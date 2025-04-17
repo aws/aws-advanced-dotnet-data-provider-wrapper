@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+
 using System.Data;
 using System.Data.Common;
+
 using MySqlConnector;
 using Npgsql;
-using Xunit;
 
 namespace AwsWrapperDataProvider.Tests
 {
@@ -72,7 +73,7 @@ namespace AwsWrapperDataProvider.Tests
         {
             const string connectionString = "Server=global-ohio-mysql-instance-1.c12pgqavxipt.us-east-2.rds.amazonaws.com;User ID=admin;Password=my_password_2020;Initial Catalog=test;" +
                 "targetConnectionType=MySqlConnector.MySqlConnection,MySqlConnector;" +
-                "targetCommandType=MySqlConnector.MySqlCommand,MySqlConnector" +
+                "targetCommandType=MySqlConnector.MySqlCommand,MySqlConnector;" +
                 "targetParameterType=MySqlConnector.MySqlParameter,MySqlConnector";
 
             const string query = "select @@aurora_server_id";
@@ -136,7 +137,8 @@ namespace AwsWrapperDataProvider.Tests
         [Trait("Category", "Integration")]
         public void PgWrapperConnectionTest()
         {
-            const string connectionString = "Host=global-ohio-pg.cluster-c12pgqavxipt.us-east-2.rds.amazonaws.com;Username=pgadmin;Password=my_password_2020;Database=postgres;";
+            const string connectionString =
+                "Host=global-ohio-pg.cluster-c12pgqavxipt.us-east-2.rds.amazonaws.com;Username=pgadmin;Password=my_password_2020;Database=postgres;";
             const string query = "select aurora_db_instance_identifier()";
 
             using (AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString))
@@ -164,9 +166,10 @@ namespace AwsWrapperDataProvider.Tests
         [Trait("Category", "Integration")]
         public void OpenPgWrapperConnectionDynamicTest()
         {
-            const string connectionString = "Host=global-ohio-pg.cluster-c12pgqavxipt.us-east-2.rds.amazonaws.com;Username=pgadmin;Password=my_password_2020;Database=postgres;" +
+            const string connectionString =
+                "Host=global-ohio-pg.cluster-c12pgqavxipt.us-east-2.rds.amazonaws.com;Username=pgadmin;Password=my_password_2020;Database=postgres;" +
                 "targetConnectionType=Npgsql.NpgsqlConnection,Npgsql;" +
-                "targetCommandType=Npgsql.NpgsqlCommand,Npgsql" +
+                "targetCommandType=Npgsql.NpgsqlCommand,Npgsql;" +
                 "targetParameterType=Npgsql.NpgsqlParameter,Npgsql";
 
             const string query = "select aurora_db_instance_identifier()";

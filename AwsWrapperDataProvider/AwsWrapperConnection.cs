@@ -17,52 +17,31 @@ using System.Data.Common;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
+using AwsWrapperDataProvider.driver;
+using AwsWrapperDataProvider.driver.connectionProviders;
+using AwsWrapperDataProvider.driver.dialects;
+using AwsWrapperDataProvider.driver.hostListProviders;
+using AwsWrapperDataProvider.driver.targetDriverDialects;
+using AwsWrapperDataProvider.driver.utils;
+
 namespace AwsWrapperDataProvider
 {
     public class AwsWrapperConnection : DbConnection
     {
-        protected static readonly HashSet<string> WrapperParameterNames = new(["targetConnectionType", "targetCommandType"]);
+        protected static HashSet<string> wrapperParameterNames = new(["targetConnectionType", "targetCommandType", "targetParameterType"]);
 
-        protected Type? _targetType;
-        protected DbConnection? _targetConnection = null;
-        protected string? _connectionString;
-        protected string? _targetConnectionString;
-        protected string? _database;
-        protected Dictionary<string, string> _parameters = new();
-        protected Dictionary<string, string> _targetConnectionParameters = new();
+        private Type _targetType;
+        private string _connectionString;
+        protected DbConnection? _targetConnection;
+        private string? _database;
+        private Dictionary<string, string> _parameters = new Dictionary<string, string>();
 
-        public AwsWrapperConnection() : base() { }
-
-        public AwsWrapperConnection(DbConnection connection) : base()
-        {
-            this._targetConnection = connection;
-            if (this._targetConnection != null)
-            {
-                this._targetType = this._targetConnection.GetType();
-                this._connectionString = this._targetConnection.ConnectionString;
-                this._database = this._targetConnection.Database;
-            }
-        }
-
-        public AwsWrapperConnection(string connectionString) : base()
-        {
-            this._connectionString = connectionString;
-            this.ParseConnectionStringParameters();
-            this.EnsureTargetType();
-        }
-
-        public AwsWrapperConnection(Type targetConnectionType) : base()
-        {
-            this._targetType = targetConnectionType;
-        }
-
-        public AwsWrapperConnection(Type targetConnectionType, string connectionString) : base()
-        {
-            this._connectionString = connectionString;
-            this._targetType = targetConnectionType;
-            this.ParseConnectionStringParameters();
-        }
-
+        private ConnectionPluginManager _pluginManager;
+        private IPluginService _pluginService;
+        private IHostListProviderService _hostListProviderService;
+        
+        public DbConnection? TargetConnection => this._targetConnection;
+        
         [AllowNull]
         public override string ConnectionString
         {
@@ -70,8 +49,8 @@ namespace AwsWrapperDataProvider
             set
             {
                 this._connectionString = value;
-                this.ParseConnectionStringParameters();
-                this.EnsureTargetType();
+                this._parameters = ConnectionUrlParser.ParseConnectionStringParameters(this._connectionString);
+                this._targetType = GetTargetType(this._parameters);
 
                 if (this._targetConnection != null)
                 {
@@ -79,12 +58,41 @@ namespace AwsWrapperDataProvider
                 }
             }
         }
+        
+        // TODO : figure out when to call Initialize()
+        public AwsWrapperConnection() : base()
+        {
+            
+        }
+
+        public AwsWrapperConnection(DbConnection connection) : this(connection.GetType(), connection.ConnectionString)
+        {
+            Debug.Assert(connection != null);
+            this._targetConnection = connection;
+            this._database = connection.Database;
+        }
+
+        public AwsWrapperConnection(string connectionString) :  this(null, connectionString) {}
+
+
+        public AwsWrapperConnection(Type? targetType, string connectionString) : base()
+        {
+            this._connectionString = connectionString;
+            this._parameters = ConnectionUrlParser.ParseConnectionStringParameters(this._connectionString);
+            this._targetType = targetType ?? GetTargetType(this._parameters);
+            
+            Initialize();
+        }
 
         public override string Database => this._targetConnection?.Database ?? this._database ?? string.Empty;
 
-        public override string DataSource => this._targetConnection is DbConnection dbConnection ? dbConnection.DataSource : string.Empty;
+        public override string DataSource => this._targetConnection is DbConnection dbConnection
+            ? dbConnection.DataSource
+            : string.Empty;
 
-        public override string ServerVersion => this._targetConnection is DbConnection dbConnection ? dbConnection.ServerVersion : string.Empty;
+        public override string ServerVersion => this._targetConnection is DbConnection dbConnection
+            ? dbConnection.ServerVersion
+            : string.Empty;
 
         public override ConnectionState State => this._targetConnection?.State ?? ConnectionState.Closed;
 
@@ -94,23 +102,26 @@ namespace AwsWrapperDataProvider
             this._targetConnection?.ChangeDatabase(databaseName);
         }
 
+        // TODO: switch method to use pluginService
+
         public override void Close()
         {
             this._targetConnection?.Close();
-            this._targetConnection = null;
         }
 
         public override void Open()
         {
-            this.EnsureConnectionCreated();
-            Debug.Assert(this._targetConnection != null);
-            this._targetConnection.Open();
+            this._pluginManager.Execute(
+                this._pluginService.CurrentConnection,
+                "DbConnection.CreateCommand",
+                (args) => this._pluginService.CurrentConnection.Open(),
+                []);
             Console.WriteLine("AwsWrapperConnection.Open()");
         }
 
+        // TODO: switch method to use pluginService
         protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel)
         {
-            this.EnsureConnectionCreated();
             Debug.Assert(this._targetConnection != null);
             DbTransaction result = this._targetConnection.BeginTransaction(isolationLevel);
             Console.WriteLine("AwsWrapperConnection.BeginDbTransaction()");
@@ -121,107 +132,104 @@ namespace AwsWrapperDataProvider
 
         public new AwsWrapperCommand CreateCommand()
         {
-            this.EnsureConnectionCreated();
-            Debug.Assert(this._targetConnection != null);
-            DbCommand command = this._targetConnection.CreateCommand();
-            var result = new AwsWrapperCommand(command, this);
+            // TODO: implement WrapperUtils.executeWithPlugins.
+            DbCommand command = this._pluginManager.Execute<DbCommand>(
+                this._pluginService.CurrentConnection,
+                "DbConnection.CreateCommand",
+                (args) => this._pluginService.CurrentConnection.CreateCommand(),
+                []);
+            var result = new AwsWrapperCommand(command, this, this._pluginManager);
             Console.WriteLine("AwsWrapperConnection.CreateCommand()");
             return result;
         }
 
-        public AwsWrapperCommand<TCommand> CreateCommand<TCommand>() where TCommand : IDbCommand
+        // TODO: switch method to use pluginService
+        public AwsWrapperCommand<TCommand> CreateCommand<TCommand>() where TCommand : DbCommand
         {
-            this.EnsureConnectionCreated();
-            Debug.Assert(this._targetConnection != null);
-            DbCommand command = this._targetConnection.CreateCommand();
-            return new AwsWrapperCommand<TCommand>(command, this);
+            TCommand command = this._pluginManager.Execute<TCommand>(
+                this._pluginService.CurrentConnection,
+                "DbConnection.CreateCommand",
+                (args) => (TCommand)this._pluginService.CurrentConnection.CreateCommand(),
+                []);
+            return new AwsWrapperCommand<TCommand>(command, this, this._pluginManager);
         }
 
-        public DbConnection? TargetConnection => this._targetConnection;
-
-        protected void EnsureTargetType()
+        private void Initialize()
         {
-            if (this._targetType == null)
+            ITargetDriverDialect driverDialect =
+                TargetDriverDialectProvider.GetDialect(this._targetType, this._parameters);
+
+            IConnectionProvider connectionProvider = new DriverConnectionProvider(
+                this._targetType);
+
+            this._pluginManager = new ConnectionPluginManager(
+                connectionProvider,
+                null,
+                this
+                );
+
+            PluginService pluginService = new PluginService(_targetConnection, _targetType, _pluginManager, _parameters, _connectionString, driverDialect);            
+            
+            this._pluginService = pluginService;
+            this._hostListProviderService = pluginService;
+            
+            this._pluginManager.Init(_pluginService, _parameters);
+            
+            // Set HostListProvider
+            HostListProviderSupplier supplier = this._pluginService.Dialect.HostListProviderSupplier;
+            if (supplier != null) {
+                IHostListProvider provider = supplier.Invoke(_parameters, _connectionString, _hostListProviderService, _pluginService);
+                this._hostListProviderService.HostListProvider = provider;
+            }
+            
+            this._pluginManager.InitHostProvider(_connectionString, _parameters, _hostListProviderService);
+            this._pluginService.RefreshHostList();
+
+            DbConnection? conn = null;
+            
+            if (this._pluginService.CurrentConnection == null)
             {
-                string? targetConnectionTypeString = this.GetTargetConnectionTypeName();
-                if (!string.IsNullOrEmpty(targetConnectionTypeString))
+                conn = this._pluginManager.Connect(
+                    this._pluginService.GetInitialConnectionHostSpec(),
+                    this._parameters,
+                    true,
+                    null);
+            }
+
+            if (conn == null) throw new Exception($"Can't connect to target connection {_connectionString}");
+            
+            this._pluginService.SetCurrentConnection(conn, this._pluginService.GetInitialConnectionHostSpec());
+            this._pluginService.RefreshHostList();
+        }
+        
+        private Type GetTargetType(Dictionary<string, string> parameters)
+        {
+            string? targetConnectionTypeString = PropertyDefinition.TARGET_CONNECTION_TYPE.GetString(parameters);
+            if (!string.IsNullOrEmpty(targetConnectionTypeString))
+            {
+                try
                 {
-                    try
-                    {
-                        this._targetType = Type.GetType(targetConnectionTypeString);
-                        if (this._targetType == null)
-                        {
-                            throw new Exception("Can't load target connection type " + targetConnectionTypeString);
-                        }
-                    }
-                    catch
+                    Type? targetType = Type.GetType(targetConnectionTypeString);
+                    if (targetType == null)
                     {
                         throw new Exception("Can't load target connection type " + targetConnectionTypeString);
                     }
+                    return targetType;
+                }
+                catch
+                {
+                    throw new Exception("Can't load target connection type " + targetConnectionTypeString);
                 }
             }
-        }
-
-        protected void EnsureConnectionCreated()
-        {
-            if (this._targetConnection != null)
-            {
-                return;
-            }
-
-            Debug.Assert(this._targetType != null);
-            this._targetConnection = string.IsNullOrWhiteSpace(this._targetConnectionString)
-                ? (DbConnection?)Activator.CreateInstance(this._targetType)
-                : (DbConnection?)Activator.CreateInstance(this._targetType, this._targetConnectionString);
-        }
-
-        protected string? GetTargetConnectionTypeName()
-        {
-            return this.GetTargetConnectionTypeName("targetConnectionType");
-        }
-
-        protected string? GetTargetCommandTypeName()
-        {
-            return this.GetTargetConnectionTypeName("targetCommandType");
-        }
-
-        protected string? GetTargetConnectionTypeName(string parameterName)
-        {
-            if (!this._parameters.TryGetValue(parameterName, out string? typeName))
-            {
-                return null;
-            }
-
-            if (string.IsNullOrEmpty(typeName))
-            {
-                throw new Exception($"Parameter {parameterName} value is invalid.");
-            }
-
-            return typeName;
-        }
-
-        protected void ParseConnectionStringParameters()
-        {
-            if (string.IsNullOrEmpty(this._connectionString))
-            {
-                throw new ArgumentNullException("Can't parse targetConnectionType parameter from connection string.");
-            }
-
-            this._parameters = this._connectionString
-                .Split(";", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
-                .Select(x => x.Split("=", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
-                .Select(x => new { Key = x.Length > 0 ? x[0] : null, Value = x.Length > 1 ? x[1] : null })
-                .Where(x => x.Key != null && x.Value != null)
-                .ToDictionary(k => k.Key ?? string.Empty, v => v.Value ?? string.Empty);
-
-            this._targetConnectionParameters = this._parameters.Where(x => !WrapperParameterNames.Contains(x.Key)).ToDictionary();
-            this._targetConnectionString = string.Join("; ", this._targetConnectionParameters.Select(x => string.Format("{0}={1}", x.Key, x.Value)));
+            throw new Exception($"Can't load target connection type {targetConnectionTypeString}");
         }
     }
 
     public class AwsWrapperConnection<TConn> : AwsWrapperConnection where TConn : DbConnection
     {
-        public AwsWrapperConnection(string connectionString) : base(typeof(TConn), connectionString) { }
+        public AwsWrapperConnection(string connectionString) : base(typeof(TConn), connectionString)
+        {
+        }
 
         public new TConn? TargetConnection => this._targetConnection as TConn;
     }

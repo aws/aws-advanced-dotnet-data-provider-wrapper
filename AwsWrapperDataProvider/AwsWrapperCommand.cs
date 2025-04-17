@@ -16,6 +16,8 @@ using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using AwsWrapperDataProvider;
+using AwsWrapperDataProvider.driver;
 
 namespace AwsWrapperDataProvider
 {
@@ -28,9 +30,17 @@ namespace AwsWrapperDataProvider
         protected string? _commandText;
         protected int? _commandTimeout;
         protected DbTransaction? _transaction;
+        protected ConnectionPluginManager _pluginManager;
 
         public AwsWrapperCommand()
         {
+        }
+
+        public AwsWrapperCommand(DbCommand command, AwsWrapperConnection connection, ConnectionPluginManager pluginManager)
+        {
+            _targetCommand = command;
+            _wrapperConnection = connection;
+            _pluginManager = pluginManager;
         }
 
         public AwsWrapperCommand(DbCommand command, DbConnection connection)
@@ -42,7 +52,8 @@ namespace AwsWrapperDataProvider
 
             Debug.Assert(connection != null);
             this._connection = connection;
-            this._wrapperConnection = connection is AwsWrapperConnection awsWrapperConnection ? awsWrapperConnection : null;
+            this._wrapperConnection =
+                connection is AwsWrapperConnection awsWrapperConnection ? awsWrapperConnection : null;
         }
 
         public AwsWrapperCommand(DbCommand command)
@@ -164,7 +175,9 @@ namespace AwsWrapperDataProvider
             set
             {
                 this._connection = value;
-                this._wrapperConnection = this._connection is AwsWrapperConnection awsWrapperConnection ? awsWrapperConnection : null;
+                this._wrapperConnection = this._connection is AwsWrapperConnection awsWrapperConnection
+                    ? awsWrapperConnection
+                    : null;
                 if (this._targetCommand != null)
                 {
                     this._targetCommand.Connection = this._wrapperConnection?.TargetConnection;
@@ -210,6 +223,15 @@ namespace AwsWrapperDataProvider
             return result;
         }
 
+        public new DbDataReader ExecuteReader()
+        {
+            return _pluginManager.Execute<DbDataReader>(
+                this._targetCommand,
+                "DbCommand.ExecuteReader()",
+                (args) => this._targetCommand.ExecuteReader(),
+                []);
+        }
+        
         public override object? ExecuteScalar()
         {
             this.EnsureCommandCreated();
@@ -291,14 +313,31 @@ namespace AwsWrapperDataProvider
 
     public class AwsWrapperCommand<TCommand> : AwsWrapperCommand where TCommand : IDbCommand
     {
-        internal AwsWrapperCommand(DbCommand command, AwsWrapperConnection wrpperConnection) : base(command, wrpperConnection) { }
+        internal AwsWrapperCommand(
+            DbCommand command,
+            AwsWrapperConnection wrapperConnection,
+            ConnectionPluginManager pluginManager) : base(command, wrapperConnection, pluginManager) {}
+        
+        internal AwsWrapperCommand(DbCommand command, AwsWrapperConnection wrapperConnection) : base(command,
+            wrapperConnection)
+        {
+        }
 
-        public AwsWrapperCommand() : base(typeof(TCommand)) { }
+        public AwsWrapperCommand() : base(typeof(TCommand))
+        {
+        }
 
-        public AwsWrapperCommand(string? commandText) : base(typeof(TCommand), commandText) { }
+        public AwsWrapperCommand(string? commandText) : base(typeof(TCommand), commandText)
+        {
+        }
 
-        public AwsWrapperCommand(AwsWrapperConnection wrapperConnection) : base(typeof(TCommand), wrapperConnection) { }
+        public AwsWrapperCommand(AwsWrapperConnection wrapperConnection) : base(typeof(TCommand), wrapperConnection)
+        {
+        }
 
-        public AwsWrapperCommand(string? commandText, AwsWrapperConnection wrapperConnection) : base(typeof(TCommand), commandText, wrapperConnection) { }
+        public AwsWrapperCommand(string? commandText, AwsWrapperConnection wrapperConnection) : base(typeof(TCommand),
+            commandText, wrapperConnection)
+        {
+        }
     }
 }
