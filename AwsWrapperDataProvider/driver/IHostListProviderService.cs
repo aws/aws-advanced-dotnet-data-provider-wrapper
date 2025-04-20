@@ -20,6 +20,9 @@ using AwsWrapperDataProvider.driver.hostListProviders;
 
 namespace AwsWrapperDataProvider.driver;
 
+/// <summary>
+/// Interface for the host list provider service that manages host list providers.
+/// </summary>
 public interface IHostListProviderService
 {
     IDialect Dialect { get; }
@@ -28,13 +31,15 @@ public interface IHostListProviderService
     
     DbConnection? CurrentConnection { get; }
     
+    HostSpec CurrentHostSpec { get; }
+    
+    HostSpec InitialConnectionHostSpec { get; set;  }
+    
+    HostSpecBuilder HostSpecBuilder { get; }
+    
+    /// <summary>
+    /// Checks if the current host list provider is static.
+    /// </summary>
+    /// <returns>True if the host list provider is static, false otherwise</returns>
     bool IsStaticHostListProvider();
-
-    HostSpec GetInitialConnectionHostSpec();
-
-    void SetInitialConnectionHostSpec(HostSpec initialConnectionHostSpec);
-
-    HostSpec GetCurrentHostSpec();
-
-    HostSpecBuilder GetHostSpecBuilder();
 }

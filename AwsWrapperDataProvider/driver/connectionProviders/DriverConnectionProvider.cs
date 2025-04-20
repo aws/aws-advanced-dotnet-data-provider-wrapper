@@ -20,6 +20,8 @@ using AwsWrapperDataProvider.driver.targetDriverDialects;
 
 namespace AwsWrapperDataProvider.driver.connectionProviders;
 
+
+// TODO: Remove need for Type in constructor, said information should be accessible from HostSpec.
 public class DriverConnectionProvider(Type targetConnectionType) : IConnectionProvider
 {
     public bool AcceptsUrl(string protocol, HostSpec hostSpec, Dictionary<string, string> props)
@@ -39,7 +41,7 @@ public class DriverConnectionProvider(Type targetConnectionType) : IConnectionPr
         Dictionary<string, string> props)
     {
         //TODO: refine stub implementation
-        Debug.Assert(targetConnectionType != null);
+        ArgumentNullException.ThrowIfNull(targetConnectionType);
 
         string connectionString = targetDriverDialect.PrepareConnectionString(hostSpec, props);
         
@@ -47,7 +49,10 @@ public class DriverConnectionProvider(Type targetConnectionType) : IConnectionPr
             ? (DbConnection?)Activator.CreateInstance(targetConnectionType)
             : (DbConnection?)Activator.CreateInstance(targetConnectionType, connectionString);
         
-        Debug.Assert(targetConnection != null);
+        if (targetConnection == null)
+        {
+            throw new InvalidCastException("Unable to create connection.");
+        }
         return targetConnection;
     }
 

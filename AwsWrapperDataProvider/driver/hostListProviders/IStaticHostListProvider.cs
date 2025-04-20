@@ -13,8 +13,13 @@
 // limitations under the License.
 
 
+using AwsWrapperDataProvider.driver.hostInfo;
+
 namespace AwsWrapperDataProvider.driver.hostListProviders;
 
+/// <summary>
+/// Interface for static host list providers that don't dynamically discover hosts.
+/// </summary>
 public interface IStaticHostListProvider : IHostListProvider
 {
 }

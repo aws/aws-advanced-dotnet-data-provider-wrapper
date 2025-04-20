@@ -103,7 +103,6 @@ namespace AwsWrapperDataProvider
         }
 
         // TODO: switch method to use pluginService
-
         public override void Close()
         {
             this._targetConnection?.Close();
@@ -130,9 +129,9 @@ namespace AwsWrapperDataProvider
 
         protected override DbCommand CreateDbCommand() => this.CreateCommand();
 
+        // TODO: implement WrapperUtils.executeWithPlugins.
         public new AwsWrapperCommand CreateCommand()
         {
-            // TODO: implement WrapperUtils.executeWithPlugins.
             DbCommand command = this._pluginManager.Execute<DbCommand>(
                 this._pluginService.CurrentConnection,
                 "DbConnection.CreateCommand",
@@ -142,14 +141,16 @@ namespace AwsWrapperDataProvider
             Console.WriteLine("AwsWrapperConnection.CreateCommand()");
             return result;
         }
-
-        // TODO: switch method to use pluginService
+        
+        // TODO: implement WrapperUtils.executeWithPlugins.
         public AwsWrapperCommand<TCommand> CreateCommand<TCommand>() where TCommand : DbCommand
         {
+            ArgumentNullException.ThrowIfNull(this._pluginService.CurrentConnection);
+            
             TCommand command = this._pluginManager.Execute<TCommand>(
                 this._pluginService.CurrentConnection,
                 "DbConnection.CreateCommand",
-                (args) => (TCommand)this._pluginService.CurrentConnection.CreateCommand(),
+                (args) => (TCommand) this._pluginService.CurrentConnection.CreateCommand(),
                 []);
             return new AwsWrapperCommand<TCommand>(command, this, this._pluginManager);
         }
@@ -190,7 +191,7 @@ namespace AwsWrapperDataProvider
             if (this._pluginService.CurrentConnection == null)
             {
                 conn = this._pluginManager.Connect(
-                    this._pluginService.GetInitialConnectionHostSpec(),
+                    this._pluginService.InitialConnectionHostSpec,
                     this._parameters,
                     true,
                     null);
@@ -198,7 +199,7 @@ namespace AwsWrapperDataProvider
 
             if (conn == null) throw new Exception($"Can't connect to target connection {_connectionString}");
             
-            this._pluginService.SetCurrentConnection(conn, this._pluginService.GetInitialConnectionHostSpec());
+            this._pluginService.SetCurrentConnection(conn, this._pluginService.InitialConnectionHostSpec);
             this._pluginService.RefreshHostList();
         }
         

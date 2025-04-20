@@ -18,20 +18,26 @@ using AwsWrapperDataProvider.driver.hostInfo;
 
 namespace AwsWrapperDataProvider.driver.plugins;
 
+/// <summary>
+/// Interface for connection plugins that can intercept and modify connection behavior.
+/// </summary>
 public interface IConnectionPlugin
 {
+    /// <summary>
+    /// Gets the set of method names this plugin subscribes to.
+    /// </summary>
+    /// <returns>Set of method names</returns>
     ISet<string> GetSubscribeMethods();
 
     /// <summary>
-    /// Established a connection to the given host using the given driver protocol and properties.
-    /// TODO: Add params
+    /// Executes a method with the given arguments and returns a result.
     /// </summary>
-    /// <param name="methodInvokedOn"></param>
-    /// <param name="methodName"></param>
-    /// <param name="jdbcCallable"></param>
-    /// <param name="jdbcMethodArgs"></param>
-    /// <typeparam name="T"></typeparam>
-    /// <returns></returns>
+    /// <param name="methodInvokedOn">The object the method is invoked on</param>
+    /// <param name="methodName">The name of the method being invoked</param>
+    /// <param name="jdbcCallable">The callable that executes the actual method</param>
+    /// <param name="jdbcMethodArgs">The arguments to pass to the method</param>
+    /// <typeparam name="T">The return type of the method</typeparam>
+    /// <returns>The result of the method execution</returns>
     T Execute<T>(
         object methodInvokedOn,
         string methodName,
@@ -39,6 +45,13 @@ public interface IConnectionPlugin
         object[] jdbcMethodArgs
     );
     
+    /// <summary>
+    /// Executes a void method with the given arguments.
+    /// </summary>
+    /// <param name="methodInvokedOn">The object the method is invoked on</param>
+    /// <param name="methodName">The name of the method being invoked</param>
+    /// <param name="jdbcCallable">The callable that executes the actual method</param>
+    /// <param name="jdbcMethodArgs">The arguments to pass to the method</param>
     void Execute(
         object methodInvokedOn,
         string methodName,
@@ -47,14 +60,13 @@ public interface IConnectionPlugin
     );
 
     /// <summary>
-    /// TODO: Add description
+    /// Establishes a connection to the given host using the given properties.
     /// </summary>
-    /// <param name="driverProtocol"></param>
-    /// <param name="hostSpec"></param>
-    /// <param name="props"></param>
-    /// <param name="isInitialConnection"></param>
-    /// <param name="jdbcCallable"></param>
-    /// <returns></returns>
+    /// <param name="hostSpec">The host specification to connect to</param>
+    /// <param name="props">Connection properties</param>
+    /// <param name="isInitialConnection">Whether this is the initial connection</param>
+    /// <param name="jdbcCallable">The callable that executes the actual connection</param>
+    /// <returns>The database connection</returns>
     DbConnection Connect(
         HostSpec hostSpec,
         Dictionary<string, string> props,
@@ -63,14 +75,13 @@ public interface IConnectionPlugin
     );
 
     /// <summary>
-    /// TODO: Add description
+    /// Forces a connection to the given host using the given properties.
     /// </summary>
-    /// <param name="driverProtocol"></param>
-    /// <param name="hostSpec"></param>
-    /// <param name="props"></param>
-    /// <param name="isInitialConnection"></param>
-    /// <param name="forceConnectJdbcCallable"></param>
-    /// <returns></returns>
+    /// <param name="hostSpec">The host specification to connect to</param>
+    /// <param name="props">Connection properties</param>
+    /// <param name="isInitialConnection">Whether this is the initial connection</param>
+    /// <param name="forceConnectJdbcCallable">The callable that executes the actual connection</param>
+    /// <returns>The database connection</returns>
     DbConnection ForceConnect(
         HostSpec hostSpec,
         Dictionary<string, string> props,
@@ -78,32 +89,31 @@ public interface IConnectionPlugin
         JdbcCallable<DbConnection> forceConnectJdbcCallable
     );
 
-    // bool acceptsStrategy(HostRole role, string strategy);
-
-    // HostSpec getHostSpecByStrategy(HostRole role, string strategy);
-
-    // HostSpec getHostSpecByStrategy(IList<HostSpec> hosts, HostRole role, string strategy);
-
     /// <summary>
-    /// TODO: Add description
+    /// Initializes the host provider.
     /// </summary>
-    /// <param name="driverProtocol"></param>
-    /// <param name="initialUrl"></param>
-    /// <param name="props"></param>
-    /// <param name="hostListProviderService"></param>
-    /// <param name="initHostProviderFunc"></param>
+    /// <param name="initialUrl">The initial connection URL</param>
+    /// <param name="props">Connection properties</param>
+    /// <param name="hostListProviderService">The host list provider service</param>
+    /// <param name="initHostProviderFunc">The function to initialize the host provider</param>
     void InitHostProvider(
         string initialUrl,
         Dictionary<string, string> props,
         IHostListProviderService hostListProviderService,
         JdbcCallable<Action<object[]>> initHostProviderFunc
     );
-
-    // OldConnectionSuggestedAction notifyConnectionChanged(NodeChangeOptions changes);
-
-    // void notifyNodeListChanged(IDictionary<string, NodeChangeOptions> changes);
 }
 
+/// <summary>
+/// Delegate for callable methods that return a value.
+/// </summary>
+/// <typeparam name="T">The return type</typeparam>
+/// <param name="args">The method arguments</param>
+/// <returns>The method result</returns>
 public delegate T JdbcCallable<out T>(object[] args);
 
+/// <summary>
+/// Delegate for callable methods that don't return a value.
+/// </summary>
+/// <param name="args">The method arguments</param>
 public delegate void JdbcCallable(object[] args);

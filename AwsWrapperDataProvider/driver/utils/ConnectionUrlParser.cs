@@ -15,13 +15,13 @@
 
 namespace AwsWrapperDataProvider.driver.utils;
 
-public class ConnectionUrlParser
+public static class ConnectionUrlParser
 {
     public static Dictionary<string, string> ParseConnectionStringParameters(string connectionString)
     {
-        if (String.IsNullOrEmpty(connectionString))
+        if (string.IsNullOrEmpty(connectionString))
         {
-            throw new ArgumentNullException("Can't parse targetConnectionType parameter from connection string.");
+            throw new ArgumentNullException(nameof(connectionString));
         }
 
         return connectionString
@@ -30,10 +30,5 @@ public class ConnectionUrlParser
             .Select(x => new { Key = x.Length > 0 ? x[0] : null, Value = x.Length > 1 ? x[1] : null })
             .Where(x => x.Key != null && x.Value != null)
             .ToDictionary(k => k.Key ?? string.Empty, v => v.Value ?? string.Empty);
-    }
-    
-    string GetProtocol(string url)
-    {
-        return "";
     }
 }

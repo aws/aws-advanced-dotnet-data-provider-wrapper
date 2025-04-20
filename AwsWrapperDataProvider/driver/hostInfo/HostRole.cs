@@ -14,23 +14,9 @@
 
 namespace AwsWrapperDataProvider.driver.hostInfo;
 
-/// <summary>
-/// Defines the role of a host in a database cluster.
-/// </summary>
 public enum HostRole
 {
-    /// <summary>
-    /// The role of the host is unknown.
-    /// </summary>
     Unknown,
-    
-    /// <summary>
-    /// The host is a writer node that can handle write operations.
-    /// </summary>
     Writer,
-    
-    /// <summary>
-    /// The host is a reader node that can handle read operations.
-    /// </summary>
     Reader
 }

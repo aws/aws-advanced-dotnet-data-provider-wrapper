@@ -16,6 +16,7 @@
 using System.Data.Common;
 using System.Linq.Expressions;
 using AwsWrapperDataProvider.driver.exceptions;
+using AwsWrapperDataProvider.driver.hostInfo;
 using AwsWrapperDataProvider.driver.hostListProviders;
 
 namespace AwsWrapperDataProvider.driver.dialects;
@@ -23,11 +24,13 @@ namespace AwsWrapperDataProvider.driver.dialects;
 public class PgDialect : IDialect
 {
     public int DefaultPort { get; } = 5432;
-
+    
+    public IExceptionHandler ExceptionHandler { get; } 
+    
     public string HostAliasQuery { get; } = "SELECT CONCAT(inet_server_addr(), ':', inet_server_port())";
 
     public string ServerVersionQuery { get; } = "SELECT 'version', VERSION()";
-
+    
     public IList<string> DialectUpdateCandidates { get; } = new List<string>()
     {
         DialectCodes.AURORA_PG
@@ -41,6 +44,11 @@ public class PgDialect : IDialect
     ) => new ConnectionStringHostListProvider(props, initialUrl, hostListProviderService);
 
     public bool IsDialect(DbConnection conn)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void PrepareConnectionProperties(Dictionary<string, string> connectionpProps, HostSpec hostSpec)
     {
         throw new NotImplementedException();
     }

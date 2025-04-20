@@ -18,7 +18,7 @@ using AwsWrapperDataProvider.driver.connectionProviders;
 
 namespace AwsWrapperDataProvider.driver.plugins;
 
-public class ConnectionPluginChainBuilder
+public static class ConnectionPluginChainBuilder
 {
     public static IList<IConnectionPlugin> GetPlugins(
         IPluginService pluginService,

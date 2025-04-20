@@ -31,7 +31,7 @@ namespace AwsWrapperDataProvider
         protected int? _commandTimeout;
         protected DbTransaction? _transaction;
         protected ConnectionPluginManager _pluginManager;
-
+        
         public AwsWrapperCommand()
         {
         }
@@ -43,6 +43,7 @@ namespace AwsWrapperDataProvider
             _pluginManager = pluginManager;
         }
 
+        // TODO: clean up multiple constructors and ensure ConnectionPluginManager is provided.
         public AwsWrapperCommand(DbCommand command, DbConnection connection)
         {
             Debug.Assert(command != null);

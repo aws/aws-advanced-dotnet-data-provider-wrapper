@@ -17,9 +17,9 @@ using System.Data.Common;
 
 namespace AwsWrapperDataProvider.driver.targetDriverDialects;
 
-public class TargetDriverDialectProvider
+public static class TargetDriverDialectProvider
 {
-    static public ITargetDriverDialect GetDialect(Type connectionType, Dictionary<string, string>? props)
+    public static ITargetDriverDialect GetDialect(Type connectionType, Dictionary<string, string>? props)
     {
         // TODO: Logic to pick driver dialect (also need to implement other dialects)
         return new PgTargetDriverDialect();

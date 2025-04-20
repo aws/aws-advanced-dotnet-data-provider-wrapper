@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 namespace AwsWrapperDataProvider.driver.hostListProviders;
 
+/// <summary>
+/// Interface for dynamic host list providers that can discover hosts at runtime.
+/// </summary>
 public interface IDynamicHostListProvider : IHostListProvider
 {
 }

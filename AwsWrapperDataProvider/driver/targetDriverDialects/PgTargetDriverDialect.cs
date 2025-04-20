@@ -21,7 +21,7 @@ namespace AwsWrapperDataProvider.driver.targetDriverDialects;
 
 public class PgTargetDriverDialect : ITargetDriverDialect
 {
-    protected static HashSet<string> wrapperParameterNames = new(["targetConnectionType", "targetCommandType", "targetParameterType"]);
+    private static HashSet<string> wrapperParameterNames = new(["targetConnectionType", "targetCommandType", "targetParameterType"]);
     
     public bool IsDialect(Type connectionType)
     {
@@ -35,5 +35,25 @@ public class PgTargetDriverDialect : ITargetDriverDialect
         // TODO: proper 
         Dictionary<string, string> targetConnectionParameters = props.Where(x => !wrapperParameterNames.Contains(x.Key)).ToDictionary();
         return string.Join("; ", targetConnectionParameters.Select(x => $"{x.Key}={x.Value}"));
+    }
+
+    public void PrepareDataSource(DbConnection connection, HostSpec hostSpec, Dictionary<string, string> props)
+    {
+        throw new NotImplementedException();
+    }
+
+    public bool Ping(DbConnection connection)
+    {
+        throw new NotImplementedException();
+    }
+
+    public ISet<string> GetAllowedOnConnectionMethodNames()
+    {
+        throw new NotImplementedException();
+    }
+
+    public string? GetSqlState(Exception exception)
+    {
+        throw new NotImplementedException();
     }
 }

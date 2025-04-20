@@ -19,16 +19,33 @@ using AwsWrapperDataProvider.driver.targetDriverDialects;
 
 namespace AwsWrapperDataProvider.driver.connectionProviders;
 
+/// <summary>
+/// Interface for connection providers that handle the physical connection creation process.
+/// </summary>
 public interface IConnectionProvider
 {
+    /// <summary>
+    /// Indicates whether this ConnectionProvider can provide connections for the given host and properties.
+    /// </summary>
+    /// <param name="hostSpec">The HostSpec containing the host-port information for the host to connect to</param>
+    /// <param name="props">The properties to use for the connection</param>
+    /// <returns>True if this ConnectionProvider can provide connections for the given URL, otherwise false</returns>
     bool AcceptsUrl(HostSpec hostSpec, Dictionary<string, string> props);
-
-    // bool AcceptsStrategy(HostRole role, string strategy);
-
-    // HostSpec GetHostSpecByStrategy(IList<HostSpec> hosts, HostRole role, string strategy, Dictionary<string, string> props);
-
+    
+    /// <summary>
+    /// Called once per connection that needs to be created.
+    /// </summary>
+    /// <param name="dialect">The database dialect</param>
+    /// <param name="targetDriverDialect">The target driver dialect</param>
+    /// <param name="hostSpec">The HostSpec containing the host-port information for the host to connect to</param>
+    /// <param name="props">The properties to use for the connection</param>
+    /// <returns>Connection resulting from the given connection information</returns>
     DbConnection Connect(IDialect dialect, ITargetDriverDialect targetDriverDialect, HostSpec hostSpec,
         Dictionary<string, string> props);
 
+    /// <summary>
+    /// Gets the name of the target driver.
+    /// </summary>
+    /// <returns>The name of the target driver</returns>
     string GetTargetName();
 }

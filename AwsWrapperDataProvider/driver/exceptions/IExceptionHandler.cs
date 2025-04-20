@@ -17,13 +17,38 @@ using AwsWrapperDataProvider.driver.targetDriverDialects;
 
 namespace AwsWrapperDataProvider.driver.exceptions;
 
+/// <summary>
+/// Interface for handling database exceptions and categorizing them.
+/// </summary>
 public interface IExceptionHandler
 {
+    /// <summary>
+    /// Determines if the given SQL state represents a network exception.
+    /// </summary>
+    /// <param name="sqlState">The SQL state code</param>
+    /// <returns>True if it's a network exception, false otherwise</returns>
     bool IsNetworkException(string sqlState);
 
+    /// <summary>
+    /// Determines if the given exception is a network exception.
+    /// </summary>
+    /// <param name="exception">The exception to check</param>
+    /// <param name="targetDriverDialect">The target driver dialect</param>
+    /// <returns>True if it's a network exception, false otherwise</returns>
     bool IsNetworkException(Exception exception, ITargetDriverDialect? targetDriverDialect);
 
+    /// <summary>
+    /// Determines if the given SQL state represents a login exception.
+    /// </summary>
+    /// <param name="sqlState">The SQL state code</param>
+    /// <returns>True if it's a login exception, false otherwise</returns>
     bool IsLoginException(string sqlState);
 
+    /// <summary>
+    /// Determines if the given exception is a login exception.
+    /// </summary>
+    /// <param name="exception">The exception to check</param>
+    /// <param name="targetDriverDialect">The target driver dialect</param>
+    /// <returns>True if it's a login exception, false otherwise</returns>
     bool IsLoginException(Exception exception, ITargetDriverDialect? targetDriverDialect);
 }

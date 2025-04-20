@@ -23,4 +23,6 @@ public class PropertyDefinition
         new AwsWrapperProperty("targetConnectionType", null, "Driver target connection type");
     public static AwsWrapperProperty TARGET_COMMAND_TYPE =
         new AwsWrapperProperty("targetCommandType", null, "Driver target command type");
+    public static AwsWrapperProperty TARGET_PARAMETER_TYPE =
+        new AwsWrapperProperty("targetParameterType", null, "Driver target parameter type");
 }

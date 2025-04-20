@@ -132,7 +132,9 @@ namespace AwsWrapperDataProvider
             return this._dataReader.GetDouble(i);
         }
 
-        [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties)]
+        [return:
+            DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields |
+                                       DynamicallyAccessedMemberTypes.PublicProperties)]
         public Type GetFieldType(int i)
         {
             return this._dataReader.GetFieldType(i);

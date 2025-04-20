@@ -14,11 +14,8 @@
 
 namespace AwsWrapperDataProvider.driver.hostInfo;
 
-/// <summary>
-/// Defines the availability status of a host.
-/// </summary>
 public enum HostAvailability
 {
     Available,
-    NotAvailable
+    Unavailable
 }

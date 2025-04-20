@@ -30,8 +30,9 @@ public class PluginService : IPluginService, IHostListProviderService
     private string _originalConnectionString;
     private volatile IHostListProvider _hostListProvider;
     private DbConnection? _currentConnection;
-    private HostSpec _currentHostSpec;
+    private HostSpec? _currentHostSpec;
     private HostSpec _initialConnectionHostSpec;
+    private List<HostSpec> _allHosts = [];
     // private ExceptionManager _exceptionManager;
     // private IExceptionHandler _exceptionHandler;
     private IDialect _dialect;
@@ -39,10 +40,13 @@ public class PluginService : IPluginService, IHostListProviderService
     
     public IDialect Dialect { get => _dialect; }
     public ITargetDriverDialect TargetDriverDialect { get => _targetDriverDialect; }
+    public HostSpec InitialConnectionHostSpec { get => _initialConnectionHostSpec; set => _initialConnectionHostSpec = value; }
+    public HostSpec CurrentHostSpec { get => _currentHostSpec; }
+    public IList<HostSpec> AllHosts { get => _allHosts; }
     public IHostListProvider HostListProvider { get => _hostListProvider; set => _hostListProvider = value; }
-    
+    public HostSpecBuilder HostSpecBuilder { get; }
     public DbConnection? CurrentConnection { get => _currentConnection; set => _currentConnection = value; }
-    
+
     public PluginService(
         DbConnection? currentConnection,
         Type connectionType,
@@ -62,25 +66,15 @@ public class PluginService : IPluginService, IHostListProviderService
         _dialect = DialectProvider.GetDialect(connectionType, props);
     }
     
-    public HostSpec GetCurrentHostSpec()
+    public bool IsStaticHostListProvider()
     {
         throw new NotImplementedException();
     }
     
-    public HostSpecBuilder GetHostSpecBuilder()
-    {
-        throw new NotImplementedException();
-    }
-
     public HostSpec GetInitialConnectionHostSpec()
     {
         // TODO implement stub method.
         return new HostSpec("temp",0000,"temp",HostRole.Reader,HostAvailability.Available);
-    }
-
-    public void SetInitialConnectionHostSpec(HostSpec initialConnectionHostSpec)
-    {
-        throw new NotImplementedException();
     }
     
     public void SetCurrentConnection(DbConnection connection, HostSpec hostSpec)
@@ -93,36 +87,46 @@ public class PluginService : IPluginService, IHostListProviderService
     {
         throw new NotImplementedException();
     }
-
-    public IList<HostSpec> GetAllHosts()
-    {
-        throw new NotImplementedException();
-    }
-
+    
     public IList<HostSpec> GetHosts()
     {
         throw new NotImplementedException();
     }
-    
+
     public HostRole GetHostRole(DbConnection connection)
     {
         throw new NotImplementedException();
     }
 
-    public IHostListProvider GetHostListProvider()
+    public HostRole SetAvailability(ISet<string> hostAliases, HostAvailability availability)
     {
         throw new NotImplementedException();
     }
 
-    public bool IsStaticHostListProvider()
-    {
-        throw new NotImplementedException();
-    }
-    
     public void RefreshHostList()
     {
         // TODO implement stub method.
         return;
+    }
+
+    public void RefreshHostList(DbConnection connection)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void ForceRefreshHostList()
+    {
+        throw new NotImplementedException();
+    }
+
+    public void ForceRefreshHostList(DbConnection connection)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void ForceRefreshHostList(bool shouldVerifyWriter, long timeoutMs)
+    {
+        throw new NotImplementedException();
     }
 
     public DbConnection Connect(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin pluginToSkip)
@@ -149,7 +153,7 @@ public class PluginService : IPluginService, IHostListProviderService
     {
         throw new NotImplementedException();
     }
-    
+
     public IConnectionProvider GetConnectionProvider()
     {
         throw new NotImplementedException();
