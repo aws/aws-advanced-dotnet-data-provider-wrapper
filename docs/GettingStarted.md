@@ -1,4 +1,4 @@
-# Getting Started with AwsWrapperDataProvider
+# Getting Started
 
 This guide provides instructions on how to build, run, and lint the AwsWrapperDataProvider project.
 
@@ -69,13 +69,13 @@ The project uses StyleCop.Analyzers for code style enforcement and .editorconfig
 
 ### Running Code Analysis
 
-To run code analysis manually:
+To run code analysis and verify that all files conform to the style rules:
 
 ```bash
-dotnet build /p:TreatWarningsAsErrors=true
+dotnet format --verify-no-changes
 ```
 
-This will treat all style warnings as errors, ensuring strict adherence to the coding standards.
+This command will check all files against the style rules defined in .editorconfig and StyleCop, but won't make any changes. It will exit with a non-zero code if any files would need formatting, making it ideal for CI/CD pipelines.
 
 ### Formatting Code
 
@@ -90,10 +90,18 @@ This command will automatically format your code to match the style defined in t
 For more control over the formatting process, you can use the following command:
 
 ```bash
-dotnet format AwsWrapperDataProvider.sln --include ./AwsWrapperDataProvider/ ./AwsWrapperDataProvider.Tests/ --verbosity diagnostic
+# Windows (Command Prompt)
+dotnet format AwsWrapperDataProvider.sln --include .\AwsWrapperDataProvider\ .\AwsWrapperDataProvider.Tests\ --verify-no-changes --verbosity diagnostic
+
+# macOS/Linux/Windows (PowerShell)
+dotnet format AwsWrapperDataProvider.sln --include ./AwsWrapperDataProvider/ ./AwsWrapperDataProvider.Tests/ --verify-no-changes --verbosity diagnostic
 ```
+
+> **Note:** The main difference between OS platforms is the path separator: Windows Command Prompt uses backslashes (`\`), while macOS/Linux and Windows PowerShell can use forward slashes (`/`).
 
 This command provides more specific formatting with the following flags:
 - `AwsWrapperDataProvider.sln`: Specifies the solution file to format
 - `--include`: Limits formatting to specific directories (in this case, only the core library and its tests)
+- `--verify-no-changes`: Fails if formatting would change any files (useful in CI pipelines to ensure code is already formatted)
 - `--verbosity diagnostic`: Provides detailed output about the formatting process, showing exactly what would be changed
+
