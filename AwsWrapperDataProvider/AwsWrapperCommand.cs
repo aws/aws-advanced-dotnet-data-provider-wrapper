@@ -16,8 +16,7 @@ using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using AwsWrapperDataProvider;
-using AwsWrapperDataProvider.driver;
+using AwsWrapperDataProvider.Driver;
 
 namespace AwsWrapperDataProvider
 {
@@ -31,16 +30,16 @@ namespace AwsWrapperDataProvider
         protected int? _commandTimeout;
         protected DbTransaction? _transaction;
         protected ConnectionPluginManager _pluginManager;
-        
+
         public AwsWrapperCommand()
         {
         }
 
         public AwsWrapperCommand(DbCommand command, AwsWrapperConnection connection, ConnectionPluginManager pluginManager)
         {
-            _targetCommand = command;
-            _wrapperConnection = connection;
-            _pluginManager = pluginManager;
+            this._targetCommand = command;
+            this._wrapperConnection = connection;
+            this._pluginManager = pluginManager;
         }
 
         // TODO: clean up multiple constructors and ensure ConnectionPluginManager is provided.
@@ -226,13 +225,13 @@ namespace AwsWrapperDataProvider
 
         public new DbDataReader ExecuteReader()
         {
-            return _pluginManager.Execute<DbDataReader>(
+            return this._pluginManager.Execute<DbDataReader>(
                 this._targetCommand,
                 "DbCommand.ExecuteReader()",
                 (args) => this._targetCommand.ExecuteReader(),
                 []);
         }
-        
+
         public override object? ExecuteScalar()
         {
             this.EnsureCommandCreated();
@@ -317,8 +316,8 @@ namespace AwsWrapperDataProvider
         internal AwsWrapperCommand(
             DbCommand command,
             AwsWrapperConnection wrapperConnection,
-            ConnectionPluginManager pluginManager) : base(command, wrapperConnection, pluginManager) {}
-        
+            ConnectionPluginManager pluginManager) : base(command, wrapperConnection, pluginManager) { }
+
         internal AwsWrapperCommand(DbCommand command, AwsWrapperConnection wrapperConnection) : base(command,
             wrapperConnection)
         {

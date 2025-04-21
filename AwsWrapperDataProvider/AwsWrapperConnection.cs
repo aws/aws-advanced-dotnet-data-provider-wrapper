@@ -17,12 +17,12 @@ using System.Data.Common;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
-using AwsWrapperDataProvider.driver;
-using AwsWrapperDataProvider.driver.connectionProviders;
-using AwsWrapperDataProvider.driver.dialects;
-using AwsWrapperDataProvider.driver.hostListProviders;
-using AwsWrapperDataProvider.driver.targetDriverDialects;
-using AwsWrapperDataProvider.driver.utils;
+using AwsWrapperDataProvider.Driver;
+using AwsWrapperDataProvider.Driver.ConnectionProviders;
+using AwsWrapperDataProvider.Driver.Dialects;
+using AwsWrapperDataProvider.Driver.HostListProviders;
+using AwsWrapperDataProvider.Driver.TargetDriverDialects;
+using AwsWrapperDataProvider.Driver.Utils;
 
 namespace AwsWrapperDataProvider
 {
@@ -39,9 +39,9 @@ namespace AwsWrapperDataProvider
         private ConnectionPluginManager _pluginManager;
         private IPluginService _pluginService;
         private IHostListProviderService _hostListProviderService;
-        
+
         public DbConnection? TargetConnection => this._targetConnection;
-        
+
         [AllowNull]
         public override string ConnectionString
         {
@@ -50,7 +50,7 @@ namespace AwsWrapperDataProvider
             {
                 this._connectionString = value;
                 this._parameters = ConnectionUrlParser.ParseConnectionStringParameters(this._connectionString);
-                this._targetType = GetTargetType(this._parameters);
+                this._targetType = this.GetTargetType(this._parameters);
 
                 if (this._targetConnection != null)
                 {
@@ -58,11 +58,10 @@ namespace AwsWrapperDataProvider
                 }
             }
         }
-        
+
         // TODO : figure out when to call Initialize()
         public AwsWrapperConnection() : base()
         {
-            
         }
 
         public AwsWrapperConnection(DbConnection connection) : this(connection.GetType(), connection.ConnectionString)
@@ -72,16 +71,15 @@ namespace AwsWrapperDataProvider
             this._database = connection.Database;
         }
 
-        public AwsWrapperConnection(string connectionString) :  this(null, connectionString) {}
-
+        public AwsWrapperConnection(string connectionString) : this(null, connectionString) { }
 
         public AwsWrapperConnection(Type? targetType, string connectionString) : base()
         {
             this._connectionString = connectionString;
             this._parameters = ConnectionUrlParser.ParseConnectionStringParameters(this._connectionString);
-            this._targetType = targetType ?? GetTargetType(this._parameters);
-            
-            Initialize();
+            this._targetType = targetType ?? this.GetTargetType(this._parameters);
+
+            this.Initialize();
         }
 
         public override string Database => this._targetConnection?.Database ?? this._database ?? string.Empty;
@@ -141,16 +139,16 @@ namespace AwsWrapperDataProvider
             Console.WriteLine("AwsWrapperConnection.CreateCommand()");
             return result;
         }
-        
+
         // TODO: implement WrapperUtils.executeWithPlugins.
         public AwsWrapperCommand<TCommand> CreateCommand<TCommand>() where TCommand : DbCommand
         {
             ArgumentNullException.ThrowIfNull(this._pluginService.CurrentConnection);
-            
+
             TCommand command = this._pluginManager.Execute<TCommand>(
                 this._pluginService.CurrentConnection,
                 "DbConnection.CreateCommand",
-                (args) => (TCommand) this._pluginService.CurrentConnection.CreateCommand(),
+                (args) => (TCommand)this._pluginService.CurrentConnection.CreateCommand(),
                 []);
             return new AwsWrapperCommand<TCommand>(command, this, this._pluginManager);
         }
@@ -166,28 +164,28 @@ namespace AwsWrapperDataProvider
             this._pluginManager = new ConnectionPluginManager(
                 connectionProvider,
                 null,
-                this
-                );
+                this);
 
-            PluginService pluginService = new PluginService(_targetConnection, _targetType, _pluginManager, _parameters, _connectionString, driverDialect);            
-            
+            PluginService pluginService = new PluginService(this._targetConnection, this._targetType, this._pluginManager, this._parameters, this._connectionString, driverDialect);
+
             this._pluginService = pluginService;
             this._hostListProviderService = pluginService;
-            
-            this._pluginManager.Init(_pluginService, _parameters);
-            
+
+            this._pluginManager.Init(this._pluginService, this._parameters);
+
             // Set HostListProvider
             HostListProviderSupplier supplier = this._pluginService.Dialect.HostListProviderSupplier;
-            if (supplier != null) {
-                IHostListProvider provider = supplier.Invoke(_parameters, _connectionString, _hostListProviderService, _pluginService);
+            if (supplier != null)
+            {
+                IHostListProvider provider = supplier.Invoke(this._parameters, this._connectionString, this._hostListProviderService, this._pluginService);
                 this._hostListProviderService.HostListProvider = provider;
             }
-            
-            this._pluginManager.InitHostProvider(_connectionString, _parameters, _hostListProviderService);
+
+            this._pluginManager.InitHostProvider(this._connectionString, this._parameters, this._hostListProviderService);
             this._pluginService.RefreshHostList();
 
             DbConnection? conn = null;
-            
+
             if (this._pluginService.CurrentConnection == null)
             {
                 conn = this._pluginManager.Connect(
@@ -197,15 +195,18 @@ namespace AwsWrapperDataProvider
                     null);
             }
 
-            if (conn == null) throw new Exception($"Can't connect to target connection {_connectionString}");
-            
+            if (conn == null)
+            {
+                throw new Exception($"Can't connect to target connection {this._connectionString}");
+            }
+
             this._pluginService.SetCurrentConnection(conn, this._pluginService.InitialConnectionHostSpec);
             this._pluginService.RefreshHostList();
         }
-        
+
         private Type GetTargetType(Dictionary<string, string> parameters)
         {
-            string? targetConnectionTypeString = PropertyDefinition.TARGET_CONNECTION_TYPE.GetString(parameters);
+            string? targetConnectionTypeString = PropertyDefinition.TargetConnectionType.GetString(parameters);
             if (!string.IsNullOrEmpty(targetConnectionTypeString))
             {
                 try
@@ -215,6 +216,7 @@ namespace AwsWrapperDataProvider
                     {
                         throw new Exception("Can't load target connection type " + targetConnectionTypeString);
                     }
+
                     return targetType;
                 }
                 catch
@@ -222,6 +224,7 @@ namespace AwsWrapperDataProvider
                     throw new Exception("Can't load target connection type " + targetConnectionTypeString);
                 }
             }
+
             throw new Exception($"Can't load target connection type {targetConnectionTypeString}");
         }
     }
