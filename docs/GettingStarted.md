@@ -91,10 +91,10 @@ For more control over the formatting process, you can use the following command:
 
 ```bash
 # Windows (Command Prompt)
-dotnet format AwsWrapperDataProvider.sln --include .\AwsWrapperDataProvider\ .\AwsWrapperDataProvider.Tests\ --verify-no-changes --verbosity diagnostic
+dotnet format AwsWrapperDataProvider.sln --include .\AwsWrapperDataProvider\ .\AwsWrapperDataProvider.Tests\ --verbosity diagnostic
 
 # macOS/Linux/Windows (PowerShell)
-dotnet format AwsWrapperDataProvider.sln --include ./AwsWrapperDataProvider/ ./AwsWrapperDataProvider.Tests/ --verify-no-changes --verbosity diagnostic
+dotnet format AwsWrapperDataProvider.sln --include ./AwsWrapperDataProvider/ ./AwsWrapperDataProvider.Tests/ --verbosity diagnostic
 ```
 
 > **Note:** The main difference between OS platforms is the path separator: Windows Command Prompt uses backslashes (`\`), while macOS/Linux and Windows PowerShell can use forward slashes (`/`).
