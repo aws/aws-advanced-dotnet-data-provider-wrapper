@@ -16,7 +16,7 @@
     <PackageReference Include="MySqlConnector" Version="2.4.0" />
     <PackageReference Include="NHibernate" Version="5.5.2" />
     <PackageReference Include="NHibernate.Driver.MySqlConnector" Version="2.0.5" />
-    <PackageReference Include="Npgsql" Version="9.0.2" />
+    <PackageReference Include="Npgsql" Version="9.0.3" />
     <PackageReference Include="xunit.v3" Version="2.0.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.0.2" />
   </ItemGroup>
