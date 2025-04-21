@@ -1,4 +1,18 @@
-﻿using System;
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License").
+// You may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
@@ -13,28 +27,28 @@ namespace AwsWrapperDataProvider
     {
         protected IDataReader _dataReader;
 
-        internal AwsWrapperDataReader(IDataReader dataReader) 
-        { 
+        internal AwsWrapperDataReader(IDataReader dataReader)
+        {
             Debug.Assert(dataReader != null);
             this._dataReader = dataReader;
         }
 
-        public int Depth 
-        { 
+        public int Depth
+        {
             get => this._dataReader.Depth;
         }
 
-        public bool IsClosed 
+        public bool IsClosed
         {
             get => this._dataReader.IsClosed;
         }
 
-        public int RecordsAffected 
+        public int RecordsAffected
         {
             get => this._dataReader.RecordsAffected;
         }
 
-        public void Close() 
+        public void Close()
         {
             // TODO: wrap over
             this._dataReader.Close();
@@ -65,10 +79,7 @@ namespace AwsWrapperDataProvider
 
         public void Dispose()
         {
-            if (this._dataReader != null)
-            {
-                this._dataReader.Dispose();
-            }
+            this._dataReader?.Dispose();
         }
 
         public bool GetBoolean(int i)

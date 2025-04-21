@@ -1,0 +1,30 @@
+name: Build, Unit Test, and Linting
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8.0
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.407'
+
+      - name: Run dotnet format only on AwsWrapperDataProvider and AwsWrapperDataProvider.Tests
+        run:  dotnet format AwsWrapperDataProvider.sln --include .\AwsWrapperDataProvider\ .\AwsWrapperDataProvider.Tests\ --verify-no-changes --verbosity diagnostic
+
+      - name: Build
+        run: dotnet build
+
+      - name: Run unit tests
+        run: dotnet test --filter Category!=Integration --no-build

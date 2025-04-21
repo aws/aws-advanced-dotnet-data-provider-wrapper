@@ -1,14 +1,29 @@
-using MySqlConnector;
-using NHibernate.Hql.Ast.ANTLR.Tree;
-using Npgsql;
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License").
+// You may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 using System.Data;
 using System.Data.Common;
+using MySqlConnector;
+using Npgsql;
+using Xunit;
 
 namespace AwsWrapperDataProvider.Tests
 {
     public class BasicConnectivityTests
     {
         [Fact]
+        [Trait("Category", "Integration")]
         public void MysqlWrapperConnectionTest()
         {
             const string connectionString = "Server=global-ohio-mysql-instance-1.c12pgqavxipt.us-east-2.rds.amazonaws.com;User ID=admin;Password=my_password_2020;Initial Catalog=test;";
@@ -20,20 +35,20 @@ namespace AwsWrapperDataProvider.Tests
                 command.CommandText = query;
 
                 // Alternative syntax
-                //IDbCommand command = connection.CreateCommand();
-                //command.CommandText = query;
+                // IDbCommand command = connection.CreateCommand();
+                // command.CommandText = query;
 
                 // Alternative syntax
-                //AwsWrapperCommand2 command = connection.CreateCommand();
-                //command.CommandText = query;
+                // AwsWrapperCommand2 command = connection.CreateCommand();
+                // command.CommandText = query;
 
                 // Alternative syntax
-                //AwsWrapperCommand2<MySqlCommand> command = new AwsWrapperCommand2<MySqlCommand>(query, connection);
+                // AwsWrapperCommand2<MySqlCommand> command = new AwsWrapperCommand2<MySqlCommand>(query, connection);
 
                 // Alternative syntax
-                //AwsWrapperCommand2<MySqlCommand> command = new();
-                //command.Connection = connection;
-                //command.CommandText = query;
+                // AwsWrapperCommand2<MySqlCommand> command = new();
+                // command.Connection = connection;
+                // command.CommandText = query;
 
                 try
                 {
@@ -52,6 +67,7 @@ namespace AwsWrapperDataProvider.Tests
         }
 
         [Fact]
+        [Trait("Category", "Integration")]
         public void MysqlWrapperConnectionDynamicTest()
         {
             const string connectionString = "Server=global-ohio-mysql-instance-1.c12pgqavxipt.us-east-2.rds.amazonaws.com;User ID=admin;Password=my_password_2020;Initial Catalog=test;" +
@@ -83,6 +99,7 @@ namespace AwsWrapperDataProvider.Tests
         }
 
         [Fact]
+        [Trait("Category", "Integration")]
         public void MysqlWrapperConnectionWithParametersTest()
         {
             const string connectionString = "Server=global-ohio-mysql-instance-1.c12pgqavxipt.us-east-2.rds.amazonaws.com;User ID=admin;Password=my_password_2020;Initial Catalog=test;";
@@ -116,6 +133,7 @@ namespace AwsWrapperDataProvider.Tests
         }
 
         [Fact]
+        [Trait("Category", "Integration")]
         public void PgWrapperConnectionTest()
         {
             const string connectionString = "Host=global-ohio-pg.cluster-c12pgqavxipt.us-east-2.rds.amazonaws.com;Username=pgadmin;Password=my_password_2020;Database=postgres;";
@@ -143,7 +161,8 @@ namespace AwsWrapperDataProvider.Tests
         }
 
         [Fact]
-        public void openPgWrapperConnectionDynamicTest()
+        [Trait("Category", "Integration")]
+        public void OpenPgWrapperConnectionDynamicTest()
         {
             const string connectionString = "Host=global-ohio-pg.cluster-c12pgqavxipt.us-east-2.rds.amazonaws.com;Username=pgadmin;Password=my_password_2020;Database=postgres;" +
                 "targetConnectionType=Npgsql.NpgsqlConnection,Npgsql;" +
@@ -172,6 +191,5 @@ namespace AwsWrapperDataProvider.Tests
                 }
             }
         }
-
     }
 }

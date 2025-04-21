@@ -1,26 +1,35 @@
-﻿using System;
-using System.Collections.Generic;
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License").
+// You may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AwsWrapperDataProvider
 {
     public class AwsWrapperConnection : DbConnection
     {
-        protected static HashSet<string> wrapperParameterNames = new(["targetConnectionType", "targetCommandType"]);
+        protected static readonly HashSet<string> WrapperParameterNames = new(["targetConnectionType", "targetCommandType"]);
 
         protected Type? _targetType;
         protected DbConnection? _targetConnection = null;
         protected string? _connectionString;
         protected string? _targetConnectionString;
         protected string? _database;
-        protected Dictionary<string, string> _parameters = new Dictionary<string, string>();
-        protected Dictionary<string, string> _targetConnectionParameters = new Dictionary<string, string>();
+        protected Dictionary<string, string> _parameters = new();
+        protected Dictionary<string, string> _targetConnectionParameters = new();
 
         public AwsWrapperConnection() : base() { }
 
@@ -82,10 +91,7 @@ namespace AwsWrapperDataProvider
         public override void ChangeDatabase(string databaseName)
         {
             this._database = databaseName;
-            if (this._targetConnection != null)
-            {
-                this._targetConnection.ChangeDatabase(databaseName);
-            }
+            this._targetConnection?.ChangeDatabase(databaseName);
         }
 
         public override void Close()
@@ -95,7 +101,7 @@ namespace AwsWrapperDataProvider
         }
 
         public override void Open()
-        {            
+        {
             this.EnsureConnectionCreated();
             Debug.Assert(this._targetConnection != null);
             this._targetConnection.Open();
@@ -106,12 +112,12 @@ namespace AwsWrapperDataProvider
         {
             this.EnsureConnectionCreated();
             Debug.Assert(this._targetConnection != null);
-            var result = this._targetConnection.BeginTransaction(isolationLevel);
+            DbTransaction result = this._targetConnection.BeginTransaction(isolationLevel);
             Console.WriteLine("AwsWrapperConnection.BeginDbTransaction()");
             return result;
         }
 
-        protected override DbCommand CreateDbCommand() => CreateCommand();
+        protected override DbCommand CreateDbCommand() => this.CreateCommand();
 
         public new AwsWrapperCommand CreateCommand()
         {
@@ -133,7 +139,7 @@ namespace AwsWrapperDataProvider
 
         public DbConnection? TargetConnection => this._targetConnection;
 
-        protected void EnsureTargetType() 
+        protected void EnsureTargetType()
         {
             if (this._targetType == null)
             {
@@ -164,7 +170,7 @@ namespace AwsWrapperDataProvider
             }
 
             Debug.Assert(this._targetType != null);
-            this._targetConnection = String.IsNullOrWhiteSpace(this._targetConnectionString)
+            this._targetConnection = string.IsNullOrWhiteSpace(this._targetConnectionString)
                 ? (DbConnection?)Activator.CreateInstance(this._targetType)
                 : (DbConnection?)Activator.CreateInstance(this._targetType, this._targetConnectionString);
         }
@@ -186,7 +192,7 @@ namespace AwsWrapperDataProvider
                 return null;
             }
 
-            if (String.IsNullOrEmpty(typeName))
+            if (string.IsNullOrEmpty(typeName))
             {
                 throw new Exception($"Parameter {parameterName} value is invalid.");
             }
@@ -196,10 +202,11 @@ namespace AwsWrapperDataProvider
 
         protected void ParseConnectionStringParameters()
         {
-            if (String.IsNullOrEmpty(this._connectionString))
+            if (string.IsNullOrEmpty(this._connectionString))
             {
                 throw new ArgumentNullException("Can't parse targetConnectionType parameter from connection string.");
             }
+
             this._parameters = this._connectionString
                 .Split(";", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
                 .Select(x => x.Split("=", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
@@ -207,7 +214,7 @@ namespace AwsWrapperDataProvider
                 .Where(x => x.Key != null && x.Value != null)
                 .ToDictionary(k => k.Key ?? string.Empty, v => v.Value ?? string.Empty);
 
-            this._targetConnectionParameters = this._parameters.Where(x => !wrapperParameterNames.Contains(x.Key)).ToDictionary();
+            this._targetConnectionParameters = this._parameters.Where(x => !WrapperParameterNames.Contains(x.Key)).ToDictionary();
             this._targetConnectionString = string.Join("; ", this._targetConnectionParameters.Select(x => string.Format("{0}={1}", x.Key, x.Value)));
         }
     }
@@ -218,5 +225,4 @@ namespace AwsWrapperDataProvider
 
         public new TConn? TargetConnection => this._targetConnection as TConn;
     }
-
 }

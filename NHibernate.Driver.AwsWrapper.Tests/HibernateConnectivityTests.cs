@@ -12,6 +12,7 @@ namespace NHibernate.Driver.AwsWrapper.Tests
     public class HibernateConnectivityTests
     {
         [Fact]
+        [Trait("Category", "Integration")]
         public void MysqlProvidedConnectionTest() {
             var properties = new Dictionary<string, string>
             {
@@ -50,6 +51,7 @@ namespace NHibernate.Driver.AwsWrapper.Tests
         }
 
         [Fact]
+        [Trait("Category", "Integration")]
         public void PgProvidedConnectionTest()
         {
             var properties = new Dictionary<string, string>

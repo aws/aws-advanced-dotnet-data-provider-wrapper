@@ -1,11 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License").
+// You may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Diagnostics.CodeAnalysis;
 
 namespace AwsWrapperDataProvider
 {
@@ -19,7 +29,9 @@ namespace AwsWrapperDataProvider
         protected int? _commandTimeout;
         protected DbTransaction? _transaction;
 
-        public AwsWrapperCommand() { }
+        public AwsWrapperCommand()
+        {
+        }
 
         public AwsWrapperCommand(DbCommand command, DbConnection connection)
         {
@@ -64,7 +76,7 @@ namespace AwsWrapperDataProvider
             this._connection = connection;
             this.EnsureCommandCreated();
             Debug.Assert(this._targetCommand != null);
-            this._targetCommand.Connection = _connection;
+            this._targetCommand.Connection = this._connection;
         }
 
         public AwsWrapperCommand(Type targetCommandType, string? commandText, AwsWrapperConnection connection)
@@ -79,6 +91,7 @@ namespace AwsWrapperDataProvider
             this.EnsureCommandCreated();
         }
 
+        [AllowNull]
         public override string CommandText
         {
             get => this._commandText ?? string.Empty;
@@ -91,6 +104,7 @@ namespace AwsWrapperDataProvider
                 }
             }
         }
+
         public override int CommandTimeout
         {
             get
@@ -99,6 +113,7 @@ namespace AwsWrapperDataProvider
                 Debug.Assert(this._targetCommand != null);
                 return this._targetCommand.CommandTimeout;
             }
+
             set
             {
                 this.EnsureCommandCreated();
@@ -115,6 +130,7 @@ namespace AwsWrapperDataProvider
                 Debug.Assert(this._targetCommand != null);
                 return this._targetCommand.CommandType;
             }
+
             set
             {
                 this.EnsureCommandCreated();
@@ -133,6 +149,7 @@ namespace AwsWrapperDataProvider
                 Debug.Assert(this._targetCommand != null);
                 return this._targetCommand.UpdatedRowSource;
             }
+
             set
             {
                 this.EnsureCommandCreated();
@@ -141,7 +158,7 @@ namespace AwsWrapperDataProvider
             }
         }
 
-        protected override DbConnection? DbConnection 
+        protected override DbConnection? DbConnection
         {
             get => this._connection;
             set
@@ -165,7 +182,7 @@ namespace AwsWrapperDataProvider
             }
         }
 
-        protected override DbTransaction? DbTransaction 
+        protected override DbTransaction? DbTransaction
         {
             get => this._targetCommand?.Transaction ?? this._transaction;
             set
@@ -188,7 +205,7 @@ namespace AwsWrapperDataProvider
         {
             this.EnsureCommandCreated();
             Debug.Assert(this._targetCommand != null);
-            var result = this._targetCommand.ExecuteNonQuery();
+            int result = this._targetCommand.ExecuteNonQuery();
             Console.WriteLine("AwsWrapperCommand.ExecuteNonQuery()");
             return result;
         }
@@ -197,7 +214,7 @@ namespace AwsWrapperDataProvider
         {
             this.EnsureCommandCreated();
             Debug.Assert(this._targetCommand != null);
-            var result = this._targetCommand.ExecuteScalar();
+            object? result = this._targetCommand.ExecuteScalar();
             Console.WriteLine("AwsWrapperCommand.ExecuteScalar()");
             return result;
         }
@@ -221,8 +238,9 @@ namespace AwsWrapperDataProvider
         {
             this.EnsureCommandCreated();
             Debug.Assert(this._targetCommand != null);
-            //TODO: wrap over
-            //return new AwsWrapperDataReader(this._targetCommand.ExecuteReader(behavior)); 
+
+            // TODO: wrap over
+            // return new AwsWrapperDataReader(this._targetCommand.ExecuteReader(behavior));
             return this._targetCommand.ExecuteReader(behavior);
         }
 
@@ -230,14 +248,16 @@ namespace AwsWrapperDataProvider
         {
             if (this._targetCommand == null)
             {
-                if (this._targetCommandType != null) 
+                if (this._targetCommandType != null)
                 {
                     this._targetCommand = Activator.CreateInstance(this._targetCommandType) as DbCommand;
                     if (this._targetCommand == null)
                     {
                         throw new Exception("Provided type doesn't implement IDbCommand.");
                     }
-                } else if (this._connection != null) {
+                }
+                else if (this._connection != null)
+                {
                     this._targetCommand = this._connection.CreateCommand();
                     if (this._targetCommandType == null)
                     {
@@ -250,14 +270,17 @@ namespace AwsWrapperDataProvider
                 {
                     this._targetCommand.Connection = this._connection;
                 }
+
                 if (this._commandText != null)
                 {
                     this._targetCommand.CommandText = this._commandText;
                 }
+
                 if (this._commandTimeout != null)
                 {
                     this._targetCommand.CommandTimeout = this._commandTimeout.Value;
                 }
+
                 if (this._transaction != null)
                 {
                     this._targetCommand.Transaction = this._transaction;
@@ -277,7 +300,5 @@ namespace AwsWrapperDataProvider
         public AwsWrapperCommand(AwsWrapperConnection wrapperConnection) : base(typeof(TCommand), wrapperConnection) { }
 
         public AwsWrapperCommand(string? commandText, AwsWrapperConnection wrapperConnection) : base(typeof(TCommand), commandText, wrapperConnection) { }
-
     }
-
 }

@@ -10,6 +10,7 @@ namespace AwsWrapperDataProvider.EntityFrameworkCore.Tests
     public class EntityFrameowrkConnectivityTests
     {
         [Fact]
+        [Trait("Category", "Integration")]
         public void PgConnectivityTest() 
         {
             using(var db = new PersonDbContext()) 
