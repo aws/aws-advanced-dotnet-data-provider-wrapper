@@ -40,7 +40,10 @@ public interface IConnectionProvider
     /// <param name="hostSpec">The HostSpec containing the host-port information for the host to connect to.</param>
     /// <param name="props">The properties to use for the connection.</param>
     /// <returns>Connection resulting from the given connection information.</returns>
-    DbConnection Connect(IDialect dialect, ITargetDriverDialect targetDriverDialect, HostSpec hostSpec,
+    DbConnection Connect(
+        IDialect dialect,
+        ITargetDriverDialect targetDriverDialect,
+        HostSpec hostSpec,
         Dictionary<string, string> props);
 
     /// <summary>

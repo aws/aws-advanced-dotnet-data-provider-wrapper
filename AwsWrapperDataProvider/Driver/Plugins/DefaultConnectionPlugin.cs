@@ -28,19 +28,30 @@ public class DefaultConnectionPlugin(
         throw new NotImplementedException();
     }
 
-    public T Execute<T>(object methodInvokedOn, string methodName, JdbcCallable<T> jdbcCallable, object[] jdbcMethodArgs)
+    public T Execute<T>(
+        object methodInvokedOn,
+        string methodName,
+        JdbcCallable<T> jdbcCallable,
+        object[] jdbcMethodArgs)
     {
         // TODO: stub implementation
         return jdbcCallable(jdbcMethodArgs);
     }
 
-    public void Execute(object methodInvokedOn, string methodName, JdbcCallable jdbcCallable, object[] jdbcMethodArgs)
+    public void Execute(
+        object methodInvokedOn,
+        string methodName,
+        JdbcCallable jdbcCallable,
+        object[] jdbcMethodArgs)
     {
         // TODO: stub implementation
         jdbcCallable(jdbcMethodArgs);
     }
 
-    public DbConnection Connect(HostSpec hostSpec, Dictionary<string, string> props, bool isInitialConnection,
+    public DbConnection Connect(
+        HostSpec hostSpec,
+        Dictionary<string, string> props,
+        bool isInitialConnection,
         JdbcCallable<DbConnection> jdbcCallable)
     {
         // TODO: stub implementation
@@ -51,13 +62,19 @@ public class DefaultConnectionPlugin(
             props);
     }
 
-    public DbConnection ForceConnect(HostSpec hostSpec, Dictionary<string, string> props, bool isInitialConnection,
+    public DbConnection ForceConnect(
+        HostSpec hostSpec,
+        Dictionary<string, string> props,
+        bool isInitialConnection,
         JdbcCallable<DbConnection> forceConnectJdbcCallable)
     {
         throw new NotImplementedException();
     }
 
-    public void InitHostProvider(string initialUrl, Dictionary<string, string> props, IHostListProviderService hostListProviderService,
+    public void InitHostProvider(
+        string initialUrl,
+        Dictionary<string, string> props,
+        IHostListProviderService hostListProviderService,
         JdbcCallable<Action<object[]>> initHostProviderFunc)
     {
         // TODO: stub implementation

@@ -16,6 +16,8 @@ namespace AwsWrapperDataProvider.Driver.Utils;
 
 public class AwsWrapperProperty
 {
+    public readonly string? DefaultValue;
+
     public string Name;
 
     public string? Description = null;
@@ -26,9 +28,11 @@ public class AwsWrapperProperty
 
     public string[]? Choices = null;
 
-    public readonly string? DefaultValue;
-
-    public AwsWrapperProperty(string name, string? defaultValue, string description, bool required = false,
+    public AwsWrapperProperty(
+        string name,
+        string? defaultValue,
+        string description,
+        bool required = false,
         string[]? choices = null)
     {
         this.Name = name;

@@ -14,9 +14,23 @@
 
 namespace AwsWrapperDataProvider.Driver.HostInfo;
 
+/// <summary>
+/// Describe if host is a writer or reader node.
+/// </summary>
 public enum HostRole
 {
+    /// <summary>
+    /// host role is unknown.
+    /// </summary>
     Unknown,
+
+    /// <summary>
+    /// host is writer.
+    /// </summary>
     Writer,
+
+    /// <summary>
+    /// host is reader.
+    /// </summary>
     Reader,
 }

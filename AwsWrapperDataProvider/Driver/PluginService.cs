@@ -28,16 +28,16 @@ public class PluginService : IPluginService, IHostListProviderService
     private readonly ConnectionPluginManager _pluginManager;
     private readonly Dictionary<string, string> _props;
     private readonly string _originalConnectionString;
+    private readonly HostSpec? _currentHostSpec;
+    private readonly List<HostSpec> _allHosts = [];
+    private readonly IDialect _dialect;
+    private readonly ITargetDriverDialect _targetDriverDialect;
     private volatile IHostListProvider _hostListProvider;
     private DbConnection? _currentConnection;
-    private readonly HostSpec? _currentHostSpec;
     private HostSpec _initialConnectionHostSpec;
-    private readonly List<HostSpec> _allHosts = [];
 
     // private ExceptionManager _exceptionManager;
     // private IExceptionHandler _exceptionHandler;
-    private readonly IDialect _dialect;
-    private readonly ITargetDriverDialect _targetDriverDialect;
 
     public IDialect Dialect { get => this._dialect; }
     public ITargetDriverDialect TargetDriverDialect { get => this._targetDriverDialect; }

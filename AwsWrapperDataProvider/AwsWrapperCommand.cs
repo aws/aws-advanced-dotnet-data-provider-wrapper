@@ -335,8 +335,9 @@ namespace AwsWrapperDataProvider
         {
         }
 
-        public AwsWrapperCommand(string? commandText, AwsWrapperConnection wrapperConnection) : base(typeof(TCommand),
-            commandText, wrapperConnection)
+        public AwsWrapperCommand(
+            string? commandText,
+            AwsWrapperConnection wrapperConnection) : base(typeof(TCommand), commandText, wrapperConnection)
         {
         }
     }

@@ -27,13 +27,13 @@ public class HostSpec(
 {
     public const int NoPort = -1;
 
-    private readonly HostAvailability _avaliability = availability;
+    private readonly HostAvailability _availability = availability;
     public string Host { get; } = host;
     public int Port { get; } = port;
     public bool IsPortSpecified => this.Port != NoPort;
     public string HostId { get; set; } = hostId;
     public HostRole Role { get; } = hostRole;
-    public HostAvailability RawAvailability => this._avaliability;
+    public HostAvailability RawAvailability => this._availability;
 
     public string GetUrl() => $"{this.GetHostAndPort()}/";
 

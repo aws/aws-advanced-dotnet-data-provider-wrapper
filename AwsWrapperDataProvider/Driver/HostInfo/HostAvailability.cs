@@ -14,8 +14,18 @@
 
 namespace AwsWrapperDataProvider.Driver.HostInfo;
 
+/// <summary>
+/// Describes if of host is available for connection.
+/// </summary>
 public enum HostAvailability
 {
+    /// <summary>
+    /// Host is available.
+    /// </summary>
     Available,
+
+    /// <summary>
+    /// Host is unavailable.
+    /// </summary>
     Unavailable,
 }
