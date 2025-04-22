@@ -28,6 +28,10 @@ namespace AwsWrapperDataProvider
 {
     public class AwsWrapperConnection : DbConnection
     {
+        private readonly ConnectionPluginManager _pluginManager;
+        private readonly IPluginService _pluginService;
+        private readonly IHostListProviderService _hostListProviderService;
+
         protected static HashSet<string> wrapperParameterNames = new(["targetConnectionType", "targetCommandType", "targetParameterType"]);
 
         private Type _targetType;
@@ -35,10 +39,6 @@ namespace AwsWrapperDataProvider
         protected DbConnection? _targetConnection;
         private string? _database;
         private Dictionary<string, string> _parameters = new Dictionary<string, string>();
-
-        private readonly ConnectionPluginManager _pluginManager;
-        private readonly IPluginService _pluginService;
-        private readonly IHostListProviderService _hostListProviderService;
 
         public DbConnection? TargetConnection => this._targetConnection;
 
