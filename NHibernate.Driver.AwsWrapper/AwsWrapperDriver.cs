@@ -73,11 +73,11 @@ namespace NHibernate.Driver.AwsWrapper
 
         public override DateTime MinDate => new(1000, 1, 1);
 
-        public System.Type BatcherFactoryClass => (this._targetDriver != null && this._targetDriver is IEmbeddedBatcherFactoryProvider batcherFactoryProvider) 
+        public System.Type BatcherFactoryClass => (this._targetDriver != null && this._targetDriver is IEmbeddedBatcherFactoryProvider batcherFactoryProvider)
         ? batcherFactoryProvider.BatcherFactoryClass 
         : typeof(GenericBatchingBatcherFactory);
 
-        public override DbConnection CreateConnection() => this._targetDriver != null ? new AwsWrapperConnection(this._targetDriver.CreateConnection()) : new AwsWrapperConnection();
+        public override DbConnection CreateConnection() => this._targetDriver != null ? new AwsWrapperConnection(this._targetDriver.CreateConnection()) : throw new ArgumentNullException(nameof(this._targetDriver));
 
         public override DbCommand CreateCommand() => this._targetDriver != null ? new AwsWrapperCommand(this._targetDriver.CreateCommand()) : new AwsWrapperCommand();
 
