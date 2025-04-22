@@ -45,10 +45,10 @@ namespace AwsWrapperDataProvider
         [AllowNull]
         public override string ConnectionString
         {
-            get => this._targetConnection?.ConnectionString ?? this._connectionString ?? string.Empty;
+            get => this._targetConnection?.ConnectionString ?? this._connectionString;
             set
             {
-                this._connectionString = value;
+                this._connectionString = value ?? string.Empty;
                 this._parameters = ConnectionUrlParser.ParseConnectionStringParameters(this._connectionString);
                 this._targetType = this.GetTargetType(this._parameters);
 
@@ -57,11 +57,6 @@ namespace AwsWrapperDataProvider
                     this._targetConnection.ConnectionString = value;
                 }
             }
-        }
-
-        // TODO : figure out when to call Initialize()
-        public AwsWrapperConnection() : base()
-        {
         }
 
         public AwsWrapperConnection(DbConnection connection) : this(connection.GetType(), connection.ConnectionString)
@@ -79,7 +74,50 @@ namespace AwsWrapperDataProvider
             this._parameters = ConnectionUrlParser.ParseConnectionStringParameters(this._connectionString);
             this._targetType = targetType ?? this.GetTargetType(this._parameters);
 
-            this.Initialize();
+            ITargetDriverDialect driverDialect =
+                TargetDriverDialectProvider.GetDialect(this._targetType, this._parameters);
+
+            IConnectionProvider connectionProvider = new DriverConnectionProvider(
+                this._targetType);
+
+            this._pluginManager = new ConnectionPluginManager(
+                connectionProvider,
+                null,
+                this);
+
+            PluginService pluginService = new PluginService(this._targetConnection, this._targetType, this._pluginManager, this._parameters, this._connectionString, driverDialect);
+
+            this._pluginService = pluginService;
+            this._hostListProviderService = pluginService;
+
+            this._pluginManager.Init(this._pluginService, this._parameters);
+
+            // Set HostListProvider
+            HostListProviderSupplier supplier = this._pluginService.Dialect.HostListProviderSupplier;
+            IHostListProvider provider = supplier.Invoke(this._parameters, this._connectionString, this._hostListProviderService, this._pluginService);
+            this._hostListProviderService.HostListProvider = provider;
+
+            this._pluginManager.InitHostProvider(this._connectionString, this._parameters, this._hostListProviderService);
+            this._pluginService.RefreshHostList();
+
+            DbConnection? conn = null;
+
+            if (this._pluginService.CurrentConnection == null)
+            {
+                conn = this._pluginManager.Connect(
+                    this._pluginService.InitialConnectionHostSpec,
+                    this._parameters,
+                    true,
+                    null);
+            }
+
+            if (conn == null)
+            {
+                throw new Exception($"Can't connect to target connection {this._connectionString}");
+            }
+
+            this._pluginService.SetCurrentConnection(conn, this._pluginService.InitialConnectionHostSpec);
+            this._pluginService.RefreshHostList();
         }
 
         public override string Database => this._targetConnection?.Database ?? this._database ?? string.Empty;
@@ -151,57 +189,6 @@ namespace AwsWrapperDataProvider
                 (args) => (TCommand)this._pluginService.CurrentConnection.CreateCommand(),
                 []);
             return new AwsWrapperCommand<TCommand>(command, this, this._pluginManager);
-        }
-
-        private void Initialize()
-        {
-            ITargetDriverDialect driverDialect =
-                TargetDriverDialectProvider.GetDialect(this._targetType, this._parameters);
-
-            IConnectionProvider connectionProvider = new DriverConnectionProvider(
-                this._targetType);
-
-            this._pluginManager = new ConnectionPluginManager(
-                connectionProvider,
-                null,
-                this);
-
-            PluginService pluginService = new PluginService(this._targetConnection, this._targetType, this._pluginManager, this._parameters, this._connectionString, driverDialect);
-
-            this._pluginService = pluginService;
-            this._hostListProviderService = pluginService;
-
-            this._pluginManager.Init(this._pluginService, this._parameters);
-
-            // Set HostListProvider
-            HostListProviderSupplier supplier = this._pluginService.Dialect.HostListProviderSupplier;
-            if (supplier != null)
-            {
-                IHostListProvider provider = supplier.Invoke(this._parameters, this._connectionString, this._hostListProviderService, this._pluginService);
-                this._hostListProviderService.HostListProvider = provider;
-            }
-
-            this._pluginManager.InitHostProvider(this._connectionString, this._parameters, this._hostListProviderService);
-            this._pluginService.RefreshHostList();
-
-            DbConnection? conn = null;
-
-            if (this._pluginService.CurrentConnection == null)
-            {
-                conn = this._pluginManager.Connect(
-                    this._pluginService.InitialConnectionHostSpec,
-                    this._parameters,
-                    true,
-                    null);
-            }
-
-            if (conn == null)
-            {
-                throw new Exception($"Can't connect to target connection {this._connectionString}");
-            }
-
-            this._pluginService.SetCurrentConnection(conn, this._pluginService.InitialConnectionHostSpec);
-            this._pluginService.RefreshHostList();
         }
 
         private Type GetTargetType(Dictionary<string, string> parameters)

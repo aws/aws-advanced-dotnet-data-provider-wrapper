@@ -26,7 +26,9 @@ public interface IDialect
 {
     int DefaultPort { get; }
 
-    IExceptionHandler ExceptionHandler { get; }
+    // TODO: Implement IExceptionHandler
+    // IExceptionHandler ExceptionHandler { get; }
+
 
     string HostAliasQuery { get; }
 

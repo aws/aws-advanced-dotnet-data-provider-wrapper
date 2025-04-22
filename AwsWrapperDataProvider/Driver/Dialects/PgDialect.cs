@@ -24,7 +24,8 @@ public class PgDialect : IDialect
 {
     public int DefaultPort { get; } = 5432;
 
-    public IExceptionHandler ExceptionHandler { get; }
+    // public IExceptionHandler ExceptionHandler { get; }
+
 
     public string HostAliasQuery { get; } = "SELECT CONCAT(inet_server_addr(), ':', inet_server_port())";
 

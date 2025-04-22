@@ -23,6 +23,10 @@ public class DefaultConnectionPlugin(
     IConnectionProvider defaultConnProvider,
     IConnectionProvider? effectiveConnProvider) : IConnectionPlugin
 {
+    private readonly IConnectionProvider _defaultConnProvider = defaultConnProvider;
+    private readonly IConnectionProvider? _effectiveConnPrivider = effectiveConnProvider;
+    private IPluginService _pluginService = pluginService;
+
     public ISet<string> GetSubscribeMethods()
     {
         throw new NotImplementedException();
@@ -55,9 +59,9 @@ public class DefaultConnectionPlugin(
         JdbcCallable<DbConnection> jdbcCallable)
     {
         // TODO: stub implementation
-        return defaultConnProvider.Connect(
-            pluginService.Dialect,
-            pluginService.TargetDriverDialect,
+        return this._defaultConnProvider.Connect(
+            this._pluginService.Dialect,
+            this._pluginService.TargetDriverDialect,
             hostSpec,
             props);
     }
