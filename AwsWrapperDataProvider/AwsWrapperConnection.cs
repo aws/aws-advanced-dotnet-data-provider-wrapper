@@ -36,9 +36,9 @@ namespace AwsWrapperDataProvider
         private string? _database;
         private Dictionary<string, string> _parameters = new Dictionary<string, string>();
 
-        private ConnectionPluginManager _pluginManager;
-        private IPluginService _pluginService;
-        private IHostListProviderService _hostListProviderService;
+        private readonly ConnectionPluginManager _pluginManager;
+        private readonly IPluginService _pluginService;
+        private readonly IHostListProviderService _hostListProviderService;
 
         public DbConnection? TargetConnection => this._targetConnection;
 

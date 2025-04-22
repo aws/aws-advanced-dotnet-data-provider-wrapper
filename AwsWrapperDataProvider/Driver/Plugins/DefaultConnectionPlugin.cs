@@ -25,7 +25,7 @@ public class DefaultConnectionPlugin(
 {
     private readonly IConnectionProvider _defaultConnProvider = defaultConnProvider;
     private readonly IConnectionProvider? _effectiveConnPrivider = effectiveConnProvider;
-    private IPluginService _pluginService = pluginService;
+    private readonly IPluginService _pluginService = pluginService;
 
     public ISet<string> GetSubscribeMethods()
     {
