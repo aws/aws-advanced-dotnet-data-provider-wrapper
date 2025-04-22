@@ -26,13 +26,13 @@ public interface IHostListProviderService
 {
     IDialect Dialect { get; }
 
-    IHostListProvider HostListProvider { get; set; }
+    IHostListProvider? HostListProvider { get; set; }
 
     DbConnection? CurrentConnection { get; }
 
-    HostSpec CurrentHostSpec { get; }
+    HostSpec? CurrentHostSpec { get; }
 
-    HostSpec InitialConnectionHostSpec { get; set; }
+    HostSpec? InitialConnectionHostSpec { get; set; }
 
     HostSpecBuilder HostSpecBuilder { get; }
 

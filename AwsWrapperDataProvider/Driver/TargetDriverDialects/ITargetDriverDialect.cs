@@ -35,7 +35,7 @@ public interface ITargetDriverDialect
     /// <param name="hostSpec">The host specification.</param>
     /// <param name="props">Connection properties.</param>
     /// <returns>The prepared connection string.</returns>
-    string PrepareConnectionString(HostSpec hostSpec, Dictionary<string, string> props);
+    string PrepareConnectionString(HostSpec? hostSpec, Dictionary<string, string> props);
 
     /// <summary>
     /// Prepares a data source with the given connection, host specification, and properties.

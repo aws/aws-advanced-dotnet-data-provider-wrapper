@@ -35,7 +35,7 @@ public class DriverConnectionProvider(Type targetConnectionType) : IConnectionPr
     public DbConnection Connect(
         IDialect dialect,
         ITargetDriverDialect targetDriverDialect,
-        HostSpec hostSpec,
+        HostSpec? hostSpec,
         Dictionary<string, string> props)
     {
         // TODO: refine stub implementation

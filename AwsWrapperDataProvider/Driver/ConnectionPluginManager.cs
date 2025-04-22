@@ -66,7 +66,7 @@ public class ConnectionPluginManager(
     }
 
     public DbConnection Connect(
-        HostSpec hostSpec,
+        HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
         IConnectionPlugin? pluginToSkip)

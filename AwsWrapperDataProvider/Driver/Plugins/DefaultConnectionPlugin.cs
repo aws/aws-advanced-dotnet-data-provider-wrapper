@@ -53,7 +53,7 @@ public class DefaultConnectionPlugin(
     }
 
     public DbConnection Connect(
-        HostSpec hostSpec,
+        HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
         JdbcCallable<DbConnection> jdbcCallable)

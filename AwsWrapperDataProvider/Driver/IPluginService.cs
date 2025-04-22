@@ -33,13 +33,13 @@ public interface IPluginService
 
     DbConnection? CurrentConnection { get; }
 
-    HostSpec CurrentHostSpec { get; }
+    HostSpec? CurrentHostSpec { get; }
 
-    HostSpec InitialConnectionHostSpec { get; }
+    HostSpec? InitialConnectionHostSpec { get; }
 
     IList<HostSpec> AllHosts { get; }
 
-    IHostListProvider HostListProvider { get; }
+    IHostListProvider? HostListProvider { get; }
 
     HostSpecBuilder HostSpecBuilder { get; }
 
@@ -48,7 +48,7 @@ public interface IPluginService
     /// </summary>
     /// <param name="connection">The database connection.</param>
     /// <param name="hostSpec">The host specification.</param>
-    void SetCurrentConnection(DbConnection connection, HostSpec hostSpec);
+    void SetCurrentConnection(DbConnection connection, HostSpec? hostSpec);
 
     /// <summary>
     /// Sets the current connection and associated host specification, skipping a specific plugin.

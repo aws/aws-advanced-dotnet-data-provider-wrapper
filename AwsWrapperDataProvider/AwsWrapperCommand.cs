@@ -29,7 +29,7 @@ namespace AwsWrapperDataProvider
         protected string? _commandText;
         protected int? _commandTimeout;
         protected DbTransaction? _transaction;
-        protected ConnectionPluginManager _pluginManager;
+        protected ConnectionPluginManager? _pluginManager;
 
         public AwsWrapperCommand()
         {
@@ -225,6 +225,8 @@ namespace AwsWrapperDataProvider
 
         public new DbDataReader ExecuteReader()
         {
+            ArgumentNullException.ThrowIfNull(this._pluginManager);
+            ArgumentNullException.ThrowIfNull(this._targetCommand);
             return this._pluginManager.Execute<DbDataReader>(
                 this._targetCommand,
                 "DbCommand.ExecuteReader()",

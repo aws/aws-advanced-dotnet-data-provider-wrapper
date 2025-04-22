@@ -26,7 +26,6 @@ public class PgDialect : IDialect
 
     // public IExceptionHandler ExceptionHandler { get; }
 
-
     public string HostAliasQuery { get; } = "SELECT CONCAT(inet_server_addr(), ':', inet_server_port())";
 
     public string ServerVersionQuery { get; } = "SELECT 'version', VERSION()";

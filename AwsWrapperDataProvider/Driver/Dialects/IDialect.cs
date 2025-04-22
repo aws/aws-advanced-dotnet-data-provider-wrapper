@@ -29,7 +29,6 @@ public interface IDialect
     // TODO: Implement IExceptionHandler
     // IExceptionHandler ExceptionHandler { get; }
 
-
     string HostAliasQuery { get; }
 
     string ServerVersionQuery { get; }
@@ -61,7 +60,7 @@ public interface IDialect
 /// <param name="hostListProviderService">The host list provider service.</param>
 /// <param name="pluginService">The plugin service.</param>
 /// <returns>A host list provider.</returns>
-public delegate IHostListProvider HostListProviderSupplier(
+public delegate IHostListProvider? HostListProviderSupplier(
     Dictionary<string, string> props,
     string? initialUrl,
     IHostListProviderService hostListProviderService,

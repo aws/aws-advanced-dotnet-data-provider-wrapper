@@ -28,24 +28,24 @@ public class PluginService : IPluginService, IHostListProviderService
     private readonly ConnectionPluginManager _pluginManager;
     private readonly Dictionary<string, string> _props;
     private readonly string _originalConnectionString;
-    private readonly HostSpec? _currentHostSpec;
     private readonly List<HostSpec> _allHosts = [];
     private readonly IDialect _dialect;
     private readonly ITargetDriverDialect _targetDriverDialect;
-    private volatile IHostListProvider _hostListProvider;
+    private volatile IHostListProvider? _hostListProvider;
+    private HostSpec? _currentHostSpec;
     private DbConnection? _currentConnection;
-    private HostSpec _initialConnectionHostSpec;
+    private HostSpec? _initialConnectionHostSpec;
 
     // private ExceptionManager _exceptionManager;
     // private IExceptionHandler _exceptionHandler;
 
     public IDialect Dialect { get => this._dialect; }
     public ITargetDriverDialect TargetDriverDialect { get => this._targetDriverDialect; }
-    public HostSpec InitialConnectionHostSpec { get => this._initialConnectionHostSpec; set => this._initialConnectionHostSpec = value; }
-    public HostSpec CurrentHostSpec { get => this._currentHostSpec; }
+    public HostSpec? InitialConnectionHostSpec { get => this._initialConnectionHostSpec; set => this._initialConnectionHostSpec = value; }
+    public HostSpec? CurrentHostSpec { get => this._currentHostSpec ?? this._initialConnectionHostSpec; }
     public IList<HostSpec> AllHosts { get => this._allHosts; }
-    public IHostListProvider HostListProvider { get => this._hostListProvider; set => this._hostListProvider = value; }
-    public HostSpecBuilder HostSpecBuilder { get; }
+    public IHostListProvider? HostListProvider { get => this._hostListProvider; set => this._hostListProvider = value; }
+    public HostSpecBuilder HostSpecBuilder { get => new HostSpecBuilder(); }
     public DbConnection? CurrentConnection { get => this._currentConnection; set => this._currentConnection = value; }
 
     public PluginService(
@@ -79,10 +79,11 @@ public class PluginService : IPluginService, IHostListProviderService
         return new HostSpec("temp", 0000, "temp", HostRole.Reader, HostAvailability.Available);
     }
 
-    public void SetCurrentConnection(DbConnection connection, HostSpec hostSpec)
+    public void SetCurrentConnection(DbConnection connection, HostSpec? hostSpec)
     {
         // TODO implement stub method.
         this._currentConnection = connection;
+        this._currentHostSpec = hostSpec;
     }
 
     public void SetCurrentConnection(DbConnection connection, HostSpec hostSpec, IConnectionPlugin pluginToSkip)

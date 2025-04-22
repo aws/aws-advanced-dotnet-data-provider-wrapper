@@ -65,7 +65,7 @@ public interface IConnectionPlugin
     /// <param name="jdbcCallable">The callable that executes the actual connection.</param>
     /// <returns>The database connection.</returns>
     DbConnection Connect(
-        HostSpec hostSpec,
+        HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
         JdbcCallable<DbConnection> jdbcCallable);

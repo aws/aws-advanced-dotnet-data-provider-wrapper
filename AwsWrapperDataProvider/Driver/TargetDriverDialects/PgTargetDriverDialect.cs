@@ -28,7 +28,7 @@ public class PgTargetDriverDialect : ITargetDriverDialect
     }
 
     public string PrepareConnectionString(
-        HostSpec hostSpec,
+        HostSpec? hostSpec,
         Dictionary<string, string> props)
     {
         // TODO: proper

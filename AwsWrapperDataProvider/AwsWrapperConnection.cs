@@ -94,7 +94,7 @@ namespace AwsWrapperDataProvider
 
             // Set HostListProvider
             HostListProviderSupplier supplier = this._pluginService.Dialect.HostListProviderSupplier;
-            IHostListProvider provider = supplier.Invoke(this._parameters, this._connectionString, this._hostListProviderService, this._pluginService);
+            IHostListProvider? provider = supplier.Invoke(this._parameters, this._connectionString, this._hostListProviderService, this._pluginService);
             this._hostListProviderService.HostListProvider = provider;
 
             this._pluginManager.InitHostProvider(this._connectionString, this._parameters, this._hostListProviderService);
@@ -146,6 +146,7 @@ namespace AwsWrapperDataProvider
 
         public override void Open()
         {
+            ArgumentNullException.ThrowIfNull(this._pluginService.CurrentConnection);
             this._pluginManager.Execute(
                 this._pluginService.CurrentConnection,
                 "DbConnection.CreateCommand",
@@ -168,6 +169,7 @@ namespace AwsWrapperDataProvider
         // TODO: implement WrapperUtils.executeWithPlugins.
         public new AwsWrapperCommand CreateCommand()
         {
+            ArgumentNullException.ThrowIfNull(this._pluginService.CurrentConnection);
             DbCommand command = this._pluginManager.Execute<DbCommand>(
                 this._pluginService.CurrentConnection,
                 "DbConnection.CreateCommand",
