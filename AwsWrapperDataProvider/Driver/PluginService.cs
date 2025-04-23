@@ -1,0 +1,164 @@
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License").
+// You may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+using System.Data.Common;
+using AwsWrapperDataProvider.Driver.ConnectionProviders;
+using AwsWrapperDataProvider.Driver.Dialects;
+using AwsWrapperDataProvider.Driver.Exceptions;
+using AwsWrapperDataProvider.Driver.HostInfo;
+using AwsWrapperDataProvider.Driver.HostListProviders;
+using AwsWrapperDataProvider.Driver.Plugins;
+using AwsWrapperDataProvider.Driver.TargetDriverDialects;
+
+namespace AwsWrapperDataProvider.Driver;
+
+public class PluginService : IPluginService, IHostListProviderService
+{
+    private readonly ConnectionPluginManager _pluginManager;
+    private readonly Dictionary<string, string> _props;
+    private readonly string _originalConnectionString;
+    private readonly List<HostSpec> _allHosts = [];
+    private readonly IDialect _dialect;
+    private readonly ITargetDriverDialect _targetDriverDialect;
+    private volatile IHostListProvider? _hostListProvider;
+    private HostSpec? _currentHostSpec;
+    private DbConnection? _currentConnection;
+    private HostSpec? _initialConnectionHostSpec;
+
+    // private ExceptionManager _exceptionManager;
+    // private IExceptionHandler _exceptionHandler;
+
+    public IDialect Dialect { get => this._dialect; }
+    public ITargetDriverDialect TargetDriverDialect { get => this._targetDriverDialect; }
+    public HostSpec? InitialConnectionHostSpec { get => this._initialConnectionHostSpec; set => this._initialConnectionHostSpec = value; }
+    public HostSpec? CurrentHostSpec { get => this._currentHostSpec ?? this._initialConnectionHostSpec; }
+    public IList<HostSpec> AllHosts { get => this._allHosts; }
+    public IHostListProvider? HostListProvider { get => this._hostListProvider; set => this._hostListProvider = value; }
+    public HostSpecBuilder HostSpecBuilder { get => new HostSpecBuilder(); }
+    public DbConnection? CurrentConnection { get => this._currentConnection; set => this._currentConnection = value; }
+
+    public PluginService(
+        DbConnection? currentConnection,
+        Type connectionType,
+        ConnectionPluginManager pluginManager,
+        Dictionary<string, string> props,
+        string connectionString,
+        ITargetDriverDialect targetDriverDialect)
+    {
+        if (currentConnection != null)
+        {
+            this._currentConnection = currentConnection;
+        }
+
+        this._pluginManager = pluginManager;
+        this._props = props;
+        this._originalConnectionString = connectionString;
+        this._targetDriverDialect = targetDriverDialect;
+        this._dialect = DialectProvider.GetDialect(connectionType, props);
+    }
+
+    public bool IsStaticHostListProvider()
+    {
+        throw new NotImplementedException();
+    }
+
+    public HostSpec GetInitialConnectionHostSpec()
+    {
+        // TODO implement stub method.
+        return new HostSpec("temp", 0000, "temp", HostRole.Reader, HostAvailability.Available);
+    }
+
+    public void SetCurrentConnection(DbConnection connection, HostSpec? hostSpec)
+    {
+        // TODO implement stub method.
+        this._currentConnection = connection;
+        this._currentHostSpec = hostSpec;
+    }
+
+    public void SetCurrentConnection(DbConnection connection, HostSpec hostSpec, IConnectionPlugin pluginToSkip)
+    {
+        throw new NotImplementedException();
+    }
+
+    public IList<HostSpec> GetHosts()
+    {
+        throw new NotImplementedException();
+    }
+
+    public HostRole GetHostRole(DbConnection connection)
+    {
+        throw new NotImplementedException();
+    }
+
+    public HostRole SetAvailability(ISet<string> hostAliases, HostAvailability availability)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void RefreshHostList()
+    {
+        // TODO implement stub method.
+        return;
+    }
+
+    public void RefreshHostList(DbConnection connection)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void ForceRefreshHostList()
+    {
+        throw new NotImplementedException();
+    }
+
+    public void ForceRefreshHostList(DbConnection connection)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void ForceRefreshHostList(bool shouldVerifyWriter, long timeoutMs)
+    {
+        throw new NotImplementedException();
+    }
+
+    public DbConnection Connect(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin pluginToSkip)
+    {
+        throw new NotImplementedException();
+    }
+
+    public DbConnection ForceConnect(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin pluginToSkip)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void UpdateDialect(DbConnection connection)
+    {
+        throw new NotImplementedException();
+    }
+
+    public HostSpec IdentifyConnection(DbConnection connection)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void FillAliases(DbConnection connection, HostSpec hostSpec)
+    {
+        throw new NotImplementedException();
+    }
+
+    public IConnectionProvider GetConnectionProvider()
+    {
+        throw new NotImplementedException();
+    }
+}

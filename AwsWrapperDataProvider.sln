@@ -1,0 +1,52 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35707.178
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AwsWrapperDataProvider", "AwsWrapperDataProvider\AwsWrapperDataProvider.csproj", "{34BCC216-048E-45E4-AF7E-B0FC4E81DCC0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AwsWrapperDataProvider.Tests", "AwsWrapperDataProvider.Tests\AwsWrapperDataProvider.Tests.csproj", "{BEB373DA-B92E-46DD-9989-4C7E1C7C5E9A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NHibernate.Driver.AwsWrapper", "NHibernate.Driver.AwsWrapper\NHibernate.Driver.AwsWrapper.csproj", "{19F626F9-AC8C-4FD6-8983-5596D5E5A832}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NHibernate.Driver.AwsWrapper.Tests", "NHibernate.Driver.AwsWrapper.Tests\NHibernate.Driver.AwsWrapper.Tests.csproj", "{D3D93C4C-6D30-4AB3-886D-F96680B6815F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL.Tests", "AwsWrapperDataProvider.EntityFrameworkCore.Tests\AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL.Tests.csproj", "{CE32DAF8-37B3-4DD4-9507-709A066AA652}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL", "AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL\AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL.csproj", "{1B88D898-A88D-428E-91DB-F4BC8716ACE6}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{34BCC216-048E-45E4-AF7E-B0FC4E81DCC0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{34BCC216-048E-45E4-AF7E-B0FC4E81DCC0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{34BCC216-048E-45E4-AF7E-B0FC4E81DCC0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{34BCC216-048E-45E4-AF7E-B0FC4E81DCC0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BEB373DA-B92E-46DD-9989-4C7E1C7C5E9A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BEB373DA-B92E-46DD-9989-4C7E1C7C5E9A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BEB373DA-B92E-46DD-9989-4C7E1C7C5E9A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BEB373DA-B92E-46DD-9989-4C7E1C7C5E9A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{19F626F9-AC8C-4FD6-8983-5596D5E5A832}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{19F626F9-AC8C-4FD6-8983-5596D5E5A832}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{19F626F9-AC8C-4FD6-8983-5596D5E5A832}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{19F626F9-AC8C-4FD6-8983-5596D5E5A832}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D3D93C4C-6D30-4AB3-886D-F96680B6815F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D3D93C4C-6D30-4AB3-886D-F96680B6815F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D3D93C4C-6D30-4AB3-886D-F96680B6815F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D3D93C4C-6D30-4AB3-886D-F96680B6815F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CE32DAF8-37B3-4DD4-9507-709A066AA652}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CE32DAF8-37B3-4DD4-9507-709A066AA652}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CE32DAF8-37B3-4DD4-9507-709A066AA652}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CE32DAF8-37B3-4DD4-9507-709A066AA652}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1B88D898-A88D-428E-91DB-F4BC8716ACE6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1B88D898-A88D-428E-91DB-F4BC8716ACE6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1B88D898-A88D-428E-91DB-F4BC8716ACE6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1B88D898-A88D-428E-91DB-F4BC8716ACE6}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

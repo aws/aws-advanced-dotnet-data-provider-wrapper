@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<hibernate-mapping xmlns="urn:nhibernate-mapping-2.2" auto-import="true" assembly="NHibernate.Driver.AwsWrapper.Tests" namespace="NHibernate.Driver.AwsWrapper.Tests">
+    <class name="Person" table="persons" dynamic-update="true" xmlns="urn:nhibernate-mapping-2.2">
+        <cache usage="read-write"/>
+        <id name="Id" column="Id" type="int">
+            <generator class="native" />
+        </id>
+        <property name="FirstName" />
+        <property name="LastName" />
+    </class>
+</hibernate-mapping>
