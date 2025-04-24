@@ -32,13 +32,11 @@ namespace AwsWrapperDataProvider
         private readonly IPluginService _pluginService;
         private readonly IHostListProviderService _hostListProviderService;
 
-        protected static HashSet<string> wrapperParameterNames = new(["targetConnectionType", "targetCommandType", "targetParameterType"]);
-
         private Type _targetType;
         private string _connectionString;
         protected DbConnection? _targetConnection;
         private string? _database;
-        private Dictionary<string, string> _parameters = new Dictionary<string, string>();
+        private Dictionary<string, string> _parameters;
 
         public DbConnection? TargetConnection => this._targetConnection;
 
@@ -49,7 +47,7 @@ namespace AwsWrapperDataProvider
             set
             {
                 this._connectionString = value ?? string.Empty;
-                this._parameters = ConnectionUrlParser.ParseConnectionStringParameters(this._connectionString);
+                this._parameters = ConnectionPropertiesUtils.ParseConnectionStringParameters(this._connectionString);
                 this._targetType = this.GetTargetType(this._parameters);
 
                 if (this._targetConnection != null)
@@ -71,14 +69,13 @@ namespace AwsWrapperDataProvider
         public AwsWrapperConnection(Type? targetType, string connectionString) : base()
         {
             this._connectionString = connectionString;
-            this._parameters = ConnectionUrlParser.ParseConnectionStringParameters(this._connectionString);
+            this._parameters = ConnectionPropertiesUtils.ParseConnectionStringParameters(this._connectionString);
             this._targetType = targetType ?? this.GetTargetType(this._parameters);
 
             ITargetDriverDialect driverDialect =
                 TargetDriverDialectProvider.GetDialect(this._targetType, this._parameters);
 
-            IConnectionProvider connectionProvider = new DriverConnectionProvider(
-                this._targetType);
+            IConnectionProvider connectionProvider = new DriverConnectionProvider();
 
             this._pluginManager = new ConnectionPluginManager(
                 connectionProvider,
@@ -90,13 +87,7 @@ namespace AwsWrapperDataProvider
             this._pluginService = pluginService;
             this._hostListProviderService = pluginService;
 
-            this._pluginManager.Init(this._pluginService, this._parameters);
-
-            // Set HostListProvider
-            HostListProviderSupplier supplier = this._pluginService.Dialect.HostListProviderSupplier;
-            IHostListProvider? provider = supplier.Invoke(this._parameters, this._connectionString, this._hostListProviderService, this._pluginService);
-            this._hostListProviderService.HostListProvider = provider;
-
+            this._pluginManager.InitConnectionPluginChain(this._pluginService, this._parameters);
             this._pluginManager.InitHostProvider(this._connectionString, this._parameters, this._hostListProviderService);
             this._pluginService.RefreshHostList();
 

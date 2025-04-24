@@ -28,10 +28,10 @@ public class PluginService : IPluginService, IHostListProviderService
     private readonly ConnectionPluginManager _pluginManager;
     private readonly Dictionary<string, string> _props;
     private readonly string _originalConnectionString;
-    private readonly List<HostSpec> _allHosts = [];
     private readonly IDialect _dialect;
     private readonly ITargetDriverDialect _targetDriverDialect;
-    private volatile IHostListProvider? _hostListProvider;
+    private volatile IHostListProvider _hostListProvider;
+    private IList<HostSpec> _allHosts = [];
     private HostSpec? _currentHostSpec;
     private DbConnection? _currentConnection;
     private HostSpec? _initialConnectionHostSpec;
@@ -42,9 +42,9 @@ public class PluginService : IPluginService, IHostListProviderService
     public IDialect Dialect { get => this._dialect; }
     public ITargetDriverDialect TargetDriverDialect { get => this._targetDriverDialect; }
     public HostSpec? InitialConnectionHostSpec { get => this._initialConnectionHostSpec; set => this._initialConnectionHostSpec = value; }
-    public HostSpec? CurrentHostSpec { get => this._currentHostSpec ?? this._initialConnectionHostSpec; }
+    public HostSpec? CurrentHostSpec { get => this._currentHostSpec ?? this.GetCurrentHostSpec(); }
     public IList<HostSpec> AllHosts { get => this._allHosts; }
-    public IHostListProvider? HostListProvider { get => this._hostListProvider; set => this._hostListProvider = value; }
+    public IHostListProvider HostListProvider { get => this._hostListProvider; set => this._hostListProvider = value; }
     public HostSpecBuilder HostSpecBuilder { get => new HostSpecBuilder(); }
     public DbConnection? CurrentConnection { get => this._currentConnection; set => this._currentConnection = value; }
 
@@ -66,6 +66,9 @@ public class PluginService : IPluginService, IHostListProviderService
         this._originalConnectionString = connectionString;
         this._targetDriverDialect = targetDriverDialect;
         this._dialect = DialectProvider.GetDialect(connectionType, props);
+        this._hostListProvider =
+            this._dialect.HostListProviderSupplier(props, connectionString, this, this)
+            ?? throw new InvalidOperationException(); // TODO : throw proper error
     }
 
     public bool IsStaticHostListProvider()
@@ -93,7 +96,8 @@ public class PluginService : IPluginService, IHostListProviderService
 
     public IList<HostSpec> GetHosts()
     {
-        throw new NotImplementedException();
+        // TODO: Handle AllowedAndBlockHosts
+        return this._allHosts;
     }
 
     public HostRole GetHostRole(DbConnection connection)
@@ -108,8 +112,13 @@ public class PluginService : IPluginService, IHostListProviderService
 
     public void RefreshHostList()
     {
-        // TODO implement stub method.
-        return;
+        IList<HostSpec> updateHostList = this.HostListProvider.Refresh();
+        if (!Equals(updateHostList, this._allHosts))
+        {
+            this.UpdateHostAvailability(updateHostList);
+            this.NotifyNodeChangeList(this._allHosts, updateHostList);
+            this._allHosts = updateHostList;
+        }
     }
 
     public void RefreshHostList(DbConnection connection)
@@ -160,5 +169,25 @@ public class PluginService : IPluginService, IHostListProviderService
     public IConnectionProvider GetConnectionProvider()
     {
         throw new NotImplementedException();
+    }
+
+    private HostSpec GetCurrentHostSpec()
+    {
+        this._currentHostSpec = this._initialConnectionHostSpec
+            ?? this.AllHosts.FirstOrDefault(h => h.Role == HostRole.Writer)
+            ?? this.GetHosts().First();
+
+        ArgumentNullException.ThrowIfNull(this._currentHostSpec);
+        return this._currentHostSpec;
+    }
+
+    private void UpdateHostAvailability(IList<HostSpec> hosts)
+    {
+        // TODO: deal with availability.
+    }
+
+    private void NotifyNodeChangeList(IList<HostSpec> oldHosts, IList<HostSpec> updateHosts)
+    {
+        // TODO: create NodeChangeList based on changes to hosts and call _pluginManager.NotifyNodeChangeList.
     }
 }

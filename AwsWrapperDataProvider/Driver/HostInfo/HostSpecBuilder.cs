@@ -19,39 +19,39 @@ namespace AwsWrapperDataProvider.Driver.HostInfo;
 /// </summary>
 public class HostSpecBuilder
 {
-    private string _host = string.Empty;
+    private string? _host = string.Empty;
     private int _port = HostSpec.NoPort;
-    private string _hostId = string.Empty;
+    private string? _hostId = string.Empty;
     private HostRole _role = HostRole.Unknown;
     private HostAvailability _availability = HostAvailability.Available;
 
-    public HostSpecBuilder WithHost(string host)
+    public HostSpecBuilder WithHost(string? host)
     {
         this._host = host;
         return this;
     }
 
-    public HostSpecBuilder WithPort(int port)
+    public HostSpecBuilder WithPort(int? port)
     {
-        this._port = port;
+        this._port = port ?? HostSpec.NoPort;
         return this;
     }
 
-    public HostSpecBuilder WithHostId(string hostId)
+    public HostSpecBuilder WithHostId(string? hostId)
     {
         this._hostId = hostId;
         return this;
     }
 
-    public HostSpecBuilder WithRole(HostRole role)
+    public HostSpecBuilder WithRole(HostRole? role)
     {
-        this._role = role;
+        this._role = role ?? HostRole.Unknown;
         return this;
     }
 
-    public HostSpecBuilder WithAvailability(HostAvailability availability)
+    public HostSpecBuilder WithAvailability(HostAvailability? availability)
     {
-        this._availability = availability;
+        this._availability = availability ?? this._availability;
         return this;
     }
 
@@ -65,11 +65,6 @@ public class HostSpecBuilder
         if (string.IsNullOrEmpty(this._host))
         {
             throw new ArgumentException("Host cannot be null or empty", nameof(this._host));
-        }
-
-        if (string.IsNullOrEmpty(this._hostId))
-        {
-            throw new ArgumentException("HostId cannot be null or empty", nameof(this._hostId));
         }
 
         return new HostSpec(

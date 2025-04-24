@@ -14,14 +14,35 @@
 
 namespace AwsWrapperDataProvider.Driver.Utils;
 
-public class PropertyDefinition
+public static class PropertyDefinition
 {
-    public static AwsWrapperProperty Database =
-        new AwsWrapperProperty("database", null, "Driver database name");
-    public static AwsWrapperProperty TargetConnectionType =
-        new AwsWrapperProperty("targetConnectionType", null, "Driver target connection type");
-    public static AwsWrapperProperty TargetCommandType =
-        new AwsWrapperProperty("targetCommandType", null, "Driver target command type");
-    public static AwsWrapperProperty TargetParameterType =
-        new AwsWrapperProperty("targetParameterType", null, "Driver target parameter type");
+    public static readonly AwsWrapperProperty Server =
+        new AwsWrapperProperty("Server", null, "MySql connection url.");
+
+    public static readonly AwsWrapperProperty Host =
+        new AwsWrapperProperty("Host", null, "Postgres connection url.");
+
+    public static readonly AwsWrapperProperty Port =
+        new AwsWrapperProperty("Port", null, "Connection port.");
+
+    public static readonly AwsWrapperProperty Database =
+        new AwsWrapperProperty("Database", null, "Driver database name.");
+
+    public static readonly AwsWrapperProperty TargetConnectionType =
+        new AwsWrapperProperty("TargetConnectionType", null, "Driver target connection type");
+
+    public static readonly AwsWrapperProperty TargetCommandType =
+        new AwsWrapperProperty("TargetCommandType", null, "Driver target command type");
+
+    public static readonly AwsWrapperProperty TargetParameterType =
+        new AwsWrapperProperty("TargetParameterType", null, "Driver target parameter type");
+
+    /// <summary>
+    /// A set of AwsWrapperProperties that is used by the wrapper and should not be passed to the target driver.
+    /// </summary>
+    public static readonly HashSet<AwsWrapperProperty> InternalWrapperProperties = [
+        TargetConnectionType,
+        TargetCommandType,
+        TargetParameterType
+    ];
 }

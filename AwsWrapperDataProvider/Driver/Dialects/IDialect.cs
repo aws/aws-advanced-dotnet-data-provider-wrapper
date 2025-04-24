@@ -62,6 +62,6 @@ public interface IDialect
 /// <returns>A host list provider.</returns>
 public delegate IHostListProvider? HostListProviderSupplier(
     Dictionary<string, string> props,
-    string? initialUrl,
+    string initialUrl,
     IHostListProviderService hostListProviderService,
     IPluginService pluginService);

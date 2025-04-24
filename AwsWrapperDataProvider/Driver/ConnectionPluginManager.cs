@@ -31,7 +31,7 @@ public class ConnectionPluginManager(
     protected AwsWrapperConnection ConnectionWrapper { get; } = connection;
     protected IPluginService? pluginService;
 
-    public void Init(
+    public void InitConnectionPluginChain(
         IPluginService pluginService,
         Dictionary<string, string> props)
     {
