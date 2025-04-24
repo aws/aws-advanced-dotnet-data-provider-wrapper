@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using AwsWrapperDataProvider.Driver.Utils;
-using Xunit;
 
 namespace AwsWrapperDataProvider.Tests.Driver.Utils;
 
@@ -31,7 +30,7 @@ public class RdsUtilsTests
     [InlineData("example.com", RdsUrlType.Other)]
     [InlineData("", RdsUrlType.Other)]
     [InlineData(null, RdsUrlType.Other)]
-    public void IdentifyRdsType_ShouldReturnCorrectType(string host, RdsUrlType expectedType)
+    public void IdentifyRdsType_ShouldReturnCorrectType(string? host, RdsUrlType expectedType)
     {
         var result = RdsUtils.IdentifyRdsType(host);
         Assert.Equal(expectedType, result);
@@ -51,7 +50,7 @@ public class RdsUtilsTests
     [InlineData("example.com", null)]
     [InlineData("", null)]
     [InlineData(null, null)]
-    public void GetRdsInstanceId_ShouldReturnCorrectInstanceId(string host, string? expectedInstanceId)
+    public void GetRdsInstanceId_ShouldReturnCorrectInstanceId(string? host, string? expectedInstanceId)
     {
         var result = RdsUtils.GetRdsInstanceId(host);
         Assert.Equal(expectedInstanceId, result);

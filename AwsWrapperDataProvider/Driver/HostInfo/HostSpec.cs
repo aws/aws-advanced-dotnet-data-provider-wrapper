@@ -27,7 +27,7 @@ public class HostSpec(
 {
     public const int NoPort = -1;
 
-    private volatile HostAvailability _availability = availability;
+    private readonly HostAvailability _availability = availability;
 
     public string? HostId { get; } = hostId;
     public string Host { get; } = host;

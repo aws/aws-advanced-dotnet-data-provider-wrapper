@@ -26,7 +26,7 @@ public class PgTargetDriverDialect : ITargetDriverDialect
 
     public bool IsDialect(Type connectionType)
     {
-         return connectionType == this.DriverConnectionType;
+        return connectionType == this.DriverConnectionType;
     }
 
     public string PrepareConnectionString(
