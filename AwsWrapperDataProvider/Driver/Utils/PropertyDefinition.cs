@@ -60,5 +60,6 @@ public static class PropertyDefinition
         CustomTargetDriverDialect,
         Plugins,
         AutoSortPluginOrder,
+        TargetParameterType
     ];
 }
