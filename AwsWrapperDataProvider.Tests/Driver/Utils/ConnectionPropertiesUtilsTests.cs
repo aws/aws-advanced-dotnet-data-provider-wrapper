@@ -25,10 +25,8 @@ public class ConnectionPropertiesUtilsTests
     [InlineData("Host=myhost.example.com", 1)]
     public void ParseConnectionStringParameters_WithValidConnectionString_ReturnsDictionary(string connectionString, int expectedCount)
     {
-        // Act
         var result = ConnectionPropertiesUtils.ParseConnectionStringParameters(connectionString);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(expectedCount, result.Count);
         Assert.Equal("myhost.example.com", result["Host"]);
@@ -39,7 +37,6 @@ public class ConnectionPropertiesUtilsTests
     [InlineData(null)]
     public void ParseConnectionStringParameters_WithInvalidConnectionString_ThrowsArgumentNullException(string? connectionString)
     {
-        // Act & Assert
         Assert.Throws<ArgumentNullException>(() => ConnectionPropertiesUtils.ParseConnectionStringParameters(connectionString!));
     }
 
@@ -48,10 +45,8 @@ public class ConnectionPropertiesUtilsTests
     [InlineData("Host=myhost.example.com;=NoKey;NoValue=", 1)]
     public void ParseConnectionStringParameters_WithMalformedPairs_SkipsInvalidPairs(string connectionString, int expectedCount)
     {
-        // Act
         var result = ConnectionPropertiesUtils.ParseConnectionStringParameters(connectionString);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(expectedCount, result.Count);
         Assert.Equal("myhost.example.com", result["Host"]);
@@ -63,13 +58,10 @@ public class ConnectionPropertiesUtilsTests
     [Fact]
     public void ParseConnectionStringParameters_WithExtraWhitespace_TrimsValues()
     {
-        // Arrange
         string connectionString = " Host = myhost.example.com ; Port = 5432 ";
 
-        // Act
         var result = ConnectionPropertiesUtils.ParseConnectionStringParameters(connectionString);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(2, result.Count);
         Assert.Equal("myhost.example.com", result["Host"]);

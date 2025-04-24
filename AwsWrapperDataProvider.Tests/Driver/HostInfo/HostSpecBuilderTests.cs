@@ -21,14 +21,11 @@ public class HostSpecBuilderTests
     [Fact]
     public void Build_WithValidHost_ShouldCreateHostSpec()
     {
-        // Arrange
         var builder = new HostSpecBuilder()
             .WithHost("test-host.example.com");
 
-        // Act
         var hostSpec = builder.Build();
 
-        // Assert
         Assert.Equal("test-host.example.com", hostSpec.Host);
         Assert.Equal(HostSpec.NoPort, hostSpec.Port);
         Assert.Equal(string.Empty, hostSpec.HostId);
@@ -39,7 +36,6 @@ public class HostSpecBuilderTests
     [Fact]
     public void Build_WithAllParameters_ShouldCreateHostSpecWithAllValues()
     {
-        // Arrange
         const string host = "test-host.example.com";
         const int port = 3306;
         const string hostId = "test-host-id";
@@ -53,10 +49,8 @@ public class HostSpecBuilderTests
             .WithRole(role)
             .WithAvailability(availability);
 
-        // Act
         var hostSpec = builder.Build();
 
-        // Assert
         Assert.Equal(host, hostSpec.Host);
         Assert.Equal(port, hostSpec.Port);
         Assert.Equal(hostId, hostSpec.HostId);
@@ -68,11 +62,9 @@ public class HostSpecBuilderTests
     [Fact]
     public void Build_WithNullHost_ShouldThrowArgumentException()
     {
-        // Arrange
         var builder = new HostSpecBuilder()
             .WithHost(null);
 
-        // Act & Assert
         var exception = Assert.Throws<ArgumentException>(() => builder.Build());
         Assert.Equal("Host cannot be null or empty (Parameter '_host')", exception.Message);
     }
@@ -80,11 +72,9 @@ public class HostSpecBuilderTests
     [Fact]
     public void Build_WithEmptyHost_ShouldThrowArgumentException()
     {
-        // Arrange
         var builder = new HostSpecBuilder()
             .WithHost(string.Empty);
 
-        // Act & Assert
         var exception = Assert.Throws<ArgumentException>(() => builder.Build());
         Assert.Equal("Host cannot be null or empty (Parameter '_host')", exception.Message);
     }
@@ -92,15 +82,12 @@ public class HostSpecBuilderTests
     [Fact]
     public void WithPort_WithNullPort_ShouldSetNoPort()
     {
-        // Arrange
         var builder = new HostSpecBuilder()
             .WithHost("test-host.example.com")
             .WithPort(null);
 
-        // Act
         var hostSpec = builder.Build();
 
-        // Assert
         Assert.Equal(HostSpec.NoPort, hostSpec.Port);
         Assert.False(hostSpec.IsPortSpecified);
     }
@@ -108,52 +95,42 @@ public class HostSpecBuilderTests
     [Fact]
     public void WithRole_WithNullRole_ShouldSetUnknownRole()
     {
-        // Arrange
         var builder = new HostSpecBuilder()
             .WithHost("test-host.example.com")
             .WithRole(null);
 
-        // Act
         var hostSpec = builder.Build();
 
-        // Assert
         Assert.Equal(HostRole.Unknown, hostSpec.Role);
     }
 
     [Fact]
     public void WithAvailability_WithNullAvailability_ShouldKeepDefaultAvailability()
     {
-        // Arrange
         var builder = new HostSpecBuilder()
             .WithHost("test-host.example.com")
             .WithAvailability(null);
 
-        // Act
         var hostSpec = builder.Build();
 
-        // Assert
         Assert.Equal(HostAvailability.Available, hostSpec.RawAvailability);
     }
 
     [Fact]
     public void WithHostId_WithNullHostId_ShouldSetEmptyHostId()
     {
-        // Arrange
         var builder = new HostSpecBuilder()
             .WithHost("test-host.example.com")
             .WithHostId(null);
 
-        // Act
         var hostSpec = builder.Build();
 
-        // Assert
         Assert.Null(hostSpec.HostId);
     }
 
     [Fact]
     public void FluentInterface_ShouldAllowChaining()
     {
-        // Arrange & Act
         var builder = new HostSpecBuilder()
             .WithHost("test-host.example.com")
             .WithPort(3306)
@@ -161,7 +138,6 @@ public class HostSpecBuilderTests
             .WithRole(HostRole.Reader)
             .WithAvailability(HostAvailability.Available);
 
-        // Assert - Just verifying the chain works without exceptions
         Assert.NotNull(builder);
     }
 }
