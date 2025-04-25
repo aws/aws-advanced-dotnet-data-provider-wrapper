@@ -48,7 +48,7 @@ public class AwsWrapperProperty
     public int? GetInt(Dictionary<string, string> properties)
     {
         string? value = this.GetString(properties);
-        return value != null ? int.Parse(value) : null;
+        return int.TryParse(value, out int res) ? res : null;
     }
 
     public void Set(Dictionary<string, string> props, string? value)

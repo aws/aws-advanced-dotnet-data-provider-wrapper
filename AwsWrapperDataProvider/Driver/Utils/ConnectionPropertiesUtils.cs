@@ -18,8 +18,8 @@ namespace AwsWrapperDataProvider.Driver.Utils;
 
 public static class ConnectionPropertiesUtils
 {
-    private static readonly string HOSTSSEPARATOR = ",";
-    private static readonly string HOSTPORTSEPARATOR = ":";
+    private static readonly string HostSeperator = ",";
+    private static readonly string HostPortSeperator = ":";
 
     public static Dictionary<string, string> ParseConnectionStringParameters(string connectionString)
     {
@@ -43,12 +43,12 @@ public static class ConnectionPropertiesUtils
                       ?? PropertyDefinition.Server.GetString(props)
                       ?? string.Empty;
         IList<string> hostStringList =
-            hostsString.Split(HOSTSSEPARATOR, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+            hostsString.Split(HostSeperator, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
         int port = PropertyDefinition.Port.GetInt(props) ?? HostSpec.NoPort;
 
         foreach (string hostPortString in hostStringList)
         {
-            IList<string> hostPortPair = hostPortString.Split(HOSTPORTSEPARATOR,
+            IList<string> hostPortPair = hostPortString.Split(HostPortSeperator,
                 2,
                 StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
             string hostString = hostPortPair[0];

@@ -80,6 +80,7 @@ public class AwsWrapperPropertyTests
     [InlineData("Port", "5432", "3306", 3306)]
     [InlineData("Port", "5432", null, 5432)]
     [InlineData("Port", null, null, null)]
+    [InlineData("Port", null, "invalid", null)]
     public void GetInt_ReturnsExpectedValue(
         string propertyName,
         string? defaultValue,
@@ -97,19 +98,6 @@ public class AwsWrapperPropertyTests
         var result = property.GetInt(properties);
 
         Assert.Equal(expectedResult, result);
-    }
-
-    [Fact]
-    [Trait("Category", "Unit")]
-    public void GetInt_WithInvalidValue_ThrowsFormatException()
-    {
-        var property = new AwsWrapperProperty("Port", "5432", "Test description");
-        var properties = new Dictionary<string, string>
-        {
-            { "Port", "invalid" },
-        };
-
-        Assert.Throws<FormatException>(() => property.GetInt(properties));
     }
 
     [Theory]
