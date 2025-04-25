@@ -27,7 +27,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AwsWrapperDataProvider\AwsWrapperDataProvider.csproj" />
-    <ProjectReference Include="..\NHibernate.Driver.AwsWrapper\NHibernate.Driver.AwsWrapper.csproj" />
   </ItemGroup>
 
   <ItemGroup>
