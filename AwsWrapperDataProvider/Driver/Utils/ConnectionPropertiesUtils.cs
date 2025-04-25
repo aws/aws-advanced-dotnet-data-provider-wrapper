@@ -18,7 +18,7 @@ namespace AwsWrapperDataProvider.Driver.Utils;
 
 public static class ConnectionPropertiesUtils
 {
-        private static readonly string HostSeperator = ",";
+    private static readonly string HostSeperator = ",";
     private static readonly string HostPortSeperator = ":";
 
     public static Dictionary<string, string> ParseConnectionStringParameters(string connectionString)
