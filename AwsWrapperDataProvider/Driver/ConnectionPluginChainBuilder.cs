@@ -1,0 +1,89 @@
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License").
+// You may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+using AwsWrapperDataProvider.Driver.ConnectionProviders;
+using AwsWrapperDataProvider.Driver.Plugins;
+using AwsWrapperDataProvider.Driver.Plugins.Efm;
+using AwsWrapperDataProvider.Driver.Plugins.Failover;
+using AwsWrapperDataProvider.Driver.Utils;
+
+namespace AwsWrapperDataProvider.Driver;
+
+public class ConnectionPluginChainBuilder
+{
+    private static readonly Dictionary<string, Type> PluginFactoryTypesByCode = new()
+    {
+            { "failover", typeof(FailoverPluginFactory) },
+            { "efm", typeof(HostMonitoringPluginFactory) },
+    };
+
+    private static readonly Dictionary<Type, int> PluginWeightByPluginFactoryType = new()
+    {
+            { typeof(FailoverPluginFactory), 700 },
+            { typeof(HostMonitoringPluginFactory), 800 },
+    };
+
+    public IList<IConnectionPlugin> GetPlugins(
+        IPluginService pluginService,
+        IConnectionProvider defaultConnectionProvider,
+        IConnectionProvider? effectiveConnectionProvider,
+        Dictionary<string, string> props)
+    {
+        IConnectionPlugin defaultConnectionPlugin = new DefaultConnectionPlugin(
+            pluginService,
+            defaultConnectionProvider,
+            effectiveConnectionProvider);
+
+        string pluginsCodes = PropertyDefinition.Plugins.GetString(props) ?? PropertyDefinition.DefaultPlugins;
+        string[] pluginsCodesArray = pluginsCodes.Split(',').Select(s => s.Trim()).Where(s => !string.IsNullOrEmpty(s)).ToArray();
+
+        if (pluginsCodesArray.Length == 0)
+        {
+            return [defaultConnectionPlugin];
+        }
+
+        List<IConnectionPluginFactory> pluginFactories = new(pluginsCodesArray.Length);
+
+        foreach (string pluginCode in pluginsCodesArray)
+        {
+            if (!PluginFactoryTypesByCode.TryGetValue(pluginCode, out Type? pluginFactoryType))
+            {
+                throw new Exception("ConnectionPluginManager.unknownPluginCode");
+            }
+
+            if (Activator.CreateInstance(pluginFactoryType) is not IConnectionPluginFactory factoryInstance)
+            {
+                throw new Exception($"ConnectionPluginManager.unableToLoadPlugin pluginCode code: {pluginCode}");
+            }
+
+            pluginFactories.Add(factoryInstance);
+        }
+
+        if (PropertyDefinition.AutoSortPluginOrder.GetBoolean(props))
+        {
+            pluginFactories = pluginFactories.OrderBy(pluginFactory => PluginWeightByPluginFactoryType[pluginFactory.GetType()]).ToList();
+        }
+
+        List<IConnectionPlugin> plugins = new(pluginFactories.Count + 1);
+        foreach (var pluginFactory in pluginFactories)
+        {
+            IConnectionPlugin pluginInstance = pluginFactory.GetInstance(pluginService, props);
+            plugins.Add(pluginInstance);
+        }
+
+        plugins.Add(defaultConnectionPlugin);
+
+        return plugins;
+    }
+}

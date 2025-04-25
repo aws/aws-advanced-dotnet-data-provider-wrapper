@@ -37,7 +37,8 @@ public class ConnectionPluginManager(
     {
         this.props = props;
         this.pluginService = pluginService;
-        this.plugins = ConnectionPluginChainBuilder.GetPlugins(
+        ConnectionPluginChainBuilder pluginChainBuilder = new();
+        this.plugins = pluginChainBuilder.GetPlugins(
             this.pluginService,
             this.defaultConnProvider,
             this.effectiveConnProvider,
