@@ -26,7 +26,7 @@ namespace AwsWrapperDataProvider.Tests
         [Trait("Category", "Integration")]
         public void MysqlWrapperConnectionTest()
         {
-            const string connectionString = "Server=global-ohio-mysql-instance-1.c12pgqavxipt.us-east-2.rds.amazonaws.com;User ID=admin;Password=my_password_2020;Initial Catalog=test;";
+            const string connectionString = "Server=<insert_rds_instance_here>;User ID=admin;Password=my_password_2020;Initial Catalog=test;";
             const string query = "select @@aurora_server_id";
 
             using (AwsWrapperConnection<MySqlConnection> connection = new(connectionString))
@@ -70,7 +70,7 @@ namespace AwsWrapperDataProvider.Tests
         [Trait("Category", "Integration")]
         public void MysqlWrapperConnectionDynamicTest()
         {
-            const string connectionString = "Server=global-ohio-mysql-instance-1.c12pgqavxipt.us-east-2.rds.amazonaws.com;User ID=admin;Password=my_password_2020;Initial Catalog=test;" +
+            const string connectionString = "Server=<insert_rds_instance_here>;User ID=admin;Password=my_password_2020;Initial Catalog=test;" +
                 "TargetConnectionType=MySqlConnector.MySqlConnection,MySqlConnector;" +
                 "TargetCommandType=MySqlConnector.MySqlCommand,MySqlConnector;" +
                 "TargetParameterType=MySqlConnector.MySqlParameter,MySqlConnector";
@@ -102,7 +102,7 @@ namespace AwsWrapperDataProvider.Tests
         [Trait("Category", "Integration")]
         public void MysqlWrapperConnectionWithParametersTest()
         {
-            const string connectionString = "Server=global-ohio-mysql-instance-1.c12pgqavxipt.us-east-2.rds.amazonaws.com;User ID=admin;Password=my_password_2020;Initial Catalog=test;";
+            const string connectionString = "Server=<insert_rds_instance_here>;User ID=admin;Password=my_password_2020;Initial Catalog=test;";
             const string query = "select @var1";
 
             using (AwsWrapperConnection<MySqlConnection> connection = new(connectionString))
@@ -137,7 +137,7 @@ namespace AwsWrapperDataProvider.Tests
         public void PgWrapperConnectionTest()
         {
             const string connectionString =
-                "Host=global-ohio-pg.cluster-c12pgqavxipt.us-east-2.rds.amazonaws.com;Username=pgadmin;Password=my_password_2020;Database=postgres;";
+                "Host=<insert_rds_instance_here>;Username=pgadmin;Password=my_password_2020;Database=postgres;";
             const string query = "select aurora_db_instance_identifier()";
 
             using (AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString))
@@ -166,7 +166,7 @@ namespace AwsWrapperDataProvider.Tests
         public void OpenPgWrapperConnectionDynamicTest()
         {
             const string connectionString =
-                "Host=global-ohio-pg.cluster-c12pgqavxipt.us-east-2.rds.amazonaws.com;Username=pgadmin;Password=my_password_2020;Database=postgres;" +
+                "Host=<insert_rds_instance_here>;Username=pgadmin;Password=my_password_2020;Database=postgres;" +
                 "TargetConnectionType=Npgsql.NpgsqlConnection,Npgsql;" +
                 "TargetCommandType=Npgsql.NpgsqlCommand,Npgsql;" +
                 "TargetParameterType=Npgsql.NpgsqlParameter,Npgsql";
