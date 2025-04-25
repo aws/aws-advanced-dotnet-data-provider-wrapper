@@ -44,7 +44,7 @@ public class PluginService : IPluginService, IHostListProviderService
     public HostSpec? InitialConnectionHostSpec { get => this._initialConnectionHostSpec; set => this._initialConnectionHostSpec = value; }
     public HostSpec? CurrentHostSpec { get => this._currentHostSpec ?? this.GetCurrentHostSpec(); }
     public IList<HostSpec> AllHosts { get => this._allHosts; }
-    public IHostListProvider HostListProvider { get => this._hostListProvider; set => this._hostListProvider = value; }
+    public IHostListProvider? HostListProvider { get => this._hostListProvider; set => this._hostListProvider = value ?? throw new ArgumentNullException(nameof(value)); }
     public HostSpecBuilder HostSpecBuilder { get => new HostSpecBuilder(); }
     public DbConnection? CurrentConnection { get => this._currentConnection; set => this._currentConnection = value; }
 
@@ -112,7 +112,7 @@ public class PluginService : IPluginService, IHostListProviderService
 
     public void RefreshHostList()
     {
-        IList<HostSpec> updateHostList = this.HostListProvider.Refresh();
+        IList<HostSpec> updateHostList = this._hostListProvider.Refresh();
         if (!Equals(updateHostList, this._allHosts))
         {
             this.UpdateHostAvailability(updateHostList);
@@ -174,7 +174,7 @@ public class PluginService : IPluginService, IHostListProviderService
     private HostSpec GetCurrentHostSpec()
     {
         this._currentHostSpec = this._initialConnectionHostSpec
-            ?? this.AllHosts.FirstOrDefault(h => h.Role == HostRole.Writer)
+            ?? this._allHosts.FirstOrDefault(h => h.Role == HostRole.Writer)
             ?? this.GetHosts().First();
 
         ArgumentNullException.ThrowIfNull(this._currentHostSpec);
