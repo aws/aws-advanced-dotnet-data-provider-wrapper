@@ -20,7 +20,7 @@ namespace AwsWrapperDataProvider.Driver.HostListProviders;
 
 public class ConnectionStringHostListProvider : IStaticHostListProvider
 {
-    private readonly IList<HostSpec> _hostList = new List<HostSpec>();
+    private readonly List<HostSpec> _hostList = new List<HostSpec>();
     private readonly Dictionary<string, string> _properties;
     private readonly IHostListProviderService _hostListProviderService;
 
@@ -81,10 +81,10 @@ public class ConnectionStringHostListProvider : IStaticHostListProvider
             return;
         }
 
-        ((List<HostSpec>)this._hostList).AddRange(ConnectionPropertiesUtils.GetHostsFromProperties(
+        this._hostList.AddRange(ConnectionPropertiesUtils.GetHostsFromProperties(
                 this._properties,
                 this._hostListProviderService.HostSpecBuilder));
-        if (!this._hostList.Any())
+        if (this._hostList.Count == 0)
         {
             // TODO: move error string to resx file.
             throw new ArgumentException("Connection string is invalid.", nameof(this._properties));
