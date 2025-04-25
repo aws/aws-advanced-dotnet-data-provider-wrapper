@@ -19,6 +19,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.Utils;
 public class RdsUtilsTests
 {
     [Theory]
+    [Trait("Category", "Unit")]
     [InlineData("mydb.cluster-123456789012.us-east-1.rds.amazonaws.com", RdsUrlType.RdsWriterCluster)]
     [InlineData("mydb.cluster-ro-123456789012.us-east-1.rds.amazonaws.com", RdsUrlType.RdsReaderCluster)]
     [InlineData("mydb.cluster-custom-123456789012.us-east-1.rds.amazonaws.com", RdsUrlType.RdsCustomCluster)]
@@ -37,6 +38,7 @@ public class RdsUtilsTests
     }
 
     [Theory]
+    [Trait("Category", "Unit")]
     [InlineData("mydb.cluster-123456789012.us-east-1.rds.amazonaws.com", "mydb")]
     [InlineData("mydb.cluster-ro-123456789012.us-east-1.rds.amazonaws.com", "mydb")]
     [InlineData("mydb.cluster-custom-123456789012.us-east-1.rds.amazonaws.com", "mydb")]
@@ -57,6 +59,7 @@ public class RdsUtilsTests
     }
 
     [Theory]
+    [Trait("Category", "Unit")]
     [InlineData("mydb.cluster-123456789012.cn-north-1.rds.amazonaws.com.cn", RdsUrlType.RdsWriterCluster)]
     [InlineData("mydb.cluster-ro-123456789012.cn-north-1.rds.amazonaws.com.cn", RdsUrlType.RdsReaderCluster)]
     [InlineData("mydb.cluster-custom-123456789012.cn-north-1.rds.amazonaws.com.cn", RdsUrlType.RdsCustomCluster)]
@@ -69,6 +72,7 @@ public class RdsUtilsTests
     }
 
     [Theory]
+    [Trait("Category", "Unit")]
     [InlineData("mydb.cluster-123456789012.rds.cn-north-1.amazonaws.com.cn", RdsUrlType.RdsWriterCluster)]
     [InlineData("mydb.cluster-ro-123456789012.rds.cn-north-1.amazonaws.com.cn", RdsUrlType.RdsReaderCluster)]
     [InlineData("mydb.cluster-custom-123456789012.rds.cn-north-1.amazonaws.com.cn", RdsUrlType.RdsCustomCluster)]
@@ -81,6 +85,7 @@ public class RdsUtilsTests
     }
 
     [Theory]
+    [Trait("Category", "Unit")]
     [InlineData("mydb.cluster-123456789012.rds.us-gov-west-1.amazonaws.com", RdsUrlType.RdsWriterCluster)]
     [InlineData("mydb.cluster-ro-123456789012.rds.us-gov-west-1.amazonaws.com", RdsUrlType.RdsReaderCluster)]
     [InlineData("mydb.cluster-custom-123456789012.rds.us-gov-west-1.amazonaws.com", RdsUrlType.RdsCustomCluster)]
@@ -95,6 +100,7 @@ public class RdsUtilsTests
     }
 
     [Theory]
+    [Trait("Category", "Unit")]
     [InlineData("mydb.cluster-123456789012.cn-north-1.rds.amazonaws.com.cn", "mydb")]
     [InlineData("mydb.123456789012.rds.cn-north-1.amazonaws.com.cn", "mydb")]
     [InlineData("mydb.123456789012.rds.us-gov-west-1.amazonaws.com", "mydb")]
@@ -107,6 +113,7 @@ public class RdsUtilsTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void ClearCache_ShouldClearCachedPatterns()
     {
         // First call to populate cache
@@ -119,6 +126,7 @@ public class RdsUtilsTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void IdentifyRdsType_WithCachedValue_ShouldReturnSameResult()
     {
         string host = "mydb.cluster-123456789012.us-east-1.rds.amazonaws.com";
@@ -131,6 +139,7 @@ public class RdsUtilsTests
     }
 
     [Theory]
+    [Trait("Category", "Unit")]
     [InlineData("mydb.cluster-123456789012.us-east-1.RDS.AMAZONAWS.COM", RdsUrlType.RdsWriterCluster)]
     [InlineData("MYDB.CLUSTER-123456789012.US-EAST-1.RDS.AMAZONAWS.COM", RdsUrlType.RdsWriterCluster)]
     public void IdentifyRdsType_ShouldBeCaseInsensitive(string host, RdsUrlType expectedType)

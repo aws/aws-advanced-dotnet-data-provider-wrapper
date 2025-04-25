@@ -19,6 +19,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.HostInfo;
 public class HostSpecTests
 {
     [Fact]
+    [Trait("Category", "Unit")]
     public void Constructor_ShouldInitializeProperties()
     {
         const string host = "test-host.example.com";
@@ -37,6 +38,7 @@ public class HostSpecTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void IsPortSpecified_WithNoPort_ShouldReturnFalse()
     {
         var hostSpec = new HostSpec("test-host.example.com", HostSpec.NoPort, "test-host-id", HostRole.Unknown, HostAvailability.Available);
@@ -45,6 +47,7 @@ public class HostSpecTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void IsPortSpecified_WithValidPort_ShouldReturnTrue()
     {
         var hostSpec = new HostSpec("test-host.example.com", 3306, "test-host-id", HostRole.Unknown, HostAvailability.Available);
@@ -53,6 +56,7 @@ public class HostSpecTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void Equals_WithNull_ShouldReturnFalse()
     {
         var hostSpec = new HostSpec("test-host.example.com", 3306, "test-host-id", HostRole.Writer, HostAvailability.Available);
@@ -61,6 +65,7 @@ public class HostSpecTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void Equals_WithDifferentType_ShouldReturnFalse()
     {
         var hostSpec = new HostSpec("test-host.example.com", 3306, "test-host-id", HostRole.Writer, HostAvailability.Available);
@@ -70,6 +75,7 @@ public class HostSpecTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void Equals_WithIdenticalValues_ShouldReturnTrue()
     {
         var hostSpec1 = new HostSpec("test-host.example.com", 3306, "test-host-id-1", HostRole.Writer, HostAvailability.Available);
@@ -79,6 +85,7 @@ public class HostSpecTests
     }
 
     [Theory]
+    [Trait("Category", "Unit")]
     [InlineData("host1.example.com", "host2.example.com", 3306, 3306, HostRole.Writer, HostRole.Writer, HostAvailability.Available, HostAvailability.Available, false)]
     [InlineData("host1.example.com", "host1.example.com", 3306, 3307, HostRole.Writer, HostRole.Writer, HostAvailability.Available, HostAvailability.Available, false)]
     [InlineData("host1.example.com", "host1.example.com", 3306, 3306, HostRole.Writer, HostRole.Reader, HostAvailability.Available, HostAvailability.Available, false)]
@@ -94,6 +101,7 @@ public class HostSpecTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void GetHashCode_WithSameValues_ShouldReturnSameHashCode()
     {
         var hostSpec1 = new HostSpec("test-host.example.com", 3306, "id1", HostRole.Writer, HostAvailability.Available);
@@ -106,6 +114,7 @@ public class HostSpecTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void GetHashCode_WithDifferentValues_ShouldReturnDifferentHashCodes()
     {
         var hostSpec1 = new HostSpec("test-host1.example.com", 3306, "id1", HostRole.Writer, HostAvailability.Available);

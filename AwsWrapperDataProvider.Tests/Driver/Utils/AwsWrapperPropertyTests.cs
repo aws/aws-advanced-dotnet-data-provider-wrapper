@@ -19,6 +19,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.Utils;
 public class AwsWrapperPropertyTests
 {
     [Theory]
+    [Trait("Category", "Unit")]
     [InlineData("TestProperty", "DefaultValue", "Test description", true, new[] { "Option1", "Option2" })]
     [InlineData("Port", "3306", "Port number", false, null)]
     [InlineData("Host", "localhost", "Database host", true, null)]
@@ -51,6 +52,7 @@ public class AwsWrapperPropertyTests
     }
 
     [Theory]
+    [Trait("Category", "Unit")]
     [InlineData("TestProperty", "DefaultValue", "ActualValue", "ActualValue")]
     [InlineData("TestProperty", "DefaultValue", null, "DefaultValue")]
     [InlineData("TestProperty", null, null, null)]
@@ -74,6 +76,7 @@ public class AwsWrapperPropertyTests
     }
 
     [Theory]
+    [Trait("Category", "Unit")]
     [InlineData("Port", "5432", "3306", 3306)]
     [InlineData("Port", "5432", null, 5432)]
     [InlineData("Port", null, null, null)]
@@ -97,6 +100,7 @@ public class AwsWrapperPropertyTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void GetInt_WithInvalidValue_ThrowsFormatException()
     {
         var property = new AwsWrapperProperty("Port", "5432", "Test description");
@@ -109,6 +113,7 @@ public class AwsWrapperPropertyTests
     }
 
     [Theory]
+    [Trait("Category", "Unit")]
     [InlineData("TestProperty", "NewValue", true)]
     [InlineData("TestProperty", null, false)]
     public void Set_ModifiesDictionaryCorrectly(
@@ -136,6 +141,7 @@ public class AwsWrapperPropertyTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void Set_WithNewKey_AddsKeyValue()
     {
         var property = new AwsWrapperProperty("NewProperty", "DefaultValue", "Test description");

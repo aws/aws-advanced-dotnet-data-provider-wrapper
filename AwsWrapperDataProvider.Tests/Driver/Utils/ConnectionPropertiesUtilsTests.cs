@@ -20,6 +20,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.Utils;
 public class ConnectionPropertiesUtilsTests
 {
     [Theory]
+    [Trait("Category", "Unit")]
     [InlineData("Host=myhost.example.com;Port=5432;Database=mydb;Username=myuser;Password=mypassword", 5)]
     [InlineData("Host=myhost.example.com;Port=5432", 2)]
     [InlineData("Host=myhost.example.com", 1)]
@@ -33,6 +34,7 @@ public class ConnectionPropertiesUtilsTests
     }
 
     [Theory]
+    [Trait("Category", "Unit")]
     [InlineData("")]
     [InlineData(null)]
     public void ParseConnectionStringParameters_WithInvalidConnectionString_ThrowsArgumentNullException(string? connectionString)
@@ -41,6 +43,7 @@ public class ConnectionPropertiesUtilsTests
     }
 
     [Theory]
+    [Trait("Category", "Unit")]
     [InlineData("Host=myhost.example.com;InvalidPair;Port=5432;=NoKey;NoValue=", 2)]
     [InlineData("Host=myhost.example.com;=NoKey;NoValue=", 1)]
     public void ParseConnectionStringParameters_WithMalformedPairs_SkipsInvalidPairs(string connectionString, int expectedCount)
@@ -56,6 +59,7 @@ public class ConnectionPropertiesUtilsTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void ParseConnectionStringParameters_WithExtraWhitespace_TrimsValues()
     {
         string connectionString = " Host = myhost.example.com ; Port = 5432 ";
@@ -69,6 +73,7 @@ public class ConnectionPropertiesUtilsTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void GetHostsFromProperties_WithRdsInstanceEndpoint_ReturnsHostSpec()
     {
         var props = new Dictionary<string, string>
@@ -88,6 +93,7 @@ public class ConnectionPropertiesUtilsTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void GetHostsFromProperties_WithRdsWriterClusterEndpoint_ReturnsHostSpec()
     {
         var props = new Dictionary<string, string>
@@ -107,6 +113,7 @@ public class ConnectionPropertiesUtilsTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void GetHostsFromProperties_WithRdsReaderClusterEndpoint_ReturnsHostSpecWithReaderRole()
     {
         var props = new Dictionary<string, string>
@@ -126,6 +133,7 @@ public class ConnectionPropertiesUtilsTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void GetHostsFromProperties_WithRdsCustomClusterEndpoint_ReturnsHostSpec()
     {
         var props = new Dictionary<string, string>
@@ -145,6 +153,7 @@ public class ConnectionPropertiesUtilsTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void GetHostsFromProperties_WithRdsProxyEndpoint_ReturnsHostSpec()
     {
         var props = new Dictionary<string, string>
@@ -164,6 +173,7 @@ public class ConnectionPropertiesUtilsTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void GetHostsFromProperties_WithServerInsteadOfHost_UsesServerValue()
     {
         var props = new Dictionary<string, string>
@@ -183,6 +193,7 @@ public class ConnectionPropertiesUtilsTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void GetHostsFromProperties_WithMultipleRdsEndpoints_ReturnsMultipleHostSpecs()
     {
         var props = new Dictionary<string, string>
@@ -209,6 +220,7 @@ public class ConnectionPropertiesUtilsTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void GetHostsFromProperties_WithHostAndPortInHostString_UsesPortFromHostString()
     {
         var props = new Dictionary<string, string>
@@ -228,6 +240,7 @@ public class ConnectionPropertiesUtilsTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void GetHostsFromProperties_WithChinaRegionRdsEndpoint_ReturnsHostSpec()
     {
         var props = new Dictionary<string, string>
@@ -247,6 +260,7 @@ public class ConnectionPropertiesUtilsTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void GetHostsFromProperties_WithGovCloudRdsEndpoint_ReturnsHostSpec()
     {
         var props = new Dictionary<string, string>
@@ -266,6 +280,7 @@ public class ConnectionPropertiesUtilsTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void GetHostsFromProperties_WithNoHostOrServer_ReturnsEmptyList()
     {
         var props = new Dictionary<string, string>

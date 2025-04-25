@@ -19,6 +19,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.HostInfo;
 public class HostSpecBuilderTests
 {
     [Fact]
+    [Trait("Category", "Unit")]
     public void Build_WithValidHost_ShouldCreateHostSpec()
     {
         var builder = new HostSpecBuilder()
@@ -34,6 +35,7 @@ public class HostSpecBuilderTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void Build_WithAllParameters_ShouldCreateHostSpecWithAllValues()
     {
         const string host = "test-host.example.com";
@@ -60,6 +62,7 @@ public class HostSpecBuilderTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void Build_WithNullHost_ShouldThrowArgumentException()
     {
         var builder = new HostSpecBuilder()
@@ -70,6 +73,7 @@ public class HostSpecBuilderTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void Build_WithEmptyHost_ShouldThrowArgumentException()
     {
         var builder = new HostSpecBuilder()
@@ -80,6 +84,7 @@ public class HostSpecBuilderTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void WithPort_WithNullPort_ShouldSetNoPort()
     {
         var builder = new HostSpecBuilder()
@@ -93,6 +98,7 @@ public class HostSpecBuilderTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void WithRole_WithNullRole_ShouldSetUnknownRole()
     {
         var builder = new HostSpecBuilder()
@@ -105,6 +111,7 @@ public class HostSpecBuilderTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void WithAvailability_WithNullAvailability_ShouldKeepDefaultAvailability()
     {
         var builder = new HostSpecBuilder()
@@ -117,6 +124,7 @@ public class HostSpecBuilderTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void WithHostId_WithNullHostId_ShouldSetEmptyHostId()
     {
         var builder = new HostSpecBuilder()
@@ -129,6 +137,7 @@ public class HostSpecBuilderTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void FluentInterface_ShouldAllowChaining()
     {
         var builder = new HostSpecBuilder()
