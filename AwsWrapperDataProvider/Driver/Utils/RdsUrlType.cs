@@ -58,6 +58,11 @@ public enum RdsUrlType
     RdsInstance,
 
     /// <summary>
+    /// Represents an RDS Aurora limitless shard group (e.g., mydb.shardgrp-123456789012.us-east-1.rds.amazonaws.com).
+    /// </summary>
+    RdsAuroraLimitlessDbShardGroup,
+
+    /// <summary>
     /// Represents any other type of hostname that doesn't match the RDS endpoint patterns.
     /// </summary>
     [Description("Other Hostname")]

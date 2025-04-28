@@ -31,7 +31,6 @@ public class ConnectionStringHostListProvider : IStaticHostListProvider
 
     public ConnectionStringHostListProvider(
         Dictionary<string, string> props,
-        string initialUrl,
         IHostListProviderService hostListProviderService)
     {
         this._properties = props;

@@ -73,7 +73,7 @@ public static class RdsUtils
     // Cache for DNS patterns to improve performance
     private static readonly ConcurrentDictionary<string, Match> CachedPatterns = new();
 
-    public static RdsUrlType IdentifyRdsType(string host)
+    public static RdsUrlType IdentifyRdsType(string? host)
     {
         if (string.IsNullOrEmpty(host))
         {
@@ -117,11 +117,17 @@ public static class RdsUtils
             return RdsUrlType.RdsProxy;
         }
 
+        // Is RDS shard group DNS.
+        if (dnsGroup.StartsWith("shardgrp-"))
+        {
+            return RdsUrlType.RdsAuroraLimitlessDbShardGroup;
+        }
+
         // Is generic RDS DNS.
         return RdsUrlType.RdsInstance;
     }
 
-    public static string? GetRdsInstanceId(string host)
+    public static string? GetRdsInstanceId(string? host)
     {
         return string.IsNullOrEmpty(host) ? null : CacheMatcher(host, DnsPatterns)?.Groups[InstanceGroup].Value;
     }

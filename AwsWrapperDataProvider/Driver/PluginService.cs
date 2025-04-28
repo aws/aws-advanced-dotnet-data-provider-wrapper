@@ -67,7 +67,7 @@ public class PluginService : IPluginService, IHostListProviderService
         this._targetDriverDialect = targetDriverDialect;
         this._dialect = DialectProvider.GetDialect(connectionType, props);
         this._hostListProvider =
-            this._dialect.HostListProviderSupplier(props, connectionString, this, this)
+            this._dialect.HostListProviderSupplier(props, this, this)
             ?? throw new InvalidOperationException(); // TODO : throw proper error
     }
 
