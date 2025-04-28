@@ -13,14 +13,14 @@
 // limitations under the License.
 
 using AwsWrapperDataProvider.Driver;
+using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Plugins.Efm;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
 using AwsWrapperDataProvider.Driver.Utils;
 using Moq;
-using IConnectionProvider = AwsWrapperDataProvider.Driver.ConnectionProviders.IConnectionProvider;
 
-namespace AwsWrapperDataProvider.Tests.Driver;
+namespace AwsWrapperDataProvider.Tests.Driver.Plugins;
 
 public class ConnectionPluginChainBuilderTests
 {

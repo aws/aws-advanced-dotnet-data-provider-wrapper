@@ -17,12 +17,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using AwsWrapperDataProvider.Driver.Plugins;
 
-namespace AwsWrapperDataProvider.Driver
+namespace AwsWrapperDataProvider.Driver.Plugins;
+
+public interface IConnectionPluginFactory
 {
-    public interface IConnectionPluginFactory
-    {
-        IConnectionPlugin GetInstance(IPluginService pluginService, Dictionary<string, string> props);
-    }
+    IConnectionPlugin GetInstance(IPluginService pluginService, Dictionary<string, string> props);
 }

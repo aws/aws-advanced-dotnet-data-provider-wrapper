@@ -16,16 +16,23 @@ namespace AwsWrapperDataProvider.Driver.Utils;
 
 public class PropertyDefinition
 {
-    public static readonly string DefaultPlugins = "efm,failover";
     public static readonly AwsWrapperProperty Database =
         new("database", null, "Driver database name");
+
     public static readonly AwsWrapperProperty TargetConnectionType =
         new("targetConnectionType", null, "Driver target connection type");
+
     public static readonly AwsWrapperProperty TargetCommandType =
         new("targetCommandType", null, "Driver target command type");
+
     public static readonly AwsWrapperProperty TargetParameterType =
         new("targetParameterType", null, "Driver target parameter type");
-    public static readonly AwsWrapperProperty Plugins = new("Plugins", DefaultPlugins, "Comma separated list of connection plugin codes");
+
+    public static readonly AwsWrapperProperty Plugins = new(
+        "Plugins",
+        "efm,failover",
+        "Comma separated list of connection plugin codes");
+
     public static readonly AwsWrapperProperty AutoSortPluginOrder = new(
         "AutoSortPluginOrder",
         "true",
