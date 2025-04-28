@@ -56,12 +56,10 @@ public interface IDialect
 /// Delegate for creating host list providers.
 /// </summary>
 /// <param name="props">Connection properties.</param>
-/// <param name="initialUrl">The initial connection URL.</param>
 /// <param name="hostListProviderService">The host list provider service.</param>
 /// <param name="pluginService">The plugin service.</param>
 /// <returns>A host list provider.</returns>
 public delegate IHostListProvider? HostListProviderSupplier(
     Dictionary<string, string> props,
-    string initialUrl,
     IHostListProviderService hostListProviderService,
     IPluginService pluginService);
