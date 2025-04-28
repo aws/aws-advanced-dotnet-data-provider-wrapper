@@ -37,12 +37,16 @@ public static class PropertyDefinition
     public static readonly AwsWrapperProperty TargetParameterType =
         new AwsWrapperProperty("TargetParameterType", null, "Driver target parameter type");
 
+    public static readonly AwsWrapperProperty CustomTargetDriverDialect =
+        new AwsWrapperProperty("TargetDriverDialect", null, "Custom target driver dialect type");
+
     /// <summary>
     /// A set of AwsWrapperProperties that is used by the wrapper and should not be passed to the target driver.
     /// </summary>
     public static readonly HashSet<AwsWrapperProperty> InternalWrapperProperties = [
         TargetConnectionType,
         TargetCommandType,
-        TargetParameterType
+        TargetParameterType,
+        CustomTargetDriverDialect,
     ];
 }
