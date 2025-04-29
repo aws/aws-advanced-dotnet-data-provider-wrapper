@@ -16,12 +16,12 @@ using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
 
-namespace AwsWrapperDataProvider.Driver.TargetDriverDialects;
+namespace AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 
 /// <summary>
 /// Interface for target driver dialects that define driver-specific behavior.
 /// </summary>
-public interface ITargetDriverDialect
+public interface ITargetConnectionDialect
 {
     /// <summary>
     /// Gets DbConnection type associated with this dialect.
@@ -44,30 +44,8 @@ public interface ITargetDriverDialect
     string PrepareConnectionString(HostSpec? hostSpec, Dictionary<string, string> props);
 
     /// <summary>
-    /// Prepares a data source with the given connection, host specification, and properties.
-    /// </summary>
-    /// <param name="connection">The database connection.</param>
-    /// <param name="hostSpec">The host specification.</param>
-    /// <param name="props">Connection properties.</param>
-    void PrepareDataSource(DbConnection connection, HostSpec hostSpec, Dictionary<string, string> props);
-
-    /// <summary>
-    /// Pings the database to check if the connection is still valid.
-    /// </summary>
-    /// <param name="connection">The database connection.</param>
-    /// <returns>True if the connection is valid, false otherwise.</returns>
-    bool Ping(DbConnection connection);
-
-    /// <summary>
     /// Gets the set of method names that are allowed to be called on the connection.
     /// </summary>
     /// <returns>Set of allowed method names.</returns>
     ISet<string> GetAllowedOnConnectionMethodNames();
-
-    /// <summary>
-    /// Gets the SQL state from an exception.
-    /// </summary>
-    /// <param name="exception">The exception.</param>
-    /// <returns>The SQL state code, or null if not available.</returns>
-    string? GetSqlState(Exception exception);
 }

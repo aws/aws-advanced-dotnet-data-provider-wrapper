@@ -18,9 +18,9 @@ using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
 using Npgsql;
 
-namespace AwsWrapperDataProvider.Driver.TargetDriverDialects;
+namespace AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 
-public class PgTargetDriverDialect : GenericTargetDriverDialect
+public class PgTargetConnectionDialect : GenericTargetConnectionDialect
 {
     public override Type DriverConnectionType { get; } = typeof(NpgsqlConnection);
 
@@ -29,25 +29,5 @@ public class PgTargetDriverDialect : GenericTargetDriverDialect
         Dictionary<string, string> props)
     {
         return this.PrepareConnectionString(hostSpec, props, PropertyDefinition.Host);
-    }
-
-    public override void PrepareDataSource(DbConnection connection, HostSpec hostSpec, Dictionary<string, string> props)
-    {
-        throw new NotImplementedException();
-    }
-
-    public override bool Ping(DbConnection connection)
-    {
-        throw new NotImplementedException();
-    }
-
-    public override ISet<string> GetAllowedOnConnectionMethodNames()
-    {
-        throw new NotImplementedException();
-    }
-
-    public override string? GetSqlState(Exception exception)
-    {
-        throw new NotImplementedException();
     }
 }

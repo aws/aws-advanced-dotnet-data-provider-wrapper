@@ -1,11 +1,11 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 // http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,9 +17,9 @@ using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
 using MySqlConnector;
 
-namespace AwsWrapperDataProvider.Driver.TargetDriverDialects;
+namespace AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 
-public class MySqlTargetDriverDialect : GenericTargetDriverDialect
+public class MySqlTargetConnectionDialect : GenericTargetConnectionDialect
 {
     public override Type DriverConnectionType { get; } = typeof(MySqlConnection);
 
@@ -28,25 +28,5 @@ public class MySqlTargetDriverDialect : GenericTargetDriverDialect
         Dictionary<string, string> props)
     {
         return this.PrepareConnectionString(hostSpec, props, PropertyDefinition.Server);
-    }
-
-    public override void PrepareDataSource(DbConnection connection, HostSpec hostSpec, Dictionary<string, string> props)
-    {
-        throw new NotImplementedException();
-    }
-
-    public override bool Ping(DbConnection connection)
-    {
-        throw new NotImplementedException();
-    }
-
-    public override ISet<string> GetAllowedOnConnectionMethodNames()
-    {
-        throw new NotImplementedException();
-    }
-
-    public override string? GetSqlState(Exception exception)
-    {
-        throw new NotImplementedException();
     }
 }

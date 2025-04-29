@@ -19,7 +19,7 @@ using AwsWrapperDataProvider.Driver.Exceptions;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Plugins;
-using AwsWrapperDataProvider.Driver.TargetDriverDialects;
+using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 
 namespace AwsWrapperDataProvider.Driver;
 
@@ -29,7 +29,7 @@ public class PluginService : IPluginService, IHostListProviderService
     private readonly Dictionary<string, string> _props;
     private readonly string _originalConnectionString;
     private readonly IDialect _dialect;
-    private readonly ITargetDriverDialect _targetDriverDialect;
+    private readonly ITargetConnectionDialect _targetConnectionDialect;
     private volatile IHostListProvider _hostListProvider;
     private IList<HostSpec> _allHosts = [];
     private HostSpec? _currentHostSpec;
@@ -40,7 +40,7 @@ public class PluginService : IPluginService, IHostListProviderService
     // private IExceptionHandler _exceptionHandler;
 
     public IDialect Dialect { get => this._dialect; }
-    public ITargetDriverDialect TargetDriverDialect { get => this._targetDriverDialect; }
+    public ITargetConnectionDialect TargetConnectionDialect { get => this._targetConnectionDialect; }
     public HostSpec? InitialConnectionHostSpec { get => this._initialConnectionHostSpec; set => this._initialConnectionHostSpec = value; }
     public HostSpec? CurrentHostSpec { get => this._currentHostSpec ?? this.GetCurrentHostSpec(); }
     public IList<HostSpec> AllHosts { get => this._allHosts; }
@@ -54,7 +54,7 @@ public class PluginService : IPluginService, IHostListProviderService
         ConnectionPluginManager pluginManager,
         Dictionary<string, string> props,
         string connectionString,
-        ITargetDriverDialect targetDriverDialect)
+        ITargetConnectionDialect targetConnectionDialect)
     {
         if (currentConnection != null)
         {
@@ -64,7 +64,7 @@ public class PluginService : IPluginService, IHostListProviderService
         this._pluginManager = pluginManager;
         this._props = props;
         this._originalConnectionString = connectionString;
-        this._targetDriverDialect = targetDriverDialect;
+        this._targetConnectionDialect = targetConnectionDialect;
         this._dialect = DialectProvider.GetDialect(connectionType, props);
         this._hostListProvider =
             this._dialect.HostListProviderSupplier(props, this, this)

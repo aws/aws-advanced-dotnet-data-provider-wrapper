@@ -1,11 +1,11 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 // http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,9 +16,9 @@ using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
 
-namespace AwsWrapperDataProvider.Driver.TargetDriverDialects;
+namespace AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 
-public abstract class GenericTargetDriverDialect : ITargetDriverDialect
+public abstract class GenericTargetConnectionDialect : ITargetConnectionDialect
 {
     public abstract Type DriverConnectionType { get; }
 
@@ -28,10 +28,11 @@ public abstract class GenericTargetDriverDialect : ITargetDriverDialect
     }
 
     public abstract string PrepareConnectionString(HostSpec? hostSpec, Dictionary<string, string> props);
-    public abstract void PrepareDataSource(DbConnection connection, HostSpec hostSpec, Dictionary<string, string> props);
-    public abstract bool Ping(DbConnection connection);
-    public abstract ISet<string> GetAllowedOnConnectionMethodNames();
-    public abstract string? GetSqlState(Exception exception);
+
+    public ISet<string> GetAllowedOnConnectionMethodNames()
+    {
+        throw new NotImplementedException("Will implement in Milestone 5, as feature is only relevant to Failover.");
+    }
 
     protected string PrepareConnectionString(HostSpec? hostSpec, Dictionary<string, string> props, AwsWrapperProperty hostProperty)
     {
