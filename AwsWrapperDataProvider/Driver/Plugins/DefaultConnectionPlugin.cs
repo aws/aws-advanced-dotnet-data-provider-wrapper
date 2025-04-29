@@ -23,9 +23,9 @@ public class DefaultConnectionPlugin(
     IConnectionProvider defaultConnProvider,
     IConnectionProvider? effectiveConnProvider) : IConnectionPlugin
 {
-    private readonly IConnectionProvider _defaultConnProvider = defaultConnProvider;
-    private readonly IConnectionProvider? _effectiveConnPrivider = effectiveConnProvider;
-    private readonly IPluginService _pluginService = pluginService;
+    private readonly IConnectionProvider defaultConnProvider = defaultConnProvider;
+    private readonly IConnectionProvider? effectiveConnPrivider = effectiveConnProvider;
+    private readonly IPluginService pluginService = pluginService;
 
     public ISet<string> GetSubscribeMethods()
     {
@@ -59,9 +59,9 @@ public class DefaultConnectionPlugin(
         JdbcCallable<DbConnection> jdbcCallable)
     {
         // TODO: stub implementation
-        return this._defaultConnProvider.Connect(
-            this._pluginService.Dialect,
-            this._pluginService.TargetConnectionDialect,
+        return this.defaultConnProvider.Connect(
+            this.pluginService.Dialect,
+            this.pluginService.TargetConnectionDialect,
             hostSpec,
             props);
     }

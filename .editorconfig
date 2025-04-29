@@ -360,7 +360,7 @@ dotnet_naming_style.tpascalcase.required_suffix =
 dotnet_naming_style.tpascalcase.word_separator = 
 dotnet_naming_style.tpascalcase.capitalization = pascal_case
 
-dotnet_naming_style._camelcase.required_prefix = _
+dotnet_naming_style._camelcase.required_prefix = 
 dotnet_naming_style._camelcase.required_suffix = 
 dotnet_naming_style._camelcase.word_separator = 
 dotnet_naming_style._camelcase.capitalization = camel_case
@@ -391,9 +391,11 @@ dotnet_diagnostic.SA1502.severity = suggestion
 dotnet_diagnostic.SA1512.severity = suggestion
 dotnet_diagnostic.SA1516.severity = suggestion
 dotnet_diagnostic.SA1600.severity = suggestion
-dotnet_diagnostic.SA1633.severity = suggestion
+dotnet_diagnostic.SA1633.severity = none
+
 dotnet_diagnostic.IDE0073.severity = warning
+
+dotnet_diagnostic.CS1591.severity = suggestion
 
 [*.cs]
 file_header_template = Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.\n\nLicensed under the Apache License, Version 2.0 (the "License").\nYou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\nhttp://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an "AS IS" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.
-csharp_prefer_system_threading_lock = true:suggestion

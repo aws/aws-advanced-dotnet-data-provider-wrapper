@@ -13,24 +13,74 @@
 // limitations under the License.
 
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
+using AwsWrapperDataProvider.Driver.Plugins.Efm;
+using AwsWrapperDataProvider.Driver.Plugins.Failover;
+using AwsWrapperDataProvider.Driver.Utils;
 
 namespace AwsWrapperDataProvider.Driver.Plugins;
 
-public static class ConnectionPluginChainBuilder
+public class ConnectionPluginChainBuilder
 {
-    public static IList<IConnectionPlugin> GetPlugins(
+    private const string DefaultPluginCode = "efm,failover";
+
+    private static readonly Dictionary<string, Type> PluginFactoryTypesByCode = new()
+    {
+            { "failover", typeof(FailoverPluginFactory) },
+            { "efm", typeof(HostMonitoringPluginFactory) },
+    };
+
+    private static readonly Dictionary<Type, int> PluginWeightByPluginFactoryType = new()
+    {
+            { typeof(FailoverPluginFactory), 700 },
+            { typeof(HostMonitoringPluginFactory), 800 },
+    };
+
+    public IList<IConnectionPlugin> GetPlugins(
         IPluginService pluginService,
         IConnectionProvider defaultConnectionProvider,
         IConnectionProvider? effectiveConnectionProvider,
         Dictionary<string, string> props)
     {
-        // TODO: Implement function
-        return new List<IConnectionPlugin>()
+        string pluginsCodes = PropertyDefinition.Plugins.GetString(props) ?? DefaultPluginCode;
+        string[] pluginsCodesArray = [.. pluginsCodes.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)];
+
+        List<IConnectionPluginFactory> pluginFactories = new(pluginsCodesArray.Length);
+
+        foreach (string pluginCode in pluginsCodesArray)
         {
-            new DefaultConnectionPlugin(
-                pluginService,
-                defaultConnectionProvider,
-                effectiveConnectionProvider),
-        };
+            if (!PluginFactoryTypesByCode.TryGetValue(pluginCode, out Type? pluginFactoryType))
+            {
+                throw new Exception($"ConnectionPluginManager.unknownPluginCode: {pluginCode}");
+            }
+
+            IConnectionPluginFactory? factoryInstance = (IConnectionPluginFactory?)Activator.CreateInstance(pluginFactoryType);
+            if (factoryInstance == null)
+            {
+                throw new Exception($"ConnectionPluginManager.unableToLoadPlugin: {pluginCode}");
+            }
+
+            pluginFactories.Add(factoryInstance);
+        }
+
+        if (pluginFactories.Count > 1 && PropertyDefinition.AutoSortPluginOrder.GetBoolean(props))
+        {
+            pluginFactories = [.. pluginFactories.OrderBy(pluginFactory => PluginWeightByPluginFactoryType[pluginFactory.GetType()])];
+        }
+
+        List<IConnectionPlugin> plugins = new(pluginFactories.Count + 1);
+        foreach (IConnectionPluginFactory pluginFactory in pluginFactories)
+        {
+            IConnectionPlugin pluginInstance = pluginFactory.GetInstance(pluginService, props);
+            plugins.Add(pluginInstance);
+        }
+
+        IConnectionPlugin defaultConnectionPlugin = new DefaultConnectionPlugin(
+            pluginService,
+            defaultConnectionProvider,
+            effectiveConnectionProvider);
+
+        plugins.Add(defaultConnectionPlugin);
+
+        return plugins;
     }
 }
