@@ -53,13 +53,13 @@ public class ConnectionPluginChainBuilder
                 throw new Exception($"ConnectionPluginManager.unknownPluginCode: {pluginCode}");
             }
 
-            var factoryInstance = Activator.CreateInstance(pluginFactoryType);
+            IConnectionPluginFactory? factoryInstance = (IConnectionPluginFactory?)Activator.CreateInstance(pluginFactoryType);
             if (factoryInstance == null)
             {
                 throw new Exception($"ConnectionPluginManager.unableToLoadPlugin: {pluginCode}");
             }
 
-            pluginFactories.Add((IConnectionPluginFactory)factoryInstance);
+            pluginFactories.Add(factoryInstance);
         }
 
         if (pluginFactories.Count > 1 && PropertyDefinition.AutoSortPluginOrder.GetBoolean(props))
@@ -68,7 +68,7 @@ public class ConnectionPluginChainBuilder
         }
 
         List<IConnectionPlugin> plugins = new(pluginFactories.Count + 1);
-        foreach (var pluginFactory in pluginFactories)
+        foreach (IConnectionPluginFactory pluginFactory in pluginFactories)
         {
             IConnectionPlugin pluginInstance = pluginFactory.GetInstance(pluginService, props);
             plugins.Add(pluginInstance);
