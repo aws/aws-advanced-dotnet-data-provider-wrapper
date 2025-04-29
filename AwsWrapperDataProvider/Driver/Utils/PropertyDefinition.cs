@@ -16,12 +16,25 @@ namespace AwsWrapperDataProvider.Driver.Utils;
 
 public class PropertyDefinition
 {
-    public static AwsWrapperProperty Database =
-        new AwsWrapperProperty("database", null, "Driver database name");
-    public static AwsWrapperProperty TargetConnectionType =
-        new AwsWrapperProperty("targetConnectionType", null, "Driver target connection type");
-    public static AwsWrapperProperty TargetCommandType =
-        new AwsWrapperProperty("targetCommandType", null, "Driver target command type");
-    public static AwsWrapperProperty TargetParameterType =
-        new AwsWrapperProperty("targetParameterType", null, "Driver target parameter type");
+    public static readonly AwsWrapperProperty Database =
+        new("database", null, "Driver database name");
+
+    public static readonly AwsWrapperProperty TargetConnectionType =
+        new("targetConnectionType", null, "Driver target connection type");
+
+    public static readonly AwsWrapperProperty TargetCommandType =
+        new("targetCommandType", null, "Driver target command type");
+
+    public static readonly AwsWrapperProperty TargetParameterType =
+        new("targetParameterType", null, "Driver target parameter type");
+
+    public static readonly AwsWrapperProperty Plugins = new(
+        "Plugins",
+        "efm,failover",
+        "Comma separated list of connection plugin codes");
+
+    public static readonly AwsWrapperProperty AutoSortPluginOrder = new(
+        "AutoSortPluginOrder",
+        "true",
+        "This flag is enabled by default, meaning that the plugins order will be automatically adjusted. Disable it at your own risk or if you really need plugins to be executed in a particular order.");
 }
