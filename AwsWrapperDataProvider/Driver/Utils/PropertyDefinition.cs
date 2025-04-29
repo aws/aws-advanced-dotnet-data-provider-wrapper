@@ -14,7 +14,7 @@
 
 namespace AwsWrapperDataProvider.Driver.Utils;
 
-public class PropertyDefinition
+public static class PropertyDefinition
 {
     public static readonly AwsWrapperProperty Server =
         new("Server", null, "MySql connection url.");
@@ -26,16 +26,16 @@ public class PropertyDefinition
         new("Port", null, "Connection port.");
 
     public static readonly AwsWrapperProperty Database =
-        new("database", null, "Driver database name");
+        new("Database", null, "Driver database name.");
 
     public static readonly AwsWrapperProperty TargetConnectionType =
-        new("targetConnectionType", null, "Driver target connection type");
+        new("TargetConnectionType", null, "Driver target connection type");
 
     public static readonly AwsWrapperProperty TargetCommandType =
-        new("targetCommandType", null, "Driver target command type");
+        new("TargetCommandType", null, "Driver target command type");
 
     public static readonly AwsWrapperProperty TargetParameterType =
-        new("targetParameterType", null, "Driver target parameter type");
+        new("TargetParameterType", null, "Driver target parameter type");
 
     public static readonly AwsWrapperProperty CustomTargetDriverDialect =
         new("TargetDriverDialect", null, "Custom target driver dialect type");
