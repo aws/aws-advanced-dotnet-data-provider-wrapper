@@ -49,6 +49,7 @@ public class AwsWrapperProperty
     {
         string? value = this.GetString(properties);
         return int.TryParse(value, out int res) ? res : null;
+    }
 
     public bool GetBoolean(Dictionary<string, string> properties)
     {
