@@ -14,6 +14,7 @@
 
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
+using AwsWrapperDataProvider.Driver.Utils;
 
 namespace AwsWrapperDataProvider.Driver.TargetDriverDialects;
 
@@ -22,6 +23,11 @@ namespace AwsWrapperDataProvider.Driver.TargetDriverDialects;
 /// </summary>
 public interface ITargetDriverDialect
 {
+    /// <summary>
+    /// Gets DbConnection type associated with this dialect.
+    /// </summary>
+    Type DriverConnectionType { get; }
+
     /// <summary>
     /// Determines if the given connection type matches this dialect.
     /// </summary>

@@ -15,24 +15,38 @@
 using System.Data;
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
+using AwsWrapperDataProvider.Driver.Utils;
+using Npgsql;
 
 namespace AwsWrapperDataProvider.Driver.TargetDriverDialects;
 
 public class PgTargetDriverDialect : ITargetDriverDialect
 {
-    private static readonly HashSet<string> WrapperParameterNames = new(["targetConnectionType", "targetCommandType", "targetParameterType"]);
+    public Type DriverConnectionType { get; } = typeof(NpgsqlConnection);
 
     public bool IsDialect(Type connectionType)
     {
-        throw new NotImplementedException();
+        return connectionType == this.DriverConnectionType;
     }
 
     public string PrepareConnectionString(
         HostSpec? hostSpec,
         Dictionary<string, string> props)
     {
-        // TODO: proper
-        Dictionary<string, string> targetConnectionParameters = props.Where(x => !WrapperParameterNames.Contains(x.Key)).ToDictionary();
+        Dictionary<string, string> targetConnectionParameters = props.Where(x =>
+            !PropertyDefinition.InternalWrapperProperties
+                .Select(prop => prop.Name)
+                .Contains(x.Key)).ToDictionary();
+
+        if (hostSpec != null)
+        {
+            PropertyDefinition.Host.Set(targetConnectionParameters, hostSpec.Host);
+            if (hostSpec.IsPortSpecified)
+            {
+                PropertyDefinition.Port.Set(targetConnectionParameters, hostSpec.Port.ToString());
+            }
+        }
+
         return string.Join("; ", targetConnectionParameters.Select(x => $"{x.Key}={x.Value}"));
     }
 

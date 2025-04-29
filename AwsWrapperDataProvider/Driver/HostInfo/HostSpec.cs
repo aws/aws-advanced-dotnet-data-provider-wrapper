@@ -21,23 +21,20 @@ namespace AwsWrapperDataProvider.Driver.HostInfo;
 public class HostSpec(
     string host,
     int port,
-    string hostId,
+    string? hostId,
     HostRole hostRole,
     HostAvailability availability)
 {
     public const int NoPort = -1;
 
     private readonly HostAvailability _availability = availability;
+
+    public string? HostId { get; } = hostId;
     public string Host { get; } = host;
     public int Port { get; } = port;
     public bool IsPortSpecified => this.Port != NoPort;
-    public string HostId { get; set; } = hostId;
     public HostRole Role { get; } = hostRole;
     public HostAvailability RawAvailability => this._availability;
-
-    public string GetUrl() => $"{this.GetHostAndPort()}/";
-
-    public string GetHostAndPort() => this.IsPortSpecified ? $"{this.Host}:{this.Port}" : this.Host;
 
     public override bool Equals(object? obj)
     {

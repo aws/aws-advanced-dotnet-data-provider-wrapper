@@ -14,19 +14,28 @@
 
 namespace AwsWrapperDataProvider.Driver.Utils;
 
-public class PropertyDefinition
+public static class PropertyDefinition
 {
+    public static readonly AwsWrapperProperty Server =
+        new("Server", null, "MySql connection url.");
+
+    public static readonly AwsWrapperProperty Host =
+        new("Host", null, "Postgres connection url.");
+
+    public static readonly AwsWrapperProperty Port =
+        new("Port", null, "Connection port.");
+
     public static readonly AwsWrapperProperty Database =
-        new("database", null, "Driver database name");
+        new("Database", null, "Driver database name.");
 
     public static readonly AwsWrapperProperty TargetConnectionType =
-        new("targetConnectionType", null, "Driver target connection type");
+        new("TargetConnectionType", null, "Driver target connection type");
 
     public static readonly AwsWrapperProperty TargetCommandType =
-        new("targetCommandType", null, "Driver target command type");
+        new("TargetCommandType", null, "Driver target command type");
 
     public static readonly AwsWrapperProperty TargetParameterType =
-        new("targetParameterType", null, "Driver target parameter type");
+        new("TargetParameterType", null, "Driver target parameter type");
 
     public static readonly AwsWrapperProperty Plugins = new(
         "Plugins",
@@ -37,4 +46,15 @@ public class PropertyDefinition
         "AutoSortPluginOrder",
         "true",
         "This flag is enabled by default, meaning that the plugins order will be automatically adjusted. Disable it at your own risk or if you really need plugins to be executed in a particular order.");
+
+    /// <summary>
+    /// A set of AwsWrapperProperties that is used by the wrapper and should not be passed to the target driver.
+    /// </summary>
+    public static readonly HashSet<AwsWrapperProperty> InternalWrapperProperties = [
+        TargetConnectionType,
+        TargetCommandType,
+        TargetParameterType,
+        Plugins,
+        AutoSortPluginOrder,
+    ];
 }

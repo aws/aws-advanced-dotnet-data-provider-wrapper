@@ -24,8 +24,6 @@ public class AwsWrapperProperty
 
     public bool Required = false;
 
-    public string? Value = null;
-
     public string[]? Choices = null;
 
     public AwsWrapperProperty(
@@ -45,6 +43,12 @@ public class AwsWrapperProperty
     public string? GetString(Dictionary<string, string> properties)
     {
         return properties.TryGetValue(this.Name, out string? value) ? value : this.DefaultValue;
+    }
+
+    public int? GetInt(Dictionary<string, string> properties)
+    {
+        string? value = this.GetString(properties);
+        return int.TryParse(value, out int res) ? res : null;
     }
 
     public bool GetBoolean(Dictionary<string, string> properties)

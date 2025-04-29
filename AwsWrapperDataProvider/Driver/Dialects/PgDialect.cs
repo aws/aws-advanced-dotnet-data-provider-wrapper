@@ -37,9 +37,8 @@ public class PgDialect : IDialect
 
     public HostListProviderSupplier HostListProviderSupplier { get; } = (
         Dictionary<string, string> props,
-        string? initialUrl,
         IHostListProviderService hostListProviderService,
-        IPluginService pluginService) => new ConnectionStringHostListProvider(props, initialUrl, hostListProviderService);
+        IPluginService pluginService) => new ConnectionStringHostListProvider(props, hostListProviderService);
 
     public bool IsDialect(DbConnection conn)
     {

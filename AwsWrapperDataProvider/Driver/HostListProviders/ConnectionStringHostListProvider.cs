@@ -14,21 +14,33 @@
 
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
+using AwsWrapperDataProvider.Driver.Utils;
 
 namespace AwsWrapperDataProvider.Driver.HostListProviders;
 
 public class ConnectionStringHostListProvider : IStaticHostListProvider
 {
+    private readonly List<HostSpec> _hostList = new List<HostSpec>();
+    private readonly Dictionary<string, string> _properties;
+    private readonly IHostListProviderService _hostListProviderService;
+
+    /// <summary>
+    /// Check if _hostList has already been initialized. _hostList should only be initialized once.
+    /// </summary>
+    private bool _isInitialized = false;
+
     public ConnectionStringHostListProvider(
         Dictionary<string, string> props,
-        string? initialUrl,
         IHostListProviderService hostListProviderService)
     {
+        this._properties = props;
+        this._hostListProviderService = hostListProviderService;
     }
 
     public IList<HostSpec> Refresh()
     {
-        throw new NotImplementedException();
+        this.Init();
+        return this._hostList.AsReadOnly();
     }
 
     public IList<HostSpec> Refresh(DbConnection connection)
@@ -59,5 +71,25 @@ public class ConnectionStringHostListProvider : IStaticHostListProvider
     public string GetClusterId()
     {
         throw new NotImplementedException();
+    }
+
+    private void Init()
+    {
+        if (this._isInitialized)
+        {
+            return;
+        }
+
+        this._hostList.AddRange(ConnectionPropertiesUtils.GetHostsFromProperties(
+                this._properties,
+                this._hostListProviderService.HostSpecBuilder));
+        if (this._hostList.Count == 0)
+        {
+            // TODO: move error string to resx file.
+            throw new ArgumentException("Connection string is invalid.", nameof(this._properties));
+        }
+
+        this._hostListProviderService.InitialConnectionHostSpec = this._hostList.First();
+        this._isInitialized = true;
     }
 }

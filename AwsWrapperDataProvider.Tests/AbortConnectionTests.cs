@@ -26,7 +26,7 @@ namespace AwsWrapperDataProvider.Tests
         [Trait("Category", "Integration")]
         public async Task MysqlWrapperCommandCancelTest()
         {
-            const string connectionString = "Server=global-ohio-mysql-instance-1.c12pgqavxipt.us-east-2.rds.amazonaws.com;User ID=admin;Password=my_password_2020;Initial Catalog=test;";
+            const string connectionString = "Server=<insert_rds_instance_here>;User ID=admin;Password=my_password_2020;Initial Catalog=test;";
 
             using (AwsWrapperConnection<MySqlConnection> connection = new(connectionString))
             {
@@ -86,7 +86,7 @@ namespace AwsWrapperDataProvider.Tests
         [Trait("Category", "Integration")]
         public async Task PgWrapperCommandCancelTest()
         {
-            const string connectionString = "Host=global-ohio-pg.cluster-c12pgqavxipt.us-east-2.rds.amazonaws.com;Username=pgadmin;Password=my_password_2020;Database=postgres;";
+            const string connectionString = "Host=<insert_rds_instance_here>;Username=pgadmin;Password=my_password_2020;Database=postgres;";
 
             using (AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString))
             {
