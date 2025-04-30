@@ -30,7 +30,7 @@ public static class TargetConnectionDialectProvider
     {
         // Check for custom dialect in properties
         if (props != null &&
-            PropertyDefinition.CustomTargetDriverDialect.GetString(props) is { } customDialectTypeName &&
+            PropertyDefinition.CustomTargetConnectionDialect.GetString(props) is { } customDialectTypeName &&
             !string.IsNullOrEmpty(customDialectTypeName))
         {
             // Try to find and instantiate the custom dialect type

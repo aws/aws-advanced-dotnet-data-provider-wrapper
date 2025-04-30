@@ -29,16 +29,16 @@ public static class PropertyDefinition
         new("Database", null, "Driver database name.");
 
     public static readonly AwsWrapperProperty TargetConnectionType =
-        new("TargetConnectionType", null, "Driver target connection type");
+        new("TargetConnectionType", null, "Driver target connection type.");
 
     public static readonly AwsWrapperProperty TargetCommandType =
-        new("TargetCommandType", null, "Driver target command type");
+        new("TargetCommandType", null, "Driver target command type.");
 
     public static readonly AwsWrapperProperty TargetParameterType =
-        new("TargetParameterType", null, "Driver target parameter type");
+        new("TargetParameterType", null, "Driver target parameter type.");
 
-    public static readonly AwsWrapperProperty CustomTargetDriverDialect =
-        new("TargetDriverDialect", null, "Custom target driver dialect type");
+    public static readonly AwsWrapperProperty CustomTargetConnectionDialect =
+        new("CustomTargetConnectionDialect", null, "Custom target connection dialect type. Should be AssemblyQualifiedName of class implementing ITargetConnectionDialect.");
 
     public static readonly AwsWrapperProperty Plugins = new(
         "Plugins",
@@ -57,7 +57,7 @@ public static class PropertyDefinition
         TargetConnectionType,
         TargetCommandType,
         TargetParameterType,
-        CustomTargetDriverDialect,
+        CustomTargetConnectionDialect,
         Plugins,
         AutoSortPluginOrder,
     ];

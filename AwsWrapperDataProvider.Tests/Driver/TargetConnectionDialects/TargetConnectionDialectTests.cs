@@ -64,7 +64,7 @@ public class TargetConnectionDialectTests
     {
         { "Database", "testdb" },
         { PropertyDefinition.TargetConnectionType.Name, "SomeType" },
-        { PropertyDefinition.CustomTargetDriverDialect.Name, "SomeDialect" },
+        { PropertyDefinition.CustomTargetConnectionDialect.Name, "SomeDialect" },
     };
 
     [Fact]
@@ -115,7 +115,7 @@ public class TargetConnectionDialectTests
         Assert.Contains("Port=5432", connectionString);
         Assert.Contains("Database=testdb", connectionString);
         Assert.DoesNotContain(PropertyDefinition.TargetConnectionType.Name, connectionString);
-        Assert.DoesNotContain(PropertyDefinition.CustomTargetDriverDialect.Name, connectionString);
+        Assert.DoesNotContain(PropertyDefinition.CustomTargetConnectionDialect.Name, connectionString);
     }
 
     [Fact]
@@ -166,6 +166,6 @@ public class TargetConnectionDialectTests
         Assert.Contains("Port=5432", connectionString);
         Assert.Contains("Database=testdb", connectionString);
         Assert.DoesNotContain(PropertyDefinition.TargetConnectionType.Name, connectionString);
-        Assert.DoesNotContain(PropertyDefinition.CustomTargetDriverDialect.Name, connectionString);
+        Assert.DoesNotContain(PropertyDefinition.CustomTargetConnectionDialect.Name, connectionString);
     }
 }

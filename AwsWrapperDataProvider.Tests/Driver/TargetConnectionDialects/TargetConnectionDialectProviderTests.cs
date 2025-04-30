@@ -49,7 +49,7 @@ public class TargetConnectionDialectProviderTests
     {
         var props = new Dictionary<string, string>
         {
-            { PropertyDefinition.CustomTargetDriverDialect.Name, typeof(TestCustomDialect).AssemblyQualifiedName! },
+            { PropertyDefinition.CustomTargetConnectionDialect.Name, typeof(TestCustomDialect).AssemblyQualifiedName! },
         };
 
         var dialect = TargetConnectionDialectProvider.GetDialect(typeof(NpgsqlConnection), props);
@@ -64,7 +64,7 @@ public class TargetConnectionDialectProviderTests
     {
         var props = new Dictionary<string, string>
         {
-            { PropertyDefinition.CustomTargetDriverDialect.Name, typeof(TestCustomDialect).AssemblyQualifiedName! },
+            { PropertyDefinition.CustomTargetConnectionDialect.Name, typeof(TestCustomDialect).AssemblyQualifiedName! },
         };
 
         var exception = Assert.Throws<InvalidOperationException>(() =>
@@ -79,7 +79,7 @@ public class TargetConnectionDialectProviderTests
     {
         var props = new Dictionary<string, string>
         {
-            { PropertyDefinition.CustomTargetDriverDialect.Name, "InvalidTypeName" },
+            { PropertyDefinition.CustomTargetConnectionDialect.Name, "InvalidTypeName" },
         };
 
         var exception = Assert.Throws<InvalidOperationException>(() =>
