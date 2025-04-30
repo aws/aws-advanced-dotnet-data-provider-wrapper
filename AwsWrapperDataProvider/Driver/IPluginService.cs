@@ -18,7 +18,7 @@ using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Plugins;
-using AwsWrapperDataProvider.Driver.TargetDriverDialects;
+using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 
 namespace AwsWrapperDataProvider.Driver;
 
@@ -29,7 +29,7 @@ public interface IPluginService
 {
     IDialect Dialect { get; }
 
-    ITargetDriverDialect TargetDriverDialect { get; }
+    ITargetConnectionDialect TargetConnectionDialect { get; }
 
     DbConnection? CurrentConnection { get; }
 

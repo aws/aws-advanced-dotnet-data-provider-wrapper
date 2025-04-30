@@ -61,7 +61,7 @@ public class DefaultConnectionPlugin(
         // TODO: stub implementation
         return this.defaultConnProvider.Connect(
             this.pluginService.Dialect,
-            this.pluginService.TargetDriverDialect,
+            this.pluginService.TargetConnectionDialect,
             hostSpec,
             props);
     }

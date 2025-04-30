@@ -15,12 +15,12 @@
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
-using AwsWrapperDataProvider.Driver.TargetDriverDialects;
+using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 
 namespace AwsWrapperDataProvider.Driver.ConnectionProviders;
 
 // TODO: Remove need for Type in constructor, said information should be accessible from HostSpec.
-public class DriverConnectionProvider() : IConnectionProvider
+public class DbConnectionProvider() : IConnectionProvider
 {
     public bool AcceptsUrl(string protocol, HostSpec hostSpec, Dictionary<string, string> props)
     {
@@ -34,12 +34,12 @@ public class DriverConnectionProvider() : IConnectionProvider
 
     public DbConnection Connect(
         IDialect dialect,
-        ITargetDriverDialect targetDriverDialect,
+        ITargetConnectionDialect targetConnectionDialect,
         HostSpec? hostSpec,
         Dictionary<string, string> props)
     {
-        Type targetConnectionType = targetDriverDialect.DriverConnectionType;
-        string connectionString = targetDriverDialect.PrepareConnectionString(hostSpec, props);
+        Type targetConnectionType = targetConnectionDialect.DriverConnectionType;
+        string connectionString = targetConnectionDialect.PrepareConnectionString(hostSpec, props);
 
         DbConnection? targetConnection = string.IsNullOrWhiteSpace(connectionString)
             ? (DbConnection?)Activator.CreateInstance(targetConnectionType)

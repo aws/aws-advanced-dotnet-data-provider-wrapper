@@ -12,26 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data;
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
-using Npgsql;
 
-namespace AwsWrapperDataProvider.Driver.TargetDriverDialects;
+namespace AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 
-public class PgTargetDriverDialect : ITargetDriverDialect
+public abstract class GenericTargetConnectionDialect : ITargetConnectionDialect
 {
-    public Type DriverConnectionType { get; } = typeof(NpgsqlConnection);
+    public abstract Type DriverConnectionType { get; }
 
     public bool IsDialect(Type connectionType)
     {
         return connectionType == this.DriverConnectionType;
     }
 
-    public string PrepareConnectionString(
-        HostSpec? hostSpec,
-        Dictionary<string, string> props)
+    public abstract string PrepareConnectionString(HostSpec? hostSpec, Dictionary<string, string> props);
+
+    public ISet<string> GetAllowedOnConnectionMethodNames()
+    {
+        throw new NotImplementedException("Will implement in Milestone 5, as feature is only relevant to Failover.");
+    }
+
+    protected string PrepareConnectionString(HostSpec? hostSpec, Dictionary<string, string> props, AwsWrapperProperty hostProperty)
     {
         Dictionary<string, string> targetConnectionParameters = props.Where(x =>
             !PropertyDefinition.InternalWrapperProperties
@@ -40,7 +43,7 @@ public class PgTargetDriverDialect : ITargetDriverDialect
 
         if (hostSpec != null)
         {
-            PropertyDefinition.Host.Set(targetConnectionParameters, hostSpec.Host);
+            hostProperty.Set(targetConnectionParameters, hostSpec.Host);
             if (hostSpec.IsPortSpecified)
             {
                 PropertyDefinition.Port.Set(targetConnectionParameters, hostSpec.Port.ToString());
@@ -48,25 +51,5 @@ public class PgTargetDriverDialect : ITargetDriverDialect
         }
 
         return string.Join("; ", targetConnectionParameters.Select(x => $"{x.Key}={x.Value}"));
-    }
-
-    public void PrepareDataSource(DbConnection connection, HostSpec hostSpec, Dictionary<string, string> props)
-    {
-        throw new NotImplementedException();
-    }
-
-    public bool Ping(DbConnection connection)
-    {
-        throw new NotImplementedException();
-    }
-
-    public ISet<string> GetAllowedOnConnectionMethodNames()
-    {
-        throw new NotImplementedException();
-    }
-
-    public string? GetSqlState(Exception exception)
-    {
-        throw new NotImplementedException();
     }
 }

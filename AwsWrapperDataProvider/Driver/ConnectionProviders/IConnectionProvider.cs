@@ -15,7 +15,7 @@
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
-using AwsWrapperDataProvider.Driver.TargetDriverDialects;
+using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 
 namespace AwsWrapperDataProvider.Driver.ConnectionProviders;
 
@@ -36,13 +36,13 @@ public interface IConnectionProvider
     /// Called once per connection that needs to be created.
     /// </summary>
     /// <param name="dialect">The database dialect.</param>
-    /// <param name="targetDriverDialect">The target driver dialect.</param>
+    /// <param name="targetConnectionDialect">The target driver dialect.</param>
     /// <param name="hostSpec">The HostSpec containing the host-port information for the host to connect to.</param>
     /// <param name="props">The properties to use for the connection.</param>
     /// <returns>Connection resulting from the given connection information.</returns>
     DbConnection Connect(
         IDialect dialect,
-        ITargetDriverDialect targetDriverDialect,
+        ITargetConnectionDialect targetConnectionDialect,
         HostSpec? hostSpec,
         Dictionary<string, string> props);
 

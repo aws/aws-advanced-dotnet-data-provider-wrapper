@@ -12,13 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace AwsWrapperDataProvider.Driver.TargetDriverDialects;
+using System.Data.Common;
+using AwsWrapperDataProvider.Driver.HostInfo;
+using AwsWrapperDataProvider.Driver.Utils;
+using MySqlConnector;
 
-public static class TargetDriverDialectProvider
+namespace AwsWrapperDataProvider.Driver.TargetConnectionDialects;
+
+public class MySqlTargetConnectionDialect : GenericTargetConnectionDialect
 {
-    public static ITargetDriverDialect GetDialect(Type connectionType, Dictionary<string, string>? props)
+    public override Type DriverConnectionType { get; } = typeof(MySqlConnection);
+
+    public override string PrepareConnectionString(
+        HostSpec? hostSpec,
+        Dictionary<string, string> props)
     {
-        // TODO: Logic to pick driver dialect (also need to implement other dialects)
-        return new PgTargetDriverDialect();
+        return this.PrepareConnectionString(hostSpec, props, PropertyDefinition.Server);
     }
 }

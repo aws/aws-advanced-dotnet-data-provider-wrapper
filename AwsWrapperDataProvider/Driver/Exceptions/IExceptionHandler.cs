@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using AwsWrapperDataProvider.Driver.TargetDriverDialects;
+using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 
 namespace AwsWrapperDataProvider.Driver.Exceptions;
 
@@ -34,7 +34,7 @@ public interface IExceptionHandler
     /// <param name="exception">The exception to check.</param>
     /// <param name="targetDriverDialect">The target driver dialect.</param>
     /// <returns>True if it's a network exception, false otherwise.</returns>
-    bool IsNetworkException(Exception exception, ITargetDriverDialect? targetDriverDialect);
+    bool IsNetworkException(Exception exception, ITargetConnectionDialect? targetDriverDialect);
 
     /// <summary>
     /// Determines if the given SQL state represents a login exception.
@@ -49,5 +49,5 @@ public interface IExceptionHandler
     /// <param name="exception">The exception to check.</param>
     /// <param name="targetDriverDialect">The target driver dialect.</param>
     /// <returns>True if it's a login exception, false otherwise.</returns>
-    bool IsLoginException(Exception exception, ITargetDriverDialect? targetDriverDialect);
+    bool IsLoginException(Exception exception, ITargetConnectionDialect? targetDriverDialect);
 }

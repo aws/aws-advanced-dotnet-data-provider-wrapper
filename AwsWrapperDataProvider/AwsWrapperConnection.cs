@@ -21,7 +21,7 @@ using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostListProviders;
-using AwsWrapperDataProvider.Driver.TargetDriverDialects;
+using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
 
 namespace AwsWrapperDataProvider
@@ -72,17 +72,17 @@ namespace AwsWrapperDataProvider
             this._parameters = ConnectionPropertiesUtils.ParseConnectionStringParameters(this._connectionString);
             this._targetType = targetType ?? this.GetTargetType(this._parameters);
 
-            ITargetDriverDialect driverDialect =
-                TargetDriverDialectProvider.GetDialect(this._targetType, this._parameters);
+            ITargetConnectionDialect connectionDialect =
+                TargetConnectionDialectProvider.GetDialect(this._targetType, this._parameters);
 
-            IConnectionProvider connectionProvider = new DriverConnectionProvider();
+            IConnectionProvider connectionProvider = new DbConnectionProvider();
 
             this._pluginManager = new ConnectionPluginManager(
                 connectionProvider,
                 null,
                 this);
 
-            PluginService pluginService = new PluginService(this._targetConnection, this._targetType, this._pluginManager, this._parameters, this._connectionString, driverDialect);
+            PluginService pluginService = new PluginService(this._targetConnection, this._targetType, this._pluginManager, this._parameters, this._connectionString, connectionDialect);
 
             this._pluginService = pluginService;
             this._hostListProviderService = pluginService;
