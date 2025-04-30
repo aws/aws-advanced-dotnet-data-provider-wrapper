@@ -36,14 +36,11 @@ public static class TargetConnectionDialectProvider
             // Try to find and instantiate the custom dialect type
             Type? customDialectType = Type.GetType(customDialectTypeName);
             if (customDialectType != null &&
-                typeof(ITargetConnectionDialect).IsAssignableFrom(customDialectType))
+                    typeof(ITargetConnectionDialect).IsAssignableFrom(customDialectType) &&
+                    Activator.CreateInstance(customDialectType) is ITargetConnectionDialect customDialect &&
+                    customDialect.IsDialect(connectionType))
             {
-                ITargetConnectionDialect customDialect = (ITargetConnectionDialect)Activator.CreateInstance(customDialectType)!;
-
-                if (customDialect.IsDialect(connectionType))
-                {
-                    return customDialect;
-                }
+                return customDialect;
             }
 
             throw new InvalidOperationException($"Failed to instantiate custom dialect type '{customDialectTypeName}'");
