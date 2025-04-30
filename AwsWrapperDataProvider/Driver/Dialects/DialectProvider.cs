@@ -16,6 +16,12 @@ namespace AwsWrapperDataProvider.Driver.Dialects;
 
 public static class DialectProvider
 {
+    private static readonly Dictionary<DialectCodes, Type> ConnectionToDialectMap = new()
+    {
+        { DialectCodes.Pg, typeof(PgDialect) },
+        { DialectCodes.Mysql, typeof(MysqlDialect) },
+    };
+
     public static IDialect GetDialect(Type connectionType, Dictionary<string, string> props)
     {
         // TODO: is stub implementation, implement function

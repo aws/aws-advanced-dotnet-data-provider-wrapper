@@ -14,8 +14,16 @@
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
-public class DialectCodes
+public enum DialectCodes
 {
-    public static readonly string AURORAPG = "aurora-pg";
-    public static readonly string PG = "pg";
+    AuroraMysql,
+    RdsMysql,
+    Mysql,
+    RdsMultiAzMysqlCluster,
+    AuroraPg,
+    RdsPg,
+    RdsMultiAzPgCluster,
+    Pg,
+    Unknown,
+    Custom,
 }

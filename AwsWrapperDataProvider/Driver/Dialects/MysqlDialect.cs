@@ -1,11 +1,11 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-//
+// 
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-//
+// 
 // http://www.apache.org/licenses/LICENSE-2.0
-//
+// 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,21 +18,19 @@ using AwsWrapperDataProvider.Driver.HostListProviders;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
-public class PgDialect : IDialect
+public class MysqlDialect : IDialect
 {
-    public int DefaultPort { get; } = 5432;
+    public int DefaultPort { get; } = 3306;
 
-    // public IExceptionHandler ExceptionHandler { get; }
+    public string HostAliasQuery { get; } = "SELECT CONCAT(@@hostname, ':', @@port)";
 
-    public string HostAliasQuery { get; } = "SELECT CONCAT(inet_server_addr(), ':', inet_server_port())";
-
-    public string ServerVersionQuery { get; } = "SELECT 'version', VERSION()";
+    public string ServerVersionQuery { get; } = "SHOW VARIABLES LIKE 'version_comment'";
 
     public IList<DialectCodes> DialectUpdateCandidates { get; } =
     [
-        DialectCodes.AuroraPg,
-        DialectCodes.RdsMultiAzPgCluster,
-        DialectCodes.RdsPg,
+        DialectCodes.RdsMultiAzMysqlCluster,
+        DialectCodes.AuroraMysql,
+        DialectCodes.RdsMysql,
     ];
 
     public HostListProviderSupplier HostListProviderSupplier { get; } = (
@@ -42,21 +40,10 @@ public class PgDialect : IDialect
 
     public bool IsDialect(DbConnection conn)
     {
-        DbCommand command = conn.CreateCommand();
-        command.CommandText = this.ServerVersionQuery;
-        DbDataReader reader = command.ExecuteReader();
-
-        if (reader.HasRows)
-        {
-            reader.Close();
-            command.Dispose();
-            return true;
-        }
-
-        return false;
+        throw new NotImplementedException();
     }
 
-    public void PrepareConnectionProperties(Dictionary<string, string> connectionpProps, HostSpec hostSpec)
+    public void PrepareConnectionProperties(Dictionary<string, string> props, HostSpec hostSpec)
     {
         throw new NotImplementedException();
     }
