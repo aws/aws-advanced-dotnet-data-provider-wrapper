@@ -35,42 +35,35 @@ public class DefaultConnectionPlugin(
     public T Execute<T>(
         object methodInvokedOn,
         string methodName,
-        JdbcCallable<T> jdbcCallable,
-        object[] jdbcMethodArgs)
+        ADONetDelegate<T> methodFunc,
+        object[] methodArgs)
     {
-        // TODO: stub implementation
-        return jdbcCallable(jdbcMethodArgs);
+        return methodFunc();
     }
 
     public void Execute(
         object methodInvokedOn,
         string methodName,
-        JdbcCallable jdbcCallable,
-        object[] jdbcMethodArgs)
+        ADONetDelegate methodFunc,
+        object[] methodArgs)
     {
-        // TODO: stub implementation
-        jdbcCallable(jdbcMethodArgs);
+        methodFunc();
     }
 
-    public DbConnection Connect(
+    public void OpenConnection(
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
-        JdbcCallable<DbConnection> jdbcCallable)
+        ADONetDelegate methodFunc)
     {
-        // TODO: stub implementation
-        return this.defaultConnProvider.Connect(
-            this.pluginService.Dialect,
-            this.pluginService.TargetConnectionDialect,
-            hostSpec,
-            props);
+        methodFunc();
     }
 
     public DbConnection ForceConnect(
         HostSpec hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
-        JdbcCallable<DbConnection> forceConnectJdbcCallable)
+        ADONetDelegate<DbConnection> forceConnectmethodFunc)
     {
         throw new NotImplementedException();
     }
@@ -79,7 +72,7 @@ public class DefaultConnectionPlugin(
         string initialUrl,
         Dictionary<string, string> props,
         IHostListProviderService hostListProviderService,
-        JdbcCallable<Action<object[]>> initHostProviderFunc)
+        ADONetDelegate<Action<object[]>> initHostProviderFunc)
     {
         // TODO: stub implementation
         return;
