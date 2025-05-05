@@ -46,7 +46,6 @@ public class ConnectionPluginManagerTests
             new TestPluginTwo(calls),
             new TestPluginThree(calls),
         ];
-        object[] args = [];
         ConnectionPluginManager connectionPluginManager = new(
             this.mockConnectionProvider,
             null,
@@ -62,7 +61,7 @@ public class ConnectionPluginManagerTests
                 calls.Add("targetCall");
                 return "resulTestValue";
             },
-            args);
+            []);
 
         Assert.Equal("resulTestValue", result);
         Assert.Equal(7, calls.Count);
@@ -87,7 +86,6 @@ public class ConnectionPluginManagerTests
             new TestPluginThree(calls),
         ];
 
-        object[] args = [];
         ConnectionPluginManager connectionPluginManager = new(
             this.mockConnectionProvider,
             null,
@@ -103,7 +101,7 @@ public class ConnectionPluginManagerTests
                 calls.Add("targetCall");
                 return "resulTestValue";
             },
-            args);
+            []);
 
         Assert.Equal("resulTestValue", result);
         Assert.Equal(5, calls.Count);
@@ -126,7 +124,6 @@ public class ConnectionPluginManagerTests
             new TestPluginThree(calls),
         ];
 
-        object[] args = [];
         ConnectionPluginManager connectionPluginManager = new(
             this.mockConnectionProvider,
             null,
@@ -142,7 +139,7 @@ public class ConnectionPluginManagerTests
                 calls.Add("targetCall");
                 return "resulTestValue";
             },
-            args);
+            []);
 
         Assert.Equal("resulTestValue", result);
         Assert.Equal(3, calls.Count);
