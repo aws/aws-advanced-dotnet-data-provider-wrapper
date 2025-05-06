@@ -13,6 +13,8 @@
 // limitations under the License.
 
 using System.Data.Common;
+using System.Security.Cryptography;
+using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 
@@ -28,11 +30,10 @@ public class PgDialect : IDialect
 
     public string ServerVersionQuery { get; } = "SELECT 'version', VERSION()";
 
-    public IList<DialectCodes> DialectUpdateCandidates { get; } =
+    public IList<Type> DialectUpdateCandidates { get; } =
     [
-        DialectCodes.AuroraPg,
-        DialectCodes.RdsMultiAzPgCluster,
-        DialectCodes.RdsPg,
+        typeof(AuroraPgDialect),
+        typeof(RdsPgDialect),
     ];
 
     public HostListProviderSupplier HostListProviderSupplier { get; } = (
@@ -42,15 +43,35 @@ public class PgDialect : IDialect
 
     public bool IsDialect(DbConnection conn)
     {
-        DbCommand command = conn.CreateCommand();
-        command.CommandText = this.ServerVersionQuery;
-        DbDataReader reader = command.ExecuteReader();
+        DbCommand? command = null;
+        DbDataReader? reader = null;
 
-        if (reader.HasRows)
+        try
         {
-            reader.Close();
-            command.Dispose();
-            return true;
+            command = conn.CreateCommand();
+            command.CommandText = "SELECT 1 FROM pg_proc LIMIT 1";
+            reader = command.ExecuteReader();
+
+            if (reader.HasRows)
+            {
+                return true;
+            }
+        }
+        catch (Exception ex)
+        {
+            // ignored
+        }
+        finally
+        {
+            try
+            {
+                reader?.Close();
+                command?.Dispose();
+            }
+            catch (DbException)
+            {
+                // ignored
+            }
         }
 
         return false;
@@ -58,6 +79,6 @@ public class PgDialect : IDialect
 
     public void PrepareConnectionProperties(Dictionary<string, string> connectionpProps, HostSpec hostSpec)
     {
-        throw new NotImplementedException();
+        // Do nothing.
     }
 }

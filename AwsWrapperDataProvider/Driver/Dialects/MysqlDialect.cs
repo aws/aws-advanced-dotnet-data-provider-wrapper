@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data.Common;
+using System.Runtime.CompilerServices;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 
@@ -26,11 +27,10 @@ public class MysqlDialect : IDialect
 
     public string ServerVersionQuery { get; } = "SHOW VARIABLES LIKE 'version_comment'";
 
-    public IList<DialectCodes> DialectUpdateCandidates { get; } =
+    public IList<Type> DialectUpdateCandidates { get; } =
     [
-        DialectCodes.RdsMultiAzMysqlCluster,
-        DialectCodes.AuroraMysql,
-        DialectCodes.RdsMysql,
+        typeof(AuroraMysqlDialect),
+        typeof(RdsMysqlDialect),
     ];
 
     public HostListProviderSupplier HostListProviderSupplier { get; } = (
@@ -40,11 +40,43 @@ public class MysqlDialect : IDialect
 
     public bool IsDialect(DbConnection conn)
     {
-        throw new NotImplementedException();
+        DbCommand? command = null;
+        DbDataReader? reader = null;
+
+        try
+        {
+            command = conn.CreateCommand();
+            command.CommandText = this.ServerVersionQuery;
+            reader = command.ExecuteReader();
+
+            while (reader.Read())
+            {
+                int columnCount = reader.FieldCount;
+                for (int i = 0; i < columnCount; i++)
+                {
+                    string? columnValue = reader.IsDBNull(i) ? null : reader.GetString(i);
+                    if (columnValue != null && columnValue.ToLower().Contains("mysql"))
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            // ignored
+        }
+        finally
+        {
+            reader?.Close();
+            command?.Dispose();
+        }
+
+        return false;
     }
 
     public void PrepareConnectionProperties(Dictionary<string, string> props, HostSpec hostSpec)
     {
-        throw new NotImplementedException();
+        // Do nothing.
     }
 }

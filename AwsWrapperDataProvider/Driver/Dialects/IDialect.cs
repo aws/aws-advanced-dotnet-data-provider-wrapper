@@ -33,7 +33,7 @@ public interface IDialect
 
     string ServerVersionQuery { get; }
 
-    IList<DialectCodes> DialectUpdateCandidates { get; }
+    IList<Type> DialectUpdateCandidates { get; }
 
     HostListProviderSupplier HostListProviderSupplier { get; }
 

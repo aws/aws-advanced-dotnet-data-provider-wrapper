@@ -28,9 +28,9 @@ public class PluginService : IPluginService, IHostListProviderService
     private readonly ConnectionPluginManager _pluginManager;
     private readonly Dictionary<string, string> _props;
     private readonly string _originalConnectionString;
-    private readonly IDialect _dialect;
     private readonly ITargetConnectionDialect _targetConnectionDialect;
     private volatile IHostListProvider _hostListProvider;
+    private IDialect _dialect;
     private IList<HostSpec> _allHosts = [];
     private HostSpec? _currentHostSpec;
     private DbConnection? _currentConnection;
@@ -65,9 +65,9 @@ public class PluginService : IPluginService, IHostListProviderService
         this._props = props;
         this._originalConnectionString = connectionString;
         this._targetConnectionDialect = targetConnectionDialect;
-        this._dialect = DialectProvider.GetDialect(connectionType, props);
+        this._dialect = DialectProvider.GuessDialect(this._props);
         this._hostListProvider =
-            this._dialect.HostListProviderSupplier(props, this, this)
+            this._dialect.HostListProviderSupplier(this._props, this, this)
             ?? throw new InvalidOperationException(); // TODO : throw proper error
     }
 
@@ -153,7 +153,16 @@ public class PluginService : IPluginService, IHostListProviderService
 
     public void UpdateDialect(DbConnection connection)
     {
-        throw new NotImplementedException();
+        IDialect dialect = this._dialect;
+        this._dialect = DialectProvider.UpdateDialect(
+            connection,
+            this._dialect);
+
+        if (dialect != this._dialect)
+        {
+            this._hostListProvider = this._dialect.HostListProviderSupplier(this._props, this, this)
+                                     ?? this._hostListProvider;
+        }
     }
 
     public HostSpec IdentifyConnection(DbConnection connection)
