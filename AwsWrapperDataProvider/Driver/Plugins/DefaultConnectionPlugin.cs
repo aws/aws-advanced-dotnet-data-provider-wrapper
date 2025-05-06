@@ -36,7 +36,7 @@ public class DefaultConnectionPlugin(
         object methodInvokedOn,
         string methodName,
         ADONetDelegate<T> methodFunc,
-        object[] methodArgs)
+        params object[] methodArgs)
     {
         return methodFunc();
     }
@@ -45,7 +45,7 @@ public class DefaultConnectionPlugin(
         object methodInvokedOn,
         string methodName,
         ADONetDelegate methodFunc,
-        object[] methodArgs)
+        params object[] methodArgs)
     {
         methodFunc();
     }

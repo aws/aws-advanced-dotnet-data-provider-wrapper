@@ -27,12 +27,12 @@ public class HostMonitoringPlugin(IPluginService pluginService, Dictionary<strin
         throw new NotImplementedException();
     }
 
-    public T Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, object[] methodArgs)
+    public T Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, params object[] methodArgs)
     {
         throw new NotImplementedException();
     }
 
-    public void Execute(object methodInvokedOn, string methodName, ADONetDelegate methodFunc, object[] methodArgs)
+    public void Execute(object methodInvokedOn, string methodName, ADONetDelegate methodFunc, params object[] methodArgs)
     {
         throw new NotImplementedException();
     }

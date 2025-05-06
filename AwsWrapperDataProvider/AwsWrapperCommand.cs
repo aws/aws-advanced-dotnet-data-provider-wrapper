@@ -17,6 +17,7 @@ using System.Data.Common;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using AwsWrapperDataProvider.Driver;
+using AwsWrapperDataProvider.Driver.Utils;
 
 namespace AwsWrapperDataProvider
 {
@@ -212,60 +213,77 @@ namespace AwsWrapperDataProvider
             this.EnsureCommandCreated();
             Debug.Assert(this._targetCommand != null);
             this._targetCommand.Cancel();
+            WrapperUtils.RunWithPlugins(
+                this._pluginManager!,
+                this._targetCommand,
+                "DbCommand.Cancel",
+                () => this._targetCommand.Cancel());
         }
 
         public override int ExecuteNonQuery()
         {
             this.EnsureCommandCreated();
-            Debug.Assert(this._targetCommand != null);
-            int result = this._targetCommand.ExecuteNonQuery();
-            Console.WriteLine("AwsWrapperCommand.ExecuteNonQuery()");
-            return result;
+
+            return WrapperUtils.ExecuteWithPlugins(
+                this._pluginManager!,
+                this._targetCommand!,
+                "DbCommand.ExecuteNonQuery",
+                () => this._targetCommand!.ExecuteNonQuery());
         }
 
         public new DbDataReader ExecuteReader()
         {
-            ArgumentNullException.ThrowIfNull(this._pluginManager);
-            ArgumentNullException.ThrowIfNull(this._targetCommand);
-            return this._pluginManager.Execute<DbDataReader>(
-                this._targetCommand,
-                "DbCommand.ExecuteReader()",
-                () => this._targetCommand.ExecuteReader(),
-                []);
+            this.EnsureCommandCreated();
+            return WrapperUtils.ExecuteWithPlugins(
+                this._pluginManager!,
+                this._targetCommand!,
+                "DbCommand.ExecuteReader",
+                () => this._targetCommand!.ExecuteReader());
         }
 
         public override object? ExecuteScalar()
         {
             this.EnsureCommandCreated();
-            Debug.Assert(this._targetCommand != null);
-            object? result = this._targetCommand.ExecuteScalar();
-            Console.WriteLine("AwsWrapperCommand.ExecuteScalar()");
-            return result;
+            return WrapperUtils.ExecuteWithPlugins(
+                this._pluginManager!,
+                this._targetCommand!,
+                "DbCommand.ExecuteScalar",
+                () => this._targetCommand!.ExecuteScalar());
         }
 
         public override void Prepare()
         {
             this.EnsureCommandCreated();
-            Debug.Assert(this._targetCommand != null);
-            this._targetCommand.Prepare();
-            Console.WriteLine("AwsWrapperCommand.Prepare()");
+            WrapperUtils.RunWithPlugins(
+                this._pluginManager!,
+                this._targetCommand!,
+                "DbCommand.Prepare",
+                () => this._targetCommand!.Prepare());
         }
 
         protected override DbParameter CreateDbParameter()
         {
             this.EnsureCommandCreated();
-            Debug.Assert(this._targetCommand != null);
-            return this._targetCommand.CreateParameter();
+            return WrapperUtils.ExecuteWithPlugins(
+                this._pluginManager!,
+                this._targetCommand!,
+                "DbCommand.CreateDbParameter",
+                () => this._targetCommand!.CreateParameter());
         }
 
-        protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior)
+        protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior) => this.ExecuteReader(behavior);
+
+        public new AwsWrapperDataReader ExecuteReader(CommandBehavior behavior)
         {
             this.EnsureCommandCreated();
-            Debug.Assert(this._targetCommand != null);
 
-            // TODO: wrap over
-            // return new AwsWrapperDataReader(this._targetCommand.ExecuteReader(behavior));
-            return this._targetCommand.ExecuteReader(behavior);
+            DbDataReader reader = WrapperUtils.ExecuteWithPlugins(
+                this._pluginManager!,
+                this._targetCommand!,
+                "DbCommand.ExecuteReader",
+                () => this._targetCommand!.ExecuteReader(behavior));
+
+            return new AwsWrapperDataReader(reader);
         }
 
         protected void EnsureCommandCreated()

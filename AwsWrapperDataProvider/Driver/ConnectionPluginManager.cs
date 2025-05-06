@@ -136,7 +136,7 @@ public class ConnectionPluginManager
         object methodInvokeOn,
         string methodName,
         ADONetDelegate<T> methodFunc,
-        object[] methodArgs)
+        params object[] methodArgs)
     {
         return this.ExecuteWithSubscribedPlugins(
             methodName,

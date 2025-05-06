@@ -41,7 +41,7 @@ public interface IConnectionPlugin
         object methodInvokedOn,
         string methodName,
         ADONetDelegate<T> methodFunc,
-        object[] methodArgs);
+        params object[] methodArgs);
 
     /// <summary>
     /// Executes a void method with the given arguments.
@@ -54,7 +54,7 @@ public interface IConnectionPlugin
         object methodInvokedOn,
         string methodName,
         ADONetDelegate methodFunc,
-        object[] methodArgs);
+        params object[] methodArgs);
 
     /// <summary>
     /// Opens a connection to the given host using the given properties.
