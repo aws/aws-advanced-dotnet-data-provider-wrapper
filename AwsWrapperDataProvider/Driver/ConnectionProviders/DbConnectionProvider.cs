@@ -31,7 +31,7 @@ public class DbConnectionProvider() : IConnectionProvider
         throw new NotImplementedException();
     }
 
-    public DbConnection Connect(
+    public DbConnection CreateDbConnection(
         IDialect dialect,
         ITargetConnectionDialect targetConnectionDialect,
         HostSpec? hostSpec,

@@ -19,17 +19,45 @@ using AwsWrapperDataProvider.Driver.Plugins;
 
 namespace AwsWrapperDataProvider.Driver;
 
-public class ConnectionPluginManager(
-    IConnectionProvider defaultConnectionProvider,
-    IConnectionProvider? effectiveConnectionProvider,
-    AwsWrapperConnection connection)
+public class ConnectionPluginManager
 {
-    protected Dictionary<string, string> props = new Dictionary<string, string>();
-    protected IList<IConnectionPlugin> plugins = new List<IConnectionPlugin>();
-    protected IConnectionProvider defaultConnProvider = defaultConnectionProvider;
-    protected IConnectionProvider? effectiveConnProvider = effectiveConnectionProvider;
-    protected AwsWrapperConnection ConnectionWrapper { get; } = connection;
+    protected Dictionary<string, string> props = [];
+    private readonly Dictionary<string, Delegate> pluginChainDelegates = [];
+    protected IList<IConnectionPlugin> plugins = [];
+    protected IConnectionProvider defaultConnProvider;
+    protected IConnectionProvider? effectiveConnProvider;
+    protected AwsWrapperConnection ConnectionWrapper { get; }
     protected IPluginService? pluginService;
+    private const string AllMethods = "*";
+    private const string ConnectMethod = "DbConnection.Open";
+
+    private delegate T PluginPipelineDelegate<T>(IConnectionPlugin plugin, ADONetDelegate<T> methodFunc);
+    private delegate T PluginChainADONetDelegate<T>(PluginPipelineDelegate<T> pipelineDelegate, ADONetDelegate<T> methodFunc, IConnectionPlugin pluginToSkip);
+
+    public ConnectionPluginManager(
+        IConnectionProvider defaultConnectionProvider,
+        IConnectionProvider? effectiveConnectionProvider,
+        AwsWrapperConnection connection)
+    {
+        this.defaultConnProvider = defaultConnectionProvider;
+        this.effectiveConnProvider = effectiveConnectionProvider;
+        this.ConnectionWrapper = connection;
+    }
+
+    // for testing purpose only
+    public ConnectionPluginManager(
+        IConnectionProvider defaultConnectionProvider,
+        IConnectionProvider? effectiveConnectionProvider,
+        Dictionary<string, string> props,
+        IList<IConnectionPlugin> plugins,
+        AwsWrapperConnection connection)
+    {
+        this.defaultConnProvider = defaultConnectionProvider;
+        this.effectiveConnProvider = effectiveConnectionProvider;
+        this.props = props;
+        this.plugins = plugins;
+        this.ConnectionWrapper = connection;
+    }
 
     public void InitConnectionPluginChain(
         IPluginService pluginService,
@@ -45,35 +73,99 @@ public class ConnectionPluginManager(
             this.props);
     }
 
+    private T ExecuteWithSubscribedPlugins<T>(
+        string methodName,
+        PluginPipelineDelegate<T> pluginPipelineDelegate,
+        ADONetDelegate<T> methodFunc,
+        IConnectionPlugin? pluginToSkip)
+    {
+        ArgumentNullException.ThrowIfNull(pluginPipelineDelegate);
+        ArgumentNullException.ThrowIfNull(methodFunc);
+
+        if (!this.pluginChainDelegates.TryGetValue(methodName, out Delegate? pluginChainDelegate))
+        {
+            pluginChainDelegate = this.MakePluginChainDelegate<T>(methodName);
+            this.pluginChainDelegates.Add(methodName, pluginChainDelegate!);
+        }
+
+        if (pluginChainDelegate == null)
+        {
+            throw new Exception("Error processing this ADO.NET call.");
+        }
+
+        return (T)pluginChainDelegate.DynamicInvoke(
+            pluginPipelineDelegate,
+            methodFunc,
+            pluginToSkip)!;
+    }
+
+    private PluginChainADONetDelegate<T> MakePluginChainDelegate<T>(string methodName)
+    {
+        PluginChainADONetDelegate<T>? pluginChainDelegate = null;
+
+        for (int i = this.plugins.Count - 1; i >= 0; i--)
+        {
+            IConnectionPlugin plugin = this.plugins[i];
+            ISet<string> subscribedMethods = plugin.GetSubscribeMethods();
+            bool isSubscribed = subscribedMethods.Contains(AllMethods) || subscribedMethods.Contains(methodName);
+
+            if (isSubscribed)
+            {
+                if (pluginChainDelegate == null)
+                {
+                    // DefaultConnectionPlugin always terminates the list of plugins
+                    pluginChainDelegate = (pipelineDelegate, methodFunc, pluginToSkip) => pipelineDelegate(plugin, methodFunc);
+                }
+                else
+                {
+                    PluginChainADONetDelegate<T> finalDelegate = pluginChainDelegate;
+                    pluginChainDelegate = (pipelineDelegate, methodFunc, pluginToSkip) =>
+                    {
+                        return plugin == pluginToSkip
+                            ? finalDelegate(pipelineDelegate, methodFunc, pluginToSkip)
+                            : pipelineDelegate(plugin, () => finalDelegate(pipelineDelegate, methodFunc, pluginToSkip));
+                    };
+                }
+            }
+        }
+
+        return pluginChainDelegate!;
+    }
+
     public T Execute<T>(
         object methodInvokeOn,
         string methodName,
-        JdbcCallable<T> jdbcMethodFunc,
-        object[] jdbcMethodArgs)
+        ADONetDelegate<T> methodFunc,
+        object[] methodArgs)
     {
-        // TODO: assume that Plugins only contains DefaultConnectionPlugin, implement actual use of plugin chain.
-        return this.plugins.First().Execute<T>(methodInvokeOn, methodName, jdbcMethodFunc, jdbcMethodArgs);
+        return this.ExecuteWithSubscribedPlugins(
+            methodName,
+            (plugin, methodFunc) => plugin.Execute(methodInvokeOn, methodName, methodFunc, methodArgs),
+            methodFunc,
+            null)!;
     }
 
-    // TODO: investigate if there is better solution to void return types
-    public void Execute(
-        object methodInvokeOn,
-        string methodName,
-        JdbcCallable jdbcMethodFunc,
-        object[] jdbcMethodArgs)
-    {
-        // TODO: assume that Plugins only contains DefaultConnectionPlugin, implement actual use of plugin chain.
-        this.plugins.First().Execute(methodInvokeOn, methodName, jdbcMethodFunc, jdbcMethodArgs);
-    }
-
-    public DbConnection Connect(
+    public void Open(
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
-        IConnectionPlugin? pluginToSkip)
+        IConnectionPlugin? pluginToSkip,
+        ADONetDelegate openFunc)
     {
-        // TODO: assume that Plugins only contains DefaultConnectionPlugin, implement actual use of plugin chain.
-        return this.plugins.First().Connect(hostSpec, props, isInitialConnection, (args) => throw new NotImplementedException("should not be called"));
+        // Type object does not mean anything
+        this.ExecuteWithSubscribedPlugins<object>(
+            ConnectMethod,
+            (plugin, methodFunc) =>
+            {
+                plugin.OpenConnection(hostSpec, props, isInitialConnection, () => methodFunc());
+                return default!;
+            },
+            () =>
+            {
+                openFunc();
+                return default!;
+            },
+            pluginToSkip);
     }
 
     public void InitHostProvider(
