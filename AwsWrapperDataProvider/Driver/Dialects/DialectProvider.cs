@@ -13,8 +13,6 @@
 // limitations under the License.
 
 using System.Data;
-using System.Data.Common;
-using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
 using MySqlConnector;
 using Npgsql;
@@ -23,7 +21,7 @@ namespace AwsWrapperDataProvider.Driver.Dialects;
 
 public static class DialectProvider
 {
-    private static readonly Dictionary<(RdsUrlType urlType, Type connectionType), Type> ConnectionToDialectMap = new()
+    private static readonly Dictionary<(RdsUrlType UrlType, Type ConnectionType), Type> ConnectionToDialectMap = new()
     {
         { (RdsUrlType.IpAddress, typeof(NpgsqlConnection)), typeof(PgDialect) },
         { (RdsUrlType.RdsInstance, typeof(NpgsqlConnection)), typeof(PgDialect) },

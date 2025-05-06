@@ -20,13 +20,13 @@ namespace AwsWrapperDataProvider.Driver.Dialects;
 
 public class UnknownDialect : IDialect
 {
-    public int DefaultPort { get; }
+    public int DefaultPort { get; } = HostSpec.NoPort;
 
-    public string HostAliasQuery { get; }
+    public string HostAliasQuery { get; } = "SELECT 'Unknown host'";
 
-    public string ServerVersionQuery { get; }
+    public string ServerVersionQuery { get; } = "SELECT 'Unknown version'";
 
-    public IList<Type> DialectUpdateCandidates { get; }
+    public IList<Type> DialectUpdateCandidates { get; } = [];
 
     public HostListProviderSupplier HostListProviderSupplier { get; } = (
         Dictionary<string, string> props,

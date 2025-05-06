@@ -56,7 +56,7 @@ public class PgDialect : IDialect
                 return true;
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             // ignored
         }
