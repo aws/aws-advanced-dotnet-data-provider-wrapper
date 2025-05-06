@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data;
 using System.Data.Common;
-using System.Security.Cryptography;
-using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 
@@ -41,16 +40,16 @@ public class PgDialect : IDialect
         IHostListProviderService hostListProviderService,
         IPluginService pluginService) => new ConnectionStringHostListProvider(props, hostListProviderService);
 
-    public bool IsDialect(DbConnection conn)
+    public bool IsDialect(IDbConnection conn)
     {
-        DbCommand? command = null;
+        IDbCommand? command = null;
         DbDataReader? reader = null;
 
         try
         {
             command = conn.CreateCommand();
             command.CommandText = "SELECT 1 FROM pg_proc LIMIT 1";
-            reader = command.ExecuteReader();
+            reader = (DbDataReader)command.ExecuteReader();
 
             if (reader.HasRows)
             {

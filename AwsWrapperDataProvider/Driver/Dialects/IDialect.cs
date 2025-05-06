@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data.Common;
-using AwsWrapperDataProvider.Driver.Exceptions;
+using System.Data;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 
@@ -42,7 +41,7 @@ public interface IDialect
     /// </summary>
     /// <param name="conn">The database connection.</param>
     /// <returns>True if the connection is using this dialect, false otherwise.</returns>
-    bool IsDialect(DbConnection conn);
+    bool IsDialect(IDbConnection conn);
 
     /// <summary>
     /// Used by IConnectionProvider during connection to ensure connectionProps can be used to create a DbConnection.

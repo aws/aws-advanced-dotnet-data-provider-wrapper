@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data;
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -25,9 +26,13 @@ public static class DialectProvider
     private static readonly Dictionary<(RdsUrlType urlType, Type connectionType), Type> ConnectionToDialectMap = new()
     {
         { (RdsUrlType.IpAddress, typeof(NpgsqlConnection)), typeof(PgDialect) },
-        { (RdsUrlType.IpAddress, typeof(MySqlConnection)), typeof(MysqlDialect) },
         { (RdsUrlType.RdsInstance, typeof(NpgsqlConnection)), typeof(PgDialect) },
+        { (RdsUrlType.RdsWriterCluster, typeof(NpgsqlConnection)), typeof(PgDialect) },
+        { (RdsUrlType.RdsReaderCluster, typeof(NpgsqlConnection)), typeof(PgDialect) },
+        { (RdsUrlType.IpAddress, typeof(MySqlConnection)), typeof(MysqlDialect) },
         { (RdsUrlType.RdsInstance, typeof(MySqlConnection)), typeof(MysqlDialect) },
+        { (RdsUrlType.RdsWriterCluster, typeof(MySqlConnection)), typeof(MysqlDialect) },
+        { (RdsUrlType.RdsReaderCluster, typeof(MySqlConnection)), typeof(MysqlDialect) },
     };
 
     public static IDialect GuessDialect(Dictionary<string, string> props)
@@ -50,14 +55,14 @@ public static class DialectProvider
 
         string url = PropertyDefinition.GetConnectionUrl(props);
         RdsUrlType rdsUrlType = RdsUtils.IdentifyRdsType(url);
-        Type targetConnectionType = Type.GetType(PropertyDefinition.CustomDialect.GetString(props)!) ??
+        Type targetConnectionType = Type.GetType(PropertyDefinition.TargetConnectionType.GetString(props)!) ??
                                     throw new InvalidCastException("Target connection type not found.");
 
         Type dialectType = ConnectionToDialectMap.GetValueOrDefault((rdsUrlType, targetConnectionType)) ?? typeof(UnknownDialect);
         return (IDialect)Activator.CreateInstance(dialectType)!;
     }
 
-    public static IDialect UpdateDialect(DbConnection connection, IDialect currDialect)
+    public static IDialect UpdateDialect(IDbConnection connection, IDialect currDialect)
     {
         IList<Type> dialectCandidates = currDialect.DialectUpdateCandidates;
 

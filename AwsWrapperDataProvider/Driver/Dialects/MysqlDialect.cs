@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data;
 using System.Data.Common;
-using System.Runtime.CompilerServices;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 
@@ -38,16 +38,16 @@ public class MysqlDialect : IDialect
         IHostListProviderService hostListProviderService,
         IPluginService pluginService) => new ConnectionStringHostListProvider(props, hostListProviderService);
 
-    public bool IsDialect(DbConnection conn)
+    public bool IsDialect(IDbConnection conn)
     {
-        DbCommand? command = null;
+        IDbCommand? command = null;
         DbDataReader? reader = null;
 
         try
         {
             command = conn.CreateCommand();
             command.CommandText = this.ServerVersionQuery;
-            reader = command.ExecuteReader();
+            reader = (DbDataReader)command.ExecuteReader();
 
             while (reader.Read())
             {

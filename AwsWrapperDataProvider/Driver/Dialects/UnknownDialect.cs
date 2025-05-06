@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data.Common;
+using System.Data;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 
@@ -33,7 +33,7 @@ public class UnknownDialect : IDialect
         IHostListProviderService hostListProviderService,
         IPluginService pluginService) => new ConnectionStringHostListProvider(props, hostListProviderService);
 
-    public bool IsDialect(DbConnection conn)
+    public bool IsDialect(IDbConnection conn)
     {
         return false;
     }
