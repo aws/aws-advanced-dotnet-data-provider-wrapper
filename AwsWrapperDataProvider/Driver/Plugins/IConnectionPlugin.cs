@@ -33,42 +33,41 @@ public interface IConnectionPlugin
     /// </summary>
     /// <param name="methodInvokedOn">The object the method is invoked on.</param>
     /// <param name="methodName">The name of the method being invoked.</param>
-    /// <param name="jdbcCallable">The callable that executes the actual method.</param>
-    /// <param name="jdbcMethodArgs">The arguments to pass to the method.</param>
+    /// <param name="methodFunc">The callable that executes the actual method.</param>
+    /// <param name="methodArgs">The arguments to pass to the method.</param>
     /// <typeparam name="T">The return type of the method.</typeparam>
     /// <returns>The result of the method execution.</returns>
     T Execute<T>(
         object methodInvokedOn,
         string methodName,
-        JdbcCallable<T> jdbcCallable,
-        object[] jdbcMethodArgs);
+        ADONetDelegate<T> methodFunc,
+        object[] methodArgs);
 
     /// <summary>
     /// Executes a void method with the given arguments.
     /// </summary>
     /// <param name="methodInvokedOn">The object the method is invoked on.</param>
     /// <param name="methodName">The name of the method being invoked.</param>
-    /// <param name="jdbcCallable">The callable that executes the actual method.</param>
-    /// <param name="jdbcMethodArgs">The arguments to pass to the method.</param>
+    /// <param name="methodFunc">The callable that executes the actual method.</param>
+    /// <param name="methodArgs">The arguments to pass to the method.</param>
     void Execute(
         object methodInvokedOn,
         string methodName,
-        JdbcCallable jdbcCallable,
-        object[] jdbcMethodArgs);
+        ADONetDelegate methodFunc,
+        object[] methodArgs);
 
     /// <summary>
-    /// Establishes a connection to the given host using the given properties.
+    /// Opens a connection to the given host using the given properties.
     /// </summary>
     /// <param name="hostSpec">The host specification to connect to.</param>
     /// <param name="props">Connection properties.</param>
     /// <param name="isInitialConnection">Whether this is the initial connection.</param>
-    /// <param name="jdbcCallable">The callable that executes the actual connection.</param>
-    /// <returns>The database connection.</returns>
-    DbConnection Connect(
+    /// <param name="methodFunc">The callable that executes the actual connection.</param>
+    void OpenConnection(
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
-        JdbcCallable<DbConnection> jdbcCallable);
+        ADONetDelegate methodFunc);
 
     /// <summary>
     /// Forces a connection to the given host using the given properties.
@@ -76,13 +75,13 @@ public interface IConnectionPlugin
     /// <param name="hostSpec">The host specification to connect to.</param>
     /// <param name="props">Connection properties.</param>
     /// <param name="isInitialConnection">Whether this is the initial connection.</param>
-    /// <param name="forceConnectJdbcCallable">The callable that executes the actual connection.</param>
+    /// <param name="forceConnectmethodFunc">The callable that executes the actual connection.</param>
     /// <returns>The database connection.</returns>
     DbConnection ForceConnect(
         HostSpec hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
-        JdbcCallable<DbConnection> forceConnectJdbcCallable);
+        ADONetDelegate<DbConnection> forceConnectmethodFunc);
 
     /// <summary>
     /// Initializes the host provider.
@@ -95,19 +94,17 @@ public interface IConnectionPlugin
         string initialUrl,
         Dictionary<string, string> props,
         IHostListProviderService hostListProviderService,
-        JdbcCallable<Action<object[]>> initHostProviderFunc);
+        ADONetDelegate<Action<object[]>> initHostProviderFunc);
 }
 
 /// <summary>
-/// Delegate for callable methods that return a value.
+/// Delegate for ADO.NET methods that return a value.
 /// </summary>
 /// <typeparam name="T">The return type.</typeparam>
-/// <param name="args">The method arguments.</param>
 /// <returns>The method result.</returns>
-public delegate T JdbcCallable<out T>(object[] args);
+public delegate T ADONetDelegate<out T>();
 
 /// <summary>
-/// Delegate for callable methods that don't return a value.
+/// Delegate for ADO.NET methods that don't return a value.
 /// </summary>
-/// <param name="args">The method arguments.</param>
-public delegate void JdbcCallable(object[] args);
+public delegate void ADONetDelegate();

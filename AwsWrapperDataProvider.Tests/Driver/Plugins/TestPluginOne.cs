@@ -13,23 +13,41 @@
 // limitations under the License.
 
 using System.Data.Common;
+using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.HostInfo;
+using AwsWrapperDataProvider.Driver.Plugins;
 
-namespace AwsWrapperDataProvider.Driver.Plugins.Efm;
+namespace AwsWrapperDataProvider.Tests.Driver.Plugins;
 
-public class HostMonitoringPlugin(IPluginService pluginService, Dictionary<string, string> props) : IConnectionPlugin
+public class TestPluginOne : IConnectionPlugin
 {
-    private readonly IPluginService pluginService = pluginService;
-    private readonly Dictionary<string, string> props = props;
+    protected ISet<string> subscribedMethods = new HashSet<string> { "*" };
+    protected List<string> calls;
 
-    public void OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate methodFunc)
+    public TestPluginOne(List<string> calls)
     {
-        throw new NotImplementedException();
+        this.calls = calls;
     }
 
     public T Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, object[] methodArgs)
     {
-        throw new NotImplementedException();
+        this.calls.Add(this.GetType().Name + ":before");
+
+        T result;
+        try
+        {
+            result = methodFunc();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Exception: {e.Message}");
+            Console.WriteLine($"Stack Trace: {e.StackTrace}");
+            throw;
+        }
+
+        this.calls.Add(this.GetType().Name + ":after");
+
+        return result;
     }
 
     public void Execute(object methodInvokedOn, string methodName, ADONetDelegate methodFunc, object[] methodArgs)
@@ -37,18 +55,28 @@ public class HostMonitoringPlugin(IPluginService pluginService, Dictionary<strin
         throw new NotImplementedException();
     }
 
+    public virtual void OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate methodFunc)
+    {
+        this.calls.Add(this.GetType().Name + ":before open");
+        methodFunc();
+        this.calls.Add(this.GetType().Name + ":after open");
+    }
+
     public DbConnection ForceConnect(HostSpec hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> forceConnectmethodFunc)
     {
-        throw new NotImplementedException();
+        this.calls.Add(this.GetType().Name + ":before forceConnect");
+        DbConnection result = forceConnectmethodFunc();
+        this.calls.Add(this.GetType().Name + ":after forceConnect");
+        return result;
     }
 
     public ISet<string> GetSubscribeMethods()
     {
-        throw new NotImplementedException();
+        return this.subscribedMethods;
     }
 
     public void InitHostProvider(string initialUrl, Dictionary<string, string> props, IHostListProviderService hostListProviderService, ADONetDelegate<Action<object[]>> initHostProviderFunc)
     {
-        throw new NotImplementedException();
+        // do nothing
     }
 }

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
 
 namespace AwsWrapperDataProvider.Driver.Utils;
@@ -22,11 +23,45 @@ public class WrapperUtils
         ConnectionPluginManager connectionPluginManager,
         object methodInvokeOn,
         string methodName,
-        JdbcCallable<T> jdbcCallable,
-        object[] jdbcMethodArgs)
+        ADONetDelegate<T> methodFunc,
+        object[] methodArgs)
     {
-        // TODO: stub implementation, please replace.
-        return jdbcCallable.Invoke(jdbcMethodArgs);
+        return connectionPluginManager.Execute(
+            methodInvokeOn,
+            methodName,
+            methodFunc,
+            methodArgs);
+    }
+
+    public static void RunWithPlugins(
+        ConnectionPluginManager connectionPluginManager,
+        object methodInvokeOn,
+        string methodName,
+        ADONetDelegate methodFunc,
+        object[] methodArgs)
+    {
+        // Type object does not mean anything since it's void return type
+        ExecuteWithPlugins<object>(
+            connectionPluginManager,
+            methodInvokeOn,
+            methodName,
+            () =>
+            {
+                methodFunc();
+                return default!;
+            },
+            methodArgs);
+    }
+
+    public static void OpenWithPlugins(
+        ConnectionPluginManager connectionPluginManager,
+        HostSpec? hostSpec,
+        Dictionary<string, string> props,
+        bool isInitialConnection,
+        IConnectionPlugin? pluginToSkip,
+        ADONetDelegate openFunc)
+    {
+        connectionPluginManager.Open(hostSpec, props, isInitialConnection, pluginToSkip, openFunc);
     }
 
     private static T WrapWithProxyIfNeeded<T>(T toProxy, ConnectionPluginManager connectionPluginManager)

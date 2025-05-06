@@ -49,18 +49,12 @@ public class PluginService : IPluginService, IHostListProviderService
     public DbConnection? CurrentConnection { get => this._currentConnection; set => this._currentConnection = value; }
 
     public PluginService(
-        DbConnection? currentConnection,
         Type connectionType,
         ConnectionPluginManager pluginManager,
         Dictionary<string, string> props,
         string connectionString,
         ITargetConnectionDialect targetConnectionDialect)
     {
-        if (currentConnection != null)
-        {
-            this._currentConnection = currentConnection;
-        }
-
         this._pluginManager = pluginManager;
         this._props = props;
         this._originalConnectionString = connectionString;

@@ -230,7 +230,7 @@ namespace AwsWrapperDataProvider
             return this._pluginManager.Execute<DbDataReader>(
                 this._targetCommand,
                 "DbCommand.ExecuteReader()",
-                (args) => this._targetCommand.ExecuteReader(),
+                () => this._targetCommand.ExecuteReader(),
                 []);
         }
 

@@ -22,22 +22,22 @@ public class FailoverPlugin(IPluginService pluginService, Dictionary<string, str
     private readonly IPluginService pluginService = pluginService;
     private readonly Dictionary<string, string> props = props;
 
-    public DbConnection Connect(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, JdbcCallable<DbConnection> jdbcCallable)
+    public void OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate methodFunc)
     {
         throw new NotImplementedException();
     }
 
-    public T Execute<T>(object methodInvokedOn, string methodName, JdbcCallable<T> jdbcCallable, object[] jdbcMethodArgs)
+    public T Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, object[] methodArgs)
     {
         throw new NotImplementedException();
     }
 
-    public void Execute(object methodInvokedOn, string methodName, JdbcCallable jdbcCallable, object[] jdbcMethodArgs)
+    public void Execute(object methodInvokedOn, string methodName, ADONetDelegate methodFunc, object[] methodArgs)
     {
         throw new NotImplementedException();
     }
 
-    public DbConnection ForceConnect(HostSpec hostSpec, Dictionary<string, string> props, bool isInitialConnection, JdbcCallable<DbConnection> forceConnectJdbcCallable)
+    public DbConnection ForceConnect(HostSpec hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> forceConnectmethodFunc)
     {
         throw new NotImplementedException();
     }
@@ -47,7 +47,7 @@ public class FailoverPlugin(IPluginService pluginService, Dictionary<string, str
         throw new NotImplementedException();
     }
 
-    public void InitHostProvider(string initialUrl, Dictionary<string, string> props, IHostListProviderService hostListProviderService, JdbcCallable<Action<object[]>> initHostProviderFunc)
+    public void InitHostProvider(string initialUrl, Dictionary<string, string> props, IHostListProviderService hostListProviderService, ADONetDelegate<Action<object[]>> initHostProviderFunc)
     {
         throw new NotImplementedException();
     }
