@@ -118,11 +118,12 @@ public class ConnectionPluginManager
                 }
                 else
                 {
-                    pluginChainDelegate = (pluginPipelineDelegate, methodFunc, pluginToSkip) =>
+                    PluginChainADONetDelegate<T> finalDelegate = pluginChainDelegate;
+                    pluginChainDelegate = (pipelineDelegate, methodFunc, pluginToSkip) =>
                     {
                         return plugin == pluginToSkip
-                            ? pluginChainDelegate(pluginPipelineDelegate, methodFunc, pluginToSkip)
-                            : pluginPipelineDelegate(plugin, () => pluginChainDelegate(pluginPipelineDelegate, methodFunc, pluginToSkip));
+                            ? finalDelegate(pipelineDelegate, methodFunc, pluginToSkip)
+                            : pipelineDelegate(plugin, () => finalDelegate(pipelineDelegate, methodFunc, pluginToSkip));
                     };
                 }
             }
