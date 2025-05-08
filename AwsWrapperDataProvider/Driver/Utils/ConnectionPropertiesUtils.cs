@@ -30,7 +30,7 @@ public static class ConnectionPropertiesUtils
 
         return connectionString
             .Split(";", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
-            .Select(x => x.Split("=", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
+            .Select(x => x.Split("=", StringSplitOptions.TrimEntries))
             .Select(x => new { Key = x.Length > 0 ? x[0] : null, Value = x.Length > 1 ? x[1] : null })
             .Where(x => x.Key != null && x.Value != null)
             .ToDictionary(k => k.Key ?? string.Empty, v => v.Value ?? string.Empty);

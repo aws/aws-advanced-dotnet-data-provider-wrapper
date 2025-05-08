@@ -19,346 +19,323 @@ using System.Diagnostics.CodeAnalysis;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Utils;
 
-namespace AwsWrapperDataProvider
+namespace AwsWrapperDataProvider;
+
+public class AwsWrapperCommand : DbCommand
 {
-    public class AwsWrapperCommand : DbCommand
+    protected Type? _targetDbCommandType;
+    protected DbConnection? _targetDbConnection;
+    protected AwsWrapperConnection? _wrapperConnection;
+    protected DbCommand? _targetDbCommand;
+    protected string? _commandText;
+    protected int? _commandTimeout;
+    protected DbTransaction? _transaction;
+    protected ConnectionPluginManager? _pluginManager;
+
+    public AwsWrapperCommand()
     {
-        protected Type? _targetCommandType;
-        protected DbConnection? _connection;
-        protected AwsWrapperConnection? _wrapperConnection;
-        protected DbCommand? _targetCommand;
-        protected string? _commandText;
-        protected int? _commandTimeout;
-        protected DbTransaction? _transaction;
-        protected ConnectionPluginManager? _pluginManager;
+    }
 
-        public AwsWrapperCommand()
+    internal AwsWrapperCommand(DbCommand command, AwsWrapperConnection connection, ConnectionPluginManager pluginManager)
+    {
+        this._targetDbCommand = command;
+        this._targetDbCommandType = this._targetDbCommand.GetType();
+        this._wrapperConnection = connection;
+        this._targetDbConnection = connection.TargetDbConnection;
+        this._pluginManager = pluginManager;
+    }
+
+    public AwsWrapperCommand(DbCommand command, DbConnection? connection)
+    {
+        this._targetDbCommand = command;
+        this._targetDbCommandType = this._targetDbCommand.GetType();
+        this._targetDbConnection = connection;
+        if (connection is AwsWrapperConnection awsWrapperConnection)
         {
+            this._wrapperConnection = awsWrapperConnection;
+            this._targetDbConnection = awsWrapperConnection.TargetDbConnection;
+            this._pluginManager = awsWrapperConnection.PluginManager;
         }
+    }
 
-        public AwsWrapperCommand(DbCommand command, AwsWrapperConnection connection, ConnectionPluginManager pluginManager)
+    public AwsWrapperCommand(DbCommand command) : this(command, null) { }
+
+    public AwsWrapperCommand(Type targetDbCommandType, string? commandText) : this(targetDbCommandType, commandText, null) { }
+
+    public AwsWrapperCommand(Type targetDbCommandType) : this(targetDbCommandType, null, null) { }
+
+    public AwsWrapperCommand(Type targetDbCommandType, AwsWrapperConnection connection) : this(targetDbCommandType, null, connection) { }
+
+    public AwsWrapperCommand(Type targetDbCommandType, string? commandText, AwsWrapperConnection? connection)
+    {
+        this._targetDbCommandType = targetDbCommandType;
+        this._commandText = commandText;
+        if (connection != null)
         {
-            this._targetCommand = command;
             this._wrapperConnection = connection;
-            this._pluginManager = pluginManager;
-        }
-
-        // TODO: clean up multiple constructors and ensure ConnectionPluginManager is provided.
-        public AwsWrapperCommand(DbCommand command, DbConnection connection)
-        {
-            Debug.Assert(command != null);
-            Debug.Assert(connection is AwsWrapperConnection);
-            this._targetCommand = command;
-            this._targetCommandType = this._targetCommand.GetType();
-
-            Debug.Assert(connection != null);
-            this._connection = connection;
-            this._wrapperConnection =
-                connection is AwsWrapperConnection awsWrapperConnection ? awsWrapperConnection : null;
-        }
-
-        public AwsWrapperCommand(DbCommand command)
-        {
-            Debug.Assert(command != null);
-            this._targetCommand = command;
-            this._targetCommandType = this._targetCommand.GetType();
-        }
-
-        public AwsWrapperCommand(Type targetCommandType)
-        {
-            Debug.Assert(targetCommandType != null);
-            this._targetCommandType = targetCommandType;
-        }
-
-        public AwsWrapperCommand(Type targetCommandType, string? commandText)
-        {
-            Debug.Assert(targetCommandType != null);
-            this._targetCommandType = targetCommandType;
-
-            this._commandText = commandText;
-            this.EnsureCommandCreated();
-        }
-
-        public AwsWrapperCommand(Type targetCommandType, AwsWrapperConnection connection)
-        {
-            Debug.Assert(targetCommandType != null);
-            this._targetCommandType = targetCommandType;
-
-            Debug.Assert(connection != null);
-            this._connection = connection;
-            this.EnsureCommandCreated();
-            Debug.Assert(this._targetCommand != null);
-            this._targetCommand.Connection = this._connection;
-        }
-
-        public AwsWrapperCommand(Type targetCommandType, string? commandText, AwsWrapperConnection connection)
-        {
-            Debug.Assert(targetCommandType != null);
-            this._targetCommandType = targetCommandType;
-
-            this._commandText = commandText;
-
-            Debug.Assert(connection != null);
-            this._connection = connection;
-            this.EnsureCommandCreated();
-        }
-
-        [AllowNull]
-        public override string CommandText
-        {
-            get => this._commandText ?? string.Empty;
-            set
-            {
-                this._commandText = value;
-                if (this._targetCommand != null)
-                {
-                    this._targetCommand.CommandText = value ?? string.Empty;
-                }
-            }
-        }
-
-        public override int CommandTimeout
-        {
-            get
-            {
-                this.EnsureCommandCreated();
-                Debug.Assert(this._targetCommand != null);
-                return this._targetCommand.CommandTimeout;
-            }
-
-            set
-            {
-                this.EnsureCommandCreated();
-                Debug.Assert(this._targetCommand != null);
-                this._targetCommand.CommandTimeout = value;
-            }
-        }
-
-        public override CommandType CommandType
-        {
-            get
-            {
-                this.EnsureCommandCreated();
-                Debug.Assert(this._targetCommand != null);
-                return this._targetCommand.CommandType;
-            }
-
-            set
-            {
-                this.EnsureCommandCreated();
-                Debug.Assert(this._targetCommand != null);
-                this._targetCommand.CommandType = value;
-            }
-        }
-
-        public override bool DesignTimeVisible { get; set; }
-
-        public override UpdateRowSource UpdatedRowSource
-        {
-            get
-            {
-                this.EnsureCommandCreated();
-                Debug.Assert(this._targetCommand != null);
-                return this._targetCommand.UpdatedRowSource;
-            }
-
-            set
-            {
-                this.EnsureCommandCreated();
-                Debug.Assert(this._targetCommand != null);
-                this._targetCommand.UpdatedRowSource = value;
-            }
-        }
-
-        protected override DbConnection? DbConnection
-        {
-            get => this._connection;
-            set
-            {
-                this._connection = value;
-                this._wrapperConnection = this._connection is AwsWrapperConnection awsWrapperConnection
-                    ? awsWrapperConnection
-                    : null;
-                if (this._targetCommand != null)
-                {
-                    this._targetCommand.Connection = this._wrapperConnection?.TargetConnection;
-                }
-            }
-        }
-
-        protected override System.Data.Common.DbParameterCollection DbParameterCollection
-        {
-            get
-            {
-                this.EnsureCommandCreated();
-                Debug.Assert(this._targetCommand != null);
-                return this._targetCommand.Parameters;
-            }
-        }
-
-        protected override DbTransaction? DbTransaction
-        {
-            get => this._targetCommand?.Transaction ?? this._transaction;
-            set
-            {
-                this._transaction = value;
-                this.EnsureCommandCreated();
-                Debug.Assert(this._targetCommand != null);
-                this._targetCommand.Transaction = value;
-            }
-        }
-
-        public override void Cancel()
-        {
-            this.EnsureCommandCreated();
-            Debug.Assert(this._targetCommand != null);
-            this._targetCommand.Cancel();
-            WrapperUtils.RunWithPlugins(
-                this._pluginManager!,
-                this._targetCommand,
-                "DbCommand.Cancel",
-                () => this._targetCommand.Cancel());
-        }
-
-        public override int ExecuteNonQuery()
-        {
-            this.EnsureCommandCreated();
-
-            return WrapperUtils.ExecuteWithPlugins(
-                this._pluginManager!,
-                this._targetCommand!,
-                "DbCommand.ExecuteNonQuery",
-                () => this._targetCommand!.ExecuteNonQuery());
-        }
-
-        public new DbDataReader ExecuteReader()
-        {
-            this.EnsureCommandCreated();
-            return WrapperUtils.ExecuteWithPlugins(
-                this._pluginManager!,
-                this._targetCommand!,
-                "DbCommand.ExecuteReader",
-                () => this._targetCommand!.ExecuteReader());
-        }
-
-        public override object? ExecuteScalar()
-        {
-            this.EnsureCommandCreated();
-            return WrapperUtils.ExecuteWithPlugins(
-                this._pluginManager!,
-                this._targetCommand!,
-                "DbCommand.ExecuteScalar",
-                () => this._targetCommand!.ExecuteScalar());
-        }
-
-        public override void Prepare()
-        {
-            this.EnsureCommandCreated();
-            WrapperUtils.RunWithPlugins(
-                this._pluginManager!,
-                this._targetCommand!,
-                "DbCommand.Prepare",
-                () => this._targetCommand!.Prepare());
-        }
-
-        protected override DbParameter CreateDbParameter()
-        {
-            this.EnsureCommandCreated();
-            return WrapperUtils.ExecuteWithPlugins(
-                this._pluginManager!,
-                this._targetCommand!,
-                "DbCommand.CreateDbParameter",
-                () => this._targetCommand!.CreateParameter());
-        }
-
-        protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior) => this.ExecuteReader(behavior);
-
-        public new AwsWrapperDataReader ExecuteReader(CommandBehavior behavior)
-        {
-            this.EnsureCommandCreated();
-
-            DbDataReader reader = WrapperUtils.ExecuteWithPlugins(
-                this._pluginManager!,
-                this._targetCommand!,
-                "DbCommand.ExecuteReader",
-                () => this._targetCommand!.ExecuteReader(behavior));
-
-            return new AwsWrapperDataReader(reader);
-        }
-
-        protected void EnsureCommandCreated()
-        {
-            if (this._targetCommand == null)
-            {
-                if (this._targetCommandType != null)
-                {
-                    this._targetCommand = Activator.CreateInstance(this._targetCommandType) as DbCommand;
-                    if (this._targetCommand == null)
-                    {
-                        throw new Exception("Provided type doesn't implement IDbCommand.");
-                    }
-                }
-                else if (this._connection != null)
-                {
-                    this._targetCommand = this._connection.CreateCommand();
-                    if (this._targetCommandType == null)
-                    {
-                        this._targetCommandType = this._targetCommand?.GetType();
-                    }
-                }
-
-                Debug.Assert(this._targetCommand != null);
-                if (this._connection != null)
-                {
-                    this._targetCommand.Connection = this._connection;
-                }
-
-                if (this._commandText != null)
-                {
-                    this._targetCommand.CommandText = this._commandText;
-                }
-
-                if (this._commandTimeout != null)
-                {
-                    this._targetCommand.CommandTimeout = this._commandTimeout.Value;
-                }
-
-                if (this._transaction != null)
-                {
-                    this._targetCommand.Transaction = this._transaction;
-                }
-            }
+            this._targetDbConnection = connection.TargetDbConnection;
+            this._pluginManager = connection.PluginManager;
+            this.EnsureTargetDbCommandCreated();
+            this._targetDbCommand!.Connection = this._targetDbConnection;
         }
     }
 
-    public class AwsWrapperCommand<TCommand> : AwsWrapperCommand where TCommand : IDbCommand
+    [AllowNull]
+    public override string CommandText
     {
-        internal AwsWrapperCommand(
-            DbCommand command,
-            AwsWrapperConnection wrapperConnection,
-            ConnectionPluginManager pluginManager) : base(command, wrapperConnection, pluginManager) { }
-
-        internal AwsWrapperCommand(DbCommand command, AwsWrapperConnection wrapperConnection) : base(command,
-            wrapperConnection)
+        get => this._commandText ?? string.Empty;
+        set
         {
-        }
-
-        public AwsWrapperCommand() : base(typeof(TCommand))
-        {
-        }
-
-        public AwsWrapperCommand(string? commandText) : base(typeof(TCommand), commandText)
-        {
-        }
-
-        public AwsWrapperCommand(AwsWrapperConnection wrapperConnection) : base(typeof(TCommand), wrapperConnection)
-        {
-        }
-
-        public AwsWrapperCommand(
-            string? commandText,
-            AwsWrapperConnection wrapperConnection) : base(typeof(TCommand), commandText, wrapperConnection)
-        {
+            this._commandText = value;
+            if (this._targetDbCommand != null)
+            {
+                this._targetDbCommand.CommandText = value ?? string.Empty;
+            }
         }
     }
+
+    public override int CommandTimeout
+    {
+        get
+        {
+            this.EnsureTargetDbCommandCreated();
+            Debug.Assert(this._targetDbCommand != null);
+            return this._targetDbCommand.CommandTimeout;
+        }
+
+        set
+        {
+            this.EnsureTargetDbCommandCreated();
+            Debug.Assert(this._targetDbCommand != null);
+            this._targetDbCommand.CommandTimeout = value;
+        }
+    }
+
+    public override CommandType CommandType
+    {
+        get
+        {
+            this.EnsureTargetDbCommandCreated();
+            Debug.Assert(this._targetDbCommand != null);
+            return this._targetDbCommand.CommandType;
+        }
+
+        set
+        {
+            this.EnsureTargetDbCommandCreated();
+            Debug.Assert(this._targetDbCommand != null);
+            this._targetDbCommand.CommandType = value;
+        }
+    }
+
+    public override bool DesignTimeVisible { get; set; }
+
+    public override UpdateRowSource UpdatedRowSource
+    {
+        get
+        {
+            this.EnsureTargetDbCommandCreated();
+            Debug.Assert(this._targetDbCommand != null);
+            return this._targetDbCommand.UpdatedRowSource;
+        }
+
+        set
+        {
+            this.EnsureTargetDbCommandCreated();
+            Debug.Assert(this._targetDbCommand != null);
+            this._targetDbCommand.UpdatedRowSource = value;
+        }
+    }
+
+    protected override DbConnection? DbConnection
+    {
+        get => this._wrapperConnection;
+        set
+        {
+            if (value == null)
+            {
+                return;
+            }
+
+            if (!IsTypeAwsWrapperConnection(value.GetType()))
+            {
+                throw new InvalidOperationException("Provided connection is not of type AwsWrapperConnection.");
+            }
+
+            this._wrapperConnection = (AwsWrapperConnection)value;
+            this._targetDbConnection = this._wrapperConnection.TargetDbConnection;
+            this._pluginManager = this._wrapperConnection.PluginManager;
+            if (this._targetDbCommand != null)
+            {
+                this._targetDbCommand.Connection = this._wrapperConnection?.TargetDbConnection;
+            }
+        }
+    }
+
+    protected static bool IsTypeAwsWrapperConnection(Type type)
+    {
+        // check if type is AwsWrapperConnection or AwsWrapperConnection<T>
+        return type == typeof(AwsWrapperConnection) || (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(AwsWrapperConnection<>));
+    }
+
+    protected override System.Data.Common.DbParameterCollection DbParameterCollection
+    {
+        get
+        {
+            this.EnsureTargetDbCommandCreated();
+            Debug.Assert(this._targetDbCommand != null);
+            return this._targetDbCommand.Parameters;
+        }
+    }
+
+    protected override DbTransaction? DbTransaction
+    {
+        get => this._targetDbCommand?.Transaction ?? this._transaction;
+        set
+        {
+            this._transaction = value;
+            this.EnsureTargetDbCommandCreated();
+            Debug.Assert(this._targetDbCommand != null);
+            this._targetDbCommand.Transaction = value;
+        }
+    }
+
+    public override void Cancel()
+    {
+        this.EnsureTargetDbCommandCreated();
+        Debug.Assert(this._targetDbCommand != null);
+        this._targetDbCommand.Cancel();
+        WrapperUtils.RunWithPlugins(
+            this._pluginManager!,
+            this._targetDbCommand,
+            "DbCommand.Cancel",
+            () => this._targetDbCommand.Cancel());
+    }
+
+    public override int ExecuteNonQuery()
+    {
+        this.EnsureTargetDbCommandCreated();
+
+        return WrapperUtils.ExecuteWithPlugins(
+            this._pluginManager!,
+            this._targetDbCommand!,
+            "DbCommand.ExecuteNonQuery",
+            () => this._targetDbCommand!.ExecuteNonQuery());
+    }
+
+    public new DbDataReader ExecuteReader()
+    {
+        this.EnsureTargetDbCommandCreated();
+        return WrapperUtils.ExecuteWithPlugins(
+            this._pluginManager!,
+            this._targetDbCommand!,
+            "DbCommand.ExecuteReader",
+            () => this._targetDbCommand!.ExecuteReader());
+    }
+
+    public override object? ExecuteScalar()
+    {
+        this.EnsureTargetDbCommandCreated();
+        return WrapperUtils.ExecuteWithPlugins(
+            this._pluginManager!,
+            this._targetDbCommand!,
+            "DbCommand.ExecuteScalar",
+            () => this._targetDbCommand!.ExecuteScalar());
+    }
+
+    public override void Prepare()
+    {
+        this.EnsureTargetDbCommandCreated();
+        WrapperUtils.RunWithPlugins(
+            this._pluginManager!,
+            this._targetDbCommand!,
+            "DbCommand.Prepare",
+            () => this._targetDbCommand!.Prepare());
+    }
+
+    protected override DbParameter CreateDbParameter()
+    {
+        this.EnsureTargetDbCommandCreated();
+        return WrapperUtils.ExecuteWithPlugins(
+            this._pluginManager!,
+            this._targetDbCommand!,
+            "DbCommand.CreateDbParameter",
+            () => this._targetDbCommand!.CreateParameter());
+    }
+
+    protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior) => this.ExecuteReader(behavior);
+
+    public new AwsWrapperDataReader ExecuteReader(CommandBehavior behavior)
+    {
+        this.EnsureTargetDbCommandCreated();
+
+        DbDataReader reader = WrapperUtils.ExecuteWithPlugins(
+            this._pluginManager!,
+            this._targetDbCommand!,
+            "DbCommand.ExecuteReader",
+            () => this._targetDbCommand!.ExecuteReader(behavior));
+
+        return new AwsWrapperDataReader(reader);
+    }
+
+    protected void EnsureTargetDbCommandCreated()
+    {
+        if (this._targetDbCommand == null)
+        {
+            if (this._targetDbCommandType != null)
+            {
+                this._targetDbCommand = Activator.CreateInstance(this._targetDbCommandType) as DbCommand;
+                if (this._targetDbCommand == null)
+                {
+                    throw new Exception("Provided type doesn't implement IDbCommand.");
+                }
+            }
+            else if (this._targetDbConnection != null)
+            {
+                this._targetDbCommand = this._targetDbConnection.CreateCommand();
+                if (this._targetDbCommandType == null)
+                {
+                    this._targetDbCommandType = this._targetDbCommand?.GetType();
+                }
+            }
+
+            if (this._targetDbConnection != null)
+            {
+                this._targetDbCommand!.Connection = this._targetDbConnection;
+            }
+
+            if (this._commandText != null)
+            {
+                this._targetDbCommand!.CommandText = this._commandText;
+            }
+
+            if (this._commandTimeout != null)
+            {
+                this._targetDbCommand!.CommandTimeout = this._commandTimeout.Value;
+            }
+
+            if (this._transaction != null)
+            {
+                this._targetDbCommand!.Transaction = this._transaction;
+            }
+        }
+    }
+}
+
+public class AwsWrapperCommand<TCommand> : AwsWrapperCommand where TCommand : IDbCommand
+{
+    internal AwsWrapperCommand(
+        DbCommand command,
+        AwsWrapperConnection wrapperConnection,
+        ConnectionPluginManager pluginManager) : base(command, wrapperConnection, pluginManager) { }
+
+    internal AwsWrapperCommand(DbCommand command, AwsWrapperConnection wrapperConnection) : base(command, wrapperConnection) { }
+
+    public AwsWrapperCommand() : base(typeof(TCommand)) { }
+
+    public AwsWrapperCommand(string? commandText) : base(typeof(TCommand), commandText) { }
+
+    public AwsWrapperCommand(AwsWrapperConnection wrapperConnection) : base(typeof(TCommand), wrapperConnection) { }
+
+    public AwsWrapperCommand(string? commandText, AwsWrapperConnection wrapperConnection) : base(typeof(TCommand), commandText, wrapperConnection) { }
 }

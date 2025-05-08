@@ -36,7 +36,9 @@ public class AwsWrapperConnection : DbConnection
     private string? _database;
     private Dictionary<string, string>? _props;
 
-    public DbConnection? TargetConnection => this._pluginService?.CurrentConnection;
+    internal ConnectionPluginManager PluginManager => this._pluginManager!;
+
+    public DbConnection? TargetDbConnection => this._pluginService?.CurrentConnection;
 
     [AllowNull]
     public override string ConnectionString
@@ -220,5 +222,5 @@ public class AwsWrapperConnection<TConn> : AwsWrapperConnection where TConn : Db
     {
     }
 
-    public new TConn? TargetConnection => this._pluginService?.CurrentConnection as TConn;
+    public new TConn? TargetDbConnection => this._pluginService?.CurrentConnection as TConn;
 }
