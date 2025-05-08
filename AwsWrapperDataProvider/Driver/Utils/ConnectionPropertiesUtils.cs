@@ -32,7 +32,7 @@ public static class ConnectionPropertiesUtils
             .Split(";", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
             .Select(x => x.Split("=", StringSplitOptions.TrimEntries))
             .Where(pairs => pairs.Length == 2 && !string.IsNullOrEmpty(pairs[0]))
-            .ToDictionary(pairs => pairs[0], pairs => pairs[1]);
+            .ToDictionary(pairs => pairs[0], pairs => pairs[1]);
     }
 
     public static IList<HostSpec> GetHostsFromProperties(Dictionary<string, string> props, HostSpecBuilder hostSpecBuilder)
