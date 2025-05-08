@@ -44,7 +44,7 @@ public class ConnectionPropertiesUtilsTests
 
     [Theory]
     [Trait("Category", "Unit")]
-    [InlineData("Host=myhost.example.com;InvalidPair;Port=5432;=NoKey;NoValue=", 3)]
+    [InlineData("Host=myhost.example.com;InvalidPair;=;Port=5432;=NoKey;NoValue=", 3)]
     [InlineData("Host=myhost.example.com;=NoKey;NoValue=", 2)]
     public void ParseConnectionStringParameters_WithMalformedPairs_SkipsInvalidPairs(string connectionString, int expectedCount)
     {

@@ -14,7 +14,6 @@
 
 using System.Data;
 using System.Data.Common;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -99,15 +98,13 @@ public class AwsWrapperCommand : DbCommand
         get
         {
             this.EnsureTargetDbCommandCreated();
-            Debug.Assert(this._targetDbCommand != null);
-            return this._targetDbCommand.CommandTimeout;
+            return this._targetDbCommand!.CommandTimeout;
         }
 
         set
         {
             this.EnsureTargetDbCommandCreated();
-            Debug.Assert(this._targetDbCommand != null);
-            this._targetDbCommand.CommandTimeout = value;
+            this._targetDbCommand!.CommandTimeout = value;
         }
     }
 
@@ -116,15 +113,13 @@ public class AwsWrapperCommand : DbCommand
         get
         {
             this.EnsureTargetDbCommandCreated();
-            Debug.Assert(this._targetDbCommand != null);
-            return this._targetDbCommand.CommandType;
+            return this._targetDbCommand!.CommandType;
         }
 
         set
         {
             this.EnsureTargetDbCommandCreated();
-            Debug.Assert(this._targetDbCommand != null);
-            this._targetDbCommand.CommandType = value;
+            this._targetDbCommand!.CommandType = value;
         }
     }
 
@@ -135,15 +130,13 @@ public class AwsWrapperCommand : DbCommand
         get
         {
             this.EnsureTargetDbCommandCreated();
-            Debug.Assert(this._targetDbCommand != null);
-            return this._targetDbCommand.UpdatedRowSource;
+            return this._targetDbCommand!.UpdatedRowSource;
         }
 
         set
         {
             this.EnsureTargetDbCommandCreated();
-            Debug.Assert(this._targetDbCommand != null);
-            this._targetDbCommand.UpdatedRowSource = value;
+            this._targetDbCommand!.UpdatedRowSource = value;
         }
     }
 
@@ -154,6 +147,9 @@ public class AwsWrapperCommand : DbCommand
         {
             if (value == null)
             {
+                this._wrapperConnection = null;
+                this._targetDbConnection = null;
+                this._pluginManager = null;
                 return;
             }
 
@@ -183,8 +179,7 @@ public class AwsWrapperCommand : DbCommand
         get
         {
             this.EnsureTargetDbCommandCreated();
-            Debug.Assert(this._targetDbCommand != null);
-            return this._targetDbCommand.Parameters;
+            return this._targetDbCommand!.Parameters;
         }
     }
 
@@ -195,27 +190,23 @@ public class AwsWrapperCommand : DbCommand
         {
             this._transaction = value;
             this.EnsureTargetDbCommandCreated();
-            Debug.Assert(this._targetDbCommand != null);
-            this._targetDbCommand.Transaction = value;
+            this._targetDbCommand!.Transaction = value;
         }
     }
 
     public override void Cancel()
     {
         this.EnsureTargetDbCommandCreated();
-        Debug.Assert(this._targetDbCommand != null);
-        this._targetDbCommand.Cancel();
         WrapperUtils.RunWithPlugins(
             this._pluginManager!,
-            this._targetDbCommand,
+            this._targetDbCommand!,
             "DbCommand.Cancel",
-            () => this._targetDbCommand.Cancel());
+            () => this._targetDbCommand!.Cancel());
     }
 
     public override int ExecuteNonQuery()
     {
         this.EnsureTargetDbCommandCreated();
-
         return WrapperUtils.ExecuteWithPlugins(
             this._pluginManager!,
             this._targetDbCommand!,
@@ -268,7 +259,6 @@ public class AwsWrapperCommand : DbCommand
     public new AwsWrapperDataReader ExecuteReader(CommandBehavior behavior)
     {
         this.EnsureTargetDbCommandCreated();
-
         DbDataReader reader = WrapperUtils.ExecuteWithPlugins(
             this._pluginManager!,
             this._targetDbCommand!,
