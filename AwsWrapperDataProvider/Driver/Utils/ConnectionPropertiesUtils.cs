@@ -30,10 +30,9 @@ public static class ConnectionPropertiesUtils
 
         return connectionString
             .Split(";", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
-            .Select(x => x.Split("=", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
-            .Select(x => new { Key = x.Length > 0 ? x[0] : null, Value = x.Length > 1 ? x[1] : null })
-            .Where(x => x.Key != null && x.Value != null)
-            .ToDictionary(k => k.Key ?? string.Empty, v => v.Value ?? string.Empty);
+            .Select(x => x.Split("=", StringSplitOptions.TrimEntries))
+            .Where(pairs => pairs.Length == 2 && !string.IsNullOrEmpty(pairs[0]))
+            .ToDictionary(pairs => pairs[0], pairs => pairs[1]);
     }
 
     public static IList<HostSpec> GetHostsFromProperties(Dictionary<string, string> props, HostSpecBuilder hostSpecBuilder)

@@ -13,8 +13,10 @@
 // limitations under the License.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -23,111 +25,111 @@ using System.Threading.Tasks;
 
 namespace AwsWrapperDataProvider
 {
-    public class AwsWrapperDataReader : IDataReader
+    public class AwsWrapperDataReader : DbDataReader
     {
-        protected IDataReader _dataReader;
+        protected DbDataReader _dataReader;
 
-        internal AwsWrapperDataReader(IDataReader dataReader)
+        internal AwsWrapperDataReader(DbDataReader dataReader)
         {
             Debug.Assert(dataReader != null);
             this._dataReader = dataReader;
         }
 
-        public int Depth
+        public override int Depth
         {
             get => this._dataReader.Depth;
         }
 
-        public bool IsClosed
+        public override bool IsClosed
         {
             get => this._dataReader.IsClosed;
         }
 
-        public int RecordsAffected
+        public override int RecordsAffected
         {
             get => this._dataReader.RecordsAffected;
         }
 
-        public void Close()
+        public override void Close()
         {
             // TODO: wrap over
             this._dataReader.Close();
         }
 
-        public DataTable? GetSchemaTable()
+        public override DataTable? GetSchemaTable()
         {
             return this._dataReader.GetSchemaTable();
         }
 
-        public bool NextResult()
+        public override bool NextResult()
         {
             // TODO: wrap over
             return this._dataReader.NextResult();
         }
 
-        public bool Read()
+        public override bool Read()
         {
             // TODO: wrap over
             return this._dataReader.Read();
         }
 
-        public int FieldCount => this._dataReader.FieldCount;
+        public override int FieldCount => this._dataReader.FieldCount;
 
-        public object this[int i] => this._dataReader[i];
+        public override bool HasRows => this._dataReader.HasRows;
 
-        public object this[string name] => this._dataReader[name];
+        public override object this[int i] => this._dataReader[i];
 
-        public void Dispose()
+        public override object this[string name] => this._dataReader[name];
+
+        protected override void Dispose(bool disposing)
         {
-            this._dataReader?.Dispose();
+            if (disposing)
+            {
+                this._dataReader.Dispose();
+            }
         }
 
-        public bool GetBoolean(int i)
+        public override bool GetBoolean(int i)
         {
             return this._dataReader.GetBoolean(i);
         }
 
-        public byte GetByte(int i)
+        public override byte GetByte(int i)
         {
             return this._dataReader.GetByte(i);
         }
 
-        public long GetBytes(int i, long fieldOffset, byte[]? buffer, int bufferoffset, int length)
+        public override long GetBytes(int i, long fieldOffset, byte[]? buffer, int bufferoffset, int length)
         {
             return this._dataReader.GetBytes(i, fieldOffset, buffer, bufferoffset, length);
         }
 
-        public char GetChar(int i)
+        public override char GetChar(int i)
         {
             return this._dataReader.GetChar(i);
         }
 
-        public long GetChars(int i, long fieldoffset, char[]? buffer, int bufferoffset, int length)
+        public override long GetChars(int i, long fieldoffset, char[]? buffer, int bufferoffset, int length)
         {
             return this._dataReader.GetChars(i, fieldoffset, buffer, bufferoffset, length);
         }
 
-        public IDataReader GetData(int i)
-        {
-            return this._dataReader.GetData(i);
-        }
-
-        public string GetDataTypeName(int i)
+        public override string GetDataTypeName(int i)
         {
             return this._dataReader.GetDataTypeName(i);
         }
 
-        public DateTime GetDateTime(int i)
+        public override DateTime GetDateTime(int i)
         {
             return this._dataReader.GetDateTime(i);
         }
 
-        public decimal GetDecimal(int i)
+        public override decimal GetDecimal(int i)
         {
             return this._dataReader.GetDecimal(i);
         }
 
-        public double GetDouble(int i)
+        public override double GetDouble(int i)
         {
             return this._dataReader.GetDouble(i);
         }
@@ -135,64 +137,69 @@ namespace AwsWrapperDataProvider
         [return:
             DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields |
                                        DynamicallyAccessedMemberTypes.PublicProperties)]
-        public Type GetFieldType(int i)
+        public override Type GetFieldType(int i)
         {
             return this._dataReader.GetFieldType(i);
         }
 
-        public float GetFloat(int i)
+        public override float GetFloat(int i)
         {
             return this._dataReader.GetFloat(i);
         }
 
-        public Guid GetGuid(int i)
+        public override Guid GetGuid(int i)
         {
             return this._dataReader.GetGuid(i);
         }
 
-        public short GetInt16(int i)
+        public override short GetInt16(int i)
         {
             return this._dataReader.GetInt16(i);
         }
 
-        public int GetInt32(int i)
+        public override int GetInt32(int i)
         {
             return this._dataReader.GetInt32(i);
         }
 
-        public long GetInt64(int i)
+        public override long GetInt64(int i)
         {
             return this._dataReader.GetInt64(i);
         }
 
-        public string GetName(int i)
+        public override string GetName(int i)
         {
             return this._dataReader.GetString(i);
         }
 
-        public int GetOrdinal(string name)
+        public override int GetOrdinal(string name)
         {
             return this._dataReader.GetOrdinal(name);
         }
 
-        public string GetString(int i)
+        public override string GetString(int i)
         {
             return this._dataReader.GetString(i);
         }
 
-        public object GetValue(int i)
+        public override object GetValue(int i)
         {
             return this._dataReader.GetValue(i);
         }
 
-        public int GetValues(object[] values)
+        public override int GetValues(object[] values)
         {
             return this._dataReader.GetValues(values);
         }
 
-        public bool IsDBNull(int i)
+        public override bool IsDBNull(int i)
         {
             return this._dataReader.IsDBNull(i);
+        }
+
+        public override IEnumerator GetEnumerator()
+        {
+            return this._dataReader.GetEnumerator();
         }
     }
 }

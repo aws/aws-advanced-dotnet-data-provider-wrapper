@@ -36,7 +36,9 @@ public class AwsWrapperConnection : DbConnection
     private string? _database;
     private Dictionary<string, string>? _props;
 
-    public DbConnection? TargetConnection => this._pluginService?.CurrentConnection;
+    internal ConnectionPluginManager PluginManager => this._pluginManager!;
+
+    public DbConnection? TargetDbConnection => this._pluginService?.CurrentConnection;
 
     [AllowNull]
     public override string ConnectionString
@@ -110,7 +112,12 @@ public class AwsWrapperConnection : DbConnection
     public override void ChangeDatabase(string databaseName)
     {
         this._database = databaseName;
-        this._pluginService!.CurrentConnection?.ChangeDatabase(databaseName);
+        WrapperUtils.RunWithPlugins(
+            this._pluginManager!,
+            this._pluginService!.CurrentConnection!,
+            "DbConnection.ChangeDatabase",
+            () => this._pluginService.CurrentConnection!.ChangeDatabase(databaseName),
+            databaseName);
     }
 
     public override void Close()
@@ -119,8 +126,7 @@ public class AwsWrapperConnection : DbConnection
             this._pluginManager!,
             this._pluginService!.CurrentConnection!,
             "DbConnection.Close",
-            () => this._pluginService.CurrentConnection!.Close(),
-            []);
+            () => this._pluginService.CurrentConnection!.Close());
     }
 
     public override void Open()
@@ -143,36 +149,31 @@ public class AwsWrapperConnection : DbConnection
             this._pluginService.InitialConnectionHostSpec,
             this._props!,
             true,
-            null,
             () => this._pluginService.CurrentConnection!.Open());
     }
 
-    // TODO: switch method to use pluginService
     protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel)
     {
-        DbTransaction result = this._pluginService!.CurrentConnection!.BeginTransaction(isolationLevel);
-        Console.WriteLine("AwsWrapperConnection.BeginDbTransaction()");
-        return result;
+        return WrapperUtils.ExecuteWithPlugins<DbTransaction>(
+            this._pluginManager!,
+            this._pluginService!.CurrentConnection!,
+            "DbConnection.BeginDbTransaction",
+            () => this._pluginService!.CurrentConnection!.BeginTransaction(isolationLevel),
+            isolationLevel);
     }
 
     protected override DbCommand CreateDbCommand() => this.CreateCommand();
 
     public new AwsWrapperCommand CreateCommand()
     {
-        ArgumentNullException.ThrowIfNull(this._pluginService);
-        ArgumentNullException.ThrowIfNull(this._pluginService.CurrentConnection);
-        ArgumentNullException.ThrowIfNull(this._pluginManager);
-
-        DbCommand command = WrapperUtils.ExecuteWithPlugins<DbCommand>(
-            this._pluginManager,
-            this._pluginService.CurrentConnection,
+        DbCommand command = WrapperUtils.ExecuteWithPlugins(
+            this._pluginManager!,
+            this._pluginService!.CurrentConnection!,
             "DbConnection.CreateCommand",
-            () => this._pluginService.CurrentConnection.CreateCommand(),
-            []);
+            () => this._pluginService!.CurrentConnection!.CreateCommand());
 
-        var result = new AwsWrapperCommand(command, this, this._pluginManager);
         Console.WriteLine("AwsWrapperConnection.CreateCommand()");
-        return result;
+        return new AwsWrapperCommand(command, this, this._pluginManager!);
     }
 
     public AwsWrapperCommand<TCommand> CreateCommand<TCommand>() where TCommand : DbCommand
@@ -185,8 +186,8 @@ public class AwsWrapperConnection : DbConnection
             this._pluginManager,
             this._pluginService.CurrentConnection,
             "DbConnection.CreateCommand",
-            () => (TCommand)this._pluginService.CurrentConnection.CreateCommand(),
-            []);
+            () => (TCommand)this._pluginService.CurrentConnection.CreateCommand());
+
         return new AwsWrapperCommand<TCommand>(command, this, this._pluginManager);
     }
 
@@ -221,5 +222,5 @@ public class AwsWrapperConnection<TConn> : AwsWrapperConnection where TConn : Db
     {
     }
 
-    public new TConn? TargetConnection => this._pluginService?.CurrentConnection as TConn;
+    public new TConn? TargetDbConnection => this._pluginService?.CurrentConnection as TConn;
 }

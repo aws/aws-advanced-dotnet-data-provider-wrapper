@@ -23,20 +23,22 @@ public class DefaultConnectionPlugin(
     IConnectionProvider defaultConnProvider,
     IConnectionProvider? effectiveConnProvider) : IConnectionPlugin
 {
+    private static readonly ISet<string> SubscribeMethods = new HashSet<string> { "*" };
+
     private readonly IConnectionProvider defaultConnProvider = defaultConnProvider;
     private readonly IConnectionProvider? effectiveConnPrivider = effectiveConnProvider;
     private readonly IPluginService pluginService = pluginService;
 
     public ISet<string> GetSubscribeMethods()
     {
-        throw new NotImplementedException();
+        return SubscribeMethods;
     }
 
     public T Execute<T>(
         object methodInvokedOn,
         string methodName,
         ADONetDelegate<T> methodFunc,
-        object[] methodArgs)
+        params object[] methodArgs)
     {
         return methodFunc();
     }
@@ -45,7 +47,7 @@ public class DefaultConnectionPlugin(
         object methodInvokedOn,
         string methodName,
         ADONetDelegate methodFunc,
-        object[] methodArgs)
+        params object[] methodArgs)
     {
         methodFunc();
     }

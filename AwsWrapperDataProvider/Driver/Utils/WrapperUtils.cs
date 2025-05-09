@@ -24,7 +24,7 @@ public class WrapperUtils
         object methodInvokeOn,
         string methodName,
         ADONetDelegate<T> methodFunc,
-        object[] methodArgs)
+        params object[] methodArgs)
     {
         return connectionPluginManager.Execute(
             methodInvokeOn,
@@ -38,7 +38,7 @@ public class WrapperUtils
         object methodInvokeOn,
         string methodName,
         ADONetDelegate methodFunc,
-        object[] methodArgs)
+        params object[] methodArgs)
     {
         // Type object does not mean anything since it's void return type
         ExecuteWithPlugins<object>(
@@ -58,10 +58,9 @@ public class WrapperUtils
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
-        IConnectionPlugin? pluginToSkip,
         ADONetDelegate openFunc)
     {
-        connectionPluginManager.Open(hostSpec, props, isInitialConnection, pluginToSkip, openFunc);
+        connectionPluginManager.Open(hostSpec, props, isInitialConnection, null, openFunc);
     }
 
     private static T WrapWithProxyIfNeeded<T>(T toProxy, ConnectionPluginManager connectionPluginManager)
