@@ -122,10 +122,16 @@ public class DialectProviderTests
         mockCommand.Setup(c => c.ExecuteReader()).Returns(mockReader.Object);
         mockReader.Setup(r => r.HasRows).Returns(false);
 
-        var initialDialect = new PgDialect();
-        var updatedDialect = DialectProvider.UpdateDialect(mockConnection.Object, initialDialect);
+        var initialDialectMock = new Mock<IDialect>();
+        initialDialectMock.Setup(d => d.DialectUpdateCandidates).Returns(new List<Type>()
+        {
+            typeof(AuroraPgDialect),
+            typeof(PgDialect),
+        });
+        initialDialectMock.Setup(d => d.IsDialect(mockConnection.Object)).Returns(true);
+        var updatedDialect = DialectProvider.UpdateDialect(mockConnection.Object, initialDialectMock.Object);
 
-        Assert.Same(initialDialect, updatedDialect);
+        Assert.Same(initialDialectMock.Object, updatedDialect);
         mockConnection.Verify(c => c.CreateCommand(), Times.AtLeastOnce);
     }
 
@@ -194,7 +200,7 @@ public class DialectProviderTests
     }
 
     [Fact]
-    public void UpdateDialect_WithMysqlDialect_HandlesExceptionAndReturnsOriginalDialect()
+    public void UpdateDialect_WithInvalidMysqlDialect_ThrowsArgumentError()
     {
         var mockConnection = new Mock<IDbConnection>();
         var mockCommand = new Mock<IDbCommand>();
@@ -203,9 +209,7 @@ public class DialectProviderTests
         mockCommand.Setup(c => c.ExecuteReader()).Throws(new Exception("Connection error"));
 
         var mysqlDialect = new MysqlDialect();
-        var updatedDialect = DialectProvider.UpdateDialect(mockConnection.Object, mysqlDialect);
-
-        Assert.Same(mysqlDialect, updatedDialect);
+        Assert.Throws<ArgumentException>(() => DialectProvider.UpdateDialect(mockConnection.Object, mysqlDialect));
         mockConnection.Verify(c => c.CreateCommand(), Times.AtLeastOnce);
     }
 

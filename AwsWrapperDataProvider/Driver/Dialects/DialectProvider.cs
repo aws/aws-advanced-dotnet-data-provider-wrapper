@@ -13,9 +13,8 @@
 // limitations under the License.
 
 using System.Data;
+using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
-using MySqlConnector;
-using Npgsql;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
@@ -23,17 +22,24 @@ public static class DialectProvider
 {
     private static readonly Dictionary<Type, IDialect> _dialectCache = new();
 
-    // TODO: Decide on supported DbConnection types and fully map RdsUrlTypes to IDialect.
-    private static readonly Dictionary<(RdsUrlType UrlType, Type ConnectionType), Type> ConnectionToDialectMap = new()
+    private static readonly Dictionary<Type, string> ConnectionToDatasourceMap = new()
     {
-        { (RdsUrlType.IpAddress, typeof(NpgsqlConnection)), typeof(PgDialect) },
-        { (RdsUrlType.RdsInstance, typeof(NpgsqlConnection)), typeof(PgDialect) },
-        { (RdsUrlType.RdsWriterCluster, typeof(NpgsqlConnection)), typeof(PgDialect) },
-        { (RdsUrlType.RdsReaderCluster, typeof(NpgsqlConnection)), typeof(PgDialect) },
-        { (RdsUrlType.IpAddress, typeof(MySqlConnection)), typeof(MysqlDialect) },
-        { (RdsUrlType.RdsInstance, typeof(MySqlConnection)), typeof(MysqlDialect) },
-        { (RdsUrlType.RdsWriterCluster, typeof(MySqlConnection)), typeof(MysqlDialect) },
-        { (RdsUrlType.RdsReaderCluster, typeof(MySqlConnection)), typeof(MysqlDialect) },
+        { typeof(Npgsql.NpgsqlConnection), "postgres" },
+        { typeof(MySqlConnector.MySqlConnection), "mysql" },
+        { typeof(MySql.Data.MySqlClient.MySqlConnection), "mysql" },
+    };
+
+    // TODO: Properly map RdsUrlTypes to IDialect.
+    private static readonly Dictionary<(RdsUrlType UrlType, string DatasourceType), Type> DatasourceTypeToDialectMap = new()
+    {
+        { (RdsUrlType.IpAddress, "postgres"), typeof(PgDialect) },
+        { (RdsUrlType.RdsInstance, "postgres"), typeof(PgDialect) },
+        { (RdsUrlType.RdsWriterCluster, "postgres"), typeof(PgDialect) },
+        { (RdsUrlType.RdsReaderCluster, "postgres"), typeof(PgDialect) },
+        { (RdsUrlType.IpAddress, "mysql"), typeof(MysqlDialect) },
+        { (RdsUrlType.RdsInstance, "mysql"), typeof(MysqlDialect) },
+        { (RdsUrlType.RdsWriterCluster, "mysql"), typeof(MysqlDialect) },
+        { (RdsUrlType.RdsReaderCluster, "mysql"), typeof(MysqlDialect) },
     };
 
     public static IDialect GuessDialect(Dictionary<string, string> props)
@@ -53,7 +59,8 @@ public static class DialectProvider
         RdsUrlType rdsUrlType = RdsUtils.IdentifyRdsType(url);
         Type targetConnectionType = Type.GetType(PropertyDefinition.TargetConnectionType.GetString(props)!) ??
                                     throw new InvalidCastException("Target connection type not found.");
-        Type dialectType = ConnectionToDialectMap.GetValueOrDefault((rdsUrlType, targetConnectionType)) ?? typeof(UnknownDialect);
+        string targetDatasourceType = ConnectionToDatasourceMap.GetValueOrDefault(targetConnectionType) ?? "unknown";
+        Type dialectType = DatasourceTypeToDialectMap.GetValueOrDefault((rdsUrlType, targetDatasourceType)) ?? typeof(UnknownDialect);
         return GetDialectFromType(dialectType) ??
                throw new InvalidOperationException($"Failed to instantiate dialect type '{dialectType.Name}'");
     }
@@ -72,12 +79,12 @@ public static class DialectProvider
             }
         }
 
-        if (currDialect is UnknownDialect)
+        if (currDialect.IsDialect(connection))
         {
-            throw new ArgumentException("Unknown dialect type provided.");
+            return currDialect;
         }
 
-        return currDialect;
+        throw new ArgumentException("Unable to find valid dialect type for connection.");
     }
 
     private static IDialect? GetDialectFromType(Type? dialectType)
