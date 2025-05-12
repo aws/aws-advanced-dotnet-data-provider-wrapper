@@ -37,11 +37,11 @@ public static class PropertyDefinition
     public static readonly AwsWrapperProperty TargetParameterType =
         new("TargetParameterType", null, "Driver target parameter type.");
 
+    public static readonly AwsWrapperProperty TargetDialect =
+        new("CustomDialect", null, "Custom dialect type. Should be AssemblyQualifiedName of class implementing IDialect.");
+
     public static readonly AwsWrapperProperty CustomTargetConnectionDialect =
         new("CustomTargetConnectionDialect", null, "Custom target connection dialect type. Should be AssemblyQualifiedName of class implementing ITargetConnectionDialect.");
-
-    public static readonly AwsWrapperProperty CustomDialect =
-        new("CustomDialect", null, "Custom dialect type. Should be AssemblyQualifiedName of class implementing IDialect.");
 
     public static readonly AwsWrapperProperty Plugins = new(
         "Plugins",
@@ -61,7 +61,7 @@ public static class PropertyDefinition
         TargetCommandType,
         TargetParameterType,
         CustomTargetConnectionDialect,
-        CustomDialect,
+        TargetDialect,
         Plugins,
         AutoSortPluginOrder,
     ];

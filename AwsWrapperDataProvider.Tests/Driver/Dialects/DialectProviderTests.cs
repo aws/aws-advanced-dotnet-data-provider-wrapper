@@ -44,7 +44,7 @@ public class DialectProviderTests
     {
         var props = new Dictionary<string, string>
         {
-            { PropertyDefinition.CustomDialect.Name, typeof(TestCustomDialect).AssemblyQualifiedName! },
+            { PropertyDefinition.TargetDialect.Name, typeof(TestCustomDialect).AssemblyQualifiedName! },
         };
 
         var dialect = DialectProvider.GuessDialect(props);
@@ -54,7 +54,7 @@ public class DialectProviderTests
     [Fact]
     public void GuessDialect_WithInvalidCustomDialect_ThrowsInvalidOperationException()
     {
-        var props = new Dictionary<string, string> { { PropertyDefinition.CustomDialect.Name, "NonExistentType" }, };
+        var props = new Dictionary<string, string> { { PropertyDefinition.TargetDialect.Name, "NonExistentType" }, };
         Assert.Throws<InvalidOperationException>(() => DialectProvider.GuessDialect(props));
     }
 
@@ -135,7 +135,7 @@ public class DialectProviderTests
         var mockConnection = new Mock<IDbConnection>();
         var unknownDialect = new UnknownDialect();
 
-        Assert.Throws<NullReferenceException>(() =>
+        Assert.Throws<ArgumentException>(() =>
             DialectProvider.UpdateDialect(mockConnection.Object, unknownDialect));
     }
 

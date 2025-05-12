@@ -21,6 +21,9 @@ namespace AwsWrapperDataProvider.Driver.Dialects;
 
 public static class DialectProvider
 {
+    private static readonly Dictionary<Type, IDialect> _dialectCache = new();
+
+    // TODO: Decide on supported DbConnection types and fully map RdsUrlTypes to IDialect.
     private static readonly Dictionary<(RdsUrlType UrlType, Type ConnectionType), Type> ConnectionToDialectMap = new()
     {
         { (RdsUrlType.IpAddress, typeof(NpgsqlConnection)), typeof(PgDialect) },
@@ -35,29 +38,25 @@ public static class DialectProvider
 
     public static IDialect GuessDialect(Dictionary<string, string> props)
     {
+
         // Check for custom dialect in properties
-        if (PropertyDefinition.CustomDialect.GetString(props) is { } customDialectTypeName &&
+        if (PropertyDefinition.TargetDialect.GetString(props) is { } customDialectTypeName &&
             !string.IsNullOrEmpty(customDialectTypeName))
         {
             // Try to find and instantiate the custom dialect type
             Type? customDialectType = Type.GetType(customDialectTypeName);
-            if (customDialectType != null &&
-                typeof(IDialect).IsAssignableFrom(customDialectType) &&
-                Activator.CreateInstance(customDialectType) is IDialect customDialect)
-            {
-                return customDialect;
-            }
 
-            throw new InvalidOperationException($"Failed to instantiate custom dialect type '{customDialectTypeName}'");
+            return GetDialectFromType(customDialectType) ??
+                   throw new InvalidOperationException($"Failed to instantiate custom dialect type '{customDialectTypeName}'");
         }
 
         string url = PropertyDefinition.GetConnectionUrl(props);
         RdsUrlType rdsUrlType = RdsUtils.IdentifyRdsType(url);
         Type targetConnectionType = Type.GetType(PropertyDefinition.TargetConnectionType.GetString(props)!) ??
                                     throw new InvalidCastException("Target connection type not found.");
-
         Type dialectType = ConnectionToDialectMap.GetValueOrDefault((rdsUrlType, targetConnectionType)) ?? typeof(UnknownDialect);
-        return (IDialect)Activator.CreateInstance(dialectType)!;
+        return GetDialectFromType(dialectType) ??
+               throw new InvalidOperationException($"Failed to instantiate dialect type '{dialectType.Name}'");
     }
 
     public static IDialect UpdateDialect(IDbConnection connection, IDialect currDialect)
@@ -66,16 +65,11 @@ public static class DialectProvider
 
         foreach (Type dialectCandidate in dialectCandidates)
         {
-            if (Activator.CreateInstance(dialectCandidate) is IDialect dialect)
-            {
-                if (dialect.IsDialect(connection))
-                {
-                    return dialect;
-                }
-            }
-            else
-            {
+            IDialect dialect = GetDialectFromType(dialectCandidate) ??
                 throw new ArgumentException("Invalid dialect type provided.");
+            if (dialect.IsDialect(connection))
+            {
+                return dialect;
             }
         }
 
@@ -85,5 +79,23 @@ public static class DialectProvider
         }
 
         return currDialect;
+    }
+
+    private static IDialect? GetDialectFromType(Type? dialectType)
+    {
+        if (dialectType != null && typeof(IDialect).IsAssignableFrom(dialectType))
+        {
+            _dialectCache.TryGetValue(dialectType, out IDialect? dialect);
+
+            if (dialect == null)
+            {
+                dialect = (IDialect)Activator.CreateInstance(dialectType)!;
+                _dialectCache[dialectType] = dialect;
+            }
+
+            return dialect;
+        }
+
+        return null;
     }
 }
