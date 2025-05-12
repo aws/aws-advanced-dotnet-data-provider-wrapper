@@ -21,7 +21,7 @@ public class ConnectionPropertiesUtilsTests
 {
     [Theory]
     [Trait("Category", "Unit")]
-    [InlineData("Host=myhost.example.com;Port=5432;Database=mydb;Username=myuser;Password=mypassword", 5)]
+    [InlineData("host=myhost.example.com;port=5432;database=mydb;username=myuser;password=mypassword", 5)]
     [InlineData("Host=myhost.example.com;Port=5432", 2)]
     [InlineData("Host=myhost.example.com", 1)]
     public void ParseConnectionStringParameters_WithValidConnectionString_ReturnsDictionary(string connectionString, int expectedCount)

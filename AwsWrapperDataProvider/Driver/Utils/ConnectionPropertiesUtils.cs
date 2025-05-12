@@ -18,8 +18,8 @@ namespace AwsWrapperDataProvider.Driver.Utils;
 
 public static class ConnectionPropertiesUtils
 {
-    private static readonly string HostSeperator = ",";
-    private static readonly string HostPortSeperator = ":";
+    private const string HostSeperator = ",";
+    private const string HostPortSeperator = ":";
 
     public static Dictionary<string, string> ParseConnectionStringParameters(string connectionString)
     {
@@ -32,17 +32,16 @@ public static class ConnectionPropertiesUtils
             .Split(";", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
             .Select(x => x.Split("=", StringSplitOptions.TrimEntries))
             .Where(pairs => pairs.Length == 2 && !string.IsNullOrEmpty(pairs[0]))
-            .ToDictionary(pairs => pairs[0], pairs => pairs[1]);
+            .ToDictionary(pairs => pairs[0], pairs => pairs[1], StringComparer.OrdinalIgnoreCase);
     }
 
     public static IList<HostSpec> GetHostsFromProperties(Dictionary<string, string> props, HostSpecBuilder hostSpecBuilder)
     {
-        IList<HostSpec> hosts = new List<HostSpec>();
+        List<HostSpec> hosts = [];
         string hostsString = PropertyDefinition.Host.GetString(props)
                       ?? PropertyDefinition.Server.GetString(props)
                       ?? string.Empty;
-        IList<string> hostStringList =
-            hostsString.Split(HostSeperator, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        IList<string> hostStringList = hostsString.Split(HostSeperator, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
         int port = PropertyDefinition.Port.GetInt(props) ?? HostSpec.NoPort;
 
         foreach (string hostPortString in hostStringList)

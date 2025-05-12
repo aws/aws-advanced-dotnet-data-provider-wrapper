@@ -29,7 +29,7 @@ public interface IHostListProvider
 
     HostRole GetHostRole(DbConnection connection);
 
-    HostSpec GetHostSpec(DbConnection connection);
+    HostSpec? GetHostSpec(DbConnection connection);
 
     string GetClusterId();
 }

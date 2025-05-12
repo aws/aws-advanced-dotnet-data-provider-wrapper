@@ -45,32 +45,34 @@ public class ConnectionStringHostListProvider : IStaticHostListProvider
 
     public IList<HostSpec> Refresh(DbConnection connection)
     {
-        throw new NotImplementedException();
+        return this.Refresh();
     }
 
     public IList<HostSpec> ForceRefresh()
     {
-        throw new NotImplementedException();
+        this.Init();
+        return this._hostList.AsReadOnly();
     }
 
     public IList<HostSpec> ForceRefresh(DbConnection connection)
     {
-        throw new NotImplementedException();
+        return this.ForceRefresh();
     }
 
     public HostRole GetHostRole(DbConnection connection)
     {
-        throw new NotImplementedException();
+        throw new NotSupportedException("ConnectionStringHostListProvider does not support GetHostRole");
     }
 
-    public HostSpec GetHostSpec(DbConnection connection)
+    public HostSpec? GetHostSpec(DbConnection connection)
     {
-        throw new NotImplementedException();
+        // TODO: Add log "ConnectionStringHostListProvider does not support GetHostSpec"
+        return null;
     }
 
     public string GetClusterId()
     {
-        throw new NotImplementedException();
+        throw new NotSupportedException("ConnectionStringHostListProvider does not support GetClusterId");
     }
 
     private void Init()
