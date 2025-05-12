@@ -28,6 +28,7 @@ public class ConnectionStringHostListProvider : IStaticHostListProvider
     /// Check if _hostList has already been initialized. _hostList should only be initialized once.
     /// </summary>
     private bool _isInitialized = false;
+    private bool _isSingleWriterConnectionString;
 
     public ConnectionStringHostListProvider(
         Dictionary<string, string> props,
@@ -35,6 +36,7 @@ public class ConnectionStringHostListProvider : IStaticHostListProvider
     {
         this._properties = props;
         this._hostListProviderService = hostListProviderService;
+        this._isSingleWriterConnectionString = PropertyDefinition.SingleWriterConnectionString.GetBoolean(props);
     }
 
     public IList<HostSpec> Refresh()
@@ -84,7 +86,8 @@ public class ConnectionStringHostListProvider : IStaticHostListProvider
 
         this._hostList.AddRange(ConnectionPropertiesUtils.GetHostsFromProperties(
                 this._properties,
-                this._hostListProviderService.HostSpecBuilder));
+                this._hostListProviderService.HostSpecBuilder,
+                this._isSingleWriterConnectionString));
         if (this._hostList.Count == 0)
         {
             // TODO: move error string to resx file.

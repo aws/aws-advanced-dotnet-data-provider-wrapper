@@ -47,6 +47,11 @@ public static class PropertyDefinition
         "true",
         "This flag is enabled by default, meaning that the plugins order will be automatically adjusted. Disable it at your own risk or if you really need plugins to be executed in a particular order.");
 
+    public static readonly AwsWrapperProperty SingleWriterConnectionString = new(
+        "SingleWriterConnectionString",
+        "false",
+        "Set to true if you are providing a connection string with multiple comma-delimited hosts and your cluster has only one writer. The writer must be the first host in the connection string");
+
     /// <summary>
     /// A set of AwsWrapperProperties that is used by the wrapper and should not be passed to the target driver.
     /// </summary>
@@ -57,6 +62,7 @@ public static class PropertyDefinition
         TargetDialect,
         Plugins,
         AutoSortPluginOrder,
+        SingleWriterConnectionString
     ];
 
     public static string GetConnectionUrl(Dictionary<string, string> props)

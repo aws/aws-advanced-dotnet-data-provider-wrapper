@@ -35,7 +35,7 @@ public static class ConnectionPropertiesUtils
             .ToDictionary(pairs => pairs[0], pairs => pairs[1], StringComparer.OrdinalIgnoreCase);
     }
 
-    public static IList<HostSpec> GetHostsFromProperties(Dictionary<string, string> props, HostSpecBuilder hostSpecBuilder)
+    public static IList<HostSpec> GetHostsFromProperties(Dictionary<string, string> props, HostSpecBuilder hostSpecBuilder, bool singleWriterConnectionString)
     {
         List<HostSpec> hosts = [];
         string hostsString = PropertyDefinition.Host.GetString(props)
@@ -44,16 +44,24 @@ public static class ConnectionPropertiesUtils
         IList<string> hostStringList = hostsString.Split(HostSeperator, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
         int port = PropertyDefinition.Port.GetInt(props) ?? HostSpec.NoPort;
 
-        foreach (string hostPortString in hostStringList)
+        for (int i = 0; i < hostStringList.Count; i++)
         {
-            IList<string> hostPortPair = hostPortString.Split(HostPortSeperator,
+            IList<string> hostPortPair = hostStringList[i].Split(
+                HostPortSeperator,
                 2,
                 StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
             string hostString = hostPortPair[0];
             port = hostPortPair.Count == 2 ? int.Parse(hostPortPair[1]) : port;
-
-            RdsUrlType rdsUrlType = RdsUtils.IdentifyRdsType(hostString);
-            HostRole hostRole = RdsUrlType.RdsReaderCluster.Equals(rdsUrlType) ? HostRole.Reader : HostRole.Writer;
+            HostRole hostRole;
+            if (singleWriterConnectionString)
+            {
+                hostRole = i > 0 ? HostRole.Reader : HostRole.Writer;
+            }
+            else
+            {
+                RdsUrlType rdsUrlType = RdsUtils.IdentifyRdsType(hostString);
+                hostRole = RdsUrlType.RdsReaderCluster.Equals(rdsUrlType) ? HostRole.Reader : HostRole.Writer;
+            }
 
             string? hostId = RdsUtils.GetRdsInstanceId(hostString);
 
