@@ -23,12 +23,12 @@ public class ConnectionStringHostListProvider : IStaticHostListProvider
     private readonly List<HostSpec> _hostList = new List<HostSpec>();
     private readonly Dictionary<string, string> _properties;
     private readonly IHostListProviderService _hostListProviderService;
+    private readonly bool _isSingleWriterConnectionString;
 
     /// <summary>
     /// Check if _hostList has already been initialized. _hostList should only be initialized once.
     /// </summary>
     private bool _isInitialized = false;
-    private bool _isSingleWriterConnectionString;
 
     public ConnectionStringHostListProvider(
         Dictionary<string, string> props,
