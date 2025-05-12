@@ -38,7 +38,6 @@ public static class DialectProvider
 
     public static IDialect GuessDialect(Dictionary<string, string> props)
     {
-
         // Check for custom dialect in properties
         if (PropertyDefinition.TargetDialect.GetString(props) is { } customDialectTypeName &&
             !string.IsNullOrEmpty(customDialectTypeName))
