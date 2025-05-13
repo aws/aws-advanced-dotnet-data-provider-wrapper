@@ -66,7 +66,7 @@ public static class PropertyDefinition
         AutoSortPluginOrder,
     ];
 
-    public static string GetConnectionUrl(Dictionary<string, string> props)
+    public static string GetServerUrl(Dictionary<string, string> props)
     {
         return Server.GetString(props) ?? Host.GetString(props) ?? throw new ArgumentException("Connection url is missing");
     }
