@@ -25,17 +25,11 @@ public static class PropertyDefinition
     public static readonly AwsWrapperProperty Port =
         new("Port", null, "Connection port.");
 
-    public static readonly AwsWrapperProperty Database =
-        new("Database", null, "Driver database name.");
-
     public static readonly AwsWrapperProperty TargetConnectionType =
         new("TargetConnectionType", null, "Driver target connection type.");
 
     public static readonly AwsWrapperProperty TargetCommandType =
         new("TargetCommandType", null, "Driver target command type.");
-
-    public static readonly AwsWrapperProperty TargetParameterType =
-        new("TargetParameterType", null, "Driver target parameter type.");
 
     public static readonly AwsWrapperProperty TargetDialect =
         new("CustomDialect", null, "Custom dialect type. Should be AssemblyQualifiedName of class implementing IDialect.");
@@ -59,7 +53,6 @@ public static class PropertyDefinition
     public static readonly HashSet<AwsWrapperProperty> InternalWrapperProperties = [
         TargetConnectionType,
         TargetCommandType,
-        TargetParameterType,
         CustomTargetConnectionDialect,
         TargetDialect,
         Plugins,
@@ -68,6 +61,6 @@ public static class PropertyDefinition
 
     public static string GetConnectionUrl(Dictionary<string, string> props)
     {
-        return Server.GetString(props) ?? Host.GetString(props) ?? throw new ArgumentException("Connection url is missing");
+        return Server.GetString(props) ?? Host.GetString(props) ?? throw new ArgumentException("Connection url is missing.");
     }
 }

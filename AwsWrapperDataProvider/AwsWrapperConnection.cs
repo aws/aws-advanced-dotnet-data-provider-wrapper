@@ -34,7 +34,7 @@ public class AwsWrapperConnection : DbConnection
     private Type? _targetType;
     private string? _connectionString;
     private string? _database;
-    private Dictionary<string, string>? _props;
+    private Dictionary<string, string> _props;
 
     internal ConnectionPluginManager PluginManager => this._pluginManager!;
 
@@ -71,7 +71,7 @@ public class AwsWrapperConnection : DbConnection
         this._connectionString = connectionString;
         this._props = ConnectionPropertiesUtils.ParseConnectionStringParameters(this._connectionString);
         this._targetType = targetType ?? this.GetTargetType(this._props);
-        this._props.Add(PropertyDefinition.TargetConnectionType.Name, this._targetType.AssemblyQualifiedName!);
+        this._props[PropertyDefinition.TargetConnectionType.Name] = this._targetType.AssemblyQualifiedName!;
 
         ITargetConnectionDialect connectionDialect = TargetConnectionDialectProvider.GetDialect(this._targetType, this._props);
 
@@ -174,6 +174,7 @@ public class AwsWrapperConnection : DbConnection
             () => this._pluginService!.CurrentConnection!.CreateCommand());
 
         Console.WriteLine("AwsWrapperConnection.CreateCommand()");
+        this._props[PropertyDefinition.TargetCommandType.Name] = command.GetType().AssemblyQualifiedName!;
         return new AwsWrapperCommand(command, this, this._pluginManager!);
     }
 
@@ -189,6 +190,7 @@ public class AwsWrapperConnection : DbConnection
             "DbConnection.CreateCommand",
             () => (TCommand)this._pluginService.CurrentConnection.CreateCommand());
 
+        this._props[PropertyDefinition.TargetCommandType.Name] = typeof(TCommand).AssemblyQualifiedName!;
         return new AwsWrapperCommand<TCommand>(command, this, this._pluginManager);
     }
 
