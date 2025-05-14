@@ -20,6 +20,7 @@ namespace AwsWrapperDataProvider.Tests;
 public class AwsWrapperConnectionTest
 {
     [Fact]
+    [Trait("Category", "Unit")]
     public void Constructor_WithTypeArgument_SetsTargetConnectionTypeInProperties()
     {
         AwsWrapperConnection<MySqlConnection> connection =
@@ -32,6 +33,7 @@ public class AwsWrapperConnectionTest
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void Constructor_WithTargetConnectionTypeInConnectionString_SetsTargetConnectionTypeInProperties()
     {
         AwsWrapperConnection connection =
