@@ -71,6 +71,7 @@ public class AwsWrapperConnection : DbConnection
         this._connectionString = connectionString;
         this._props = ConnectionPropertiesUtils.ParseConnectionStringParameters(this._connectionString);
         this._targetType = targetType ?? this.GetTargetType(this._props);
+        this._props.Add(PropertyDefinition.TargetConnectionType.Name, this._targetType.AssemblyQualifiedName!);
 
         ITargetConnectionDialect connectionDialect = TargetConnectionDialectProvider.GetDialect(this._targetType, this._props);
 

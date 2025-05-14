@@ -19,20 +19,18 @@ using AwsWrapperDataProvider.Driver.HostListProviders;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
-public class PgDialect : IDialect
+public class MysqlDialect : IDialect
 {
-    public int DefaultPort { get; } = 5432;
+    public int DefaultPort { get; } = 3306;
 
-    // public IExceptionHandler ExceptionHandler { get; }
+    public string HostAliasQuery { get; } = "SELECT CONCAT(@@hostname, ':', @@port)";
 
-    public string HostAliasQuery { get; } = "SELECT CONCAT(inet_server_addr(), ':', inet_server_port())";
-
-    public string ServerVersionQuery { get; } = "SELECT 'version', VERSION()";
+    public string ServerVersionQuery { get; } = "SHOW VARIABLES LIKE 'version_comment'";
 
     public IList<Type> DialectUpdateCandidates { get; } =
     [
-        typeof(AuroraPgDialect),
-        typeof(RdsPgDialect),
+        typeof(AuroraMysqlDialect),
+        typeof(RdsMysqlDialect),
     ];
 
     public HostListProviderSupplier HostListProviderSupplier { get; } = (
@@ -45,12 +43,19 @@ public class PgDialect : IDialect
         try
         {
             using IDbCommand command = conn.CreateCommand();
-            command.CommandText = "SELECT 1 FROM pg_proc LIMIT 1";
+            command.CommandText = this.ServerVersionQuery;
             using DbDataReader reader = (DbDataReader)command.ExecuteReader();
-
-            if (reader.HasRows)
+            while (reader.Read())
             {
-                return true;
+                int columnCount = reader.FieldCount;
+                for (int i = 0; i < columnCount; i++)
+                {
+                    string? columnValue = reader.IsDBNull(i) ? null : reader.GetString(i);
+                    if (columnValue != null && columnValue.ToLower().Contains("mysql"))
+                    {
+                        return true;
+                    }
+                }
             }
         }
         catch (Exception)
@@ -61,7 +66,7 @@ public class PgDialect : IDialect
         return false;
     }
 
-    public void PrepareConnectionProperties(Dictionary<string, string> connectionpProps, HostSpec hostSpec)
+    public void PrepareConnectionProperties(Dictionary<string, string> props, HostSpec hostSpec)
     {
         // Do nothing.
     }
