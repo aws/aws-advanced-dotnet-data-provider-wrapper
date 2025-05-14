@@ -40,15 +40,11 @@ public class MysqlDialect : IDialect
 
     public bool IsDialect(IDbConnection conn)
     {
-        IDbCommand? command = null;
-        DbDataReader? reader = null;
-
         try
         {
-            command = conn.CreateCommand();
+            using IDbCommand command = conn.CreateCommand();
             command.CommandText = this.ServerVersionQuery;
-            reader = (DbDataReader)command.ExecuteReader();
-
+            using DbDataReader reader = (DbDataReader)command.ExecuteReader();
             while (reader.Read())
             {
                 int columnCount = reader.FieldCount;
@@ -65,11 +61,6 @@ public class MysqlDialect : IDialect
         catch (Exception)
         {
             // ignored
-        }
-        finally
-        {
-            reader?.Close();
-            command?.Dispose();
         }
 
         return false;

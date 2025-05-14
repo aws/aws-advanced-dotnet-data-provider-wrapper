@@ -42,14 +42,11 @@ public class PgDialect : IDialect
 
     public bool IsDialect(IDbConnection conn)
     {
-        IDbCommand? command = null;
-        DbDataReader? reader = null;
-
         try
         {
-            command = conn.CreateCommand();
+            using IDbCommand command = conn.CreateCommand();
             command.CommandText = "SELECT 1 FROM pg_proc LIMIT 1";
-            reader = (DbDataReader)command.ExecuteReader();
+            using DbDataReader reader = (DbDataReader)command.ExecuteReader();
 
             if (reader.HasRows)
             {
@@ -59,18 +56,6 @@ public class PgDialect : IDialect
         catch (Exception)
         {
             // ignored
-        }
-        finally
-        {
-            try
-            {
-                reader?.Close();
-                command?.Dispose();
-            }
-            catch (DbException)
-            {
-                // ignored
-            }
         }
 
         return false;
