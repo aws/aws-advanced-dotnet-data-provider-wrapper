@@ -28,16 +28,17 @@ namespace AwsWrapperDataProvider;
 
 public class AwsWrapperConnection : DbConnection
 {
-    protected readonly IPluginService? _pluginService;
-    private readonly ConnectionPluginManager? _pluginManager;
-    private readonly IHostListProviderService? _hostListProviderService;
-    private Type? _targetType;
-    private string? _connectionString;
-    private string? _database;
+    protected readonly IPluginService _pluginService;
+    private readonly ConnectionPluginManager _pluginManager;
+    private readonly IHostListProviderService _hostListProviderService;
+    private Type _targetType;
+    private string _connectionString;
     private Dictionary<string, string> _props;
+    private string? _database;
 
-    internal ConnectionPluginManager PluginManager => this._pluginManager!;
+    internal ConnectionPluginManager PluginManager => this._pluginManager;
 
+    public Dictionary<string, string> ConnectionProperties => this._props;
     public DbConnection? TargetDbConnection => this._pluginService?.CurrentConnection;
 
     [AllowNull]
@@ -94,9 +95,6 @@ public class AwsWrapperConnection : DbConnection
                 this._props),
             this._pluginService.InitialConnectionHostSpec);
     }
-
-    // for testing purpose only
-    public AwsWrapperConnection() : base() { }
 
     public override string Database => this._pluginService!.CurrentConnection?.Database ?? this._database ?? string.Empty;
 
