@@ -37,8 +37,8 @@ public class AwsWrapperConnection : DbConnection
     private string? _database;
 
     internal ConnectionPluginManager PluginManager => this._pluginManager;
+    internal Dictionary<string, string> ConnectionProperties => this._props;
 
-    public Dictionary<string, string> ConnectionProperties => this._props;
     public DbConnection? TargetDbConnection => this._pluginService?.CurrentConnection;
 
     [AllowNull]
