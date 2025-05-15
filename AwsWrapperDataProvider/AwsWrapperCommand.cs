@@ -222,7 +222,7 @@ public class AwsWrapperCommand : DbCommand
             this._targetDbCommand!,
             "DbCommand.ExecuteReader",
             () => this._targetDbCommand!.ExecuteReader());
-        return new AwsWrapperDataReader(dbDataReader, this._pluginManager);
+        return new AwsWrapperDataReader(dbDataReader, this._pluginManager!);
     }
 
     public override object? ExecuteScalar()

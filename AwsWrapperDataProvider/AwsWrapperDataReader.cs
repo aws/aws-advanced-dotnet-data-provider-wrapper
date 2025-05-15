@@ -25,17 +25,12 @@ namespace AwsWrapperDataProvider
 {
     public class AwsWrapperDataReader : DbDataReader
     {
-        private ConnectionPluginManager _connectionPluginManager;
+        private readonly ConnectionPluginManager _connectionPluginManager;
         protected DbDataReader _targetDataReader;
 
-        public AwsWrapperDataReader(DbDataReader targetDataReader, ConnectionPluginManager connectionPluginManager) : this(targetDataReader)
+        public AwsWrapperDataReader(DbDataReader targetDataReader, ConnectionPluginManager connectionPluginManager)
         {
             this._connectionPluginManager = connectionPluginManager;
-        }
-
-        internal AwsWrapperDataReader(DbDataReader targetDataReader)
-        {
-            Debug.Assert(targetDataReader != null);
             this._targetDataReader = targetDataReader;
         }
 
@@ -89,8 +84,21 @@ namespace AwsWrapperDataProvider
         {
             if (disposing)
             {
-                this._targetDataReader.Dispose();
+                WrapperUtils.RunWithPlugins(
+                    this._connectionPluginManager,
+                    this._targetDataReader,
+                    "DbDataReader.Dispose",
+                    () => this._targetDataReader!.Dispose());
             }
+        }
+
+        public new void Dispose()
+        {
+            WrapperUtils.RunWithPlugins(
+                this._connectionPluginManager,
+                this._targetDataReader,
+                "DbDataReader.Dispose",
+                () => this._targetDataReader!.Dispose());
         }
 
         public override bool GetBoolean(int i)
@@ -175,7 +183,6 @@ namespace AwsWrapperDataProvider
         }
 
         public override Type GetFieldType(int i)
-
         {
             return WrapperUtils.ExecuteWithPlugins(
                 this._connectionPluginManager,
@@ -220,7 +227,6 @@ namespace AwsWrapperDataProvider
                 () => this._targetDataReader.GetInt32(i));
         }
 
-
         public override long GetInt64(int i)
         {
             return WrapperUtils.ExecuteWithPlugins(
@@ -229,7 +235,6 @@ namespace AwsWrapperDataProvider
                 "DbDataReader.GetInt64",
                 () => this._targetDataReader.GetInt64(i));
         }
-
 
         public override string GetName(int i)
         {
@@ -267,7 +272,6 @@ namespace AwsWrapperDataProvider
                 () => this._targetDataReader.GetValue(i));
         }
 
-
         public override int GetValues(object[] values)
         {
             return WrapperUtils.ExecuteWithPlugins(
@@ -286,7 +290,6 @@ namespace AwsWrapperDataProvider
                 () => this._targetDataReader.IsDBNull(i));
         }
 
-
         public override IEnumerator GetEnumerator()
         {
             return WrapperUtils.ExecuteWithPlugins(
@@ -295,6 +298,5 @@ namespace AwsWrapperDataProvider
                 "DbDataReader.GetEnumerator",
                 () => this._targetDataReader.GetEnumerator());
         }
-
     }
 }
