@@ -12,20 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using AwsWrapperDataProvider.Driver.HostInfo;
-using AwsWrapperDataProvider.Driver.Utils;
-using Npgsql;
+namespace AwsWrapperDataProvider.Driver.Dialects;
 
-namespace AwsWrapperDataProvider.Driver.TargetConnectionDialects;
-
-public class PgTargetConnectionDialect : GenericTargetConnectionDialect
+public class RdsPgDialect : PgDialect
 {
-    public override Type DriverConnectionType { get; } = typeof(NpgsqlConnection);
-
-    public override string PrepareConnectionString(
-        HostSpec? hostSpec,
-        Dictionary<string, string> props)
-    {
-        return this.PrepareConnectionString(hostSpec, props, PropertyDefinition.Host);
-    }
+    // TODO: Implement RdsPgDialect
 }

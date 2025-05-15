@@ -14,8 +14,7 @@
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
-public class DialectCodes
+public class AuroraPgDialect : PgDialect
 {
-    public static readonly string AURORAPG = "aurora-pg";
-    public static readonly string PG = "pg";
+    // TODO Implement AuroraPgDialect
 }

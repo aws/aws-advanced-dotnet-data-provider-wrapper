@@ -58,7 +58,14 @@ public class DefaultConnectionPlugin(
         bool isInitialConnection,
         ADONetDelegate methodFunc)
     {
-        methodFunc();
+        DbConnection? conn = this.pluginService.CurrentConnection;
+        ArgumentNullException.ThrowIfNull(conn);
+        conn.Open();
+
+        if (isInitialConnection)
+        {
+            this.pluginService.UpdateDialect(conn);
+        }
     }
 
     public DbConnection ForceConnect(

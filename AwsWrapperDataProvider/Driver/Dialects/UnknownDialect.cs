@@ -13,27 +13,20 @@
 // limitations under the License.
 
 using System.Data;
-using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
-public class PgDialect : IDialect
+public class UnknownDialect : IDialect
 {
-    public int DefaultPort { get; } = 5432;
+    public int DefaultPort { get; } = HostSpec.NoPort;
 
-    // public IExceptionHandler ExceptionHandler { get; }
+    public string HostAliasQuery { get; } = "SELECT 'Unknown host'";
 
-    public string HostAliasQuery { get; } = "SELECT CONCAT(inet_server_addr(), ':', inet_server_port())";
+    public string ServerVersionQuery { get; } = "SELECT 'Unknown version'";
 
-    public string ServerVersionQuery { get; } = "SELECT 'version', VERSION()";
-
-    public IList<Type> DialectUpdateCandidates { get; } =
-    [
-        typeof(AuroraPgDialect),
-        typeof(RdsPgDialect),
-    ];
+    public IList<Type> DialectUpdateCandidates { get; } = [];
 
     public HostListProviderSupplier HostListProviderSupplier { get; } = (
         Dictionary<string, string> props,
@@ -42,26 +35,10 @@ public class PgDialect : IDialect
 
     public bool IsDialect(IDbConnection conn)
     {
-        try
-        {
-            using IDbCommand command = conn.CreateCommand();
-            command.CommandText = "SELECT 1 FROM pg_proc LIMIT 1";
-            using DbDataReader reader = (DbDataReader)command.ExecuteReader();
-
-            if (reader.HasRows)
-            {
-                return true;
-            }
-        }
-        catch (Exception)
-        {
-            // ignored
-        }
-
         return false;
     }
 
-    public void PrepareConnectionProperties(Dictionary<string, string> connectionpProps, HostSpec hostSpec)
+    public void PrepareConnectionProperties(Dictionary<string, string> props, HostSpec hostSpec)
     {
         // Do nothing.
     }

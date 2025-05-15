@@ -37,6 +37,9 @@ public static class PropertyDefinition
     public static readonly AwsWrapperProperty TargetParameterType =
         new("TargetParameterType", null, "Driver target parameter type.");
 
+    public static readonly AwsWrapperProperty TargetDialect =
+        new("CustomDialect", null, "Custom dialect type. Should be AssemblyQualifiedName of class implementing IDialect.");
+
     public static readonly AwsWrapperProperty CustomTargetConnectionDialect =
         new("CustomTargetConnectionDialect", null, "Custom target connection dialect type. Should be AssemblyQualifiedName of class implementing ITargetConnectionDialect.");
 
@@ -58,7 +61,13 @@ public static class PropertyDefinition
         TargetCommandType,
         TargetParameterType,
         CustomTargetConnectionDialect,
+        TargetDialect,
         Plugins,
         AutoSortPluginOrder,
     ];
+
+    public static string GetConnectionUrl(Dictionary<string, string> props)
+    {
+        return Server.GetString(props) ?? Host.GetString(props) ?? throw new ArgumentException("Connection url is missing");
+    }
 }

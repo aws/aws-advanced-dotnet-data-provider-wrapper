@@ -19,7 +19,6 @@ using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 
 namespace AwsWrapperDataProvider.Driver.ConnectionProviders;
 
-// TODO: Remove need for Type in constructor, said information should be accessible from HostSpec.
 public class DbConnectionProvider() : IConnectionProvider
 {
     public bool AcceptsUrl(string protocol, HostSpec hostSpec, Dictionary<string, string> props)
