@@ -51,6 +51,7 @@ public class AwsWrapperDataReaderTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void Read_DelegatesToTargetReader()
     {
         this.SetupConnectionPluginManagerExecute<bool>();
@@ -59,6 +60,7 @@ public class AwsWrapperDataReaderTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void Close_DelegatesToTargetReader()
     {
         this.SetupConnectionPluginManagerExecute<int>();
@@ -67,6 +69,7 @@ public class AwsWrapperDataReaderTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void GetBoolean_DelegatesToTargetReader()
     {
         this.SetupConnectionPluginManagerExecute<bool>();
@@ -75,6 +78,7 @@ public class AwsWrapperDataReaderTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void GetByte_DelegatesToTargetReader()
     {
         this.SetupConnectionPluginManagerExecute<byte>();
@@ -83,6 +87,7 @@ public class AwsWrapperDataReaderTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void GetString_DelegatesToTargetReader()
     {
         this.SetupConnectionPluginManagerExecute<string>();
@@ -91,6 +96,7 @@ public class AwsWrapperDataReaderTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void Indexer_ByName_DelegatesToTargetReader()
     {
         this._mockReader.Setup(r => r["foo"]).Returns("bar");
@@ -99,6 +105,7 @@ public class AwsWrapperDataReaderTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void Indexer_ByIndex_DelegatesToTargetReader()
     {
         this._mockReader.Setup(r => r[0]).Returns(123);
@@ -107,6 +114,7 @@ public class AwsWrapperDataReaderTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void GetEnumerator_DelegatesToTargetReader()
     {
         this.SetupConnectionPluginManagerExecute<IEnumerator>();
