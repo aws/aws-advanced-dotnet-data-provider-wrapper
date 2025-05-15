@@ -66,12 +66,6 @@ public class ConnectionStringHostListProvider : IStaticHostListProvider
         throw new NotSupportedException("ConnectionStringHostListProvider does not support GetHostRole");
     }
 
-    public HostSpec? GetHostSpec(DbConnection connection)
-    {
-        // TODO: Add log "ConnectionStringHostListProvider does not support GetHostSpec"
-        return null;
-    }
-
     public string GetClusterId()
     {
         throw new NotSupportedException("ConnectionStringHostListProvider does not support GetClusterId");
