@@ -21,6 +21,7 @@ using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Utils;
 using AwsWrapperDataProvider.Tests.Driver.Plugins;
 using Moq;
+using MySqlConnector;
 
 namespace AwsWrapperDataProvider.Tests.Driver;
 
@@ -32,7 +33,8 @@ public class ConnectionPluginManagerTests
     public ConnectionPluginManagerTests()
     {
         this.mockConnectionProvider = Mock.Of<IConnectionProvider>();
-        this.mockWrapperConnection = Mock.Of<AwsWrapperConnection>();
+        this.mockWrapperConnection = new Mock<AwsWrapperConnection<MySqlConnection>>(
+            "Server=<insert_rds_instance_here>;User ID=admin;Password=my_password_2020;Initial Catalog=test;").Object;
     }
 
     [Fact]
