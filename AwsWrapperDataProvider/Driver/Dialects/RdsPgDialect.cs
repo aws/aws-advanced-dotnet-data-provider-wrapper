@@ -12,9 +12,50 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data;
+using System.Data.Common;
+
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
 public class RdsPgDialect : PgDialect
 {
-    // TODO: Implement RdsPgDialect
+    private const string ExtensionsSql = "SELECT (setting LIKE '%rds_tools%') AS rds_tools, "
+      + "(setting LIKE '%aurora_stat_utils%') AS aurora_stat_utils "
+      + "FROM pg_settings "
+      + "WHERE name='rds.extensions'";
+
+    public override IList<Type> DialectUpdateCandidates { get; } =
+    [
+        typeof(AuroraPgDialect),
+    ];
+
+    public override bool IsDialect(IDbConnection conn)
+    {
+        if (!base.IsDialect(conn))
+        {
+            return false;
+        }
+
+        try
+        {
+            using IDbCommand command = conn.CreateCommand();
+            command.CommandText = ExtensionsSql;
+            using DbDataReader reader = (DbDataReader)command.ExecuteReader();
+            while (reader.Read())
+            {
+                bool rdsTools = reader.GetBoolean("rds_tools");
+                bool auroraUtils = reader.GetBoolean("aurora_stat_utils");
+                if (rdsTools && !auroraUtils)
+                {
+                    return true;
+                }
+            }
+        }
+        catch (Exception)
+        {
+            // ignored
+        }
+
+        return false;
+    }
 }

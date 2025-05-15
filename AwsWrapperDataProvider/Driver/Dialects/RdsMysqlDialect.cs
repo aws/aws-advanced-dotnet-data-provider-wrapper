@@ -12,9 +12,48 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data;
+using System.Data.Common;
+
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
 public class RdsMysqlDialect : MysqlDialect
 {
-    // TODO: Implement RdsMysqlDialect;
+    public override IList<Type> DialectUpdateCandidates { get; } =
+    [
+        typeof(AuroraMysqlDialect),
+    ];
+
+    public override bool IsDialect(IDbConnection conn)
+    {
+        if (base.IsDialect(conn))
+        {
+            return false;
+        }
+
+        try
+        {
+            using IDbCommand command = conn.CreateCommand();
+            command.CommandText = this.ServerVersionQuery;
+            using DbDataReader reader = (DbDataReader)command.ExecuteReader();
+            while (reader.Read())
+            {
+                int columnCount = reader.FieldCount;
+                for (int i = 0; i < columnCount; i++)
+                {
+                    string? columnValue = reader.IsDBNull(i) ? null : reader.GetString(i);
+                    if (columnValue != null && string.Equals(columnValue, "Source distribution", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+        catch (Exception)
+        {
+            // ignored
+        }
+
+        return false;
+    }
 }

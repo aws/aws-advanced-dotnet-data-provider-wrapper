@@ -12,9 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data;
+
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
 public class AuroraPgDialect : PgDialect
 {
     // TODO Implement AuroraPgDialect
+    public override bool IsDialect(IDbConnection conn)
+    {
+        return false;
+    }
 }

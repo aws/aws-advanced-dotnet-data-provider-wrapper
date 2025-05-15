@@ -23,13 +23,11 @@ public class PgDialect : IDialect
 {
     public int DefaultPort { get; } = 5432;
 
-    // public IExceptionHandler ExceptionHandler { get; }
-
     public string HostAliasQuery { get; } = "SELECT CONCAT(inet_server_addr(), ':', inet_server_port())";
 
     public string ServerVersionQuery { get; } = "SELECT 'version', VERSION()";
 
-    public IList<Type> DialectUpdateCandidates { get; } =
+    public virtual IList<Type> DialectUpdateCandidates { get; } =
     [
         typeof(AuroraPgDialect),
         typeof(RdsPgDialect),
@@ -40,7 +38,7 @@ public class PgDialect : IDialect
         IHostListProviderService hostListProviderService,
         IPluginService pluginService) => new ConnectionStringHostListProvider(props, hostListProviderService);
 
-    public bool IsDialect(IDbConnection conn)
+    public virtual bool IsDialect(IDbConnection conn)
     {
         try
         {

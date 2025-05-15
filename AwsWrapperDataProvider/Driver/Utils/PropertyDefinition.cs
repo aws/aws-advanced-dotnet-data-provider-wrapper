@@ -50,7 +50,7 @@ public static class PropertyDefinition
     public static readonly AwsWrapperProperty SingleWriterConnectionString = new(
         "SingleWriterConnectionString",
         "false",
-        "Set to true if you are providing a connection string with multiple comma-delimited hosts and your cluster has only one writer. The writer must be the first host in the connection string");
+        "Set to true if you are providing a connection string with multiple comma-delimited hosts and your cluster has only one writer. The writer must be the first host in the connection string.");
 
     /// <summary>
     /// A set of AwsWrapperProperties that is used by the wrapper and should not be passed to the target driver.
