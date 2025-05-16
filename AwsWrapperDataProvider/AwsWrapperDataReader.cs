@@ -212,7 +212,7 @@ namespace AwsWrapperDataProvider
                 () => this._targetDataReader.GetDouble(i));
         }
 
-        // TODO: write integration test to check if can user reflection on Type after trimming.
+        // TODO: Write integration test to check if user can use reflection on Type after trimming.
         [return:
             DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields |
                                        DynamicallyAccessedMemberTypes.PublicProperties)]
