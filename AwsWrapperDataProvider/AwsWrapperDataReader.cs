@@ -25,7 +25,7 @@ namespace AwsWrapperDataProvider
         private readonly ConnectionPluginManager _connectionPluginManager;
         protected DbDataReader _targetDataReader;
 
-        public AwsWrapperDataReader(DbDataReader targetDataReader, ConnectionPluginManager connectionPluginManager)
+        internal AwsWrapperDataReader(DbDataReader targetDataReader, ConnectionPluginManager connectionPluginManager)
         {
             this._connectionPluginManager = connectionPluginManager;
             this._targetDataReader = targetDataReader;

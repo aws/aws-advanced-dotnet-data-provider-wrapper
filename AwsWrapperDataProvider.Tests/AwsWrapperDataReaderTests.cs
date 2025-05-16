@@ -16,13 +16,11 @@ using System.Collections;
 using System.Data;
 using System.Data.Common;
 using System.Linq.Expressions;
-using System.Runtime.CompilerServices;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.Plugins;
 using Moq;
 using Npgsql;
-using ZstdSharp.Unsafe;
 
 namespace AwsWrapperDataProvider.Tests;
 
