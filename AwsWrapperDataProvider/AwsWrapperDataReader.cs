@@ -15,6 +15,7 @@
 using System.Collections;
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics.CodeAnalysis;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Utils;
 
@@ -211,6 +212,10 @@ namespace AwsWrapperDataProvider
                 () => this._targetDataReader.GetDouble(i));
         }
 
+        // TODO: write integration test to check if can user reflection on Type after trimming.
+        [return:
+            DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields |
+                                       DynamicallyAccessedMemberTypes.PublicProperties)]
         public override Type GetFieldType(int i)
         {
             return WrapperUtils.ExecuteWithPlugins(
