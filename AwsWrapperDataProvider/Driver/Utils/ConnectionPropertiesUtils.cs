@@ -18,8 +18,8 @@ namespace AwsWrapperDataProvider.Driver.Utils;
 
 public static class ConnectionPropertiesUtils
 {
-    private static readonly string HostSeperator = ",";
-    private static readonly string HostPortSeperator = ":";
+    private const string HostSeperator = ",";
+    private const string HostPortSeperator = ":";
 
     public static Dictionary<string, string> ParseConnectionStringParameters(string connectionString)
     {
@@ -32,29 +32,36 @@ public static class ConnectionPropertiesUtils
             .Split(";", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
             .Select(x => x.Split("=", StringSplitOptions.TrimEntries))
             .Where(pairs => pairs.Length == 2 && !string.IsNullOrEmpty(pairs[0]))
-            .ToDictionary(pairs => pairs[0], pairs => pairs[1]);
+            .ToDictionary(pairs => pairs[0], pairs => pairs[1], StringComparer.OrdinalIgnoreCase);
     }
 
-    public static IList<HostSpec> GetHostsFromProperties(Dictionary<string, string> props, HostSpecBuilder hostSpecBuilder)
+    public static IList<HostSpec> GetHostsFromProperties(Dictionary<string, string> props, HostSpecBuilder hostSpecBuilder, bool singleWriterConnectionString)
     {
-        IList<HostSpec> hosts = new List<HostSpec>();
+        List<HostSpec> hosts = [];
         string hostsString = PropertyDefinition.Host.GetString(props)
                       ?? PropertyDefinition.Server.GetString(props)
                       ?? string.Empty;
-        IList<string> hostStringList =
-            hostsString.Split(HostSeperator, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        IList<string> hostStringList = hostsString.Split(HostSeperator, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
         int port = PropertyDefinition.Port.GetInt(props) ?? HostSpec.NoPort;
 
-        foreach (string hostPortString in hostStringList)
+        for (int i = 0; i < hostStringList.Count; i++)
         {
-            IList<string> hostPortPair = hostPortString.Split(HostPortSeperator,
+            IList<string> hostPortPair = hostStringList[i].Split(
+                HostPortSeperator,
                 2,
                 StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
             string hostString = hostPortPair[0];
             port = hostPortPair.Count == 2 ? int.Parse(hostPortPair[1]) : port;
-
-            RdsUrlType rdsUrlType = RdsUtils.IdentifyRdsType(hostString);
-            HostRole hostRole = RdsUrlType.RdsReaderCluster.Equals(rdsUrlType) ? HostRole.Reader : HostRole.Writer;
+            HostRole hostRole;
+            if (singleWriterConnectionString)
+            {
+                hostRole = i > 0 ? HostRole.Reader : HostRole.Writer;
+            }
+            else
+            {
+                RdsUrlType rdsUrlType = RdsUtils.IdentifyRdsType(hostString);
+                hostRole = RdsUrlType.RdsReaderCluster.Equals(rdsUrlType) ? HostRole.Reader : HostRole.Writer;
+            }
 
             string? hostId = RdsUtils.GetRdsInstanceId(hostString);
 

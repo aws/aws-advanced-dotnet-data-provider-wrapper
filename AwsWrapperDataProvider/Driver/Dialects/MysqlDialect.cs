@@ -27,7 +27,7 @@ public class MysqlDialect : IDialect
 
     public string ServerVersionQuery { get; } = "SHOW VARIABLES LIKE 'version_comment'";
 
-    public IList<Type> DialectUpdateCandidates { get; } =
+    public virtual IList<Type> DialectUpdateCandidates { get; } =
     [
         typeof(AuroraMysqlDialect),
         typeof(RdsMysqlDialect),
@@ -38,7 +38,7 @@ public class MysqlDialect : IDialect
         IHostListProviderService hostListProviderService,
         IPluginService pluginService) => new ConnectionStringHostListProvider(props, hostListProviderService);
 
-    public bool IsDialect(IDbConnection conn)
+    public virtual bool IsDialect(IDbConnection conn)
     {
         try
         {
@@ -66,7 +66,7 @@ public class MysqlDialect : IDialect
         return false;
     }
 
-    public void PrepareConnectionProperties(Dictionary<string, string> props, HostSpec hostSpec)
+    public virtual void PrepareConnectionProperties(Dictionary<string, string> props, HostSpec hostSpec)
     {
         // Do nothing.
     }

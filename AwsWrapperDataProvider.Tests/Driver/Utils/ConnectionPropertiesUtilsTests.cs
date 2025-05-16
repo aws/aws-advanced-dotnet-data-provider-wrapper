@@ -21,7 +21,7 @@ public class ConnectionPropertiesUtilsTests
 {
     [Theory]
     [Trait("Category", "Unit")]
-    [InlineData("Host=myhost.example.com;Port=5432;Database=mydb;Username=myuser;Password=mypassword", 5)]
+    [InlineData("host=myhost.example.com;port=5432;database=mydb;username=myuser;password=mypassword", 5)]
     [InlineData("Host=myhost.example.com;Port=5432", 2)]
     [InlineData("Host=myhost.example.com", 1)]
     public void ParseConnectionStringParameters_WithValidConnectionString_ReturnsDictionary(string connectionString, int expectedCount)
@@ -89,7 +89,7 @@ public class ConnectionPropertiesUtilsTests
             HostRole.Writer,
             HostAvailability.Available);
 
-        this.AssertHostsFromProperties(props, expectedHost);
+        this.AssertHostsFromProperties(props, false, expectedHost);
     }
 
     [Fact]
@@ -109,7 +109,7 @@ public class ConnectionPropertiesUtilsTests
             HostRole.Writer,
             HostAvailability.Available);
 
-        this.AssertHostsFromProperties(props, expectedHost);
+        this.AssertHostsFromProperties(props, false, expectedHost);
     }
 
     [Fact]
@@ -129,7 +129,7 @@ public class ConnectionPropertiesUtilsTests
             HostRole.Reader,
             HostAvailability.Available);
 
-        this.AssertHostsFromProperties(props, expectedHost);
+        this.AssertHostsFromProperties(props, false, expectedHost);
     }
 
     [Fact]
@@ -149,7 +149,7 @@ public class ConnectionPropertiesUtilsTests
             HostRole.Writer,
             HostAvailability.Available);
 
-        this.AssertHostsFromProperties(props, expectedHost);
+        this.AssertHostsFromProperties(props, false, expectedHost);
     }
 
     [Fact]
@@ -169,7 +169,7 @@ public class ConnectionPropertiesUtilsTests
             HostRole.Writer,
             HostAvailability.Available);
 
-        this.AssertHostsFromProperties(props, expectedHost);
+        this.AssertHostsFromProperties(props, false, expectedHost);
     }
 
     [Fact]
@@ -189,7 +189,7 @@ public class ConnectionPropertiesUtilsTests
             HostRole.Writer,
             HostAvailability.Available);
 
-        this.AssertHostsFromProperties(props, expectedHost);
+        this.AssertHostsFromProperties(props, false, expectedHost);
     }
 
     [Fact]
@@ -216,7 +216,34 @@ public class ConnectionPropertiesUtilsTests
             HostRole.Writer,
             HostAvailability.Available);
 
-        this.AssertHostsFromProperties(props, expectedHost1, expectedHost2);
+        this.AssertHostsFromProperties(props, false, expectedHost1, expectedHost2);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void GetHostsFromProperties_SingleWriterConnectionString()
+    {
+        var props = new Dictionary<string, string>
+        {
+            { "Host", "mydb1.123456789012.us-east-1.rds.amazonaws.com,mydb2.123456789012.us-east-1.rds.amazonaws.com" },
+            { "Port", "3306" },
+        };
+
+        var expectedHost1 = new HostSpec(
+            "mydb1.123456789012.us-east-1.rds.amazonaws.com",
+            3306,
+            "mydb1",
+            HostRole.Writer,
+            HostAvailability.Available);
+
+        var expectedHost2 = new HostSpec(
+            "mydb2.123456789012.us-east-1.rds.amazonaws.com",
+            3306,
+            "mydb2",
+            HostRole.Reader,
+            HostAvailability.Available);
+
+        this.AssertHostsFromProperties(props, true, expectedHost1, expectedHost2);
     }
 
     [Fact]
@@ -236,7 +263,7 @@ public class ConnectionPropertiesUtilsTests
             HostRole.Writer,
             HostAvailability.Available);
 
-        this.AssertHostsFromProperties(props, expectedHost);
+        this.AssertHostsFromProperties(props, false, expectedHost);
     }
 
     [Fact]
@@ -256,7 +283,7 @@ public class ConnectionPropertiesUtilsTests
             HostRole.Writer,
             HostAvailability.Available);
 
-        this.AssertHostsFromProperties(props, expectedHost);
+        this.AssertHostsFromProperties(props, false, expectedHost);
     }
 
     [Fact]
@@ -276,7 +303,7 @@ public class ConnectionPropertiesUtilsTests
             HostRole.Writer,
             HostAvailability.Available);
 
-        this.AssertHostsFromProperties(props, expectedHost);
+        this.AssertHostsFromProperties(props, false, expectedHost);
     }
 
     [Fact]
@@ -289,15 +316,16 @@ public class ConnectionPropertiesUtilsTests
             { "Database", "mydb" },
         };
 
-        this.AssertHostsFromProperties(props);
+        this.AssertHostsFromProperties(props, false);
     }
 
     private void AssertHostsFromProperties(
         Dictionary<string, string> props,
+        bool singleWriterConnectionString,
         params HostSpec[] expectedHosts)
     {
         var hostSpecBuilder = new HostSpecBuilder();
-        var result = ConnectionPropertiesUtils.GetHostsFromProperties(props, hostSpecBuilder);
+        var result = ConnectionPropertiesUtils.GetHostsFromProperties(props, hostSpecBuilder, singleWriterConnectionString);
 
         Assert.NotNull(result);
         Assert.Equal(expectedHosts.Length, result.Count);

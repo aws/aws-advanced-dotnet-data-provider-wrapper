@@ -12,9 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data;
+
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
 public class AuroraMysqlDialect : MysqlDialect
 {
     // TODO: Implement AuroraMysqlDialect
+    public override bool IsDialect(IDbConnection conn)
+    {
+        return false;
+    }
 }

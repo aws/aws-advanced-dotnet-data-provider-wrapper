@@ -23,6 +23,7 @@ public class ConnectionStringHostListProvider : IStaticHostListProvider
     private readonly List<HostSpec> _hostList = new List<HostSpec>();
     private readonly Dictionary<string, string> _properties;
     private readonly IHostListProviderService _hostListProviderService;
+    private readonly bool _isSingleWriterConnectionString;
 
     /// <summary>
     /// Check if _hostList has already been initialized. _hostList should only be initialized once.
@@ -35,6 +36,7 @@ public class ConnectionStringHostListProvider : IStaticHostListProvider
     {
         this._properties = props;
         this._hostListProviderService = hostListProviderService;
+        this._isSingleWriterConnectionString = PropertyDefinition.SingleWriterConnectionString.GetBoolean(props);
     }
 
     public IList<HostSpec> Refresh()
@@ -45,32 +47,28 @@ public class ConnectionStringHostListProvider : IStaticHostListProvider
 
     public IList<HostSpec> Refresh(DbConnection connection)
     {
-        throw new NotImplementedException();
+        return this.Refresh();
     }
 
     public IList<HostSpec> ForceRefresh()
     {
-        throw new NotImplementedException();
+        this.Init();
+        return this._hostList.AsReadOnly();
     }
 
     public IList<HostSpec> ForceRefresh(DbConnection connection)
     {
-        throw new NotImplementedException();
+        return this.ForceRefresh();
     }
 
     public HostRole GetHostRole(DbConnection connection)
     {
-        throw new NotImplementedException();
-    }
-
-    public HostSpec GetHostSpec(DbConnection connection)
-    {
-        throw new NotImplementedException();
+        throw new NotSupportedException("ConnectionStringHostListProvider does not support GetHostRole.");
     }
 
     public string GetClusterId()
     {
-        throw new NotImplementedException();
+        throw new NotSupportedException("ConnectionStringHostListProvider does not support GetClusterId.");
     }
 
     private void Init()
@@ -82,7 +80,8 @@ public class ConnectionStringHostListProvider : IStaticHostListProvider
 
         this._hostList.AddRange(ConnectionPropertiesUtils.GetHostsFromProperties(
                 this._properties,
-                this._hostListProviderService.HostSpecBuilder));
+                this._hostListProviderService.HostSpecBuilder,
+                this._isSingleWriterConnectionString));
         if (this._hostList.Count == 0)
         {
             // TODO: move error string to resx file.

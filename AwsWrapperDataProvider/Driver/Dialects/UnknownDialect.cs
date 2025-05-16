@@ -22,11 +22,19 @@ public class UnknownDialect : IDialect
 {
     public int DefaultPort { get; } = HostSpec.NoPort;
 
-    public string HostAliasQuery { get; } = "SELECT 'Unknown host'";
+    public string HostAliasQuery { get; } = string.Empty;
 
-    public string ServerVersionQuery { get; } = "SELECT 'Unknown version'";
+    public string ServerVersionQuery { get; } = string.Empty;
 
-    public IList<Type> DialectUpdateCandidates { get; } = [];
+    public IList<Type> DialectUpdateCandidates { get; } =
+    [
+        typeof(AuroraPgDialect),
+        typeof(AuroraMysqlDialect),
+        typeof(RdsPgDialect),
+        typeof(RdsMysqlDialect),
+        typeof(PgDialect),
+        typeof(MysqlDialect),
+    ];
 
     public HostListProviderSupplier HostListProviderSupplier { get; } = (
         Dictionary<string, string> props,
