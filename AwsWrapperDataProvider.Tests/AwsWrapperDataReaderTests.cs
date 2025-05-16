@@ -19,7 +19,6 @@ using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.Plugins;
 using Moq;
 using Npgsql;
-using Org.BouncyCastle.Pqc.Crypto.Crystals.Dilithium;
 
 namespace AwsWrapperDataProvider.Tests;
 
