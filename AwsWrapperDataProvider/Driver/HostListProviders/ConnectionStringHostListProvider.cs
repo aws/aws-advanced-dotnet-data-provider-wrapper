@@ -20,7 +20,7 @@ namespace AwsWrapperDataProvider.Driver.HostListProviders;
 
 public class ConnectionStringHostListProvider : IStaticHostListProvider
 {
-    private readonly List<HostSpec> _hostList = new List<HostSpec>();
+    private readonly List<HostSpec> _hostList = new();
     private readonly Dictionary<string, string> _properties;
     private readonly IHostListProviderService _hostListProviderService;
     private readonly bool _isSingleWriterConnectionString;

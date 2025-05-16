@@ -51,6 +51,12 @@ public class AwsWrapperProperty
         return int.TryParse(value, out int res) ? res : null;
     }
 
+    public long? GetLong(Dictionary<string, string> properties)
+    {
+        string? value = this.GetString(properties);
+        return long.TryParse(value, out long res) ? res : null;
+    }
+
     public bool GetBoolean(Dictionary<string, string> properties)
     {
         return properties.TryGetValue(this.Name, out string? value)

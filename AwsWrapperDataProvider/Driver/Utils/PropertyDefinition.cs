@@ -70,6 +70,21 @@ public static class PropertyDefinition
     public static readonly AwsWrapperProperty IamExpiration =
         new("iamExpiration", "870", "IAM token cache expiration in seconds.");
 
+    public static readonly AwsWrapperProperty ClusterTopologyRefreshRateMS = new(
+        "ClusterTopologyRefreshRateMS",
+        "30000",
+        "Cluster topology refresh rate in millis. The cached topology for the cluster will be invalidated after the specified time, after which it will be updated during the next interaction with the connection.");
+
+    public static readonly AwsWrapperProperty ClusterInstanceHostPattern = new(
+        "ClusterInstanceHostPattern",
+        null,
+        "The cluster instance DNS pattern that will be used to build a complete instance endpoint. A \"?\" character in this pattern should be used as a placeholder for cluster instance names. This pattern is required to be specified for IP address or custom domain connections to AWS RDS clusters. Otherwise, if unspecified, the pattern will be automatically created for AWS RDS clusters.");
+
+    public static readonly AwsWrapperProperty ClusterId = new(
+        "ClusterId",
+        string.Empty,
+        "A unique identifier for the cluster. Connections with the same cluster id share a cluster topology cache. If unspecified, a cluster id is automatically created for AWS RDS clusters.");
+
     public static readonly AwsWrapperProperty SecretsManagerSecretId = new(
         "secretsManagerSecretId", null, "The name or the ARN of the secret to retrieve.");
 
@@ -100,7 +115,10 @@ public static class PropertyDefinition
         SecretsManagerSecretId,
         SecretsManagerRegion,
         SecretsManagerExpirationSecs,
-        SecretsManagerEndpoint
+        SecretsManagerEndpoint,
+        ClusterTopologyRefreshRateMS,
+        ClusterInstanceHostPattern,
+        ClusterId
     ];
 
     public static string GetConnectionUrl(Dictionary<string, string> props)
