@@ -31,51 +31,83 @@ namespace AwsWrapperDataProvider
             this._targetDataReader = targetDataReader;
         }
 
-        public override int Depth
-        {
-            get => this._targetDataReader.Depth;
-        }
+        public override int Depth => WrapperUtils.ExecuteWithPlugins(
+                this._connectionPluginManager,
+                this._targetDataReader,
+                "DbDataReader.Depth",
+                () => this._targetDataReader.Depth);
 
-        public override bool IsClosed
-        {
-            get => this._targetDataReader.IsClosed;
-        }
+        public override bool IsClosed => WrapperUtils.ExecuteWithPlugins(
+                this._connectionPluginManager,
+                this._targetDataReader,
+                "DbDataReader.IsClosed",
+                () => this._targetDataReader!.IsClosed);
 
-        public override int RecordsAffected
-        {
-            get => this._targetDataReader.RecordsAffected;
-        }
+        public override int RecordsAffected => WrapperUtils.ExecuteWithPlugins(
+                this._connectionPluginManager,
+                this._targetDataReader,
+                "DbDataReader.RecordsAffected",
+                () => this._targetDataReader.RecordsAffected);
+
+        public override int FieldCount => WrapperUtils.ExecuteWithPlugins(
+            this._connectionPluginManager,
+            this._targetDataReader,
+            "DbDataReader.FieldCount",
+            () => this._targetDataReader!.FieldCount);
+
+        public override bool HasRows => WrapperUtils.ExecuteWithPlugins(
+            this._connectionPluginManager,
+            this._targetDataReader,
+            "DbDataReader.HasRows",
+            () => this._targetDataReader!.HasRows);
+
+        public override object this[int i] => WrapperUtils.ExecuteWithPlugins(
+            this._connectionPluginManager,
+            this._targetDataReader,
+            "DbDataReader[i]",
+            () => this._targetDataReader[i]);
+
+        public override object this[string name] => WrapperUtils.ExecuteWithPlugins(
+            this._connectionPluginManager,
+            this._targetDataReader,
+            "DbDataReader[name]",
+            () => this._targetDataReader[name]);
 
         public override void Close()
         {
-            // TODO: wrap over
-            this._targetDataReader.Close();
+            WrapperUtils.RunWithPlugins(
+                this._connectionPluginManager,
+                this._targetDataReader,
+                "DbDataReader.Close",
+                () => this._targetDataReader.Close());
         }
 
         public override DataTable? GetSchemaTable()
         {
-            return this._targetDataReader.GetSchemaTable();
+            return WrapperUtils.ExecuteWithPlugins(
+                this._connectionPluginManager,
+                this._targetDataReader,
+                "DbDataReader.GetSchemaTable",
+                () => this._targetDataReader.GetSchemaTable());
         }
 
         public override bool NextResult()
         {
-            // TODO: wrap over
-            return this._targetDataReader.NextResult();
+            return WrapperUtils.ExecuteWithPlugins(
+                this._connectionPluginManager,
+                this._targetDataReader,
+                "DbDataReader.NextResult",
+                () => this._targetDataReader!.NextResult());
         }
 
         public override bool Read()
         {
-            // TODO: wrap over
-            return this._targetDataReader.Read();
+            return WrapperUtils.ExecuteWithPlugins(
+                this._connectionPluginManager,
+                this._targetDataReader,
+                "DbDataReader.Read()",
+                () => this._targetDataReader!.Read());
         }
-
-        public override int FieldCount => this._targetDataReader.FieldCount;
-
-        public override bool HasRows => this._targetDataReader.HasRows;
-
-        public override object this[int i] => this._targetDataReader[i];
-
-        public override object this[string name] => this._targetDataReader[name];
 
         protected override void Dispose(bool disposing)
         {
