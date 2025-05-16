@@ -26,6 +26,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.Dialects;
 public class DialectProviderTests
 {
     [Fact]
+    [Trait("Category", "Unit")]
     public void GuessDialect_WithCustomDialect_ReturnsCustomDialect()
     {
         var props = new Dictionary<string, string>
@@ -38,6 +39,7 @@ public class DialectProviderTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void GuessDialect_WithInvalidCustomDialect_ThrowsInvalidOperationException()
     {
         var props = new Dictionary<string, string> { { PropertyDefinition.TargetDialect.Name, "NonExistentType" }, };
@@ -45,6 +47,7 @@ public class DialectProviderTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void GuessDialect_WithPgConnectionAndIpAddress_ReturnsPgDialect()
     {
         var props = new Dictionary<string, string>
@@ -57,6 +60,7 @@ public class DialectProviderTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void GuessDialect_WithMySqlConnectionAndRdsInstance_ReturnsMysqlDialect()
     {
         var props = new Dictionary<string, string>
@@ -69,6 +73,7 @@ public class DialectProviderTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void GuessDialect_WithUnknownMapping_ReturnsUnknownDialect()
     {
         var props = new Dictionary<string, string>
@@ -81,6 +86,7 @@ public class DialectProviderTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void UpdateDialect_PgToRdsPg()
     {
         var mockConnection = new Mock<IDbConnection>();
@@ -103,6 +109,7 @@ public class DialectProviderTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void UpdateDialect_WithNoMatchingDialectCandidate_ReturnsOriginalDialect()
     {
         var mockConnection = new Mock<IDbConnection>();
@@ -127,6 +134,7 @@ public class DialectProviderTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void UpdateDialect_WithUnknownDialect_ThrowsArgumentException()
     {
         var mockConnection = new Mock<IDbConnection>();
@@ -137,12 +145,33 @@ public class DialectProviderTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
+    public void UpdateDialect_WithUnknownDialect_ReturnsMysqlDialect()
+    {
+        var mockConnection = new Mock<IDbConnection>();
+        var mockCommand = new Mock<IDbCommand>();
+        var mockReader = new Mock<DbDataReader>();
+        mockConnection.Setup(c => c.CreateCommand()).Returns(mockCommand.Object);
+        mockCommand.Setup(c => c.ExecuteReader()).Returns(mockReader.Object);
+        mockReader.Setup(r => r.Read()).Returns(true);
+        mockReader.Setup(r => r.FieldCount).Returns(1);
+        mockReader.Setup(r => r.IsDBNull(0)).Returns(false);
+        mockReader.Setup(r => r.GetString(0)).Returns("MySQL Community Server (GPL)");
+        var unknownDialect = new UnknownDialect();
+
+        var updatedDialect = DialectProvider.UpdateDialect(mockConnection.Object, unknownDialect);
+        Assert.IsType<MysqlDialect>(updatedDialect);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
     public void UpdateDialect_WithMysqlDialect_ReturnsAuroraMysqlDialect()
     {
         // TODO: Implement after AuroraMysqlDialect.IsDialect is implemented
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void UpdateDialect_WithMysqlDialect_ReturnsRdsMysqlDialect()
     {
         var mockConnection = new Mock<IDbConnection>();
@@ -164,6 +193,7 @@ public class DialectProviderTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void UpdateDialect_WithInvalidMysqlDialect_ThrowsArgumentError()
     {
         var mockConnection = new Mock<IDbConnection>();
