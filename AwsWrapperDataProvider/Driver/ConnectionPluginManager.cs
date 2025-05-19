@@ -132,7 +132,7 @@ public class ConnectionPluginManager
         return pluginChainDelegate!;
     }
 
-    public T Execute<T>(
+    public virtual T Execute<T>(
         object methodInvokeOn,
         string methodName,
         ADONetDelegate<T> methodFunc,
@@ -145,7 +145,7 @@ public class ConnectionPluginManager
             null)!;
     }
 
-    public void Open(
+    public virtual void Open(
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
@@ -168,7 +168,7 @@ public class ConnectionPluginManager
             pluginToSkip);
     }
 
-    public void InitHostProvider(
+    public virtual void InitHostProvider(
         string initialConnectionString,
         Dictionary<string, string> props,
         IHostListProviderService hostListProviderService)

@@ -217,11 +217,12 @@ public class AwsWrapperCommand : DbCommand
     public new DbDataReader ExecuteReader()
     {
         this.EnsureTargetDbCommandCreated();
-        return WrapperUtils.ExecuteWithPlugins(
+        DbDataReader dbDataReader = WrapperUtils.ExecuteWithPlugins(
             this._pluginManager!,
             this._targetDbCommand!,
             "DbCommand.ExecuteReader",
             () => this._targetDbCommand!.ExecuteReader());
+        return new AwsWrapperDataReader(dbDataReader, this._pluginManager!);
     }
 
     public override object? ExecuteScalar()
@@ -265,7 +266,7 @@ public class AwsWrapperCommand : DbCommand
             "DbCommand.ExecuteReader",
             () => this._targetDbCommand!.ExecuteReader(behavior));
 
-        return new AwsWrapperDataReader(reader);
+        return new AwsWrapperDataReader(reader, this._pluginManager!);
     }
 
     protected void EnsureTargetDbCommandCreated()
