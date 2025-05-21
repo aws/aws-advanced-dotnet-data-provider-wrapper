@@ -43,15 +43,6 @@ public class DefaultConnectionPlugin(
         return methodFunc();
     }
 
-    public void Execute(
-        object methodInvokedOn,
-        string methodName,
-        ADONetDelegate methodFunc,
-        params object[] methodArgs)
-    {
-        methodFunc();
-    }
-
     public void OpenConnection(
         HostSpec? hostSpec,
         Dictionary<string, string> props,
@@ -68,22 +59,12 @@ public class DefaultConnectionPlugin(
         }
     }
 
-    public DbConnection ForceConnect(
-        HostSpec hostSpec,
-        Dictionary<string, string> props,
-        bool isInitialConnection,
-        ADONetDelegate<DbConnection> forceConnectmethodFunc)
-    {
-        throw new NotImplementedException();
-    }
-
     public void InitHostProvider(
         string initialUrl,
         Dictionary<string, string> props,
         IHostListProviderService hostListProviderService,
         ADONetDelegate<Action<object[]>> initHostProviderFunc)
     {
-        // TODO: stub implementation
-        return;
+        // do nothing
     }
 }

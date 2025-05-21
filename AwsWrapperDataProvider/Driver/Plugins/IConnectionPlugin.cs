@@ -44,19 +44,6 @@ public interface IConnectionPlugin
         params object[] methodArgs);
 
     /// <summary>
-    /// Executes a void method with the given arguments.
-    /// </summary>
-    /// <param name="methodInvokedOn">The object the method is invoked on.</param>
-    /// <param name="methodName">The name of the method being invoked.</param>
-    /// <param name="methodFunc">The callable that executes the actual method.</param>
-    /// <param name="methodArgs">The arguments to pass to the method.</param>
-    void Execute(
-        object methodInvokedOn,
-        string methodName,
-        ADONetDelegate methodFunc,
-        params object[] methodArgs);
-
-    /// <summary>
     /// Opens a connection to the given host using the given properties.
     /// </summary>
     /// <param name="hostSpec">The host specification to connect to.</param>
@@ -68,20 +55,6 @@ public interface IConnectionPlugin
         Dictionary<string, string> props,
         bool isInitialConnection,
         ADONetDelegate methodFunc);
-
-    /// <summary>
-    /// Forces a connection to the given host using the given properties.
-    /// </summary>
-    /// <param name="hostSpec">The host specification to connect to.</param>
-    /// <param name="props">Connection properties.</param>
-    /// <param name="isInitialConnection">Whether this is the initial connection.</param>
-    /// <param name="forceConnectmethodFunc">The callable that executes the actual connection.</param>
-    /// <returns>The database connection.</returns>
-    DbConnection ForceConnect(
-        HostSpec hostSpec,
-        Dictionary<string, string> props,
-        bool isInitialConnection,
-        ADONetDelegate<DbConnection> forceConnectmethodFunc);
 
     /// <summary>
     /// Initializes the host provider.

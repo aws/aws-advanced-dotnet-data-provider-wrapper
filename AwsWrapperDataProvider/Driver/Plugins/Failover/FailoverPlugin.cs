@@ -32,16 +32,6 @@ public class FailoverPlugin(IPluginService pluginService, Dictionary<string, str
         throw new NotImplementedException();
     }
 
-    public void Execute(object methodInvokedOn, string methodName, ADONetDelegate methodFunc, params object[] methodArgs)
-    {
-        throw new NotImplementedException();
-    }
-
-    public DbConnection ForceConnect(HostSpec hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> forceConnectmethodFunc)
-    {
-        throw new NotImplementedException();
-    }
-
     public ISet<string> GetSubscribeMethods()
     {
         throw new NotImplementedException();
