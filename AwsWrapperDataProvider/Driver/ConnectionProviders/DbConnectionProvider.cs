@@ -38,7 +38,7 @@ public class DbConnectionProvider() : IConnectionProvider
         Dictionary<string, string> props)
     {
         Type targetConnectionType = targetConnectionDialect.DriverConnectionType;
-        string connectionString = targetConnectionDialect.PrepareConnectionString(hostSpec, props);
+        string connectionString = targetConnectionDialect.PrepareConnectionString(dialect, hostSpec, props);
 
         DbConnection? targetConnection = string.IsNullOrWhiteSpace(connectionString)
             ? (DbConnection?)Activator.CreateInstance(targetConnectionType)

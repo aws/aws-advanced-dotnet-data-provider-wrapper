@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -71,8 +72,9 @@ public class TargetConnectionDialectTests
     [Trait("Category", "Unit")]
     public void PgTargetDriverDialect_PrepareConnectionString_WithHostSpec_IncludesHostAndPort()
     {
-        var dialect = new PgTargetConnectionDialect();
-        var connectionString = dialect.PrepareConnectionString(HostWithPort, ConnectionProps);
+        var connectionDialect = new NpgsqlDialect();
+        var dialect = new PgDialect();
+        var connectionString = connectionDialect.PrepareConnectionString(dialect, HostWithPort, ConnectionProps);
 
         Assert.Contains("Host=test-host", connectionString);
         Assert.Contains("Port=5432", connectionString);
@@ -85,8 +87,9 @@ public class TargetConnectionDialectTests
     [Trait("Category", "Unit")]
     public void PgTargetDriverDialect_PrepareConnectionString_WithoutPort_OmitsPortParameter()
     {
-        var dialect = new PgTargetConnectionDialect();
-        var connectionString = dialect.PrepareConnectionString(HostWithoutPort, BasicDatabaseProps);
+        var connectionDialect = new NpgsqlDialect();
+        var dialect = new PgDialect();
+        var connectionString = connectionDialect.PrepareConnectionString(dialect, HostWithoutPort, BasicDatabaseProps);
 
         Assert.Contains("Host=test-host", connectionString);
         Assert.DoesNotContain("Port=", connectionString);
@@ -96,8 +99,9 @@ public class TargetConnectionDialectTests
     [Trait("Category", "Unit")]
     public void PgTargetDriverDialect_PrepareConnectionString_WithoutHostSpec_UsesPropertiesOnly()
     {
-        var dialect = new PgTargetConnectionDialect();
-        var connectionString = dialect.PrepareConnectionString(null, PropertiesWithHost);
+        var connectionDialect = new NpgsqlDialect();
+        var dialect = new PgDialect();
+        var connectionString = connectionDialect.PrepareConnectionString(dialect, null, PropertiesWithHost);
 
         Assert.Contains("Host=original-host", connectionString);
         Assert.Contains("Port=5432", connectionString);
@@ -108,8 +112,9 @@ public class TargetConnectionDialectTests
     [Trait("Category", "Unit")]
     public void PgTargetDriverDialect_PrepareConnectionString_FiltersInternalProperties()
     {
-        var dialect = new PgTargetConnectionDialect();
-        var connectionString = dialect.PrepareConnectionString(HostWithPort, PropsWithInternalProperties);
+        var connectionDialect = new NpgsqlDialect();
+        var dialect = new PgDialect();
+        var connectionString = connectionDialect.PrepareConnectionString(dialect, HostWithPort, PropsWithInternalProperties);
 
         Assert.Contains("Host=test-host", connectionString);
         Assert.Contains("Port=5432", connectionString);
@@ -122,8 +127,9 @@ public class TargetConnectionDialectTests
     [Trait("Category", "Unit")]
     public void MySqlTargetDriverDialect_PrepareConnectionString_WithHostSpec_IncludesServerAndPort()
     {
-        var dialect = new MySqlTargetConnectionDialect();
-        var connectionString = dialect.PrepareConnectionString(HostWithPort, ConnectionProps);
+        var connectionDialect = new MySqlConnectorDialect();
+        var dialect = new MysqlDialect();
+        var connectionString = connectionDialect.PrepareConnectionString(dialect, HostWithPort, ConnectionProps);
 
         Assert.Contains("Server=test-host", connectionString);
         Assert.Contains("Port=5432", connectionString);
@@ -136,19 +142,21 @@ public class TargetConnectionDialectTests
     [Trait("Category", "Unit")]
     public void MySqlTargetDriverDialect_PrepareConnectionString_WithoutPort_OmitsPortParameter()
     {
-        var dialect = new MySqlTargetConnectionDialect();
-        var connectionString = dialect.PrepareConnectionString(HostWithoutPort, BasicDatabaseProps);
+        var connectionDialect = new MySqlConnectorDialect();
+        var dialect = new MysqlDialect();
+        var connectionString = connectionDialect.PrepareConnectionString(dialect, HostWithoutPort, BasicDatabaseProps);
 
         Assert.Contains("Server=test-host", connectionString);
-        Assert.DoesNotContain("Port=", connectionString);
+        Assert.Contains("Port=3306", connectionString);
     }
 
     [Fact]
     [Trait("Category", "Unit")]
     public void MySqlTargetDriverDialect_PrepareConnectionString_WithoutHostSpec_UsesPropertiesOnly()
     {
-        var dialect = new MySqlTargetConnectionDialect();
-        var connectionString = dialect.PrepareConnectionString(null, PropertiesWithServer);
+        var connectionDialect = new MySqlConnectorDialect();
+        var dialect = new MysqlDialect();
+        var connectionString = connectionDialect.PrepareConnectionString(dialect, null, PropertiesWithServer);
 
         Assert.Contains("Server=original-host", connectionString);
         Assert.Contains("Port=5432", connectionString);
@@ -159,8 +167,64 @@ public class TargetConnectionDialectTests
     [Trait("Category", "Unit")]
     public void MySqlTargetDriverDialect_PrepareConnectionString_FiltersInternalProperties()
     {
-        var dialect = new MySqlTargetConnectionDialect();
-        var connectionString = dialect.PrepareConnectionString(HostWithPort, PropsWithInternalProperties);
+        var connectionDialect = new MySqlConnectorDialect();
+        var dialect = new MysqlDialect();
+        var connectionString = connectionDialect.PrepareConnectionString(dialect, HostWithPort, PropsWithInternalProperties);
+
+        Assert.Contains("Server=test-host", connectionString);
+        Assert.Contains("Port=5432", connectionString);
+        Assert.Contains("Database=testdb", connectionString);
+        Assert.DoesNotContain(PropertyDefinition.TargetConnectionType.Name, connectionString);
+        Assert.DoesNotContain(PropertyDefinition.CustomTargetConnectionDialect.Name, connectionString);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void MySqlClientDialect_PrepareConnectionString_WithHostSpec_IncludesServerAndPort()
+    {
+        var connectionDialect = new MySqlClientDialect();
+        var dialect = new MysqlDialect();
+        var connectionString = connectionDialect.PrepareConnectionString(dialect, HostWithPort, ConnectionProps);
+
+        Assert.Contains("Server=test-host", connectionString);
+        Assert.Contains("Port=5432", connectionString);
+        Assert.Contains("Database=testdb", connectionString);
+        Assert.Contains("Username=testuser", connectionString);
+        Assert.Contains("Password=testpass", connectionString);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void MySqlClientDialect_PrepareConnectionString_WithoutPort_OmitsPortParameter()
+    {
+        var connectionDialect = new MySqlClientDialect();
+        var dialect = new MysqlDialect();
+        var connectionString = connectionDialect.PrepareConnectionString(dialect, HostWithoutPort, BasicDatabaseProps);
+
+        Assert.Contains("Server=test-host", connectionString);
+        Assert.Contains("Port=3306", connectionString);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void MySqlClientDialect_PrepareConnectionString_WithoutHostSpec_UsesPropertiesOnly()
+    {
+        var connectionDialect = new MySqlClientDialect();
+        var dialect = new MysqlDialect();
+        var connectionString = connectionDialect.PrepareConnectionString(dialect, null, PropertiesWithServer);
+
+        Assert.Contains("Server=original-host", connectionString);
+        Assert.Contains("Port=5432", connectionString);
+        Assert.Contains("Database=testdb", connectionString);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void MySqlClientDialect_PrepareConnectionString_FiltersInternalProperties()
+    {
+        var connectionDialect = new MySqlClientDialect();
+        var dialect = new MysqlDialect();
+        var connectionString = connectionDialect.PrepareConnectionString(dialect, HostWithPort, PropsWithInternalProperties);
 
         Assert.Contains("Server=test-host", connectionString);
         Assert.Contains("Port=5432", connectionString);

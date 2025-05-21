@@ -13,8 +13,6 @@
 // limitations under the License.
 
 using AwsWrapperDataProvider.Driver.Utils;
-using MySqlConnector;
-using Npgsql;
 
 namespace AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 
@@ -22,8 +20,9 @@ public static class TargetConnectionDialectProvider
 {
     private static readonly Dictionary<Type, Type> ConnectionToDialectMap = new()
     {
-        { typeof(NpgsqlConnection), typeof(PgTargetConnectionDialect) },
-        { typeof(MySqlConnection), typeof(MySqlTargetConnectionDialect) },
+        { typeof(Npgsql.NpgsqlConnection), typeof(NpgsqlDialect) },
+        { typeof(MySqlConnector.MySqlConnection), typeof(MySqlConnectorDialect) },
+        { typeof(MySql.Data.MySqlClient.MySqlConnection), typeof(MySqlClientDialect) },
     };
 
     public static ITargetConnectionDialect GetDialect(Type connectionType, Dictionary<string, string>? props)

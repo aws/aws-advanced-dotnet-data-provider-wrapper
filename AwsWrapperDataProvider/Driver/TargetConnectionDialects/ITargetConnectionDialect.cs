@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data.Common;
+using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
 
@@ -38,10 +39,11 @@ public interface ITargetConnectionDialect
     /// <summary>
     /// Prepares a connection string for the given host specification and properties.
     /// </summary>
+    /// <param name="dialect">The dialect of connection.</param>
     /// <param name="hostSpec">The host specification.</param>
     /// <param name="props">Connection properties.</param>
     /// <returns>The prepared connection string.</returns>
-    string PrepareConnectionString(HostSpec? hostSpec, Dictionary<string, string> props);
+    string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props);
 
     /// <summary>
     /// Gets the set of method names that are allowed to be called on the connection.
