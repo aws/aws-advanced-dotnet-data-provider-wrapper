@@ -90,7 +90,7 @@ public class ConnectionPluginManager
 
         if (pluginChainDelegate == null)
         {
-            throw new Exception("Error processing this ADO.NET call.");
+            throw new Exception(Properties.Resources.Error_ProcessingAdoNetCall);
         }
 
         return (T)pluginChainDelegate.DynamicInvoke(
