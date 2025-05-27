@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data.Common;
+using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
 
@@ -27,14 +28,14 @@ public abstract class GenericTargetConnectionDialect : ITargetConnectionDialect
         return connectionType == this.DriverConnectionType;
     }
 
-    public abstract string PrepareConnectionString(HostSpec? hostSpec, Dictionary<string, string> props);
+    public abstract string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props);
 
     public ISet<string> GetAllowedOnConnectionMethodNames()
     {
         throw new NotImplementedException("Will implement in Milestone 5, as feature is only relevant to Failover.");
     }
 
-    protected string PrepareConnectionString(HostSpec? hostSpec, Dictionary<string, string> props, AwsWrapperProperty hostProperty)
+    protected string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, AwsWrapperProperty hostProperty)
     {
         Dictionary<string, string> targetConnectionParameters = props.Where(x =>
             !PropertyDefinition.InternalWrapperProperties
@@ -43,6 +44,7 @@ public abstract class GenericTargetConnectionDialect : ITargetConnectionDialect
 
         if (hostSpec != null)
         {
+            dialect.PrepareConnectionProperties(targetConnectionParameters, hostSpec);
             hostProperty.Set(targetConnectionParameters, hostSpec.Host);
             if (hostSpec.IsPortSpecified)
             {

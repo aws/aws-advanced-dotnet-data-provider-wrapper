@@ -17,6 +17,7 @@ using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Exceptions;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
+using AwsWrapperDataProvider.Driver.Utils;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
@@ -73,6 +74,11 @@ public class MysqlDialect : IDialect
 
     public virtual void PrepareConnectionProperties(Dictionary<string, string> props, HostSpec hostSpec)
     {
-        // Do nothing.
+        // If PORT is not set, assign to default port.
+        int? port = PropertyDefinition.Port.GetInt(props);
+        if (port is null)
+        {
+            PropertyDefinition.Port.Set(props, this.DefaultPort.ToString());
+        }
     }
 }

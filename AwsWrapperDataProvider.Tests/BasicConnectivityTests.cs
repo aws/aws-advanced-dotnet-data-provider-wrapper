@@ -24,9 +24,38 @@ namespace AwsWrapperDataProvider.Tests
     {
         [Fact]
         [Trait("Category", "Integration")]
-        public void MysqlWrapperConnectionTest()
+        public void MySqlClientWrapperConnectionTest()
         {
-            const string connectionString = "Server=<insert_rds_instance_here>;User ID=admin;Password=my_password_2020;Initial Catalog=test;";
+            const string connectionString = "Server=127.0.0.1;User ID=root;Password=password;Initial Catalog=mysql;";
+            const string query = "select * from test";
+
+            using (AwsWrapperConnection<MySql.Data.MySqlClient.MySqlConnection> connection =
+                   new(connectionString))
+            {
+                AwsWrapperCommand<MySql.Data.MySqlClient.MySqlCommand> command = connection.CreateCommand<MySql.Data.MySqlClient.MySqlCommand>();
+                command.CommandText = query;
+
+                try
+                {
+                    connection.Open();
+                    IDataReader reader = command.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        Console.WriteLine(reader.GetInt32(0));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
+                }
+            }
+        }
+
+        [Fact]
+        [Trait("Category", "Integration")]
+        public void MySqlConnectorWrapperConnectionTest()
+        {
+            const string connectionString = "Server=localhost;Port=3306;User ID=root;Password=password;Initial Catalog=mysql;";
             const string query = "select @@aurora_server_id";
 
             using (AwsWrapperConnection<MySqlConnection> connection = new(connectionString))
@@ -56,7 +85,7 @@ namespace AwsWrapperDataProvider.Tests
                     IDataReader reader = command.ExecuteReader();
                     while (reader.Read())
                     {
-                        Console.WriteLine(reader.GetString(0));
+                        Console.WriteLine(reader.GetInt32(0));
                     }
                 }
                 catch (Exception ex)

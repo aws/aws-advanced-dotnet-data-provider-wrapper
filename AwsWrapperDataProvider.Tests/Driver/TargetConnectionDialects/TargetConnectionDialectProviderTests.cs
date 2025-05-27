@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data.Common;
+
+using AwsWrapperDataProvider.Driver.Dialects;
+using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
 using MySqlConnector;
@@ -24,8 +26,8 @@ public class TargetConnectionDialectProviderTests
 {
     [Theory]
     [Trait("Category", "Unit")]
-    [InlineData(typeof(NpgsqlConnection), typeof(PgTargetConnectionDialect))]
-    [InlineData(typeof(MySqlConnection), typeof(MySqlTargetConnectionDialect))]
+    [InlineData(typeof(NpgsqlConnection), typeof(NpgsqlDialect))]
+    [InlineData(typeof(MySqlConnection), typeof(MySqlConnectorDialect))]
     public void GetDialect_WithSupportedConnectionType_ReturnsTargetDriverDialect(Type connectionType, Type dialectType)
     {
         var dialect = TargetConnectionDialectProvider.GetDialect(connectionType, null);
@@ -96,7 +98,7 @@ public class TargetConnectionDialectProviderTests
         var props = new Dictionary<string, string>();
         var dialect = TargetConnectionDialectProvider.GetDialect(typeof(NpgsqlConnection), props);
         Assert.NotNull(dialect);
-        Assert.IsType<PgTargetConnectionDialect>(dialect);
+        Assert.IsType<NpgsqlDialect>(dialect);
     }
 
     // Test custom dialect implementation
@@ -110,7 +112,7 @@ public class TargetConnectionDialectProviderTests
 
         public ISet<string> GetAllowedOnConnectionMethodNames() => new HashSet<string>();
 
-        public string PrepareConnectionString(AwsWrapperDataProvider.Driver.HostInfo.HostSpec? hostSpec, Dictionary<string, string> props)
+        public string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props)
         {
             return "TestConnectionString";
         }
