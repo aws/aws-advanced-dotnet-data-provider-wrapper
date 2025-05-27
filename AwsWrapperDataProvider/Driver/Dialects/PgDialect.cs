@@ -14,6 +14,7 @@
 
 using System.Data;
 using System.Data.Common;
+using AwsWrapperDataProvider.Driver.Exceptions;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 
@@ -21,11 +22,15 @@ namespace AwsWrapperDataProvider.Driver.Dialects;
 
 public class PgDialect : IDialect
 {
+    private readonly IExceptionHandler _exceptionHandler = new PgExceptionHandler();
+
     public int DefaultPort { get; } = 5432;
 
     public string HostAliasQuery { get; } = "SELECT CONCAT(inet_server_addr(), ':', inet_server_port())";
 
     public string ServerVersionQuery { get; } = "SELECT 'version', VERSION()";
+
+    public IExceptionHandler ExceptionHandler => this._exceptionHandler;
 
     public virtual IList<Type> DialectUpdateCandidates { get; } =
     [

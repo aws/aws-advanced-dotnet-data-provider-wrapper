@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data;
+using AwsWrapperDataProvider.Driver.Exceptions;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 
@@ -20,11 +21,15 @@ namespace AwsWrapperDataProvider.Driver.Dialects;
 
 public class UnknownDialect : IDialect
 {
+    private readonly IExceptionHandler _exceptionHandler = new GenericExceptionHandler();
+
     public int DefaultPort { get; } = HostSpec.NoPort;
 
     public string HostAliasQuery { get; } = string.Empty;
 
     public string ServerVersionQuery { get; } = string.Empty;
+
+    public IExceptionHandler ExceptionHandler => this._exceptionHandler;
 
     public IList<Type> DialectUpdateCandidates { get; } =
     [

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data.Common;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
 using MySqlConnector;
@@ -104,6 +105,8 @@ public class TargetConnectionDialectProviderTests
         public Type DriverConnectionType => typeof(NpgsqlConnection);
 
         public bool IsDialect(Type connectionType) => connectionType == typeof(NpgsqlConnection);
+
+        public string? GetSqlState(DbException exception) => string.Empty;
 
         public ISet<string> GetAllowedOnConnectionMethodNames() => new HashSet<string>();
 

@@ -23,7 +23,7 @@ using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 
 namespace AwsWrapperDataProvider.Driver;
 
-public class PluginService : IPluginService, IHostListProviderService
+public class PluginService : IPluginService, IHostListProviderService, IExceptionHandlerService
 {
     private readonly ConnectionPluginManager _pluginManager;
     private readonly Dictionary<string, string> _props;
@@ -192,5 +192,25 @@ public class PluginService : IPluginService, IHostListProviderService
     private void NotifyNodeChangeList(IList<HostSpec> oldHosts, IList<HostSpec> updateHosts)
     {
         // TODO: create NodeChangeList based on changes to hosts and call _pluginManager.NotifyNodeChangeList.
+    }
+
+    public bool IsLoginException(Exception exception)
+    {
+        return this._dialect.ExceptionHandler.IsLoginException(exception, this._targetConnectionDialect);
+    }
+
+    public bool IsLoginException(string sqlState)
+    {
+        return this._dialect.ExceptionHandler.IsLoginException(sqlState);
+    }
+
+    public bool IsNetworkException(Exception exception)
+    {
+        return this._dialect.ExceptionHandler.IsNetworkException(exception, this._targetConnectionDialect);
+    }
+
+    public bool IsNetworkException(string sqlState)
+    {
+        return this._dialect.ExceptionHandler.IsNetworkException(sqlState);
     }
 }
