@@ -29,6 +29,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.Exceptions
         }
 
         [Theory]
+        [Trait("Category", "Unit")]
         [InlineData("53", true)]
         [InlineData("57P01", true)]
         [InlineData("57P02", true)]
@@ -48,6 +49,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.Exceptions
         }
 
         [Theory]
+        [Trait("Category", "Unit")]
         [InlineData("28000", true)]
         [InlineData("28P01", true)]
         [InlineData("08", false)]
@@ -60,6 +62,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.Exceptions
         }
 
         [Theory]
+        [Trait("Category", "Unit")]
         [InlineData("08", true)]
         [InlineData("28000", false)]
         public void IsNetworkException_WithPostgresException_ReturnsExpectedResult(string sqlState, bool expected)
@@ -70,6 +73,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.Exceptions
         }
 
         [Theory]
+        [Trait("Category", "Unit")]
         [InlineData("28000", true)]
         [InlineData("28P01", true)]
         [InlineData("08", false)]
@@ -81,6 +85,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.Exceptions
         }
 
         [Theory]
+        [Trait("Category", "Unit")]
         [InlineData("08", true)]
         [InlineData("28000", false)]
         public void IsNetworkException_WithNestedPostgresException_ReturnsExpectedResult(string sqlState, bool expected)
@@ -93,6 +98,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.Exceptions
         }
 
         [Theory]
+        [Trait("Category", "Unit")]
         [InlineData("28000", true)]
         [InlineData("08", false)]
         public void IsLoginException_WithNestedPostgresException_ReturnsExpectedResult(string sqlState, bool expected)

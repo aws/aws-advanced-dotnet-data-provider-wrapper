@@ -34,6 +34,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.Exceptions
         }
 
         [Theory]
+        [Trait("Category", "Unit")]
         [InlineData("08001", true)]
         [InlineData("08S01", true)]
         [InlineData("28000", false)]
@@ -45,6 +46,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.Exceptions
         }
 
         [Theory]
+        [Trait("Category", "Unit")]
         [InlineData("28000", true)]
         [InlineData("28P01", true)]
         [InlineData("08001", false)]
@@ -56,6 +58,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.Exceptions
         }
 
         [Theory]
+        [Trait("Category", "Unit")]
         [InlineData("08001", true)]
         [InlineData("28000", false)]
         public void IsNetworkException_WithDbException_ReturnsExpectedResult(string sqlState, bool expected)
@@ -67,6 +70,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.Exceptions
         }
 
         [Theory]
+        [Trait("Category", "Unit")]
         [InlineData("28000", true)]
         [InlineData("08001", false)]
         public void IsLoginException_WithDbException_ReturnsExpectedResult(string sqlState, bool expected)
@@ -78,6 +82,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.Exceptions
         }
 
         [Theory]
+        [Trait("Category", "Unit")]
         [InlineData("08001", true)]
         [InlineData("28000", false)]
         public void IsNetworkException_WithNestedDbException_ReturnsExpectedResult(string sqlState, bool expected)
@@ -90,6 +95,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.Exceptions
         }
 
         [Theory]
+        [Trait("Category", "Unit")]
         [InlineData("28000", true)]
         [InlineData("08001", false)]
         public void IsLoginException_WithNestedDbException_ReturnsExpectedResult(string sqlState, bool expected)
@@ -102,6 +108,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.Exceptions
         }
 
         [Fact]
+        [Trait("Category", "Unit")]
         public void IsNetworkException_WithNonDbException_ReturnsFalse()
         {
             var exception = new Exception("Not a DB exception");
@@ -111,6 +118,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.Exceptions
         }
 
         [Fact]
+        [Trait("Category", "Unit")]
         public void IsLoginException_WithNonDbException_ReturnsFalse()
         {
             var exception = new Exception("Not a DB exception");
