@@ -12,20 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
-using Npgsql;
+using MySql.Data.MySqlClient;
 
 namespace AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 
-public class PgTargetConnectionDialect : GenericTargetConnectionDialect
+public class MySqlClientDialect : GenericTargetConnectionDialect
 {
-    public override Type DriverConnectionType { get; } = typeof(NpgsqlConnection);
-
-    public override string PrepareConnectionString(
-        HostSpec? hostSpec,
-        Dictionary<string, string> props)
+    public override Type DriverConnectionType { get; } = typeof(MySqlConnection);
+    public override string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props)
     {
-        return this.PrepareConnectionString(hostSpec, props, PropertyDefinition.Host);
+        return this.PrepareConnectionString(dialect, hostSpec, props, PropertyDefinition.Server);
     }
 }
