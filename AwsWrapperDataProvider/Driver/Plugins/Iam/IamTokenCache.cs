@@ -24,7 +24,7 @@ public class IamTokenCache
 
     private readonly int cleanUpIntervalMinutes = 10; // clean up expired tokens every 10 minutes
 
-    private Dictionary<string, Token> tokenCache = new Dictionary<string, Token>();
+    private readonly Dictionary<string, Token> tokenCache = new Dictionary<string, Token>();
 
     private DateTime cleanUpTime = DateTime.Now;
 

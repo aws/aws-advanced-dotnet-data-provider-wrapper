@@ -24,7 +24,7 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
     private readonly IPluginService pluginService = pluginService;
     private readonly Dictionary<string, string> props = props;
 
-    private IamTokenCache iamTokenCache = new IamTokenCache();
+    private readonly IamTokenCache iamTokenCache = new IamTokenCache();
 
     public void OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate methodFunc)
     {
@@ -77,7 +77,7 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
             throw new Exception("Could not determine region for IAM authentication provider.");
         }
 
-        string? iamUser = PropertyDefinition.User.GetString(props) ?? "";
+        string? iamUser = PropertyDefinition.User.GetString(props) ?? string.Empty;
 
         string cacheKey = IamTokenCache.GetCacheKey(iamUser, iamHost, iamPort, iamRegion);
         string? token = this.iamTokenCache.GetToken(cacheKey);
