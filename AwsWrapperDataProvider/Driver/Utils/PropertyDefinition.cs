@@ -25,6 +25,12 @@ public static class PropertyDefinition
     public static readonly AwsWrapperProperty Port =
         new("Port", null, "Connection port.");
 
+    public static readonly AwsWrapperProperty User =
+        new("User", null, "The user name that the driver will use to connect to database.");
+
+    public static readonly AwsWrapperProperty Password =
+        new("Password", null, "The password that the driver will use to connect to database.");
+
     public static readonly AwsWrapperProperty TargetConnectionType =
         new("TargetConnectionType", null, "Driver target connection type.");
 
@@ -52,6 +58,18 @@ public static class PropertyDefinition
         "false",
         "Set to true if you are providing a connection string with multiple comma-delimited hosts and your cluster has only one writer. The writer must be the first host in the connection string.");
 
+    public static readonly AwsWrapperProperty IamHost =
+        new("iamHost", null, "Overrides the host that is used to generate the IAM token.");
+
+    public static readonly AwsWrapperProperty IamDefaultPort =
+        new("iamDefaultPort", "-1", "Overrides default port that is used to generate the IAM token.");
+
+    public static readonly AwsWrapperProperty IamRegion =
+        new("iamRegion", null, "Overrides AWS region that is used to generate the IAM token.");
+
+    public static readonly AwsWrapperProperty IamExpiration =
+        new("iamExpiration", "870", "IAM token cache expiration in seconds.");
+
     /// <summary>
     /// A set of AwsWrapperProperties that is used by the wrapper and should not be passed to the target driver.
     /// </summary>
@@ -62,7 +80,11 @@ public static class PropertyDefinition
         TargetDialect,
         Plugins,
         AutoSortPluginOrder,
-        SingleWriterConnectionString
+        SingleWriterConnectionString,
+        IamHost,
+        IamDefaultPort,
+        IamRegion,
+        IamExpiration
     ];
 
     public static string GetConnectionUrl(Dictionary<string, string> props)
