@@ -39,7 +39,7 @@ public class HostSpecBuilder
         return this;
     }
 
-    public HostSpecBuilder WithHostId(string hostId)
+    public HostSpecBuilder WithHostId(string? hostId)
     {
         this.hostId = hostId;
         return this;
