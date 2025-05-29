@@ -19,7 +19,7 @@ namespace AwsWrapperDataProvider.Driver.Plugins.Iam;
 
 public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, string> props) : IConnectionPlugin
 {
-    private static readonly ISet<string> SubscribeMethods = new HashSet<string> { "*" };
+    private static readonly ISet<string> SubscribeMethods = new HashSet<string> { "open" };
 
     private readonly IPluginService pluginService = pluginService;
     private readonly Dictionary<string, string> props = props;
@@ -33,7 +33,7 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
 
     public T Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, params object[] methodArgs)
     {
-        throw new NotImplementedException();
+        return methodFunc();
     }
 
     public ISet<string> GetSubscribeMethods()
@@ -43,24 +43,12 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
 
     public void InitHostProvider(string initialUrl, Dictionary<string, string> props, IHostListProviderService hostListProviderService, ADONetDelegate<Action<object[]>> initHostProviderFunc)
     {
-        throw new NotImplementedException();
+        initHostProviderFunc();
     }
 
     private void ConnectInternal(HostSpec? hostSpec, Dictionary<string, string> props, ADONetDelegate methodFunc)
     {
-        string? iamHost = PropertyDefinition.IamHost.GetString(props);
-
-        if (iamHost == null)
-        {
-            if (hostSpec != null)
-            {
-                iamHost = hostSpec.Host;
-            }
-            else
-            {
-                throw new Exception("Could not determine host for IAM authentication provider.");
-            }
-        }
+        string iamHost = PropertyDefinition.IamHost.GetString(props) ?? hostSpec?.Host ?? throw new Exception("Could not determine host for IAM authentication provider.");
 
         // the default value for IamDefaultPort is -1, which should default to the other port property (?)
         int iamPort = PropertyDefinition.IamDefaultPort.GetInt(props) ?? this.pluginService.Dialect.DefaultPort;
@@ -70,13 +58,7 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
             iamPort = PropertyDefinition.Port.GetInt(props) ?? this.pluginService.Dialect.DefaultPort;
         }
 
-        string? iamRegion = RegionUtils.GetRegion(iamHost, props, PropertyDefinition.IamRegion);
-
-        if (iamRegion == null)
-        {
-            throw new Exception("Could not determine region for IAM authentication provider.");
-        }
-
+        string iamRegion = RegionUtils.GetRegion(iamHost, props, PropertyDefinition.IamRegion) ?? throw new Exception("Could not determine region for IAM authentication provider.");
         string? iamUser = PropertyDefinition.User.GetString(props) ?? string.Empty;
 
         string cacheKey = IamTokenCache.GetCacheKey(iamUser, iamHost, iamPort, iamRegion);
@@ -90,9 +72,9 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
                 int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? 800; // TODO(micahdbak): default expiration
                 this.iamTokenCache.SetToken(cacheKey, token, tokenExpirationSeconds);
             }
-            catch
+            catch (Exception ex)
             {
-                throw new Exception("Could not generate authentication token for IAM user " + iamUser + ".");
+                throw new Exception("Could not generate authentication token for IAM user " + iamUser + ".", ex);
             }
         }
 

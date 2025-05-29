@@ -15,6 +15,7 @@
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.Plugins.Efm;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
+using AwsWrapperDataProvider.Driver.Plugins.Iam;
 using AwsWrapperDataProvider.Driver.Utils;
 
 namespace AwsWrapperDataProvider.Driver.Plugins;
@@ -27,12 +28,14 @@ public class ConnectionPluginChainBuilder
     {
             { "failover", typeof(FailoverPluginFactory) },
             { "efm", typeof(HostMonitoringPluginFactory) },
+            { "iam", typeof(IamAuthPluginFactory) },
     };
 
     private static readonly Dictionary<Type, int> PluginWeightByPluginFactoryType = new()
     {
             { typeof(FailoverPluginFactory), 700 },
             { typeof(HostMonitoringPluginFactory), 800 },
+            { typeof(IamAuthPluginFactory), 900 },
     };
 
     public IList<IConnectionPlugin> GetPlugins(

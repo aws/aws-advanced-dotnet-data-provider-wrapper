@@ -12,23 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Amazon;
-using Amazon.RDS.Util;
-
 namespace AwsWrapperDataProvider.Driver.Plugins.Iam;
 
-public class IamTokenUtility
+public class IamAuthPluginFactory : IConnectionPluginFactory
 {
-    public static string GenerateAuthenticationToken(string region, string hostname, int port, string user)
+    public IConnectionPlugin GetInstance(IPluginService pluginService, Dictionary<string, string> props)
     {
-        try
-        {
-            RegionEndpoint regionEndpoint = RegionEndpoint.GetBySystemName(region);
-            return RDSAuthTokenGenerator.GenerateAuthToken(regionEndpoint, hostname, port, user);
-        }
-        catch (Exception ex)
-        {
-            throw new Exception("Couldn't generate token for IAM authentication.", ex);
-        }
+        return new IamAuthPlugin(pluginService, props);
     }
 }

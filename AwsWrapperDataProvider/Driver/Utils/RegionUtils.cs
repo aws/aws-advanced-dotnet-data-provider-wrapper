@@ -12,10 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using Amazon;
+using Amazon.RDS.Util;
+
 namespace AwsWrapperDataProvider.Driver.Utils;
 
 public static class RegionUtils
 {
+    public static bool IsValidRegion(string region)
+    {
+        try
+        {
+            RegionEndpoint.GetBySystemName(region);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     public static string? GetRegionFromProps(Dictionary<string, string> props, AwsWrapperProperty prop)
     {
         string? region = prop.GetString(props);
@@ -25,7 +41,7 @@ public static class RegionUtils
             return null;
         }
 
-        return RegionDefinition.IsValidRegion(region) ? region : null;
+        return IsValidRegion(region) ? region : null;
     }
 
     public static string? GetRegionFromHost(string host)
@@ -37,7 +53,7 @@ public static class RegionUtils
             return null;
         }
 
-        return RegionDefinition.IsValidRegion(region) ? region : null;
+        return IsValidRegion(region) ? region : null;
     }
 
     public static string? GetRegion(string host, Dictionary<string, string> props, AwsWrapperProperty prop)
