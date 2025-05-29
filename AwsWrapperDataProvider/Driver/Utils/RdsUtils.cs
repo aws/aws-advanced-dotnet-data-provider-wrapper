@@ -53,10 +53,7 @@ public static partial class RdsUtils
     [GeneratedRegex(@"^(?<instance>.+)\.(?<dns>cluster-|cluster-ro-)(?<domain>[a-zA-Z0-9]+\.rds\.(?<region>[a-zA-Z0-9\-]+)\.(amazonaws\.com|c2s\.ic\.gov|sc2s\.sgov\.gov))$", RegexOptions.IgnoreCase, "en-CA")]
     private static partial Regex AuroraGovClusterPattern();
 
-    private static readonly Regex[] AuroraDnsPatterns =
-    [
-        AuroraDnsPattern(), AuroraChinaDnsPattern(), AuroraOldChinaDnsPattern(), AuroraGovDnsPattern(),
-    ];
+    private static readonly Regex[] AuroraDnsPatterns = [AuroraDnsPattern(), AuroraChinaDnsPattern(), AuroraOldChinaDnsPattern(), AuroraGovDnsPattern()];
 
     [GeneratedRegex(@"^(([1-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){1}(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){2}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$")]
     private static partial Regex IpV4Pattern();
