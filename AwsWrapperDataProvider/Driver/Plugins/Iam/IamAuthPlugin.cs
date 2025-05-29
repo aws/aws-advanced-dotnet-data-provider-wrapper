@@ -20,7 +20,7 @@ namespace AwsWrapperDataProvider.Driver.Plugins.Iam;
 
 public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, string> props) : AbstractConnectionPlugin
 {
-    private static readonly ISet<string> SubscribeMethods = new HashSet<string> { "Open", "OpenAsync" };
+    private static readonly ISet<string> SubscribeMethods = new HashSet<string> { "DbConnection.Open", "DbConnection.OpenAsync" };
 
     private readonly IPluginService pluginService = pluginService;
     private readonly Dictionary<string, string> props = props;

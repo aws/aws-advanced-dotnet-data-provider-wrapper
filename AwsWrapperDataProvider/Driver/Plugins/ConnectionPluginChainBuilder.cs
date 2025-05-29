@@ -35,7 +35,7 @@ public class ConnectionPluginChainBuilder
     {
             { typeof(FailoverPluginFactory), 700 },
             { typeof(HostMonitoringPluginFactory), 800 },
-            { typeof(IamAuthPluginFactory), 900 },
+            { typeof(IamAuthPluginFactory), 1000 },
     };
 
     public IList<IConnectionPlugin> GetPlugins(
