@@ -73,7 +73,7 @@ public class PluginService : IPluginService, IHostListProviderService
     public HostSpec GetInitialConnectionHostSpec()
     {
         // TODO implement stub method.
-        return new HostSpec("temp", 0000, "temp", HostRole.Reader, HostAvailability.Available);
+        throw new NotImplementedException();
     }
 
     public void SetCurrentConnection(DbConnection connection, HostSpec? hostSpec)

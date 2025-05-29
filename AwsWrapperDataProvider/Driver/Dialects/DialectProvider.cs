@@ -29,7 +29,6 @@ public static class DialectProvider
         { typeof(MySql.Data.MySqlClient.MySqlConnection), "mysql" },
     };
 
-    // TODO: Properly map RdsUrlTypes to IDialect.
     private static readonly Dictionary<(RdsUrlType UrlType, string DatasourceType), Type> DatasourceTypeToDialectMap = new()
     {
         { (RdsUrlType.IpAddress, "postgres"), typeof(PgDialect) },

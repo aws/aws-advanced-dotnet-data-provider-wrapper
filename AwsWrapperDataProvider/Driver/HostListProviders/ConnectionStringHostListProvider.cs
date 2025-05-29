@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data.Common;
+using System.Data;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
 
@@ -45,7 +45,7 @@ public class ConnectionStringHostListProvider : IStaticHostListProvider
         return this._hostList.AsReadOnly();
     }
 
-    public IList<HostSpec> Refresh(DbConnection connection)
+    public IList<HostSpec> Refresh(IDbConnection connection)
     {
         return this.Refresh();
     }
@@ -56,12 +56,12 @@ public class ConnectionStringHostListProvider : IStaticHostListProvider
         return this._hostList.AsReadOnly();
     }
 
-    public IList<HostSpec> ForceRefresh(DbConnection connection)
+    public IList<HostSpec> ForceRefresh(IDbConnection connection)
     {
         return this.ForceRefresh();
     }
 
-    public HostRole GetHostRole(DbConnection connection)
+    public HostRole GetHostRole(IDbConnection connection)
     {
         throw new NotSupportedException("ConnectionStringHostListProvider does not support GetHostRole.");
     }

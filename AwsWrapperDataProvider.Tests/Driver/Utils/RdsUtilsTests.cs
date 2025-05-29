@@ -88,20 +88,63 @@ public class RdsUtilsTests
     private const string UsIsoEastRegionLimitlessDbShardGroup =
         "database-test-name.shardgrp-XYZ.rds.us-iso-east-1.c2s.ic.gov";
 
+    public static IEnumerable<object?[]> IdentifyRdsTypeTestData()
+    {
+        yield return new object?[] { UsEastRegionCluster, RdsUrlType.RdsWriterCluster };
+        yield return new object?[] { UsEastRegionClusterReadOnly, RdsUrlType.RdsReaderCluster };
+        yield return new object?[] { UsEastRegionCustomDomain, RdsUrlType.RdsCustomCluster };
+        yield return new object?[] { UsEastRegionProxy, RdsUrlType.RdsProxy };
+        yield return new object?[] { UsEastRegionInstance, RdsUrlType.RdsInstance };
+        yield return new object?[] { UsEastRegionLimitlessDbShardGroup, RdsUrlType.RdsAuroraLimitlessDbShardGroup };
+        yield return new object?[] { "192.168.1.1", RdsUrlType.IpAddress };
+        yield return new object?[] { "2001:0db8:85a3:0000:0000:8a2e:0370:7334", RdsUrlType.IpAddress };
+        yield return new object?[] { "2001:db8::8a2e:370:7334", RdsUrlType.IpAddress };
+        yield return new object?[] { "example.com", RdsUrlType.Other };
+        yield return new object?[] { string.Empty, RdsUrlType.Other };
+        yield return new object?[] { null, RdsUrlType.Other };
+
+        // Old China Dns Pattern
+        yield return new object?[] { OldChinaRegionCluster, RdsUrlType.RdsWriterCluster };
+        yield return new object?[] { OldChinaRegionClusterReadOnly, RdsUrlType.RdsReaderCluster };
+        yield return new object?[] { OldChinaRegionCustomDomain, RdsUrlType.RdsCustomCluster };
+        yield return new object?[] { OldChinaRegionProxy, RdsUrlType.RdsProxy };
+        yield return new object?[] { OldChinaRegionInstance, RdsUrlType.RdsInstance };
+        yield return new object?[] { OldChinaRegionLimitlessDbShardGroup, RdsUrlType.RdsAuroraLimitlessDbShardGroup };
+
+        // China Dns Pattern
+        yield return new object?[] { ChinaRegionCluster, RdsUrlType.RdsWriterCluster };
+        yield return new object?[] { ChinaRegionClusterReadOnly, RdsUrlType.RdsReaderCluster };
+        yield return new object?[] { ChinaRegionCustomDomain, RdsUrlType.RdsCustomCluster };
+        yield return new object?[] { ChinaRegionProxy, RdsUrlType.RdsProxy };
+        yield return new object?[] { ChinaRegionInstance, RdsUrlType.RdsInstance };
+        yield return new object?[] { ChinaRegionLimitlessDbShardGroup, RdsUrlType.RdsAuroraLimitlessDbShardGroup };
+
+        // Gov Dns Pattern
+        yield return new object?[] { UsGovEastRegionCluster, RdsUrlType.RdsWriterCluster };
+        yield return new object?[] { UsIsoEastRegionCluster, RdsUrlType.RdsWriterCluster };
+        yield return new object?[] { UsIsoEastRegionClusterReadOnly, RdsUrlType.RdsReaderCluster };
+        yield return new object?[] { UsIsoEastRegionCustomDomain, RdsUrlType.RdsCustomCluster };
+        yield return new object?[] { UsIsoEastRegionProxy, RdsUrlType.RdsProxy };
+        yield return new object?[] { UsIsoEastRegionInstance, RdsUrlType.RdsInstance };
+        yield return new object?[] { UsIsoEastRegionLimitlessDbShardGroup, RdsUrlType.RdsAuroraLimitlessDbShardGroup };
+        yield return new object?[] { UsIsobEastRegionCluster, RdsUrlType.RdsWriterCluster };
+        yield return new object?[] { UsIsobEastRegionClusterReadOnly, RdsUrlType.RdsReaderCluster };
+        yield return new object?[] { UsIsobEastRegionCustomDomain, RdsUrlType.RdsCustomCluster };
+        yield return new object?[] { UsIsobEastRegionProxy, RdsUrlType.RdsProxy };
+        yield return new object?[] { UsIsobEastRegionInstance, RdsUrlType.RdsInstance };
+        yield return new object?[] { UsIsobEastRegionLimitlessDbShardGroup, RdsUrlType.RdsAuroraLimitlessDbShardGroup };
+
+        // Should be case insensitive
+        yield return new object?[] { "mydb.cluster-123456789012.us-east-1.RDS.AMAZONAWS.COM", RdsUrlType.RdsWriterCluster };
+        yield return new object?[] { "MYDB.CLUSTER-123456789012.US-EAST-1.RDS.AMAZONAWS.COM", RdsUrlType.RdsWriterCluster };
+
+        // Other
+        yield return new object?[] { UsEastRegionElbUrl, RdsUrlType.Other };
+    }
+
     [Theory]
     [Trait("Category", "Unit")]
-    [InlineData(UsEastRegionCluster, RdsUrlType.RdsWriterCluster)]
-    [InlineData(UsEastRegionClusterReadOnly, RdsUrlType.RdsReaderCluster)]
-    [InlineData(UsEastRegionCustomDomain, RdsUrlType.RdsCustomCluster)]
-    [InlineData(UsEastRegionProxy, RdsUrlType.RdsProxy)]
-    [InlineData(UsEastRegionInstance, RdsUrlType.RdsInstance)]
-    [InlineData(UsEastRegionLimitlessDbShardGroup, RdsUrlType.RdsAuroraLimitlessDbShardGroup)]
-    [InlineData("192.168.1.1", RdsUrlType.IpAddress)]
-    [InlineData("2001:0db8:85a3:0000:0000:8a2e:0370:7334", RdsUrlType.IpAddress)]
-    [InlineData("2001:db8::8a2e:370:7334", RdsUrlType.IpAddress)]
-    [InlineData("example.com", RdsUrlType.Other)]
-    [InlineData("", RdsUrlType.Other)]
-    [InlineData(null, RdsUrlType.Other)]
+    [MemberData(nameof(IdentifyRdsTypeTestData))]
     public void IdentifyRdsType_ShouldReturnCorrectType(string? host, RdsUrlType expectedType)
     {
         var result = RdsUtils.IdentifyRdsType(host);
@@ -124,55 +167,6 @@ public class RdsUtilsTests
     {
         var result = RdsUtils.GetRdsInstanceId(host);
         Assert.Equal(expectedInstanceId, result);
-    }
-
-    [Theory]
-    [Trait("Category", "Unit")]
-    [InlineData(OldChinaRegionCluster, RdsUrlType.RdsWriterCluster)]
-    [InlineData(OldChinaRegionClusterReadOnly, RdsUrlType.RdsReaderCluster)]
-    [InlineData(OldChinaRegionCustomDomain, RdsUrlType.RdsCustomCluster)]
-    [InlineData(OldChinaRegionProxy, RdsUrlType.RdsProxy)]
-    [InlineData(OldChinaRegionInstance, RdsUrlType.RdsInstance)]
-    [InlineData(OldChinaRegionLimitlessDbShardGroup, RdsUrlType.RdsAuroraLimitlessDbShardGroup)]
-    public void IdentifyRdsType_WithAuroraOldChinaDnsPattern_ShouldReturnCorrectType(string host, RdsUrlType expectedType)
-    {
-        var result = RdsUtils.IdentifyRdsType(host);
-        Assert.Equal(expectedType, result);
-    }
-
-    [Theory]
-    [Trait("Category", "Unit")]
-    [InlineData(ChinaRegionCluster, RdsUrlType.RdsWriterCluster)]
-    [InlineData(ChinaRegionClusterReadOnly, RdsUrlType.RdsReaderCluster)]
-    [InlineData(ChinaRegionCustomDomain, RdsUrlType.RdsCustomCluster)]
-    [InlineData(ChinaRegionProxy, RdsUrlType.RdsProxy)]
-    [InlineData(ChinaRegionInstance, RdsUrlType.RdsInstance)]
-    [InlineData(ChinaRegionLimitlessDbShardGroup, RdsUrlType.RdsAuroraLimitlessDbShardGroup)]
-    public void IdentifyRdsType_WithAuroraChinaDnsPattern_ShouldReturnCorrectType(string host, RdsUrlType expectedType)
-    {
-        var result = RdsUtils.IdentifyRdsType(host);
-        Assert.Equal(expectedType, result);
-    }
-
-    [Theory]
-    [Trait("Category", "Unit")]
-    [InlineData(UsGovEastRegionCluster, RdsUrlType.RdsWriterCluster)]
-    [InlineData(UsIsoEastRegionCluster, RdsUrlType.RdsWriterCluster)]
-    [InlineData(UsIsoEastRegionClusterReadOnly, RdsUrlType.RdsReaderCluster)]
-    [InlineData(UsIsoEastRegionCustomDomain, RdsUrlType.RdsCustomCluster)]
-    [InlineData(UsIsoEastRegionProxy, RdsUrlType.RdsProxy)]
-    [InlineData(UsIsoEastRegionInstance, RdsUrlType.RdsInstance)]
-    [InlineData(UsIsoEastRegionLimitlessDbShardGroup, RdsUrlType.RdsAuroraLimitlessDbShardGroup)]
-    [InlineData(UsIsobEastRegionCluster, RdsUrlType.RdsWriterCluster)]
-    [InlineData(UsIsobEastRegionClusterReadOnly, RdsUrlType.RdsReaderCluster)]
-    [InlineData(UsIsobEastRegionCustomDomain, RdsUrlType.RdsCustomCluster)]
-    [InlineData(UsIsobEastRegionProxy, RdsUrlType.RdsProxy)]
-    [InlineData(UsIsobEastRegionInstance, RdsUrlType.RdsInstance)]
-    [InlineData(UsIsobEastRegionLimitlessDbShardGroup, RdsUrlType.RdsAuroraLimitlessDbShardGroup)]
-    public void IdentifyRdsType_WithAuroraGovDnsPattern_ShouldReturnCorrectType(string host, RdsUrlType expectedType)
-    {
-        var result = RdsUtils.IdentifyRdsType(host);
-        Assert.Equal(expectedType, result);
     }
 
     [Theory]
@@ -214,30 +208,54 @@ public class RdsUtilsTests
         Assert.Equal(firstResult, secondResult);
     }
 
-    [Theory]
-    [Trait("Category", "Unit")]
-    [InlineData("mydb.cluster-123456789012.us-east-1.RDS.AMAZONAWS.COM", RdsUrlType.RdsWriterCluster)]
-    [InlineData("MYDB.CLUSTER-123456789012.US-EAST-1.RDS.AMAZONAWS.COM", RdsUrlType.RdsWriterCluster)]
-    public void IdentifyRdsType_ShouldBeCaseInsensitive(string host, RdsUrlType expectedType)
-    {
-        var result = RdsUtils.IdentifyRdsType(host);
-        Assert.Equal(expectedType, result);
-    }
-
-    [Theory]
-    [Trait("Category", "Unit")]
-    [InlineData(UsEastRegionElbUrl, RdsUrlType.Other)]
-    public void IdentifyRdsType_WithElbUrl_ShouldReturnOtherType(string host, RdsUrlType expectedType)
-    {
-        var result = RdsUtils.IdentifyRdsType(host);
-        Assert.Equal(expectedType, result);
-    }
-
     [Fact]
     [Trait("Category", "Unit")]
     public void GetRdsInstanceId_WithElbUrl_ShouldReturnNull()
     {
         var result = RdsUtils.GetRdsInstanceId(UsEastRegionElbUrl);
         Assert.Null(result);
+    }
+
+    [Theory]
+    [Trait("Category", "Unit")]
+    [InlineData("?.XYZ.us-east-2.rds.amazonaws.com", UsEastRegionCluster)]
+    [InlineData("?.XYZ.us-east-2.rds.amazonaws.com", UsEastRegionClusterReadOnly)]
+    [InlineData("?.XYZ.us-east-2.rds.amazonaws.com", UsEastRegionCustomDomain)]
+    [InlineData("?.XYZ.us-east-2.rds.amazonaws.com", UsEastRegionInstance)]
+    [InlineData("?.XYZ.us-east-2.rds.amazonaws.com", UsEastRegionLimitlessDbShardGroup)]
+    [InlineData("?.XYZ.us-east-2.rds.amazonaws.com", UsEastRegionProxy)]
+
+    [InlineData("?.XYZ.rds.us-gov-east-1.amazonaws.com", UsGovEastRegionCluster)]
+
+    [InlineData("?.XYZ.rds.us-isob-east-1.sc2s.sgov.gov", UsIsobEastRegionCluster)]
+    [InlineData("?.XYZ.rds.us-isob-east-1.sc2s.sgov.gov", UsIsobEastRegionClusterReadOnly)]
+    [InlineData("?.XYZ.rds.us-isob-east-1.sc2s.sgov.gov", UsIsobEastRegionCustomDomain)]
+    [InlineData("?.XYZ.rds.us-isob-east-1.sc2s.sgov.gov", UsIsobEastRegionInstance)]
+    [InlineData("?.XYZ.rds.us-isob-east-1.sc2s.sgov.gov", UsIsobEastRegionLimitlessDbShardGroup)]
+    [InlineData("?.XYZ.rds.us-isob-east-1.sc2s.sgov.gov", UsIsobEastRegionProxy)]
+
+    [InlineData("?.XYZ.rds.us-iso-east-1.c2s.ic.gov", UsIsoEastRegionCluster)]
+    [InlineData("?.XYZ.rds.us-iso-east-1.c2s.ic.gov", UsIsoEastRegionClusterReadOnly)]
+    [InlineData("?.XYZ.rds.us-iso-east-1.c2s.ic.gov", UsIsoEastRegionCustomDomain)]
+    [InlineData("?.XYZ.rds.us-iso-east-1.c2s.ic.gov", UsIsoEastRegionInstance)]
+    [InlineData("?.XYZ.rds.us-iso-east-1.c2s.ic.gov", UsIsoEastRegionLimitlessDbShardGroup)]
+    [InlineData("?.XYZ.rds.us-iso-east-1.c2s.ic.gov", UsIsoEastRegionProxy)]
+
+    [InlineData("?.XYZ.rds.cn-northwest-1.amazonaws.com.cn", ChinaRegionCluster)]
+    [InlineData("?.XYZ.rds.cn-northwest-1.amazonaws.com.cn", ChinaRegionClusterReadOnly)]
+    [InlineData("?.XYZ.rds.cn-northwest-1.amazonaws.com.cn", ChinaRegionCustomDomain)]
+    [InlineData("?.XYZ.rds.cn-northwest-1.amazonaws.com.cn", ChinaRegionInstance)]
+    [InlineData("?.XYZ.rds.cn-northwest-1.amazonaws.com.cn", ChinaRegionLimitlessDbShardGroup)]
+    [InlineData("?.XYZ.rds.cn-northwest-1.amazonaws.com.cn", ChinaRegionProxy)]
+
+    [InlineData("?.XYZ.cn-northwest-1.rds.amazonaws.com.cn", OldChinaRegionCluster)]
+    [InlineData("?.XYZ.cn-northwest-1.rds.amazonaws.com.cn", OldChinaRegionClusterReadOnly)]
+    [InlineData("?.XYZ.cn-northwest-1.rds.amazonaws.com.cn", OldChinaRegionCustomDomain)]
+    [InlineData("?.XYZ.cn-northwest-1.rds.amazonaws.com.cn", OldChinaRegionInstance)]
+    [InlineData("?.XYZ.cn-northwest-1.rds.amazonaws.com.cn", OldChinaRegionLimitlessDbShardGroup)]
+    [InlineData("?.XYZ.cn-northwest-1.rds.amazonaws.com.cn", OldChinaRegionProxy)]
+    public void GetRdsInstanceHostPatternTest(string expectedHostPattern, string host)
+    {
+        Assert.Equal(expectedHostPattern, RdsUtils.GetRdsInstanceHostPattern(host));
     }
 }

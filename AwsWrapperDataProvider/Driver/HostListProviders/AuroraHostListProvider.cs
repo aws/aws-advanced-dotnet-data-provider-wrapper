@@ -1,4 +1,4 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -12,22 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data;
-using AwsWrapperDataProvider.Driver.HostInfo;
-
 namespace AwsWrapperDataProvider.Driver.HostListProviders;
 
-public interface IHostListProvider
+public class AuroraHostListProvider : RdsHostListProvider
 {
-    IList<HostSpec> Refresh();
-
-    IList<HostSpec> Refresh(IDbConnection connection);
-
-    IList<HostSpec> ForceRefresh();
-
-    IList<HostSpec> ForceRefresh(IDbConnection connection);
-
-    HostRole GetHostRole(IDbConnection connection);
-
-    string GetClusterId();
+    public AuroraHostListProvider(
+        Dictionary<string, string> properties,
+        IHostListProviderService hostListProviderService,
+        string topologyQuery,
+        string nodeIdQuery,
+        string isReaderQuery)
+        : base(properties, hostListProviderService, topologyQuery, nodeIdQuery, isReaderQuery)
+    {
+    }
 }

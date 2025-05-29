@@ -70,8 +70,8 @@ public static class PropertyDefinition
     public static readonly AwsWrapperProperty IamExpiration =
         new("iamExpiration", "870", "IAM token cache expiration in seconds.");
 
-    public static readonly AwsWrapperProperty ClusterTopologyRefreshRateMS = new(
-        "ClusterTopologyRefreshRateMS",
+    public static readonly AwsWrapperProperty ClusterTopologyRefreshRateMs = new(
+        "ClusterTopologyRefreshRateMs",
         "30000",
         "Cluster topology refresh rate in millis. The cached topology for the cluster will be invalidated after the specified time, after which it will be updated during the next interaction with the connection.");
 
@@ -116,7 +116,7 @@ public static class PropertyDefinition
         SecretsManagerRegion,
         SecretsManagerExpirationSecs,
         SecretsManagerEndpoint,
-        ClusterTopologyRefreshRateMS,
+        ClusterTopologyRefreshRateMs,
         ClusterInstanceHostPattern,
         ClusterId
     ];

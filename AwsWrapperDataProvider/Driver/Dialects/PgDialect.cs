@@ -33,7 +33,7 @@ public class PgDialect : IDialect
         typeof(RdsPgDialect),
     ];
 
-    public HostListProviderSupplier HostListProviderSupplier { get; } = (
+    public virtual HostListProviderSupplier HostListProviderSupplier { get; } = (
         Dictionary<string, string> props,
         IHostListProviderService hostListProviderService,
         IPluginService pluginService) => new ConnectionStringHostListProvider(props, hostListProviderService);
@@ -44,14 +44,14 @@ public class PgDialect : IDialect
         {
             using IDbCommand command = conn.CreateCommand();
             command.CommandText = "SELECT 1 FROM pg_proc LIMIT 1";
-            using DbDataReader reader = (DbDataReader)command.ExecuteReader();
+            using IDataReader reader = command.ExecuteReader();
 
-            if (reader.HasRows)
+            if (reader.Read())
             {
                 return true;
             }
         }
-        catch (Exception)
+        catch (DbException)
         {
             // ignored
         }

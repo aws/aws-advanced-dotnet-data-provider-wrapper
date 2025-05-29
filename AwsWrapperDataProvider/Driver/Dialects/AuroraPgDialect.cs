@@ -13,14 +13,91 @@
 // limitations under the License.
 
 using System.Data;
+using System.Data.Common;
+using AwsWrapperDataProvider.Driver.HostListProviders;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
 public class AuroraPgDialect : PgDialect
 {
-    // TODO Implement AuroraPgDialect
-    public override bool IsDialect(IDbConnection conn)
+    private static readonly string ExtensionsSql = "SELECT (setting LIKE '%aurora_stat_utils%') AS aurora_stat_utils "
+          + "FROM pg_settings "
+          + "WHERE name='rds.extensions'";
+
+    private static readonly string TopologySql = "SELECT 1 FROM aurora_replica_status() LIMIT 1";
+
+    private static readonly string TopologyQuery = "SELECT SERVER_ID, CASE WHEN SESSION_ID = 'MASTER_SESSION_ID' THEN TRUE ELSE FALSE END, "
+          + "CPU, COALESCE(REPLICA_LAG_IN_MSEC, 0), LAST_UPDATE_TIMESTAMP "
+          + "FROM aurora_replica_status() "
+          + "WHERE EXTRACT(EPOCH FROM(NOW() - LAST_UPDATE_TIMESTAMP)) <= 300 OR SESSION_ID = 'MASTER_SESSION_ID' "
+          + "OR LAST_UPDATE_TIMESTAMP IS NULL";
+
+    private static readonly string NodeIdQuery = "SELECT aurora_db_instance_identifier()";
+
+    private static readonly string IsReaderQuery = "SELECT pg_is_in_recovery()";
+
+    public override IList<Type> DialectUpdateCandidates { get; } =
+    [
+    ];
+
+    public override bool IsDialect(IDbConnection connection)
     {
-        return false;
+        if (!base.IsDialect(connection))
+        {
+            return false;
+        }
+
+        bool hasExtensions = false;
+        bool hasTopology = false;
+
+        try
+        {
+            using IDbCommand command = connection.CreateCommand();
+            command.CommandText = ExtensionsSql;
+            using IDataReader reader = command.ExecuteReader();
+            if (reader.Read())
+            {
+                bool auroraUtils = reader.GetBoolean(reader.GetOrdinal("aurora_stat_utils"));
+                if (auroraUtils)
+                {
+                    hasExtensions = true;
+                }
+            }
+        }
+        catch (DbException)
+        {
+            // ignored
+        }
+
+        if (!hasExtensions)
+        {
+            return false;
+        }
+
+        try
+        {
+            using IDbCommand command = connection.CreateCommand();
+            command.CommandText = TopologySql;
+            using IDataReader reader = command.ExecuteReader();
+            if (reader.Read())
+            {
+                hasTopology = true;
+            }
+        }
+        catch (DbException)
+        {
+            // ignored
+        }
+
+        return hasExtensions && hasTopology;
+    }
+
+    public override HostListProviderSupplier HostListProviderSupplier => this.GetHostListProviderSupplier();
+
+    private HostListProviderSupplier GetHostListProviderSupplier()
+    {
+        // TODO add MonitoringRdsHostListProvider for failover plugin
+        return (props, hostListProviderService, pluginService) => new AuroraHostListProvider(
+            props, hostListProviderService, TopologyQuery, NodeIdQuery, IsReaderQuery);
     }
 }
