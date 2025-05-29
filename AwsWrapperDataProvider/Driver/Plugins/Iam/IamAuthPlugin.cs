@@ -13,37 +13,28 @@
 // limitations under the License.
 
 using AwsWrapperDataProvider.Driver.HostInfo;
+using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Utils;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.Iam;
 
-public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, string> props) : IConnectionPlugin
+public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, string> props) : AbstractConnectionPlugin
 {
-    private static readonly ISet<string> SubscribeMethods = new HashSet<string> { "open" };
+    private static readonly ISet<string> SubscribeMethods = new HashSet<string> { "Open", "OpenAsync" };
 
     private readonly IPluginService pluginService = pluginService;
     private readonly Dictionary<string, string> props = props;
 
     private readonly IamTokenCache iamTokenCache = new IamTokenCache();
 
-    public void OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate methodFunc)
-    {
-        this.ConnectInternal(hostSpec, props, methodFunc);
-    }
-
-    public T Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, params object[] methodArgs)
-    {
-        return methodFunc();
-    }
-
-    public ISet<string> GetSubscribeMethods()
+    public override ISet<string> GetSubscribeMethods()
     {
         return SubscribeMethods;
     }
 
-    public void InitHostProvider(string initialUrl, Dictionary<string, string> props, IHostListProviderService hostListProviderService, ADONetDelegate<Action<object[]>> initHostProviderFunc)
+    public override void OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate methodFunc)
     {
-        initHostProviderFunc();
+        this.ConnectInternal(hostSpec, props, methodFunc);
     }
 
     private void ConnectInternal(HostSpec? hostSpec, Dictionary<string, string> props, ADONetDelegate methodFunc)
@@ -55,7 +46,7 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
 
         if (iamPort <= 0)
         {
-            iamPort = PropertyDefinition.Port.GetInt(props) ?? this.pluginService.Dialect.DefaultPort;
+            iamPort = this.pluginService.Dialect.DefaultPort;
         }
 
         string iamRegion = RegionUtils.GetRegion(iamHost, props, PropertyDefinition.IamRegion) ?? throw new Exception("Could not determine region for IAM authentication provider.");
