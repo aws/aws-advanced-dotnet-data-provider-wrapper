@@ -23,7 +23,7 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
 {
     private static readonly ISet<string> SubscribeMethods = new HashSet<string> { "DbConnection.Open", "DbConnection.OpenAsync" };
 
-    private static readonly int DefaultIamExpirationSeconds = 900;
+    private static readonly int DefaultIamExpirationSeconds = 870;
 
     private readonly IPluginService pluginService = pluginService;
     private readonly Dictionary<string, string> props = props;

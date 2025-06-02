@@ -12,13 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Text.RegularExpressions;
 using Amazon;
-using Amazon.RDS.Util;
 
 namespace AwsWrapperDataProvider.Driver.Utils;
 
 public static class RegionUtils
 {
+    private static readonly string RegionGroup = "region";
+
+    private static readonly Regex SecretIdPattern = new(
+        @$"^arn:aws:secretsmanager:(?<{RegionGroup}>[a-z\-0-9]+):.*");
+
     public static bool IsValidRegion(string region)
     {
         try
@@ -54,6 +59,14 @@ public static class RegionUtils
         }
 
         return IsValidRegion(region) ? region : null;
+    }
+
+    public static string? GetRegionFromSecretId(string secretId)
+    {
+        var match = SecretIdPattern.Match(secretId);
+        string? region = match.Groups[RegionGroup].Value;
+
+        return region == null ? null : IsValidRegion(region) ? region : null;
     }
 
     public static string? GetRegion(string host, Dictionary<string, string> props, AwsWrapperProperty prop)

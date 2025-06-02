@@ -70,6 +70,18 @@ public static class PropertyDefinition
     public static readonly AwsWrapperProperty IamExpiration =
         new("iamExpiration", "870", "IAM token cache expiration in seconds.");
 
+    public static readonly AwsWrapperProperty SecretsManagerSecretId = new(
+        "secretsManagerSecretId", null, "The name or the ARN of the secret to retrieve.");
+
+    public static readonly AwsWrapperProperty SecretsManagerRegion = new(
+        "secretsManagerRegion", "us-east-1", "The region of the secret to retrieve.");
+
+    public static readonly AwsWrapperProperty SecretsManagerExpirationSecs = new(
+        "secretsManagerExpirationSec", "870", "The time in seconds that secrets are cached for.");
+
+    public static readonly AwsWrapperProperty SecretsManagerEndpoint = new(
+        "secretsManagerEndpoint", null, "The endpoint of the secret to retrieve.");
+
     /// <summary>
     /// A set of AwsWrapperProperties that is used by the wrapper and should not be passed to the target driver.
     /// </summary>
