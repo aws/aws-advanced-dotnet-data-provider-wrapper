@@ -50,6 +50,7 @@ public class RdsHostListProviderTest : IDisposable
         this.mockCommand = new Mock<IDbCommand>();
         this.mockReader = new Mock<IDataReader>();
         this.mockConnection.Setup(c => c.CreateCommand()).Returns(this.mockCommand.Object);
+        this.mockConnection.Setup(c => c.State).Returns(ConnectionState.Open);
         this.mockCommand.Setup(c => c.ExecuteReader()).Returns(this.mockReader.Object);
     }
 
