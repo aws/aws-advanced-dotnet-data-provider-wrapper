@@ -263,7 +263,7 @@ public class RdsHostListProvider : IDynamicHostListProvider
         bool needToSuggest = cachedHosts == null && this.IsPrimaryClusterId;
         if (cachedHosts == null || forceUpdate)
         {
-            if (connection == null)
+            if (connection == null || connection.State != ConnectionState.Open)
             {
                 return new FetchTopologyResult(false, this.initialHostList);
             }

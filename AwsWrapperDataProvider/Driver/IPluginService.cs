@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections;
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.Dialects;
@@ -76,8 +77,7 @@ public interface IPluginService
     /// </summary>
     /// <param name="hostAliases">Set of host aliases.</param>
     /// <param name="availability">The availability status.</param>
-    /// <returns>The host role.</returns>
-    HostRole SetAvailability(ISet<string> hostAliases, HostAvailability availability);
+    void SetAvailability(ICollection<string> hostAliases, HostAvailability availability);
 
     /// <summary>
     /// Refreshes the host list.
