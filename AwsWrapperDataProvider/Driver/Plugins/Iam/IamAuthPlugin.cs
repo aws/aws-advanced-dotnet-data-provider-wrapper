@@ -40,6 +40,7 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
 
     private void ConnectInternal(HostSpec? hostSpec, Dictionary<string, string> props, ADONetDelegate methodFunc)
     {
+        string iamUser = PropertyDefinition.User.GetString(props) ?? throw new Exception(PropertyDefinition.User.Name + " is null or empty.");
         string iamHost = PropertyDefinition.IamHost.GetString(props) ?? hostSpec?.Host ?? throw new Exception("Could not determine host for IAM authentication provider.");
 
         // the default value for IamDefaultPort is -1, which should default to the other port property (?)
@@ -51,11 +52,9 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
         }
 
         string iamRegion = RegionUtils.GetRegion(iamHost, props, PropertyDefinition.IamRegion) ?? throw new Exception("Could not determine region for IAM authentication provider.");
-        string? iamUser = PropertyDefinition.User.GetString(props) ?? string.Empty;
 
         string cacheKey = IamTokenUtility.GetCacheKey(iamUser, iamHost, iamPort, iamRegion);
-        string? token;
-        if (!this.iamTokenCache.TryGetValue(cacheKey, out token))
+        if (!this.iamTokenCache.TryGetValue(cacheKey, out string? token))
         {
             try
             {
