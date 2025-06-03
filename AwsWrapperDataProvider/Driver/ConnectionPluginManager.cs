@@ -37,6 +37,16 @@ public class ConnectionPluginManager
     private delegate T PluginChainADONetDelegate<T>(PluginPipelineDelegate<T> pipelineDelegate, ADONetDelegate<T> methodFunc, IConnectionPlugin pluginToSkip);
 
     public ConnectionPluginManager(
+        IConnectionProvider defaultConnProvider,
+        IConnectionProvider? effectiveConnProvider,
+        AwsWrapperConnection connection) : this(
+        defaultConnProvider,
+        effectiveConnProvider,
+        connection,
+        null)
+    { }
+
+    public ConnectionPluginManager(
         IConnectionProvider defaultConnectionProvider,
         IConnectionProvider? effectiveConnectionProvider,
         AwsWrapperConnection connection,
