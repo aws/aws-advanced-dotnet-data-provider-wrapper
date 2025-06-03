@@ -23,6 +23,8 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
 {
     private static readonly ISet<string> SubscribeMethods = new HashSet<string> { "DbConnection.Open", "DbConnection.OpenAsync" };
 
+    private static readonly int DefaultIamExpirationSeconds = 900;
+
     private readonly IPluginService pluginService = pluginService;
     private readonly Dictionary<string, string> props = props;
 
@@ -59,11 +61,8 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
             try
             {
                 token = IamTokenUtility.GenerateAuthenticationToken(iamRegion, iamHost, iamPort, iamUser);
-                int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? 800; // TODO(micahdbak): default expiration
-
-                MemoryCacheEntryOptions tokenOptions = new MemoryCacheEntryOptions()
-                    .SetAbsoluteExpiration(DateTime.Now.AddSeconds(tokenExpirationSeconds));
-                this.iamTokenCache.Set(cacheKey, token, tokenOptions);
+                int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? DefaultIamExpirationSeconds;
+                this.iamTokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
             }
             catch (Exception ex)
             {
@@ -74,6 +73,28 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
         // token is non-null here, as the above try-catch block must have succeeded
         PropertyDefinition.Password.Set(props, token);
 
-        methodFunc();
+        try
+        {
+            methodFunc();
+        }
+        catch
+        {
+            // should the token not work (expired on the server), generate a new one and try again
+            try
+            {
+                token = IamTokenUtility.GenerateAuthenticationToken(iamRegion, iamHost, iamPort, iamUser);
+                int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? DefaultIamExpirationSeconds;
+                this.iamTokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Could not generate authentication token for IAM user " + iamUser + ".", ex);
+            }
+
+            // token is non-null here, as the above try-catch block must have succeeded
+            PropertyDefinition.Password.Set(props, token);
+
+            methodFunc();
+        }
     }
 }
