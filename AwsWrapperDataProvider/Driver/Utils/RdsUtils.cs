@@ -174,7 +174,7 @@ public static partial class RdsUtils
 
     public static string? GetRdsRegion(string host)
     {
-        return CacheMatcher(host, DnsPatterns)?.Groups[RegionGroup].Value;
+        return CacheMatcher(host, AuroraDnsPatterns)?.Groups[RegionGroup].Value;
     }
 
     private static string? GetDnsGroup(string host)
