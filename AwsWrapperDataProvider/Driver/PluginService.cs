@@ -36,7 +36,6 @@ public class PluginService : IPluginService, IHostListProviderService
     private HostSpec? _currentHostSpec;
     private DbConnection? _currentConnection;
     private HostSpec? _initialConnectionHostSpec;
-    private ConfigurationProfile? _configurationProfile;
 
     // private ExceptionManager _exceptionManager;
     // private IExceptionHandler _exceptionHandler;
@@ -55,13 +54,14 @@ public class PluginService : IPluginService, IHostListProviderService
         ConnectionPluginManager pluginManager,
         Dictionary<string, string> props,
         string connectionString,
-        ITargetConnectionDialect targetConnectionDialect)
+        ITargetConnectionDialect? targetConnectionDialect,
+        ConfigurationProfile? configurationProfile)
     {
         this._pluginManager = pluginManager;
         this._props = props;
         this._originalConnectionString = connectionString;
-        this._targetConnectionDialect = targetConnectionDialect;
-        this._dialect = DialectProvider.GuessDialect(this._props);
+        this._targetConnectionDialect = configurationProfile?.TargetConnectionDialect ?? targetConnectionDialect ?? throw new ArgumentNullException(nameof(targetConnectionDialect));
+        this._dialect = configurationProfile?.Dialect ?? DialectProvider.GuessDialect(this._props, configurationProfile);
         this._hostListProvider =
             this._dialect.HostListProviderSupplier(this._props, this, this)
             ?? throw new InvalidOperationException(); // TODO : throw proper error

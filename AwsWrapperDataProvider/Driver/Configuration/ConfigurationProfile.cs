@@ -30,9 +30,9 @@ public class ConfigurationProfile
     private readonly List<IConnectionPluginFactory>? _pluginFactories;
     private readonly Dictionary<string, string>? _properties;
 
-    private IDialect? _dialect;
-    private ITargetConnectionDialect? _targetDriverDialect;
-    private IConnectionProvider? _connectionProvider;
+    private readonly IDialect? _dialect;
+    private readonly ITargetConnectionDialect? _targetDriverDialect;
+    private readonly IConnectionProvider? _connectionProvider;
 
     public ConfigurationProfile(
         string name,
@@ -42,42 +42,41 @@ public class ConfigurationProfile
         ITargetConnectionDialect? targetDriverDialect,
         IConnectionProvider? connectionProvider)
     {
-        _name = name;
-        _pluginFactories = pluginFactories;
-        _properties = properties;
-        _dialect = dialect;
-        _targetDriverDialect = targetDriverDialect;
-        _connectionProvider = connectionProvider;
+        this._name = name;
+        this._pluginFactories = pluginFactories;
+        this._properties = properties;
+        this._dialect = dialect;
+        this._targetDriverDialect = targetDriverDialect;
+        this._connectionProvider = connectionProvider;
     }
 
     /// <summary>
     /// Gets the name of the configuration profile.
     /// </summary>
-    public string Name => _name;
+    public string Name => this._name;
 
     /// <summary>
     /// Gets the properties of the configuration profile.
     /// </summary>
-    public Dictionary<string, string>? Properties => _properties;
+    public Dictionary<string, string>? Properties => this._properties;
 
     /// <summary>
     /// Gets the plugin factories of the configuration profile.
     /// </summary>
-    public List<IConnectionPluginFactory>? PluginFactories => _pluginFactories;
+    public List<IConnectionPluginFactory>? PluginFactories => this._pluginFactories;
 
     /// <summary>
     /// Gets the dialect of the configuration profile.
     /// </summary>
-    public IDialect? Dialect => _dialect ?? null;
-
+    public IDialect? Dialect => this._dialect ?? null;
 
     /// <summary>
     /// Gets the target driver dialect of the configuration profile.
     /// </summary>
-    public ITargetConnectionDialect? TargetDriverDialect => _targetDriverDialect ?? null;
+    public ITargetConnectionDialect? TargetConnectionDialect => this._targetDriverDialect ?? null;
 
     /// <summary>
     /// Gets the connection provider of the configuration profile.
     /// </summary>
-    public IConnectionProvider? ConnectionProvider => _connectionProvider ?? null;
+    public IConnectionProvider? ConnectionProvider => this._connectionProvider ?? null;
 }

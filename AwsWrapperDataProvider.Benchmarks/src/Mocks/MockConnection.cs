@@ -1,14 +1,23 @@
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License").
+// You may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 using System.Collections;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics.CodeAnalysis;
-using AwsWrapperDataProvider.Driver.Dialects;
-using AwsWrapperDataProvider.Driver.HostInfo;
-using AwsWrapperDataProvider.Driver.HostListProviders;
-using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
-using Npgsql;
 
-namespace AwsWrapperDataProvider.Benchmarks.TestPlugins;
+namespace AwsWrapperDataProvider.Benchmarks.Mocks;
 
 public class MockConnection : DbConnection
 {
@@ -16,15 +25,16 @@ public class MockConnection : DbConnection
 
     protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) => new MockTransaction();
 
-    public override void ChangeDatabase(string databaseName) => _state = _state; // No-op
+    public override void ChangeDatabase(string databaseName) { /* No-op */ }
 
-    public override void Close() => _state = ConnectionState.Closed;
+    public override void Close() => this._state = ConnectionState.Closed;
 
-    public override void Open() => _state = ConnectionState.Open;
+    public override void Open() => this._state = ConnectionState.Open;
 
-    [AllowNull] public override string ConnectionString { get; set; } = string.Empty;
+    [AllowNull]
+    public override string ConnectionString { get; set; } = "197.0.0.1";
     public override string Database => "MockDatabase";
-    public override ConnectionState State => _state;
+    public override ConnectionState State => this._state;
     public override string DataSource => "MockDataSource";
     public override string ServerVersion => "1.0.0";
 
@@ -34,23 +44,24 @@ public class MockConnection : DbConnection
 public class MockCommand : DbCommand
 {
     private readonly List<DbParameter> _parameters = new();
-    
-    public override void Cancel() { } // No-op
 
-    public override int ExecuteNonQuery() => 1; // Return a default value of 1 row affected
+    public override void Cancel() { } // Do nothing
 
-    public override object? ExecuteScalar() => null; // Return null as default
+    public override int ExecuteNonQuery() => 1;
 
-    public override void Prepare() { } // No-op
+    public override object? ExecuteScalar() => null;
 
-    [AllowNull] public override string CommandText { get; set; } = string.Empty;
+    public override void Prepare() { } // Do nothing
+
+    [AllowNull]
+    public override string CommandText { get; set; } = string.Empty;
     public override int CommandTimeout { get; set; } = 30;
     public override CommandType CommandType { get; set; } = CommandType.Text;
     public override UpdateRowSource UpdatedRowSource { get; set; } = UpdateRowSource.None;
     protected override DbConnection? DbConnection { get; set; }
-    
-    protected override DbParameterCollection DbParameterCollection => new MockParameterCollection(_parameters);
-    
+
+    protected override DbParameterCollection DbParameterCollection => new MockParameterCollection(this._parameters);
+
     protected override DbTransaction? DbTransaction { get; set; }
     public override bool DesignTimeVisible { get; set; } = true;
 
@@ -65,75 +76,75 @@ public class MockParameterCollection : DbParameterCollection
 
     public MockParameterCollection(List<DbParameter> parameters)
     {
-        _parameters = parameters;
+        this._parameters = parameters;
     }
 
     public override int Add(object value)
     {
-        _parameters.Add((DbParameter)value);
-        return _parameters.Count - 1;
+        this._parameters.Add((DbParameter)value);
+        return this._parameters.Count - 1;
     }
 
     public override void AddRange(Array values)
     {
         foreach (DbParameter parameter in values)
         {
-            _parameters.Add(parameter);
+            this._parameters.Add(parameter);
         }
     }
 
-    public override void Clear() => _parameters.Clear();
+    public override void Clear() => this._parameters.Clear();
 
-    public override bool Contains(object value) => _parameters.Contains((DbParameter)value);
+    public override bool Contains(object value) => this._parameters.Contains((DbParameter)value);
 
-    public override bool Contains(string value) => _parameters.Any(p => p.ParameterName == value);
+    public override bool Contains(string value) => this._parameters.Any(p => p.ParameterName == value);
 
     public override void CopyTo(Array array, int index)
     {
-        for (int i = 0; i < _parameters.Count; i++)
+        for (int i = 0; i < this._parameters.Count; i++)
         {
-            array.SetValue(_parameters[i], index + i);
+            array.SetValue(this._parameters[i], index + i);
         }
     }
 
-    public override IEnumerator GetEnumerator() => _parameters.GetEnumerator();
+    public override IEnumerator GetEnumerator() => this._parameters.GetEnumerator();
 
-    public override int IndexOf(object value) => _parameters.IndexOf((DbParameter)value);
+    public override int IndexOf(object value) => this._parameters.IndexOf((DbParameter)value);
 
-    public override int IndexOf(string parameterName) => _parameters.FindIndex(p => p.ParameterName == parameterName);
+    public override int IndexOf(string parameterName) => this._parameters.FindIndex(p => p.ParameterName == parameterName);
 
-    public override void Insert(int index, object value) => _parameters.Insert(index, (DbParameter)value);
+    public override void Insert(int index, object value) => this._parameters.Insert(index, (DbParameter)value);
 
-    public override void Remove(object value) => _parameters.Remove((DbParameter)value);
+    public override void Remove(object value) => this._parameters.Remove((DbParameter)value);
 
-    public override void RemoveAt(int index) => _parameters.RemoveAt(index);
+    public override void RemoveAt(int index) => this._parameters.RemoveAt(index);
 
     public override void RemoveAt(string parameterName)
     {
-        int index = IndexOf(parameterName);
+        int index = this.IndexOf(parameterName);
         if (index >= 0)
         {
-            _parameters.RemoveAt(index);
+            this._parameters.RemoveAt(index);
         }
     }
 
-    protected override DbParameter GetParameter(int index) => _parameters[index];
+    protected override DbParameter GetParameter(int index) => this._parameters[index];
 
-    protected override DbParameter GetParameter(string parameterName) => 
-        _parameters.First(p => p.ParameterName == parameterName);
+    protected override DbParameter GetParameter(string parameterName) =>
+        this._parameters.First(p => p.ParameterName == parameterName);
 
-    protected override void SetParameter(int index, DbParameter value) => _parameters[index] = value;
+    protected override void SetParameter(int index, DbParameter value) => this._parameters[index] = value;
 
     protected override void SetParameter(string parameterName, DbParameter value)
     {
-        int index = IndexOf(parameterName);
+        int index = this.IndexOf(parameterName);
         if (index >= 0)
         {
-            _parameters[index] = value;
+            this._parameters[index] = value;
         }
     }
 
-    public override int Count => _parameters.Count;
+    public override int Count => this._parameters.Count;
     public override object SyncRoot => this;
     public override bool IsFixedSize => false;
     public override bool IsReadOnly => false;
@@ -142,8 +153,8 @@ public class MockParameterCollection : DbParameterCollection
 
 public class MockParameter : DbParameter
 {
-    public override void ResetDbType() => DbType = DbType.String;
-
+    private readonly string _parameterName = string.Empty;
+    public override void ResetDbType() => this.DbType = DbType.String;
     public override DbType DbType { get; set; } = DbType.String;
     public override ParameterDirection Direction { get; set; } = ParameterDirection.Input;
     public override bool IsNullable { get; set; }
@@ -156,10 +167,10 @@ public class MockParameter : DbParameter
 
 public class MockDataReader : DbDataReader
 {
-    private bool _isClosed = false;
-    private bool _hasRows = false;
-    private int _currentRow = -1;
+    private readonly bool _hasRows = false;
     private readonly int _rowCount = 0;
+    private bool _isClosed = false;
+    private int _currentRow = -1;
 
     public override bool GetBoolean(int ordinal) => false;
 
@@ -210,22 +221,22 @@ public class MockDataReader : DbDataReader
     public override object this[string name] => DBNull.Value;
 
     public override int RecordsAffected => 0;
-    public override bool HasRows => _hasRows;
-    public override bool IsClosed => _isClosed;
+    public override bool HasRows => this._hasRows;
+    public override bool IsClosed => this._isClosed;
 
     public override bool NextResult() => false;
 
     public override bool Read()
     {
-        _currentRow++;
-        return _currentRow < _rowCount;
+        this._currentRow++;
+        return this._currentRow < this._rowCount;
     }
 
     public override int Depth => 0;
 
     public override IEnumerator GetEnumerator() => new DbEnumerator(this);
 
-    public override void Close() => _isClosed = true;
+    public override void Close() => this._isClosed = true;
 }
 
 public class MockTransaction : DbTransaction
@@ -237,37 +248,5 @@ public class MockTransaction : DbTransaction
     public override void Rollback() { } // No-op
 
     protected override DbConnection? DbConnection => null;
-    public override IsolationLevel IsolationLevel => _isolationLevel;
-}
-
-public class MockConnectionDialect : ITargetConnectionDialect
-{
-    public Type DriverConnectionType { get; } = typeof(MockConnection);
-    public bool IsDialect(Type connectionType)
-    {
-        return true;
-    }
-
-    public string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props) => string.Empty;
-
-    public ISet<string> GetAllowedOnConnectionMethodNames() => new HashSet<string> { "*" };
-}
-
-public class MockDialect : IDialect
-{
-    public int DefaultPort { get; } = HostSpec.NoPort;
-    public string HostAliasQuery { get; } = string.Empty;
-    public string ServerVersionQuery { get; } = string.Empty;
-    public IList<Type> DialectUpdateCandidates { get; } = [];
-
-    public HostListProviderSupplier HostListProviderSupplier { get; } = (props,
-        hostListProviderService,
-        pluginService) => new ConnectionStringHostListProvider(props, hostListProviderService);
-
-    public bool IsDialect(IDbConnection conn) => true;
-
-    public void PrepareConnectionProperties(Dictionary<string, string> props, HostSpec hostSpec)
-    {
-        // Do nothing.
-    }
+    public override IsolationLevel IsolationLevel => this._isolationLevel;
 }

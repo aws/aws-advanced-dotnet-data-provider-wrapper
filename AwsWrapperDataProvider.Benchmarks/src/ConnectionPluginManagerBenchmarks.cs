@@ -13,23 +13,28 @@
 // limitations under the License.
 
 using AwsWrapperDataProvider.Benchmarks.Mocks;
+using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
+using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Engines;
 
 namespace AwsWrapperDataProvider.Benchmarks
 {
+    // TODO: Add ExecutionTimePlugin
+
     [SimpleJob(RunStrategy.Monitoring, warmupCount: 3)]
     [MemoryDiagnoser]
-    public class PluginBenchmarks
+    public class ConnectionPluginManagerBenchmarks
     {
         private const int OperationsPerInvoke = 500000;
-        private const int PluginChainLength = 10;
 
-        private ConfigurationProfile _configurationProfileWithPlugins;
-        private ConfigurationProfile _configurationProfileWithNoPlugins;
+        private ConnectionPluginManager _pluginManagerWithNoPlugins;
+        private ConnectionPluginManager _pluginManagerWithPlugins;
+        private Dictionary<string, string> _propWithPlugins;
+        private Dictionary<string, string> _propWithNoPlugins;
 
         [IterationSetup]
         public void IterationSetup()
@@ -37,12 +42,12 @@ namespace AwsWrapperDataProvider.Benchmarks
             // Setup mocks
             // Create a plugin chain with 10 custom test plugins
             var pluginFactories = new List<IConnectionPluginFactory>();
-            for (int i = 0; i < PluginChainLength; i++)
+            for (int i = 0; i < 10; i++)
             {
                 pluginFactories.Add(new BenchmarkPluginFactory());
             }
 
-            this._configurationProfileWithPlugins = ConfigurationProfileBuilder.Get()
+            var configurationProfileWithPlugins = ConfigurationProfileBuilder.Get()
                 .WithName("benchmark-with-plugins")
                 .WithDialect(new MockDialect())
                 .WithTargetConnectionDialect(new MockConnectionDialect())
@@ -50,54 +55,75 @@ namespace AwsWrapperDataProvider.Benchmarks
                 .WithPluginFactories(pluginFactories)
                 .Build();
 
-            this._configurationProfileWithNoPlugins = ConfigurationProfileBuilder.Get()
+            var configurationProfileWithNoPlugins = ConfigurationProfileBuilder.Get()
                 .WithName("benchmark-with-no-plugins")
                 .WithDialect(new MockDialect())
                 .WithTargetConnectionDialect(new MockConnectionDialect())
                 .WithConnectionProvider(new DbConnectionProvider())
                 .WithPluginFactories([])
                 .Build();
+
+            var connectionWrapperWithPlugins = new AwsWrapperConnection(new MockConnection(), configurationProfileWithPlugins);
+            var connectionWrapperWithNoPlugins = new AwsWrapperConnection(new MockConnection(), configurationProfileWithNoPlugins);
+
+            this._pluginManagerWithPlugins = connectionWrapperWithPlugins.PluginManager;
+            this._propWithPlugins = connectionWrapperWithPlugins.ConnectionProperties;
+
+            this._pluginManagerWithNoPlugins = connectionWrapperWithNoPlugins.PluginManager;
+            this._propWithNoPlugins = connectionWrapperWithNoPlugins.ConnectionProperties;
         }
 
         [Benchmark(OperationsPerInvoke = OperationsPerInvoke)]
-        public void ConnectionPluginManager_InitAndRelease_WithPlugins()
+        public void Open_WithPlugins()
         {
             for (int i = 0; i < OperationsPerInvoke; i++)
             {
-                using var connection = new AwsWrapperConnection(new MockConnection(), this._configurationProfileWithPlugins);
+                this._pluginManagerWithPlugins.Open(
+                    new HostSpecBuilder().WithHost("host").Build(),
+                    this._propWithPlugins,
+                    true,
+                    null,
+                    () => { });
             }
         }
 
         [Benchmark(OperationsPerInvoke = OperationsPerInvoke)]
-        public void ConnectionPluginMananger_InitAndRelease_WithoutPlugins()
+        public void Open_WithNoPlugins()
         {
             for (int i = 0; i < OperationsPerInvoke; i++)
             {
-                using var connection =
-                    new AwsWrapperConnection(new MockConnection(), this._configurationProfileWithNoPlugins);
+                this._pluginManagerWithNoPlugins.Open(
+                    new HostSpecBuilder().WithHost("host").Build(),
+                    this._propWithNoPlugins,
+                    true,
+                    null,
+                    () => { });
             }
         }
 
         [Benchmark(OperationsPerInvoke = OperationsPerInvoke)]
-        public void ExecuteStatement_WithPlugins()
+        public void Execute_WithPlugins()
         {
             for (int i = 0; i < OperationsPerInvoke; i++)
             {
-                using var connection =
-                    new AwsWrapperConnection(new MockConnection(), this._configurationProfileWithPlugins);
-                using var command = connection.CreateCommand();
-                using var reader = command.ExecuteReader();
+                this._pluginManagerWithPlugins.Execute(
+                    new MockCommand().ExecuteNonQuery(),
+                    "DbCommand.ExecuteNonQuery",
+                    () => 1,
+                    Array.Empty<object>());
             }
         }
 
         [Benchmark(OperationsPerInvoke = OperationsPerInvoke)]
-        public void ExecuteStatement_WithoutPlugins()
+        public void Execute_WithNoPlugins()
         {
             for (int i = 0; i < OperationsPerInvoke; i++)
             {
-                using var connection = new AwsWrapperConnection(new MockConnection(), this._configurationProfileWithPlugins);
-                using var command = connection.CreateCommand();
-                using var reader = command.ExecuteReader();
+                this._pluginManagerWithNoPlugins.Execute(
+                    new MockCommand().ExecuteNonQuery(),
+                    "DbCommand.ExecuteNonQuery",
+                    () => 1,
+                    Array.Empty<object>());
             }
         }
     }

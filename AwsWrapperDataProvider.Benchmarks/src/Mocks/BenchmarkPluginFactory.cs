@@ -12,11 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using AwsWrapperDataProvider.Benchmarks;
-using BenchmarkDotNet.Running;
+using AwsWrapperDataProvider.Driver;
+using AwsWrapperDataProvider.Driver.Plugins;
 
-BenchmarkRunner.Run(new[]
+namespace AwsWrapperDataProvider.Benchmarks.Mocks;
+
+/// <summary>
+/// Factory for creating benchmark plugins.
+/// </summary>
+public class BenchmarkPluginFactory : IConnectionPluginFactory
 {
-    typeof(ConnectionPluginManagerBenchmarks),
-    typeof(PluginBenchmarks),
-});
+    public IConnectionPlugin GetInstance(IPluginService pluginService, Dictionary<string, string> props)
+    {
+        return new BenchmarkPlugin();
+    }
+}

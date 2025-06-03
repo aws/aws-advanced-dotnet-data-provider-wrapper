@@ -16,6 +16,9 @@
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
         <_Parameter1>AwsWrapperDataProvider.Tests</_Parameter1>
     </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+        <_Parameter1>AwsWrapperDataProvider.Benchmarks</_Parameter1>
+    </AssemblyAttribute>
   </ItemGroup>
 
 </Project>

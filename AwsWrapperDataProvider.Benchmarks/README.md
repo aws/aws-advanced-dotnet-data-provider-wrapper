@@ -7,24 +7,51 @@ The benchmarks do not measure the performance of target data providers nor the p
 ## Usage
 
 1. Build the benchmarks with the following command:
-   ```
+   ```bash
    dotnet build -c Release
    ```
 
 2. Run the benchmarks with the following command:
-   ```
+   ```bash
    dotnet run -c Release
    ```
 
 3. To run specific benchmarks:
+   ```bash
+   dotnet run -c Release -- --filter *ConnectionPluginManager*
    ```
-   dotnet run -c Release --filter *PluginManagerBenchmarks*
-   ```
+
+## Running Specific Benchmark Categories
+
+You can filter benchmarks by class name or method name:
+
+```bash
+# Run only ConnectionPluginManagerBenchmarks
+dotnet run -c Release -- --filter *ConnectionPluginManagerBenchmarks*
+
+# Run only PluginBenchmarks
+dotnet run -c Release -- --filter *PluginBenchmarks*
+```
+
+## Additional Benchmark Options
+
+You can customize the benchmark run with additional BenchmarkDotNet options:
+
+```bash
+# Run shorter benchmarks
+dotnet run -c Release -- --job short
+
+# Export results to specific formats
+dotnet run -c Release -- --exporters json html
+
+# Combine options
+dotnet run -c Release -- --filter *ConnectionPluginManager* --job short --exporters json
+```
 
 ## Benchmark Categories
 
-- **PluginManagerBenchmarks**: Tests the performance of the plugin manager with and without plugins
-- **ConnectionBenchmarks**: Tests connection operations with different configurations
+- **ConnectionPluginManagerBenchmarks**: Tests the performance of the connection plugin manager
+- **PluginBenchmarks**: Tests the performance of various plugins
 
 ## Results
 

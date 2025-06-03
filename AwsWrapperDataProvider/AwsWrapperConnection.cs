@@ -14,14 +14,11 @@
 
 using System.Data;
 using System.Data.Common;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
-using AwsWrapperDataProvider.Driver.Dialects;
-using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
 
@@ -36,7 +33,6 @@ public class AwsWrapperConnection : DbConnection
     private string _connectionString;
     private Dictionary<string, string> _props;
     private string? _database;
-    private ConfigurationProfile? _configurationProfile;
 
     internal ConnectionPluginManager PluginManager => this._pluginManager;
     internal Dictionary<string, string> ConnectionProperties => this._props;
@@ -60,42 +56,46 @@ public class AwsWrapperConnection : DbConnection
         }
     }
 
-    public AwsWrapperConnection(DbConnection connection, ConfigurationProfile profile) : this(connection)
-    {
-        this._configurationProfile = profile;
-    }
+    public AwsWrapperConnection(DbConnection connection, ConfigurationProfile? profile) : this(
+        connection.GetType(),
+        connection.ConnectionString,
+        profile)
+    { }
 
-    public AwsWrapperConnection(DbConnection connection) : this(connection.GetType(), connection.ConnectionString)
+    public AwsWrapperConnection(DbConnection connection) : this(connection, null)
     {
-        Debug.Assert(connection != null);
         this._pluginService!.SetCurrentConnection(connection, this._pluginService.InitialConnectionHostSpec);
         this._database = connection.Database;
     }
 
-    public AwsWrapperConnection(string connectionString, ConfigurationProfile profile) : this(null, connectionString, profile) { }
+    public AwsWrapperConnection(string connectionString, ConfigurationProfile? profile) : this(
+        null,
+        connectionString,
+        profile)
+    { }
 
     public AwsWrapperConnection(string connectionString) : this(null, connectionString) { }
 
-    public AwsWrapperConnection(Type? targetType, string connectionString, ConfigurationProfile profile) : this(
-        targetType, connectionString)
-    {
-        this._configurationProfile = profile;
-    }
+    public AwsWrapperConnection(Type? targetType, string connectionString) : this(
+        targetType,
+        connectionString,
+        null)
+    { }
 
-    public AwsWrapperConnection(Type? targetType, string connectionString) : base()
+    public AwsWrapperConnection(Type? targetType, string connectionString, ConfigurationProfile? profile) : base()
     {
         this._connectionString = connectionString;
-        this._props = ConnectionPropertiesUtils.ParseConnectionStringParameters(this._connectionString);
+        this._props = profile?.Properties ?? ConnectionPropertiesUtils.ParseConnectionStringParameters(this._connectionString);
         this._targetType = targetType ?? this.GetTargetType(this._props);
         this._props[PropertyDefinition.TargetConnectionType.Name] = this._targetType.AssemblyQualifiedName!;
 
-        ITargetConnectionDialect connectionDialect = TargetConnectionDialectProvider.GetDialect(this._targetType, this._props);
+        ITargetConnectionDialect connectionDialect = TargetConnectionDialectProvider.GetDialect(this._targetType, this._props, profile);
 
         DbConnectionProvider connectionProvider = new();
 
-        this._pluginManager = new(connectionProvider, null, this);
+        this._pluginManager = new(connectionProvider, null, this, profile);
 
-        PluginService pluginService = new(this._targetType, this._pluginManager, this._props, this._connectionString, connectionDialect);
+        PluginService pluginService = new(this._targetType, this._pluginManager, this._props, this._connectionString, connectionDialect, profile);
 
         this._pluginService = pluginService;
         this._hostListProviderService = pluginService;
@@ -185,8 +185,6 @@ public class AwsWrapperConnection : DbConnection
             this._pluginService!.CurrentConnection!,
             "DbConnection.CreateCommand",
             () => this._pluginService!.CurrentConnection!.CreateCommand());
-
-        Console.WriteLine("AwsWrapperConnection.CreateCommand()");
         this._props[PropertyDefinition.TargetCommandType.Name] = command.GetType().AssemblyQualifiedName!;
         return new AwsWrapperCommand(command, this, this._pluginManager!);
     }

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data.Common;
+using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
@@ -26,6 +27,7 @@ public class ConnectionPluginManager
     protected IList<IConnectionPlugin> plugins = [];
     protected IConnectionProvider defaultConnProvider;
     protected IConnectionProvider? effectiveConnProvider;
+    protected ConfigurationProfile? configurationProfile;
     protected AwsWrapperConnection ConnectionWrapper { get; }
     protected IPluginService? pluginService;
     private const string AllMethods = "*";
@@ -37,10 +39,12 @@ public class ConnectionPluginManager
     public ConnectionPluginManager(
         IConnectionProvider defaultConnectionProvider,
         IConnectionProvider? effectiveConnectionProvider,
-        AwsWrapperConnection connection)
+        AwsWrapperConnection connection,
+        ConfigurationProfile? configurationProfile)
     {
         this.defaultConnProvider = defaultConnectionProvider;
         this.effectiveConnProvider = effectiveConnectionProvider;
+        this.configurationProfile = configurationProfile;
         this.ConnectionWrapper = connection;
     }
 
@@ -70,7 +74,8 @@ public class ConnectionPluginManager
             this.pluginService,
             this.defaultConnProvider,
             this.effectiveConnProvider,
-            this.props);
+            this.props,
+            this.configurationProfile);
     }
 
     private T ExecuteWithSubscribedPlugins<T>(

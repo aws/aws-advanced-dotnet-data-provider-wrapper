@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data;
+using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
 
@@ -41,6 +42,13 @@ public static class DialectProvider
         { (RdsUrlType.RdsWriterCluster, "mysql"), typeof(MysqlDialect) },
         { (RdsUrlType.RdsReaderCluster, "mysql"), typeof(MysqlDialect) },
     };
+
+    public static IDialect GuessDialect(
+        Dictionary<string, string> props,
+        ConfigurationProfile? configurationProfile)
+    {
+        return configurationProfile?.Dialect ?? GuessDialect(props);
+    }
 
     public static IDialect GuessDialect(Dictionary<string, string> props)
     {

@@ -1,11 +1,11 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 // http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -28,7 +28,7 @@ public class ConfigurationProfileBuilder
     private List<IConnectionPluginFactory>? _pluginFactories;
     private Dictionary<string, string>? _properties;
     private IDialect? _dialect;
-    private ITargetConnectionDialect? _targetDriverDialect;
+    private ITargetConnectionDialect? _targetConnectionDialect;
     private IConnectionProvider? _connectionProvider;
 
     private ConfigurationProfileBuilder() { }
@@ -46,7 +46,7 @@ public class ConfigurationProfileBuilder
     /// <returns>This builder instance.</returns>
     public ConfigurationProfileBuilder WithName(string name)
     {
-        _name = name;
+        this._name = name;
         return this;
     }
 
@@ -57,7 +57,7 @@ public class ConfigurationProfileBuilder
     /// <returns>This builder instance.</returns>
     public ConfigurationProfileBuilder WithProperties(Dictionary<string, string>? properties)
     {
-        _properties = properties;
+        this._properties = properties;
         return this;
     }
 
@@ -68,7 +68,7 @@ public class ConfigurationProfileBuilder
     /// <returns>This builder instance.</returns>
     public ConfigurationProfileBuilder WithPluginFactories(List<IConnectionPluginFactory>? pluginFactories)
     {
-        _pluginFactories = pluginFactories;
+        this._pluginFactories = pluginFactories;
         return this;
     }
 
@@ -79,18 +79,18 @@ public class ConfigurationProfileBuilder
     /// <returns>This builder instance.</returns>
     public ConfigurationProfileBuilder WithDialect(IDialect? dialect)
     {
-        _dialect = dialect;
+        this._dialect = dialect;
         return this;
     }
 
     /// <summary>
     /// Sets the target driver dialect of the configuration profile.
     /// </summary>
-    /// <param name="targetDriverDialect">The target driver dialect of the configuration profile.</param>
+    /// <param name="targetConnectionDialect">The target driver dialect of the configuration profile.</param>
     /// <returns>This builder instance.</returns>
-    public ConfigurationProfileBuilder WithTargetDriverDialect(ITargetConnectionDialect? targetDriverDialect)
+    public ConfigurationProfileBuilder WithTargetConnectionDialect(ITargetConnectionDialect? targetConnectionDialect)
     {
-        _targetDriverDialect = targetDriverDialect;
+        this._targetConnectionDialect = targetConnectionDialect;
         return this;
     }
 
@@ -101,7 +101,7 @@ public class ConfigurationProfileBuilder
     /// <returns>This builder instance.</returns>
     public ConfigurationProfileBuilder WithConnectionProvider(IConnectionProvider? connectionProvider)
     {
-        _connectionProvider = connectionProvider;
+        this._connectionProvider = connectionProvider;
         return this;
     }
 
@@ -120,11 +120,11 @@ public class ConfigurationProfileBuilder
             throw new InvalidOperationException($"Configuration profile '{presetProfileName}' not found.");
         }
 
-        _pluginFactories = configurationProfile.PluginFactories;
-        _properties = configurationProfile.Properties;
-        _dialect = configurationProfile.Dialect;
-        _targetDriverDialect = configurationProfile.TargetDriverDialect;
-        _connectionProvider = configurationProfile.ConnectionProvider;
+        this._pluginFactories = configurationProfile.PluginFactories;
+        this._properties = configurationProfile.Properties;
+        this._dialect = configurationProfile.Dialect;
+        this._targetConnectionDialect = configurationProfile.TargetConnectionDialect;
+        this._connectionProvider = configurationProfile.ConnectionProvider;
 
         return this;
     }
@@ -136,18 +136,18 @@ public class ConfigurationProfileBuilder
     /// <exception cref="InvalidOperationException">Thrown when the profile name is null or empty, or when trying to modify a built-in preset.</exception>
     public ConfigurationProfile Build()
     {
-        if (string.IsNullOrEmpty(_name))
+        if (string.IsNullOrEmpty(this._name))
         {
             throw new InvalidOperationException("Profile name is required.");
         }
 
         return new ConfigurationProfile(
-            _name,
-            _pluginFactories,
-            _properties,
-            _dialect,
-            _targetDriverDialect,
-            _connectionProvider);
+            this._name,
+            this._pluginFactories,
+            this._properties,
+            this._dialect,
+            this._targetConnectionDialect,
+            this._connectionProvider);
     }
 
     /// <summary>
@@ -155,6 +155,6 @@ public class ConfigurationProfileBuilder
     /// </summary>
     public void BuildAndSet()
     {
-        ConfigurationProfileCache.AddOrReplaceProfile(_name!, Build());
+        ConfigurationProfileCache.AddOrReplaceProfile(this._name!, this.Build());
     }
 }

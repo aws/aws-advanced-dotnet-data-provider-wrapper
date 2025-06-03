@@ -237,7 +237,8 @@ public class ConnectionPluginManagerTests
         ConnectionPluginManager pluginManager = new(
             this.mockConnectionProvider,
             null,
-            this.mockWrapperConnection);
+            this.mockWrapperConnection,
+            null);
 
         pluginManager.InitConnectionPluginChain(
             Mock.Of<IPluginService>(),
