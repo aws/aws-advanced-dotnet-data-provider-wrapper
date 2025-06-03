@@ -51,6 +51,7 @@ public class DefaultConnectionPlugin(
     {
         DbConnection? conn = this.pluginService.CurrentConnection;
         ArgumentNullException.ThrowIfNull(conn);
+        conn.ConnectionString = this.pluginService.TargetConnectionDialect.PrepareConnectionString(this.pluginService.Dialect, null, props);
         conn.Open();
 
         if (isInitialConnection)

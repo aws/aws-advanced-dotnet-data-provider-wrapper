@@ -132,6 +132,11 @@ public static class RdsUtils
         return string.IsNullOrEmpty(host) ? null : CacheMatcher(host, DnsPatterns)?.Groups[InstanceGroup].Value;
     }
 
+    public static string? GetRdsRegion(string host)
+    {
+        return CacheMatcher(host, DnsPatterns)?.Groups[RegionGroup].Value;
+    }
+
     private static string? GetDnsGroup(string host)
     {
         return CacheMatcher(host, DnsPatterns)?.Groups[DnsGroup].Value;
