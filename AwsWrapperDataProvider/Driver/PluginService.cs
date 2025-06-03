@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data.Common;
+using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.Exceptions;
@@ -35,6 +36,7 @@ public class PluginService : IPluginService, IHostListProviderService
     private HostSpec? _currentHostSpec;
     private DbConnection? _currentConnection;
     private HostSpec? _initialConnectionHostSpec;
+    private ConfigurationProfile? _configurationProfile;
 
     // private ExceptionManager _exceptionManager;
     // private IExceptionHandler _exceptionHandler;

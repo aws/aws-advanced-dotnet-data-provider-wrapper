@@ -18,6 +18,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
 using AwsWrapperDataProvider.Driver;
+using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostListProviders;
@@ -35,6 +36,7 @@ public class AwsWrapperConnection : DbConnection
     private string _connectionString;
     private Dictionary<string, string> _props;
     private string? _database;
+    private ConfigurationProfile? _configurationProfile;
 
     internal ConnectionPluginManager PluginManager => this._pluginManager;
     internal Dictionary<string, string> ConnectionProperties => this._props;
@@ -58,6 +60,11 @@ public class AwsWrapperConnection : DbConnection
         }
     }
 
+    public AwsWrapperConnection(DbConnection connection, ConfigurationProfile profile) : this(connection)
+    {
+        this._configurationProfile = profile;
+    }
+
     public AwsWrapperConnection(DbConnection connection) : this(connection.GetType(), connection.ConnectionString)
     {
         Debug.Assert(connection != null);
@@ -65,7 +72,15 @@ public class AwsWrapperConnection : DbConnection
         this._database = connection.Database;
     }
 
+    public AwsWrapperConnection(string connectionString, ConfigurationProfile profile) : this(null, connectionString, profile) { }
+
     public AwsWrapperConnection(string connectionString) : this(null, connectionString) { }
+
+    public AwsWrapperConnection(Type? targetType, string connectionString, ConfigurationProfile profile) : this(
+        targetType, connectionString)
+    {
+        this._configurationProfile = profile;
+    }
 
     public AwsWrapperConnection(Type? targetType, string connectionString) : base()
     {
@@ -219,9 +234,13 @@ public class AwsWrapperConnection : DbConnection
 
 public class AwsWrapperConnection<TConn> : AwsWrapperConnection where TConn : DbConnection
 {
-    public AwsWrapperConnection(string connectionString) : base(typeof(TConn), connectionString)
-    {
-    }
+    public AwsWrapperConnection(string connectionString) : base(typeof(TConn), connectionString) { }
+
+    public AwsWrapperConnection(string connectionString, ConfigurationProfile profile) : base(
+        typeof(TConn),
+        connectionString,
+        profile)
+    { }
 
     public new TConn? TargetDbConnection => this._pluginService?.CurrentConnection as TConn;
 }
