@@ -13,8 +13,9 @@
 // limitations under the License.
 
 using AwsWrapperDataProvider.Driver.HostInfo;
-using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Utils;
+using K4os.Compression.LZ4.Internal;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.Iam;
 
@@ -25,7 +26,7 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
     private readonly IPluginService pluginService = pluginService;
     private readonly Dictionary<string, string> props = props;
 
-    private readonly IamTokenCache iamTokenCache = new IamTokenCache();
+    private readonly MemoryCache iamTokenCache = new(new MemoryCacheOptions());
 
     public override ISet<string> GetSubscribeMethods()
     {
@@ -52,16 +53,18 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
         string iamRegion = RegionUtils.GetRegion(iamHost, props, PropertyDefinition.IamRegion) ?? throw new Exception("Could not determine region for IAM authentication provider.");
         string? iamUser = PropertyDefinition.User.GetString(props) ?? string.Empty;
 
-        string cacheKey = IamTokenCache.GetCacheKey(iamUser, iamHost, iamPort, iamRegion);
-        string? token = this.iamTokenCache.GetToken(cacheKey);
-
-        if (token == null)
+        string cacheKey = IamTokenUtility.GetCacheKey(iamUser, iamHost, iamPort, iamRegion);
+        string? token;
+        if (!this.iamTokenCache.TryGetValue(cacheKey, out token))
         {
             try
             {
                 token = IamTokenUtility.GenerateAuthenticationToken(iamRegion, iamHost, iamPort, iamUser);
                 int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? 800; // TODO(micahdbak): default expiration
-                this.iamTokenCache.SetToken(cacheKey, token, tokenExpirationSeconds);
+
+                MemoryCacheEntryOptions tokenOptions = new MemoryCacheEntryOptions()
+                    .SetAbsoluteExpiration(DateTime.Now.AddSeconds(tokenExpirationSeconds));
+                this.iamTokenCache.Set(cacheKey, token, tokenOptions);
             }
             catch (Exception ex)
             {

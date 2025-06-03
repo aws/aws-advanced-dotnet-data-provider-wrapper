@@ -19,6 +19,11 @@ namespace AwsWrapperDataProvider.Driver.Plugins.Iam;
 
 public class IamTokenUtility
 {
+    public static string GetCacheKey(string user, string hostname, int port, string region)
+    {
+        return user + ":" + hostname + ":" + port + ":" + region;
+    }
+
     public static string GenerateAuthenticationToken(string region, string hostname, int port, string user)
     {
         try

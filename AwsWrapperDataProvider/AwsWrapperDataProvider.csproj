@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="AWSSDK.RDS" Version="4.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.5" />
     <PackageReference Include="MySql.Data" Version="9.3.0" />
     <PackageReference Include="MySqlConnector" Version="2.4.0" />
     <PackageReference Include="Npgsql" Version="9.0.3" />
