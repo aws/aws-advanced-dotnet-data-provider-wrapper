@@ -23,7 +23,7 @@ public class SecretsManagerAuthPluginFactory : IConnectionPluginFactory
     public IConnectionPlugin GetInstance(IPluginService pluginService, Dictionary<string, string> props)
     {
         string secretId = PropertyDefinition.SecretsManagerSecretId.GetString(props) ?? throw new Exception("Secret ID not provided.");
-        string region = PropertyDefinition.SecretsManagerRegion.GetString(props) ?? RegionUtils.GetRegionFromSecretId(secretId) ?? throw new Exception("Can't determine secret region.");
+        string region = RegionUtils.GetRegionFromSecretId(secretId) ?? PropertyDefinition.SecretsManagerRegion.GetString(props) ?? throw new Exception("Can't determine secret region.");
 
         RegionEndpoint regionEndpoint = RegionEndpoint.GetBySystemName(region);
         AmazonSecretsManagerClient client = new(regionEndpoint);

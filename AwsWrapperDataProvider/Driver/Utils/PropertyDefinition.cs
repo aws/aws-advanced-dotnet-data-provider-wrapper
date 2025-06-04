@@ -96,7 +96,11 @@ public static class PropertyDefinition
         IamHost,
         IamDefaultPort,
         IamRegion,
-        IamExpiration
+        IamExpiration,
+        SecretsManagerSecretId,
+        SecretsManagerRegion,
+        SecretsManagerExpirationSecs,
+        SecretsManagerEndpoint
     ];
 
     public static string GetConnectionUrl(Dictionary<string, string> props)

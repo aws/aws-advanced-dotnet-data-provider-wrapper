@@ -22,8 +22,8 @@ public class SecretsManagerUtility
 {
     public class AwsRdsSecrets
     {
-        public required string Username;
-        public required string Password;
+        public string? Username { get; set; }
+        public string? Password { get; set; }
     }
 
     public static AwsRdsSecrets GetRdsSecretFromAwsSecretsManager(string secretId, AmazonSecretsManagerClient client)
@@ -31,6 +31,14 @@ public class SecretsManagerUtility
         GetSecretValueResponse response = client.GetSecretValueAsync(new GetSecretValueRequest { SecretId = secretId })
             .GetAwaiter().GetResult();
 
-        return JsonSerializer.Deserialize<AwsRdsSecrets>(response.SecretString) ?? throw new Exception("Could not get secrets from secrets manager.");
+        JsonSerializerOptions options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        AwsRdsSecrets? secrets = JsonSerializer.Deserialize<AwsRdsSecrets>(response.SecretString, options);
+
+        if (secrets?.Username == null || secrets?.Password == null)
+        {
+            throw new Exception("Secrets Manager did not provide secrets.");
+        }
+
+        return secrets;
     }
 }
