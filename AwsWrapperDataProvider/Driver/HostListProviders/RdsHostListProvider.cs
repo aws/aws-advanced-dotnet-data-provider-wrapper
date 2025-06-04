@@ -337,7 +337,7 @@ public class RdsHostListProvider : IDynamicHostListProvider
         while (reader.Read())
         {
             // According to the topology query the result set
-            // should contain 4 columns: node ID, 1/0 (writer/reader), CPU utilization, node lag in time.
+            // should contain 5 columns: node ID, 1/0 (writer/reader), CPU utilization, node lag in time, last update timestamp.
             string hostName = reader.GetString(0);
             bool isWriter = reader.GetBoolean(1);
             double cpuUtilization = reader.GetDouble(2);
