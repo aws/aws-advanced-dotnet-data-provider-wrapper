@@ -36,9 +36,7 @@ public class AuroraPgDialect : PgDialect
 
     private static readonly string IsReaderQuery = "SELECT pg_is_in_recovery()";
 
-    public override IList<Type> DialectUpdateCandidates { get; } =
-    [
-    ];
+    public override IList<Type> DialectUpdateCandidates { get; } = [];
 
     public override bool IsDialect(IDbConnection connection)
     {
@@ -53,7 +51,7 @@ public class AuroraPgDialect : PgDialect
         try
         {
             using IDbCommand command = connection.CreateCommand();
-            command.CommandText = ExtensionsSql;
+            command.CommandText = $"{ExtensionsSql}; {TopologySql}";
             using IDataReader reader = command.ExecuteReader();
             if (reader.Read())
             {
@@ -63,23 +61,8 @@ public class AuroraPgDialect : PgDialect
                     hasExtensions = true;
                 }
             }
-        }
-        catch (DbException)
-        {
-            // ignored
-        }
 
-        if (!hasExtensions)
-        {
-            return false;
-        }
-
-        try
-        {
-            using IDbCommand command = connection.CreateCommand();
-            command.CommandText = TopologySql;
-            using IDataReader reader = command.ExecuteReader();
-            if (reader.Read())
+            if (reader.NextResult() && reader.Read())
             {
                 hasTopology = true;
             }

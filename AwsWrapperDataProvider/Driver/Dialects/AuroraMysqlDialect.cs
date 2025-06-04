@@ -31,9 +31,7 @@ public class AuroraMysqlDialect : MysqlDialect
 
     private static readonly string IsDialectQuery = "SHOW VARIABLES LIKE 'aurora_version'";
 
-    public override IList<Type> DialectUpdateCandidates { get; } =
-    [
-    ];
+    public override IList<Type> DialectUpdateCandidates { get; } = [];
 
     public override bool IsDialect(IDbConnection connection)
     {
