@@ -55,7 +55,7 @@ public class AuroraMysqlDialect : MysqlDialect
     private HostListProviderSupplier GetHostListProviderSupplier()
     {
         // TODO add MonitoringRdsHostListProvider for failover plugin
-        return (props, hostListProviderService, pluginService) => new AuroraHostListProvider(
+        return (props, hostListProviderService, pluginService) => new RdsHostListProvider(
             props, hostListProviderService, TopologyQuery, NodeIdQuery, IsReaderQuery);
     }
 }
