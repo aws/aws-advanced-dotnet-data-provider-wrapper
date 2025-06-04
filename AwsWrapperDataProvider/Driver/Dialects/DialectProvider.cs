@@ -80,6 +80,12 @@ public class DialectProvider
             host = hosts.First().Host;
         }
 
+        if (KnownEndpointDialects.TryGetValue(host, out IDialect? cachedDialect) && cachedDialect != null)
+        {
+            this.dialect = cachedDialect;
+            return this.dialect!;
+        }
+
         RdsUrlType rdsUrlType = RdsUtils.IdentifyRdsType(host);
         Type targetConnectionType = Type.GetType(PropertyDefinition.TargetConnectionType.GetString(props)!) ??
                                     throw new InvalidCastException("Target connection type not found.");
