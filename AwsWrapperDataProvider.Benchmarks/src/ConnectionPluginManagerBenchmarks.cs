@@ -30,11 +30,12 @@ namespace AwsWrapperDataProvider.Benchmarks
     public class ConnectionPluginManagerBenchmarks
     {
         private const int OperationsPerInvoke = 500000;
+        private const int PluginChainLength = 10;
 
-        private ConnectionPluginManager _pluginManagerWithNoPlugins;
-        private ConnectionPluginManager _pluginManagerWithPlugins;
-        private Dictionary<string, string> _propWithPlugins;
-        private Dictionary<string, string> _propWithNoPlugins;
+        private ConnectionPluginManager?_pluginManagerWithNoPlugins;
+        private ConnectionPluginManager? _pluginManagerWithPlugins;
+        private Dictionary<string, string>? _propWithPlugins;
+        private Dictionary<string, string>? _propWithNoPlugins;
 
         [IterationSetup]
         public void IterationSetup()
@@ -42,7 +43,7 @@ namespace AwsWrapperDataProvider.Benchmarks
             // Setup mocks
             // Create a plugin chain with 10 custom test plugins
             var pluginFactories = new List<IConnectionPluginFactory>();
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < PluginChainLength; i++)
             {
                 pluginFactories.Add(new BenchmarkPluginFactory());
             }
@@ -78,9 +79,9 @@ namespace AwsWrapperDataProvider.Benchmarks
         {
             for (int i = 0; i < OperationsPerInvoke; i++)
             {
-                this._pluginManagerWithPlugins.Open(
+                this._pluginManagerWithPlugins!.Open(
                     new HostSpecBuilder().WithHost("host").Build(),
-                    this._propWithPlugins,
+                    this._propWithPlugins!,
                     true,
                     null,
                     () => { });
@@ -92,9 +93,9 @@ namespace AwsWrapperDataProvider.Benchmarks
         {
             for (int i = 0; i < OperationsPerInvoke; i++)
             {
-                this._pluginManagerWithNoPlugins.Open(
+                this._pluginManagerWithNoPlugins!.Open(
                     new HostSpecBuilder().WithHost("host").Build(),
-                    this._propWithNoPlugins,
+                    this._propWithNoPlugins!,
                     true,
                     null,
                     () => { });
@@ -106,7 +107,7 @@ namespace AwsWrapperDataProvider.Benchmarks
         {
             for (int i = 0; i < OperationsPerInvoke; i++)
             {
-                this._pluginManagerWithPlugins.Execute(
+                this._pluginManagerWithPlugins!.Execute(
                     new MockCommand().ExecuteNonQuery(),
                     "DbCommand.ExecuteNonQuery",
                     () => 1,
@@ -119,7 +120,7 @@ namespace AwsWrapperDataProvider.Benchmarks
         {
             for (int i = 0; i < OperationsPerInvoke; i++)
             {
-                this._pluginManagerWithNoPlugins.Execute(
+                this._pluginManagerWithNoPlugins!.Execute(
                     new MockCommand().ExecuteNonQuery(),
                     "DbCommand.ExecuteNonQuery",
                     () => 1,

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Collections;
+using System.ComponentModel;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics.CodeAnalysis;
@@ -153,16 +154,21 @@ public class MockParameterCollection : DbParameterCollection
 
 public class MockParameter : DbParameter
 {
-    private readonly string _parameterName = string.Empty;
     public override void ResetDbType() => this.DbType = DbType.String;
     public override DbType DbType { get; set; } = DbType.String;
     public override ParameterDirection Direction { get; set; } = ParameterDirection.Input;
     public override bool IsNullable { get; set; }
-    public override string ParameterName { get; set; } = string.Empty;
-    public override string SourceColumn { get; set; } = string.Empty;
     public override object? Value { get; set; }
     public override bool SourceColumnNullMapping { get; set; }
     public override int Size { get; set; }
+
+    [DefaultValue("")]
+    [AllowNull]
+    public override string ParameterName { get; set; }
+
+    [DefaultValue("")]
+    [AllowNull]
+    public override string SourceColumn { get; set; }
 }
 
 public class MockDataReader : DbDataReader

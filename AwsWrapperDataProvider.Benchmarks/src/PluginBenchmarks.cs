@@ -28,8 +28,8 @@ namespace AwsWrapperDataProvider.Benchmarks
         private const int OperationsPerInvoke = 500000;
         private const int PluginChainLength = 10;
 
-        private ConfigurationProfile _configurationProfileWithPlugins;
-        private ConfigurationProfile _configurationProfileWithNoPlugins;
+        private ConfigurationProfile? _configurationProfileWithPlugins;
+        private ConfigurationProfile? _configurationProfileWithNoPlugins;
 
         [IterationSetup]
         public void IterationSetup()
