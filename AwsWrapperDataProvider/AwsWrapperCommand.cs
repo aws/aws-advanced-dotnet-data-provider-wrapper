@@ -252,7 +252,7 @@ public class AwsWrapperCommand : DbCommand
         return WrapperUtils.ExecuteWithPlugins(
             this._pluginManager!,
             this._targetDbCommand!,
-            "DbCommand.CreateDbParameter",
+            "DbCommand.CreateParameter",
             () => this._targetDbCommand!.CreateParameter());
     }
 
@@ -262,7 +262,7 @@ public class AwsWrapperCommand : DbCommand
         DbDataReader reader = WrapperUtils.ExecuteWithPlugins(
             this._pluginManager!,
             this._targetDbCommand!,
-            "DbCommand.ExecuteWrapperReader",
+            "DbCommand.ExecuteReader",
             () => this._targetDbCommand!.ExecuteReader(behavior));
 
         return new AwsWrapperDataReader(reader, this._pluginManager!);
