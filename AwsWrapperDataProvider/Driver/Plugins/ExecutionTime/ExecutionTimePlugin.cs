@@ -12,12 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Diagnostics;
+using Microsoft.Extensions.Logging;
+
 namespace AwsWrapperDataProvider.Driver.Plugins.ExecutionTime;
 
 public class ExecutionTimePlugin : AbstractConnectionPlugin
 {
-    public override ISet<string> GetSubscribeMethods()
+    // private static readonly ILogger<ExecutionTimePlugin>? _logger = new Logger<ExecutionTimePlugin>;
+
+    public override ISet<string> GetSubscribeMethods() => new HashSet<string>() { "*" };
+
+    public override T Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, params object[] methodArgs)
     {
-        throw new NotImplementedException();
+        var sw = Stopwatch.StartNew();
+        T results = base.Execute(methodInvokedOn, methodName, methodFunc, methodArgs);
+        sw.Stop();
+
+        long ticks = sw.ElapsedTicks;
+        double nanoseconds = (double)ticks / Stopwatch.Frequency * 1_000_000_000;
+
+        // this._logger.LogInformation($"Execution time: {ticks}ms, {nanoseconds}ns");
+
+        return results;
     }
 }
