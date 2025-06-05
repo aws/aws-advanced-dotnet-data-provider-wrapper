@@ -38,7 +38,7 @@ public class AwsWrapperConnection : DbConnection
 
     internal Dictionary<string, string> ConnectionProperties { get; private set; }
 
-    public DbConnection? TargetDbConnection => this.pluginService?.CurrentConnection;
+    internal DbConnection? TargetDbConnection => this.pluginService?.CurrentConnection;
 
     [AllowNull]
     public override string ConnectionString
@@ -153,29 +153,36 @@ public class AwsWrapperConnection : DbConnection
 
     protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel)
     {
-        return WrapperUtils.ExecuteWithPlugins<DbTransaction>(
-            this.PluginManager!,
-            this.pluginService!.CurrentConnection!,
+        ArgumentNullException.ThrowIfNull(this.pluginService);
+        ArgumentNullException.ThrowIfNull(this.pluginService.CurrentConnection);
+        ArgumentNullException.ThrowIfNull(this.PluginManager);
+
+        DbTransaction targetTransaction = WrapperUtils.ExecuteWithPlugins(
+            this.PluginManager,
+            this.pluginService.CurrentConnection,
             "DbConnection.BeginDbTransaction",
-            () => this.pluginService!.CurrentConnection!.BeginTransaction(isolationLevel),
+            () => this.pluginService.CurrentConnection!.BeginTransaction(isolationLevel),
             isolationLevel);
+
+        return new AwsWrapperTransaction(this, targetTransaction, this.PluginManager);
     }
 
-    protected override DbCommand CreateDbCommand() => this.CreateCommand();
+    protected override DbCommand CreateDbCommand() => this.CreateWrapperCommand<DbCommand>();
 
-    public new AwsWrapperCommand CreateCommand()
-    {
-        DbCommand command = WrapperUtils.ExecuteWithPlugins(
-            this.PluginManager!,
-            this.pluginService!.CurrentConnection!,
-            "DbConnection.CreateCommand",
-            () => this.pluginService!.CurrentConnection!.CreateCommand());
+    //protected AwsWrapperCommand CreateWrapperCommand()
+    //{
+    //    DbCommand command = WrapperUtils.ExecuteWithPlugins(
+    //        this.PluginManager!,
+    //        this.pluginService!.CurrentConnection!,
+    //        "DbConnection.CreateWrapperCommand",
+    //        () => this.pluginService!.CurrentConnection!.CreateCommand());
 
-        this.ConnectionProperties[PropertyDefinition.TargetCommandType.Name] = command.GetType().AssemblyQualifiedName!;
-        return new AwsWrapperCommand(command, this, this.PluginManager!);
-    }
+    //    Console.WriteLine("AwsWrapperConnection.CreateWrapperCommand()");
+    //    this._props[PropertyDefinition.TargetCommandType.Name] = command.GetType().AssemblyQualifiedName!;
+    //    return new AwsWrapperCommand(command, this, this.PluginManager!);
+    //}
 
-    public AwsWrapperCommand<TCommand> CreateCommand<TCommand>() where TCommand : DbCommand
+    public AwsWrapperCommand<TCommand> CreateWrapperCommand<TCommand>() where TCommand : DbCommand
     {
         ArgumentNullException.ThrowIfNull(this.pluginService);
         ArgumentNullException.ThrowIfNull(this.pluginService.CurrentConnection);
@@ -184,7 +191,7 @@ public class AwsWrapperConnection : DbConnection
         TCommand command = WrapperUtils.ExecuteWithPlugins<TCommand>(
             this.PluginManager,
             this.pluginService.CurrentConnection,
-            "DbConnection.CreateCommand",
+            "DbConnection.CreateWrapperCommand",
             () => (TCommand)this.pluginService.CurrentConnection.CreateCommand());
 
         this.ConnectionProperties[PropertyDefinition.TargetCommandType.Name] = typeof(TCommand).AssemblyQualifiedName!;

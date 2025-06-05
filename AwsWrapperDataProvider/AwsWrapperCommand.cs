@@ -28,7 +28,7 @@ public class AwsWrapperCommand : DbCommand
     protected DbCommand? _targetDbCommand;
     protected string? _commandText;
     protected int? _commandTimeout;
-    protected DbTransaction? _transaction;
+    protected AwsWrapperTransaction? wrapperTransaction;
     protected ConnectionPluginManager? _pluginManager;
 
     public AwsWrapperCommand()
@@ -174,7 +174,7 @@ public class AwsWrapperCommand : DbCommand
         return type == typeof(AwsWrapperConnection) || (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(AwsWrapperConnection<>));
     }
 
-    protected override System.Data.Common.DbParameterCollection DbParameterCollection
+    protected override DbParameterCollection DbParameterCollection
     {
         get
         {
@@ -185,12 +185,24 @@ public class AwsWrapperCommand : DbCommand
 
     protected override DbTransaction? DbTransaction
     {
-        get => this._targetDbCommand?.Transaction ?? this._transaction;
+        get => this.wrapperTransaction;
         set
         {
-            this._transaction = value;
+            if (value == null)
+            {
+                this.wrapperTransaction = null;
+                this._targetDbCommand!.Transaction = null;
+                return;
+            }
+
+            if (value is not AwsWrapperTransaction)
+            {
+                throw new InvalidOperationException("Provided DbTransaction is not of type AwsWrapperTransaction.");
+            }
+
+            this.wrapperTransaction = (AwsWrapperTransaction)value;
             this.EnsureTargetDbCommandCreated();
-            this._targetDbCommand!.Transaction = value;
+            this._targetDbCommand!.Transaction = this.wrapperTransaction.TargetDbTransaction;
         }
     }
 
@@ -212,17 +224,6 @@ public class AwsWrapperCommand : DbCommand
             this._targetDbCommand!,
             "DbCommand.ExecuteNonQuery",
             () => this._targetDbCommand!.ExecuteNonQuery());
-    }
-
-    public new DbDataReader ExecuteReader()
-    {
-        this.EnsureTargetDbCommandCreated();
-        DbDataReader dbDataReader = WrapperUtils.ExecuteWithPlugins(
-            this._pluginManager!,
-            this._targetDbCommand!,
-            "DbCommand.ExecuteReader",
-            () => this._targetDbCommand!.ExecuteReader());
-        return new AwsWrapperDataReader(dbDataReader, this._pluginManager!);
     }
 
     public override object? ExecuteScalar()
@@ -255,15 +256,13 @@ public class AwsWrapperCommand : DbCommand
             () => this._targetDbCommand!.CreateParameter());
     }
 
-    protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior) => this.ExecuteReader(behavior);
-
-    public new AwsWrapperDataReader ExecuteReader(CommandBehavior behavior)
+    protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior)
     {
         this.EnsureTargetDbCommandCreated();
         DbDataReader reader = WrapperUtils.ExecuteWithPlugins(
             this._pluginManager!,
             this._targetDbCommand!,
-            "DbCommand.ExecuteReader",
+            "DbCommand.ExecuteWrapperReader",
             () => this._targetDbCommand!.ExecuteReader(behavior));
 
         return new AwsWrapperDataReader(reader, this._pluginManager!);
@@ -305,9 +304,9 @@ public class AwsWrapperCommand : DbCommand
                 this._targetDbCommand!.CommandTimeout = this._commandTimeout.Value;
             }
 
-            if (this._transaction != null)
+            if (this.wrapperTransaction != null)
             {
-                this._targetDbCommand!.Transaction = this._transaction;
+                this._targetDbCommand!.Transaction = this.wrapperTransaction.TargetDbTransaction;
             }
         }
     }
