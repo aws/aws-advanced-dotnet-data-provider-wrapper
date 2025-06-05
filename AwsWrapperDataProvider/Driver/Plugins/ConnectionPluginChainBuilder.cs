@@ -15,6 +15,7 @@
 using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.Plugins.Efm;
+using AwsWrapperDataProvider.Driver.Plugins.ExecutionTime;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
 using AwsWrapperDataProvider.Driver.Plugins.Iam;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -23,10 +24,12 @@ namespace AwsWrapperDataProvider.Driver.Plugins;
 
 public class ConnectionPluginChainBuilder
 {
+    private const int WeightRelativeToPriorPlugin = -1;
     private const string DefaultPluginCode = "efm,failover";
 
     private static readonly Dictionary<string, Type> PluginFactoryTypesByCode = new()
     {
+            { "executionTime", typeof(ExecutionTimePlugin) },
             { "failover", typeof(FailoverPluginFactory) },
             { "efm", typeof(HostMonitoringPluginFactory) },
             { "iam", typeof(IamAuthPluginFactory) },
@@ -37,6 +40,7 @@ public class ConnectionPluginChainBuilder
             { typeof(FailoverPluginFactory), 700 },
             { typeof(HostMonitoringPluginFactory), 800 },
             { typeof(IamAuthPluginFactory), 1000 },
+            { typeof(ExecutionTimePlugin), WeightRelativeToPriorPlugin },
     };
 
     public IList<IConnectionPlugin> GetPlugins(
@@ -77,7 +81,7 @@ public class ConnectionPluginChainBuilder
 
             if (pluginFactories.Count > 1 && PropertyDefinition.AutoSortPluginOrder.GetBoolean(props))
             {
-                pluginFactories = [.. pluginFactories.OrderBy(pluginFactory => PluginWeightByPluginFactoryType[pluginFactory.GetType()])];
+                pluginFactories = SortPluginFactories(pluginFactories);
             }
         }
 
@@ -96,5 +100,22 @@ public class ConnectionPluginChainBuilder
         plugins.Add(defaultConnectionPlugin);
 
         return plugins;
+    }
+
+    private List<IConnectionPluginFactory> SortPluginFactories(List<IConnectionPluginFactory> pluginFactories)
+    {
+        int lastWeight = 0;
+        return [.. pluginFactories.OrderBy(pluginFactory =>
+            {
+                int pluginWeight = PluginWeightByPluginFactoryType[pluginFactory.GetType()];
+                if (pluginWeight == WeightRelativeToPriorPlugin)
+                {
+                    lastWeight++;
+                    return lastWeight;
+                }
+
+                lastWeight = pluginWeight;
+                return pluginWeight;
+            })];
     }
 }
