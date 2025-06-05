@@ -81,7 +81,7 @@ public class ConnectionPluginChainBuilder
 
             if (pluginFactories.Count > 1 && PropertyDefinition.AutoSortPluginOrder.GetBoolean(props))
             {
-                pluginFactories = SortPluginFactories(pluginFactories);
+                pluginFactories = this.SortPluginFactories(pluginFactories);
             }
         }
 
