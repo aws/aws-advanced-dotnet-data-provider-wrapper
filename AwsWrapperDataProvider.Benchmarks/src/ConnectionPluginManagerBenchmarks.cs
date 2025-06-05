@@ -32,7 +32,7 @@ namespace AwsWrapperDataProvider.Benchmarks
         private const int OperationsPerInvoke = 500000;
         private const int PluginChainLength = 10;
 
-        private ConnectionPluginManager?_pluginManagerWithNoPlugins;
+        private ConnectionPluginManager? _pluginManagerWithNoPlugins;
         private ConnectionPluginManager? _pluginManagerWithPlugins;
         private Dictionary<string, string>? _propWithPlugins;
         private Dictionary<string, string>? _propWithNoPlugins;
