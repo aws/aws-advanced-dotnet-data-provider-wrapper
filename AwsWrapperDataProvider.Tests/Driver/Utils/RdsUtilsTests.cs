@@ -75,6 +75,7 @@ public class RdsUtilsTests
 
     private const string UsGovEastRegionCluster =
         "database-test-name.cluster-XYZ.rds.us-gov-east-1.amazonaws.com";
+
     private const string UsIsoEastRegionCluster =
         "database-test-name.cluster-XYZ.rds.us-iso-east-1.c2s.ic.gov";
     private const string UsIsoEastRegionClusterReadOnly =
@@ -87,6 +88,13 @@ public class RdsUtilsTests
         "custom-test-name.cluster-custom-XYZ.rds.us-iso-east-1.c2s.ic.gov";
     private const string UsIsoEastRegionLimitlessDbShardGroup =
         "database-test-name.shardgrp-XYZ.rds.us-iso-east-1.c2s.ic.gov";
+
+    private const string UsEastRegionHostPattern = "?.XYZ.us-east-2.rds.amazonaws.com";
+    private const string UsGovEastRegionHostPattern = "?.XYZ.rds.us-gov-east-1.amazonaws.com";
+    private const string UsIsobEastRegionHostPattern = "?.XYZ.rds.us-isob-east-1.sc2s.sgov.gov";
+    private const string UsIsoEastRegionHostPattern = "?.XYZ.rds.us-iso-east-1.c2s.ic.gov";
+    private const string ChinaRegionHostPattern = "?.XYZ.rds.cn-northwest-1.amazonaws.com.cn";
+    private const string OldChinaRegionHostPattern = "?.XYZ.cn-northwest-1.rds.amazonaws.com.cn";
 
     public static IEnumerable<object?[]> IdentifyRdsTypeTestData()
     {
@@ -218,42 +226,42 @@ public class RdsUtilsTests
 
     [Theory]
     [Trait("Category", "Unit")]
-    [InlineData("?.XYZ.us-east-2.rds.amazonaws.com", UsEastRegionCluster)]
-    [InlineData("?.XYZ.us-east-2.rds.amazonaws.com", UsEastRegionClusterReadOnly)]
-    [InlineData("?.XYZ.us-east-2.rds.amazonaws.com", UsEastRegionCustomDomain)]
-    [InlineData("?.XYZ.us-east-2.rds.amazonaws.com", UsEastRegionInstance)]
-    [InlineData("?.XYZ.us-east-2.rds.amazonaws.com", UsEastRegionLimitlessDbShardGroup)]
-    [InlineData("?.XYZ.us-east-2.rds.amazonaws.com", UsEastRegionProxy)]
+    [InlineData(UsEastRegionHostPattern, UsEastRegionCluster)]
+    [InlineData(UsEastRegionHostPattern, UsEastRegionClusterReadOnly)]
+    [InlineData(UsEastRegionHostPattern, UsEastRegionCustomDomain)]
+    [InlineData(UsEastRegionHostPattern, UsEastRegionInstance)]
+    [InlineData(UsEastRegionHostPattern, UsEastRegionLimitlessDbShardGroup)]
+    [InlineData(UsEastRegionHostPattern, UsEastRegionProxy)]
 
-    [InlineData("?.XYZ.rds.us-gov-east-1.amazonaws.com", UsGovEastRegionCluster)]
+    [InlineData(UsGovEastRegionHostPattern, UsGovEastRegionCluster)]
 
-    [InlineData("?.XYZ.rds.us-isob-east-1.sc2s.sgov.gov", UsIsobEastRegionCluster)]
-    [InlineData("?.XYZ.rds.us-isob-east-1.sc2s.sgov.gov", UsIsobEastRegionClusterReadOnly)]
-    [InlineData("?.XYZ.rds.us-isob-east-1.sc2s.sgov.gov", UsIsobEastRegionCustomDomain)]
-    [InlineData("?.XYZ.rds.us-isob-east-1.sc2s.sgov.gov", UsIsobEastRegionInstance)]
-    [InlineData("?.XYZ.rds.us-isob-east-1.sc2s.sgov.gov", UsIsobEastRegionLimitlessDbShardGroup)]
-    [InlineData("?.XYZ.rds.us-isob-east-1.sc2s.sgov.gov", UsIsobEastRegionProxy)]
+    [InlineData(UsIsobEastRegionHostPattern, UsIsobEastRegionCluster)]
+    [InlineData(UsIsobEastRegionHostPattern, UsIsobEastRegionClusterReadOnly)]
+    [InlineData(UsIsobEastRegionHostPattern, UsIsobEastRegionCustomDomain)]
+    [InlineData(UsIsobEastRegionHostPattern, UsIsobEastRegionInstance)]
+    [InlineData(UsIsobEastRegionHostPattern, UsIsobEastRegionLimitlessDbShardGroup)]
+    [InlineData(UsIsobEastRegionHostPattern, UsIsobEastRegionProxy)]
 
-    [InlineData("?.XYZ.rds.us-iso-east-1.c2s.ic.gov", UsIsoEastRegionCluster)]
-    [InlineData("?.XYZ.rds.us-iso-east-1.c2s.ic.gov", UsIsoEastRegionClusterReadOnly)]
-    [InlineData("?.XYZ.rds.us-iso-east-1.c2s.ic.gov", UsIsoEastRegionCustomDomain)]
-    [InlineData("?.XYZ.rds.us-iso-east-1.c2s.ic.gov", UsIsoEastRegionInstance)]
-    [InlineData("?.XYZ.rds.us-iso-east-1.c2s.ic.gov", UsIsoEastRegionLimitlessDbShardGroup)]
-    [InlineData("?.XYZ.rds.us-iso-east-1.c2s.ic.gov", UsIsoEastRegionProxy)]
+    [InlineData(UsIsoEastRegionHostPattern, UsIsoEastRegionCluster)]
+    [InlineData(UsIsoEastRegionHostPattern, UsIsoEastRegionClusterReadOnly)]
+    [InlineData(UsIsoEastRegionHostPattern, UsIsoEastRegionCustomDomain)]
+    [InlineData(UsIsoEastRegionHostPattern, UsIsoEastRegionInstance)]
+    [InlineData(UsIsoEastRegionHostPattern, UsIsoEastRegionLimitlessDbShardGroup)]
+    [InlineData(UsIsoEastRegionHostPattern, UsIsoEastRegionProxy)]
 
-    [InlineData("?.XYZ.rds.cn-northwest-1.amazonaws.com.cn", ChinaRegionCluster)]
-    [InlineData("?.XYZ.rds.cn-northwest-1.amazonaws.com.cn", ChinaRegionClusterReadOnly)]
-    [InlineData("?.XYZ.rds.cn-northwest-1.amazonaws.com.cn", ChinaRegionCustomDomain)]
-    [InlineData("?.XYZ.rds.cn-northwest-1.amazonaws.com.cn", ChinaRegionInstance)]
-    [InlineData("?.XYZ.rds.cn-northwest-1.amazonaws.com.cn", ChinaRegionLimitlessDbShardGroup)]
-    [InlineData("?.XYZ.rds.cn-northwest-1.amazonaws.com.cn", ChinaRegionProxy)]
+    [InlineData(ChinaRegionHostPattern, ChinaRegionCluster)]
+    [InlineData(ChinaRegionHostPattern, ChinaRegionClusterReadOnly)]
+    [InlineData(ChinaRegionHostPattern, ChinaRegionCustomDomain)]
+    [InlineData(ChinaRegionHostPattern, ChinaRegionInstance)]
+    [InlineData(ChinaRegionHostPattern, ChinaRegionLimitlessDbShardGroup)]
+    [InlineData(ChinaRegionHostPattern, ChinaRegionProxy)]
 
-    [InlineData("?.XYZ.cn-northwest-1.rds.amazonaws.com.cn", OldChinaRegionCluster)]
-    [InlineData("?.XYZ.cn-northwest-1.rds.amazonaws.com.cn", OldChinaRegionClusterReadOnly)]
-    [InlineData("?.XYZ.cn-northwest-1.rds.amazonaws.com.cn", OldChinaRegionCustomDomain)]
-    [InlineData("?.XYZ.cn-northwest-1.rds.amazonaws.com.cn", OldChinaRegionInstance)]
-    [InlineData("?.XYZ.cn-northwest-1.rds.amazonaws.com.cn", OldChinaRegionLimitlessDbShardGroup)]
-    [InlineData("?.XYZ.cn-northwest-1.rds.amazonaws.com.cn", OldChinaRegionProxy)]
+    [InlineData(OldChinaRegionHostPattern, OldChinaRegionCluster)]
+    [InlineData(OldChinaRegionHostPattern, OldChinaRegionClusterReadOnly)]
+    [InlineData(OldChinaRegionHostPattern, OldChinaRegionCustomDomain)]
+    [InlineData(OldChinaRegionHostPattern, OldChinaRegionInstance)]
+    [InlineData(OldChinaRegionHostPattern, OldChinaRegionLimitlessDbShardGroup)]
+    [InlineData(OldChinaRegionHostPattern, OldChinaRegionProxy)]
     public void GetRdsInstanceHostPatternTest(string expectedHostPattern, string host)
     {
         Assert.Equal(expectedHostPattern, RdsUtils.GetRdsInstanceHostPattern(host));

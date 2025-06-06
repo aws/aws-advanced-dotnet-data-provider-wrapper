@@ -26,14 +26,20 @@ namespace AwsWrapperDataProvider.Tests.Driver.HostListProviders;
 
 public class RdsHostListProviderTest : IDisposable
 {
+    private const string ClusterA = "cluster-a.cluster-xyz.us-east-2.rds.amazonaws.com";
+    private const string Instance1 = "instance-a-1.xyz.us-east-2.rds.amazonaws.com";
+    private const string Instance2 = "instance-a-2.xyz.us-east-2.rds.amazonaws.com";
+    private const string Instance3 = "instance-a-3.xyz.us-east-2.rds.amazonaws.com";
+
     private readonly Dictionary<string, string> properties;
     private readonly Mock<IHostListProviderService> mockHostListProviderService;
     private readonly Mock<IDbConnection> mockConnection;
     private readonly Mock<IDbCommand> mockCommand;
     private readonly Mock<IDataReader> mockReader;
-    private readonly List<HostSpec> hosts = [
-        new HostSpecBuilder().WithHost("host1").Build(),
-        new HostSpecBuilder().WithHost("host2").Build(),
+    private readonly List<HostSpec> clusterAHosts = [
+        new HostSpecBuilder().WithHost(Instance1).WithRole(HostRole.Writer).Build(),
+        new HostSpecBuilder().WithHost(Instance2).WithRole(HostRole.Reader).Build(),
+        new HostSpecBuilder().WithHost(Instance3).WithRole(HostRole.Reader).Build(),
     ];
 
     private readonly TimeSpan topologyRefreshRate = TimeSpan.FromSeconds(5);
@@ -85,10 +91,10 @@ public class RdsHostListProviderTest : IDisposable
     {
         var rdsHostListProviderSpy = this.GetRdsHostListProviderSpy();
 
-        RdsHostListProvider.TopologyCache.Set(rdsHostListProviderSpy.Object.ClusterId, this.hosts, this.topologyRefreshRate);
+        RdsHostListProvider.TopologyCache.Set(rdsHostListProviderSpy.Object.ClusterId, this.clusterAHosts, this.topologyRefreshRate);
 
         var result = rdsHostListProviderSpy.Object.GetTopology(this.mockConnection.Object, false);
-        Assert.Equal(this.hosts, result.Hosts);
+        Assert.Equal(this.clusterAHosts, result.Hosts);
         Assert.True(result.IsCachedData);
         rdsHostListProviderSpy.Verify(r => r.QueryForTopology(It.IsAny<IDbConnection>()), Times.Never);
     }
@@ -99,7 +105,7 @@ public class RdsHostListProviderTest : IDisposable
     {
         var rdsHostListProviderSpy = this.GetRdsHostListProviderSpy();
 
-        RdsHostListProvider.TopologyCache.Set(rdsHostListProviderSpy.Object.ClusterId, this.hosts, this.topologyRefreshRate);
+        RdsHostListProvider.TopologyCache.Set(rdsHostListProviderSpy.Object.ClusterId, this.clusterAHosts, this.topologyRefreshRate);
         List<HostSpec> newHosts = [new HostSpecBuilder().WithHost("newHost").Build()];
         rdsHostListProviderSpy.Setup(r => r.QueryForTopology(It.IsAny<IDbConnection>())).Returns(newHosts);
 
@@ -115,11 +121,11 @@ public class RdsHostListProviderTest : IDisposable
         var rdsHostListProviderSpy = this.GetRdsHostListProviderSpy();
         rdsHostListProviderSpy.Object.ClusterId = "cluster-id";
 
-        RdsHostListProvider.TopologyCache.Set(rdsHostListProviderSpy.Object.ClusterId, this.hosts, this.topologyRefreshRate);
+        RdsHostListProvider.TopologyCache.Set(rdsHostListProviderSpy.Object.ClusterId, this.clusterAHosts, this.topologyRefreshRate);
         rdsHostListProviderSpy.Setup(r => r.QueryForTopology(It.IsAny<DbConnection>())).Returns([]);
 
         var result = rdsHostListProviderSpy.Object.GetTopology(this.mockConnection.Object, false);
-        Assert.Equal(this.hosts, result.Hosts);
+        Assert.Equal(this.clusterAHosts, result.Hosts);
         Assert.True(result.IsCachedData);
     }
 
@@ -141,28 +147,22 @@ public class RdsHostListProviderTest : IDisposable
     public void Refresh_SuggestedClusterIdForRds()
     {
         RdsHostListProvider.ClearAll();
-        var rdsHostListProviderSpy1 = this.GetRdsHostListProviderSpy("cluster-a.cluster-xyz.us-east-2.rds.amazonaws.com");
+        var rdsHostListProviderSpy1 = this.GetRdsHostListProviderSpy(ClusterA);
 
-        List<HostSpec> clusterAHosts = [
-            new HostSpecBuilder().WithHost("instance-a-1.xyz.us-east-2.rds.amazonaws.com").WithRole(HostRole.Writer).Build(),
-            new HostSpecBuilder().WithHost("instance-a-2.xyz.us-east-2.rds.amazonaws.com").WithRole(HostRole.Reader).Build(),
-            new HostSpecBuilder().WithHost("instance-a-3.xyz.us-east-2.rds.amazonaws.com").WithRole(HostRole.Reader).Build(),
-        ];
-
-        rdsHostListProviderSpy1.Setup(r => r.QueryForTopology(It.IsAny<IDbConnection>())).Returns(clusterAHosts);
+        rdsHostListProviderSpy1.Setup(r => r.QueryForTopology(It.IsAny<IDbConnection>())).Returns(this.clusterAHosts);
         Assert.Equal(0, RdsHostListProvider.TopologyCache.Count);
 
         var provider1Hosts = rdsHostListProviderSpy1.Object.Refresh(this.mockConnection.Object);
-        Assert.Equal(clusterAHosts, provider1Hosts);
+        Assert.Equal(this.clusterAHosts, provider1Hosts);
 
-        var rdsHostListProviderSpy2 = this.GetRdsHostListProviderSpy("cluster-a.cluster-xyz.us-east-2.rds.amazonaws.com");
+        var rdsHostListProviderSpy2 = this.GetRdsHostListProviderSpy(ClusterA);
 
         Assert.Equal(rdsHostListProviderSpy1.Object.ClusterId, rdsHostListProviderSpy2.Object.ClusterId);
         Assert.True(rdsHostListProviderSpy1.Object.IsPrimaryClusterId);
         Assert.True(rdsHostListProviderSpy2.Object.IsPrimaryClusterId);
 
         var provider2Hosts = rdsHostListProviderSpy2.Object.Refresh(this.mockConnection.Object);
-        Assert.Equal(clusterAHosts, provider2Hosts);
+        Assert.Equal(this.clusterAHosts, provider2Hosts);
 
         Assert.Equal(1, RdsHostListProvider.TopologyCache.Count);
     }
@@ -172,28 +172,22 @@ public class RdsHostListProviderTest : IDisposable
     public void Refresh_SuggestedClusterIdForInstance()
     {
         RdsHostListProvider.ClearAll();
-        var rdsHostListProviderSpy1 = this.GetRdsHostListProviderSpy("cluster-a.cluster-xyz.us-east-2.rds.amazonaws.com");
+        var rdsHostListProviderSpy1 = this.GetRdsHostListProviderSpy(ClusterA);
 
-        List<HostSpec> clusterAHosts = [
-            new HostSpecBuilder().WithHost("instance-a-1.xyz.us-east-2.rds.amazonaws.com").WithRole(HostRole.Writer).Build(),
-            new HostSpecBuilder().WithHost("instance-a-2.xyz.us-east-2.rds.amazonaws.com").WithRole(HostRole.Reader).Build(),
-            new HostSpecBuilder().WithHost("instance-a-3.xyz.us-east-2.rds.amazonaws.com").WithRole(HostRole.Reader).Build(),
-        ];
-
-        rdsHostListProviderSpy1.Setup(r => r.QueryForTopology(It.IsAny<IDbConnection>())).Returns(clusterAHosts);
+        rdsHostListProviderSpy1.Setup(r => r.QueryForTopology(It.IsAny<IDbConnection>())).Returns(this.clusterAHosts);
         Assert.Equal(0, RdsHostListProvider.TopologyCache.Count);
 
         var provider1Hosts = rdsHostListProviderSpy1.Object.Refresh(this.mockConnection.Object);
-        Assert.Equal(clusterAHosts, provider1Hosts);
+        Assert.Equal(this.clusterAHosts, provider1Hosts);
 
-        var rdsHostListProviderSpy2 = this.GetRdsHostListProviderSpy("instance-a-3.xyz.us-east-2.rds.amazonaws.com");
+        var rdsHostListProviderSpy2 = this.GetRdsHostListProviderSpy(Instance3);
 
         Assert.Equal(rdsHostListProviderSpy1.Object.ClusterId, rdsHostListProviderSpy2.Object.ClusterId);
         Assert.True(rdsHostListProviderSpy1.Object.IsPrimaryClusterId);
         Assert.True(rdsHostListProviderSpy2.Object.IsPrimaryClusterId);
 
         var provider2Hosts = rdsHostListProviderSpy2.Object.Refresh(this.mockConnection.Object);
-        Assert.Equal(clusterAHosts, provider2Hosts);
+        Assert.Equal(this.clusterAHosts, provider2Hosts);
 
         Assert.Equal(1, RdsHostListProvider.TopologyCache.Count);
     }
@@ -203,31 +197,25 @@ public class RdsHostListProviderTest : IDisposable
     public void Refresh_AcceptSuggestion()
     {
         RdsHostListProvider.ClearAll();
-        var rdsHostListProviderSpy1 = this.GetRdsHostListProviderSpy("instance-a-2.xyz.us-east-2.rds.amazonaws.com");
+        var rdsHostListProviderSpy1 = this.GetRdsHostListProviderSpy(Instance2);
 
-        List<HostSpec> clusterAHosts = [
-            new HostSpecBuilder().WithHost("instance-a-1.xyz.us-east-2.rds.amazonaws.com").WithRole(HostRole.Writer).Build(),
-            new HostSpecBuilder().WithHost("instance-a-2.xyz.us-east-2.rds.amazonaws.com").WithRole(HostRole.Reader).Build(),
-            new HostSpecBuilder().WithHost("instance-a-3.xyz.us-east-2.rds.amazonaws.com").WithRole(HostRole.Reader).Build(),
-        ];
-
-        rdsHostListProviderSpy1.Setup(r => r.QueryForTopology(It.IsAny<IDbConnection>())).Returns(clusterAHosts);
+        rdsHostListProviderSpy1.Setup(r => r.QueryForTopology(It.IsAny<IDbConnection>())).Returns(this.clusterAHosts);
         Assert.Equal(0, RdsHostListProvider.TopologyCache.Count);
 
         var provider1Hosts = rdsHostListProviderSpy1.Object.Refresh(this.mockConnection.Object);
-        Assert.Equal(clusterAHosts, provider1Hosts);
+        Assert.Equal(this.clusterAHosts, provider1Hosts);
 
-        var rdsHostListProviderSpy2 = this.GetRdsHostListProviderSpy("cluster-a.cluster-xyz.us-east-2.rds.amazonaws.com");
-        rdsHostListProviderSpy2.Setup(r => r.QueryForTopology(It.IsAny<IDbConnection>())).Returns(clusterAHosts);
+        var rdsHostListProviderSpy2 = this.GetRdsHostListProviderSpy(ClusterA);
+        rdsHostListProviderSpy2.Setup(r => r.QueryForTopology(It.IsAny<IDbConnection>())).Returns(this.clusterAHosts);
 
         var provider2Hosts = rdsHostListProviderSpy2.Object.Refresh(this.mockConnection.Object);
-        Assert.Equal(clusterAHosts, provider2Hosts);
+        Assert.Equal(this.clusterAHosts, provider2Hosts);
 
         Assert.NotEqual(rdsHostListProviderSpy1.Object.ClusterId, rdsHostListProviderSpy2.Object.ClusterId);
         Assert.False(rdsHostListProviderSpy1.Object.IsPrimaryClusterId);
         Assert.True(rdsHostListProviderSpy2.Object.IsPrimaryClusterId);
         Assert.Equal(2, RdsHostListProvider.TopologyCache.Count);
-        Assert.Equal("cluster-a.cluster-xyz.us-east-2.rds.amazonaws.com", RdsHostListProvider.SuggestedPrimaryClusterIdCache.Get<string>(rdsHostListProviderSpy1.Object.ClusterId));
+        Assert.Equal(ClusterA, RdsHostListProvider.SuggestedPrimaryClusterIdCache.Get<string>(rdsHostListProviderSpy1.Object.ClusterId));
 
         provider1Hosts = rdsHostListProviderSpy1.Object.ForceRefresh(this.mockConnection.Object);
         Assert.Equal(rdsHostListProviderSpy1.Object.ClusterId, rdsHostListProviderSpy2.Object.ClusterId);
@@ -246,7 +234,6 @@ public class RdsHostListProviderTest : IDisposable
         double nodeLag = 0.123;
         DateTime firstTimestamp = DateTime.UtcNow;
         DateTime secondTimestamp = firstTimestamp.AddMinutes(1);
-        this.mockReader.Setup(r => r.IsDBNull(It.IsAny<int>())).Returns(false);
         this.mockReader.SetupSequence(r => r.Read()).Returns(true).Returns(true).Returns(false);
         this.mockReader.SetupSequence(r => r.GetString(0)).Returns(hostName1).Returns(hostName2);
         this.mockReader.SetupSequence(r => r.GetBoolean(1)).Returns(true).Returns(true);
@@ -276,7 +263,6 @@ public class RdsHostListProviderTest : IDisposable
         string hostName = "hostName";
         double cpuUtilization = 11.1;
         double nodeLag = 0.123;
-        this.mockReader.Setup(r => r.IsDBNull(It.IsAny<int>())).Returns(false);
         this.mockReader.SetupSequence(r => r.Read()).Returns(true).Returns(false);
         this.mockReader.SetupSequence(r => r.GetString(0)).Returns(hostName);
         this.mockReader.SetupSequence(r => r.GetBoolean(1)).Returns(true);
@@ -314,7 +300,6 @@ public class RdsHostListProviderTest : IDisposable
             .WithRole(HostRole.Writer)
             .Build();
 
-        this.mockReader.Setup(r => r.IsDBNull(It.IsAny<int>())).Returns(false);
         this.mockReader.SetupSequence(r => r.Read()).Returns(true).Returns(true).Returns(true).Returns(true).Returns(false);
         this.mockReader.SetupSequence(r => r.GetString(0))
             .Returns(unexpectedWriterHostWithNullLastUpdateTime.Host)
