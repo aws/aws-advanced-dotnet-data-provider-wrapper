@@ -23,6 +23,8 @@ public class SecretsManagerAuthPlugin(IPluginService pluginService, Dictionary<s
 {
     private static readonly ISet<string> SubscribeMethods = new HashSet<string> { "DbConnection.Open", "DbConnection.OpenAsync" };
 
+    private static readonly MemoryCache SecretValueCache = new(new MemoryCacheOptions());
+
     private readonly IPluginService pluginService = pluginService;
 
     private readonly Dictionary<string, string> props = props;
@@ -36,8 +38,6 @@ public class SecretsManagerAuthPlugin(IPluginService pluginService, Dictionary<s
     private readonly int secretValueExpirySecs = secretValueExpirySecs;
 
     private readonly AmazonSecretsManagerClient client = client;
-
-    private readonly MemoryCache secretValueCache = new(new MemoryCacheOptions());
 
     private SecretsManagerUtility.AwsRdsSecrets? secret;
 
@@ -79,13 +79,12 @@ public class SecretsManagerAuthPlugin(IPluginService pluginService, Dictionary<s
 
     private bool UpdateSecrets(bool forceReFetch)
     {
-        SecretsManagerUtility.AwsRdsSecrets? secret;
         bool secretsWasFetched = false;
 
-        if (forceReFetch || !this.secretValueCache.TryGetValue(this.cacheKey, out secret))
+        if (forceReFetch || !SecretValueCache.TryGetValue(this.cacheKey, out SecretsManagerUtility.AwsRdsSecrets? secret))
         {
             secret = SecretsManagerUtility.GetRdsSecretFromAwsSecretsManager(this.secretId, this.client);
-            this.secretValueCache.Set(this.cacheKey, secret, TimeSpan.FromSeconds(this.secretValueExpirySecs));
+            SecretValueCache.Set(this.cacheKey, secret, TimeSpan.FromSeconds(this.secretValueExpirySecs));
             secretsWasFetched = true;
         }
 

@@ -18,27 +18,32 @@ using Amazon.SecretsManager.Model;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.SecretsManager;
 
-public class SecretsManagerUtility
+public static class SecretsManagerUtility
 {
     public class AwsRdsSecrets
     {
         public string? Username { get; set; }
+
         public string? Password { get; set; }
     }
 
+    private static readonly JsonSerializerOptions SerializerOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
     public static AwsRdsSecrets GetRdsSecretFromAwsSecretsManager(string secretId, AmazonSecretsManagerClient client)
     {
-        GetSecretValueResponse response = client.GetSecretValueAsync(new GetSecretValueRequest { SecretId = secretId })
-            .GetAwaiter().GetResult();
-
-        JsonSerializerOptions options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-        AwsRdsSecrets? secrets = JsonSerializer.Deserialize<AwsRdsSecrets>(response.SecretString, options);
-
-        if (secrets?.Username == null || secrets?.Password == null)
+        try
         {
-            throw new Exception("Secrets Manager did not provide secrets.");
-        }
+            GetSecretValueResponse response = client.GetSecretValueAsync(new GetSecretValueRequest { SecretId = secretId })
+                .GetAwaiter().GetResult();
+            AwsRdsSecrets? secrets = JsonSerializer.Deserialize<AwsRdsSecrets>(response.SecretString, SerializerOptions);
 
-        return secrets;
+            return secrets?.Username == null || secrets?.Password == null
+                ? throw new Exception("Username or password not found in RDS secret.")
+                : secrets;
+        }
+        catch (Exception ex)
+        {
+            throw new Exception("Couldn't get RDS secret from AWS Secrets Manager.", ex);
+        }
     }
 }

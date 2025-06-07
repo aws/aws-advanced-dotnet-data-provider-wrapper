@@ -20,13 +20,27 @@ namespace AwsWrapperDataProvider.Driver.Plugins.SecretsManager;
 
 public class SecretsManagerAuthPluginFactory : IConnectionPluginFactory
 {
+    private static readonly Dictionary<string, AmazonSecretsManagerClient> Clients = new();
+
     public IConnectionPlugin GetInstance(IPluginService pluginService, Dictionary<string, string> props)
     {
         string secretId = PropertyDefinition.SecretsManagerSecretId.GetString(props) ?? throw new Exception("Secret ID not provided.");
         string region = RegionUtils.GetRegionFromSecretId(secretId) ?? PropertyDefinition.SecretsManagerRegion.GetString(props) ?? throw new Exception("Can't determine secret region.");
+        AmazonSecretsManagerClient? client;
 
-        RegionEndpoint regionEndpoint = RegionEndpoint.GetBySystemName(region);
-        AmazonSecretsManagerClient client = new(regionEndpoint);
+        try
+        {
+            if (!Clients.TryGetValue(region, out client))
+            {
+                RegionEndpoint regionEndpoint = RegionEndpoint.GetBySystemName(region);
+                client = new(regionEndpoint);
+                Clients[region] = client;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception("Couldn't create AWS Secrets Manager client.", ex);
+        }
 
         int secretValueExpirySecs = PropertyDefinition.SecretsManagerExpirationSecs.GetInt(props) ?? 870;
 
