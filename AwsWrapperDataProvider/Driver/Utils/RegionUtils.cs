@@ -17,6 +17,9 @@ using Amazon;
 
 namespace AwsWrapperDataProvider.Driver.Utils;
 
+/// <summary>
+/// Methods to get the AWS region from a variety of sources.
+/// </summary>
 public static partial class RegionUtils
 {
     private static readonly string RegionGroup = "region";
