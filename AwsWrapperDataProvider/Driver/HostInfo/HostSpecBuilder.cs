@@ -19,39 +19,53 @@ namespace AwsWrapperDataProvider.Driver.HostInfo;
 /// </summary>
 public class HostSpecBuilder
 {
-    private string? _host = string.Empty;
-    private int _port = HostSpec.NoPort;
-    private string? _hostId = string.Empty;
-    private HostRole _role = HostRole.Unknown;
-    private HostAvailability _availability = HostAvailability.Available;
+    private string? host;
+    private int port = HostSpec.NoPort;
+    private string? hostId;
+    private HostRole role = HostRole.Writer;
+    private HostAvailability availability = HostAvailability.Available;
+    private long weight = HostSpec.DefaultWeight;
+    private DateTime lastUpateTime;
 
-    public HostSpecBuilder WithHost(string? host)
+    public HostSpecBuilder WithHost(string host)
     {
-        this._host = host;
+        this.host = host;
         return this;
     }
 
-    public HostSpecBuilder WithPort(int? port)
+    public HostSpecBuilder WithPort(int port)
     {
-        this._port = port ?? HostSpec.NoPort;
+        this.port = port;
         return this;
     }
 
     public HostSpecBuilder WithHostId(string? hostId)
     {
-        this._hostId = hostId;
+        this.hostId = hostId;
         return this;
     }
 
-    public HostSpecBuilder WithRole(HostRole? role)
+    public HostSpecBuilder WithRole(HostRole role)
     {
-        this._role = role ?? HostRole.Unknown;
+        this.role = role;
         return this;
     }
 
-    public HostSpecBuilder WithAvailability(HostAvailability? availability)
+    public HostSpecBuilder WithAvailability(HostAvailability availability)
     {
-        this._availability = availability ?? this._availability;
+        this.availability = availability;
+        return this;
+    }
+
+    public HostSpecBuilder WithWeight(long weight)
+    {
+        this.weight = weight;
+        return this;
+    }
+
+    public HostSpecBuilder WithLastUpdateTime(DateTime lastUpdateTime)
+    {
+        this.lastUpateTime = lastUpdateTime;
         return this;
     }
 
@@ -62,16 +76,18 @@ public class HostSpecBuilder
     /// <exception cref="ArgumentException">Thrown when required parameters are missing or invalid.</exception>
     public HostSpec Build()
     {
-        if (string.IsNullOrEmpty(this._host))
+        if (string.IsNullOrEmpty(this.host))
         {
-            throw new ArgumentException("Host cannot be null or empty", nameof(this._host));
+            throw new ArgumentException("Host cannot be null or empty", nameof(this.host));
         }
 
         return new HostSpec(
-            this._host,
-            this._port,
-            this._hostId,
-            this._role,
-            this._availability);
+            this.host,
+            this.port,
+            this.hostId,
+            this.role,
+            this.availability,
+            this.weight,
+            this.lastUpateTime);
     }
 }

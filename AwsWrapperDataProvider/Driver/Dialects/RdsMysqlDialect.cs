@@ -35,21 +35,21 @@ public class RdsMysqlDialect : MysqlDialect
         {
             using IDbCommand command = conn.CreateCommand();
             command.CommandText = this.ServerVersionQuery;
-            using DbDataReader reader = (DbDataReader)command.ExecuteReader();
+            using IDataReader reader = command.ExecuteReader();
             while (reader.Read())
             {
                 int columnCount = reader.FieldCount;
                 for (int i = 0; i < columnCount; i++)
                 {
-                    string? columnValue = reader.IsDBNull(i) ? null : reader.GetString(i);
-                    if (columnValue != null && string.Equals(columnValue, "Source distribution", StringComparison.OrdinalIgnoreCase))
+                    string columnValue = reader.GetString(i);
+                    if (string.Equals(columnValue, "Source distribution", StringComparison.OrdinalIgnoreCase))
                     {
                         return true;
                     }
                 }
             }
         }
-        catch (Exception)
+        catch (DbException)
         {
             // ignored
         }

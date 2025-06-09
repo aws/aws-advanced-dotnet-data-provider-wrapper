@@ -28,32 +28,31 @@ namespace AwsWrapperDataProvider;
 
 public class AwsWrapperConnection : DbConnection
 {
-    protected readonly IPluginService _pluginService;
-    private readonly ConnectionPluginManager _pluginManager;
-    private readonly IHostListProviderService _hostListProviderService;
-    private Type _targetType;
-    private string _connectionString;
-    private Dictionary<string, string> _props;
-    private string? _database;
+    protected readonly IPluginService pluginService;
+    private readonly IHostListProviderService hostListProviderService;
+    private Type targetType;
+    private string connectionString;
+    private string? database;
 
-    internal ConnectionPluginManager PluginManager => this._pluginManager;
-    internal Dictionary<string, string> ConnectionProperties => this._props;
+    internal ConnectionPluginManager PluginManager { get; }
 
-    public DbConnection? TargetDbConnection => this._pluginService?.CurrentConnection;
+    internal Dictionary<string, string> ConnectionProperties { get; private set; }
+
+    public DbConnection? TargetDbConnection => this.pluginService?.CurrentConnection;
 
     [AllowNull]
     public override string ConnectionString
     {
-        get => this._pluginService!.CurrentConnection?.ConnectionString ?? this._connectionString ?? string.Empty;
+        get => this.pluginService!.CurrentConnection?.ConnectionString ?? this.connectionString ?? string.Empty;
         set
         {
-            this._connectionString = value ?? string.Empty;
-            this._props = ConnectionPropertiesUtils.ParseConnectionStringParameters(this._connectionString);
-            this._targetType = this.GetTargetType(this._props);
+            this.connectionString = value ?? string.Empty;
+            this.ConnectionProperties = ConnectionPropertiesUtils.ParseConnectionStringParameters(this.connectionString);
+            this.targetType = this.GetTargetType(this.ConnectionProperties);
 
-            if (this._pluginService?.CurrentConnection != null)
+            if (this.pluginService?.CurrentConnection != null)
             {
-                this._pluginService.CurrentConnection.ConnectionString = value;
+                this.pluginService.CurrentConnection.ConnectionString = value;
             }
         }
     }
@@ -61,71 +60,72 @@ public class AwsWrapperConnection : DbConnection
     public AwsWrapperConnection(DbConnection connection) : this(connection.GetType(), connection.ConnectionString)
     {
         Debug.Assert(connection != null);
-        this._pluginService!.SetCurrentConnection(connection, this._pluginService.InitialConnectionHostSpec);
-        this._database = connection.Database;
+        this.pluginService!.SetCurrentConnection(connection, this.pluginService.InitialConnectionHostSpec);
+        this.database = connection.Database;
     }
 
     public AwsWrapperConnection(string connectionString) : this(null, connectionString) { }
 
     public AwsWrapperConnection(Type? targetType, string connectionString) : base()
     {
-        this._connectionString = connectionString;
-        this._props = ConnectionPropertiesUtils.ParseConnectionStringParameters(this._connectionString);
-        this._targetType = targetType ?? this.GetTargetType(this._props);
-        this._props[PropertyDefinition.TargetConnectionType.Name] = this._targetType.AssemblyQualifiedName!;
+        this.connectionString = connectionString;
+        this.ConnectionProperties = ConnectionPropertiesUtils.ParseConnectionStringParameters(this.connectionString);
+        this.targetType = targetType ?? this.GetTargetType(this.ConnectionProperties);
+        this.ConnectionProperties[PropertyDefinition.TargetConnectionType.Name] = this.targetType.AssemblyQualifiedName!;
 
-        ITargetConnectionDialect connectionDialect = TargetConnectionDialectProvider.GetDialect(this._targetType, this._props);
+        ITargetConnectionDialect connectionDialect = TargetConnectionDialectProvider.GetDialect(this.targetType, this.ConnectionProperties);
 
         DbConnectionProvider connectionProvider = new();
 
-        this._pluginManager = new(connectionProvider, null, this);
+        this.PluginManager = new(connectionProvider, null, this);
 
-        PluginService pluginService = new(this._targetType, this._pluginManager, this._props, this._connectionString, connectionDialect);
+        PluginService pluginService = new(this.targetType, this.PluginManager, this.ConnectionProperties, this.connectionString, connectionDialect);
 
-        this._pluginService = pluginService;
-        this._hostListProviderService = pluginService;
+        this.pluginService = pluginService;
+        this.hostListProviderService = pluginService;
 
-        this._pluginManager.InitConnectionPluginChain(this._pluginService, this._props);
+        this.PluginManager.InitConnectionPluginChain(this.pluginService, this.ConnectionProperties);
 
-        this._pluginService.SetCurrentConnection(
+        this.pluginService.RefreshHostList();
+        this.pluginService.SetCurrentConnection(
             connectionProvider.CreateDbConnection(
-                this._pluginService.Dialect,
-                this._pluginService.TargetConnectionDialect,
+                this.pluginService.Dialect,
+                this.pluginService.TargetConnectionDialect,
                 null,
-                this._props),
-            this._pluginService.InitialConnectionHostSpec);
+                this.ConnectionProperties),
+            this.pluginService.InitialConnectionHostSpec);
     }
 
-    public override string Database => this._pluginService!.CurrentConnection?.Database ?? this._database ?? string.Empty;
+    public override string Database => this.pluginService!.CurrentConnection?.Database ?? this.database ?? string.Empty;
 
-    public override string DataSource => this._pluginService!.CurrentConnection is DbConnection dbConnection
+    public override string DataSource => this.pluginService!.CurrentConnection is DbConnection dbConnection
         ? dbConnection.DataSource
         : string.Empty;
 
-    public override string ServerVersion => this._pluginService!.CurrentConnection is DbConnection dbConnection
+    public override string ServerVersion => this.pluginService!.CurrentConnection is DbConnection dbConnection
         ? dbConnection.ServerVersion
         : string.Empty;
 
-    public override ConnectionState State => this._pluginService!.CurrentConnection?.State ?? ConnectionState.Closed;
+    public override ConnectionState State => this.pluginService!.CurrentConnection?.State ?? ConnectionState.Closed;
 
     public override void ChangeDatabase(string databaseName)
     {
-        this._database = databaseName;
+        this.database = databaseName;
         WrapperUtils.RunWithPlugins(
-            this._pluginManager!,
-            this._pluginService!.CurrentConnection!,
+            this.PluginManager!,
+            this.pluginService!.CurrentConnection!,
             "DbConnection.ChangeDatabase",
-            () => this._pluginService.CurrentConnection!.ChangeDatabase(databaseName),
+            () => this.pluginService.CurrentConnection!.ChangeDatabase(databaseName),
             databaseName);
     }
 
     public override void Close()
     {
         WrapperUtils.RunWithPlugins(
-            this._pluginManager!,
-            this._pluginService!.CurrentConnection!,
+            this.PluginManager!,
+            this.pluginService!.CurrentConnection!,
             "DbConnection.Close",
-            () => this._pluginService.CurrentConnection!.Close());
+            () => this.pluginService.CurrentConnection!.Close());
     }
 
     public override void Open()
@@ -135,29 +135,29 @@ public class AwsWrapperConnection : DbConnection
             throw new InvalidOperationException("Connection is already open.");
         }
 
-        ArgumentNullException.ThrowIfNull(this._pluginService);
-        ArgumentNullException.ThrowIfNull(this._pluginService.CurrentConnection);
-        ArgumentNullException.ThrowIfNull(this._pluginManager);
-        ArgumentNullException.ThrowIfNull(this._hostListProviderService);
+        ArgumentNullException.ThrowIfNull(this.pluginService);
+        ArgumentNullException.ThrowIfNull(this.pluginService.CurrentConnection);
+        ArgumentNullException.ThrowIfNull(this.PluginManager);
+        ArgumentNullException.ThrowIfNull(this.hostListProviderService);
 
-        this._pluginManager.InitHostProvider(this._connectionString!, this._props!, this._hostListProviderService);
-        this._pluginService.RefreshHostList();
+        this.PluginManager.InitHostProvider(this.connectionString!, this.ConnectionProperties!, this.hostListProviderService);
 
         WrapperUtils.OpenWithPlugins(
-            this._pluginManager,
-            this._pluginService.InitialConnectionHostSpec,
-            this._props!,
+            this.PluginManager,
+            this.pluginService.InitialConnectionHostSpec,
+            this.ConnectionProperties!,
             true,
-            () => this._pluginService.CurrentConnection!.Open());
+            () => this.pluginService.CurrentConnection!.Open());
+        this.pluginService.RefreshHostList();
     }
 
     protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel)
     {
         return WrapperUtils.ExecuteWithPlugins<DbTransaction>(
-            this._pluginManager!,
-            this._pluginService!.CurrentConnection!,
+            this.PluginManager!,
+            this.pluginService!.CurrentConnection!,
             "DbConnection.BeginDbTransaction",
-            () => this._pluginService!.CurrentConnection!.BeginTransaction(isolationLevel),
+            () => this.pluginService!.CurrentConnection!.BeginTransaction(isolationLevel),
             isolationLevel);
     }
 
@@ -166,30 +166,29 @@ public class AwsWrapperConnection : DbConnection
     public new AwsWrapperCommand CreateCommand()
     {
         DbCommand command = WrapperUtils.ExecuteWithPlugins(
-            this._pluginManager!,
-            this._pluginService!.CurrentConnection!,
+            this.PluginManager!,
+            this.pluginService!.CurrentConnection!,
             "DbConnection.CreateCommand",
-            () => this._pluginService!.CurrentConnection!.CreateCommand());
+            () => this.pluginService!.CurrentConnection!.CreateCommand());
 
-        Console.WriteLine("AwsWrapperConnection.CreateCommand()");
-        this._props[PropertyDefinition.TargetCommandType.Name] = command.GetType().AssemblyQualifiedName!;
-        return new AwsWrapperCommand(command, this, this._pluginManager!);
+        this.ConnectionProperties[PropertyDefinition.TargetCommandType.Name] = command.GetType().AssemblyQualifiedName!;
+        return new AwsWrapperCommand(command, this, this.PluginManager!);
     }
 
     public AwsWrapperCommand<TCommand> CreateCommand<TCommand>() where TCommand : DbCommand
     {
-        ArgumentNullException.ThrowIfNull(this._pluginService);
-        ArgumentNullException.ThrowIfNull(this._pluginService.CurrentConnection);
-        ArgumentNullException.ThrowIfNull(this._pluginManager);
+        ArgumentNullException.ThrowIfNull(this.pluginService);
+        ArgumentNullException.ThrowIfNull(this.pluginService.CurrentConnection);
+        ArgumentNullException.ThrowIfNull(this.PluginManager);
 
         TCommand command = WrapperUtils.ExecuteWithPlugins<TCommand>(
-            this._pluginManager,
-            this._pluginService.CurrentConnection,
+            this.PluginManager,
+            this.pluginService.CurrentConnection,
             "DbConnection.CreateCommand",
-            () => (TCommand)this._pluginService.CurrentConnection.CreateCommand());
+            () => (TCommand)this.pluginService.CurrentConnection.CreateCommand());
 
-        this._props[PropertyDefinition.TargetCommandType.Name] = typeof(TCommand).AssemblyQualifiedName!;
-        return new AwsWrapperCommand<TCommand>(command, this, this._pluginManager);
+        this.ConnectionProperties[PropertyDefinition.TargetCommandType.Name] = typeof(TCommand).AssemblyQualifiedName!;
+        return new AwsWrapperCommand<TCommand>(command, this, this.PluginManager);
     }
 
     private Type GetTargetType(Dictionary<string, string> props)
@@ -223,5 +222,5 @@ public class AwsWrapperConnection<TConn> : AwsWrapperConnection where TConn : Db
     {
     }
 
-    public new TConn? TargetDbConnection => this._pluginService?.CurrentConnection as TConn;
+    public new TConn? TargetDbConnection => this.pluginService?.CurrentConnection as TConn;
 }

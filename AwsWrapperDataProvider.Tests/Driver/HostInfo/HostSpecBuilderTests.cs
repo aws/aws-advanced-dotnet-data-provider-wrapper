@@ -29,8 +29,8 @@ public class HostSpecBuilderTests
 
         Assert.Equal("test-host.example.com", hostSpec.Host);
         Assert.Equal(HostSpec.NoPort, hostSpec.Port);
-        Assert.Equal(string.Empty, hostSpec.HostId);
-        Assert.Equal(HostRole.Unknown, hostSpec.Role);
+        Assert.Null(hostSpec.HostId);
+        Assert.Equal(HostRole.Writer, hostSpec.Role);
         Assert.Equal(HostAvailability.Available, hostSpec.RawAvailability);
     }
 
@@ -63,13 +63,12 @@ public class HostSpecBuilderTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void Build_WithNullHost_ShouldThrowArgumentException()
+    public void Build_WithoutHost_ShouldThrowArgumentException()
     {
-        var builder = new HostSpecBuilder()
-            .WithHost(null);
+        var builder = new HostSpecBuilder();
 
         var exception = Assert.Throws<ArgumentException>(() => builder.Build());
-        Assert.Equal("Host cannot be null or empty (Parameter '_host')", exception.Message);
+        Assert.Equal("Host cannot be null or empty (Parameter 'host')", exception.Message);
     }
 
     [Fact]
@@ -80,16 +79,15 @@ public class HostSpecBuilderTests
             .WithHost(string.Empty);
 
         var exception = Assert.Throws<ArgumentException>(() => builder.Build());
-        Assert.Equal("Host cannot be null or empty (Parameter '_host')", exception.Message);
+        Assert.Equal("Host cannot be null or empty (Parameter 'host')", exception.Message);
     }
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void WithPort_WithNullPort_ShouldSetNoPort()
+    public void WithPort_WithoutPort_ShouldSetNoPort()
     {
         var builder = new HostSpecBuilder()
-            .WithHost("test-host.example.com")
-            .WithPort(null);
+            .WithHost("test-host.example.com");
 
         var hostSpec = builder.Build();
 
@@ -99,24 +97,22 @@ public class HostSpecBuilderTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void WithRole_WithNullRole_ShouldSetUnknownRole()
+    public void WithRole_WithoutRole_ShouldSetUnknownRole()
     {
         var builder = new HostSpecBuilder()
-            .WithHost("test-host.example.com")
-            .WithRole(null);
+            .WithHost("test-host.example.com");
 
         var hostSpec = builder.Build();
 
-        Assert.Equal(HostRole.Unknown, hostSpec.Role);
+        Assert.Equal(HostRole.Writer, hostSpec.Role);
     }
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void WithAvailability_WithNullAvailability_ShouldKeepDefaultAvailability()
+    public void WithAvailability_WithoutAvailability_ShouldKeepDefaultAvailability()
     {
         var builder = new HostSpecBuilder()
-            .WithHost("test-host.example.com")
-            .WithAvailability(null);
+            .WithHost("test-host.example.com");
 
         var hostSpec = builder.Build();
 
@@ -125,11 +121,10 @@ public class HostSpecBuilderTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void WithHostId_WithNullHostId_ShouldSetEmptyHostId()
+    public void WithHostId_WithoutHostId_ShouldSetEmptyHostId()
     {
         var builder = new HostSpecBuilder()
-            .WithHost("test-host.example.com")
-            .WithHostId(null);
+            .WithHost("test-host.example.com");
 
         var hostSpec = builder.Build();
 

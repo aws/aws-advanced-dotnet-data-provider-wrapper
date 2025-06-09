@@ -17,7 +17,7 @@ using System.Text.RegularExpressions;
 
 namespace AwsWrapperDataProvider.Driver.Utils;
 
-public static class RdsUtils
+public static partial class RdsUtils
 {
     // Group names for regex matches
     private const string InstanceGroup = "instance";
@@ -26,49 +26,43 @@ public static class RdsUtils
     private const string RegionGroup = "region";
 
     // Regular expression patterns for different AWS RDS endpoint types
-    private static readonly Regex AuroraDnsPattern = new(
-        $"^(?<{InstanceGroup}>.+)\\." +
-        $"(?<{DnsGroup}>proxy-|cluster-|cluster-ro-|cluster-custom-|shardgrp-)?" +
-        $"(?<{DomainGroup}>[a-zA-Z0-9]+\\.(?<{RegionGroup}>[a-zA-Z0-9\\-]+)" +
-        "\\.rds\\.amazonaws\\.com)$",
-        RegexOptions.IgnoreCase);
+    [GeneratedRegex(@"^(?<instance>.+)\.(?<dns>proxy-|cluster-|cluster-ro-|cluster-custom-|shardgrp-)?(?<domain>[a-zA-Z0-9]+\.(?<region>[a-zA-Z0-9\-]+)\.rds\.amazonaws\.com)$", RegexOptions.IgnoreCase, "en-CA")]
+    private static partial Regex AuroraDnsPattern();
 
-    private static readonly Regex AuroraChinaDnsPattern = new(
-        @$"^(?<{InstanceGroup}>.+)\." +
-        @$"(?<{DnsGroup}>proxy-|cluster-|cluster-ro-|cluster-custom-|shardgrp-)?" +
-        @$"(?<{DomainGroup}>[a-zA-Z0-9]+\.rds\.(?<{RegionGroup}>[a-zA-Z0-9\-]+)" +
-        @"\.amazonaws\.com\.cn)$",
-        RegexOptions.IgnoreCase);
+    [GeneratedRegex(@"^(?<instance>.+)\.(?<dns>cluster-|cluster-ro-)(?<domain>[a-zA-Z0-9]+\.(?<region>[a-zA-Z0-9\-]+)\.rds\.amazonaws\.com)$", RegexOptions.IgnoreCase, "en-CA")]
+    private static partial Regex AuroraClusterPattern();
 
-    private static readonly Regex AuroraOldChinaDnsPattern = new(
-        @$"^(?<{InstanceGroup}>.+)\." +
-        @$"(?<{DnsGroup}>proxy-|cluster-|cluster-ro-|cluster-custom-|shardgrp-)?" +
-        @$"(?<{DomainGroup}>[a-zA-Z0-9]+\.(?<{RegionGroup}>[a-zA-Z0-9\-]+)" +
-        @"\.rds\.amazonaws\.com\.cn)$",
-        RegexOptions.IgnoreCase);
+    [GeneratedRegex(@"^(?<instance>.+)\.(?<dns>shardgrp-)(?<domain>[a-zA-Z0-9]+\.(?<region>[a-zA-Z0-9\-]+)\.rds\.(amazonaws\.com|amazonaws\.com\.cn|c2s\.ic\.gov|sc2s\.sgov\.gov))$", RegexOptions.IgnoreCase, "en-CA")]
+    private static partial Regex AuroraLimitlessClusterPattern();
 
-    private static readonly Regex AuroraGovDnsPattern = new(
-        @$"^(?<{InstanceGroup}>.+)\." +
-        @$"(?<{DnsGroup}>proxy-|cluster-|cluster-ro-|cluster-custom-|shardgrp-)?" +
-        @$"(?<{DomainGroup}>[a-zA-Z0-9]+\.rds\.(?<{RegionGroup}>[a-zA-Z0-9\-]+)" +
-        @"\.(amazonaws\.com|c2s\.ic\.gov|sc2s\.sgov\.gov))$",
-        RegexOptions.IgnoreCase);
+    [GeneratedRegex(@"^(?<instance>.+)\.(?<dns>proxy-|cluster-|cluster-ro-|cluster-custom-|shardgrp-)?(?<domain>[a-zA-Z0-9]+\.rds\.(?<region>[a-zA-Z0-9\-]+)\.amazonaws\.com\.cn)$", RegexOptions.IgnoreCase, "en-CA")]
+    private static partial Regex AuroraChinaDnsPattern();
 
-    private static readonly Regex[] DnsPatterns =
-    {
-        AuroraDnsPattern, AuroraChinaDnsPattern, AuroraOldChinaDnsPattern, AuroraGovDnsPattern,
-    };
+    [GeneratedRegex(@"^(?<instance>.+)\.(?<dns>cluster-|cluster-ro-)(?<domain>[a-zA-Z0-9]+\.rds\.(?<region>[a-zA-Z0-9\-]+)\.amazonaws\.com\.cn)$", RegexOptions.IgnoreCase, "en-CA")]
+    private static partial Regex AuroraChinaClusterPattern();
 
-    private static readonly Regex IpV4Pattern = new(
-        @"^(([1-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){1}" +
-        @"(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){2}" +
-        @"([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$");
+    [GeneratedRegex(@"^(?<instance>.+)\.(?<dns>proxy-|cluster-|cluster-ro-|cluster-custom-|shardgrp-)?(?<domain>[a-zA-Z0-9]+\.(?<region>[a-zA-Z0-9\-]+)\.rds\.amazonaws\.com\.cn)$", RegexOptions.IgnoreCase, "en-CA")]
+    private static partial Regex AuroraOldChinaDnsPattern();
 
-    private static readonly Regex IpV6Pattern = new(@"^[0-9a-fA-F]{1,4}(:[0-9a-fA-F]{1,4}){7}$");
+    [GeneratedRegex(@"^(?<instance>.+)\.(?<dns>cluster-|cluster-ro-)(?<domain>[a-zA-Z0-9]+\.(?<region>[a-zA-Z0-9\-]+)\.rds\.amazonaws\.com\.cn)$", RegexOptions.IgnoreCase, "en-CA")]
+    private static partial Regex AuroraOldChinaClusterPattern();
 
-    private static readonly Regex IpV6CompressedPattern = new(
-        @"^(([0-9A-Fa-f]{1,4}(:[0-9A-Fa-f]{1,4}){0,5})?)" +
-        @"::(([0-9A-Fa-f]{1,4}(:[0-9A-Fa-f]{1,4}){0,5})?)$");
+    [GeneratedRegex(@"^(?<instance>.+)\.(?<dns>proxy-|cluster-|cluster-ro-|cluster-custom-|shardgrp-)?(?<domain>[a-zA-Z0-9]+\.rds\.(?<region>[a-zA-Z0-9\-]+)\.(amazonaws\.com|c2s\.ic\.gov|sc2s\.sgov\.gov))$", RegexOptions.IgnoreCase, "en-CA")]
+    private static partial Regex AuroraGovDnsPattern();
+
+    [GeneratedRegex(@"^(?<instance>.+)\.(?<dns>cluster-|cluster-ro-)(?<domain>[a-zA-Z0-9]+\.rds\.(?<region>[a-zA-Z0-9\-]+)\.(amazonaws\.com|c2s\.ic\.gov|sc2s\.sgov\.gov))$", RegexOptions.IgnoreCase, "en-CA")]
+    private static partial Regex AuroraGovClusterPattern();
+
+    private static readonly Regex[] AuroraDnsPatterns = [AuroraDnsPattern(), AuroraChinaDnsPattern(), AuroraOldChinaDnsPattern(), AuroraGovDnsPattern()];
+
+    [GeneratedRegex(@"^(([1-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){1}(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){2}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$")]
+    private static partial Regex IpV4Pattern();
+
+    [GeneratedRegex(@"^[0-9a-fA-F]{1,4}(:[0-9a-fA-F]{1,4}){7}$")]
+    private static partial Regex IpV6Pattern();
+
+    [GeneratedRegex("^(([0-9A-Fa-f]{1,4}(:[0-9A-Fa-f]{1,4}){0,5})?)::(([0-9A-Fa-f]{1,4}(:[0-9A-Fa-f]{1,4}){0,5})?)$")]
+    private static partial Regex IpV6CompressedPattern();
 
     // Cache for DNS patterns to improve performance
     private static readonly ConcurrentDictionary<string, Match> CachedPatterns = new();
@@ -80,7 +74,7 @@ public static class RdsUtils
             return RdsUrlType.Other;
         }
 
-        if (IpV4Pattern.IsMatch(host) || IpV6Pattern.IsMatch(host) || IpV6CompressedPattern.IsMatch(host))
+        if (IpV4Pattern().IsMatch(host) || IpV6Pattern().IsMatch(host) || IpV6CompressedPattern().IsMatch(host))
         {
             return RdsUrlType.IpAddress;
         }
@@ -129,17 +123,63 @@ public static class RdsUtils
 
     public static string? GetRdsInstanceId(string? host)
     {
-        return string.IsNullOrEmpty(host) ? null : CacheMatcher(host, DnsPatterns)?.Groups[InstanceGroup].Value;
+        return string.IsNullOrEmpty(host) ? null : CacheMatcher(host, AuroraDnsPatterns)?.Groups[InstanceGroup].Value;
+    }
+
+    public static string GetRdsInstanceHostPattern(string host)
+    {
+        if (string.IsNullOrEmpty(host))
+        {
+            return "?";
+        }
+
+        string? group = CacheMatcher(host, AuroraDnsPatterns)?.Groups[DomainGroup].Value;
+        return string.IsNullOrEmpty(group) ? "?" : $"?.{group}";
+    }
+
+    public static bool IsDnsPatternValid(string pattern)
+    {
+        return pattern.Contains('?');
+    }
+
+    public static string? GetRdsClusterHostUrl(string host)
+    {
+        if (AuroraClusterPattern().IsMatch(host))
+        {
+            return AuroraClusterPattern().Replace(host, "${instance}.cluster-${domain}");
+        }
+
+        if (AuroraChinaClusterPattern().IsMatch(host))
+        {
+            return AuroraChinaClusterPattern().Replace(host, "${instance}.cluster-${domain}");
+        }
+
+        if (AuroraOldChinaClusterPattern().IsMatch(host))
+        {
+            return AuroraOldChinaClusterPattern().Replace(host, "${instance}.cluster-${domain}");
+        }
+
+        if (AuroraGovClusterPattern().IsMatch(host))
+        {
+            return AuroraGovClusterPattern().Replace(host, "${instance}.cluster-${domain}");
+        }
+
+        if (AuroraLimitlessClusterPattern().IsMatch(host))
+        {
+            return AuroraLimitlessClusterPattern().Replace(host, "${instance}.shardgrp-${domain}");
+        }
+
+        return null;
     }
 
     public static string? GetRdsRegion(string host)
     {
-        return CacheMatcher(host, DnsPatterns)?.Groups[RegionGroup].Value;
+        return CacheMatcher(host, AuroraDnsPatterns)?.Groups[RegionGroup].Value;
     }
 
     private static string? GetDnsGroup(string host)
     {
-        return CacheMatcher(host, DnsPatterns)?.Groups[DnsGroup].Value;
+        return CacheMatcher(host, AuroraDnsPatterns)?.Groups[DnsGroup].Value;
     }
 
     private static Match? CacheMatcher(string host, params Regex[] patterns)

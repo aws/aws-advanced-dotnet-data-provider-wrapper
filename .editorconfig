@@ -391,6 +391,7 @@ dotnet_diagnostic.SA1502.severity = suggestion
 dotnet_diagnostic.SA1512.severity = suggestion
 dotnet_diagnostic.SA1516.severity = suggestion
 dotnet_diagnostic.SA1600.severity = suggestion
+dotnet_diagnostic.SA1601.severity = suggestion
 dotnet_diagnostic.SA1633.severity = none
 
 dotnet_diagnostic.IDE0073.severity = warning

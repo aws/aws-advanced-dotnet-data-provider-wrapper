@@ -42,7 +42,6 @@ public class DialectTests
         IDialect mysqlDialect = new MysqlDialect();
         this.mockReader.Setup(reader => reader.Read()).Returns(true);
         this.mockReader.Setup(reader => reader.FieldCount).Returns(1);
-        this.mockReader.Setup(reader => reader.IsDBNull(0)).Returns(false);
         this.mockReader.Setup(reader => reader.GetString(0)).Returns("MySQL Community Server (GPL)");
         Assert.True(mysqlDialect.IsDialect(this.mockConnection.Object));
     }
@@ -61,7 +60,7 @@ public class DialectTests
     public void IsDialect_MySQL_ExceptionThrown()
     {
         IDialect mysqlDialect = new MysqlDialect();
-        this.mockReader.Setup(reader => reader.Read()).Throws(new InvalidOperationException());
+        this.mockReader.Setup(reader => reader.Read()).Throws(new MockDbException());
         Assert.False(mysqlDialect.IsDialect(this.mockConnection.Object));
     }
 
@@ -72,7 +71,6 @@ public class DialectTests
         IDialect mysqlDialect = new MysqlDialect();
         this.mockReader.SetupSequence(reader => reader.Read()).Returns(true).Returns(false);
         this.mockReader.Setup(reader => reader.FieldCount).Returns(1);
-        this.mockReader.Setup(reader => reader.IsDBNull(0)).Returns(false);
         this.mockReader.Setup(reader => reader.GetString(0)).Returns("Invalid");
         Assert.False(mysqlDialect.IsDialect(this.mockConnection.Object));
     }
@@ -84,7 +82,6 @@ public class DialectTests
         IDialect rdsMysqlDialect = new RdsMysqlDialect();
         this.mockReader.SetupSequence(reader => reader.Read()).Returns(true).Returns(false).Returns(true).Returns(false);
         this.mockReader.Setup(reader => reader.FieldCount).Returns(1);
-        this.mockReader.Setup(reader => reader.IsDBNull(0)).Returns(false);
         this.mockReader.Setup(reader => reader.GetString(0)).Returns("Source distribution");
         Assert.True(rdsMysqlDialect.IsDialect(this.mockConnection.Object));
     }
@@ -104,7 +101,7 @@ public class DialectTests
     public void IsDialect_RdsMySQL_ExceptionThrown()
     {
         IDialect rdsMysqlDialect = new RdsMysqlDialect();
-        this.mockReader.Setup(reader => reader.Read()).Throws(new InvalidOperationException());
+        this.mockReader.Setup(reader => reader.Read()).Throws(new MockDbException());
         Assert.False(rdsMysqlDialect.IsDialect(this.mockConnection.Object));
     }
 
@@ -115,7 +112,6 @@ public class DialectTests
         IDialect rdsMysqlDialect = new RdsMysqlDialect();
         this.mockReader.SetupSequence(reader => reader.Read()).Returns(true).Returns(false);
         this.mockReader.Setup(reader => reader.FieldCount).Returns(1);
-        this.mockReader.Setup(reader => reader.IsDBNull(0)).Returns(false);
         this.mockReader.Setup(reader => reader.GetString(0)).Returns("MySQL Community Server (GPL)");
         Assert.False(rdsMysqlDialect.IsDialect(this.mockConnection.Object));
         this.mockReader.Verify(reader => reader.Read(), Times.Once);
@@ -128,7 +124,6 @@ public class DialectTests
         IDialect rdsMysqlDialect = new RdsMysqlDialect();
         this.mockReader.SetupSequence(reader => reader.Read()).Returns(true).Returns(false).Returns(true).Returns(false);
         this.mockReader.Setup(reader => reader.FieldCount).Returns(1);
-        this.mockReader.Setup(reader => reader.IsDBNull(0)).Returns(false);
         this.mockReader.Setup(reader => reader.GetString(0)).Returns("Invalid");
         Assert.False(rdsMysqlDialect.IsDialect(this.mockConnection.Object));
         this.mockReader.Verify(reader => reader.Read(), Times.Exactly(4));
@@ -139,7 +134,7 @@ public class DialectTests
     public void IsDialect_PG_Success()
     {
         IDialect pgDialect = new PgDialect();
-        this.mockReader.Setup(reader => reader.HasRows).Returns(true);
+        this.mockReader.Setup(reader => reader.Read()).Returns(true);
         Assert.True(pgDialect.IsDialect(this.mockConnection.Object));
     }
 
@@ -148,7 +143,7 @@ public class DialectTests
     public void IsDialect_PG_ExceptionThrown()
     {
         IDialect pgDialect = new PgDialect();
-        this.mockCommand.Setup(cmd => cmd.ExecuteReader()).Throws(new InvalidOperationException());
+        this.mockCommand.Setup(cmd => cmd.ExecuteReader()).Throws(new MockDbException());
         Assert.False(pgDialect.IsDialect(this.mockConnection.Object));
     }
 
@@ -157,7 +152,7 @@ public class DialectTests
     public void IsDialect_PG_EmptyReader()
     {
         IDialect pgDialect = new PgDialect();
-        this.mockReader.Setup(reader => reader.HasRows).Returns(false);
+        this.mockReader.Setup(reader => reader.Read()).Returns(false);
         Assert.False(pgDialect.IsDialect(this.mockConnection.Object));
     }
 
@@ -166,7 +161,6 @@ public class DialectTests
     public void IsDialect_RdsPG_Success()
     {
         IDialect rdsPgDialect = new RdsPgDialect();
-        this.mockReader.Setup(reader => reader.HasRows).Returns(true);
         this.mockReader.Setup(reader => reader.Read()).Returns(true);
         this.mockReader.Setup(reader => reader.GetOrdinal("rds_tools")).Returns(0);
         this.mockReader.Setup(reader => reader.GetBoolean(0)).Returns(true);
@@ -180,7 +174,7 @@ public class DialectTests
     public void IsDialect_RdsPG_ExceptionThrown()
     {
         IDialect rdsPgDialect = new RdsPgDialect();
-        this.mockCommand.Setup(cmd => cmd.ExecuteReader()).Throws(new InvalidOperationException());
+        this.mockCommand.Setup(cmd => cmd.ExecuteReader()).Throws(new MockDbException());
         Assert.False(rdsPgDialect.IsDialect(this.mockConnection.Object));
     }
 
@@ -189,7 +183,7 @@ public class DialectTests
     public void IsDialect_RdsPG_EmptyReader()
     {
         IDialect rdsPgDialect = new RdsPgDialect();
-        this.mockReader.Setup(reader => reader.HasRows).Returns(false);
+        this.mockReader.Setup(reader => reader.Read()).Returns(false);
         Assert.False(rdsPgDialect.IsDialect(this.mockConnection.Object));
     }
 
@@ -198,7 +192,6 @@ public class DialectTests
     public void IsDialect_RdsPG_IsAurora()
     {
         IDialect rdsPgDialect = new RdsPgDialect();
-        this.mockReader.Setup(reader => reader.HasRows).Returns(true);
         this.mockReader.SetupSequence(reader => reader.Read()).Returns(true).Returns(false);
         this.mockReader.Setup(reader => reader.GetOrdinal("rds_tools")).Returns(0);
         this.mockReader.Setup(reader => reader.GetBoolean(0)).Returns(true);
