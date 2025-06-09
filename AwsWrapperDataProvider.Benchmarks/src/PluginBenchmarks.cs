@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Runtime.Versioning;
 using AwsWrapperDataProvider.Benchmarks.Mocks;
 using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.Plugins;
+using AwsWrapperDataProvider.Driver.Plugins.ExecutionTime;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Engines;
 
@@ -30,6 +32,7 @@ namespace AwsWrapperDataProvider.Benchmarks
 
         private ConfigurationProfile? _configurationProfileWithPlugins;
         private ConfigurationProfile? _configurationProfileWithNoPlugins;
+        private ConfigurationProfile? _configurationProfileWithExecutionTimePlugin;
 
         [IterationSetup]
         public void IterationSetup()
@@ -40,6 +43,13 @@ namespace AwsWrapperDataProvider.Benchmarks
             for (int i = 0; i < PluginChainLength; i++)
             {
                 pluginFactories.Add(new BenchmarkPluginFactory());
+            }
+
+            var pluginFactoriesWithExecutionTime = new List<IConnectionPluginFactory>();
+            pluginFactoriesWithExecutionTime.Add(new ExecutionTimePluginFactory());
+            for (int i = 0; i < PluginChainLength; i++)
+            {
+                pluginFactoriesWithExecutionTime.Add(new BenchmarkPluginFactory());
             }
 
             this._configurationProfileWithPlugins = ConfigurationProfileBuilder.Get()
@@ -56,6 +66,14 @@ namespace AwsWrapperDataProvider.Benchmarks
                 .WithTargetConnectionDialect(new MockConnectionDialect())
                 .WithConnectionProvider(new DbConnectionProvider())
                 .WithPluginFactories([])
+                .Build();
+
+            this._configurationProfileWithExecutionTimePlugin = ConfigurationProfileBuilder.Get()
+                .WithName("benchmark-with-plugins")
+                .WithDialect(new MockDialect())
+                .WithTargetConnectionDialect(new MockConnectionDialect())
+                .WithConnectionProvider(new DbConnectionProvider())
+                .WithPluginFactories(pluginFactoriesWithExecutionTime)
                 .Build();
         }
 
@@ -96,6 +114,27 @@ namespace AwsWrapperDataProvider.Benchmarks
             for (int i = 0; i < OperationsPerInvoke; i++)
             {
                 using var connection = new AwsWrapperConnection(new MockConnection(), this._configurationProfileWithPlugins);
+                using var command = connection.CreateCommand();
+                using var reader = command.ExecuteReader();
+            }
+        }
+
+        [Benchmark(OperationsPerInvoke = OperationsPerInvoke)]
+        public void ConnectionPluginManager_InitAndRelease_WithExecutionTimePlugin()
+        {
+            for (int i = 0; i < OperationsPerInvoke; i++)
+            {
+                using var connection = new AwsWrapperConnection(new MockConnection(), this._configurationProfileWithExecutionTimePlugin);
+            }
+        }
+
+        [Benchmark(OperationsPerInvoke = OperationsPerInvoke)]
+        public void ExecuteStatement_WithExecutionTimePlugin()
+        {
+            for (int i = 0; i < OperationsPerInvoke; i++)
+            {
+                using var connection =
+                    new AwsWrapperConnection(new MockConnection(), this._configurationProfileWithExecutionTimePlugin);
                 using var command = connection.CreateCommand();
                 using var reader = command.ExecuteReader();
             }

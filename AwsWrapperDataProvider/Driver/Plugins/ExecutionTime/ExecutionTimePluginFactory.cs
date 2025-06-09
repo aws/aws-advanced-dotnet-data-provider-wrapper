@@ -14,7 +14,7 @@
 
 namespace AwsWrapperDataProvider.Driver.Plugins.ExecutionTime;
 
-public class ExecutionTimePluginFactory
+public class ExecutionTimePluginFactory : IConnectionPluginFactory
 {
     public IConnectionPlugin GetInstance(IPluginService pluginService, Dictionary<string, string> props)
     {

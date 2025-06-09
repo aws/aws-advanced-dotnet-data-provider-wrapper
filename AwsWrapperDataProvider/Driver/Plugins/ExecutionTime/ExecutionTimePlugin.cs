@@ -13,13 +13,14 @@
 // limitations under the License.
 
 using System.Diagnostics;
+using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.ExecutionTime;
 
 public class ExecutionTimePlugin : AbstractConnectionPlugin
 {
-    // private static readonly ILogger<ExecutionTimePlugin>? _logger = new Logger<ExecutionTimePlugin>;
+    private static readonly ILogger<ExecutionTimePlugin> _logger = LoggerUtils.GetLogger<ExecutionTimePlugin>();
 
     public override ISet<string> GetSubscribeMethods() => new HashSet<string>() { "*" };
 
@@ -32,7 +33,7 @@ public class ExecutionTimePlugin : AbstractConnectionPlugin
         long ticks = sw.ElapsedTicks;
         double nanoseconds = (double)ticks / Stopwatch.Frequency * 1_000_000_000;
 
-        // this._logger.LogInformation($"Execution time: {ticks}ms, {nanoseconds}ns");
+        _logger.LogInformation($"Execution time: {ticks}ms, {nanoseconds}ns");
 
         return results;
     }
