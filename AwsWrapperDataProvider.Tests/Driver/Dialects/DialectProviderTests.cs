@@ -38,7 +38,6 @@ public class DialectProviderTests
         this.mockPluginService = new Mock<PluginService>();
         this.mockPluginService.Object.InitialConnectionHostSpec = new HostSpecBuilder().WithHost("anyHost").Build();
         this.dialectProvider = new DialectProvider(this.mockPluginService.Object);
-        TestUtils.SetNonPublicInstanceField(this.dialectProvider, "canUpdate", true);
 
         this.mockConnection = new Mock<IDbConnection>();
         this.mockConnection.SetupAllProperties();
