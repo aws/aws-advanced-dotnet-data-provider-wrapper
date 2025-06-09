@@ -22,15 +22,13 @@ namespace AwsWrapperDataProvider.Driver.Dialects;
 
 public class PgDialect : IDialect
 {
-    private readonly IExceptionHandler _exceptionHandler = new PgExceptionHandler();
-
     public int DefaultPort { get; } = 5432;
 
     public string HostAliasQuery { get; } = "SELECT CONCAT(inet_server_addr(), ':', inet_server_port())";
 
     public string ServerVersionQuery { get; } = "SELECT 'version', VERSION()";
 
-    public IExceptionHandler ExceptionHandler => this._exceptionHandler;
+    public IExceptionHandler ExceptionHandler { get; } = new PgExceptionHandler();
 
     public virtual IList<Type> DialectUpdateCandidates { get; } =
     [

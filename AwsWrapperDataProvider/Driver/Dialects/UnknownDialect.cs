@@ -21,15 +21,13 @@ namespace AwsWrapperDataProvider.Driver.Dialects;
 
 public class UnknownDialect : IDialect
 {
-    private readonly IExceptionHandler _exceptionHandler = new GenericExceptionHandler();
-
     public int DefaultPort { get; } = HostSpec.NoPort;
 
     public string HostAliasQuery { get; } = string.Empty;
 
     public string ServerVersionQuery { get; } = string.Empty;
 
-    public IExceptionHandler ExceptionHandler => this._exceptionHandler;
+    public IExceptionHandler ExceptionHandler { get; } = new GenericExceptionHandler();
 
     public IList<Type> DialectUpdateCandidates { get; } =
     [

@@ -23,15 +23,13 @@ namespace AwsWrapperDataProvider.Driver.Dialects;
 
 public class MysqlDialect : IDialect
 {
-    private readonly IExceptionHandler _exceptionHandler = new MySqlExceptionHandler();
-
     public int DefaultPort { get; } = 3306;
 
     public string HostAliasQuery { get; } = "SELECT CONCAT(@@hostname, ':', @@port)";
 
     public string ServerVersionQuery { get; } = "SHOW VARIABLES LIKE 'version_comment'";
 
-    public IExceptionHandler ExceptionHandler => this._exceptionHandler;
+    public IExceptionHandler ExceptionHandler { get; } = new MySqlExceptionHandler();
 
     public virtual IList<Type> DialectUpdateCandidates { get; } =
     [
