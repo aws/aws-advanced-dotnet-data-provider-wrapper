@@ -12,59 +12,60 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.ComponentModel;
-
 namespace AwsWrapperDataProvider.Driver.Utils;
 
 /// <summary>
 /// Represents the different types of RDS endpoints that can be identified from a hostname.
 /// </summary>
-public enum RdsUrlType
+public sealed class RdsUrlType
 {
     /// <summary>
     /// Represents an IP address (IPv4 or IPv6).
     /// </summary>
-    [Description("IP Address")]
-    IpAddress,
+    public static readonly RdsUrlType IpAddress = new(false, false);
 
     /// <summary>
     /// Represents an RDS cluster writer endpoint (e.g., mydb.cluster-123456789012.us-east-1.rds.amazonaws.com).
     /// </summary>
-    [Description("RDS Writer Cluster Endpoint")]
-    RdsWriterCluster,
+    public static readonly RdsUrlType RdsWriterCluster = new(true, true);
 
     /// <summary>
     /// Represents an RDS cluster reader endpoint (e.g., mydb.cluster-ro-123456789012.us-east-1.rds.amazonaws.com).
     /// </summary>
-    [Description("RDS Reader Cluster Endpoint")]
-    RdsReaderCluster,
+    public static readonly RdsUrlType RdsReaderCluster = new(true, true);
 
     /// <summary>
     /// Represents an RDS custom cluster endpoint (e.g., mydb.cluster-custom-123456789012.us-east-1.rds.amazonaws.com).
     /// </summary>
-    [Description("RDS Custom Cluster Endpoint")]
-    RdsCustomCluster,
+    public static readonly RdsUrlType RdsCustomCluster = new(true, true);
 
     /// <summary>
     /// Represents an RDS proxy endpoint (e.g., mydb.proxy-123456789012.us-east-1.rds.amazonaws.com).
     /// </summary>
-    [Description("RDS Proxy Endpoint")]
-    RdsProxy,
+    public static readonly RdsUrlType RdsProxy = new(true, false);
 
     /// <summary>
     /// Represents an RDS instance endpoint (e.g., mydb.123456789012.us-east-1.rds.amazonaws.com).
     /// </summary>
-    [Description("RDS Instance Endpoint")]
-    RdsInstance,
+    public static readonly RdsUrlType RdsInstance = new(true, false);
 
     /// <summary>
     /// Represents an RDS Aurora limitless shard group (e.g., mydb.shardgrp-123456789012.us-east-1.rds.amazonaws.com).
     /// </summary>
-    RdsAuroraLimitlessDbShardGroup,
+    public static readonly RdsUrlType RdsAuroraLimitlessDbShardGroup = new(true, false);
 
     /// <summary>
     /// Represents any other type of hostname that doesn't match the RDS endpoint patterns.
     /// </summary>
-    [Description("Other Hostname")]
-    Other,
+    public static readonly RdsUrlType Other = new(false, false);
+
+    public bool IsRds { get; }
+
+    public bool IsRdsCluster { get; }
+
+    private RdsUrlType(bool isRds, bool isRdsCluster)
+    {
+        this.IsRds = isRds;
+        this.IsRdsCluster = isRdsCluster;
+    }
 }

@@ -37,7 +37,7 @@ public class MysqlDialect : IDialect
         typeof(RdsMysqlDialect),
     ];
 
-    public HostListProviderSupplier HostListProviderSupplier { get; } = (
+    public virtual HostListProviderSupplier HostListProviderSupplier { get; } = (
         Dictionary<string, string> props,
         IHostListProviderService hostListProviderService,
         IPluginService pluginService) => new ConnectionStringHostListProvider(props, hostListProviderService);
@@ -48,21 +48,21 @@ public class MysqlDialect : IDialect
         {
             using IDbCommand command = conn.CreateCommand();
             command.CommandText = this.ServerVersionQuery;
-            using DbDataReader reader = (DbDataReader)command.ExecuteReader();
+            using IDataReader reader = command.ExecuteReader();
             while (reader.Read())
             {
                 int columnCount = reader.FieldCount;
                 for (int i = 0; i < columnCount; i++)
                 {
-                    string? columnValue = reader.IsDBNull(i) ? null : reader.GetString(i);
-                    if (columnValue != null && columnValue.ToLower().Contains("mysql"))
+                    string columnValue = reader.GetString(i);
+                    if (columnValue != null && columnValue.Contains("mysql", StringComparison.OrdinalIgnoreCase))
                     {
                         return true;
                     }
                 }
             }
         }
-        catch (Exception)
+        catch (DbException)
         {
             // ignored
         }

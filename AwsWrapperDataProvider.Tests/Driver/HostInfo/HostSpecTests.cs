@@ -104,8 +104,9 @@ public class HostSpecTests
     [Trait("Category", "Unit")]
     public void GetHashCode_WithSameValues_ShouldReturnSameHashCode()
     {
-        var hostSpec1 = new HostSpec("test-host.example.com", 3306, "id1", HostRole.Writer, HostAvailability.Available);
-        var hostSpec2 = new HostSpec("test-host.example.com", 3306, "id2", HostRole.Writer, HostAvailability.Available);
+        var now = DateTime.UtcNow;
+        var hostSpec1 = new HostSpec("test-host.example.com", 3306, "id1", HostRole.Writer, HostAvailability.Available, 0, now);
+        var hostSpec2 = new HostSpec("test-host.example.com", 3306, "id2", HostRole.Writer, HostAvailability.Available, 0, now);
 
         var hashCode1 = hostSpec1.GetHashCode();
         var hashCode2 = hostSpec2.GetHashCode();
