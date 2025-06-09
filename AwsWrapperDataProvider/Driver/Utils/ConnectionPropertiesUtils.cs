@@ -77,4 +77,34 @@ public static class ConnectionPropertiesUtils
 
         return hosts;
     }
+
+    public static HostSpec ParseHostPortPair(string url, HostSpecBuilder hostSpecBuilder)
+    {
+        IList<string> hostPortPair = url.Split(
+                HostPortSeperator,
+                2,
+                StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        RdsUrlType rdsUrlType = RdsUtils.IdentifyRdsType(hostPortPair[0]);
+        HostRole hostRole = RdsUrlType.RdsReaderCluster.Equals(rdsUrlType) ? HostRole.Reader : HostRole.Writer;
+        string? hostId = RdsUtils.GetRdsInstanceId(hostPortPair[0]);
+        if (hostPortPair.Count > 1)
+        {
+            if (int.TryParse(hostPortPair[1], out int port))
+            {
+                return hostSpecBuilder
+                    .WithHost(hostPortPair[0])
+                    .WithPort(port)
+                    .WithHostId(hostId)
+                    .WithRole(hostRole)
+                    .Build();
+            }
+        }
+
+        return hostSpecBuilder
+            .WithHost(hostPortPair[0])
+            .WithPort(HostSpec.NoPort)
+            .WithHostId(hostId)
+            .WithRole(hostRole)
+            .Build();
+    }
 }

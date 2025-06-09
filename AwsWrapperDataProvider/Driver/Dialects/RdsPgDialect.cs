@@ -40,18 +40,18 @@ public class RdsPgDialect : PgDialect
         {
             using IDbCommand command = conn.CreateCommand();
             command.CommandText = ExtensionsSql;
-            using DbDataReader reader = (DbDataReader)command.ExecuteReader();
+            using IDataReader reader = command.ExecuteReader();
             while (reader.Read())
             {
-                bool rdsTools = reader.GetBoolean("rds_tools");
-                bool auroraUtils = reader.GetBoolean("aurora_stat_utils");
+                bool rdsTools = reader.GetBoolean(reader.GetOrdinal("rds_tools"));
+                bool auroraUtils = reader.GetBoolean(reader.GetOrdinal("aurora_stat_utils"));
                 if (rdsTools && !auroraUtils)
                 {
                     return true;
                 }
             }
         }
-        catch (Exception)
+        catch (DbException)
         {
             // ignored
         }

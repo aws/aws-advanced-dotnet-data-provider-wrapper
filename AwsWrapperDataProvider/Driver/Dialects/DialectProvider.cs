@@ -13,37 +13,74 @@
 // limitations under the License.
 
 using System.Data;
-using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
+using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
-public static class DialectProvider
+public class DialectProvider
 {
-    private static readonly Dictionary<Type, IDialect> _dialectCache = new();
+    private const string MySqlDataSource = "mysql";
+    private const string PgDataSource = "postgres";
+
+    private static readonly MemoryCache KnownEndpointDialects = new(new MemoryCacheOptions());
+    private static readonly TimeSpan EndpointCacheExpiration = TimeSpan.FromHours(24);
 
     private static readonly Dictionary<Type, string> ConnectionToDatasourceMap = new()
     {
-        { typeof(Npgsql.NpgsqlConnection), "postgres" },
-        { typeof(MySqlConnector.MySqlConnection), "mysql" },
-        { typeof(MySql.Data.MySqlClient.MySqlConnection), "mysql" },
+        { typeof(Npgsql.NpgsqlConnection), PgDataSource },
+        { typeof(MySqlConnector.MySqlConnection), MySqlDataSource },
+        { typeof(MySql.Data.MySqlClient.MySqlConnection), MySqlDataSource },
     };
 
-    // TODO: Properly map RdsUrlTypes to IDialect.
-    private static readonly Dictionary<(RdsUrlType UrlType, string DatasourceType), Type> DatasourceTypeToDialectMap = new()
+    private static readonly Dictionary<Type, IDialect> KnownDialectsByType = new()
     {
-        { (RdsUrlType.IpAddress, "postgres"), typeof(PgDialect) },
-        { (RdsUrlType.RdsInstance, "postgres"), typeof(PgDialect) },
-        { (RdsUrlType.RdsWriterCluster, "postgres"), typeof(PgDialect) },
-        { (RdsUrlType.RdsReaderCluster, "postgres"), typeof(PgDialect) },
-        { (RdsUrlType.IpAddress, "mysql"), typeof(MysqlDialect) },
-        { (RdsUrlType.RdsInstance, "mysql"), typeof(MysqlDialect) },
-        { (RdsUrlType.RdsWriterCluster, "mysql"), typeof(MysqlDialect) },
-        { (RdsUrlType.RdsReaderCluster, "mysql"), typeof(MysqlDialect) },
+        { typeof(MysqlDialect), new MysqlDialect() },
+        { typeof(PgDialect), new PgDialect() },
+        { typeof(RdsMysqlDialect), new RdsMysqlDialect() },
+        { typeof(RdsPgDialect), new RdsPgDialect() },
+        { typeof(AuroraMysqlDialect), new AuroraMysqlDialect() },
+        { typeof(AuroraPgDialect), new AuroraPgDialect() },
+        { typeof(UnknownDialect), new UnknownDialect() },
     };
 
-    public static IDialect GuessDialect(Dictionary<string, string> props)
+    private static readonly Dictionary<(RdsUrlType UrlType, string DatasourceType), Type> DialectTypeMap = new()
     {
+        { (RdsUrlType.IpAddress, PgDataSource), typeof(PgDialect) },
+        { (RdsUrlType.RdsWriterCluster, PgDataSource), typeof(AuroraPgDialect) },
+        { (RdsUrlType.RdsReaderCluster, PgDataSource), typeof(AuroraPgDialect) },
+        { (RdsUrlType.RdsCustomCluster, PgDataSource), typeof(AuroraPgDialect) },
+        { (RdsUrlType.RdsProxy, PgDataSource), typeof(RdsPgDialect) },
+        { (RdsUrlType.RdsInstance, PgDataSource), typeof(RdsPgDialect) },
+        { (RdsUrlType.Other, PgDataSource), typeof(PgDialect) },
+
+        // TODO : Uncomment when Aurora Limitless DB Shard Group is supported
+        // { (RdsUrlType.RdsAuroraLimitlessDbShardGroup, PgDataSource), typeof() },
+        { (RdsUrlType.IpAddress, MySqlDataSource), typeof(MysqlDialect) },
+        { (RdsUrlType.RdsWriterCluster, MySqlDataSource), typeof(AuroraMysqlDialect) },
+        { (RdsUrlType.RdsReaderCluster, MySqlDataSource), typeof(AuroraMysqlDialect) },
+        { (RdsUrlType.RdsCustomCluster, MySqlDataSource), typeof(AuroraMysqlDialect) },
+        { (RdsUrlType.RdsProxy, MySqlDataSource), typeof(RdsMysqlDialect) },
+        { (RdsUrlType.RdsInstance, MySqlDataSource), typeof(RdsMysqlDialect) },
+        { (RdsUrlType.Other, MySqlDataSource), typeof(MysqlDialect) },
+
+        // TODO : Uncomment when Aurora Limitless DB Shard Group is supported
+        // { (RdsUrlType.RdsAuroraLimitlessDbShardGroup, MySqlDataSource), typeof() },
+    };
+
+    private readonly PluginService pluginService;
+    private IDialect? dialect = null;
+
+    public DialectProvider(PluginService pluginService)
+    {
+        this.pluginService = pluginService;
+    }
+
+    public IDialect GuessDialect(Dictionary<string, string> props)
+    {
+        this.dialect = null;
+
         // Check for custom dialect in properties
         if (PropertyDefinition.TargetDialect.GetString(props) is { } customDialectTypeName &&
             !string.IsNullOrEmpty(customDialectTypeName))
@@ -55,27 +92,43 @@ public static class DialectProvider
                    throw new InvalidOperationException($"Failed to instantiate custom dialect type '{customDialectTypeName}'");
         }
 
-        string url = PropertyDefinition.GetConnectionUrl(props);
-        RdsUrlType rdsUrlType = RdsUtils.IdentifyRdsType(url);
-        Type targetConnectionType = Type.GetType(PropertyDefinition.TargetConnectionType.GetString(props)!) ??
-                                    throw new InvalidCastException("Target connection type not found.");
+        string host = PropertyDefinition.GetConnectionUrl(props);
+        IList<HostSpec> hosts = ConnectionPropertiesUtils.GetHostsFromProperties(
+            props,
+            this.pluginService.HostSpecBuilder,
+            true);
+        if (hosts.Count != 0)
+        {
+            host = hosts.First().Host;
+        }
+
+        if (KnownEndpointDialects.TryGetValue(host, out IDialect? cachedDialect) && cachedDialect != null)
+        {
+            this.dialect = cachedDialect;
+            return this.dialect!;
+        }
+
+        RdsUrlType rdsUrlType = RdsUtils.IdentifyRdsType(host);
+        Type targetConnectionType = Type.GetType(PropertyDefinition.TargetConnectionType.GetString(props)!) ?? throw new InvalidCastException("Target connection type not found.");
         string targetDatasourceType = ConnectionToDatasourceMap.GetValueOrDefault(targetConnectionType) ?? "unknown";
-        Type dialectType = DatasourceTypeToDialectMap.GetValueOrDefault((rdsUrlType, targetDatasourceType)) ?? typeof(UnknownDialect);
-        return GetDialectFromType(dialectType) ??
-               throw new InvalidOperationException($"Failed to instantiate dialect type '{dialectType.Name}'");
+        Type dialectType = DialectTypeMap.GetValueOrDefault((rdsUrlType, targetDatasourceType), typeof(UnknownDialect));
+        this.dialect = KnownDialectsByType[dialectType];
+        return this.dialect;
     }
 
-    public static IDialect UpdateDialect(IDbConnection connection, IDialect currDialect)
+    public IDialect UpdateDialect(IDbConnection connection, IDialect currDialect)
     {
         IList<Type> dialectCandidates = currDialect.DialectUpdateCandidates;
 
         foreach (Type dialectCandidate in dialectCandidates)
         {
-            IDialect dialect = GetDialectFromType(dialectCandidate) ??
-                throw new ArgumentException("Invalid dialect type provided.");
+            IDialect dialect = KnownDialectsByType[dialectCandidate];
             if (dialect.IsDialect(connection))
             {
-                return dialect;
+                this.dialect = dialect;
+                KnownEndpointDialects.Set(this.pluginService.InitialConnectionHostSpec!.Host, dialect, EndpointCacheExpiration);
+                KnownEndpointDialects.Set(connection.ConnectionString, dialect, EndpointCacheExpiration);
+                return this.dialect;
             }
         }
 
@@ -91,12 +144,12 @@ public static class DialectProvider
     {
         if (dialectType != null && typeof(IDialect).IsAssignableFrom(dialectType))
         {
-            _dialectCache.TryGetValue(dialectType, out IDialect? dialect);
+            KnownDialectsByType.TryGetValue(dialectType, out IDialect? dialect);
 
             if (dialect == null)
             {
                 dialect = (IDialect)Activator.CreateInstance(dialectType)!;
-                _dialectCache[dialectType] = dialect;
+                KnownDialectsByType[dialectType] = dialect;
             }
 
             return dialect;
