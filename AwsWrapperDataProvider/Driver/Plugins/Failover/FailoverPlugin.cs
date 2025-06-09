@@ -33,8 +33,7 @@ public class FailoverPlugin(IPluginService pluginService, Dictionary<string, str
         throw new NotImplementedException();
     }
 
-    public T Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc,
-        params object[] methodArgs)
+    public T Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, params object[] methodArgs)
     {
         throw new NotImplementedException();
     }
