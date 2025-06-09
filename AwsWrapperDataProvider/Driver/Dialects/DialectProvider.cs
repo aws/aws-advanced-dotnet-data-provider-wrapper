@@ -45,8 +45,29 @@ public class DialectProvider
         { typeof(UnknownDialect), new UnknownDialect() },
     };
 
+    private static readonly Dictionary<(RdsUrlType UrlType, string DatasourceType), Type> DialectTypeMap = new()
+    {
+        { (RdsUrlType.IpAddress, PgDataSource), typeof(PgDialect) },
+        { (RdsUrlType.RdsWriterCluster, PgDataSource), typeof(AuroraPgDialect) },
+        { (RdsUrlType.RdsReaderCluster, PgDataSource), typeof(AuroraPgDialect) },
+        { (RdsUrlType.RdsCustomCluster, PgDataSource), typeof(AuroraPgDialect) },
+        { (RdsUrlType.RdsProxy, PgDataSource), typeof(RdsPgDialect) },
+        { (RdsUrlType.Other, PgDataSource), typeof(PgDialect) },
+
+        // TODO : Uncomment when Aurora Limitless DB Shard Group is supported
+        // { (RdsUrlType.RdsAuroraLimitlessDbShardGroup, PgDataSource), typeof() },
+        { (RdsUrlType.IpAddress, MySqlDataSource), typeof(MysqlDialect) },
+        { (RdsUrlType.RdsWriterCluster, MySqlDataSource), typeof(AuroraMysqlDialect) },
+        { (RdsUrlType.RdsReaderCluster, MySqlDataSource), typeof(AuroraMysqlDialect) },
+        { (RdsUrlType.RdsCustomCluster, MySqlDataSource), typeof(AuroraMysqlDialect) },
+        { (RdsUrlType.RdsProxy, MySqlDataSource), typeof(RdsMysqlDialect) },
+        { (RdsUrlType.Other, MySqlDataSource), typeof(MysqlDialect) },
+
+        // TODO : Uncomment when Aurora Limitless DB Shard Group is supported
+        // { (RdsUrlType.RdsAuroraLimitlessDbShardGroup, MySqlDataSource), typeof() },
+    };
+
     private readonly PluginService pluginService;
-    private bool canUpdate = false;
     private IDialect? dialect = null;
 
     public DialectProvider(PluginService pluginService)
@@ -56,7 +77,6 @@ public class DialectProvider
 
     public IDialect GuessDialect(Dictionary<string, string> props)
     {
-        this.canUpdate = false;
         this.dialect = null;
 
         // Check for custom dialect in properties
@@ -87,65 +107,15 @@ public class DialectProvider
         }
 
         RdsUrlType rdsUrlType = RdsUtils.IdentifyRdsType(host);
-        Type targetConnectionType = Type.GetType(PropertyDefinition.TargetConnectionType.GetString(props)!) ??
-                                    throw new InvalidCastException("Target connection type not found.");
+        Type targetConnectionType = Type.GetType(PropertyDefinition.TargetConnectionType.GetString(props)!) ?? throw new InvalidCastException("Target connection type not found.");
         string targetDatasourceType = ConnectionToDatasourceMap.GetValueOrDefault(targetConnectionType) ?? "unknown";
-        if (targetDatasourceType == MySqlDataSource)
-        {
-            if (rdsUrlType.IsRdsCluster)
-            {
-                // TODO change to true once supports RDS_MULTI_AZ_MYSQL_CLUSTER
-                this.canUpdate = false;
-                this.dialect = KnownDialectsByType[typeof(AuroraMysqlDialect)];
-                return this.dialect;
-            }
-
-            if (rdsUrlType.IsRds)
-            {
-                this.canUpdate = true;
-                this.dialect = KnownDialectsByType[typeof(RdsMysqlDialect)];
-                return this.dialect;
-            }
-
-            this.canUpdate = true;
-            this.dialect = KnownDialectsByType[typeof(MysqlDialect)];
-            return this.dialect;
-        }
-
-        if (targetDatasourceType == PgDataSource)
-        {
-            if (rdsUrlType.IsRdsCluster)
-            {
-                // TODO change to true once supports RDS_MULTI_AZ_PG_CLUSTER
-                this.canUpdate = false;
-                this.dialect = KnownDialectsByType[typeof(AuroraPgDialect)];
-                return this.dialect;
-            }
-
-            if (rdsUrlType.IsRds)
-            {
-                this.canUpdate = true;
-                this.dialect = KnownDialectsByType[typeof(RdsPgDialect)];
-                return this.dialect;
-            }
-
-            this.canUpdate = true;
-            this.dialect = KnownDialectsByType[typeof(PgDialect)];
-            return this.dialect;
-        }
-
-        this.canUpdate = true;
-        this.dialect = KnownDialectsByType[typeof(UnknownDialect)];
-        return this.dialect;
+        Type dialectType = DialectTypeMap.GetValueOrDefault((rdsUrlType, targetDatasourceType), typeof(UnknownDialect));
+        this.dialect = KnownDialectsByType[dialectType];
+        return KnownDialectsByType[dialectType];
     }
 
     public IDialect UpdateDialect(IDbConnection connection, IDialect currDialect)
     {
-        if (!this.canUpdate)
-        {
-            return this.dialect!;
-        }
-
         IList<Type> dialectCandidates = currDialect.DialectUpdateCandidates;
 
         foreach (Type dialectCandidate in dialectCandidates)
@@ -153,7 +123,6 @@ public class DialectProvider
             IDialect dialect = KnownDialectsByType[dialectCandidate];
             if (dialect.IsDialect(connection))
             {
-                this.canUpdate = false;
                 this.dialect = dialect;
                 KnownEndpointDialects.Set(this.pluginService.InitialConnectionHostSpec!.Host, dialect, EndpointCacheExpiration);
                 KnownEndpointDialects.Set(connection.ConnectionString, dialect, EndpointCacheExpiration);
