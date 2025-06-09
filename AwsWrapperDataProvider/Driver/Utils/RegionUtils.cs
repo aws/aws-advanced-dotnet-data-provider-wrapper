@@ -12,24 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Text.RegularExpressions;
 using Amazon;
-using Amazon.RDS.Util;
 
 namespace AwsWrapperDataProvider.Driver.Utils;
 
-public static class RegionUtils
+/// <summary>
+/// Methods to get the AWS region from a variety of sources.
+/// </summary>
+public static partial class RegionUtils
 {
+    private static readonly string RegionGroup = "region";
+
+    [GeneratedRegex(@$"^arn:aws:secretsmanager:(?<region>[a-z\-0-9]+):.*", RegexOptions.IgnoreCase, "en-CA")]
+    private static partial Regex SecretIdPattern();
+
     public static bool IsValidRegion(string region)
     {
-        try
-        {
-            RegionEndpoint.GetBySystemName(region);
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
+        return RegionEndpoint.EnumerableAllRegions.Any(r => r.SystemName.Equals(region, StringComparison.OrdinalIgnoreCase));
     }
 
     public static string? GetRegionFromProps(Dictionary<string, string> props, AwsWrapperProperty prop)
@@ -54,6 +54,14 @@ public static class RegionUtils
         }
 
         return IsValidRegion(region) ? region : null;
+    }
+
+    public static string? GetRegionFromSecretId(string secretId)
+    {
+        var match = SecretIdPattern().Match(secretId);
+        string? region = match.Groups[RegionGroup].Value;
+
+        return region == null ? null : IsValidRegion(region) ? region : null;
     }
 
     public static string? GetRegion(string host, Dictionary<string, string> props, AwsWrapperProperty prop)

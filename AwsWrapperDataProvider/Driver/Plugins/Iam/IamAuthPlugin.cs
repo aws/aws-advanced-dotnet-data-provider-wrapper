@@ -23,12 +23,12 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
 {
     private static readonly ISet<string> SubscribeMethods = new HashSet<string> { "DbConnection.Open", "DbConnection.OpenAsync" };
 
-    private static readonly int DefaultIamExpirationSeconds = 900;
+    private static readonly MemoryCache IamTokenCache = new(new MemoryCacheOptions());
+
+    private static readonly int DefaultIamExpirationSeconds = 870;
 
     private readonly IPluginService pluginService = pluginService;
     private readonly Dictionary<string, string> props = props;
-
-    private readonly MemoryCache iamTokenCache = new(new MemoryCacheOptions());
 
     public override ISet<string> GetSubscribeMethods()
     {
@@ -56,13 +56,13 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
         string iamRegion = RegionUtils.GetRegion(iamHost, props, PropertyDefinition.IamRegion) ?? throw new Exception("Could not determine region for IAM authentication provider.");
 
         string cacheKey = IamTokenUtility.GetCacheKey(iamUser, iamHost, iamPort, iamRegion);
-        if (!this.iamTokenCache.TryGetValue(cacheKey, out string? token))
+        if (!IamTokenCache.TryGetValue(cacheKey, out string? token))
         {
             try
             {
                 token = IamTokenUtility.GenerateAuthenticationToken(iamRegion, iamHost, iamPort, iamUser);
                 int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? DefaultIamExpirationSeconds;
-                this.iamTokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
+                IamTokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
             }
             catch (Exception ex)
             {
@@ -84,7 +84,7 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
             {
                 token = IamTokenUtility.GenerateAuthenticationToken(iamRegion, iamHost, iamPort, iamUser);
                 int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? DefaultIamExpirationSeconds;
-                this.iamTokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
+                IamTokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
             }
             catch (Exception ex)
             {
