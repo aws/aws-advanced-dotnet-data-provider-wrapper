@@ -16,8 +16,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.Plugins;
 
 public class TestPluginTwo : TestPluginOne
 {
-    public TestPluginTwo(List<string> calls) : base(calls)
-    {
-        this.subscribedMethods = new HashSet<string> { "testADONetCall_A", "testADONetCall_B" };
-    }
+    public TestPluginTwo(List<string> calls) : base(calls) { }
+
+    public override ISet<string> SubscribedMethods { get; } = new HashSet<string> { "testADONetCall_A", "testADONetCall_B" };
 }

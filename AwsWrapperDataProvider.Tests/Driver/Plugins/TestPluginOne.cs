@@ -21,8 +21,9 @@ namespace AwsWrapperDataProvider.Tests.Driver.Plugins;
 
 public class TestPluginOne : IConnectionPlugin
 {
-    protected ISet<string> subscribedMethods = new HashSet<string> { "*" };
     protected List<string> calls;
+
+    public virtual ISet<string> SubscribedMethods { get; } = new HashSet<string> { "*" };
 
     public TestPluginOne(List<string> calls)
     {
@@ -55,24 +56,21 @@ public class TestPluginOne : IConnectionPlugin
         throw new NotImplementedException();
     }
 
-    public virtual void OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate methodFunc)
+    public virtual void OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection,
+        ADONetDelegate methodFunc)
     {
         this.calls.Add(this.GetType().Name + ":before open");
         methodFunc();
         this.calls.Add(this.GetType().Name + ":after open");
     }
 
-    public DbConnection ForceConnect(HostSpec hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> forceConnectmethodFunc)
+    public DbConnection ForceConnect(HostSpec hostSpec, Dictionary<string, string> props, bool isInitialConnection,
+        ADONetDelegate<DbConnection> forceConnectmethodFunc)
     {
         this.calls.Add(this.GetType().Name + ":before forceConnect");
         DbConnection result = forceConnectmethodFunc();
         this.calls.Add(this.GetType().Name + ":after forceConnect");
         return result;
-    }
-
-    public ISet<string> GetSubscribeMethods()
-    {
-        return this.subscribedMethods;
     }
 
     public void InitHostProvider(string initialUrl, Dictionary<string, string> props, IHostListProviderService hostListProviderService, ADONetDelegate<Action<object[]>> initHostProviderFunc)

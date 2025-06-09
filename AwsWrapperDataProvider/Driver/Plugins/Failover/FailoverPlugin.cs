@@ -22,17 +22,19 @@ public class FailoverPlugin(IPluginService pluginService, Dictionary<string, str
     private readonly IPluginService pluginService = pluginService;
     private readonly Dictionary<string, string> props = props;
 
-    public void OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate methodFunc)
+    public ISet<string> SubscribedMethods { get; } = new HashSet<string>();
+
+    public void OpenConnection(
+        HostSpec? hostSpec,
+        Dictionary<string, string> props,
+        bool isInitialConnection,
+        ADONetDelegate methodFunc)
     {
         throw new NotImplementedException();
     }
 
-    public T Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, params object[] methodArgs)
-    {
-        throw new NotImplementedException();
-    }
-
-    public ISet<string> GetSubscribeMethods()
+    public T Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc,
+        params object[] methodArgs)
     {
         throw new NotImplementedException();
     }

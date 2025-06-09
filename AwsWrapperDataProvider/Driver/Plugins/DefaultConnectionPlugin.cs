@@ -23,16 +23,11 @@ public class DefaultConnectionPlugin(
     IConnectionProvider defaultConnProvider,
     IConnectionProvider? effectiveConnProvider) : IConnectionPlugin
 {
-    private static readonly ISet<string> SubscribeMethods = new HashSet<string> { "*" };
+    public ISet<string> SubscribedMethods { get; } = new HashSet<string> { "*" };
 
     private readonly IConnectionProvider defaultConnProvider = defaultConnProvider;
     private readonly IConnectionProvider? effectiveConnPrivider = effectiveConnProvider;
     private readonly IPluginService pluginService = pluginService;
-
-    public ISet<string> GetSubscribeMethods()
-    {
-        return SubscribeMethods;
-    }
 
     public T Execute<T>(
         object methodInvokedOn,

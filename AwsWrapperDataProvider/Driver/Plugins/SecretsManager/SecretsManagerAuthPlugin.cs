@@ -21,7 +21,7 @@ namespace AwsWrapperDataProvider.Driver.Plugins.SecretsManager;
 
 public class SecretsManagerAuthPlugin(IPluginService pluginService, Dictionary<string, string> props, string secretId, string region, int secretValueExpirySecs, AmazonSecretsManagerClient client) : AbstractConnectionPlugin
 {
-    private static readonly ISet<string> SubscribeMethods = new HashSet<string> { "DbConnection.Open", "DbConnection.OpenAsync" };
+    public override ISet<string> SubscribedMethods { get; } = new HashSet<string> { "DbConnection.Open", "DbConnection.OpenAsync" };
 
     private static readonly MemoryCache SecretValueCache = new(new MemoryCacheOptions());
 
@@ -44,11 +44,6 @@ public class SecretsManagerAuthPlugin(IPluginService pluginService, Dictionary<s
     private static string GetCacheKey(string secretId, string region)
     {
         return secretId + ":" + region;
-    }
-
-    public override ISet<string> GetSubscribeMethods()
-    {
-        return SubscribeMethods;
     }
 
     public override void OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate methodFunc)

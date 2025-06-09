@@ -21,7 +21,7 @@ namespace AwsWrapperDataProvider.Driver.Plugins.Iam;
 
 public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, string> props) : AbstractConnectionPlugin
 {
-    private static readonly ISet<string> SubscribeMethods = new HashSet<string> { "DbConnection.Open", "DbConnection.OpenAsync" };
+    public override ISet<string> SubscribedMethods { get; } = new HashSet<string> { "DbConnection.Open", "DbConnection.OpenAsync" };
 
     private static readonly MemoryCache IamTokenCache = new(new MemoryCacheOptions());
 
@@ -29,11 +29,6 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
 
     private readonly IPluginService pluginService = pluginService;
     private readonly Dictionary<string, string> props = props;
-
-    public override ISet<string> GetSubscribeMethods()
-    {
-        return SubscribeMethods;
-    }
 
     public override void OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate methodFunc)
     {
