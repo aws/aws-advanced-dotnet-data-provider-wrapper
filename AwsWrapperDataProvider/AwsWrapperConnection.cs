@@ -171,7 +171,6 @@ public class AwsWrapperConnection : DbConnection
             "DbConnection.CreateCommand",
             () => this.pluginService!.CurrentConnection!.CreateCommand());
 
-        Console.WriteLine("AwsWrapperConnection.CreateCommand()");
         this.ConnectionProperties[PropertyDefinition.TargetCommandType.Name] = command.GetType().AssemblyQualifiedName!;
         return new AwsWrapperCommand(command, this, this.PluginManager!);
     }

@@ -111,7 +111,7 @@ public class DialectProvider
         string targetDatasourceType = ConnectionToDatasourceMap.GetValueOrDefault(targetConnectionType) ?? "unknown";
         Type dialectType = DialectTypeMap.GetValueOrDefault((rdsUrlType, targetDatasourceType), typeof(UnknownDialect));
         this.dialect = KnownDialectsByType[dialectType];
-        return KnownDialectsByType[dialectType];
+        return this.dialect;
     }
 
     public IDialect UpdateDialect(IDbConnection connection, IDialect currDialect)
