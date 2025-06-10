@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using System.Data.Common;
-using System.Reflection;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.HostInfo;
@@ -244,9 +243,7 @@ public class ConnectionPluginManagerTests
             Mock.Of<IPluginService>(),
             props);
 
-        // To get the protected field plugins from ConnectionPluginManager
-        FieldInfo? fieldInfo = typeof(ConnectionPluginManager).GetField("plugins", BindingFlags.NonPublic | BindingFlags.Instance);
-        IList<IConnectionPlugin> plugins = (IList<IConnectionPlugin>)fieldInfo?.GetValue(pluginManager)!;
+        IList<IConnectionPlugin> plugins = TestUtils.GetNonPublicInstanceField<IList<IConnectionPlugin>>(pluginManager, "plugins")!;
 
         Assert.Single(plugins);
     }

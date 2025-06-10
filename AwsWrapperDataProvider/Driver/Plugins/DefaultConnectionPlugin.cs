@@ -54,6 +54,7 @@ public class DefaultConnectionPlugin(
         conn.ConnectionString = this.pluginService.TargetConnectionDialect.PrepareConnectionString(this.pluginService.Dialect, null, props);
         conn.Open();
 
+        this.pluginService.SetAvailability(hostSpec!.AsAliases(), HostAvailability.Available);
         if (isInitialConnection)
         {
             this.pluginService.UpdateDialect(conn);

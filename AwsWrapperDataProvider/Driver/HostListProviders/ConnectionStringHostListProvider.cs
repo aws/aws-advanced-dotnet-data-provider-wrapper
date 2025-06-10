@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data.Common;
+using System.Data;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
 
@@ -20,32 +20,32 @@ namespace AwsWrapperDataProvider.Driver.HostListProviders;
 
 public class ConnectionStringHostListProvider : IStaticHostListProvider
 {
-    private readonly List<HostSpec> _hostList = new List<HostSpec>();
-    private readonly Dictionary<string, string> _properties;
-    private readonly IHostListProviderService _hostListProviderService;
-    private readonly bool _isSingleWriterConnectionString;
+    private readonly List<HostSpec> hostList = [];
+    private readonly Dictionary<string, string> properties;
+    private readonly IHostListProviderService hostListProviderService;
+    private readonly bool isSingleWriterConnectionString;
 
     /// <summary>
-    /// Check if _hostList has already been initialized. _hostList should only be initialized once.
+    /// Check if hostList has already been initialized. hostList should only be initialized once.
     /// </summary>
-    private bool _isInitialized = false;
+    private bool isInitialized = false;
 
     public ConnectionStringHostListProvider(
         Dictionary<string, string> props,
         IHostListProviderService hostListProviderService)
     {
-        this._properties = props;
-        this._hostListProviderService = hostListProviderService;
-        this._isSingleWriterConnectionString = PropertyDefinition.SingleWriterConnectionString.GetBoolean(props);
+        this.properties = props;
+        this.hostListProviderService = hostListProviderService;
+        this.isSingleWriterConnectionString = PropertyDefinition.SingleWriterConnectionString.GetBoolean(props);
     }
 
     public IList<HostSpec> Refresh()
     {
         this.Init();
-        return this._hostList.AsReadOnly();
+        return this.hostList.AsReadOnly();
     }
 
-    public IList<HostSpec> Refresh(DbConnection connection)
+    public IList<HostSpec> Refresh(IDbConnection connection)
     {
         return this.Refresh();
     }
@@ -53,15 +53,15 @@ public class ConnectionStringHostListProvider : IStaticHostListProvider
     public IList<HostSpec> ForceRefresh()
     {
         this.Init();
-        return this._hostList.AsReadOnly();
+        return this.hostList.AsReadOnly();
     }
 
-    public IList<HostSpec> ForceRefresh(DbConnection connection)
+    public IList<HostSpec> ForceRefresh(IDbConnection connection)
     {
         return this.ForceRefresh();
     }
 
-    public HostRole GetHostRole(DbConnection connection)
+    public HostRole GetHostRole(IDbConnection connection)
     {
         throw new NotSupportedException("ConnectionStringHostListProvider does not support GetHostRole.");
     }
@@ -73,22 +73,22 @@ public class ConnectionStringHostListProvider : IStaticHostListProvider
 
     private void Init()
     {
-        if (this._isInitialized)
+        if (this.isInitialized)
         {
             return;
         }
 
-        this._hostList.AddRange(ConnectionPropertiesUtils.GetHostsFromProperties(
-                this._properties,
-                this._hostListProviderService.HostSpecBuilder,
-                this._isSingleWriterConnectionString));
-        if (this._hostList.Count == 0)
+        this.hostList.AddRange(ConnectionPropertiesUtils.GetHostsFromProperties(
+                this.properties,
+                this.hostListProviderService.HostSpecBuilder,
+                this.isSingleWriterConnectionString));
+        if (this.hostList.Count == 0)
         {
             // TODO: move error string to resx file.
-            throw new ArgumentException("Connection string is invalid.", nameof(this._properties));
+            throw new ArgumentException("Connection string is invalid.", nameof(this.properties));
         }
 
-        this._hostListProviderService.InitialConnectionHostSpec = this._hostList.First();
-        this._isInitialized = true;
+        this.hostListProviderService.InitialConnectionHostSpec = this.hostList.First();
+        this.isInitialized = true;
     }
 }

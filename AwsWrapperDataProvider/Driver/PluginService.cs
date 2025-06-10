@@ -26,28 +26,24 @@ namespace AwsWrapperDataProvider.Driver;
 
 public class PluginService : IPluginService, IHostListProviderService
 {
-    private readonly ConnectionPluginManager _pluginManager;
-    private readonly Dictionary<string, string> _props;
-    private readonly string _originalConnectionString;
-    private readonly ITargetConnectionDialect _targetConnectionDialect;
-    private volatile IHostListProvider _hostListProvider;
-    private IDialect _dialect;
-    private IList<HostSpec> _allHosts = [];
-    private HostSpec? _currentHostSpec;
-    private DbConnection? _currentConnection;
-    private HostSpec? _initialConnectionHostSpec;
+    private readonly ConnectionPluginManager pluginManager;
+    private readonly Dictionary<string, string> props;
+    private readonly string originalConnectionString;
+    private readonly DialectProvider dialectProvider;
+    private volatile IHostListProvider hostListProvider;
+    private HostSpec? currentHostSpec;
 
     // private ExceptionManager _exceptionManager;
     // private IExceptionHandler _exceptionHandler;
 
-    public IDialect Dialect { get => this._dialect; }
-    public ITargetConnectionDialect TargetConnectionDialect { get => this._targetConnectionDialect; }
-    public HostSpec? InitialConnectionHostSpec { get => this._initialConnectionHostSpec; set => this._initialConnectionHostSpec = value; }
-    public HostSpec? CurrentHostSpec { get => this._currentHostSpec ?? this.GetCurrentHostSpec(); }
-    public IList<HostSpec> AllHosts { get => this._allHosts; }
-    public IHostListProvider? HostListProvider { get => this._hostListProvider; set => this._hostListProvider = value ?? throw new ArgumentNullException(nameof(value)); }
+    public IDialect Dialect { get; private set; }
+    public ITargetConnectionDialect TargetConnectionDialect { get; }
+    public HostSpec? InitialConnectionHostSpec { get; set; }
+    public HostSpec? CurrentHostSpec { get => this.currentHostSpec ?? this.GetCurrentHostSpec(); }
+    public IList<HostSpec> AllHosts { get; private set; } = [];
+    public IHostListProvider? HostListProvider { get => this.hostListProvider; set => this.hostListProvider = value ?? throw new ArgumentNullException(nameof(value)); }
     public HostSpecBuilder HostSpecBuilder { get => new HostSpecBuilder(); }
-    public DbConnection? CurrentConnection { get => this._currentConnection; set => this._currentConnection = value; }
+    public DbConnection? CurrentConnection { get; set; }
 
     public PluginService(
         Type connectionType,
@@ -57,15 +53,21 @@ public class PluginService : IPluginService, IHostListProviderService
         ITargetConnectionDialect? targetConnectionDialect,
         ConfigurationProfile? configurationProfile)
     {
-        this._pluginManager = pluginManager;
-        this._props = props;
-        this._originalConnectionString = connectionString;
-        this._targetConnectionDialect = configurationProfile?.TargetConnectionDialect ?? targetConnectionDialect ?? throw new ArgumentNullException(nameof(targetConnectionDialect));
-        this._dialect = configurationProfile?.Dialect ?? DialectProvider.GuessDialect(this._props, configurationProfile);
-        this._hostListProvider =
-            this._dialect.HostListProviderSupplier(this._props, this, this)
+        this.pluginManager = pluginManager;
+        this.props = props;
+        this.originalConnectionString = connectionString;
+        this.TargetConnectionDialect = configurationProfile?.TargetConnectionDialect ?? targetConnectionDialect ?? throw new ArgumentNullException(nameof(targetConnectionDialect));
+        this.dialectProvider = new(this);
+        this.Dialect = configurationProfile?.Dialect ?? this.dialectProvider.GuessDialect(this.props);
+        this.hostListProvider =
+            this.Dialect.HostListProviderSupplier(this.props, this, this)
             ?? throw new InvalidOperationException(); // TODO : throw proper error
     }
+
+    // for testing purpose only
+#pragma warning disable CS8618
+    internal PluginService() { }
+#pragma warning restore CS8618
 
     public bool IsStaticHostListProvider()
     {
@@ -75,14 +77,14 @@ public class PluginService : IPluginService, IHostListProviderService
     public HostSpec GetInitialConnectionHostSpec()
     {
         // TODO implement stub method.
-        return new HostSpec("temp", 0000, "temp", HostRole.Reader, HostAvailability.Available);
+        throw new NotImplementedException();
     }
 
     public void SetCurrentConnection(DbConnection connection, HostSpec? hostSpec)
     {
         // TODO implement stub method.
-        this._currentConnection = connection;
-        this._currentHostSpec = hostSpec;
+        this.CurrentConnection = connection;
+        this.currentHostSpec = hostSpec;
     }
 
     public void SetCurrentConnection(DbConnection connection, HostSpec hostSpec, IConnectionPlugin pluginToSkip)
@@ -93,7 +95,7 @@ public class PluginService : IPluginService, IHostListProviderService
     public IList<HostSpec> GetHosts()
     {
         // TODO: Handle AllowedAndBlockHosts
-        return this._allHosts;
+        return this.AllHosts;
     }
 
     public HostRole GetHostRole(DbConnection connection)
@@ -101,19 +103,20 @@ public class PluginService : IPluginService, IHostListProviderService
         throw new NotImplementedException();
     }
 
-    public HostRole SetAvailability(ISet<string> hostAliases, HostAvailability availability)
+    public void SetAvailability(ICollection<string> hostAliases, HostAvailability availability)
     {
-        throw new NotImplementedException();
+        // TODO: Implement
+        return;
     }
 
     public void RefreshHostList()
     {
-        IList<HostSpec> updateHostList = this._hostListProvider.Refresh();
-        if (!Equals(updateHostList, this._allHosts))
+        IList<HostSpec> updateHostList = this.hostListProvider.Refresh();
+        if (!updateHostList.SequenceEqual(this.AllHosts))
         {
             this.UpdateHostAvailability(updateHostList);
-            this.NotifyNodeChangeList(this._allHosts, updateHostList);
-            this._allHosts = updateHostList;
+            this.NotifyNodeChangeList(this.AllHosts, updateHostList);
+            this.AllHosts = updateHostList;
         }
     }
 
@@ -149,15 +152,13 @@ public class PluginService : IPluginService, IHostListProviderService
 
     public void UpdateDialect(DbConnection connection)
     {
-        IDialect dialect = this._dialect;
-        this._dialect = DialectProvider.UpdateDialect(
-            connection,
-            this._dialect);
+        IDialect dialect = this.Dialect;
+        this.Dialect = this.dialectProvider.UpdateDialect(connection, this.Dialect);
 
-        if (dialect != this._dialect)
+        if (dialect != this.Dialect)
         {
-            this._hostListProvider = this._dialect.HostListProviderSupplier(this._props, this, this)
-                                     ?? this._hostListProvider;
+            this.hostListProvider = this.Dialect.HostListProviderSupplier(this.props, this, this)
+                                     ?? this.hostListProvider;
         }
     }
 
@@ -178,12 +179,12 @@ public class PluginService : IPluginService, IHostListProviderService
 
     private HostSpec GetCurrentHostSpec()
     {
-        this._currentHostSpec = this._initialConnectionHostSpec
-            ?? this._allHosts.FirstOrDefault(h => h.Role == HostRole.Writer)
+        this.currentHostSpec = this.InitialConnectionHostSpec
+            ?? this.AllHosts.FirstOrDefault(h => h.Role == HostRole.Writer)
             ?? this.GetHosts().First();
 
-        ArgumentNullException.ThrowIfNull(this._currentHostSpec);
-        return this._currentHostSpec;
+        ArgumentNullException.ThrowIfNull(this.currentHostSpec);
+        return this.currentHostSpec;
     }
 
     private void UpdateHostAvailability(IList<HostSpec> hosts)
@@ -193,6 +194,6 @@ public class PluginService : IPluginService, IHostListProviderService
 
     private void NotifyNodeChangeList(IList<HostSpec> oldHosts, IList<HostSpec> updateHosts)
     {
-        // TODO: create NodeChangeList based on changes to hosts and call _pluginManager.NotifyNodeChangeList.
+        // TODO: create NodeChangeList based on changes to hosts and call pluginManager.NotifyNodeChangeList.
     }
 }

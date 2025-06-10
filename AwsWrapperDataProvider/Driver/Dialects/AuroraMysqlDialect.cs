@@ -13,14 +13,49 @@
 // limitations under the License.
 
 using System.Data;
+using System.Data.Common;
+using AwsWrapperDataProvider.Driver.HostListProviders;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
 public class AuroraMysqlDialect : MysqlDialect
 {
-    // TODO: Implement AuroraMysqlDialect
-    public override bool IsDialect(IDbConnection conn)
+    private static readonly string TopologyQuery = "SELECT SERVER_ID, CASE WHEN SESSION_ID = 'MASTER_SESSION_ID' THEN TRUE ELSE FALSE END, "
+          + "CPU, REPLICA_LAG_IN_MILLISECONDS, LAST_UPDATE_TIMESTAMP "
+          + "FROM information_schema.replica_host_status "
+          + "WHERE time_to_sec(timediff(now(), LAST_UPDATE_TIMESTAMP)) <= 300 OR SESSION_ID = 'MASTER_SESSION_ID' ";
+
+    private static readonly string IsReaderQuery = "SELECT @@innodb_read_only";
+
+    private static readonly string NodeIdQuery = "SELECT @@aurora_server_id";
+
+    private static readonly string IsDialectQuery = "SHOW VARIABLES LIKE 'aurora_version'";
+
+    public override IList<Type> DialectUpdateCandidates { get; } = [];
+
+    public override bool IsDialect(IDbConnection connection)
     {
+        try
+        {
+            using IDbCommand command = connection.CreateCommand();
+            command.CommandText = IsDialectQuery;
+            using IDataReader reader = command.ExecuteReader();
+            return reader.Read();
+        }
+        catch (DbException)
+        {
+            // ignored
+        }
+
         return false;
+    }
+
+    public override HostListProviderSupplier HostListProviderSupplier => this.GetHostListProviderSupplier();
+
+    private HostListProviderSupplier GetHostListProviderSupplier()
+    {
+        // TODO add MonitoringRdsHostListProvider for failover plugin
+        return (props, hostListProviderService, pluginService) => new RdsHostListProvider(
+            props, hostListProviderService, TopologyQuery, NodeIdQuery, IsReaderQuery);
     }
 }
