@@ -19,8 +19,6 @@ using System.Diagnostics.CodeAnalysis;
 
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
-using AwsWrapperDataProvider.Driver.Dialects;
-using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
 
@@ -38,7 +36,7 @@ public class AwsWrapperConnection : DbConnection
 
     internal Dictionary<string, string> ConnectionProperties { get; private set; }
 
-    public DbConnection? TargetDbConnection => this.pluginService?.CurrentConnection;
+    internal DbConnection? TargetDbConnection => this.pluginService?.CurrentConnection;
 
     [AllowNull]
     public override string ConnectionString
@@ -153,27 +151,21 @@ public class AwsWrapperConnection : DbConnection
 
     protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel)
     {
-        return WrapperUtils.ExecuteWithPlugins<DbTransaction>(
-            this.PluginManager!,
-            this.pluginService!.CurrentConnection!,
+        ArgumentNullException.ThrowIfNull(this.pluginService);
+        ArgumentNullException.ThrowIfNull(this.pluginService.CurrentConnection);
+        ArgumentNullException.ThrowIfNull(this.PluginManager);
+
+        DbTransaction targetTransaction = WrapperUtils.ExecuteWithPlugins(
+            this.PluginManager,
+            this.pluginService.CurrentConnection,
             "DbConnection.BeginDbTransaction",
-            () => this.pluginService!.CurrentConnection!.BeginTransaction(isolationLevel),
+            () => this.pluginService.CurrentConnection!.BeginTransaction(isolationLevel),
             isolationLevel);
+
+        return new AwsWrapperTransaction(this, targetTransaction, this.PluginManager);
     }
 
-    protected override DbCommand CreateDbCommand() => this.CreateCommand();
-
-    public new AwsWrapperCommand CreateCommand()
-    {
-        DbCommand command = WrapperUtils.ExecuteWithPlugins(
-            this.PluginManager!,
-            this.pluginService!.CurrentConnection!,
-            "DbConnection.CreateCommand",
-            () => this.pluginService!.CurrentConnection!.CreateCommand());
-
-        this.ConnectionProperties[PropertyDefinition.TargetCommandType.Name] = command.GetType().AssemblyQualifiedName!;
-        return new AwsWrapperCommand(command, this, this.PluginManager!);
-    }
+    protected override DbCommand CreateDbCommand() => this.CreateCommand<DbCommand>();
 
     public AwsWrapperCommand<TCommand> CreateCommand<TCommand>() where TCommand : DbCommand
     {
