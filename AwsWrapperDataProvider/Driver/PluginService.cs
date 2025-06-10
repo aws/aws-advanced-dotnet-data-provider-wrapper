@@ -197,21 +197,21 @@ public class PluginService : IPluginService, IHostListProviderService, IExceptio
 
     public bool IsLoginException(Exception exception)
     {
-        return this._dialect.ExceptionHandler.IsLoginException(exception, this._targetConnectionDialect);
+        return this.Dialect.ExceptionHandler.IsLoginException(exception, this.TargetConnectionDialect);
     }
 
     public bool IsLoginException(string sqlState)
     {
-        return this._dialect.ExceptionHandler.IsLoginException(sqlState);
+        return this.Dialect.ExceptionHandler.IsLoginException(sqlState);
     }
 
     public bool IsNetworkException(Exception exception)
     {
-        return this._dialect.ExceptionHandler.IsNetworkException(exception, this._targetConnectionDialect);
+        return this.Dialect.ExceptionHandler.IsNetworkException(exception, this.TargetConnectionDialect);
     }
 
     public bool IsNetworkException(string sqlState)
     {
-        return this._dialect.ExceptionHandler.IsNetworkException(sqlState);
+        return this.Dialect.ExceptionHandler.IsNetworkException(sqlState);
     }
 }
