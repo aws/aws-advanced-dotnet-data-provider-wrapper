@@ -43,7 +43,7 @@ public class AwsWrapperTransaction : DbTransaction
         WrapperUtils.RunWithPlugins(
             this.pluginManager!,
             this.targetTransaction!,
-            "DbConnection.Commit",
+            "DbTransaction.Commit",
             () => this.targetTransaction!.Commit());
     }
 
@@ -52,7 +52,34 @@ public class AwsWrapperTransaction : DbTransaction
         WrapperUtils.RunWithPlugins(
             this.pluginManager!,
             this.targetTransaction!,
-            "DbConnection.Rollback",
+            "DbTransaction.Rollback",
             () => this.targetTransaction!.Rollback());
+    }
+
+    public override void Save(string savepointName)
+    {
+        WrapperUtils.RunWithPlugins(
+            this.pluginManager!,
+            this.targetTransaction!,
+            "DbTransaction.Save",
+            () => this.targetTransaction!.Save(savepointName));
+    }
+
+    public override void Rollback(string savepointName)
+    {
+        WrapperUtils.RunWithPlugins(
+            this.pluginManager!,
+            this.targetTransaction!,
+            "DbTransaction.Rollback",
+            () => this.targetTransaction!.Rollback(savepointName));
+    }
+
+    public override void Release(string savepointName)
+    {
+        WrapperUtils.RunWithPlugins(
+            this.pluginManager!,
+            this.targetTransaction!,
+            "DbTransaction.Release",
+            () => this.targetTransaction!.Release(savepointName));
     }
 }

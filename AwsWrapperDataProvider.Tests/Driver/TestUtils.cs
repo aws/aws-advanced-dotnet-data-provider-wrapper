@@ -12,7 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data.Common;
+using System.Linq.Expressions;
 using System.Reflection;
+using AwsWrapperDataProvider.Driver;
+using AwsWrapperDataProvider.Driver.Plugins;
+using Moq;
 
 namespace AwsWrapperDataProvider.Tests.Driver;
 
@@ -55,5 +60,35 @@ public static class TestUtils
         }
 
         field.SetValue(null, value);
+    }
+
+    public static void VerifyDelegatesToExecutePipeline<TMock, TReturn>(
+        Mock<ConnectionPluginManager> mockPluginManager,
+        Mock<TMock> mockObject,
+        Expression<Func<TMock, TReturn>> expression)
+        where TMock : class
+    {
+        mockPluginManager.Verify(p => p.Execute(
+                mockObject.Object,
+                It.IsAny<string>(),
+                It.IsAny<ADONetDelegate<TReturn>>(),
+                It.IsAny<object[]>()),
+            Times.Once);
+        mockObject.Verify(expression, Times.Once);
+    }
+
+    public static void VerifyDelegatesToExecutePipeline<TMock>(
+        Mock<ConnectionPluginManager> mockPluginManager,
+        Mock<TMock> mockObject,
+        Expression<Action<TMock>> expression)
+        where TMock : class
+    {
+        mockPluginManager.Verify(p => p.Execute(
+                mockObject.Object,
+                It.IsAny<string>(),
+                It.IsAny<ADONetDelegate<object>>(),
+                It.IsAny<object[]>()),
+            Times.Once);
+        mockObject.Verify(expression, Times.Once);
     }
 }

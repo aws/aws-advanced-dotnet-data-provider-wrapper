@@ -19,8 +19,6 @@ using System.Diagnostics.CodeAnalysis;
 
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
-using AwsWrapperDataProvider.Driver.Dialects;
-using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
 
