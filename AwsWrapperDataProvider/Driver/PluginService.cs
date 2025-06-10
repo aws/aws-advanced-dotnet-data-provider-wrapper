@@ -138,7 +138,7 @@ public class PluginService : IPluginService, IHostListProviderService
         throw new NotImplementedException();
     }
 
-    public DbConnection Connect(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin pluginToSkip)
+    public DbConnection OpenConnection(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin? pluginToSkip)
     {
         throw new NotImplementedException();
     }
@@ -160,7 +160,7 @@ public class PluginService : IPluginService, IHostListProviderService
         }
     }
 
-    public HostSpec IdentifyConnection(DbConnection connection)
+    public HostSpec? IdentifyConnection(DbConnection connection)
     {
         throw new NotImplementedException();
     }

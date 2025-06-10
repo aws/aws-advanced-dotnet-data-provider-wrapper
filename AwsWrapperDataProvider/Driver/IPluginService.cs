@@ -32,7 +32,7 @@ public interface IPluginService
 
     ITargetConnectionDialect TargetConnectionDialect { get; }
 
-    DbConnection? CurrentConnection { get; }
+    DbConnection? CurrentConnection { get; set; }
 
     HostSpec? CurrentHostSpec { get; }
 
@@ -115,7 +115,7 @@ public interface IPluginService
     /// <param name="props">Connection properties.</param>
     /// <param name="pluginToSkip">The plugin to skip.</param>
     /// <returns>The database connection.</returns>
-    DbConnection Connect(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin pluginToSkip);
+    DbConnection OpenConnection(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin? pluginToSkip);
 
     /// <summary>
     /// Forces a connection to a host, skipping a specific plugin.
@@ -137,7 +137,7 @@ public interface IPluginService
     /// </summary>
     /// <param name="connection">The database connection.</param>
     /// <returns>The host specification.</returns>
-    HostSpec IdentifyConnection(DbConnection connection);
+    HostSpec? IdentifyConnection(DbConnection connection);
 
     /// <summary>
     /// Fills in aliases for the given host specification using the connection.

@@ -97,6 +97,18 @@ public static class PropertyDefinition
     public static readonly AwsWrapperProperty SecretsManagerEndpoint = new(
         "secretsManagerEndpoint", null, "The endpoint of the secret to retrieve.");
 
+    public static readonly AwsWrapperProperty ReaderHostSelectionStrategy = new(
+        "readerInitialConnectionHostSelectorStrategy", "random", "The strategy that should be used to select a new reader host while opening a new connection.");
+
+    public static readonly AwsWrapperProperty OpenConnectionRetryTimeoutMs = new(
+        "openConnectionRetryTimeoutMs", "30000", "Maximum allowed time for the retries opening a connection.");
+
+    public static readonly AwsWrapperProperty OpenConnectionRetryIntervalMs = new(
+        "openConnectionRetryIntervalMs", "1000", "Time between each retry of opening a connection.");
+
+    public static readonly AwsWrapperProperty VerifyOpenedConnectionType = new(
+        "verifyOpenedConnectionType", null, "Force to verify an opened connection to be either a writer or a reader.");
+
     /// <summary>
     /// A set of AwsWrapperProperties that is used by the wrapper and should not be passed to the target driver.
     /// </summary>
@@ -118,7 +130,11 @@ public static class PropertyDefinition
         SecretsManagerEndpoint,
         ClusterTopologyRefreshRateMs,
         ClusterInstanceHostPattern,
-        ClusterId
+        ClusterId,
+        ReaderHostSelectionStrategy,
+        OpenConnectionRetryTimeoutMs,
+        OpenConnectionRetryIntervalMs,
+        VerifyOpenedConnectionType,
     ];
 
     public static string GetConnectionUrl(Dictionary<string, string> props)

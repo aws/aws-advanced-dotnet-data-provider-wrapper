@@ -177,6 +177,14 @@ public static partial class RdsUtils
         return CacheMatcher(host, AuroraDnsPatterns)?.Groups[RegionGroup].Value;
     }
 
+    public static bool IsRdsClusterDns(string host)
+    {
+        string? dnsGroup = GetDnsGroup(host);
+        return dnsGroup != null
+               && (string.Equals(dnsGroup, "cluster-", StringComparison.OrdinalIgnoreCase)
+                   || string.Equals(dnsGroup, "cluster-ro-", StringComparison.OrdinalIgnoreCase));
+    }
+
     private static string? GetDnsGroup(string host)
     {
         return CacheMatcher(host, AuroraDnsPatterns)?.Groups[DnsGroup].Value;
