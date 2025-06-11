@@ -122,15 +122,6 @@ namespace AwsWrapperDataProvider
             }
         }
 
-        public new void Dispose()
-        {
-            WrapperUtils.RunWithPlugins(
-                this._connectionPluginManager,
-                this._targetDataReader,
-                "DbDataReader.Dispose",
-                () => this._targetDataReader!.Dispose());
-        }
-
         public override bool GetBoolean(int i)
         {
             return WrapperUtils.ExecuteWithPlugins(
