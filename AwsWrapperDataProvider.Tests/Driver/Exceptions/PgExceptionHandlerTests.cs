@@ -68,7 +68,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.Exceptions
         public void IsNetworkException_WithPostgresException_ReturnsExpectedResult(string sqlState, bool expected)
         {
             var exception = new PostgresException("error", "sev", "invariant sev", sqlState);
-            var result = this._handler.IsNetworkException(exception, null);
+            var result = this._handler.IsNetworkException(exception);
             Assert.Equal(expected, result);
         }
 
@@ -80,7 +80,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.Exceptions
         public void IsLoginException_WithPostgresException_ReturnsExpectedResult(string sqlState, bool expected)
         {
             var exception = new PostgresException("error", "sev", "invariant sev", sqlState);
-            var result = this._handler.IsLoginException(exception, null);
+            var result = this._handler.IsLoginException(exception);
             Assert.Equal(expected, result);
         }
 
@@ -93,7 +93,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.Exceptions
             var innerException = new PostgresException("error", "sev", "invariant sev", sqlState);
             var exception = new Exception("Outer exception", innerException);
 
-            var result = this._handler.IsNetworkException(exception, null);
+            var result = this._handler.IsNetworkException(exception);
             Assert.Equal(expected, result);
         }
 
@@ -106,7 +106,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.Exceptions
             var innerException = new PostgresException("error", "sev", "invariant sev", sqlState);
             var exception = new Exception("Outer exception", innerException);
 
-            var result = this._handler.IsLoginException(exception, null);
+            var result = this._handler.IsLoginException(exception);
             Assert.Equal(expected, result);
         }
     }

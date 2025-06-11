@@ -31,15 +31,7 @@ public class GenericExceptionHandler : IExceptionHandler
 
     public virtual bool IsNetworkException(string sqlState) => this.NetworkErrorStates.Contains(sqlState);
 
-    public virtual bool IsNetworkException(Exception exception, ITargetConnectionDialect? targetDriverDialect) =>
-        this.ExceptionHasSqlState(exception, targetDriverDialect, this.NetworkErrorStates);
-
-    public virtual bool IsLoginException(string sqlState) => this.LoginErrorStates.Contains(sqlState);
-
-    public virtual bool IsLoginException(Exception exception, ITargetConnectionDialect? targetDriverDialect) =>
-        this.ExceptionHasSqlState(exception, targetDriverDialect, this.LoginErrorStates);
-
-    private bool ExceptionHasSqlState(Exception exception, ITargetConnectionDialect? targetDriverDialect, string[] sqlStates)
+    public virtual bool IsNetworkException(Exception exception)
     {
         Exception? currException = exception;
 
@@ -49,10 +41,48 @@ public class GenericExceptionHandler : IExceptionHandler
             {
                 string sqlState = dbException.SqlState ??
                                   string.Empty;
-                return sqlStates.Contains(sqlState);
+                return this.NetworkErrorStates.Contains(sqlState)
+                    || this.DbExceptionContainsTimeOutException(dbException);
             }
 
             currException = currException.InnerException;
+        }
+
+        return false;
+    }
+
+    public virtual bool IsLoginException(string sqlState) => this.LoginErrorStates.Contains(sqlState);
+
+    public virtual bool IsLoginException(Exception exception)
+    {
+        Exception? currException = exception;
+
+        while (currException is not null)
+        {
+            if (currException is DbException dbException)
+            {
+                string sqlState = dbException.SqlState ??
+                                  string.Empty;
+                return this.LoginErrorStates.Contains(sqlState);
+            }
+
+            currException = currException.InnerException;
+        }
+
+        return false;
+    }
+
+    private bool DbExceptionContainsTimeOutException(DbException exception)
+    {
+        Exception currentException = exception;
+
+        while (currentException is not null)
+        {
+            if (currentException is TimeoutException lol)
+            {
+                return true;
+            }
+            currentException = currentException.InnerException;
         }
 
         return false;

@@ -65,7 +65,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.Exceptions
         {
             var exception = new TestDbException(sqlState);
 
-            var result = this._handler.IsNetworkException(exception, null);
+            var result = this._handler.IsNetworkException(exception);
             Assert.Equal(expected, result);
         }
 
@@ -77,7 +77,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.Exceptions
         {
             var exception = new TestDbException(sqlState);
 
-            var result = this._handler.IsLoginException(exception, null);
+            var result = this._handler.IsLoginException(exception);
             Assert.Equal(expected, result);
         }
 
@@ -90,7 +90,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.Exceptions
             var innerException = new TestDbException(sqlState);
             var exception = new Exception("Outer exception", innerException);
 
-            var result = this._handler.IsNetworkException(exception, null);
+            var result = this._handler.IsNetworkException(exception);
             Assert.Equal(expected, result);
         }
 
@@ -103,7 +103,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.Exceptions
             var innerException = new TestDbException(sqlState);
             var exception = new Exception("Outer exception", innerException);
 
-            var result = this._handler.IsLoginException(exception, null);
+            var result = this._handler.IsLoginException(exception);
             Assert.Equal(expected, result);
         }
 
@@ -113,7 +113,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.Exceptions
         {
             var exception = new Exception("Not a DB exception");
 
-            var result = this._handler.IsNetworkException(exception, null);
+            var result = this._handler.IsNetworkException(exception);
             Assert.False(result);
         }
 
@@ -123,7 +123,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.Exceptions
         {
             var exception = new Exception("Not a DB exception");
 
-            var result = this._handler.IsLoginException(exception, null);
+            var result = this._handler.IsLoginException(exception);
             Assert.False(result);
         }
 

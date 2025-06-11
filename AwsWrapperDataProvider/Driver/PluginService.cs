@@ -197,7 +197,7 @@ public class PluginService : IPluginService, IHostListProviderService
 
     public bool IsLoginException(Exception exception)
     {
-        return this.Dialect.ExceptionHandler.IsLoginException(exception, this.TargetConnectionDialect);
+        return this.Dialect.ExceptionHandler.IsLoginException(exception);
     }
 
     public bool IsLoginException(string sqlState)
@@ -207,7 +207,7 @@ public class PluginService : IPluginService, IHostListProviderService
 
     public bool IsNetworkException(Exception exception)
     {
-        return this.Dialect.ExceptionHandler.IsNetworkException(exception, this.TargetConnectionDialect);
+        return this.Dialect.ExceptionHandler.IsNetworkException(exception);
     }
 
     public bool IsNetworkException(string sqlState)
