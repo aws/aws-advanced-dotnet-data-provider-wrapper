@@ -82,6 +82,7 @@ public class GenericExceptionHandler : IExceptionHandler
             {
                 return true;
             }
+
             currentException = currentException.InnerException;
         }
 
