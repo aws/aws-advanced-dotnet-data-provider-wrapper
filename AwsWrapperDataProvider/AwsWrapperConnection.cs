@@ -59,13 +59,13 @@ public class AwsWrapperConnection : DbConnection
         connection.GetType(),
         connection.ConnectionString,
         profile)
-    { }
-
-    public AwsWrapperConnection(DbConnection connection) : this(connection, null)
     {
         this.pluginService!.SetCurrentConnection(connection, this.pluginService.InitialConnectionHostSpec);
         this.database = connection.Database;
     }
+
+    public AwsWrapperConnection(DbConnection connection) : this(connection, null)
+    { }
 
     public AwsWrapperConnection(string connectionString, ConfigurationProfile? profile) : this(
         null,
