@@ -16,6 +16,7 @@ using System.Collections;
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.Dialects;
+using AwsWrapperDataProvider.Driver.Exceptions;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Plugins;
@@ -26,7 +27,7 @@ namespace AwsWrapperDataProvider.Driver;
 /// <summary>
 /// Interface for the plugin service that manages connection plugins and host list providers.
 /// </summary>
-public interface IPluginService
+public interface IPluginService : IExceptionHandlerService
 {
     IDialect Dialect { get; }
 

@@ -23,7 +23,7 @@ using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 
 namespace AwsWrapperDataProvider.Driver;
 
-public class PluginService : IPluginService, IHostListProviderService, IExceptionHandlerService
+public class PluginService : IPluginService, IHostListProviderService
 {
     private readonly ConnectionPluginManager pluginManager;
     private readonly Dictionary<string, string> props;
