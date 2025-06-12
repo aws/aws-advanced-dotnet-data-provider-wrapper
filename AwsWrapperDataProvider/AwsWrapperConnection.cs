@@ -14,10 +14,10 @@
 
 using System.Data;
 using System.Data.Common;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
 using AwsWrapperDataProvider.Driver;
+using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
@@ -56,19 +56,36 @@ public class AwsWrapperConnection : DbConnection
         }
     }
 
-    public AwsWrapperConnection(DbConnection connection) : this(connection.GetType(), connection.ConnectionString)
+    public AwsWrapperConnection(DbConnection connection, ConfigurationProfile? profile) : this(
+        connection.GetType(),
+        connection.ConnectionString,
+        profile)
     {
-        Debug.Assert(connection != null);
         this.pluginService!.SetCurrentConnection(connection, this.pluginService.InitialConnectionHostSpec);
         this.database = connection.Database;
     }
 
+    public AwsWrapperConnection(DbConnection connection) : this(connection, null)
+    { }
+
+    public AwsWrapperConnection(string connectionString, ConfigurationProfile? profile) : this(
+        null,
+        connectionString,
+        profile)
+    { }
+
     public AwsWrapperConnection(string connectionString) : this(null, connectionString) { }
 
-    public AwsWrapperConnection(Type? targetType, string connectionString) : base()
+    public AwsWrapperConnection(Type? targetType, string connectionString) : this(
+        targetType,
+        connectionString,
+        null)
+    { }
+
+    public AwsWrapperConnection(Type? targetType, string connectionString, ConfigurationProfile? profile) : base()
     {
         this.connectionString = connectionString;
-        this.ConnectionProperties = ConnectionPropertiesUtils.ParseConnectionStringParameters(this.connectionString);
+        this.ConnectionProperties = profile?.Properties ?? ConnectionPropertiesUtils.ParseConnectionStringParameters(this.connectionString);
         this.targetType = targetType ?? this.GetTargetType(this.ConnectionProperties);
         this.ConnectionProperties[PropertyDefinition.TargetConnectionType.Name] = this.targetType.AssemblyQualifiedName!;
 
@@ -78,7 +95,7 @@ public class AwsWrapperConnection : DbConnection
 
         this.PluginManager = new(connectionProvider, null, this);
 
-        PluginService pluginService = new(this.targetType, this.PluginManager, this.ConnectionProperties, this.connectionString, connectionDialect);
+        PluginService pluginService = new(this.targetType, this.PluginManager, this.ConnectionProperties, this.connectionString, connectionDialect, profile);
 
         this.pluginService = pluginService;
         this.hostListProviderService = pluginService;
@@ -211,9 +228,13 @@ public class AwsWrapperConnection : DbConnection
 
 public class AwsWrapperConnection<TConn> : AwsWrapperConnection where TConn : DbConnection
 {
-    public AwsWrapperConnection(string connectionString) : base(typeof(TConn), connectionString)
-    {
-    }
+    public AwsWrapperConnection(string connectionString) : base(typeof(TConn), connectionString) { }
+
+    public AwsWrapperConnection(string connectionString, ConfigurationProfile profile) : base(
+        typeof(TConn),
+        connectionString,
+        profile)
+    { }
 
     public new TConn? TargetDbConnection => this.pluginService?.CurrentConnection as TConn;
 }

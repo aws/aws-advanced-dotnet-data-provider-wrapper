@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Runtime.CompilerServices;
+using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.Utils;
 
 namespace AwsWrapperDataProvider.Driver.TargetConnectionDialects;
@@ -24,6 +26,14 @@ public static class TargetConnectionDialectProvider
         { typeof(MySqlConnector.MySqlConnection), typeof(MySqlConnectorDialect) },
         { typeof(MySql.Data.MySqlClient.MySqlConnection), typeof(MySqlClientDialect) },
     };
+
+    public static ITargetConnectionDialect GetDialect(
+        Type connectionType,
+        Dictionary<string, string>? props,
+        ConfigurationProfile? configurationProfile)
+    {
+        return configurationProfile?.TargetConnectionDialect ?? GetDialect(connectionType, props);
+    }
 
     public static ITargetConnectionDialect GetDialect(Type connectionType, Dictionary<string, string>? props)
     {

@@ -10,6 +10,7 @@
     <PackageReference Include="AWSSDK.RDS" Version="4.0.1" />
     <PackageReference Include="AWSSDK.SecretsManager" Version="4.0.0.4" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.5" />
     <PackageReference Include="MySql.Data" Version="9.3.0" />
     <PackageReference Include="MySqlConnector" Version="2.4.0" />
     <PackageReference Include="Npgsql" Version="9.0.3" />
@@ -18,6 +19,9 @@
   <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
         <_Parameter1>AwsWrapperDataProvider.Tests</_Parameter1>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+        <_Parameter1>AwsWrapperDataProvider.Benchmarks</_Parameter1>
     </AssemblyAttribute>
     <!-- Required for Moq to mock internal members -->
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
