@@ -51,17 +51,19 @@ public class PgExceptionHandler : GenericExceptionHandler
 
         while (currException is not null)
         {
+            if (currException is SocketException or TimeoutException)
+            {
+                return true;
+            }
+
             if (currException is DbException dbException)
             {
                 string sqlState = dbException.SqlState ??
                                   string.Empty;
-                return this.NetworkErrorStates.Contains(sqlState)
-                       || currException.InnerException is TimeoutException; // Check for invalid IP as hostname
-            }
-
-            if (currException is SocketException)
-            {
-                return true;
+                if (this.NetworkErrorStates.Contains(sqlState))
+                {
+                    return true;
+                }
             }
 
             currException = currException.InnerException;
