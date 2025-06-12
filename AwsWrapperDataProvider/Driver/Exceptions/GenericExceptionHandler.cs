@@ -31,29 +31,13 @@ public class GenericExceptionHandler : IExceptionHandler
 
     public virtual bool IsNetworkException(string sqlState) => this.NetworkErrorStates.Contains(sqlState);
 
-    public virtual bool IsNetworkException(Exception exception)
-    {
-        Exception? currException = exception;
-
-        while (currException is not null)
-        {
-            if (currException is DbException dbException)
-            {
-                string sqlState = dbException.SqlState ??
-                                  string.Empty;
-                return this.NetworkErrorStates.Contains(sqlState)
-                    || this.DbExceptionContainsTimeOutException(dbException);
-            }
-
-            currException = currException.InnerException;
-        }
-
-        return false;
-    }
+    public virtual bool IsNetworkException(Exception exception) => this.ExceptionHasSqlState(exception, this.NetworkErrorStates);
 
     public virtual bool IsLoginException(string sqlState) => this.LoginErrorStates.Contains(sqlState);
 
-    public virtual bool IsLoginException(Exception exception)
+    public virtual bool IsLoginException(Exception exception) => this.ExceptionHasSqlState(exception, this.LoginErrorStates);
+
+    protected bool ExceptionHasSqlState(Exception exception, string[] sqlStates)
     {
         Exception? currException = exception;
 
@@ -63,7 +47,7 @@ public class GenericExceptionHandler : IExceptionHandler
             {
                 string sqlState = dbException.SqlState ??
                                   string.Empty;
-                return this.LoginErrorStates.Contains(sqlState);
+                return sqlStates.Contains(sqlState);
             }
 
             currException = currException.InnerException;
@@ -72,7 +56,7 @@ public class GenericExceptionHandler : IExceptionHandler
         return false;
     }
 
-    private bool DbExceptionContainsTimeOutException(DbException exception)
+    protected bool DbExceptionContainsTimeOutException(DbException exception)
     {
         Exception currentException = exception;
 

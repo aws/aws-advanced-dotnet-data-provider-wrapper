@@ -13,6 +13,8 @@
 // limitations under the License.
 
 using System.Data.Common;
+using System.Net.Sockets;
+using System.Runtime.InteropServices.Marshalling;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using Npgsql;
 
@@ -42,4 +44,29 @@ public class PgExceptionHandler : GenericExceptionHandler
     protected override string[] NetworkErrorStates => this._networkErrorStates;
 
     protected override string[] LoginErrorStates => this._loginErrorStates;
+
+    public override bool IsNetworkException(Exception exception)
+    {
+        Exception? currException = exception;
+
+        while (currException is not null)
+        {
+            if (currException is DbException dbException)
+            {
+                string sqlState = dbException.SqlState ??
+                                  string.Empty;
+                return this.NetworkErrorStates.Contains(sqlState)
+                       || this.DbExceptionContainsTimeOutException(dbException);
+            }
+
+            if (currException is SocketException)
+            {
+                return true;
+            }
+
+            currException = currException.InnerException;
+        }
+
+        return false;
+    }
 }

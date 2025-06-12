@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data.Common;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using MySql.Data.MySqlClient;
 
@@ -22,7 +23,7 @@ public class MySqlExceptionHandler : GenericExceptionHandler
     // TODO: Check if we need to handle HikariMariaDb exception codes as well.
     private readonly string[] _networkErrorStates =
     {
-        "08000", // Connection Exception
+        "08000", // Connection Exceptio n
         "08001", // SQL client unable to establish SQL connection
         "08004", // SQL server rejected SQL connection
         "08S01", // Communication link failure
@@ -36,4 +37,25 @@ public class MySqlExceptionHandler : GenericExceptionHandler
     protected override string[] NetworkErrorStates => this._networkErrorStates;
 
     protected override string[] LoginErrorStates => this._loginErrorStates;
+
+    public override bool IsNetworkException(Exception exception)
+    {
+        Exception? currException = exception;
+
+        while (currException is not null)
+        {
+            if (currException is DbException dbException)
+            {
+                string sqlState = dbException.SqlState ??
+                                  string.Empty;
+                return this.NetworkErrorStates.Contains(sqlState)
+                       || dbException.InnerException is ArgumentException
+                       || this.DbExceptionContainsTimeOutException(dbException);
+            }
+
+            currException = currException.InnerException;
+        }
+
+        return false;
+    }
 }
