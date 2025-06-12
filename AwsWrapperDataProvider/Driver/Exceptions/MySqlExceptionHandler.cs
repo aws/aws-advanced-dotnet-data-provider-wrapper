@@ -23,7 +23,7 @@ public class MySqlExceptionHandler : GenericExceptionHandler
     // TODO: Check if we need to handle HikariMariaDb exception codes as well.
     private readonly string[] _networkErrorStates =
     {
-        "08000", // Connection Exceptio n
+        "08000", // Connection Exception
         "08001", // SQL client unable to establish SQL connection
         "08004", // SQL server rejected SQL connection
         "08S01", // Communication link failure
