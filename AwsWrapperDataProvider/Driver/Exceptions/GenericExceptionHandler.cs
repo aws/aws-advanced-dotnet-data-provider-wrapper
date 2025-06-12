@@ -55,21 +55,4 @@ public class GenericExceptionHandler : IExceptionHandler
 
         return false;
     }
-
-    protected bool DbExceptionContainsTimeOutException(DbException exception)
-    {
-        Exception currentException = exception;
-
-        while (currentException is not null)
-        {
-            if (currentException is TimeoutException lol)
-            {
-                return true;
-            }
-
-            currentException = currentException.InnerException;
-        }
-
-        return false;
-    }
 }

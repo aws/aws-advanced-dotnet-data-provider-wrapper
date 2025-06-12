@@ -50,7 +50,7 @@ public class MySqlExceptionHandler : GenericExceptionHandler
                                   string.Empty;
                 return this.NetworkErrorStates.Contains(sqlState)
                        || dbException.InnerException is ArgumentException
-                       || this.DbExceptionContainsTimeOutException(dbException);
+                       || dbException.InnerException?.InnerException is TimeoutException; // Check for invalid IP as hostname
             }
 
             currException = currException.InnerException;

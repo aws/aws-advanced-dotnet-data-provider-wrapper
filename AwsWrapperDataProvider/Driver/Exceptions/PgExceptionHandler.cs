@@ -56,7 +56,7 @@ public class PgExceptionHandler : GenericExceptionHandler
                 string sqlState = dbException.SqlState ??
                                   string.Empty;
                 return this.NetworkErrorStates.Contains(sqlState)
-                       || this.DbExceptionContainsTimeOutException(dbException);
+                       || currException.InnerException is TimeoutException; // Check for invalid IP as hostname
             }
 
             if (currException is SocketException)
