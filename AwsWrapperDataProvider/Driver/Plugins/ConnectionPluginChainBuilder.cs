@@ -68,7 +68,6 @@ public class ConnectionPluginChainBuilder
 
             foreach (string pluginCode in pluginsCodesArray)
             {
-                throw new Exception(string.Format(Properties.Resources.Error_UnknownPluginCode, pluginCode));
                 if (!PluginFactoryTypesByCode.TryGetValue(pluginCode, out Type? pluginFactoryType))
                 {
                     throw new Exception(string.Format(Properties.Resources.Error_UnknownPluginCode, pluginCode));
@@ -77,7 +76,7 @@ public class ConnectionPluginChainBuilder
                 IConnectionPluginFactory? factoryInstance = (IConnectionPluginFactory?)Activator.CreateInstance(pluginFactoryType);
                 if (factoryInstance == null)
                 {
-                    throw new Exception(string.Format(Properties.Resources.Error_UnknownPluginCode, pluginCode));
+                    throw new Exception(string.Format(Properties.Resources.Error_UnableToLoadPlugin, pluginCode));
                 }
 
                 pluginFactories.Add(factoryInstance);

@@ -15,6 +15,7 @@
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.HostInfo;
+using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Plugins;
 
 namespace AwsWrapperDataProvider.Benchmarks.Mocks;

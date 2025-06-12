@@ -14,6 +14,7 @@
 
 using System.Data;
 using AwsWrapperDataProvider.Driver.Dialects;
+using AwsWrapperDataProvider.Driver.Exceptions;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 
@@ -29,6 +30,8 @@ public class MockDialect : IDialect
     public HostListProviderSupplier HostListProviderSupplier { get; } = (props,
         hostListProviderService,
         pluginService) => new ConnectionStringHostListProvider(props, hostListProviderService);
+
+    public IExceptionHandler ExceptionHandler { get; } = new GenericExceptionHandler();
 
     public bool IsDialect(IDbConnection conn) => true;
 

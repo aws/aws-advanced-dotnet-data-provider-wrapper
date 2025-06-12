@@ -46,11 +46,34 @@ public class MySqlExceptionHandler : GenericExceptionHandler
         {
             if (currException is DbException dbException)
             {
+                return this.IsNetworkException(dbException);
+            }
+
+            currException = currException.InnerException;
+        }
+
+        return false;
+    }
+
+    private bool IsNetworkException(DbException exception)
+    {
+        Exception? currException = exception;
+
+        while (currException is not null)
+        {
+            if (currException is ArgumentException or TimeoutException)
+            {
+                return true;
+            }
+
+            if (currException is DbException dbException)
+            {
                 string sqlState = dbException.SqlState ??
                                   string.Empty;
-                return this.NetworkErrorStates.Contains(sqlState)
-                       || dbException.InnerException is ArgumentException
-                       || dbException.InnerException?.InnerException is TimeoutException; // Check for invalid IP as hostname
+                if (this.NetworkErrorStates.Contains(sqlState))
+                {
+                    return true;
+                }
             }
 
             currException = currException.InnerException;
