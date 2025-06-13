@@ -141,7 +141,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.Exceptions
 
         private class TestGenericExceptionHandler : GenericExceptionHandler
         {
-            public TestGenericExceptionHandler(HashSet<string> networkErrorStates,HashSet<string> loginErrorStates)
+            public TestGenericExceptionHandler(HashSet<string> networkErrorStates, HashSet<string> loginErrorStates)
             {
                 this._networkErrorStatesValue = networkErrorStates;
                 this._loginErrorStatesValue = loginErrorStates;
