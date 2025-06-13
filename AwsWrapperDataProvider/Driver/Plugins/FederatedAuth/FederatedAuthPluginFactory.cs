@@ -20,16 +20,10 @@ public class FederatedAuthPluginFactory : IConnectionPluginFactory
 {
     public IConnectionPlugin GetInstance(IPluginService pluginService, Dictionary<string, string> props)
     {
-        string? idpName = PropertyDefinition.IdpName.GetString(props);
-        CredentialsProviderFactory? credentialsProviderFactory = null;
-
-        if (idpName == null || idpName.Equals(AdfsCredentialsProviderFactory.IdpName, StringComparison.CurrentCultureIgnoreCase))
-        {
-            credentialsProviderFactory = new AdfsCredentialsProviderFactory(pluginService);
-        }
+        CredentialsProviderFactory? credentialsProviderFactory = new AdfsCredentialsProviderFactory(pluginService);
 
         return credentialsProviderFactory == null
-            ? throw new Exception("IDP name unknown")
+            ? throw new Exception("Could not create credentials provider factory for federated authentication")
             : (IConnectionPlugin)new FederatedAuthPlugin(pluginService, props, credentialsProviderFactory);
     }
 }

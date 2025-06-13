@@ -18,10 +18,13 @@ namespace AwsWrapperDataProvider.Driver.Plugins.FederatedAuth;
 
 public class HttpClientProvider
 {
-    private static readonly HttpClient Client = new();
+    private static HttpClient? client;
 
     public static HttpClient GetHttpClient()
     {
-        return Client;
+        // lazily create http client
+        client ??= new HttpClient();
+
+        return client;
     }
 }

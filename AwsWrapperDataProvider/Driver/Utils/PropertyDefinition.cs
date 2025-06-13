@@ -115,9 +115,6 @@ public static class PropertyDefinition
     public static readonly AwsWrapperProperty IdpPassword = new(
         "idpPassword", null, "The federated user password");
 
-    public static readonly AwsWrapperProperty IdpName = new(
-        "idpName", "adfs", "The name of the Identity Provider implementation used");
-
     public static readonly AwsWrapperProperty RelayingPartyId = new(
         "rpIdentifier", "urn:amazon:webservices", "The relaying party identifier");
 
@@ -149,7 +146,6 @@ public static class PropertyDefinition
         IdpPort,
         IdpUsername,
         IdpPassword,
-        IdpName,
         RelayingPartyId,
         DbUser,
         ClusterTopologyRefreshRateMs,
