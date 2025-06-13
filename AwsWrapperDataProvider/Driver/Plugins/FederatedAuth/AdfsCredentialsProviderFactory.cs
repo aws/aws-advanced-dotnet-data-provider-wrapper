@@ -20,10 +20,10 @@ namespace AwsWrapperDataProvider.Driver.Plugins.FederatedAuth;
 
 public partial class AdfsCredentialsProviderFactory(IPluginService pluginService) : SamlCredentialsProviderFactory
 {
-    [GeneratedRegex("<input(.+?)/>", RegexOptions.IgnoreCase, "en-CA")]
+    [GeneratedRegex("<input(.+?)/>", RegexOptions.IgnoreCase | RegexOptions.Singleline, "en-CA")]
     private static partial Regex InputTagPattern();
 
-    [GeneratedRegex("<form.*?action=\"([^\"]+)\"", RegexOptions.IgnoreCase, "en-CA")]
+    [GeneratedRegex("<form.*?action=\"([^\"]+)\"", RegexOptions.IgnoreCase | RegexOptions.Singleline, "en-CA")]
     private static partial Regex FormActionPattern();
 
     private readonly IPluginService pluginService = pluginService;

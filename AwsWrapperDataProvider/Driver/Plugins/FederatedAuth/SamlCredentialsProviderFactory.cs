@@ -16,6 +16,7 @@ using Amazon;
 using Amazon.Runtime;
 using Amazon.SecurityToken;
 using Amazon.SecurityToken.Model;
+using AwsWrapperDataProvider.Driver.Utils;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.FederatedAuth;
 
@@ -34,11 +35,13 @@ public abstract class SamlCredentialsProviderFactory : CredentialsProviderFactor
     public override AWSCredentialsProvider GetAwsCredentialsProvider(string host, RegionEndpoint region, Dictionary<string, string> props)
     {
         string samlAssertion = this.GetSamlAssertion(props);
+        string roleArn = PropertyDefinition.IamRoleArn.GetString(props) ?? throw new Exception("Missing IAM role ARN");
+        string principalArn = PropertyDefinition.IamIdpArn.GetString(props) ?? throw new Exception("Missing IAM IDP ARN");
 
         AmazonSecurityTokenServiceClient client = new(region);
 
         AssumeRoleWithSAMLResponse result = client.AssumeRoleWithSAMLAsync(
-            new AssumeRoleWithSAMLRequest { SAMLAssertion = samlAssertion })
+            new AssumeRoleWithSAMLRequest { SAMLAssertion = samlAssertion, RoleArn = roleArn, PrincipalArn = principalArn })
             .GetAwaiter().GetResult();
 
         return new SamlAWSCredentialsProvider(result.Credentials);

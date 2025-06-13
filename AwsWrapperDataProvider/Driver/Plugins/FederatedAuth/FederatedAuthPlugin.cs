@@ -55,6 +55,12 @@ public partial class FederatedAuthPlugin(IPluginService pluginService, Dictionar
 
         string host = PropertyDefinition.IamHost.GetString(props) ?? hostSpec?.Host ?? string.Empty;
         int port = PropertyDefinition.IamDefaultPort.GetInt(props) ?? hostSpec?.Port ?? this.pluginService.Dialect.DefaultPort;
+
+        if (port <= 0)
+        {
+            port = this.pluginService.Dialect.DefaultPort;
+        }
+
         string region = RegionUtils.GetRegion(host, props, PropertyDefinition.IamRegion) ?? throw new Exception("Failed to determine region");
         string dbUser = PropertyDefinition.DbUser.GetString(props) ?? throw new Exception("Failed not determine db user");
 
@@ -77,7 +83,7 @@ public partial class FederatedAuthPlugin(IPluginService pluginService, Dictionar
         {
             methodFunc();
         }
-        catch
+        catch (Exception ex)
         {
             // should the token not work (expired on the server), generate a new one and try again
             if (isCachedToken)
@@ -86,7 +92,7 @@ public partial class FederatedAuthPlugin(IPluginService pluginService, Dictionar
             }
             else
             {
-                throw new Exception("Failed to connect; token generation may be at fault.");
+                throw new Exception("Failed to connect; token generation may be at fault.", ex);
             }
 
             methodFunc();
