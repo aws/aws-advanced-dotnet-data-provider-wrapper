@@ -24,10 +24,10 @@ namespace AwsWrapperDataProvider.Driver.Exceptions;
 public class GenericExceptionHandler : IExceptionHandler
 {
     // Common SQL states for network-related issues across different databases
-    protected virtual string[] NetworkErrorStates => [];
+    protected virtual HashSet<string> NetworkErrorStates => new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
     // Common SQL states for authentication-related issues across different databases
-    protected virtual string[] LoginErrorStates => [];
+    protected virtual HashSet<string> LoginErrorStates => new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
     public virtual bool IsNetworkException(string sqlState) => this.NetworkErrorStates.Contains(sqlState);
 
@@ -37,7 +37,7 @@ public class GenericExceptionHandler : IExceptionHandler
 
     public virtual bool IsLoginException(Exception exception) => this.ExceptionHasSqlState(exception, this.LoginErrorStates);
 
-    protected bool ExceptionHasSqlState(Exception exception, string[] sqlStates)
+    protected bool ExceptionHasSqlState(Exception exception, HashSet<string> sqlStates)
     {
         Exception? currException = exception;
 

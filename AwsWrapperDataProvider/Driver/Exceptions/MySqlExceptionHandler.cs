@@ -21,7 +21,7 @@ namespace AwsWrapperDataProvider.Driver.Exceptions;
 public class MySqlExceptionHandler : GenericExceptionHandler
 {
     // TODO: Check if we need to handle HikariMariaDb exception codes as well.
-    private readonly string[] _networkErrorStates =
+    private readonly HashSet<string> _networkErrorStates = new HashSet<string>
     {
         "08000", // Connection Exception
         "08001", // SQL client unable to establish SQL connection
@@ -29,14 +29,14 @@ public class MySqlExceptionHandler : GenericExceptionHandler
         "08S01", // Communication link failure
     };
 
-    private readonly string[] _loginErrorStates =
+    private readonly HashSet<string> _loginErrorStates = new HashSet<string>
     {
         "28000", // Invalid authorization specification
     };
 
-    protected override string[] NetworkErrorStates => this._networkErrorStates;
+    protected override HashSet<string> NetworkErrorStates => this._networkErrorStates;
 
-    protected override string[] LoginErrorStates => this._loginErrorStates;
+    protected override HashSet<string> LoginErrorStates => this._loginErrorStates;
 
     public override bool IsNetworkException(Exception exception)
     {

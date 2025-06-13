@@ -22,7 +22,7 @@ namespace AwsWrapperDataProvider.Driver.Exceptions;
 
 public class PgExceptionHandler : GenericExceptionHandler
 {
-    private readonly string[] _networkErrorStates =
+    private readonly HashSet<string> _networkErrorStates = new HashSet<string>
     {
         "53", // insufficient resources
         "57P01", // admin shutdown
@@ -35,15 +35,15 @@ public class PgExceptionHandler : GenericExceptionHandler
         "XX", // internal error (backend)
     };
 
-    private readonly string[] _loginErrorStates =
+    private readonly HashSet<string> _loginErrorStates = new HashSet<string>
     {
         "28000", // Invalid authorization specification
         "28P01", // Wrong password
     };
 
-    protected override string[] NetworkErrorStates => this._networkErrorStates;
+    protected override HashSet<string> NetworkErrorStates => this._networkErrorStates;
 
-    protected override string[] LoginErrorStates => this._loginErrorStates;
+    protected override HashSet<string> LoginErrorStates => this._loginErrorStates;
 
     public override bool IsNetworkException(Exception exception)
     {
