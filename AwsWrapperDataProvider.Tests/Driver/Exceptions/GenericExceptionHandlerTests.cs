@@ -23,8 +23,8 @@ namespace AwsWrapperDataProvider.Tests.Driver.Exceptions
 {
     public class GenericExceptionHandlerTests
     {
-        private readonly string[] _networkStates = { "08001", "08S01" };
-        private readonly string[] _loginStates = { "28000", "28P01" };
+        private readonly HashSet<string> _networkStates = new HashSet<string> { "08001", "08S01" };
+        private readonly HashSet<string> _loginStates = new HashSet<string> { "28000", "28P01" };
 
         private readonly IExceptionHandler _handler;
 
@@ -141,17 +141,17 @@ namespace AwsWrapperDataProvider.Tests.Driver.Exceptions
 
         private class TestGenericExceptionHandler : GenericExceptionHandler
         {
-            public TestGenericExceptionHandler(string[] networkErrorStates, string[] loginErrorStates)
+            public TestGenericExceptionHandler(HashSet<string> networkErrorStates,HashSet<string> loginErrorStates)
             {
                 this._networkErrorStatesValue = networkErrorStates;
                 this._loginErrorStatesValue = loginErrorStates;
             }
 
-            private readonly string[] _networkErrorStatesValue;
-            private readonly string[] _loginErrorStatesValue;
+            private readonly HashSet<string> _networkErrorStatesValue;
+            private readonly HashSet<string> _loginErrorStatesValue;
 
-            protected override string[] NetworkErrorStates => this._networkErrorStatesValue;
-            protected override string[] LoginErrorStates => this._loginErrorStatesValue;
+            protected override HashSet<string> NetworkErrorStates => this._networkErrorStatesValue;
+            protected override HashSet<string> LoginErrorStates => this._loginErrorStatesValue;
         }
     }
 }
