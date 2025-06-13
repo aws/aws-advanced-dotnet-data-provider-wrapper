@@ -13,6 +13,8 @@
 // limitations under the License.
 
 using System.Data;
+
+using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Caching.Memory;
@@ -44,6 +46,13 @@ public class DialectProvider
         { typeof(AuroraPgDialect), new AuroraPgDialect() },
         { typeof(UnknownDialect), new UnknownDialect() },
     };
+
+    public IDialect GuessDialect(
+        Dictionary<string, string> props,
+        ConfigurationProfile? configurationProfile)
+    {
+        return configurationProfile?.Dialect ?? this.GuessDialect(props);
+    }
 
     private static readonly Dictionary<(RdsUrlType UrlType, string DatasourceType), Type> DialectTypeMap = new()
     {

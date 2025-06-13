@@ -16,6 +16,7 @@ using System.Data;
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Dialects;
+using AwsWrapperDataProvider.Driver.Exceptions;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
 using Moq;
@@ -236,6 +237,8 @@ public class DialectProviderTests
         public string ServerVersionQuery => "SELECT 'version'";
         public IList<Type> DialectUpdateCandidates => new List<Type>();
         public HostListProviderSupplier HostListProviderSupplier => (props, service, pluginService) => null;
+
+        public IExceptionHandler ExceptionHandler => new GenericExceptionHandler();
 
         public bool IsDialect(IDbConnection conn) => true;
 

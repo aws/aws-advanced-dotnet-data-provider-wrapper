@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data.Common;
+using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.Exceptions;
@@ -49,14 +50,15 @@ public class PluginService : IPluginService, IHostListProviderService
         ConnectionPluginManager pluginManager,
         Dictionary<string, string> props,
         string connectionString,
-        ITargetConnectionDialect targetConnectionDialect)
+        ITargetConnectionDialect? targetConnectionDialect,
+        ConfigurationProfile? configurationProfile)
     {
         this.pluginManager = pluginManager;
         this.props = props;
         this.originalConnectionString = connectionString;
-        this.TargetConnectionDialect = targetConnectionDialect;
+        this.TargetConnectionDialect = configurationProfile?.TargetConnectionDialect ?? targetConnectionDialect ?? throw new ArgumentNullException(nameof(targetConnectionDialect));
         this.dialectProvider = new(this);
-        this.Dialect = this.dialectProvider.GuessDialect(this.props);
+        this.Dialect = configurationProfile?.Dialect ?? this.dialectProvider.GuessDialect(this.props);
         this.hostListProvider =
             this.Dialect.HostListProviderSupplier(this.props, this, this)
             ?? throw new InvalidOperationException(); // TODO : throw proper error
@@ -193,5 +195,25 @@ public class PluginService : IPluginService, IHostListProviderService
     private void NotifyNodeChangeList(IList<HostSpec> oldHosts, IList<HostSpec> updateHosts)
     {
         // TODO: create NodeChangeList based on changes to hosts and call pluginManager.NotifyNodeChangeList.
+    }
+
+    public bool IsLoginException(Exception exception)
+    {
+        return this.Dialect.ExceptionHandler.IsLoginException(exception);
+    }
+
+    public bool IsLoginException(string sqlState)
+    {
+        return this.Dialect.ExceptionHandler.IsLoginException(sqlState);
+    }
+
+    public bool IsNetworkException(Exception exception)
+    {
+        return this.Dialect.ExceptionHandler.IsNetworkException(exception);
+    }
+
+    public bool IsNetworkException(string sqlState)
+    {
+        return this.Dialect.ExceptionHandler.IsNetworkException(sqlState);
     }
 }

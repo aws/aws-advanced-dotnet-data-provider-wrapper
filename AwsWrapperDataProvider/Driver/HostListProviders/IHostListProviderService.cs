@@ -15,9 +15,8 @@
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
-using AwsWrapperDataProvider.Driver.HostListProviders;
 
-namespace AwsWrapperDataProvider.Driver;
+namespace AwsWrapperDataProvider.Driver.HostListProviders;
 
 /// <summary>
 /// Interface for the host list provider service that manages host list providers.

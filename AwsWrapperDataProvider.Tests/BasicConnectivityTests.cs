@@ -101,8 +101,7 @@ namespace AwsWrapperDataProvider.Tests
         {
             const string connectionString = "Server=<insert_rds_instance_here>;User ID=admin;Password=my_password_2020;Initial Catalog=test;" +
                 "TargetConnectionType=MySqlConnector.MySqlConnection,MySqlConnector;" +
-                "TargetCommandType=MySqlConnector.MySqlCommand,MySqlConnector;" +
-                "TargetParameterType=MySqlConnector.MySqlParameter,MySqlConnector";
+                "TargetCommandType=MySqlConnector.MySqlCommand,MySqlConnector";
 
             const string query = "select @@aurora_server_id";
 
@@ -197,8 +196,7 @@ namespace AwsWrapperDataProvider.Tests
             const string connectionString =
                 "Host=<insert_rds_instance_here>;Username=pgadmin;Password=my_password_2020;Database=postgres;" +
                 "TargetConnectionType=Npgsql.NpgsqlConnection,Npgsql;" +
-                "TargetCommandType=Npgsql.NpgsqlCommand,Npgsql;" +
-                "TargetParameterType=Npgsql.NpgsqlParameter,Npgsql";
+                "TargetCommandType=Npgsql.NpgsqlCommand,Npgsql";
 
             const string query = "select aurora_db_instance_identifier()";
 
