@@ -24,6 +24,8 @@ namespace AwsWrapperDataProvider.Driver.Plugins.FederatedAuth;
 
 public partial class FederatedAuthPlugin(IPluginService pluginService, Dictionary<string, string> props, CredentialsProviderFactory credentialsFactory) : AbstractConnectionPlugin
 {
+    public static readonly int DefaultHttpTimeoutMs = 60000;
+
     private static readonly ISet<string> SubscribeMethods = new HashSet<string> { "DbConnection.Open", "DbConnection.OpenAsync" };
 
     private static readonly MemoryCache IamTokenCache = new(new MemoryCacheOptions());

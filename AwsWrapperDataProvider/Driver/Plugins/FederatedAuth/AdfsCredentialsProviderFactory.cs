@@ -192,7 +192,8 @@ public partial class AdfsCredentialsProviderFactory(IPluginService pluginService
 
     public override string GetSamlAssertion(Dictionary<string, string> props)
     {
-        HttpClient httpClient = HttpClientProvider.GetHttpClient();
+        int connectionTimeoutMs = PropertyDefinition.HttpClientConnectTimeout.GetInt(props) ?? FederatedAuthPlugin.DefaultHttpTimeoutMs;
+        HttpClient httpClient = HttpClientFactory.GetDisposableHttpClient(connectionTimeoutMs);
 
         string uri = GetSignInPageUrl(props);
         string signInPageBody = GetSignInPageBody(httpClient, uri);
@@ -208,6 +209,7 @@ public partial class AdfsCredentialsProviderFactory(IPluginService pluginService
 
         Match samlMatch = FederatedAuthPlugin.SamlResponsePattern().Match(content) ?? throw new Exception("Failed login");
 
+        httpClient.Dispose();
         return samlMatch.Groups[FederatedAuthPlugin.SamlResponsePatternGroup].Value;
     }
 }
