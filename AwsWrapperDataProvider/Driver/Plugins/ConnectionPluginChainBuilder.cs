@@ -70,13 +70,13 @@ public class ConnectionPluginChainBuilder
             {
                 if (!PluginFactoryTypesByCode.TryGetValue(pluginCode, out Type? pluginFactoryType))
                 {
-                    throw new Exception($"ConnectionPluginManager.unknownPluginCode: {pluginCode}");
+                    throw new Exception(string.Format(Properties.Resources.Error_UnknownPluginCode, pluginCode));
                 }
 
                 IConnectionPluginFactory? factoryInstance = (IConnectionPluginFactory?)Activator.CreateInstance(pluginFactoryType);
                 if (factoryInstance == null)
                 {
-                    throw new Exception($"ConnectionPluginManager.unableToLoadPlugin: {pluginCode}");
+                    throw new Exception(string.Format(Properties.Resources.Error_UnableToLoadPlugin, pluginCode));
                 }
 
                 pluginFactories.Add(factoryInstance);

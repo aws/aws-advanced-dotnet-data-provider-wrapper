@@ -196,4 +196,24 @@ public class PluginService : IPluginService, IHostListProviderService
     {
         // TODO: create NodeChangeList based on changes to hosts and call pluginManager.NotifyNodeChangeList.
     }
+
+    public bool IsLoginException(Exception exception)
+    {
+        return this.Dialect.ExceptionHandler.IsLoginException(exception);
+    }
+
+    public bool IsLoginException(string sqlState)
+    {
+        return this.Dialect.ExceptionHandler.IsLoginException(sqlState);
+    }
+
+    public bool IsNetworkException(Exception exception)
+    {
+        return this.Dialect.ExceptionHandler.IsNetworkException(exception);
+    }
+
+    public bool IsNetworkException(string sqlState)
+    {
+        return this.Dialect.ExceptionHandler.IsNetworkException(sqlState);
+    }
 }

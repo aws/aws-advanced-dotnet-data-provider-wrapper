@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using AwsWrapperDataProvider.Driver.HostInfo;
+using AwsWrapperDataProvider.Driver.HostListProviders;
 
 namespace AwsWrapperDataProvider.Driver.Plugins;
 

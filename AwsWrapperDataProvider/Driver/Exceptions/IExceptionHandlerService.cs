@@ -17,23 +17,16 @@ using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 namespace AwsWrapperDataProvider.Driver.Exceptions;
 
 /// <summary>
-/// Interface for handling database exceptions and categorizing them.
+/// Service interface for handling database exceptions and categorizing them.
 /// </summary>
-public interface IExceptionHandler
+public interface IExceptionHandlerService
 {
     /// <summary>
-    /// Determines if the given SQL state represents a network exception.
-    /// </summary>
-    /// <param name="sqlState">The SQL state code.</param>
-    /// <returns>True if it's a network exception, false otherwise.</returns>
-    bool IsNetworkException(string sqlState);
-
-    /// <summary>
-    /// Determines if the given exception is a network exception.
+    /// Determines if the given exception is a login exception.
     /// </summary>
     /// <param name="exception">The exception to check.</param>
-    /// <returns>True if it's a network exception, false otherwise.</returns>
-    bool IsNetworkException(Exception exception);
+    /// <returns>True if it's a login exception, false otherwise.</returns>
+    bool IsLoginException(Exception exception);
 
     /// <summary>
     /// Determines if the given SQL state represents a login exception.
@@ -43,9 +36,16 @@ public interface IExceptionHandler
     bool IsLoginException(string sqlState);
 
     /// <summary>
-    /// Determines if the given exception is a login exception.
+    /// Determines if the given exception is a network exception.
     /// </summary>
     /// <param name="exception">The exception to check.</param>
-    /// <returns>True if it's a login exception, false otherwise.</returns>
-    bool IsLoginException(Exception exception);
+    /// <returns>True if it's a network exception, false otherwise.</returns>
+    bool IsNetworkException(Exception exception);
+
+    /// <summary>
+    /// Determines if the given SQL state represents a network exception.
+    /// </summary>
+    /// <param name="sqlState">The SQL state code.</param>
+    /// <returns>True if it's a network exception, false otherwise.</returns>
+    bool IsNetworkException(string sqlState);
 }

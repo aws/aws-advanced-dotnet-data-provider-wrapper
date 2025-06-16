@@ -19,6 +19,7 @@ using System.Diagnostics.CodeAnalysis;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
+using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
 
@@ -147,7 +148,7 @@ public class AwsWrapperConnection : DbConnection
     {
         if (this.State != ConnectionState.Closed)
         {
-            throw new InvalidOperationException("Connection is already open.");
+            throw new InvalidOperationException(Properties.Resources.Error_ConnectionAlreadyOpen);
         }
 
         ArgumentNullException.ThrowIfNull(this.pluginService);
@@ -210,18 +211,18 @@ public class AwsWrapperConnection : DbConnection
                 Type? targetType = Type.GetType(targetConnectionTypeString);
                 if (targetType == null)
                 {
-                    throw new Exception("Can't load target connection type " + targetConnectionTypeString);
+                    throw new Exception(string.Format(Properties.Resources.Error_CantLoadTargetConnectionType, targetConnectionTypeString));
                 }
 
                 return targetType;
             }
             catch
             {
-                throw new Exception("Can't load target connection type " + targetConnectionTypeString);
+                throw new Exception(string.Format(Properties.Resources.Error_CantLoadTargetConnectionType, targetConnectionTypeString));
             }
         }
 
-        throw new Exception($"Can't load target connection type {targetConnectionTypeString}");
+        throw new Exception(string.Format(Properties.Resources.Error_CantLoadTargetConnectionType, targetConnectionTypeString));
     }
 }
 
