@@ -22,12 +22,12 @@ namespace AwsWrapperDataProvider.Driver.Plugins.AuroraInitialConnectionStrategy;
 
 public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
 {
-    //TODO: Add logger
+    // TODO: Add logger
 
-    private IPluginService pluginService;
+    private readonly IPluginService pluginService;
+    private readonly VerifyOpenedConnectionType? verifyOpenedConnectionType;
+
     private IHostListProviderService? hostListProviderService;
-    private VerifyOpenedConnectionType? verifyOpenedConnectionType;
-
     public AuroraInitialConnectionStrategyPlugin(IPluginService pluginService, Dictionary<string, string> props)
     {
         this.pluginService = pluginService;
@@ -94,6 +94,8 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
         bool isInitialConnection,
         ADONetDelegate methodFunc)
     {
+        ArgumentNullException.ThrowIfNull(this.hostListProviderService);
+
         int retryDelay = (int)PropertyDefinition.OpenConnectionRetryIntervalMs.GetInt(props)!;
         long endTimeMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
                          + (long)PropertyDefinition.OpenConnectionRetryTimeoutMs.GetLong(props)!;
@@ -157,11 +159,12 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
                     throw;
                 }
 
-                if (writerCandidate != null) {
+                if (writerCandidate != null)
+                {
                     this.pluginService.SetAvailability(writerCandidate.AsAliases(), HostAvailability.Unavailable);
                 }
             }
-            catch (Exception exception)
+            catch
             {
                 this.CloseConnection(writerConnectionCandidate);
                 throw;
@@ -176,6 +179,8 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
         bool isInitialConnection,
         ADONetDelegate methodFunc)
     {
+        ArgumentNullException.ThrowIfNull(this.hostListProviderService);
+
         int retryDelay = (int)PropertyDefinition.OpenConnectionRetryIntervalMs.GetInt(props)!;
         long endTimeMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
                          + (long)PropertyDefinition.OpenConnectionRetryTimeoutMs.GetLong(props)!;
@@ -215,6 +220,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
 
                             return readerConnectionCandidate;
                         }
+
                         this.CloseConnection(readerConnectionCandidate);
                         Task.Delay(retryDelay);
                         continue;
@@ -265,11 +271,12 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
                     throw;
                 }
 
-                if (readerCandidate != null) {
+                if (readerCandidate != null)
+                {
                     this.pluginService.SetAvailability(readerCandidate.AsAliases(), HostAvailability.Unavailable);
                 }
             }
-            catch (Exception exception)
+            catch
             {
                 this.CloseConnection(readerConnectionCandidate);
                 throw;
@@ -331,7 +338,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
         Reader,
     }
 
-    private Dictionary<string, VerifyOpenedConnectionType> verifyOpenedConnectionTypeMap = new(StringComparer.OrdinalIgnoreCase)
+    private readonly Dictionary<string, VerifyOpenedConnectionType> verifyOpenedConnectionTypeMap = new(StringComparer.OrdinalIgnoreCase)
     {
         { "writer", VerifyOpenedConnectionType.Writer },
         { "reader", VerifyOpenedConnectionType.Reader },
