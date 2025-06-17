@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.HostInfo;
@@ -23,7 +22,6 @@ namespace AwsWrapperDataProvider.Driver;
 
 public class ConnectionPluginManager
 {
-    protected Dictionary<string, string> props = [];
     private readonly Dictionary<string, Delegate> pluginChainDelegates = [];
     protected IList<IConnectionPlugin> plugins = [];
     protected IConnectionProvider defaultConnProvider;
@@ -32,7 +30,9 @@ public class ConnectionPluginManager
     protected AwsWrapperConnection ConnectionWrapper { get; }
     protected IPluginService? pluginService;
     private const string AllMethods = "*";
+    private const string GetHostSpecByStrategyMethod = "GetHostSpecByStrategy";
     private const string ConnectMethod = "DbConnection.Open";
+    private const string InitHostMethod = "InitHostMethod";
 
     private delegate T PluginPipelineDelegate<T>(IConnectionPlugin plugin, ADONetDelegate<T> methodFunc);
     private delegate T PluginChainADONetDelegate<T>(PluginPipelineDelegate<T> pipelineDelegate, ADONetDelegate<T> methodFunc, IConnectionPlugin pluginToSkip);
@@ -63,13 +63,11 @@ public class ConnectionPluginManager
     public ConnectionPluginManager(
         IConnectionProvider defaultConnectionProvider,
         IConnectionProvider? effectiveConnectionProvider,
-        Dictionary<string, string> props,
         IList<IConnectionPlugin> plugins,
         AwsWrapperConnection connection)
     {
         this.defaultConnProvider = defaultConnectionProvider;
         this.effectiveConnProvider = effectiveConnectionProvider;
-        this.props = props;
         this.plugins = plugins;
         this.ConnectionWrapper = connection;
     }
@@ -78,14 +76,13 @@ public class ConnectionPluginManager
         IPluginService pluginService,
         Dictionary<string, string> props)
     {
-        this.props = props;
         this.pluginService = pluginService;
         ConnectionPluginChainBuilder pluginChainBuilder = new();
         this.plugins = pluginChainBuilder.GetPlugins(
             this.pluginService,
             this.defaultConnProvider,
             this.effectiveConnProvider,
-            this.props,
+            props,
             this.configurationProfile);
     }
 
@@ -189,7 +186,37 @@ public class ConnectionPluginManager
         Dictionary<string, string> props,
         IHostListProviderService hostListProviderService)
     {
-        // TODO: stub method, implement method
-        return;
+        this.ExecuteWithSubscribedPlugins<object>(
+            InitHostMethod,
+            (plugin, methodFunc) =>
+            {
+                plugin.InitHostProvider(
+                    initialConnectionString,
+                    props,
+                    hostListProviderService,
+                    () => methodFunc());
+                return default;
+            },
+            () => throw new InvalidOperationException("Should not be called"),
+            null);
+    }
+
+    public HostSpec GetHostSpecByStrategy(HostRole hostRole, string strategy, Dictionary<string, string> props)
+    {
+        if (this.defaultConnProvider.GetHostSpecByStrategy(
+                this.pluginService!.GetHosts(),
+                hostRole,
+                strategy,
+                props) is { } hostSpec)
+        {
+            return hostSpec;
+        }
+
+        throw new InvalidOperationException($"The driver does not support the requested host selection strategy: {strategy}");
+    }
+
+    public virtual bool AcceptsStrategy(HostRole hostRole, string strategy)
+    {
+        return this.defaultConnProvider.AcceptsStrategy(hostRole, strategy);
     }
 }

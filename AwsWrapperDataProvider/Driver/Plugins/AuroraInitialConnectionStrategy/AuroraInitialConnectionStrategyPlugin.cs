@@ -14,6 +14,7 @@
 
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
+using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Utils;
 using Org.BouncyCastle.Crypto;
 
@@ -24,7 +25,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
     //TODO: Add logger
 
     private IPluginService pluginService;
-    private IHostListProviderService _hostListProviderService;
+    private IHostListProviderService? hostListProviderService;
     private VerifyOpenedConnectionType? verifyOpenedConnectionType;
 
     public AuroraInitialConnectionStrategyPlugin(IPluginService pluginService, Dictionary<string, string> props)
@@ -37,14 +38,15 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
     public override ISet<string> SubscribedMethods { get; } =
         new HashSet<string> { "DbConnection.Open", "DbConnection.OpenAsync" };
 
-    public override void InitHostProvider(string initialUrl,
+    public override void InitHostProvider(
+        string initialUrl,
         Dictionary<string, string> props,
         IHostListProviderService hostListProviderService,
-        ADONetDelegate<Action<object[]>> initHostProviderFunc)
+        ADONetDelegate initHostProviderFunc)
     {
-        this._hostListProviderService = hostListProviderService;
+        this.hostListProviderService = hostListProviderService;
 
-        if (hostListProviderService.IsStaticHostListProvider())
+        if (this.hostListProviderService.IsStaticHostListProvider())
         {
             throw new Exception("AuroraInitialConnectionStrategyPlugin requires dynamic provider.");
         }
@@ -108,11 +110,13 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
                 if (writerCandidate == null || RdsUtils.IsRdsClusterDns(writerCandidate.Host))
                 {
                     methodFunc();
-                    writerConnectionCandidate = this.pluginService.CurrentConnection ?? throw new Exception("Could not find connection.");
+                    writerConnectionCandidate = this.pluginService.CurrentConnection ??
+                                                throw new Exception("Could not find connection.");
                     this.pluginService.ForceRefreshHostList(writerConnectionCandidate);
                     writerCandidate = this.pluginService.IdentifyConnection(writerConnectionCandidate);
 
-                    if (writerCandidate == null || writerCandidate.Role != HostRole.Writer) {
+                    if (writerCandidate == null || writerCandidate.Role != HostRole.Writer)
+                    {
                         // Shouldn't be here. But let's try again.
                         this.CloseConnection(writerConnectionCandidate);
                         Task.Delay(retryDelay);
@@ -121,14 +125,15 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
 
                     if (isInitialConnection)
                     {
-                        this._hostListProviderService.InitialConnectionHostSpec = writerCandidate;
+                        this.hostListProviderService.InitialConnectionHostSpec = writerCandidate;
                     }
 
                     return writerConnectionCandidate;
                 }
 
                 this.pluginService.OpenConnection(writerCandidate, props, null);
-                writerConnectionCandidate = this.pluginService.CurrentConnection;
+                writerConnectionCandidate = this.pluginService.CurrentConnection
+                    ?? throw new Exception("Could not find connection.");
 
                 if (this.pluginService.GetHostRole(writerConnectionCandidate) != HostRole.Writer)
                 {
@@ -139,10 +144,22 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
 
                 if (isInitialConnection)
                 {
-                    this._hostListProviderService.InitialConnectionHostSpec = writerCandidate;
+                    this.hostListProviderService.InitialConnectionHostSpec = writerCandidate;
                 }
 
                 return writerConnectionCandidate;
+            }
+            catch (DbException dbException)
+            {
+                this.CloseConnection(writerConnectionCandidate);
+                if (this.pluginService.IsLoginException(dbException))
+                {
+                    throw;
+                }
+
+                if (writerCandidate != null) {
+                    this.pluginService.SetAvailability(writerCandidate.AsAliases(), HostAvailability.Unavailable);
+                }
             }
             catch (Exception exception)
             {
@@ -159,12 +176,141 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
         bool isInitialConnection,
         ADONetDelegate methodFunc)
     {
-        throw new NotImplementedException();
+        int retryDelay = (int)PropertyDefinition.OpenConnectionRetryIntervalMs.GetInt(props)!;
+        long endTimeMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+                         + (long)PropertyDefinition.OpenConnectionRetryTimeoutMs.GetLong(props)!;
+
+        while (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() < endTimeMs)
+        {
+            DbConnection? readerConnectionCandidate = null;
+            HostSpec? readerCandidate = null;
+
+            try
+            {
+                readerCandidate = this.GetReader(props);
+
+                if (readerCandidate == null || RdsUtils.IsRdsClusterDns(readerCandidate.Host))
+                {
+                    methodFunc();
+                    readerConnectionCandidate = this.pluginService.CurrentConnection ??
+                                                throw new Exception("Could not find connection.");
+                    this.pluginService.ForceRefreshHostList(readerConnectionCandidate);
+                    readerCandidate = this.pluginService.IdentifyConnection(readerConnectionCandidate);
+
+                    if (readerCandidate == null)
+                    {
+                        this.CloseConnection(readerConnectionCandidate);
+                        Task.Delay(retryDelay);
+                        continue;
+                    }
+
+                    if (readerCandidate.Role != HostRole.Reader)
+                    {
+                        if (this.HasNoReader())
+                        {
+                            if (isInitialConnection)
+                            {
+                                this.hostListProviderService.InitialConnectionHostSpec = readerCandidate;
+                            }
+
+                            return readerConnectionCandidate;
+                        }
+                        this.CloseConnection(readerConnectionCandidate);
+                        Task.Delay(retryDelay);
+                        continue;
+                    }
+
+                    if (isInitialConnection)
+                    {
+                        this.hostListProviderService.InitialConnectionHostSpec = readerCandidate;
+                    }
+
+                    return readerConnectionCandidate;
+                }
+
+                this.pluginService.OpenConnection(readerCandidate, props, null);
+                readerConnectionCandidate = this.pluginService.CurrentConnection!;
+
+                if (this.pluginService.GetHostRole(readerConnectionCandidate) != HostRole.Reader)
+                {
+                    this.pluginService.ForceRefreshHostList(readerConnectionCandidate);
+
+                    if (this.HasNoReader())
+                    {
+                        if (isInitialConnection)
+                        {
+                            this.hostListProviderService.InitialConnectionHostSpec = readerCandidate;
+                        }
+
+                        return readerConnectionCandidate;
+                    }
+
+                    this.CloseConnection(readerConnectionCandidate);
+                    Task.Delay(retryDelay);
+                    continue;
+                }
+
+                if (isInitialConnection)
+                {
+                    this.hostListProviderService.InitialConnectionHostSpec = readerCandidate;
+                }
+
+                return readerConnectionCandidate;
+            }
+            catch (DbException dbException)
+            {
+                this.CloseConnection(readerConnectionCandidate);
+                if (this.pluginService.IsLoginException(dbException))
+                {
+                    throw;
+                }
+
+                if (readerCandidate != null) {
+                    this.pluginService.SetAvailability(readerCandidate.AsAliases(), HostAvailability.Unavailable);
+                }
+            }
+            catch (Exception exception)
+            {
+                this.CloseConnection(readerConnectionCandidate);
+                throw;
+            }
+        }
+
+        return null;
     }
 
     private HostSpec? GetWriter()
     {
         return this.pluginService.AllHosts.FirstOrDefault(host => host.Role == HostRole.Writer);
+    }
+
+    private HostSpec? GetReader(Dictionary<string, string> props)
+    {
+        string strategy = PropertyDefinition.ReaderHostSelectionStrategy.GetString(props)!;
+        if (this.pluginService.AcceptsStrategy(HostRole.Reader, strategy))
+        {
+            try
+            {
+                return this.pluginService.GetHostSpecByStrategy(HostRole.Reader, strategy);
+            }
+            catch (DbException dbException)
+            {
+                return null;
+            }
+        }
+
+        throw new InvalidOperationException($"Invalid host selection strategy: {strategy}");
+    }
+
+    private bool HasNoReader()
+    {
+        if (this.pluginService.AllHosts.Count == 0)
+        {
+            return false;
+        }
+
+        return this.pluginService.AllHosts
+            .All(host => host.Role == HostRole.Writer);
     }
 
     private void CloseConnection(DbConnection? connection)

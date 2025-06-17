@@ -21,17 +21,28 @@ public abstract class AbstractConnectionPlugin : IConnectionPlugin
 {
     public abstract ISet<string> SubscribedMethods { get; }
 
-    public virtual T Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, params object[] methodArgs)
+    public virtual T Execute<T>(object methodInvokedOn,
+        string methodName,
+        ADONetDelegate<T> methodFunc,
+        params object[] methodArgs)
     {
         return methodFunc();
     }
 
-    public virtual void OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate methodFunc)
+    public virtual void OpenConnection(
+        HostSpec? hostSpec,
+        Dictionary<string, string> props,
+        bool isInitialConnection,
+        ADONetDelegate methodFunc)
     {
         methodFunc();
     }
 
-    public virtual void InitHostProvider(string initialUrl, Dictionary<string, string> props, IHostListProviderService hostListProviderService, ADONetDelegate<Action<object[]>> initHostProviderFunc)
+    public virtual void InitHostProvider(
+        string initialUrl,
+        Dictionary<string, string> props,
+        IHostListProviderService hostListProviderService,
+        ADONetDelegate initHostProviderFunc)
     {
         initHostProviderFunc();
     }

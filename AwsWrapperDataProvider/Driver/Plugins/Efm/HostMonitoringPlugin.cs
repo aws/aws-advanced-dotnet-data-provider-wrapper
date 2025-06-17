@@ -18,25 +18,10 @@ using AwsWrapperDataProvider.Driver.HostListProviders;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.Efm;
 
-public class HostMonitoringPlugin(IPluginService pluginService, Dictionary<string, string> props) : IConnectionPlugin
+public class HostMonitoringPlugin(IPluginService pluginService, Dictionary<string, string> props) : AbstractConnectionPlugin
 {
     private readonly IPluginService pluginService = pluginService;
     private readonly Dictionary<string, string> props = props;
 
-    public ISet<string> SubscribedMethods { get; } = new HashSet<string> { "*" };
-
-    public void OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate methodFunc)
-    {
-        throw new NotImplementedException();
-    }
-
-    public T Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, params object[] methodArgs)
-    {
-        throw new NotImplementedException();
-    }
-
-    public void InitHostProvider(string initialUrl, Dictionary<string, string> props, IHostListProviderService hostListProviderService, ADONetDelegate<Action<object[]>> initHostProviderFunc)
-    {
-        throw new NotImplementedException();
-    }
+    public override ISet<string> SubscribedMethods { get; } = new HashSet<string> { "*" };
 }

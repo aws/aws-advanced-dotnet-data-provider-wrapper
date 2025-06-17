@@ -21,11 +21,15 @@ using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace AwsWrapperDataProvider.Driver;
 
 public class PluginService : IPluginService, IHostListProviderService
 {
+    private static readonly DateTimeOffset DefaultHostAvailabilityCacheExpireNano = DateTimeOffset.Now.AddMinutes(5);
+    internal static readonly MemoryCache HostAvailabilityExpiringCache = new(new MemoryCacheOptions());
+
     private readonly ConnectionPluginManager pluginManager;
     private readonly Dictionary<string, string> props;
     private readonly string originalConnectionString;
@@ -100,13 +104,62 @@ public class PluginService : IPluginService, IHostListProviderService
 
     public HostRole GetHostRole(DbConnection connection)
     {
-        throw new NotImplementedException();
+        return this.hostListProvider.GetHostRole(connection);
     }
 
     public void SetAvailability(ICollection<string> hostAliases, HostAvailability availability)
     {
-        // TODO: Implement
-        return;
+        if (hostAliases.Count == 0)
+        {
+            return;
+        }
+
+        List<HostSpec> hostsToChange = this.AllHosts
+            .Where(host => hostAliases.Contains(host.AsAlias())
+                        || host.GetAliases().Any(alias => hostAliases.Contains(alias)))
+            .Distinct()
+            .ToList();
+
+        if (hostsToChange.Count == 0)
+        {
+            // TODO: host to change list empty;
+            return;
+        }
+
+        var changes = new Dictionary<string, NodeChangeOptions>();
+
+        foreach (HostSpec host in hostsToChange)
+        {
+            var currentAvailability = host.Availability;
+            host.Availability = availability;
+
+            if (!HostAvailabilityExpiringCache.TryGetValue(host.Host, out _))
+            {
+                HostAvailabilityExpiringCache.Set(host.Host, availability, DefaultHostAvailabilityCacheExpireNano);
+            }
+
+            if (currentAvailability != availability)
+            {
+                NodeChangeOptions hostChanges;
+                switch (availability)
+                {
+                    case HostAvailability.Available:
+                        hostChanges = NodeChangeOptions.WentUp | NodeChangeOptions.NodeChanged;
+                        break;
+                    default:
+                        hostChanges = NodeChangeOptions.WentDown | NodeChangeOptions.NodeChanged;
+                        break;
+                }
+
+                changes[host.Host] = hostChanges;
+            }
+        }
+
+        if (changes.Count > 0)
+        {
+            // TODO: implement NotifyNodeChangeList pipeline
+            // this.pluginManager.NotifyNodeChangeList(changes);
+        }
     }
 
     public void RefreshHostList()
@@ -122,17 +175,26 @@ public class PluginService : IPluginService, IHostListProviderService
 
     public void RefreshHostList(DbConnection connection)
     {
-        throw new NotImplementedException();
+        IList<HostSpec> updateHostList = this.hostListProvider.Refresh(connection);
+        this.UpdateHostAvailability(updateHostList);
+        this.NotifyNodeChangeList(this.AllHosts, updateHostList);
+        this.AllHosts = updateHostList;
     }
 
     public void ForceRefreshHostList()
     {
-        throw new NotImplementedException();
+        IList<HostSpec> updateHostList = this.hostListProvider.ForceRefresh();
+        this.UpdateHostAvailability(updateHostList);
+        this.NotifyNodeChangeList(this.AllHosts, updateHostList);
+        this.AllHosts = updateHostList;
     }
 
     public void ForceRefreshHostList(DbConnection connection)
     {
-        throw new NotImplementedException();
+        IList<HostSpec> updateHostList = this.hostListProvider.ForceRefresh(connection);
+        this.UpdateHostAvailability(updateHostList);
+        this.NotifyNodeChangeList(this.AllHosts, updateHostList);
+        this.AllHosts = updateHostList;
     }
 
     public void ForceRefreshHostList(bool shouldVerifyWriter, long timeoutMs)
@@ -164,7 +226,7 @@ public class PluginService : IPluginService, IHostListProviderService
 
     public HostSpec? IdentifyConnection(DbConnection connection)
     {
-        throw new NotImplementedException();
+        return this.hostListProvider.IdentifyConnection(connection);
     }
 
     public void FillAliases(DbConnection connection, HostSpec hostSpec)
@@ -175,6 +237,16 @@ public class PluginService : IPluginService, IHostListProviderService
     public IConnectionProvider GetConnectionProvider()
     {
         throw new NotImplementedException();
+    }
+
+    public bool AcceptsStrategy(HostRole hostRole, string strategy)
+    {
+        return this.pluginManager.AcceptsStrategy(hostRole, strategy);
+    }
+
+    public HostSpec GetHostSpecByStrategy(HostRole hostRole, string strategy)
+    {
+        return this.pluginManager.GetHostSpecByStrategy(hostRole, strategy, this.props);
     }
 
     private HostSpec GetCurrentHostSpec()

@@ -22,7 +22,7 @@ public class ExecutionTimePlugin : AbstractConnectionPlugin
 {
     private static readonly ILogger<ExecutionTimePlugin> _logger = LoggerUtils.GetLogger<ExecutionTimePlugin>();
 
-    public override ISet<string> GetSubscribeMethods() => new HashSet<string>() { "*" };
+    public override ISet<string> SubscribedMethods { get; } = new HashSet<string>() { "*" };
 
     public override T Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, params object[] methodArgs)
     {

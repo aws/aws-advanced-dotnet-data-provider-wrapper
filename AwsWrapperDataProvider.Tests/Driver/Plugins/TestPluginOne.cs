@@ -63,7 +63,6 @@ public class TestPluginOne : IConnectionPlugin
         methodFunc();
         this.calls.Add(this.GetType().Name + ":after open");
     }
-
     public DbConnection ForceConnect(HostSpec hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> forceConnectmethodFunc)
     {
         this.calls.Add(this.GetType().Name + ":before forceConnect");
@@ -72,7 +71,7 @@ public class TestPluginOne : IConnectionPlugin
         return result;
     }
 
-    public void InitHostProvider(string initialUrl, Dictionary<string, string> props, IHostListProviderService hostListProviderService, ADONetDelegate<Action<object[]>> initHostProviderFunc)
+    public void InitHostProvider(string initialUrl, Dictionary<string, string> props, IHostListProviderService hostListProviderService, ADONetDelegate initHostProviderFunc)
     {
         // do nothing
     }
