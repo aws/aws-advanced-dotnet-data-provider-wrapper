@@ -122,7 +122,7 @@ public class ConnectionPluginManager
         for (int i = this.plugins.Count - 1; i >= 0; i--)
         {
             IConnectionPlugin plugin = this.plugins[i];
-            ISet<string> subscribedMethods = plugin.GetSubscribeMethods();
+            IReadOnlySet<string> subscribedMethods = plugin.SubscribedMethods;
             bool isSubscribed = subscribedMethods.Contains(AllMethods) || subscribedMethods.Contains(methodName);
 
             if (isSubscribed)

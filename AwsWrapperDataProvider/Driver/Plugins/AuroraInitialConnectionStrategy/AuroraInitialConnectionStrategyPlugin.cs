@@ -1,4 +1,4 @@
-﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -12,15 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data.Common;
-using AwsWrapperDataProvider.Driver.HostInfo;
-using AwsWrapperDataProvider.Driver.Plugins;
+namespace AwsWrapperDataProvider.Driver.Plugins.AuroraInitialConnectionStrategy;
 
-namespace AwsWrapperDataProvider.Tests.Driver.Plugins;
-
-public class TestPluginThree : TestPluginOne
+public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
 {
-    public TestPluginThree(List<string> calls) : base(calls) { }
-
-    public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string> { "testADONetCall_A", "DbConnection.Open" };
+    public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string> { "DbConnection.Open", "DbConnection.OpenAsync", "initHostProvider" };
 }

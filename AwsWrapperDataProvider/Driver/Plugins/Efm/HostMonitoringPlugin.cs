@@ -20,10 +20,10 @@ namespace AwsWrapperDataProvider.Driver.Plugins.Efm;
 
 public class HostMonitoringPlugin(IPluginService pluginService, Dictionary<string, string> props) : IConnectionPlugin
 {
-    private static readonly ISet<string> SubscribeMethods = new HashSet<string> { "*" };
-
     private readonly IPluginService pluginService = pluginService;
     private readonly Dictionary<string, string> props = props;
+
+    public IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string> { "*" };
 
     public void OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate methodFunc)
     {
@@ -33,11 +33,6 @@ public class HostMonitoringPlugin(IPluginService pluginService, Dictionary<strin
     public T Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, params object[] methodArgs)
     {
         throw new NotImplementedException();
-    }
-
-    public ISet<string> GetSubscribeMethods()
-    {
-        return SubscribeMethods;
     }
 
     public void InitHostProvider(string initialUrl, Dictionary<string, string> props, IHostListProviderService hostListProviderService, ADONetDelegate<Action<object[]>> initHostProviderFunc)

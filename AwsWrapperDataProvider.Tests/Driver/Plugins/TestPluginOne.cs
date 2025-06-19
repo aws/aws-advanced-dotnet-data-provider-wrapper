@@ -22,8 +22,9 @@ namespace AwsWrapperDataProvider.Tests.Driver.Plugins;
 
 public class TestPluginOne : IConnectionPlugin
 {
-    protected ISet<string> subscribedMethods = new HashSet<string> { "*" };
     protected List<string> calls;
+
+    public virtual IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string> { "*" };
 
     public TestPluginOne(List<string> calls)
     {
@@ -69,11 +70,6 @@ public class TestPluginOne : IConnectionPlugin
         DbConnection result = forceConnectmethodFunc();
         this.calls.Add(this.GetType().Name + ":after forceConnect");
         return result;
-    }
-
-    public ISet<string> GetSubscribeMethods()
-    {
-        return this.subscribedMethods;
     }
 
     public void InitHostProvider(string initialUrl, Dictionary<string, string> props, IHostListProviderService hostListProviderService, ADONetDelegate<Action<object[]>> initHostProviderFunc)
