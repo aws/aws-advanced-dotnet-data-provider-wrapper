@@ -23,5 +23,5 @@ public class FailoverPlugin(IPluginService pluginService, Dictionary<string, str
     private readonly IPluginService pluginService = pluginService;
     private readonly Dictionary<string, string> props = props;
 
-    public IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string>();
+    public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string>();
 }
