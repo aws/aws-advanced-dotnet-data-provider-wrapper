@@ -14,6 +14,7 @@
 
 using System.Data;
 using System.Data.Common;
+using AwsWrapperDataProvider.Driver.Exceptions;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -27,6 +28,8 @@ public class MysqlDialect : IDialect
     public string HostAliasQuery { get; } = "SELECT CONCAT(@@hostname, ':', @@port)";
 
     public string ServerVersionQuery { get; } = "SHOW VARIABLES LIKE 'version_comment'";
+
+    public IExceptionHandler ExceptionHandler { get; } = new MySqlExceptionHandler();
 
     public virtual IList<Type> DialectUpdateCandidates { get; } =
     [

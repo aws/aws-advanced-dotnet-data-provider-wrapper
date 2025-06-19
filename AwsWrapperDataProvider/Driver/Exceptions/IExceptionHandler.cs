@@ -32,9 +32,8 @@ public interface IExceptionHandler
     /// Determines if the given exception is a network exception.
     /// </summary>
     /// <param name="exception">The exception to check.</param>
-    /// <param name="targetDriverDialect">The target driver dialect.</param>
     /// <returns>True if it's a network exception, false otherwise.</returns>
-    bool IsNetworkException(Exception exception, ITargetConnectionDialect? targetDriverDialect);
+    bool IsNetworkException(Exception exception);
 
     /// <summary>
     /// Determines if the given SQL state represents a login exception.
@@ -47,7 +46,6 @@ public interface IExceptionHandler
     /// Determines if the given exception is a login exception.
     /// </summary>
     /// <param name="exception">The exception to check.</param>
-    /// <param name="targetDriverDialect">The target driver dialect.</param>
     /// <returns>True if it's a login exception, false otherwise.</returns>
-    bool IsLoginException(Exception exception, ITargetConnectionDialect? targetDriverDialect);
+    bool IsLoginException(Exception exception);
 }

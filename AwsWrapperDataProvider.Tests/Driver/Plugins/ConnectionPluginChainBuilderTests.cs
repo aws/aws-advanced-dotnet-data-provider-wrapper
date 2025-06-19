@@ -38,7 +38,8 @@ public class ConnectionPluginChainBuilderTests
             this.pluginServiceMock.Object,
             this.connectionProviderMock.Object,
             null,
-            props);
+            props,
+            null);
 
         Assert.NotNull(plugins);
         Assert.Equal(3, plugins.Count);
@@ -62,7 +63,8 @@ public class ConnectionPluginChainBuilderTests
             this.pluginServiceMock.Object,
             this.connectionProviderMock.Object,
             null,
-            props);
+            props,
+            null);
 
         Assert.NotNull(plugins);
         Assert.Equal(3, plugins.Count);
@@ -82,7 +84,8 @@ public class ConnectionPluginChainBuilderTests
             this.pluginServiceMock.Object,
             this.connectionProviderMock.Object,
             null,
-            props);
+            props,
+            null);
 
         Assert.NotNull(plugins);
         Assert.Equal(3, plugins.Count);
@@ -102,7 +105,8 @@ public class ConnectionPluginChainBuilderTests
             this.pluginServiceMock.Object,
             this.connectionProviderMock.Object,
             null,
-            props);
+            props,
+            null);
 
         Assert.NotNull(plugins);
         Assert.Equal(3, plugins.Count);
@@ -121,7 +125,8 @@ public class ConnectionPluginChainBuilderTests
             this.pluginServiceMock.Object,
             this.connectionProviderMock.Object,
             null,
-            []);
+            [],
+            null);
 
         Assert.NotNull(plugins);
         Assert.Equal(3, plugins.Count);
@@ -141,7 +146,8 @@ public class ConnectionPluginChainBuilderTests
             this.pluginServiceMock.Object,
             this.connectionProviderMock.Object,
             null,
-            props);
+            props,
+            null);
 
         Assert.NotNull(plugins);
         Assert.Single(plugins);
@@ -159,6 +165,7 @@ public class ConnectionPluginChainBuilderTests
             this.pluginServiceMock.Object,
             this.connectionProviderMock.Object,
             null,
-            props));
+            props,
+            null));
     }
 }

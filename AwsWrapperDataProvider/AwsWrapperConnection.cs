@@ -14,12 +14,11 @@
 
 using System.Data;
 using System.Data.Common;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
 using AwsWrapperDataProvider.Driver;
+using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
-using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -38,7 +37,7 @@ public class AwsWrapperConnection : DbConnection
 
     internal Dictionary<string, string> ConnectionProperties { get; private set; }
 
-    public DbConnection? TargetDbConnection => this.pluginService?.CurrentConnection;
+    internal DbConnection? TargetDbConnection => this.pluginService?.CurrentConnection;
 
     [AllowNull]
     public override string ConnectionString
@@ -57,19 +56,36 @@ public class AwsWrapperConnection : DbConnection
         }
     }
 
-    public AwsWrapperConnection(DbConnection connection) : this(connection.GetType(), connection.ConnectionString)
+    public AwsWrapperConnection(DbConnection connection, ConfigurationProfile? profile) : this(
+        connection.GetType(),
+        connection.ConnectionString,
+        profile)
     {
-        Debug.Assert(connection != null);
         this.pluginService!.SetCurrentConnection(connection, this.pluginService.InitialConnectionHostSpec);
         this.database = connection.Database;
     }
 
+    public AwsWrapperConnection(DbConnection connection) : this(connection, null)
+    { }
+
+    public AwsWrapperConnection(string connectionString, ConfigurationProfile? profile) : this(
+        null,
+        connectionString,
+        profile)
+    { }
+
     public AwsWrapperConnection(string connectionString) : this(null, connectionString) { }
 
-    public AwsWrapperConnection(Type? targetType, string connectionString) : base()
+    public AwsWrapperConnection(Type? targetType, string connectionString) : this(
+        targetType,
+        connectionString,
+        null)
+    { }
+
+    public AwsWrapperConnection(Type? targetType, string connectionString, ConfigurationProfile? profile) : base()
     {
         this.connectionString = connectionString;
-        this.ConnectionProperties = ConnectionPropertiesUtils.ParseConnectionStringParameters(this.connectionString);
+        this.ConnectionProperties = profile?.Properties ?? ConnectionPropertiesUtils.ParseConnectionStringParameters(this.connectionString);
         this.targetType = targetType ?? this.GetTargetType(this.ConnectionProperties);
         this.ConnectionProperties[PropertyDefinition.TargetConnectionType.Name] = this.targetType.AssemblyQualifiedName!;
 
@@ -79,7 +95,7 @@ public class AwsWrapperConnection : DbConnection
 
         this.PluginManager = new(connectionProvider, null, this);
 
-        PluginService pluginService = new(this.targetType, this.PluginManager, this.ConnectionProperties, this.connectionString, connectionDialect);
+        PluginService pluginService = new(this.targetType, this.PluginManager, this.ConnectionProperties, this.connectionString, connectionDialect, profile);
 
         this.pluginService = pluginService;
         this.hostListProviderService = pluginService;
@@ -132,7 +148,7 @@ public class AwsWrapperConnection : DbConnection
     {
         if (this.State != ConnectionState.Closed)
         {
-            throw new InvalidOperationException("Connection is already open.");
+            throw new InvalidOperationException(Properties.Resources.Error_ConnectionAlreadyOpen);
         }
 
         ArgumentNullException.ThrowIfNull(this.pluginService);
@@ -153,27 +169,21 @@ public class AwsWrapperConnection : DbConnection
 
     protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel)
     {
-        return WrapperUtils.ExecuteWithPlugins<DbTransaction>(
-            this.PluginManager!,
-            this.pluginService!.CurrentConnection!,
+        ArgumentNullException.ThrowIfNull(this.pluginService);
+        ArgumentNullException.ThrowIfNull(this.pluginService.CurrentConnection);
+        ArgumentNullException.ThrowIfNull(this.PluginManager);
+
+        DbTransaction targetTransaction = WrapperUtils.ExecuteWithPlugins(
+            this.PluginManager,
+            this.pluginService.CurrentConnection,
             "DbConnection.BeginDbTransaction",
-            () => this.pluginService!.CurrentConnection!.BeginTransaction(isolationLevel),
+            () => this.pluginService.CurrentConnection!.BeginTransaction(isolationLevel),
             isolationLevel);
+
+        return new AwsWrapperTransaction(this, targetTransaction, this.PluginManager);
     }
 
-    protected override DbCommand CreateDbCommand() => this.CreateCommand();
-
-    public new AwsWrapperCommand CreateCommand()
-    {
-        DbCommand command = WrapperUtils.ExecuteWithPlugins(
-            this.PluginManager!,
-            this.pluginService!.CurrentConnection!,
-            "DbConnection.CreateCommand",
-            () => this.pluginService!.CurrentConnection!.CreateCommand());
-
-        this.ConnectionProperties[PropertyDefinition.TargetCommandType.Name] = command.GetType().AssemblyQualifiedName!;
-        return new AwsWrapperCommand(command, this, this.PluginManager!);
-    }
+    protected override DbCommand CreateDbCommand() => this.CreateCommand<DbCommand>();
 
     public AwsWrapperCommand<TCommand> CreateCommand<TCommand>() where TCommand : DbCommand
     {
@@ -201,26 +211,30 @@ public class AwsWrapperConnection : DbConnection
                 Type? targetType = Type.GetType(targetConnectionTypeString);
                 if (targetType == null)
                 {
-                    throw new Exception("Can't load target connection type " + targetConnectionTypeString);
+                    throw new Exception(string.Format(Properties.Resources.Error_CantLoadTargetConnectionType, targetConnectionTypeString));
                 }
 
                 return targetType;
             }
             catch
             {
-                throw new Exception("Can't load target connection type " + targetConnectionTypeString);
+                throw new Exception(string.Format(Properties.Resources.Error_CantLoadTargetConnectionType, targetConnectionTypeString));
             }
         }
 
-        throw new Exception($"Can't load target connection type {targetConnectionTypeString}");
+        throw new Exception(string.Format(Properties.Resources.Error_CantLoadTargetConnectionType, targetConnectionTypeString));
     }
 }
 
 public class AwsWrapperConnection<TConn> : AwsWrapperConnection where TConn : DbConnection
 {
-    public AwsWrapperConnection(string connectionString) : base(typeof(TConn), connectionString)
-    {
-    }
+    public AwsWrapperConnection(string connectionString) : base(typeof(TConn), connectionString) { }
+
+    public AwsWrapperConnection(string connectionString, ConfigurationProfile profile) : base(
+        typeof(TConn),
+        connectionString,
+        profile)
+    { }
 
     public new TConn? TargetDbConnection => this.pluginService?.CurrentConnection as TConn;
 }

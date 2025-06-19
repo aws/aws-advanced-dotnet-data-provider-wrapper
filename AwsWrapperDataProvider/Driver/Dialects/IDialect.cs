@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data;
+using AwsWrapperDataProvider.Driver.Exceptions;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 
@@ -25,9 +26,6 @@ public interface IDialect
 {
     int DefaultPort { get; }
 
-    // TODO: Implement IExceptionHandler
-    // IExceptionHandler ExceptionHandler { get; }
-
     string HostAliasQuery { get; }
 
     string ServerVersionQuery { get; }
@@ -35,6 +33,8 @@ public interface IDialect
     IList<Type> DialectUpdateCandidates { get; }
 
     HostListProviderSupplier HostListProviderSupplier { get; }
+
+    IExceptionHandler ExceptionHandler { get; }
 
     /// <summary>
     /// Determines if the given connection is using this dialect.

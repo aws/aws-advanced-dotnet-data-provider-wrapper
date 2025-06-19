@@ -13,8 +13,10 @@
 // limitations under the License.
 
 using System.Data.Common;
+using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.HostInfo;
+using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Plugins;
 
 namespace AwsWrapperDataProvider.Driver;
@@ -26,6 +28,7 @@ public class ConnectionPluginManager
     protected IList<IConnectionPlugin> plugins = [];
     protected IConnectionProvider defaultConnProvider;
     protected IConnectionProvider? effectiveConnProvider;
+    protected ConfigurationProfile? configurationProfile;
     protected AwsWrapperConnection ConnectionWrapper { get; }
     protected IPluginService? pluginService;
     private const string AllMethods = "*";
@@ -35,12 +38,24 @@ public class ConnectionPluginManager
     private delegate T PluginChainADONetDelegate<T>(PluginPipelineDelegate<T> pipelineDelegate, ADONetDelegate<T> methodFunc, IConnectionPlugin pluginToSkip);
 
     public ConnectionPluginManager(
+        IConnectionProvider defaultConnProvider,
+        IConnectionProvider? effectiveConnProvider,
+        AwsWrapperConnection connection) : this(
+        defaultConnProvider,
+        effectiveConnProvider,
+        connection,
+        null)
+    { }
+
+    public ConnectionPluginManager(
         IConnectionProvider defaultConnectionProvider,
         IConnectionProvider? effectiveConnectionProvider,
-        AwsWrapperConnection connection)
+        AwsWrapperConnection connection,
+        ConfigurationProfile? configurationProfile)
     {
         this.defaultConnProvider = defaultConnectionProvider;
         this.effectiveConnProvider = effectiveConnectionProvider;
+        this.configurationProfile = configurationProfile;
         this.ConnectionWrapper = connection;
     }
 
@@ -70,7 +85,8 @@ public class ConnectionPluginManager
             this.pluginService,
             this.defaultConnProvider,
             this.effectiveConnProvider,
-            this.props);
+            this.props,
+            this.configurationProfile);
     }
 
     private T ExecuteWithSubscribedPlugins<T>(
@@ -90,7 +106,7 @@ public class ConnectionPluginManager
 
         if (pluginChainDelegate == null)
         {
-            throw new Exception("Error processing this ADO.NET call.");
+            throw new Exception(Properties.Resources.Error_ProcessingAdoNetCall);
         }
 
         return (T)pluginChainDelegate.DynamicInvoke(
