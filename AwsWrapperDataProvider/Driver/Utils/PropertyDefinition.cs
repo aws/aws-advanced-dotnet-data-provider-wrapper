@@ -59,16 +59,16 @@ public static class PropertyDefinition
         "Set to true if you are providing a connection string with multiple comma-delimited hosts and your cluster has only one writer. The writer must be the first host in the connection string.");
 
     public static readonly AwsWrapperProperty IamHost =
-        new("iamHost", null, "Overrides the host that is used to generate the IAM token.");
+        new("IamHost", null, "Overrides the host that is used to generate the IAM token.");
 
     public static readonly AwsWrapperProperty IamDefaultPort =
-        new("iamDefaultPort", "-1", "Overrides default port that is used to generate the IAM token.");
+        new("IamDefaultPort", "-1", "Overrides default port that is used to generate the IAM token.");
 
     public static readonly AwsWrapperProperty IamRegion =
-        new("iamRegion", null, "Overrides AWS region that is used to generate the IAM token.");
+        new("IamRegion", null, "Overrides AWS region that is used to generate the IAM token.");
 
     public static readonly AwsWrapperProperty IamExpiration =
-        new("iamExpiration", "870", "IAM token cache expiration in seconds.");
+        new("IamExpiration", "870", "IAM token cache expiration in seconds.");
 
     public static readonly AwsWrapperProperty ClusterTopologyRefreshRateMs = new(
         "ClusterTopologyRefreshRateMs",
@@ -86,28 +86,28 @@ public static class PropertyDefinition
         "A unique identifier for the cluster. Connections with the same cluster id share a cluster topology cache. If unspecified, a cluster id is automatically created for AWS RDS clusters.");
 
     public static readonly AwsWrapperProperty SecretsManagerSecretId = new(
-        "secretsManagerSecretId", null, "The name or the ARN of the secret to retrieve.");
+        "SecretsManagerSecretId", null, "The name or the ARN of the secret to retrieve.");
 
     public static readonly AwsWrapperProperty SecretsManagerRegion = new(
-        "secretsManagerRegion", "us-east-1", "The region of the secret to retrieve.");
+        "SecretsManagerRegion", "us-east-1", "The region of the secret to retrieve.");
 
     public static readonly AwsWrapperProperty SecretsManagerExpirationSecs = new(
-        "secretsManagerExpirationSec", "870", "The time in seconds that secrets are cached for.");
+        "SecretsManagerExpirationSec", "870", "The time in seconds that secrets are cached for.");
 
     public static readonly AwsWrapperProperty SecretsManagerEndpoint = new(
-        "secretsManagerEndpoint", null, "The endpoint of the secret to retrieve.");
+        "SecretsManagerEndpoint", null, "The endpoint of the secret to retrieve.");
 
     public static readonly AwsWrapperProperty ReaderHostSelectionStrategy = new(
-        "readerInitialConnectionHostSelectorStrategy", "random", "The strategy that should be used to select a new reader host while opening a new connection.");
+        "ReaderInitialConnectionHostSelectorStrategy", "random", "The strategy that should be used to select a new reader host while opening a new connection.");
 
     public static readonly AwsWrapperProperty OpenConnectionRetryTimeoutMs = new(
-        "openConnectionRetryTimeoutMs", "30000", "Maximum allowed time for the retries opening a connection.");
+        "OpenConnectionRetryTimeoutMs", "30000", "Maximum allowed time for the retries opening a connection.");
 
     public static readonly AwsWrapperProperty OpenConnectionRetryIntervalMs = new(
-        "openConnectionRetryIntervalMs", "1000", "Time between each retry of opening a connection.");
+        "OpenConnectionRetryIntervalMs", "1000", "Time between each retry of opening a connection.");
 
     public static readonly AwsWrapperProperty VerifyOpenedConnectionType = new(
-        "verifyOpenedConnectionType", null, "Force to verify an opened connection to be either a writer or a reader.");
+        "VerifyOpenedConnectionType", null, "Force to verify an opened connection to be either a writer or a reader.");
 
     /// <summary>
     /// A set of AwsWrapperProperties that is used by the wrapper and should not be passed to the target driver.

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data.Common;
+using System.Runtime.CompilerServices;
 using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.Dialects;
@@ -75,7 +76,7 @@ public class PluginService : IPluginService, IHostListProviderService
 
     public bool IsStaticHostListProvider()
     {
-        throw new NotImplementedException();
+        return this.HostListProvider is IStaticHostListProvider;
     }
 
     public HostSpec GetInitialConnectionHostSpec()

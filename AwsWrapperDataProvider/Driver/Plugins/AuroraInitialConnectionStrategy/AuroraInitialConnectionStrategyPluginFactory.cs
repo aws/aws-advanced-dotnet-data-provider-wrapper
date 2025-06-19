@@ -14,7 +14,7 @@
 
 namespace AwsWrapperDataProvider.Driver.Plugins.AuroraInitialConnectionStrategy;
 
-public class AuroraInitialConnectionStrategyPluginFactory
+public class AuroraInitialConnectionStrategyPluginFactory : IConnectionPluginFactory
 {
     public IConnectionPlugin GetInstance(IPluginService pluginService, Dictionary<string, string> props)
     {

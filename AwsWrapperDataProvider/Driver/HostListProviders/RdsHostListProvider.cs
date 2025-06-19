@@ -220,6 +220,7 @@ public class RdsHostListProvider : IDynamicHostListProvider
     public HostSpec? IdentifyConnection(DbConnection connection)
     {
         using DbCommand command = connection.CreateCommand();
+        command.CommandText = this.nodeIdQuery;
         using DbDataReader resultSet = command.ExecuteReader();
 
         if (!resultSet.Read())
@@ -227,7 +228,7 @@ public class RdsHostListProvider : IDynamicHostListProvider
             return null;
         }
 
-        string instanceName = resultSet.GetString(1);
+        string instanceName = resultSet.GetString(0);
 
         IList<HostSpec> topology = this.Refresh(connection);
         bool isForcedRefresh = false;

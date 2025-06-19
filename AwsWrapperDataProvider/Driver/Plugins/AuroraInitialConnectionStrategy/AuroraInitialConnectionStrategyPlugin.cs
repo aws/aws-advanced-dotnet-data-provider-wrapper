@@ -22,8 +22,6 @@ namespace AwsWrapperDataProvider.Driver.Plugins.AuroraInitialConnectionStrategy;
 
 public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
 {
-    // TODO: Add logger
-
     private readonly IPluginService pluginService;
     private readonly VerifyOpenedConnectionType? verifyOpenedConnectionType;
 
@@ -36,7 +34,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
     }
 
     public override ISet<string> SubscribedMethods { get; } =
-        new HashSet<string> { "DbConnection.Open", "DbConnection.OpenAsync" };
+        new HashSet<string> { "DbConnection.Open", "DbConnection.OpenAsync", "initHostProvider" };
 
     public override void InitHostProvider(
         string initialUrl,
@@ -164,7 +162,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
                     this.pluginService.SetAvailability(writerCandidate.AsAliases(), HostAvailability.Unavailable);
                 }
             }
-            catch
+            catch (Exception e)
             {
                 this.CloseConnection(writerConnectionCandidate);
                 throw;

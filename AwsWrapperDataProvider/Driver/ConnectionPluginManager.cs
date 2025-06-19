@@ -32,7 +32,7 @@ public class ConnectionPluginManager
     private const string AllMethods = "*";
     private const string GetHostSpecByStrategyMethod = "GetHostSpecByStrategy";
     private const string ConnectMethod = "DbConnection.Open";
-    private const string InitHostMethod = "InitHostMethod";
+    private const string InitHostMethod = "initHostProvider";
 
     private delegate T PluginPipelineDelegate<T>(IConnectionPlugin plugin, ADONetDelegate<T> methodFunc);
     private delegate T PluginChainADONetDelegate<T>(PluginPipelineDelegate<T> pipelineDelegate, ADONetDelegate<T> methodFunc, IConnectionPlugin pluginToSkip);
