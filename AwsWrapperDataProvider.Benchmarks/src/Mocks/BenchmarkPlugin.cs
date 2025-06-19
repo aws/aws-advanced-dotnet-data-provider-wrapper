@@ -27,14 +27,13 @@ namespace AwsWrapperDataProvider.Benchmarks.Mocks;
 public class BenchmarkPlugin : IConnectionPlugin
 {
     private readonly string _name;
-    private readonly HashSet<string> _subscribedMethods = new() { "*" };
 
     public BenchmarkPlugin(string name = "BenchmarkPlugin")
     {
         this._name = name;
     }
 
-    public ISet<string> GetSubscribeMethods() => this._subscribedMethods;
+    public IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string>() { "*" };
 
     public T Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, params object[] methodArgs)
     {
