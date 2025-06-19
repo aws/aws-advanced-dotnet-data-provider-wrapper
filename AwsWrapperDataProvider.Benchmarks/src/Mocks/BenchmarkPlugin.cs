@@ -33,7 +33,7 @@ public class BenchmarkPlugin : IConnectionPlugin
         this._name = name;
     }
 
-    public ISet<string> SubscribedMethods { get; } = new HashSet<string> { "*" };
+    public IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string>() { "*" };
 
     public T Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, params object[] methodArgs)
     {

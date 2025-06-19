@@ -22,5 +22,5 @@ public class TestPluginThree : TestPluginOne
 {
     public TestPluginThree(List<string> calls) : base(calls) { }
 
-    public override ISet<string> SubscribedMethods { get; } = new HashSet<string> { "testADONetCall_A", "DbConnection.Open" };
+    public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string> { "testADONetCall_A", "DbConnection.Open" };
 }

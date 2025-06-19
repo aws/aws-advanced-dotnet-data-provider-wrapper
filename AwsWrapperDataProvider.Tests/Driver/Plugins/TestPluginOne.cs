@@ -24,7 +24,7 @@ public class TestPluginOne : IConnectionPlugin
 {
     protected List<string> calls;
 
-    public virtual ISet<string> SubscribedMethods { get; } = new HashSet<string> { "*" };
+    public virtual IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string> { "*" };
 
     public TestPluginOne(List<string> calls)
     {

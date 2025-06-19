@@ -19,7 +19,7 @@ namespace AwsWrapperDataProvider.Driver.Plugins;
 
 public abstract class AbstractConnectionPlugin : IConnectionPlugin
 {
-    public abstract ISet<string> SubscribedMethods { get; }
+    public abstract IReadOnlySet<string> SubscribedMethods { get; }
 
     public virtual T Execute<T>(object methodInvokedOn,
         string methodName,

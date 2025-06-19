@@ -33,8 +33,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
         this.verifyOpenedConnectionType = verifyOpenedConnectionTypeStr != null ? this.verifyOpenedConnectionTypeMap[verifyOpenedConnectionTypeStr] : null;
     }
 
-    public override ISet<string> SubscribedMethods { get; } =
-        new HashSet<string> { "DbConnection.Open", "DbConnection.OpenAsync", "initHostProvider" };
+    public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string> { "DbConnection.Open", "DbConnection.OpenAsync", "initHostProvider" };
 
     public override void InitHostProvider(
         string initialUrl,

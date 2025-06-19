@@ -24,7 +24,7 @@ public class DefaultConnectionPlugin(
     IConnectionProvider defaultConnProvider,
     IConnectionProvider? effectiveConnProvider) : IConnectionPlugin
 {
-    public ISet<string> SubscribedMethods { get; } = new HashSet<string> { "*" };
+    public IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string> { "*" };
 
     private readonly IConnectionProvider defaultConnProvider = defaultConnProvider;
     private readonly IConnectionProvider? effectiveConnPrivider = effectiveConnProvider;
