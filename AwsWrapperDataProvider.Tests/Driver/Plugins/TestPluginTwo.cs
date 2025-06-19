@@ -18,5 +18,5 @@ public class TestPluginTwo : TestPluginOne
 {
     public TestPluginTwo(List<string> calls) : base(calls) { }
 
-    public override ISet<string> SubscribedMethods { get; } = new HashSet<string> { "testADONetCall_A", "testADONetCall_B" };
+    public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string> { "testADONetCall_A", "testADONetCall_B" };
 }

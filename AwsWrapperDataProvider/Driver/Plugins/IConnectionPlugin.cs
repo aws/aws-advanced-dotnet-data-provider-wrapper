@@ -26,7 +26,7 @@ public interface IConnectionPlugin
     /// Gets the set of method names this plugin subscribes to.
     /// </summary>
     /// <returns>Set of method names.</returns>
-    ISet<string> SubscribedMethods { get; }
+    IReadOnlySet<string> SubscribedMethods { get; }
 
     /// <summary>
     /// Executes a method with the given arguments and returns a result.

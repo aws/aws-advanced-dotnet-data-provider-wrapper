@@ -22,7 +22,7 @@ public class HostMonitoringPlugin(IPluginService pluginService, Dictionary<strin
     private readonly IPluginService pluginService = pluginService;
     private readonly Dictionary<string, string> props = props;
 
-    public ISet<string> SubscribedMethods { get; } = new HashSet<string> { "*" };
+    public IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string> { "*" };
 
     public void OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate methodFunc)
     {
