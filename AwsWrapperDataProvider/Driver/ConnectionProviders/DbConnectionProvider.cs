@@ -16,12 +16,21 @@ using System.Data.Common;
 using System.Runtime.InteropServices.Marshalling;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
+using AwsWrapperDataProvider.Driver.HostInfo.HostSelectors;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 
 namespace AwsWrapperDataProvider.Driver.ConnectionProviders;
 
 public class DbConnectionProvider() : IConnectionProvider
 {
+    private static readonly Dictionary<string, IHostSelector> AcceptedStrategies =
+        new Dictionary<string, IHostSelector>()
+        {
+            { HighestWeightHostSelector.StrategyName,  new HighestWeightHostSelector() },
+            { RandomHostSelector.StrategyName, new RandomHostSelector() },
+            { RoundRobinHostSelector.StrategyName, new RoundRobinHostSelector()},
+        };
+
     public bool AcceptsUrl(string protocol, HostSpec hostSpec, Dictionary<string, string> props)
     {
         throw new NotImplementedException();
@@ -53,10 +62,10 @@ public class DbConnectionProvider() : IConnectionProvider
         return targetConnection;
     }
 
-    public bool AcceptsStrategy(HostRole hostRole, string strategy)
+    public bool AcceptsStrategy(string strategy)
     {
         // TODO: implement Functions to use strategy.
-        return true;
+        return AcceptedStrategies.ContainsKey(strategy);
     }
 
     public HostSpec? GetHostSpecByStrategy(

@@ -215,8 +215,8 @@ public class ConnectionPluginManager
         throw new InvalidOperationException($"The driver does not support the requested host selection strategy: {strategy}");
     }
 
-    public virtual bool AcceptsStrategy(HostRole hostRole, string strategy)
+    public virtual bool AcceptsStrategy(string strategy)
     {
-        return this.defaultConnProvider.AcceptsStrategy(hostRole, strategy);
+        return this.defaultConnProvider.AcceptsStrategy(strategy);
     }
 }

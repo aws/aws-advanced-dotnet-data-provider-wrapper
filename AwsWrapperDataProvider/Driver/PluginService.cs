@@ -240,9 +240,9 @@ public class PluginService : IPluginService, IHostListProviderService
         throw new NotImplementedException();
     }
 
-    public bool AcceptsStrategy(HostRole hostRole, string strategy)
+    public bool AcceptsStrategy(string strategy)
     {
-        return this.pluginManager.AcceptsStrategy(hostRole, strategy);
+        return this.pluginManager.AcceptsStrategy(strategy);
     }
 
     public HostSpec GetHostSpecByStrategy(HostRole hostRole, string strategy)
