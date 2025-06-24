@@ -195,7 +195,7 @@ public class ConnectionPluginManager
                     props,
                     hostListProviderService,
                     () => methodFunc());
-                return default;
+                return default!;
             },
             () => throw new InvalidOperationException("Should not be called"),
             null);
