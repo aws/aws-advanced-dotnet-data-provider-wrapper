@@ -42,7 +42,7 @@ namespace AwsWrapperDataProvider
                 this._connectionPluginManager,
                 this._targetDataReader,
                 "DbDataReader.IsClosed",
-                () => this._targetDataReader!.IsClosed);
+                () => this._targetDataReader.IsClosed);
 
         public override int RecordsAffected => WrapperUtils.ExecuteWithPlugins(
                 this._connectionPluginManager,
@@ -54,13 +54,13 @@ namespace AwsWrapperDataProvider
             this._connectionPluginManager,
             this._targetDataReader,
             "DbDataReader.FieldCount",
-            () => this._targetDataReader!.FieldCount);
+            () => this._targetDataReader.FieldCount);
 
         public override bool HasRows => WrapperUtils.ExecuteWithPlugins(
             this._connectionPluginManager,
             this._targetDataReader,
             "DbDataReader.HasRows",
-            () => this._targetDataReader!.HasRows);
+            () => this._targetDataReader.HasRows);
 
         public override object this[int i] => WrapperUtils.ExecuteWithPlugins(
             this._connectionPluginManager,
@@ -98,7 +98,7 @@ namespace AwsWrapperDataProvider
                 this._connectionPluginManager,
                 this._targetDataReader,
                 "DbDataReader.NextResult",
-                () => this._targetDataReader!.NextResult());
+                () => this._targetDataReader.NextResult());
         }
 
         public override bool Read()
@@ -107,7 +107,7 @@ namespace AwsWrapperDataProvider
                 this._connectionPluginManager,
                 this._targetDataReader,
                 "DbDataReader.Read()",
-                () => this._targetDataReader!.Read());
+                () => this._targetDataReader.Read());
         }
 
         protected override void Dispose(bool disposing)
@@ -118,7 +118,7 @@ namespace AwsWrapperDataProvider
                     this._connectionPluginManager,
                     this._targetDataReader,
                     "DbDataReader.Dispose",
-                    () => this._targetDataReader!.Dispose());
+                    () => this._targetDataReader.Dispose());
             }
         }
 
@@ -128,7 +128,7 @@ namespace AwsWrapperDataProvider
                 this._connectionPluginManager,
                 this._targetDataReader,
                 "DbDataReader.GetBoolean",
-                () => this._targetDataReader!.GetBoolean(i));
+                () => this._targetDataReader.GetBoolean(i));
         }
 
         public override byte GetByte(int i)
@@ -137,7 +137,7 @@ namespace AwsWrapperDataProvider
                 this._connectionPluginManager,
                 this._targetDataReader,
                 "DbDataReader.GetByte",
-                () => this._targetDataReader!.GetByte(i));
+                () => this._targetDataReader.GetByte(i));
         }
 
         public override long GetBytes(int i, long fieldOffset, byte[]? buffer, int bufferoffset, int length)
@@ -155,7 +155,7 @@ namespace AwsWrapperDataProvider
                 this._connectionPluginManager,
                 this._targetDataReader,
                 "DbDataReader.GetChar",
-                () => this._targetDataReader!.GetChar(i));
+                () => this._targetDataReader.GetChar(i));
         }
 
         public override long GetChars(int i, long fieldoffset, char[]? buffer, int bufferoffset, int length)
@@ -173,7 +173,7 @@ namespace AwsWrapperDataProvider
                 this._connectionPluginManager,
                 this._targetDataReader,
                 "DbDataReader.GetDataTypeName",
-                () => this._targetDataReader!.GetDataTypeName(i));
+                () => this._targetDataReader.GetDataTypeName(i));
         }
 
         public override DateTime GetDateTime(int i)
@@ -182,7 +182,7 @@ namespace AwsWrapperDataProvider
                 this._connectionPluginManager,
                 this._targetDataReader,
                 "DbDataReader.GetDataTypeTime",
-                () => this._targetDataReader!.GetDateTime(i));
+                () => this._targetDataReader.GetDateTime(i));
         }
 
         public override decimal GetDecimal(int i)

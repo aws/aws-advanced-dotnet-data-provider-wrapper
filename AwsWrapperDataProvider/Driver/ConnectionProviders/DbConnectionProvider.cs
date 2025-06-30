@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections.ObjectModel;
 using System.Data.Common;
 using System.Runtime.InteropServices.Marshalling;
 using AwsWrapperDataProvider.Driver.Dialects;
@@ -23,13 +24,13 @@ namespace AwsWrapperDataProvider.Driver.ConnectionProviders;
 
 public class DbConnectionProvider() : IConnectionProvider
 {
-    private static readonly Dictionary<string, IHostSelector> AcceptedStrategies =
-        new Dictionary<string, IHostSelector>()
+    private static readonly ReadOnlyDictionary<string, IHostSelector> AcceptedStrategies =
+        new(new Dictionary<string, IHostSelector>()
         {
             { HighestWeightHostSelector.StrategyName,  new HighestWeightHostSelector() },
             { RandomHostSelector.StrategyName, new RandomHostSelector() },
-            { RoundRobinHostSelector.StrategyName, new RoundRobinHostSelector()},
-        };
+            { RoundRobinHostSelector.StrategyName, new RoundRobinHostSelector() },
+        });
 
     public bool AcceptsUrl(string protocol, HostSpec hostSpec, Dictionary<string, string> props)
     {
