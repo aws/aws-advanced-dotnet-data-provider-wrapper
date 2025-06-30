@@ -30,11 +30,6 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
 
     public static readonly int DefaultIamExpirationSeconds = 870;
 
-    public override ISet<string> GetSubscribeMethods()
-    {
-        return SubscribeMethods;
-    }
-
     public override void OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate methodFunc)
     {
         this.ConnectInternal(hostSpec, props, methodFunc);
