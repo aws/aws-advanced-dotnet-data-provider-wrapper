@@ -71,7 +71,8 @@ public class HttpClientFactory
 
         private static bool ResponseIsRedirect(HttpResponseMessage response)
         {
-            return (int)response.StatusCode >= 300 && (int)response.StatusCode < 400 && response.Headers.Location != null;
+            int statusCode = (int)response.StatusCode;
+            return statusCode >= 300 && statusCode < 400 && response.Headers.Location != null;
         }
     }
 
