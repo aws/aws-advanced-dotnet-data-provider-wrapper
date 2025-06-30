@@ -35,7 +35,7 @@ public interface IPluginService : IExceptionHandlerService
 
     DbConnection? CurrentConnection { get; set; }
 
-    HostSpec? CurrentHostSpec { get; }
+    HostSpec? CurrentHostSpec { get; set; }
 
     HostSpec? InitialConnectionHostSpec { get; }
 
