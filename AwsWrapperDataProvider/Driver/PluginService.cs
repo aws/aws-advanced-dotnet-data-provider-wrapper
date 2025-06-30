@@ -28,7 +28,7 @@ namespace AwsWrapperDataProvider.Driver;
 
 public class PluginService : IPluginService, IHostListProviderService
 {
-    private static readonly DateTimeOffset DefaultHostAvailabilityCacheExpireNano = DateTimeOffset.Now.AddMinutes(5);
+    private static readonly DateTimeOffset DefaultHostAvailabilityCacheExpiration = DateTimeOffset.Now.AddMinutes(5);
     internal static readonly MemoryCache HostAvailabilityExpiringCache = new(new MemoryCacheOptions());
 
     private readonly ConnectionPluginManager pluginManager;
