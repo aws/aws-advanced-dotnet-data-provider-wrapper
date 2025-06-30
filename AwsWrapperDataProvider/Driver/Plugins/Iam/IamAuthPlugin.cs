@@ -72,8 +72,13 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
         {
             methodFunc();
         }
-        catch
+        catch (Exception ex)
         {
+            if (!this.pluginService.IsLoginException(ex))
+            {
+                throw;
+            }
+
             // should the token not work (expired on the server), generate a new one and try again
             try
             {
@@ -81,9 +86,9 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
                 int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? DefaultIamExpirationSeconds;
                 IamTokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
             }
-            catch (Exception ex)
+            catch (Exception ex2)
             {
-                throw new Exception("Could not generate authentication token for IAM user " + iamUser + ".", ex);
+                throw new Exception("Could not generate authentication token for IAM user " + iamUser + ".", ex2);
             }
 
             // token is non-null here, as the above try-catch block must have succeeded

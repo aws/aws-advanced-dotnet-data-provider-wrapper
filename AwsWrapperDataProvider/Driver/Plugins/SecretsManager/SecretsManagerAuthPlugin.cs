@@ -60,9 +60,13 @@ public class SecretsManagerAuthPlugin(IPluginService pluginService, Dictionary<s
         {
             methodFunc();
         }
-        catch
+        catch (Exception ex)
         {
-            // TODO: check that this was due to a login error
+            if (!this.pluginService.IsLoginException(ex))
+            {
+                throw;
+            }
+
             if (!secretsWasFetched)
             {
                 this.UpdateSecrets(true);
