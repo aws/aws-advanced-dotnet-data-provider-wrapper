@@ -14,7 +14,6 @@
 
 using System.Net;
 using System.Net.Http;
-using ZstdSharp.Unsafe;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.FederatedAuth;
 
