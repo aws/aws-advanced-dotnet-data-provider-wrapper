@@ -14,6 +14,7 @@
 
 using Amazon;
 using Amazon.RDS.Util;
+using Amazon.Runtime;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.Iam;
 
@@ -24,12 +25,21 @@ public class IamTokenUtility
         return user + ":" + hostname + ":" + port + ":" + region;
     }
 
-    public static string GenerateAuthenticationToken(string region, string hostname, int port, string user)
+    public static string GenerateAuthenticationToken(string region, string hostname, int port, string user, AWSCredentials? credentials)
     {
         try
         {
             RegionEndpoint regionEndpoint = RegionEndpoint.GetBySystemName(region);
-            return RDSAuthTokenGenerator.GenerateAuthToken(regionEndpoint, hostname, port, user);
+
+            if (credentials != null)
+            {
+                return RDSAuthTokenGenerator.GenerateAuthToken(credentials, regionEndpoint, hostname, port, user);
+            }
+            else
+            {
+                // load aws credentials from system if possible
+                return RDSAuthTokenGenerator.GenerateAuthToken(regionEndpoint, hostname, port, user);
+            }
         }
         catch (Exception ex)
         {

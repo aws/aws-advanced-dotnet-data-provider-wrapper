@@ -14,7 +14,6 @@
 
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
-using K4os.Compression.LZ4.Internal;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.Iam;
@@ -25,10 +24,11 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
 
     private static readonly MemoryCache IamTokenCache = new(new MemoryCacheOptions());
 
-    private static readonly int DefaultIamExpirationSeconds = 870;
-
     private readonly IPluginService pluginService = pluginService;
+
     private readonly Dictionary<string, string> props = props;
+
+    public static readonly int DefaultIamExpirationSeconds = 870;
 
     public override void OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate methodFunc)
     {
@@ -55,7 +55,7 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
         {
             try
             {
-                token = IamTokenUtility.GenerateAuthenticationToken(iamRegion, iamHost, iamPort, iamUser);
+                token = IamTokenUtility.GenerateAuthenticationToken(iamRegion, iamHost, iamPort, iamUser, null);
                 int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? DefaultIamExpirationSeconds;
                 IamTokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
             }
@@ -77,7 +77,7 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
             // should the token not work (expired on the server), generate a new one and try again
             try
             {
-                token = IamTokenUtility.GenerateAuthenticationToken(iamRegion, iamHost, iamPort, iamUser);
+                token = IamTokenUtility.GenerateAuthenticationToken(iamRegion, iamHost, iamPort, iamUser, null);
                 int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? DefaultIamExpirationSeconds;
                 IamTokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
             }
