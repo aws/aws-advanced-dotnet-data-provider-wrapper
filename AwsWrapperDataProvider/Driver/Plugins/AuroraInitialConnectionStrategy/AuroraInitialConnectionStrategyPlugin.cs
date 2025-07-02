@@ -161,7 +161,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
                     this.pluginService.SetAvailability(writerCandidate.AsAliases(), HostAvailability.Unavailable);
                 }
             }
-            catch (Exception e)
+            catch
             {
                 this.CloseConnection(writerConnectionCandidate);
                 throw;
@@ -297,7 +297,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
             {
                 return this.pluginService.GetHostSpecByStrategy(HostRole.Reader, strategy);
             }
-            catch (DbException dbException)
+            catch (DbException)
             {
                 return null;
             }

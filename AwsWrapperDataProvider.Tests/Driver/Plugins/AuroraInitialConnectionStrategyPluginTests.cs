@@ -238,7 +238,7 @@ public class AuroraInitialConnectionStrategyPluginTests
         this.mockPluginService.Setup(x => x.CurrentConnection).Returns(this.mockConnection.Object);
         this.mockPluginService.Setup(x => x.IdentifyConnection(It.IsAny<DbConnection>())).Returns(writerHost);
         this.mockPluginService.Setup(x => x.AcceptsStrategy("random")).Returns(true);
-        this.mockPluginService.Setup(x => x.GetHostSpecByStrategy(HostRole.Reader, "random")).Returns((HostSpec?)null);
+        this.mockPluginService.Setup(x => x.GetHostSpecByStrategy(HostRole.Reader, "random")).Returns((HostSpec?)null!);
         this.mockHostListProviderService.Setup(x => x.IsStaticHostListProvider()).Returns(false);
 
         this.plugin.InitHostProvider("test-url", props, this.mockHostListProviderService.Object, () => { });
