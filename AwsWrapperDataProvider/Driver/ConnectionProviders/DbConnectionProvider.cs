@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data.Common;
+using System.Runtime.InteropServices.Marshalling;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
@@ -50,6 +51,30 @@ public class DbConnectionProvider() : IConnectionProvider
         }
 
         return targetConnection;
+    }
+
+    public bool AcceptsStrategy(HostRole hostRole, string strategy)
+    {
+        // TODO: implement Functions to use strategy.
+        return true;
+    }
+
+    public HostSpec? GetHostSpecByStrategy(
+        IList<HostSpec> hosts,
+        HostRole hostRole,
+        string strategy,
+        Dictionary<string, string> props)
+    {
+        // TODO: Implement Function to use strategy.
+        foreach (HostSpec hostSpec in hosts)
+        {
+            if (hostSpec.Role == hostRole)
+            {
+                return hostSpec;
+            }
+        }
+
+        return null;
     }
 
     public string GetTargetName()

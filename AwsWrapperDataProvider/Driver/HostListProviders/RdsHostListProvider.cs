@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data;
+using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Caching.Memory;
@@ -214,6 +215,54 @@ public class RdsHostListProvider : IDynamicHostListProvider
     {
         this.EnsureInitialized();
         return this.ClusterId;
+    }
+
+    public HostSpec? IdentifyConnection(DbConnection connection)
+    {
+        using DbCommand command = connection.CreateCommand();
+        command.CommandText = this.nodeIdQuery;
+        using DbDataReader resultSet = command.ExecuteReader();
+
+        if (!resultSet.Read())
+        {
+            return null;
+        }
+
+        string instanceName = resultSet.GetString(0);
+
+        IList<HostSpec> topology = this.Refresh(connection);
+        bool isForcedRefresh = false;
+
+        // TODO Clean up if statement
+        if (topology == null)
+        {
+            topology = this.ForceRefresh(connection);
+            isForcedRefresh = true;
+
+            if (topology == null)
+            {
+                return null;
+            }
+        }
+
+        HostSpec? foundHost = topology
+            .Where(host => host.HostId == instanceName)
+            .FirstOrDefault();
+
+        if (foundHost == null && !isForcedRefresh)
+        {
+            topology = this.ForceRefresh(connection);
+            if (topology == null)
+            {
+                return null;
+            }
+
+            foundHost = topology
+                .Where(host => host.HostId == instanceName)
+                .FirstOrDefault();
+        }
+
+        return foundHost;
     }
 
     public HostRole GetHostRole(IDbConnection connection)

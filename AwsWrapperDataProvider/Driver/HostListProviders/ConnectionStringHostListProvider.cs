@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data;
+using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
 
@@ -69,6 +70,12 @@ public class ConnectionStringHostListProvider : IStaticHostListProvider
     public string GetClusterId()
     {
         throw new NotSupportedException("ConnectionStringHostListProvider does not support GetClusterId.");
+    }
+
+    public HostSpec? IdentifyConnection(DbConnection connection)
+    {
+        // TODO Log unsupported operation.
+        return null;
     }
 
     private void Init()

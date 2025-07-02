@@ -12,25 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data;
-using System.Data.Common;
-using AwsWrapperDataProvider.Driver.HostInfo;
+namespace AwsWrapperDataProvider.Driver.Plugins.AuroraInitialConnectionStrategy;
 
-namespace AwsWrapperDataProvider.Driver.HostListProviders;
-
-public interface IHostListProvider
+public class AuroraInitialConnectionStrategyPluginFactory : IConnectionPluginFactory
 {
-    IList<HostSpec> Refresh();
-
-    IList<HostSpec> Refresh(IDbConnection connection);
-
-    IList<HostSpec> ForceRefresh();
-
-    IList<HostSpec> ForceRefresh(IDbConnection connection);
-
-    HostRole GetHostRole(IDbConnection connection);
-
-    string GetClusterId();
-
-    HostSpec? IdentifyConnection(DbConnection connection);
+    public IConnectionPlugin GetInstance(IPluginService pluginService, Dictionary<string, string> props)
+    {
+        return new AuroraInitialConnectionStrategyPlugin(pluginService, props);
+    }
 }

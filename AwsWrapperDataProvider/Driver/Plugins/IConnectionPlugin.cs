@@ -68,7 +68,7 @@ public interface IConnectionPlugin
         string initialUrl,
         Dictionary<string, string> props,
         IHostListProviderService hostListProviderService,
-        ADONetDelegate<Action<object[]>> initHostProviderFunc);
+        ADONetDelegate initHostProviderFunc);
 }
 
 /// <summary>

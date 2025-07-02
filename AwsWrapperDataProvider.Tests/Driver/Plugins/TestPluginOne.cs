@@ -72,7 +72,7 @@ public class TestPluginOne : IConnectionPlugin
         return result;
     }
 
-    public void InitHostProvider(string initialUrl, Dictionary<string, string> props, IHostListProviderService hostListProviderService, ADONetDelegate<Action<object[]>> initHostProviderFunc)
+    public void InitHostProvider(string initialUrl, Dictionary<string, string> props, IHostListProviderService hostListProviderService, ADONetDelegate initHostProviderFunc)
     {
         // do nothing
     }

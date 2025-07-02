@@ -40,7 +40,6 @@ public class AwsWrapperTransactionTests
         this.mockPluginManager = new Mock<ConnectionPluginManager>(
             new Mock<IConnectionProvider>().Object,
             new Mock<IConnectionProvider>().Object,
-            new Dictionary<string, string>(),
             new List<IConnectionPlugin> { new TestPluginOne([]) },
             connection)
         {

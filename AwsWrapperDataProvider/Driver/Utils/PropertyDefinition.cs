@@ -58,17 +58,17 @@ public static class PropertyDefinition
         "false",
         "Set to true if you are providing a connection string with multiple comma-delimited hosts and your cluster has only one writer. The writer must be the first host in the connection string.");
 
-    public static readonly AwsWrapperProperty IamHost = new(
-        "iamHost", null, "Overrides the host that is used to generate the IAM token.");
+    public static readonly AwsWrapperProperty IamHost =
+        new("IamHost", null, "Overrides the host that is used to generate the IAM token.");
 
-    public static readonly AwsWrapperProperty IamDefaultPort = new(
-        "iamDefaultPort", "-1", "Overrides default port that is used to generate the IAM token.");
+    public static readonly AwsWrapperProperty IamDefaultPort =
+        new("IamDefaultPort", "-1", "Overrides default port that is used to generate the IAM token.");
 
-    public static readonly AwsWrapperProperty IamRegion = new(
-        "iamRegion", null, "Overrides AWS region that is used to generate the IAM token.");
+    public static readonly AwsWrapperProperty IamRegion =
+        new("IamRegion", null, "Overrides AWS region that is used to generate the IAM token.");
 
-    public static readonly AwsWrapperProperty IamExpiration = new(
-        "iamExpiration", "870", "IAM token cache expiration in seconds.");
+    public static readonly AwsWrapperProperty IamExpiration =
+        new("IamExpiration", "870", "IAM token cache expiration in seconds.");
 
     public static readonly AwsWrapperProperty IamRoleArn = new(
         "iamRoleArn", null, "The ARN of the IAM Role that is to be assumed.");
@@ -92,16 +92,28 @@ public static class PropertyDefinition
         "A unique identifier for the cluster. Connections with the same cluster id share a cluster topology cache. If unspecified, a cluster id is automatically created for AWS RDS clusters.");
 
     public static readonly AwsWrapperProperty SecretsManagerSecretId = new(
-        "secretsManagerSecretId", null, "The name or the ARN of the secret to retrieve.");
+        "SecretsManagerSecretId", null, "The name or the ARN of the secret to retrieve.");
 
     public static readonly AwsWrapperProperty SecretsManagerRegion = new(
-        "secretsManagerRegion", "us-east-1", "The region of the secret to retrieve.");
+        "SecretsManagerRegion", "us-east-1", "The region of the secret to retrieve.");
 
     public static readonly AwsWrapperProperty SecretsManagerExpirationSecs = new(
-        "secretsManagerExpirationSec", "870", "The time in seconds that secrets are cached for.");
+        "SecretsManagerExpirationSec", "870", "The time in seconds that secrets are cached for.");
 
     public static readonly AwsWrapperProperty SecretsManagerEndpoint = new(
-        "secretsManagerEndpoint", null, "The endpoint of the secret to retrieve.");
+        "SecretsManagerEndpoint", null, "The endpoint of the secret to retrieve.");
+
+    public static readonly AwsWrapperProperty ReaderHostSelectionStrategy = new(
+        "ReaderInitialConnectionHostSelectorStrategy", "random", "The strategy that should be used to select a new reader host while opening a new connection.");
+
+    public static readonly AwsWrapperProperty OpenConnectionRetryTimeoutMs = new(
+        "OpenConnectionRetryTimeoutMs", "30000", "Maximum allowed time for the retries opening a connection.");
+
+    public static readonly AwsWrapperProperty OpenConnectionRetryIntervalMs = new(
+        "OpenConnectionRetryIntervalMs", "1000", "Time between each retry of opening a connection.");
+
+    public static readonly AwsWrapperProperty VerifyOpenedConnectionType = new(
+        "VerifyOpenedConnectionType", null, "Force to verify an opened connection to be either a writer or a reader.");
 
     public static readonly AwsWrapperProperty IdpEndpoint = new(
         "idpEndpoint", null, "The hosting URL of the Identity Provider");
@@ -154,7 +166,11 @@ public static class PropertyDefinition
         HttpClientConnectTimeout,
         ClusterTopologyRefreshRateMs,
         ClusterInstanceHostPattern,
-        ClusterId
+        ClusterId,
+        ReaderHostSelectionStrategy,
+        OpenConnectionRetryTimeoutMs,
+        OpenConnectionRetryIntervalMs,
+        VerifyOpenedConnectionType,
     ];
 
     public static string GetConnectionUrl(Dictionary<string, string> props)

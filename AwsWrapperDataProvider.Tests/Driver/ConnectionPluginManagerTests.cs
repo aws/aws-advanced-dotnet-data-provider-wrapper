@@ -50,7 +50,6 @@ public class ConnectionPluginManagerTests
         ConnectionPluginManager connectionPluginManager = new(
             this.mockConnectionProvider,
             null,
-            [],
             testPlugins,
             this.mockWrapperConnection);
 
@@ -90,7 +89,6 @@ public class ConnectionPluginManagerTests
         ConnectionPluginManager connectionPluginManager = new(
             this.mockConnectionProvider,
             null,
-            [],
             testPlugins,
             this.mockWrapperConnection);
 
@@ -128,7 +126,6 @@ public class ConnectionPluginManagerTests
         ConnectionPluginManager connectionPluginManager = new(
             this.mockConnectionProvider,
             null,
-            [],
             testPlugins,
             this.mockWrapperConnection);
 
@@ -165,7 +162,6 @@ public class ConnectionPluginManagerTests
         ConnectionPluginManager connectionPluginManager = new(
             this.mockConnectionProvider,
             null,
-            [],
             testPlugins,
             this.mockWrapperConnection);
 
@@ -204,7 +200,6 @@ public class ConnectionPluginManagerTests
         ConnectionPluginManager connectionPluginManager = new(
             this.mockConnectionProvider,
             null,
-            [],
             testPlugins,
             this.mockWrapperConnection);
 

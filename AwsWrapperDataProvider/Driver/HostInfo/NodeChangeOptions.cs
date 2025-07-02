@@ -12,25 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data;
-using System.Data.Common;
-using AwsWrapperDataProvider.Driver.HostInfo;
+namespace AwsWrapperDataProvider.Driver.HostInfo;
 
-namespace AwsWrapperDataProvider.Driver.HostListProviders;
-
-public interface IHostListProvider
+[Flags]
+public enum NodeChangeOptions
 {
-    IList<HostSpec> Refresh();
-
-    IList<HostSpec> Refresh(IDbConnection connection);
-
-    IList<HostSpec> ForceRefresh();
-
-    IList<HostSpec> ForceRefresh(IDbConnection connection);
-
-    HostRole GetHostRole(IDbConnection connection);
-
-    string GetClusterId();
-
-    HostSpec? IdentifyConnection(DbConnection connection);
+    HostName,
+    PromotedToWriter,
+    PromotedToReader,
+    WentUp,
+    WentDown,
+    ConnectionObjectChanged,
+    InitialConnection,
+    NodeAdded,
+    NodeChanged,
+    NodeDeleted,
 }

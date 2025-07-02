@@ -33,7 +33,21 @@ public class HostSpec
     public int Port { get; }
     public bool IsPortSpecified => this.Port != NoPort;
     public HostRole Role { get; }
-    public HostAvailability RawAvailability { get; }
+    public HostAvailability RawAvailability { get; set; }
+
+    public HostAvailability Availability
+    {
+        get
+        {
+            // TODO: check for host selection strategy when implemented.
+            return this.RawAvailability;
+        }
+        set
+        {
+            this.RawAvailability = value;
+        }
+    }
+
     public long Weight { get; }
     public DateTime LastUpdateTime { get; }
 

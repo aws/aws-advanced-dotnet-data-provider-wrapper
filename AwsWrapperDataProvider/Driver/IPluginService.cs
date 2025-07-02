@@ -33,9 +33,9 @@ public interface IPluginService : IExceptionHandlerService
 
     ITargetConnectionDialect TargetConnectionDialect { get; }
 
-    DbConnection? CurrentConnection { get; }
+    DbConnection? CurrentConnection { get; set; }
 
-    HostSpec? CurrentHostSpec { get; }
+    HostSpec? CurrentHostSpec { get; set; }
 
     HostSpec? InitialConnectionHostSpec { get; }
 
@@ -116,7 +116,7 @@ public interface IPluginService : IExceptionHandlerService
     /// <param name="props">Connection properties.</param>
     /// <param name="pluginToSkip">The plugin to skip.</param>
     /// <returns>The database connection.</returns>
-    DbConnection Connect(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin pluginToSkip);
+    DbConnection OpenConnection(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin? pluginToSkip);
 
     /// <summary>
     /// Forces a connection to a host, skipping a specific plugin.
@@ -138,7 +138,7 @@ public interface IPluginService : IExceptionHandlerService
     /// </summary>
     /// <param name="connection">The database connection.</param>
     /// <returns>The host specification.</returns>
-    HostSpec IdentifyConnection(DbConnection connection);
+    HostSpec? IdentifyConnection(DbConnection connection);
 
     /// <summary>
     /// Fills in aliases for the given host specification using the connection.
@@ -152,4 +152,20 @@ public interface IPluginService : IExceptionHandlerService
     /// </summary>
     /// <returns>The connection provider.</returns>
     IConnectionProvider GetConnectionProvider();
+
+    /// <summary>
+    /// Checks if IConnectionPlugin and ConnectionProvider support host seclection strategy.
+    /// </summary>
+    /// <param name="hostRole">The desired role.</param>
+    /// <param name="strategy">The strategy that should be used to pick a host.</param>
+    /// <returns>whether strategy is supported.</returns>
+    bool AcceptsStrategy(HostRole hostRole, string strategy);
+
+    /// <summary>
+    /// Retrieves host given role of host and host selection strategy.
+    /// </summary>
+    /// <param name="hostRole">The role of host to be selected.</param>
+    /// <param name="strategy">Host selection strategy.</param>
+    /// <returns>Host givent role and selection strategy.</returns>
+    HostSpec GetHostSpecByStrategy(HostRole hostRole, string strategy);
 }

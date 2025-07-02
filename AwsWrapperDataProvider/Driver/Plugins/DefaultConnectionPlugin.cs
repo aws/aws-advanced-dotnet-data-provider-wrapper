@@ -61,7 +61,7 @@ public class DefaultConnectionPlugin(
         string initialUrl,
         Dictionary<string, string> props,
         IHostListProviderService hostListProviderService,
-        ADONetDelegate<Action<object[]>> initHostProviderFunc)
+        ADONetDelegate initHostProviderFunc)
     {
         // do nothing
     }
