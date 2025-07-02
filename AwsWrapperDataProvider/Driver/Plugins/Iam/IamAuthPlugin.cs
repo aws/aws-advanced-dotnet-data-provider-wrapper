@@ -51,6 +51,7 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
         string iamRegion = RegionUtils.GetRegion(iamHost, props, PropertyDefinition.IamRegion) ?? throw new Exception("Could not determine region for IAM authentication provider.");
 
         string cacheKey = IamTokenUtility.GetCacheKey(iamUser, iamHost, iamPort, iamRegion);
+        bool isCachedToken = true;
         if (!IamTokenCache.TryGetValue(cacheKey, out string? token))
         {
             try
@@ -58,6 +59,7 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
                 token = IamTokenUtility.GenerateAuthenticationToken(iamRegion, iamHost, iamPort, iamUser, null);
                 int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? DefaultIamExpirationSeconds;
                 IamTokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
+                isCachedToken = false;
             }
             catch (Exception ex)
             {
@@ -74,12 +76,12 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
         }
         catch (Exception ex)
         {
-            if (!this.pluginService.IsLoginException(ex))
+            if (!this.pluginService.IsLoginException(ex) || !isCachedToken)
             {
                 throw;
             }
 
-            // should the token not work (expired on the server), generate a new one and try again
+            // should the token not work (login exception + is cached token), generate a new one and try again
             try
             {
                 token = IamTokenUtility.GenerateAuthenticationToken(iamRegion, iamHost, iamPort, iamUser, null);
