@@ -18,6 +18,7 @@ using AwsWrapperDataProvider.Driver.Plugins.AuroraInitialConnectionStrategy;
 using AwsWrapperDataProvider.Driver.Plugins.Efm;
 using AwsWrapperDataProvider.Driver.Plugins.ExecutionTime;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
+using AwsWrapperDataProvider.Driver.Plugins.FederatedAuth;
 using AwsWrapperDataProvider.Driver.Plugins.Iam;
 using AwsWrapperDataProvider.Driver.Plugins.SecretsManager;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -37,6 +38,7 @@ public class ConnectionPluginChainBuilder
             { "iam", typeof(IamAuthPluginFactory) },
             { "awsSecretsManager", typeof(SecretsManagerAuthPluginFactory) },
             { "initialConnection", typeof(AuroraInitialConnectionStrategyPluginFactory) },
+            { "federatedAuth", typeof(FederatedAuthPluginFactory) },
     };
 
     private static readonly Dictionary<Type, int> PluginWeightByPluginFactoryType = new()
@@ -46,6 +48,7 @@ public class ConnectionPluginChainBuilder
             { typeof(HostMonitoringPluginFactory), 800 },
             { typeof(IamAuthPluginFactory), 1000 },
             { typeof(SecretsManagerAuthPluginFactory), 1100 },
+            { typeof(FederatedAuthPluginFactory), 1200 },
             { typeof(ExecutionTimePlugin), WeightRelativeToPriorPlugin },
     };
 

@@ -36,7 +36,7 @@ public class AwsWrapperTransaction : DbTransaction
 
     internal DbTransaction TargetDbTransaction => this.targetTransaction;
 
-    protected override DbConnection? DbConnection => this.wrapperConnection.TargetDbConnection;
+    protected override DbConnection? DbConnection => this.wrapperConnection;
 
     public override void Commit()
     {

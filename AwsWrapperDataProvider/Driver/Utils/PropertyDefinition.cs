@@ -70,6 +70,12 @@ public static class PropertyDefinition
     public static readonly AwsWrapperProperty IamExpiration =
         new("IamExpiration", "870", "IAM token cache expiration in seconds.");
 
+    public static readonly AwsWrapperProperty IamRoleArn = new(
+        "iamRoleArn", null, "The ARN of the IAM Role that is to be assumed.");
+
+    public static readonly AwsWrapperProperty IamIdpArn = new(
+        "iamIdpArn", null, "The ARN of the Identity Provider");
+
     public static readonly AwsWrapperProperty ClusterTopologyRefreshRateMs = new(
         "ClusterTopologyRefreshRateMs",
         "30000",
@@ -109,6 +115,27 @@ public static class PropertyDefinition
     public static readonly AwsWrapperProperty VerifyOpenedConnectionType = new(
         "VerifyOpenedConnectionType", null, "Force to verify an opened connection to be either a writer or a reader.");
 
+    public static readonly AwsWrapperProperty IdpEndpoint = new(
+        "idpEndpoint", null, "The hosting URL of the Identity Provider");
+
+    public static readonly AwsWrapperProperty IdpPort = new(
+      "idpPort", "443", "The hosting port of Identity Provider");
+
+    public static readonly AwsWrapperProperty IdpUsername = new(
+        "idpUsername", null, "The federated user name");
+
+    public static readonly AwsWrapperProperty IdpPassword = new(
+        "idpPassword", null, "The federated user password");
+
+    public static readonly AwsWrapperProperty RelayingPartyId = new(
+        "rpIdentifier", "urn:amazon:webservices", "The relaying party identifier");
+
+    public static readonly AwsWrapperProperty DbUser = new(
+        "dbUser", null, "The database user used to access the database");
+
+    public static readonly AwsWrapperProperty HttpClientConnectTimeout = new AwsWrapperProperty(
+      "httpClientConnectTimeout", "60000", "The connect timeout value in milliseconds for the HttpClient used by the FederatedAuthPlugin");
+
     /// <summary>
     /// A set of AwsWrapperProperties that is used by the wrapper and should not be passed to the target driver.
     /// </summary>
@@ -124,10 +151,19 @@ public static class PropertyDefinition
         IamDefaultPort,
         IamRegion,
         IamExpiration,
+        IamRoleArn,
+        IamIdpArn,
         SecretsManagerSecretId,
         SecretsManagerRegion,
         SecretsManagerExpirationSecs,
         SecretsManagerEndpoint,
+        IdpEndpoint,
+        IdpPort,
+        IdpUsername,
+        IdpPassword,
+        RelayingPartyId,
+        DbUser,
+        HttpClientConnectTimeout,
         ClusterTopologyRefreshRateMs,
         ClusterInstanceHostPattern,
         ClusterId,
