@@ -18,10 +18,22 @@ using AwsWrapperDataProvider.Driver.HostListProviders;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.Failover;
 
-public class FailoverPlugin(IPluginService pluginService, Dictionary<string, string> props) : AbstractConnectionPlugin
+public class FailoverPlugin : AbstractConnectionPlugin
 {
-    private readonly IPluginService pluginService = pluginService;
-    private readonly Dictionary<string, string> props = props;
+    private readonly IPluginService pluginService;
+    private readonly Dictionary<string, string> props;
 
-    public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string>();
+    public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string>()
+    {
+        // UPDATE WITH PROPER VALUES
+        "DbConnection.",
+        "DbConnection.Open",
+        "initHostProvider",
+    };
+
+    public FailoverPlugin(IPluginService pluginService, Dictionary<string, string> props)
+    {
+        this.pluginService = pluginService;
+        this.props = props;
+    }
 }

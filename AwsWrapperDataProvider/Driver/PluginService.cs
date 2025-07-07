@@ -213,6 +213,16 @@ public class PluginService : IPluginService, IHostListProviderService
         throw new NotImplementedException();
     }
 
+    public DbConnection ForceConnect(HostSpec hostSpec, Dictionary<string, string> props)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<DbConnection> ForceConnectAsync(HostSpec hostSpec, Dictionary<string, string> props)
+    {
+        return await Task.Run(() => this.ForceConnect(hostSpec, props));
+    }
+
     public void UpdateDialect(DbConnection connection)
     {
         IDialect dialect = this.Dialect;

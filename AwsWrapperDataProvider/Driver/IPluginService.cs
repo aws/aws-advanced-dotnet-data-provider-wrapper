@@ -128,6 +128,22 @@ public interface IPluginService : IExceptionHandlerService
     DbConnection ForceConnect(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin pluginToSkip);
 
     /// <summary>
+    /// Forces a connection to a host.
+    /// </summary>
+    /// <param name="hostSpec">The host specification.</param>
+    /// <param name="props">Connection properties.</param>
+    /// <returns>The database connection.</returns>
+    DbConnection ForceConnect(HostSpec hostSpec, Dictionary<string, string> props);
+
+    /// <summary>
+    /// Forces a connection to a host asynchronously.
+    /// </summary>
+    /// <param name="hostSpec">The host specification.</param>
+    /// <param name="props">Connection properties.</param>
+    /// <returns>The database connection.</returns>
+    Task<DbConnection> ForceConnectAsync(HostSpec hostSpec, Dictionary<string, string> props);
+
+    /// <summary>
     /// Updates the dialect based on the given connection.
     /// </summary>
     /// <param name="connection">The database connection.</param>
