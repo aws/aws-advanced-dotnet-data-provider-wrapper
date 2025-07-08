@@ -62,10 +62,4 @@ public class WrapperUtils
     {
         connectionPluginManager.Open(hostSpec, props, isInitialConnection, null, openFunc);
     }
-
-    private static T WrapWithProxyIfNeeded<T>(T toProxy, ConnectionPluginManager connectionPluginManager)
-    {
-        // TODO: stub implementation, please replace.
-        return toProxy;
-    }
 }

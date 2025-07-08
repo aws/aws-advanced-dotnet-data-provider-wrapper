@@ -39,7 +39,7 @@ public class MonitoringRdsHostListProvider : RdsHostListProvider
 
     protected readonly IPluginService pluginService;
     protected readonly TimeSpan highRefreshRate;
-    protected readonly string writerTopologyQuery;
+    protected readonly string isWriterQuery;
 
     static MonitoringRdsHostListProvider()
     {
@@ -52,11 +52,11 @@ public class MonitoringRdsHostListProvider : RdsHostListProvider
         string topologyQuery,
         string nodeIdQuery,
         string isReaderQuery,
-        string writerTopologyQuery,
+        string isWriterQuery,
         IPluginService pluginService) : base(properties, hostListProviderService, topologyQuery, nodeIdQuery, isReaderQuery)
     {
         this.pluginService = pluginService;
-        this.writerTopologyQuery = writerTopologyQuery;
+        this.isWriterQuery = isWriterQuery;
         this.highRefreshRate = TimeSpan.FromMilliseconds(
             ClusterTopologyHighRefreshRateMs.GetLong(this.properties) ?? 100);
     }
@@ -139,7 +139,7 @@ public class MonitoringRdsHostListProvider : RdsHostListProvider
             this.highRefreshRate,
             TopologyCacheExpirationTime,
             this.topologyQuery,
-            this.writerTopologyQuery,
+            this.isWriterQuery,
             this.nodeIdQuery));
     }
 

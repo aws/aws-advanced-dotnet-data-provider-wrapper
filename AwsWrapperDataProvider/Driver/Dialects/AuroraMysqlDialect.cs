@@ -15,6 +15,8 @@
 using System.Data;
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostListProviders;
+using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
+using AwsWrapperDataProvider.Driver.Utils;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
@@ -30,6 +32,9 @@ public class AuroraMysqlDialect : MysqlDialect
     private static readonly string NodeIdQuery = "SELECT @@aurora_server_id";
 
     private static readonly string IsDialectQuery = "SHOW VARIABLES LIKE 'aurora_version'";
+
+    private static readonly string IsWriterQuery = "SELECT SERVER_ID FROM information_schema.replica_host_status "
+        + "WHERE SESSION_ID = 'MASTER_SESSION_ID' AND SERVER_ID = @@aurora_server_id";
 
     public override IList<Type> DialectUpdateCandidates { get; } = [];
 
@@ -54,8 +59,21 @@ public class AuroraMysqlDialect : MysqlDialect
 
     private HostListProviderSupplier GetHostListProviderSupplier()
     {
-        // TODO add MonitoringRdsHostListProvider for failover plugin
-        return (props, hostListProviderService, pluginService) => new RdsHostListProvider(
-            props, hostListProviderService, TopologyQuery, NodeIdQuery, IsReaderQuery);
+        return (props, hostListProviderService, pluginService) =>
+            PropertyDefinition.Plugins.GetString(props)!.Contains("failover") ?
+                new MonitoringRdsHostListProvider(
+                    props,
+                    hostListProviderService,
+                    TopologyQuery,
+                    NodeIdQuery,
+                    IsReaderQuery,
+                    IsWriterQuery,
+                    pluginService) :
+                new RdsHostListProvider(
+                    props,
+                    hostListProviderService,
+                    TopologyQuery,
+                    NodeIdQuery,
+                    IsReaderQuery);
     }
 }

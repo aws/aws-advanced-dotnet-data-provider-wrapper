@@ -1,4 +1,4 @@
-﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -15,18 +15,11 @@
 namespace AwsWrapperDataProvider.Driver.Plugins.Failover;
 
 /// <summary>
-/// Factory for creating FailoverPlugin instances.
+/// Enumeration of failover modes that determine the behavior during failover scenarios.
 /// </summary>
-public class FailoverPluginFactory : IConnectionPluginFactory
+public enum FailoverMode
 {
-    /// <summary>
-    /// Creates a new instance of the FailoverPlugin.
-    /// </summary>
-    /// <param name="pluginService">The plugin service.</param>
-    /// <param name="props">Connection properties.</param>
-    /// <returns>A new FailoverPlugin instance.</returns>
-    public IConnectionPlugin GetInstance(IPluginService pluginService, Dictionary<string, string> props)
-    {
-        return new FailoverPlugin(pluginService, props);
-    }
+    StrictWriter,
+    StrictReader,
+    ReaderOrWriter,
 }

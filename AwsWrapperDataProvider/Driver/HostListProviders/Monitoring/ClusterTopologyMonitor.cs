@@ -151,7 +151,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         {
             var connectionToClose = Interlocked.Exchange(ref this.monitoringConnection, null);
             this.isVerifiedWriterConnection = false;
-            this.CloseConnection(connectionToClose, true);
+            this.CloseConnection(connectionToClose);
         }
 
         return await this.WaitTillTopologyGetsUpdatedAsync(timeoutMs);
@@ -336,7 +336,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                 {
                     try
                     {
-                        connection = await this.pluginService.ForceConnectAsync(hostSpec, this.monitoringProperties);
+                        this.pluginService.OpenConnection(hostSpec, this.monitoringProperties, false);
                         this.pluginService.SetAvailability(hostSpec.AsAliases(), HostAvailability.Available);
                     }
                     catch
@@ -441,8 +441,8 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         {
             try
             {
-                var conn = await this.pluginService.ForceConnectAsync(this.initialHostSpec, this.monitoringProperties);
-                if (Interlocked.CompareExchange(ref this.monitoringConnection, conn, null) == null)
+                this.pluginService.OpenConnection(this.initialHostSpec, this.monitoringProperties, false);
+                if (Interlocked.CompareExchange(ref this.monitoringConnection, this.pluginService.CurrentConnection, null) == null)
                 {
                     try
                     {
@@ -460,7 +460,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                 }
                 else
                 {
-                    this.CloseConnection(conn);
+                    this.CloseConnection(this.pluginService.CurrentConnection);
                 }
             }
             catch
@@ -532,7 +532,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         return null;
     }
 
-    protected void CloseConnection(DbConnection? connection, bool unstableConnection = false)
+    protected void CloseConnection(DbConnection? connection)
     {
         try
         {

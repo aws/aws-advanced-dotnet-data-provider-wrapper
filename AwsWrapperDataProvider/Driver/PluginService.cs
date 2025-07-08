@@ -203,24 +203,14 @@ public class PluginService : IPluginService, IHostListProviderService
         throw new NotImplementedException();
     }
 
-    public DbConnection OpenConnection(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin? pluginToSkip)
+    public void OpenConnection(HostSpec hostSpec, Dictionary<string, string> props, bool isInitialConnection)
     {
-        throw new NotImplementedException();
+        this.pluginManager.Open(hostSpec, props, isInitialConnection, null, () => { });
     }
 
-    public DbConnection ForceConnect(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin pluginToSkip)
+    public Task OpenConnectionAsync(HostSpec hostSpec, Dictionary<string, string> props)
     {
         throw new NotImplementedException();
-    }
-
-    public DbConnection ForceConnect(HostSpec hostSpec, Dictionary<string, string> props)
-    {
-        throw new NotImplementedException();
-    }
-
-    public async Task<DbConnection> ForceConnectAsync(HostSpec hostSpec, Dictionary<string, string> props)
-    {
-        return await Task.Run(() => this.ForceConnect(hostSpec, props));
     }
 
     public void UpdateDialect(DbConnection connection)

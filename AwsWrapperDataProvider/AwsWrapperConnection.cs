@@ -163,7 +163,7 @@ public class AwsWrapperConnection : DbConnection
             this.pluginService.InitialConnectionHostSpec,
             this.ConnectionProperties!,
             true,
-            () => this.pluginService.CurrentConnection!.Open());
+            () => { });
         this.pluginService.RefreshHostList();
     }
 

@@ -136,6 +136,22 @@ public static class PropertyDefinition
     public static readonly AwsWrapperProperty HttpClientConnectTimeout = new AwsWrapperProperty(
       "httpClientConnectTimeout", "60000", "The connect timeout value in milliseconds for the HttpClient used by the FederatedAuthPlugin");
 
+    // Failover Plugin Properties
+    public static readonly AwsWrapperProperty FailoverTimeoutMs = new(
+        "failoverTimeoutMs", "300000", "Maximum allowed time for the failover process in milliseconds.");
+
+    public static readonly AwsWrapperProperty FailoverMode = new(
+        "failoverMode", null, "Set node role to follow during failover. Valid values: StrictWriter, StrictReader, ReaderOrWriter.");
+
+    public static readonly AwsWrapperProperty FailoverReaderHostSelectorStrategy = new(
+        "failoverReaderHostSelectorStrategy", "random", "The strategy that should be used to select a new reader host while opening a new connection.");
+
+    public static readonly AwsWrapperProperty EnableConnectFailover = new(
+        "enableConnectFailover", "false", "Enable/disable cluster-aware failover if the initial connection to the database fails due to a network exception.");
+
+    public static readonly AwsWrapperProperty SkipFailoverOnInterruptedThread = new(
+        "skipFailoverOnInterruptedThread", "false", "Enable to skip failover if the current thread is interrupted.");
+
     /// <summary>
     /// A set of AwsWrapperProperties that is used by the wrapper and should not be passed to the target driver.
     /// </summary>
@@ -171,6 +187,13 @@ public static class PropertyDefinition
         OpenConnectionRetryTimeoutMs,
         OpenConnectionRetryIntervalMs,
         VerifyOpenedConnectionType,
+
+        // Failover Plugin Properties
+        FailoverTimeoutMs,
+        FailoverMode,
+        FailoverReaderHostSelectorStrategy,
+        EnableConnectFailover,
+        SkipFailoverOnInterruptedThread,
     ];
 
     public static string GetConnectionUrl(Dictionary<string, string> props)

@@ -130,7 +130,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
                     return writerConnectionCandidate;
                 }
 
-                this.pluginService.OpenConnection(writerCandidate, props, null);
+                this.pluginService.OpenConnection(writerCandidate, props, isInitialConnection);
                 writerConnectionCandidate = this.pluginService.CurrentConnection
                     ?? throw new Exception("Could not find connection.");
 
@@ -231,7 +231,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
                     return readerConnectionCandidate;
                 }
 
-                this.pluginService.OpenConnection(readerCandidate, props, null);
+                this.pluginService.OpenConnection(readerCandidate, props, isInitialConnection);
                 readerConnectionCandidate = this.pluginService.CurrentConnection!;
 
                 if (this.pluginService.GetHostRole(readerConnectionCandidate) != HostRole.Reader)

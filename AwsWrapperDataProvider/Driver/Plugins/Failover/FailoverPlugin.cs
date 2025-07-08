@@ -12,22 +12,77 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data;
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
+using AwsWrapperDataProvider.Driver.Plugins.ExecutionTime;
+using AwsWrapperDataProvider.Driver.Utils;
+using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.Failover;
 
+/// <summary>
+/// Failover Plugin v.2
+/// This plugin provides cluster-aware failover features. The plugin switches connections upon
+/// detecting communication related exceptions and/or cluster topology changes.
+/// </summary>
 public class FailoverPlugin : AbstractConnectionPlugin
 {
+    private static readonly ILogger<FailoverPlugin> logger = LoggerUtils.GetLogger<FailoverPlugin>();
+
+    // Method names
+    private const string MethodAbort = "DbConnection.Abort";
+    private const string MethodClose = "DbConnection.Close";
+    private const string MethodIsClosed = "DbConnection.IsClosed";
+    private const string MethodDispose = "DbConnection.Dispose";
+
     private readonly IPluginService pluginService;
     private readonly Dictionary<string, string> props;
+    private IHostListProviderService? hostListProviderService;
+    private RdsUrlType? rdsUrlType;
+
+
+    // Configuration settings
+    private readonly int failoverTimeoutMs;
+    private readonly FailoverMode failoverMode;
+    private readonly string failoverReaderHostSelectorStrategy;
+    private readonly bool enableConnectFailover;
+    private readonly bool skipFailoverOnInterruptedThread;
+
+    // State tracking
+    private bool closedExplicitly = false;
+    private bool isClosed = false;
+    private Exception? lastExceptionDealtWith = null;
+    private bool isInTransaction = false;
 
     public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string>()
     {
-        // UPDATE WITH PROPER VALUES
-        "DbConnection.",
+        // Network-bound methods that might fail and trigger failover
         "DbConnection.Open",
+        "DbConnection.OpenAsync",
+        "DbCommand.ExecuteNonQuery",
+        "DbCommand.ExecuteNonQueryAsync",
+        "DbCommand.ExecuteReader",
+        "DbCommand.ExecuteReaderAsync",
+        "DbCommand.ExecuteScalar",
+        "DbCommand.ExecuteScalarAsync",
+        "DbDataReader.Read",
+        "DbDataReader.ReadAsync",
+        "DbDataReader.NextResult",
+        "DbDataReader.NextResultAsync",
+        "DbTransaction.Commit",
+        "DbTransaction.CommitAsync",
+        "DbTransaction.Rollback",
+        "DbTransaction.RollbackAsync",
+
+        // Connection management methods
+        "DbConnection.Close",
+        "DbConnection.Dispose",
+        "DbConnection.Abort",
+
+        // Special methods
+        "DbConnection.ClearWarnings",
         "initHostProvider",
     };
 
@@ -35,5 +90,457 @@ public class FailoverPlugin : AbstractConnectionPlugin
     {
         this.pluginService = pluginService;
         this.props = props;
+
+        // Initialize configuration settings using PropertyDefinition
+        this.failoverTimeoutMs = PropertyDefinition.FailoverTimeoutMs.GetInt(props) ?? 300000;
+        this.failoverMode = this.GetFailoverMode();
+        this.failoverReaderHostSelectorStrategy = PropertyDefinition.FailoverReaderHostSelectorStrategy.GetString(props) ?? "random";
+        this.enableConnectFailover = PropertyDefinition.EnableConnectFailover.GetBoolean(props);
+        this.skipFailoverOnInterruptedThread = PropertyDefinition.SkipFailoverOnInterruptedThread.GetBoolean(props);
+    }
+
+    public override T Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, params object[] methodArgs)
+    {
+        try
+        {
+            // Check if current connection is closed and needs to be replaced
+            if (this.pluginService.CurrentConnection != null
+                && !this.CanDirectExecute(methodName)
+                && !this.closedExplicitly
+                && this.pluginService.CurrentConnection.State == ConnectionState.Closed)
+            {
+                this.PickNewConnection();
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException("Failed to establish new connection", ex);
+        }
+
+        if (this.CanDirectExecute(methodName))
+        {
+            return methodFunc();
+        }
+
+        if (this.isClosed && !this.AllowedOnClosedConnection(methodName))
+        {
+            this.InvalidInvocationOnClosedConnection();
+        }
+
+        try
+        {
+            return methodFunc();
+        }
+        catch (Exception e)
+        {
+            this.DealWithOriginalException(e);
+            throw; // This line should not be reached due to exception handling above
+        }
+    }
+
+    public override void OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate methodFunc)
+    {
+        if (!this.enableConnectFailover || hostSpec == null)
+        {
+            methodFunc();
+            return;
+        }
+
+        var hostSpecWithAvailability = this.pluginService.GetHosts()
+            .FirstOrDefault(x => x.Host == hostSpec.Host && x.Port == hostSpec.Port);
+
+        if (hostSpecWithAvailability == null || hostSpecWithAvailability.Availability != HostAvailability.Unavailable)
+        {
+            try
+            {
+                methodFunc();
+            }
+            catch (Exception e)
+            {
+                if (!this.ShouldExceptionTriggerConnectionSwitch(e))
+                {
+                    throw;
+                }
+
+                this.pluginService.SetAvailability(hostSpec.AsAliases(), HostAvailability.Unavailable);
+
+                try
+                {
+                    this.Failover();
+                }
+                catch (FailoverSuccessException)
+                {
+                    // Connection established successfully through failover
+                }
+            }
+        }
+        else
+        {
+            try
+            {
+                this.pluginService.RefreshHostList();
+                this.Failover();
+            }
+            catch (FailoverSuccessException)
+            {
+                // Connection established successfully through failover
+            }
+        }
+
+        if (this.pluginService.CurrentConnection == null)
+        {
+            throw new InvalidOperationException("Unable to establish connection");
+        }
+
+        if (isInitialConnection)
+        {
+            this.pluginService.RefreshHostList(this.pluginService.CurrentConnection);
+        }
+    }
+
+    public override void InitHostProvider(string initialUrl, Dictionary<string, string> props, IHostListProviderService hostListProviderService, ADONetDelegate initHostProviderFunc)
+    {
+        this.hostListProviderService = hostListProviderService;
+        initHostProviderFunc();
+    }
+
+    private void InvalidInvocationOnClosedConnection()
+    {
+        if (!this.closedExplicitly)
+        {
+            this.isClosed = false;
+            this.PickNewConnection();
+            throw new FailoverSuccessException("The active connection has changed. Please re-configure session state if required.");
+        }
+
+        throw new InvalidOperationException("Connection is closed");
+    }
+
+    private bool AllowedOnClosedConnection(string methodName)
+    {
+        return this.pluginService.TargetConnectionDialect.GetAllowedOnConnectionMethodNames().Contains(methodName);
+    }
+
+    private void DealWithOriginalException(Exception originalException)
+    {
+        if (this.lastExceptionDealtWith != originalException && this.ShouldExceptionTriggerConnectionSwitch(originalException))
+        {
+            this.InvalidateCurrentConnection();
+            if (this.pluginService.CurrentHostSpec != null)
+            {
+                this.pluginService.SetAvailability(this.pluginService.CurrentHostSpec.AsAliases(), HostAvailability.Unavailable);
+            }
+
+            try
+            {
+                this.PickNewConnection();
+            }
+            catch (Exception e)
+            {
+                throw new InvalidOperationException("Failed to establish new connection during failover", e);
+            }
+
+            this.lastExceptionDealtWith = originalException;
+        }
+
+        throw originalException;
+    }
+
+    private void Failover()
+    {
+        if (this.failoverMode == FailoverMode.StrictWriter)
+        {
+            this.FailoverWriter();
+        }
+        else
+        {
+            this.FailoverReader();
+        }
+    }
+
+    private void FailoverReader()
+    {
+        var failoverStartTime = DateTime.UtcNow;
+        var failoverEndTime = failoverStartTime.AddMilliseconds(this.failoverTimeoutMs);
+
+        try
+        {
+            // Force refresh host list without waiting for topology update
+            this.pluginService.ForceRefreshHostList(false, 0);
+
+            var result = this.GetReaderFailoverConnection(failoverEndTime);
+            this.pluginService.SetCurrentConnection(result.Connection, result.HostSpec);
+
+            this.ThrowFailoverSuccessException();
+        }
+        catch (FailoverSuccessException)
+        {
+            throw;
+        }
+        catch (TimeoutException)
+        {
+            throw new FailoverFailedException("Unable to connect to reader within timeout period");
+        }
+        catch (Exception ex)
+        {
+            throw new FailoverFailedException("Reader failover failed", ex);
+        }
+    }
+
+    private ReaderFailoverResult GetReaderFailoverConnection(DateTime failoverEndTime)
+    {
+        var hosts = this.pluginService.GetHosts();
+        var readerCandidates = hosts.Where(h => h.Role == HostRole.Reader).ToHashSet();
+        var originalWriter = hosts.FirstOrDefault(h => h.Role == HostRole.Writer);
+        bool isOriginalWriterStillWriter = false;
+
+        do
+        {
+            // First, try all original readers
+            var remainingReaders = new HashSet<HostSpec>(readerCandidates);
+            while (remainingReaders.Count > 0 && DateTime.UtcNow < failoverEndTime)
+            {
+                HostSpec readerCandidate;
+                try
+                {
+                    readerCandidate = this.pluginService.GetHostSpecByStrategy(HostRole.Reader, this.failoverReaderHostSelectorStrategy);
+                    if (!remainingReaders.Contains(readerCandidate))
+                    {
+                        break;
+                    }
+                }
+                catch (Exception)
+                {
+                    break;
+                }
+
+                try
+                {
+                    this.pluginService.OpenConnection(readerCandidate, this.props, false);
+                    DbConnection candidateConn = this.pluginService.CurrentConnection;
+                    var role = this.pluginService.GetHostRole(candidateConn);
+
+                    if (role == HostRole.Reader || this.failoverMode != FailoverMode.StrictReader)
+                    {
+                        var updatedHostSpec = new HostSpec(readerCandidate.Host, readerCandidate.Port, role, readerCandidate.Availability);
+                        return new ReaderFailoverResult(candidateConn, updatedHostSpec);
+                    }
+
+                    // The role is Writer or Unknown, and we are in StrictReader mode
+                    remainingReaders.Remove(readerCandidate);
+                    candidateConn.Close();
+
+                    if (role == HostRole.Writer)
+                    {
+                        readerCandidates.Remove(readerCandidate);
+                    }
+                }
+                catch (Exception)
+                {
+                    remainingReaders.Remove(readerCandidate);
+                }
+            }
+
+            // Try the original writer, which may have been demoted to a reader
+            if (originalWriter != null && DateTime.UtcNow <= failoverEndTime)
+            {
+                if (this.failoverMode == FailoverMode.StrictReader && isOriginalWriterStillWriter)
+                {
+                    continue;
+                }
+
+                try
+                {
+                    this.pluginService.OpenConnection(originalWriter, this.props, false);
+                    DbConnection candidateConn = this.pluginService.CurrentConnection;
+                    var role = this.pluginService.GetHostRole(candidateConn);
+
+                    if (role == HostRole.Reader || this.failoverMode != FailoverMode.StrictReader)
+                    {
+                        var updatedHostSpec = new HostSpec(originalWriter.Host, originalWriter.Port, role, originalWriter.Availability);
+                        return new ReaderFailoverResult(candidateConn, updatedHostSpec);
+                    }
+
+                    candidateConn.Close();
+
+                    if (role == HostRole.Writer)
+                    {
+                        isOriginalWriterStillWriter = true;
+                    }
+                }
+                catch (Exception)
+                {
+                    // Continue to next iteration
+                }
+            }
+        }
+        while (DateTime.UtcNow < failoverEndTime);
+
+        throw new TimeoutException("Failover reader timeout");
+    }
+
+    private void FailoverWriter()
+    {
+        var failoverStartTime = DateTime.UtcNow;
+
+        try
+        {
+            // Force refresh host list and wait for topology to stabilize
+            this.pluginService.ForceRefreshHostList(true, this.failoverTimeoutMs);
+
+            var updatedHosts = this.pluginService.AllHosts;
+            var writerCandidate = updatedHosts.FirstOrDefault(x => x.Role == HostRole.Writer);
+
+            if (writerCandidate == null)
+            {
+                throw new FailoverFailedException("No writer host found in updated topology");
+            }
+
+            var allowedHosts = this.pluginService.GetHosts();
+            if (!allowedHosts.Any(h => h.Host == writerCandidate.Host && h.Port == writerCandidate.Port))
+            {
+                throw new FailoverFailedException($"New writer {writerCandidate.Host}:{writerCandidate.Port} is not in allowed hosts list");
+            }
+
+            DbConnection writerCandidateConn;
+            try
+            {
+                this.pluginService.OpenConnection(writerCandidate, this.props, false);
+                writerCandidateConn = this.pluginService.CurrentConnection ?? throw new Exception($"Unable to open connection to {writerCandidate.Host}");
+            }
+            catch (Exception ex)
+            {
+                throw new FailoverFailedException($"Exception connecting to writer {writerCandidate.Host}", ex);
+            }
+
+            var role = this.pluginService.GetHostRole(writerCandidateConn);
+            if (role != HostRole.Writer)
+            {
+                try
+                {
+                    writerCandidateConn.Close();
+                }
+                catch (Exception)
+                {
+                    // Ignore close exception
+                }
+
+                throw new FailoverFailedException($"Unexpected role {role} for writer candidate {writerCandidate.Host}");
+            }
+
+            this.pluginService.SetCurrentConnection(writerCandidateConn, writerCandidate);
+            this.ThrowFailoverSuccessException();
+        }
+        catch (FailoverSuccessException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new FailoverFailedException("Writer failover failed", ex);
+        }
+    }
+
+    private void ThrowFailoverSuccessException()
+    {
+        if (this.isInTransaction)
+        {
+            this.isInTransaction = false;
+            throw new TransactionStateUnknownException("Transaction resolution unknown. Please re-configure session state if required and try restarting transaction.");
+        }
+        else
+        {
+            throw new FailoverSuccessException("The active SQL connection has changed due to a connection failure. Please re-configure session state if required.");
+        }
+    }
+
+    private void InvalidateCurrentConnection()
+    {
+        var conn = this.pluginService.CurrentConnection;
+        if (conn == null)
+        {
+            return;
+        }
+
+        // Handle transaction rollback if needed
+        if (conn.State == ConnectionState.Open)
+        {
+            try
+            {
+                // Check if we're in a transaction and roll it back
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "SELECT 1"; // Simple query to test connection
+                cmd.ExecuteScalar();
+            }
+            catch (Exception)
+            {
+                // Connection is likely broken, mark as in transaction for proper handling
+                this.isInTransaction = true;
+            }
+        }
+
+        try
+        {
+            if (conn.State != ConnectionState.Closed)
+            {
+                conn.Close();
+            }
+        }
+        catch (Exception)
+        {
+            // Swallow exception, current connection should be useless anyway
+        }
+    }
+
+    private void PickNewConnection()
+    {
+        if (this.isClosed && this.closedExplicitly)
+        {
+            logger.LogInformation("Failover connection closed explicitly.");
+            return;
+        }
+
+        this.Failover();
+    }
+
+    private bool ShouldExceptionTriggerConnectionSwitch(Exception exception)
+    {
+        if (!this.IsFailoverEnabled())
+        {
+            return false;
+        }
+
+        if (this.skipFailoverOnInterruptedThread && Thread.CurrentThread.ThreadState == ThreadState.AbortRequested)
+        {
+            return false;
+        }
+
+        return this.pluginService.IsNetworkException(exception);
+    }
+
+    private bool CanDirectExecute(string methodName)
+    {
+        return methodName == MethodClose ||
+               methodName == MethodIsClosed ||
+               methodName == MethodAbort ||
+               methodName == MethodDispose;
+    }
+
+    private bool IsFailoverEnabled()
+    {
+        return RdsUrlType.RdsProxy.Equals(this.rdsUrlType)
+            && !(this.pluginService.AllHosts.Count == 0);
+    }
+
+    private FailoverMode GetFailoverMode()
+    {
+        var modeStr = PropertyDefinition.FailoverMode.GetString(this.props);
+        if (string.IsNullOrEmpty(modeStr))
+        {
+            // Default based on connection type - this would need to be determined based on URL analysis
+            return FailoverMode.StrictWriter;
+        }
+
+        return Enum.TryParse<FailoverMode>(modeStr, true, out var mode) ? mode : FailoverMode.StrictWriter;
     }
 }

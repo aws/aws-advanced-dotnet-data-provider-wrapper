@@ -1,4 +1,4 @@
-﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -15,18 +15,19 @@
 namespace AwsWrapperDataProvider.Driver.Plugins.Failover;
 
 /// <summary>
-/// Factory for creating FailoverPlugin instances.
+/// Exception thrown when a failover operation fails to complete successfully.
 /// </summary>
-public class FailoverPluginFactory : IConnectionPluginFactory
+public class FailoverFailedException : Exception
 {
-    /// <summary>
-    /// Creates a new instance of the FailoverPlugin.
-    /// </summary>
-    /// <param name="pluginService">The plugin service.</param>
-    /// <param name="props">Connection properties.</param>
-    /// <returns>A new FailoverPlugin instance.</returns>
-    public IConnectionPlugin GetInstance(IPluginService pluginService, Dictionary<string, string> props)
+    public FailoverFailedException() : base("Failover operation failed")
     {
-        return new FailoverPlugin(pluginService, props);
+    }
+
+    public FailoverFailedException(string message) : base(message)
+    {
+    }
+
+    public FailoverFailedException(string message, Exception innerException) : base(message, innerException)
+    {
     }
 }
