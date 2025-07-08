@@ -101,7 +101,7 @@ public class AuroraInitialConnectionStrategyPluginTests
 
         this.plugin.OpenConnection(hostSpec, this.defaultProps, false, methodFunc.Object);
 
-        this.mockPluginService.Verify(x => x.OpenConnection(It.IsAny<HostSpec>(), It.IsAny<Dictionary<string, string>>(), null), Times.Once);
+        this.mockPluginService.Verify(x => x.OpenConnection(It.IsAny<HostSpec>(), It.IsAny<Dictionary<string, string>>(), false), Times.Once);
     }
 
     [Fact]
@@ -123,7 +123,7 @@ public class AuroraInitialConnectionStrategyPluginTests
 
         this.plugin.OpenConnection(hostSpec, this.defaultProps, false, methodFunc.Object);
 
-        this.mockPluginService.Verify(x => x.OpenConnection(It.IsAny<HostSpec>(), It.IsAny<Dictionary<string, string>>(), null), Times.Once);
+        this.mockPluginService.Verify(x => x.OpenConnection(It.IsAny<HostSpec>(), It.IsAny<Dictionary<string, string>>(), false), Times.Once);
     }
 
     [Fact]
@@ -160,7 +160,7 @@ public class AuroraInitialConnectionStrategyPluginTests
 
         pluginWithVerify.OpenConnection(hostSpec, props, true, methodFunc.Object);
 
-        this.mockPluginService.Verify(x => x.OpenConnection(It.IsAny<HostSpec>(), It.IsAny<Dictionary<string, string>>(), null), Times.Once);
+        this.mockPluginService.Verify(x => x.OpenConnection(It.IsAny<HostSpec>(), It.IsAny<Dictionary<string, string>>(), false), Times.Once);
     }
 
     [Fact]
@@ -189,7 +189,7 @@ public class AuroraInitialConnectionStrategyPluginTests
 
         pluginWithVerify.OpenConnection(hostSpec, props, true, methodFunc.Object);
 
-        this.mockPluginService.Verify(x => x.OpenConnection(It.IsAny<HostSpec>(), It.IsAny<Dictionary<string, string>>(), null), Times.Once);
+        this.mockPluginService.Verify(x => x.OpenConnection(It.IsAny<HostSpec>(), It.IsAny<Dictionary<string, string>>(), false), Times.Once);
     }
 
     [Fact]

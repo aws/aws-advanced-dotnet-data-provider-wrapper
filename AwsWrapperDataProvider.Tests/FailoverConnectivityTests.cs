@@ -12,9 +12,38 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data;
+
 namespace AwsWrapperDataProvider.Tests;
 
 public class FailoverConnectivityTests
 {
-    
+    [Fact]
+    [Trait("Category", "Integration")]
+    public void MySqlClientWrapperConnectionTest()
+    {
+        const string connectionString = "Server=127.0.0.1;User ID=root;Password=password;Initial Catalog=mysql;";
+        const string query = "select * from test";
+
+        using (AwsWrapperConnection<MySql.Data.MySqlClient.MySqlConnection> connection =
+               new(connectionString))
+        {
+            AwsWrapperCommand<MySql.Data.MySqlClient.MySqlCommand> command = connection.CreateCommand<MySql.Data.MySqlClient.MySqlCommand>();
+            command.CommandText = query;
+
+            try
+            {
+                connection.Open();
+                IDataReader reader = command.ExecuteReader();
+                while (reader.Read())
+                {
+                    Console.WriteLine(reader.GetInt32(0));
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
+        }
+    }
 }
