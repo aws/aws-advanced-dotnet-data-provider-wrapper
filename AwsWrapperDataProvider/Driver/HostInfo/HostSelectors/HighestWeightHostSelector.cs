@@ -23,17 +23,9 @@ public class HighestWeightHostSelector : IHostSelector
 {
     public static string StrategyName { get; } = "HighestWeight";
 
-    /// <summary>
-    /// Selects the host with the highest weight for the requested role from the given host list.
-    /// </summary>
-    /// <param name="hosts">A list of available hosts to pick from.</param>
-    /// <param name="hostRole">The desired host role - either a writer or a reader.</param>
-    /// <param name="props">Connection properties that may be needed by the host selector.</param>
-    /// <returns>A host matching the requested role with the highest weight.</returns>
-    /// <exception cref="InvalidOperationException">If the host list does not contain any hosts matching the requested role.</exception>
     public HostSpec GetHost(List<HostSpec> hosts, HostRole hostRole, Dictionary<string, string> props)
     {
-        var eligibleHosts = hosts
+        List<HostSpec> eligibleHosts = hosts
             .Where(hostSpec => hostRole == hostSpec.Role && hostSpec.Availability == HostAvailability.Available)
             .ToList();
 

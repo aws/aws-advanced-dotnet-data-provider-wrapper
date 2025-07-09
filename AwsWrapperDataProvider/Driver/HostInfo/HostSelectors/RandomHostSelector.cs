@@ -24,17 +24,9 @@ public class RandomHostSelector : IHostSelector
     public static string StrategyName { get; } = "Random";
     private static readonly Random Random = new();
 
-    /// <summary>
-    /// Selects a random host with the requested role from the given host list.
-    /// </summary>
-    /// <param name="hosts">A list of available hosts to pick from.</param>
-    /// <param name="hostRole">The desired host role - either a writer or a reader.</param>
-    /// <param name="props">Connection properties that may be needed by the host selector.</param>
-    /// <returns>A host matching the requested role.</returns>
-    /// <exception cref="InvalidOperationException">If the host list does not contain any hosts matching the requested role.</exception>
     public HostSpec GetHost(List<HostSpec> hosts, HostRole hostRole, Dictionary<string, string> props)
     {
-        var eligibleHosts = hosts
+        List<HostSpec> eligibleHosts = hosts
             .Where(hostSpec => hostRole == hostSpec.Role && hostSpec.Availability == HostAvailability.Available)
             .ToList();
 
@@ -43,7 +35,7 @@ public class RandomHostSelector : IHostSelector
             throw new InvalidOperationException($"No hosts found matching role: {hostRole}");
         }
 
-        var randomIndex = Random.Next(eligibleHosts.Count);
+        int randomIndex = Random.Next(eligibleHosts.Count);
         return eligibleHosts[randomIndex];
     }
 }
