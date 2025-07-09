@@ -30,6 +30,8 @@ public partial class RoundRobinHostSelector : IHostSelector
     private const int DefaultWeight = 1;
 
     private static readonly MemoryCache RoundRobinCache = new(new MemoryCacheOptions());
+    protected TimeSpan DefaultRoundRobinCacheExpire = TimeSpan.FromMinutes(10);
+
     private static readonly object Lock = new();
 
     [GeneratedRegex(@"(?<host>[^:/?#]*):(?<weight>[0-9]+)")]
@@ -129,7 +131,7 @@ public partial class RoundRobinHostSelector : IHostSelector
             // Update cache entries for all hosts to point to the same cluster info
             foreach (HostSpec host in hosts)
             {
-                RoundRobinCache.Set(host.Host, clusterInfo);
+                RoundRobinCache.Set(host.Host, clusterInfo, this.DefaultRoundRobinCacheExpire);
             }
         }
         else
@@ -140,7 +142,7 @@ public partial class RoundRobinHostSelector : IHostSelector
 
             foreach (HostSpec host in hosts)
             {
-                RoundRobinCache.Set(host.Host, clusterInfo);
+                RoundRobinCache.Set(host.Host, clusterInfo, this.DefaultRoundRobinCacheExpire);
             }
         }
     }
