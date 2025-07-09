@@ -136,6 +136,16 @@ public static class PropertyDefinition
     public static readonly AwsWrapperProperty HttpClientConnectTimeout = new AwsWrapperProperty(
       "httpClientConnectTimeout", "60000", "The connect timeout value in milliseconds for the HttpClient used by the FederatedAuthPlugin");
 
+    public static readonly AwsWrapperProperty RoundRobinHostWeightPairs = new(
+        "roundRobinHostWeightPairs",
+        null,
+        "Comma separated list of database host-weight pairs in the format of `<host>:<weight>`.");
+
+    public static readonly AwsWrapperProperty RoundRobinDefaultWeight = new(
+        "roundRobinDefaultWeight",
+        "1",
+        "The default weight for any hosts that have not been configured with the `roundRobinHostWeightPairs` parameter.");
+
     /// <summary>
     /// A set of AwsWrapperProperties that is used by the wrapper and should not be passed to the target driver.
     /// </summary>
@@ -171,6 +181,8 @@ public static class PropertyDefinition
         OpenConnectionRetryTimeoutMs,
         OpenConnectionRetryIntervalMs,
         VerifyOpenedConnectionType,
+        RoundRobinHostWeightPairs,
+        RoundRobinDefaultWeight,
     ];
 
     public static string GetConnectionUrl(Dictionary<string, string> props)

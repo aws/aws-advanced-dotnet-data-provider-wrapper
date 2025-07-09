@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Collections.Concurrent;
 using System.Data.Common;
 using System.Text.RegularExpressions;
 using AwsWrapperDataProvider.Driver.Utils;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace AwsWrapperDataProvider.Driver.HostInfo.HostSelectors;
 
@@ -23,26 +23,17 @@ namespace AwsWrapperDataProvider.Driver.HostInfo.HostSelectors;
 /// Host selector that selects hosts in a round-robin fashion with support for weighted selection.
 /// Hosts can be assigned weights to control how frequently they are selected.
 /// </summary>
-public class RoundRobinHostSelector : IHostSelector
+public partial class RoundRobinHostSelector : IHostSelector
 {
     public static string StrategyName { get; } = "RoundRobin";
 
-    // Configuration properties
-    public static readonly AwsWrapperProperty RoundRobinHostWeightPairs = new(
-        "roundRobinHostWeightPairs",
-        null,
-        "Comma separated list of database host-weight pairs in the format of `<host>:<weight>`.");
-
-    public static readonly AwsWrapperProperty RoundRobinDefaultWeight = new(
-        "roundRobinDefaultWeight",
-        "1",
-        "The default weight for any hosts that have not been configured with the `roundRobinHostWeightPairs` parameter.");
-
     private const int DefaultWeight = 1;
-    private static readonly Regex HostWeightPairsPattern = new(@"(?<host>[^:/?#]*):(?<weight>[0-9]+)", RegexOptions.Compiled);
 
-    private static readonly ConcurrentDictionary<string, RoundRobinClusterInfo> RoundRobinCache = new();
+    private static readonly MemoryCache RoundRobinCache = new(new MemoryCacheOptions());
     private static readonly object Lock = new();
+
+    [GeneratedRegex(@"(?<host>[^:/?#]*):(?<weight>[0-9]+)")]
+    private static partial Regex HostWeightPairsPattern();
 
     public HostSpec GetHost(List<HostSpec> hosts, HostRole hostRole, Dictionary<string, string> props)
     {
@@ -62,7 +53,7 @@ public class RoundRobinHostSelector : IHostSelector
             this.CreateCacheEntryForHosts(eligibleHosts, props);
 
             string currentClusterInfoKey = eligibleHosts[0].Host;
-            RoundRobinClusterInfo clusterInfo = RoundRobinCache[currentClusterInfoKey];
+            RoundRobinClusterInfo clusterInfo = RoundRobinCache.Get<RoundRobinClusterInfo>(currentClusterInfoKey)!;
 
             HostSpec? lastHost = clusterInfo.LastHost;
             int lastHostIndex = -1;
@@ -115,21 +106,21 @@ public class RoundRobinHostSelector : IHostSelector
 
     private void CreateCacheEntryForHosts(List<HostSpec> hosts, Dictionary<string, string>? props)
     {
-        List<HostSpec> hostsWithCacheEntry = hosts.Where(host => RoundRobinCache.ContainsKey(host.Host)).ToList();
+        List<HostSpec> hostsWithCacheEntry = hosts.Where(host => RoundRobinCache.TryGetValue(host.Host, out _)).ToList();
 
         if (hostsWithCacheEntry.Count > 0)
         {
             // Update existing cluster info
-            RoundRobinClusterInfo clusterInfo = RoundRobinCache[hostsWithCacheEntry[0].Host];
+            RoundRobinClusterInfo clusterInfo = RoundRobinCache.Get<RoundRobinClusterInfo>(hostsWithCacheEntry[0].Host)!;
 
-            if (this.HasPropertyChanged(clusterInfo.LastClusterHostWeightPairPropertyValue, RoundRobinHostWeightPairs, props))
+            if (this.HasPropertyChanged(clusterInfo.LastClusterHostWeightPairPropertyValue, PropertyDefinition.RoundRobinHostWeightPairs, props))
             {
                 clusterInfo.LastHost = null;
                 clusterInfo.WeightCounter = 0;
                 this.UpdateCachedHostWeightPairsProperties(clusterInfo, props);
             }
 
-            if (this.HasPropertyChanged(clusterInfo.LastClusterDefaultWeightPropertyValue, RoundRobinDefaultWeight, props))
+            if (this.HasPropertyChanged(clusterInfo.LastClusterDefaultWeightPropertyValue, PropertyDefinition.RoundRobinDefaultWeight, props))
             {
                 clusterInfo.DefaultWeight = DefaultWeight;
                 this.UpdateCachedDefaultWeightProperties(clusterInfo, props);
@@ -138,7 +129,7 @@ public class RoundRobinHostSelector : IHostSelector
             // Update cache entries for all hosts to point to the same cluster info
             foreach (HostSpec host in hosts)
             {
-                RoundRobinCache[host.Host] = clusterInfo;
+                RoundRobinCache.Set(host.Host, clusterInfo);
             }
         }
         else
@@ -149,7 +140,7 @@ public class RoundRobinHostSelector : IHostSelector
 
             foreach (HostSpec host in hosts)
             {
-                RoundRobinCache[host.Host] = clusterInfo;
+                RoundRobinCache.Set(host.Host, clusterInfo);
             }
         }
     }
@@ -177,7 +168,7 @@ public class RoundRobinHostSelector : IHostSelector
 
         if (props != null)
         {
-            string? defaultWeightString = RoundRobinDefaultWeight.GetString(props);
+            string? defaultWeightString = PropertyDefinition.RoundRobinDefaultWeight.GetString(props);
             if (!string.IsNullOrEmpty(defaultWeightString))
             {
                 if (int.TryParse(defaultWeightString, out int parsedWeight) && parsedWeight >= DefaultWeight)
@@ -202,7 +193,7 @@ public class RoundRobinHostSelector : IHostSelector
             return;
         }
 
-        string? hostWeights = RoundRobinHostWeightPairs.GetString(props);
+        string? hostWeights = PropertyDefinition.RoundRobinHostWeightPairs.GetString(props);
         if (string.IsNullOrEmpty(hostWeights))
         {
             if (hostWeights == string.Empty)
@@ -217,7 +208,7 @@ public class RoundRobinHostSelector : IHostSelector
         string[] hostWeightPairs = hostWeights.Split(',');
         foreach (string pair in hostWeightPairs)
         {
-            Match match = HostWeightPairsPattern.Match(pair.Trim());
+            Match match = HostWeightPairsPattern().Match(pair.Trim());
             if (!match.Success)
             {
                 throw new InvalidOperationException("Invalid round robin host weight pairs format. Expected format: host1:weight1,host2:weight2");
@@ -242,13 +233,6 @@ public class RoundRobinHostSelector : IHostSelector
         }
 
         clusterInfo.LastClusterHostWeightPairPropertyValue = hostWeights;
-    }
-
-    public static void SetRoundRobinHostWeightPairsProperty(Dictionary<string, string> properties, List<HostSpec> hosts)
-    {
-        IEnumerable<string> pairs = hosts.Select(host => $"{host.HostId ?? host.Host}:{host.Weight}");
-        string roundRobinHostWeightPairsString = string.Join(",", pairs);
-        RoundRobinHostWeightPairs.Set(properties, roundRobinHostWeightPairsString);
     }
 
     public static void ClearCache()
