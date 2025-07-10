@@ -25,7 +25,7 @@ public class AwsWrapperDataAdapter : DbDataAdapter
 
     private readonly ConnectionPluginManager connectionPluginManager;
 
-    internal AwsWrapperDataAdapter(DbDataAdapter targetDataAdapter, ConnectionPluginManager connectionPluginManager)
+    public AwsWrapperDataAdapter(DbDataAdapter targetDataAdapter, ConnectionPluginManager connectionPluginManager)
     {
         this.targetDataAdapter = targetDataAdapter;
         this.connectionPluginManager = connectionPluginManager;
@@ -33,45 +33,83 @@ public class AwsWrapperDataAdapter : DbDataAdapter
 
     internal DbDataAdapter TargetDbDataAdapter => this.targetDataAdapter;
 
+    public new AwsWrapperCommand? DeleteCommand
+    {
+        set => this.targetDataAdapter.DeleteCommand = value;
+    }
+
+    public new AwsWrapperCommand? InsertCommand
+    {
+        set => this.targetDataAdapter.InsertCommand = value;
+    }
+
+    public new AwsWrapperCommand? SelectCommand
+    {
+        set => this.targetDataAdapter.SelectCommand = value;
+    }
+
     public override int UpdateBatchSize => WrapperUtils.ExecuteWithPlugins(
         this.connectionPluginManager,
         this.targetDataAdapter,
         "DbDataAdapter.UpdateBatchSize",
         () => this.targetDataAdapter.UpdateBatchSize);
 
+    public new AwsWrapperCommand? UpdateCommand
+    {
+        set => this.targetDataAdapter.UpdateCommand = value;
+    }
+
     protected override int Fill(DataSet dataSet, int startRecord, int maxRecords, string srcTable, IDbCommand command, CommandBehavior behavior)
     {
-        return WrapperUtils.ExecuteWithPlugins(
+        return WrapperUtils.ExecuteWithPlugins<int>(
             this.connectionPluginManager,
             this.targetDataAdapter,
-            "DbDataAdapter.CreateDbConnection",
+            "DbDataAdapter.Fill",
             () => this.targetDataAdapter.Fill(dataSet, startRecord, maxRecords, srcTable));
     }
 
     protected override int Fill(DataTable[] dataTables, int startRecord, int maxRecords, IDbCommand command, CommandBehavior behavior)
     {
-        return WrapperUtils.ExecuteWithPlugins(
+        return WrapperUtils.ExecuteWithPlugins<int>(
             this.connectionPluginManager,
             this.targetDataAdapter,
-            "DbDataAdapter.CreateDbConnection",
+            "DbDataAdapter.Fill",
             () => this.targetDataAdapter.Fill(startRecord, maxRecords, dataTables));
     }
 
     protected override int Fill(DataTable dataTable, IDbCommand command, CommandBehavior behavior)
     {
-        return WrapperUtils.ExecuteWithPlugins(
+        return WrapperUtils.ExecuteWithPlugins<int>(
             this.connectionPluginManager,
             this.targetDataAdapter,
-            "DbDataAdapter.CreateDbConnection",
+            "DbDataAdapter.Fill",
             () => this.targetDataAdapter.Fill(dataTable));
+    }
+
+    protected override DataTable[] FillSchema(DataSet dataSet, SchemaType schemaType, IDbCommand command, string srcTable, CommandBehavior behavior)
+    {
+        return WrapperUtils.ExecuteWithPlugins<DataTable[]>(
+            this.connectionPluginManager,
+            this.targetDataAdapter,
+            "DbDataAdapter.FillSchema",
+            () => this.targetDataAdapter.FillSchema(dataSet, schemaType, srcTable));
+    }
+
+    protected override DataTable? FillSchema(DataTable dataTable, SchemaType schemaType, IDbCommand command, CommandBehavior behavior)
+    {
+        return WrapperUtils.ExecuteWithPlugins<DataTable?>(
+            this.connectionPluginManager,
+            this.targetDataAdapter,
+            "DbDataAdapter.FillSchema",
+            () => this.targetDataAdapter.FillSchema(dataTable, schemaType));
     }
 
     protected override int Update(DataRow[] dataRows, DataTableMapping tableMapping)
     {
-        return WrapperUtils.ExecuteWithPlugins(
+        return WrapperUtils.ExecuteWithPlugins<int>(
             this.connectionPluginManager,
             this.targetDataAdapter,
-            "DbDataAdapter.CreateDbConnection",
+            "DbDataAdapter.Update",
             () => this.targetDataAdapter.Update(dataRows));
     }
 }

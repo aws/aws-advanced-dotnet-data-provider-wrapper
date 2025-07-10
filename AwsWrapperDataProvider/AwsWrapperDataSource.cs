@@ -20,77 +20,72 @@ namespace AwsWrapperDataProvider;
 
 public class AwsWrapperDataSource : DbDataSource
 {
-    protected DbDataSource targetDataSource;
+    public override string ConnectionString { get; }
 
-    private readonly ConnectionPluginManager connectionPluginManager;
+    private readonly Type? targetConnectionType;
 
-    internal AwsWrapperDataSource(DbDataSource targetDataSource, ConnectionPluginManager connectionPluginManager)
+    private AwsWrapperConnection? mostRecentConnection;
+
+    public AwsWrapperDataSource(Type? targetConnectionType, string connectionString)
     {
-        this.targetDataSource = targetDataSource;
-        this.connectionPluginManager = connectionPluginManager;
+        this.targetConnectionType = targetConnectionType;
+        this.ConnectionString = connectionString;
     }
 
-    internal DbDataSource TargetDbDataSource => this.targetDataSource;
+    protected override DbBatch CreateDbBatch() => this.CreateBatch();
 
-    public override string ConnectionString => WrapperUtils.ExecuteWithPlugins(
-        this.connectionPluginManager,
-        this.targetDataSource,
-        "DbDataSource.ConnectionString",
-        () => this.targetDataSource.ConnectionString);
-
-    protected override DbBatch CreateDbBatch()
+    public new AwsWrapperBatch CreateBatch()
     {
-        return WrapperUtils.ExecuteWithPlugins(
-            this.connectionPluginManager,
-            this.targetDataSource,
-            "DbDataSource.CreateDbBatch",
-            () => this.targetDataSource.CreateBatch());
+        return this.mostRecentConnection!.CreateBatch();
     }
 
-    protected override DbCommand CreateDbCommand(string? commandText = default)
+    protected override DbCommand CreateDbCommand(string? commandText = default) => this.CreateCommand<DbCommand>(commandText);
+
+    public AwsWrapperCommand<TCommand> CreateCommand<TCommand>(string? commandText = default) where TCommand : DbCommand
     {
-        return WrapperUtils.ExecuteWithPlugins(
-            this.connectionPluginManager,
-            this.targetDataSource,
-            "DbDataSource.CreateDbCommand",
-            () => this.targetDataSource.CreateCommand(commandText));
+        AwsWrapperCommand<TCommand> command = this.mostRecentConnection!.CreateCommand<TCommand>();
+        command.CommandText = commandText;
+        return command;
     }
 
-    protected override DbConnection CreateDbConnection()
+    protected override DbConnection CreateDbConnection() => this.CreateConnection();
+
+    public new AwsWrapperConnection CreateConnection()
     {
-        return new AwsWrapperConnection(WrapperUtils.ExecuteWithPlugins(
-            this.connectionPluginManager,
-            this.targetDataSource,
-            "DbDataSource.CreateDbConnection",
-            () => this.targetDataSource.CreateConnection()));
+        this.mostRecentConnection = new AwsWrapperConnection(this.targetConnectionType, this.ConnectionString);
+        return this.mostRecentConnection;
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        this.mostRecentConnection = null;
     }
 
     protected override ValueTask DisposeAsyncCore()
     {
-        return WrapperUtils.ExecuteWithPlugins(
-            this.connectionPluginManager,
-            this.targetDataSource,
-            "DbDataSource.DisposeAsyncCore",
-            () => this.targetDataSource.DisposeAsync());
+        this.mostRecentConnection = null;
+        return ValueTask.CompletedTask;
     }
 
-    protected override DbConnection OpenDbConnection()
+    protected override DbConnection OpenDbConnection() => this.OpenConnection();
+
+    public new AwsWrapperConnection OpenConnection()
     {
-        return new AwsWrapperConnection(WrapperUtils.ExecuteWithPlugins(
-            this.connectionPluginManager,
-            this.targetDataSource,
-            "DbDataSource.OpenDbConnection",
-            () => this.targetDataSource.OpenConnection()));
+        this.mostRecentConnection = this.CreateConnection();
+        this.mostRecentConnection.Open();
+        return this.mostRecentConnection;
     }
 
     protected override async ValueTask<DbConnection> OpenDbConnectionAsync(CancellationToken cancellationToken = default)
     {
-        DbConnection conn = await WrapperUtils.ExecuteWithPlugins(
-            this.connectionPluginManager,
-            this.targetDataSource,
-            "DbDataSource.OpenDbConnectionAsync",
-            () => this.targetDataSource.OpenConnectionAsync(cancellationToken));
+        AwsWrapperConnection connection = await this.OpenConnectionAsync(cancellationToken);
+        return connection;
+    }
 
-        return new AwsWrapperConnection(conn);
+    public new async ValueTask<AwsWrapperConnection> OpenConnectionAsync(CancellationToken cancellationToken = default)
+    {
+        this.mostRecentConnection = this.CreateConnection();
+        await this.mostRecentConnection.OpenAsync(cancellationToken);
+        return this.mostRecentConnection;
     }
 }
