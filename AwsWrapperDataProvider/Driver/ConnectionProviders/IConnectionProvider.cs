@@ -52,7 +52,7 @@ public interface IConnectionProvider
     /// <returns>The name of the target driver.</returns>
     string GetTargetName();
 
-    bool AcceptsStrategy(HostRole hostRole, string strategy);
+    bool AcceptsStrategy(string strategy);
 
     HostSpec? GetHostSpecByStrategy(IList<HostSpec> hosts, HostRole hostRole, string strategy, Dictionary<string, string> props);
 }

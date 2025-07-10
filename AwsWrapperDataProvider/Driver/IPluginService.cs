@@ -156,10 +156,9 @@ public interface IPluginService : IExceptionHandlerService
     /// <summary>
     /// Checks if IConnectionPlugin and ConnectionProvider support host seclection strategy.
     /// </summary>
-    /// <param name="hostRole">The desired role.</param>
     /// <param name="strategy">The strategy that should be used to pick a host.</param>
     /// <returns>whether strategy is supported.</returns>
-    bool AcceptsStrategy(HostRole hostRole, string strategy);
+    bool AcceptsStrategy(string strategy);
 
     /// <summary>
     /// Retrieves host given role of host and host selection strategy.

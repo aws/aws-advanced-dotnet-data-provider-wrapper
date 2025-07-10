@@ -116,7 +116,7 @@ public class AuroraInitialConnectionStrategyPluginTests
         this.mockPluginService.Setup(x => x.AllHosts).Returns(new List<HostSpec> { readerHost });
         this.mockPluginService.Setup(x => x.CurrentConnection).Returns(this.mockConnection.Object);
         this.mockPluginService.Setup(x => x.GetHostRole(It.IsAny<DbConnection>())).Returns(HostRole.Reader);
-        this.mockPluginService.Setup(x => x.AcceptsStrategy(HostRole.Reader, "random")).Returns(true);
+        this.mockPluginService.Setup(x => x.AcceptsStrategy("random")).Returns(true);
         this.mockPluginService.Setup(x => x.GetHostSpecByStrategy(HostRole.Reader, "random")).Returns(readerHost);
 
         this.plugin.InitHostProvider("test-url", this.defaultProps, this.mockHostListProviderService.Object, () => { });
@@ -182,7 +182,7 @@ public class AuroraInitialConnectionStrategyPluginTests
         this.mockPluginService.Setup(x => x.AllHosts).Returns(new List<HostSpec> { readerHost });
         this.mockPluginService.Setup(x => x.CurrentConnection).Returns(this.mockConnection.Object);
         this.mockPluginService.Setup(x => x.GetHostRole(It.IsAny<DbConnection>())).Returns(HostRole.Reader);
-        this.mockPluginService.Setup(x => x.AcceptsStrategy(HostRole.Reader, "random")).Returns(true);
+        this.mockPluginService.Setup(x => x.AcceptsStrategy("random")).Returns(true);
         this.mockPluginService.Setup(x => x.GetHostSpecByStrategy(HostRole.Reader, "random")).Returns(readerHost);
 
         pluginWithVerify.InitHostProvider("test-url", props, this.mockHostListProviderService.Object, () => { });
@@ -237,8 +237,8 @@ public class AuroraInitialConnectionStrategyPluginTests
         this.mockPluginService.Setup(x => x.AllHosts).Returns(new List<HostSpec> { writerHost });
         this.mockPluginService.Setup(x => x.CurrentConnection).Returns(this.mockConnection.Object);
         this.mockPluginService.Setup(x => x.IdentifyConnection(It.IsAny<DbConnection>())).Returns(writerHost);
-        this.mockPluginService.Setup(x => x.AcceptsStrategy(HostRole.Reader, "random")).Returns(true);
-        this.mockPluginService.Setup(x => x.GetHostSpecByStrategy(HostRole.Reader, "random")).Returns(((HostSpec?)null)!);
+        this.mockPluginService.Setup(x => x.AcceptsStrategy("random")).Returns(true);
+        this.mockPluginService.Setup(x => x.GetHostSpecByStrategy(HostRole.Reader, "random")).Returns((HostSpec?)null!);
         this.mockHostListProviderService.Setup(x => x.IsStaticHostListProvider()).Returns(false);
 
         this.plugin.InitHostProvider("test-url", props, this.mockHostListProviderService.Object, () => { });
@@ -263,7 +263,7 @@ public class AuroraInitialConnectionStrategyPluginTests
         var readerHost = new HostSpec("test-cluster.cluster-ro-xyz.us-east-1.rds.amazonaws.com", 5432, null, HostRole.Reader, HostAvailability.Available);
 
         this.mockPluginService.Setup(x => x.AllHosts).Returns(new List<HostSpec> { readerHost });
-        this.mockPluginService.Setup(x => x.AcceptsStrategy(HostRole.Reader, "invalid-strategy")).Returns(false);
+        this.mockPluginService.Setup(x => x.AcceptsStrategy("invalid-strategy")).Returns(false);
         this.mockHostListProviderService.Setup(x => x.IsStaticHostListProvider()).Returns(false);
 
         this.plugin.InitHostProvider("test-url", props, this.mockHostListProviderService.Object, () => { });
