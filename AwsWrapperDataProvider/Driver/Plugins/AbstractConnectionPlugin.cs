@@ -38,6 +38,15 @@ public abstract class AbstractConnectionPlugin : IConnectionPlugin
         methodFunc();
     }
 
+    public virtual void ForceOpenConnection(
+        HostSpec? hostSpec,
+        Dictionary<string, string> props,
+        bool isInitialConnection,
+        ADONetDelegate methodFunc)
+    {
+        methodFunc();
+    }
+
     public virtual void InitHostProvider(
         string initialUrl,
         Dictionary<string, string> props,

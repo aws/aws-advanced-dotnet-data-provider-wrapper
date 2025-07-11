@@ -64,6 +64,13 @@ public class TestPluginOne : IConnectionPlugin
         this.calls.Add(this.GetType().Name + ":after open");
     }
 
+    public virtual void ForceOpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate methodFunc)
+    {
+        this.calls.Add(this.GetType().Name + ":before forceOpen");
+        methodFunc();
+        this.calls.Add(this.GetType().Name + ":after forceOpen");
+    }
+
     public DbConnection ForceConnect(HostSpec hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> forceConnectmethodFunc)
     {
         this.calls.Add(this.GetType().Name + ":before forceConnect");

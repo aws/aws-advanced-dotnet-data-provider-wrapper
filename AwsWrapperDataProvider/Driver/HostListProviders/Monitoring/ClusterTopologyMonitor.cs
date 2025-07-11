@@ -336,7 +336,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                 {
                     try
                     {
-                        this.pluginService.OpenConnection(hostSpec, this.monitoringProperties, false);
+                        this.pluginService.ForceOpenConnection(hostSpec, this.monitoringProperties, false);
                         this.pluginService.SetAvailability(hostSpec.AsAliases(), HostAvailability.Available);
                     }
                     catch
@@ -441,7 +441,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         {
             try
             {
-                this.pluginService.OpenConnection(this.initialHostSpec, this.monitoringProperties, false);
+                this.pluginService.ForceOpenConnection(this.initialHostSpec, this.monitoringProperties, false);
                 if (Interlocked.CompareExchange(ref this.monitoringConnection, this.pluginService.CurrentConnection, null) == null)
                 {
                     try

@@ -32,6 +32,7 @@ public class ConnectionPluginManager
     private const string AllMethods = "*";
     private const string GetHostSpecByStrategyMethod = "GetHostSpecByStrategy";
     private const string ConnectMethod = "DbConnection.Open";
+    private const string ForceConnectMethod = "DbConnection.ForceOpen";
     private const string InitHostMethod = "initHostProvider";
 
     private delegate T PluginPipelineDelegate<T>(IConnectionPlugin plugin, ADONetDelegate<T> methodFunc);
@@ -171,6 +172,29 @@ public class ConnectionPluginManager
             (plugin, methodFunc) =>
             {
                 plugin.OpenConnection(hostSpec, props, isInitialConnection, () => methodFunc());
+                return default!;
+            },
+            () =>
+            {
+                openFunc();
+                return default!;
+            },
+            pluginToSkip);
+    }
+
+    public virtual void ForceOpen(
+        HostSpec? hostSpec,
+        Dictionary<string, string> props,
+        bool isInitialConnection,
+        IConnectionPlugin? pluginToSkip,
+        ADONetDelegate openFunc)
+    {
+        // Type object does not mean anything
+        this.ExecuteWithSubscribedPlugins<object>(
+            ForceConnectMethod,
+            (plugin, methodFunc) =>
+            {
+                plugin.ForceOpenConnection(hostSpec, props, isInitialConnection, () => methodFunc());
                 return default!;
             },
             () =>

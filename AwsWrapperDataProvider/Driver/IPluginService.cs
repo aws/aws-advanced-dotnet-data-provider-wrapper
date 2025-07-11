@@ -110,6 +110,15 @@ public interface IPluginService : IExceptionHandlerService
     void OpenConnection(HostSpec hostSpec, Dictionary<string, string> props,  bool isInitialConnection);
 
     /// <summary>
+    /// Forces a connection to a host, bypassing certain plugins like failover to prevent cyclic dependencies.
+    /// Used primarily for monitoring and internal connections.
+    /// </summary>
+    /// <param name="hostSpec">The host specification.</param>
+    /// <param name="props">Connection properties.</param>
+    /// <param name="isInitialConnection">Is initial connection.</param>
+    void ForceOpenConnection(HostSpec hostSpec, Dictionary<string, string> props, bool isInitialConnection);
+
+    /// <summary>
     /// Updates the dialect based on the given connection.
     /// </summary>
     /// <param name="connection">The database connection.</param>

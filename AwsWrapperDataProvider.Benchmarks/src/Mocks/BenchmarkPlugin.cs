@@ -47,6 +47,12 @@ public class BenchmarkPlugin : IConnectionPlugin
         methodFunc();
     }
 
+    public void ForceOpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate methodFunc)
+    {
+        // Pass through to the next plugin
+        methodFunc();
+    }
+
     public void InitHostProvider(string initialUrl, Dictionary<string, string> props, IHostListProviderService hostListProviderService, ADONetDelegate initHostProviderFunc)
     {
         // Pass through to the next plugin

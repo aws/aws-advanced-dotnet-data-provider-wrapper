@@ -62,4 +62,14 @@ public class WrapperUtils
     {
         connectionPluginManager.Open(hostSpec, props, isInitialConnection, null, openFunc);
     }
+
+    public static void ForceOpenWithPlugins(
+        ConnectionPluginManager connectionPluginManager,
+        HostSpec? hostSpec,
+        Dictionary<string, string> props,
+        bool isInitialConnection,
+        ADONetDelegate openFunc)
+    {
+        connectionPluginManager.ForceOpen(hostSpec, props, isInitialConnection, null, openFunc);
+    }
 }

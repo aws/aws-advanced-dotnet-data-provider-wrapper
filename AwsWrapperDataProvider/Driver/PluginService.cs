@@ -208,6 +208,11 @@ public class PluginService : IPluginService, IHostListProviderService
         this.pluginManager.Open(hostSpec, props, isInitialConnection, null, () => { });
     }
 
+    public void ForceOpenConnection(HostSpec hostSpec, Dictionary<string, string> props, bool isInitialConnection)
+    {
+        this.pluginManager.ForceOpen(hostSpec, props, isInitialConnection, null, () => { });
+    }
+
     public Task OpenConnectionAsync(HostSpec hostSpec, Dictionary<string, string> props)
     {
         throw new NotImplementedException();

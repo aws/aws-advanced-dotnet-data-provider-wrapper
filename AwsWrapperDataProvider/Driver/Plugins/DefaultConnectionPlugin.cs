@@ -45,16 +45,54 @@ public class DefaultConnectionPlugin(
         bool isInitialConnection,
         ADONetDelegate methodFunc)
     {
-        DbConnection? conn = this.pluginService.CurrentConnection;
-        ArgumentNullException.ThrowIfNull(conn);
-        conn.ConnectionString = this.pluginService.TargetConnectionDialect.PrepareConnectionString(this.pluginService.Dialect, null, props);
+        // Use the connection provider pattern like JDBC wrapper
+        DbConnection conn = this.OpenInternal(hostSpec, props, this.defaultConnProvider, isInitialConnection);
+        
+        // Set this as the current connection
+        this.pluginService.SetCurrentConnection(conn, hostSpec);
+    }
+
+    public void ForceOpenConnection(
+        HostSpec? hostSpec,
+        Dictionary<string, string> props,
+        bool isInitialConnection,
+        ADONetDelegate methodFunc)
+    {
+        // Use the connection provider pattern like JDBC wrapper
+        DbConnection conn = this.OpenInternal(hostSpec, props, this.defaultConnProvider, isInitialConnection);
+        
+        // Set this as the current connection
+        this.pluginService.SetCurrentConnection(conn, hostSpec);
+    }
+
+    /// <summary>
+    /// Internal connection opening logic that mirrors JDBC wrapper's connectInternal method.
+    /// Creates a new connection using the connection provider.
+    /// </summary>
+    private DbConnection OpenInternal(
+        HostSpec? hostSpec,
+        Dictionary<string, string> props,
+        IConnectionProvider connProvider,
+        bool isInitialConnection)
+    {
+        // Create a new connection using the connection provider (like JDBC wrapper)
+        DbConnection conn = connProvider.CreateDbConnection(
+            this.pluginService.Dialect,
+            this.pluginService.TargetConnectionDialect,
+            hostSpec,
+            props);
+
+        // Open the connection
         conn.Open();
 
+        // Set availability and update dialect
         this.pluginService.SetAvailability(hostSpec!.AsAliases(), HostAvailability.Available);
         if (isInitialConnection)
         {
             this.pluginService.UpdateDialect(conn);
         }
+
+        return conn;
     }
 
     public void InitHostProvider(
