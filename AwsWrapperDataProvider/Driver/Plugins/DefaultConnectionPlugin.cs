@@ -45,24 +45,18 @@ public class DefaultConnectionPlugin(
         bool isInitialConnection,
         ADONetDelegate methodFunc)
     {
-        // Use the connection provider pattern like JDBC wrapper
         DbConnection conn = this.OpenInternal(hostSpec, props, this.defaultConnProvider, isInitialConnection);
-        
-        // Set this as the current connection
         this.pluginService.SetCurrentConnection(conn, hostSpec);
     }
 
-    public void ForceOpenConnection(
+    public DbConnection ForceOpenConnection(
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
         ADONetDelegate methodFunc)
     {
-        // Use the connection provider pattern like JDBC wrapper
         DbConnection conn = this.OpenInternal(hostSpec, props, this.defaultConnProvider, isInitialConnection);
-        
-        // Set this as the current connection
-        this.pluginService.SetCurrentConnection(conn, hostSpec);
+        return conn;
     }
 
     /// <summary>

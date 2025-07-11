@@ -47,10 +47,10 @@ public class BenchmarkPlugin : IConnectionPlugin
         methodFunc();
     }
 
-    public void ForceOpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate methodFunc)
+    public DbConnection ForceOpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate methodFunc)
     {
-        // Pass through to the next plugin
-        methodFunc();
+        // Benchmark plugin should not create actual connections
+        throw new NotImplementedException("Benchmark plugin should not be used for actual connection creation");
     }
 
     public void InitHostProvider(string initialUrl, Dictionary<string, string> props, IHostListProviderService hostListProviderService, ADONetDelegate initHostProviderFunc)

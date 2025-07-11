@@ -67,7 +67,8 @@ public interface IConnectionPlugin
     /// <param name="props">Connection properties.</param>
     /// <param name="isInitialConnection">Whether this is the initial connection.</param>
     /// <param name="methodFunc">The callable that executes the actual connection.</param>
-    void ForceOpenConnection(
+    /// <returns>The created database connection.</returns>
+    DbConnection ForceOpenConnection(
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,

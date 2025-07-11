@@ -116,7 +116,8 @@ public interface IPluginService : IExceptionHandlerService
     /// <param name="hostSpec">The host specification.</param>
     /// <param name="props">Connection properties.</param>
     /// <param name="isInitialConnection">Is initial connection.</param>
-    void ForceOpenConnection(HostSpec hostSpec, Dictionary<string, string> props, bool isInitialConnection);
+    /// <returns>The created database connection.</returns>
+    DbConnection ForceOpenConnection(HostSpec hostSpec, Dictionary<string, string> props, bool isInitialConnection);
 
     /// <summary>
     /// Updates the dialect based on the given connection.

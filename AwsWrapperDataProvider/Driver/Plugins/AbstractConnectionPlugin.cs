@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 
@@ -38,13 +39,13 @@ public abstract class AbstractConnectionPlugin : IConnectionPlugin
         methodFunc();
     }
 
-    public virtual void ForceOpenConnection(
+    public virtual DbConnection ForceOpenConnection(
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
         ADONetDelegate methodFunc)
     {
-        methodFunc();
+        throw new NotImplementedException("ForceOpenConnection must be implemented by concrete plugins");
     }
 
     public virtual void InitHostProvider(

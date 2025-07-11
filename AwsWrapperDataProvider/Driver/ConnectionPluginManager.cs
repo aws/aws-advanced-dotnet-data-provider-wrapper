@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.HostInfo;
@@ -182,25 +183,21 @@ public class ConnectionPluginManager
             pluginToSkip);
     }
 
-    public virtual void ForceOpen(
+    public virtual DbConnection ForceOpen(
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
         IConnectionPlugin? pluginToSkip,
         ADONetDelegate openFunc)
     {
-        // Type object does not mean anything
-        this.ExecuteWithSubscribedPlugins<object>(
+        // Execute the plugin chain and return the connection
+        return this.ExecuteWithSubscribedPlugins<DbConnection>(
             ForceConnectMethod,
-            (plugin, methodFunc) =>
-            {
-                plugin.ForceOpenConnection(hostSpec, props, isInitialConnection, () => methodFunc());
-                return default!;
-            },
+            (plugin, methodFunc) => plugin.ForceOpenConnection(hostSpec, props, isInitialConnection, () => methodFunc()),
             () =>
             {
-                openFunc();
-                return default!;
+                // This should not be reached since DefaultConnectionPlugin should handle it
+                throw new InvalidOperationException("ForceOpen should be handled by DefaultConnectionPlugin");
             },
             pluginToSkip);
     }

@@ -439,11 +439,13 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         bool writerVerifiedByThisThread = false;
         if (this.monitoringConnection == null)
         {
+            DbConnection? newConnection = null;
             try
             {
-                this.pluginService.ForceOpenConnection(this.initialHostSpec, this.monitoringProperties, false);
-                if (Interlocked.CompareExchange(ref this.monitoringConnection, this.pluginService.CurrentConnection, null) == null)
+                newConnection = this.pluginService.ForceOpenConnection(this.initialHostSpec, this.monitoringProperties, false);
+                if (Interlocked.CompareExchange(ref this.monitoringConnection, newConnection, null) == null)
                 {
+                    // SUCCESS: This thread won the race
                     try
                     {
                         if (!string.IsNullOrEmpty(await this.GetWriterNodeIdAsync(this.monitoringConnection)))
@@ -457,15 +459,32 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                     {
                         // Ignore
                     }
+
+                    // Don't close this connection - it's now the monitoring connection
+                    newConnection = null;
                 }
-                else
-                {
-                    this.CloseConnection(this.pluginService.CurrentConnection);
-                }
+
+                // If we reach here and newConnection != null, another thread won the race
             }
-            catch
+            catch (Exception ex)
             {
-                return null;
+                // Log the exception but don't rethrow
+                // The monitoring will continue to retry
+            }
+            finally
+            {
+                // Clean up if this thread lost the race or if there was an exception
+                if (newConnection != null)
+                {
+                    try
+                    {
+                        newConnection.Close();
+                    }
+                    catch
+                    {
+                        // Ignore cleanup errors
+                    }
+                }
             }
         }
 

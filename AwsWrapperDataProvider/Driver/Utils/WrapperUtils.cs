@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
 
@@ -63,13 +64,13 @@ public class WrapperUtils
         connectionPluginManager.Open(hostSpec, props, isInitialConnection, null, openFunc);
     }
 
-    public static void ForceOpenWithPlugins(
+    public static DbConnection ForceOpenWithPlugins(
         ConnectionPluginManager connectionPluginManager,
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
         ADONetDelegate openFunc)
     {
-        connectionPluginManager.ForceOpen(hostSpec, props, isInitialConnection, null, openFunc);
+        return connectionPluginManager.ForceOpen(hostSpec, props, isInitialConnection, null, openFunc);
     }
 }

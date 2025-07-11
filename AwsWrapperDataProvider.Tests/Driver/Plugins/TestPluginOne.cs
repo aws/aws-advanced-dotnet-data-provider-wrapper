@@ -64,11 +64,9 @@ public class TestPluginOne : IConnectionPlugin
         this.calls.Add(this.GetType().Name + ":after open");
     }
 
-    public virtual void ForceOpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate methodFunc)
+    public virtual DbConnection ForceOpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate methodFunc)
     {
-        this.calls.Add(this.GetType().Name + ":before forceOpen");
-        methodFunc();
-        this.calls.Add(this.GetType().Name + ":after forceOpen");
+        throw new NotImplementedException("Test plugin should not be used for actual connection creation");
     }
 
     public DbConnection ForceConnect(HostSpec hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> forceConnectmethodFunc)
