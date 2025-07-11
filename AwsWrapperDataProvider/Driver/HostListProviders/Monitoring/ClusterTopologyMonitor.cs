@@ -336,12 +336,13 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                 {
                     try
                     {
-                        this.pluginService.ForceOpenConnection(hostSpec, this.monitoringProperties, false);
+                        connection = this.pluginService.ForceOpenConnection(hostSpec, this.monitoringProperties, false);
                         this.pluginService.SetAvailability(hostSpec.AsAliases(), HostAvailability.Available);
                     }
                     catch
                     {
                         this.pluginService.SetAvailability(hostSpec.AsAliases(), HostAvailability.Unavailable);
+                        connection = null;
                     }
                 }
 
