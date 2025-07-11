@@ -54,14 +54,13 @@ public class WrapperUtils
             methodArgs);
     }
 
-    public static void OpenWithPlugins(
+    public static DbConnection OpenWithPlugins(
         ConnectionPluginManager connectionPluginManager,
         HostSpec? hostSpec,
         Dictionary<string, string> props,
-        bool isInitialConnection,
-        ADONetDelegate openFunc)
+        bool isInitialConnection)
     {
-        connectionPluginManager.Open(hostSpec, props, isInitialConnection, null, openFunc);
+        return connectionPluginManager.Open(hostSpec, props, isInitialConnection, null);
     }
 
     public static DbConnection ForceOpenWithPlugins(
@@ -71,6 +70,6 @@ public class WrapperUtils
         bool isInitialConnection,
         ADONetDelegate openFunc)
     {
-        return connectionPluginManager.ForceOpen(hostSpec, props, isInitialConnection, null, openFunc);
+        return connectionPluginManager.ForceOpen(hostSpec, props, isInitialConnection, null);
     }
 }

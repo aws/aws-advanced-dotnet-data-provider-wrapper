@@ -51,11 +51,12 @@ public interface IConnectionPlugin
     /// <param name="props">Connection properties.</param>
     /// <param name="isInitialConnection">Whether this is the initial connection.</param>
     /// <param name="methodFunc">The callable that executes the actual connection.</param>
-    void OpenConnection(
+    /// <returns>The created database connection.</returns>
+    DbConnection OpenConnection(
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
-        ADONetDelegate methodFunc);
+        ADONetDelegate<DbConnection> methodFunc);
 
     /// <summary>
     /// Forces a connection to the given host using the given properties.
@@ -72,7 +73,7 @@ public interface IConnectionPlugin
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
-        ADONetDelegate methodFunc);
+        ADONetDelegate<DbConnection> methodFunc);
 
     /// <summary>
     /// Initializes the host provider.

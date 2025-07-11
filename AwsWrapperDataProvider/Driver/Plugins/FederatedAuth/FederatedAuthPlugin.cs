@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data.Common;
 using System.Text.RegularExpressions;
 using Amazon;
 using Amazon.Runtime;
@@ -41,12 +42,12 @@ public partial class FederatedAuthPlugin(IPluginService pluginService, Dictionar
     [GeneratedRegex("SAMLResponse\\W+value=\"(?<saml>[^\"]+)\"", RegexOptions.IgnoreCase, "en-CA")]
     public static partial Regex SamlResponsePattern();
 
-    public override void OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate methodFunc)
+    public override DbConnection OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
     {
-        this.ConnectInternal(hostSpec, props, methodFunc);
+        return this.ConnectInternal(hostSpec, props, methodFunc);
     }
 
-    private void ConnectInternal(HostSpec? hostSpec, Dictionary<string, string> props, ADONetDelegate methodFunc)
+    private DbConnection ConnectInternal(HostSpec? hostSpec, Dictionary<string, string> props, ADONetDelegate<DbConnection> methodFunc)
     {
         SamlUtils.CheckIdpCredentialsWithFallback(PropertyDefinition.IdpUsername, PropertyDefinition.IdpPassword, props);
 
@@ -78,7 +79,7 @@ public partial class FederatedAuthPlugin(IPluginService pluginService, Dictionar
 
         try
         {
-            methodFunc();
+            return methodFunc();
         }
         catch (Exception ex)
         {
@@ -92,7 +93,7 @@ public partial class FederatedAuthPlugin(IPluginService pluginService, Dictionar
                 throw new Exception("Failed to connect; token generation may be at fault.", ex);
             }
 
-            methodFunc();
+            return methodFunc();
         }
     }
 

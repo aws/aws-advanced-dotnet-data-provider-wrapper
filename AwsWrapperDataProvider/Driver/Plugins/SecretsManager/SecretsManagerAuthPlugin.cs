@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data.Common;
 using Amazon.SecretsManager;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -46,19 +47,19 @@ public class SecretsManagerAuthPlugin(IPluginService pluginService, Dictionary<s
         return secretId + ":" + region;
     }
 
-    public override void OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate methodFunc)
+    public override DbConnection OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
     {
-        this.ConnectInternal(hostSpec, props, methodFunc);
+        return this.ConnectInternal(hostSpec, props, methodFunc);
     }
 
-    private void ConnectInternal(HostSpec? hostSpec, Dictionary<string, string> props, ADONetDelegate methodFunc)
+    private DbConnection ConnectInternal(HostSpec? hostSpec, Dictionary<string, string> props, ADONetDelegate<DbConnection> methodFunc)
     {
         bool secretsWasFetched = this.UpdateSecrets(false);
         this.ApplySecretToProperties(props);
 
         try
         {
-            methodFunc();
+            return methodFunc();
         }
         catch
         {
@@ -67,8 +68,9 @@ public class SecretsManagerAuthPlugin(IPluginService pluginService, Dictionary<s
             {
                 this.UpdateSecrets(true);
                 this.ApplySecretToProperties(props);
-                methodFunc();
+                return methodFunc();
             }
+            throw;
         }
     }
 

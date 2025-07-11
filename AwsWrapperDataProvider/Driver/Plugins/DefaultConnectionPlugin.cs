@@ -39,24 +39,22 @@ public class DefaultConnectionPlugin(
         return methodFunc();
     }
 
-    public void OpenConnection(
+    public DbConnection OpenConnection(
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
-        ADONetDelegate methodFunc)
+        ADONetDelegate<DbConnection> methodFunc)
     {
-        DbConnection conn = this.OpenInternal(hostSpec, props, this.defaultConnProvider, isInitialConnection);
-        this.pluginService.SetCurrentConnection(conn, hostSpec);
+        return this.OpenInternal(hostSpec, props, this.defaultConnProvider, isInitialConnection);
     }
 
     public DbConnection ForceOpenConnection(
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
-        ADONetDelegate methodFunc)
+        ADONetDelegate<DbConnection> methodFunc)
     {
-        DbConnection conn = this.OpenInternal(hostSpec, props, this.defaultConnProvider, isInitialConnection);
-        return conn;
+        return this.OpenInternal(hostSpec, props, this.defaultConnProvider, isInitialConnection);
     }
 
     /// <summary>

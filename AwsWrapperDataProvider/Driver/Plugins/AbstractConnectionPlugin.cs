@@ -30,22 +30,22 @@ public abstract class AbstractConnectionPlugin : IConnectionPlugin
         return methodFunc();
     }
 
-    public virtual void OpenConnection(
+    public virtual DbConnection OpenConnection(
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
-        ADONetDelegate methodFunc)
+        ADONetDelegate<DbConnection> methodFunc)
     {
-        methodFunc();
+        return methodFunc();
     }
 
     public virtual DbConnection ForceOpenConnection(
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
-        ADONetDelegate methodFunc)
+        ADONetDelegate<DbConnection> methodFunc)
     {
-        throw new NotImplementedException("ForceOpenConnection must be implemented by concrete plugins");
+        return methodFunc();
     }
 
     public virtual void InitHostProvider(

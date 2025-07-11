@@ -83,8 +83,7 @@ namespace AwsWrapperDataProvider.Benchmarks
                     new HostSpecBuilder().WithHost("host").Build(),
                     this._propWithPlugins!,
                     true,
-                    null,
-                    () => { });
+                    null);
             }
         }
 
@@ -97,8 +96,7 @@ namespace AwsWrapperDataProvider.Benchmarks
                     new HostSpecBuilder().WithHost("host").Build(),
                     this._propWithNoPlugins!,
                     true,
-                    null,
-                    () => { });
+                    null);
             }
         }
 

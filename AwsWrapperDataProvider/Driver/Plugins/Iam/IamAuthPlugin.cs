@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Caching.Memory;
@@ -20,7 +21,7 @@ namespace AwsWrapperDataProvider.Driver.Plugins.Iam;
 
 public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, string> props) : AbstractConnectionPlugin
 {
-    public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string> { "DbConnection.Open", "DbConnection.OpenAsync" };
+    public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string> { "DbConnection.Open", "DbConnection.OpenAsync", "DbConnection.ForceOpen" };
 
     private static readonly MemoryCache IamTokenCache = new(new MemoryCacheOptions());
 
@@ -30,12 +31,12 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
 
     public static readonly int DefaultIamExpirationSeconds = 870;
 
-    public override void OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate methodFunc)
+    public override DbConnection OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
     {
-        this.ConnectInternal(hostSpec, props, methodFunc);
+        return this.ConnectInternal(hostSpec, props, methodFunc);
     }
 
-    private void ConnectInternal(HostSpec? hostSpec, Dictionary<string, string> props, ADONetDelegate methodFunc)
+    private DbConnection ConnectInternal(HostSpec? hostSpec, Dictionary<string, string> props, ADONetDelegate<DbConnection> methodFunc)
     {
         string iamUser = PropertyDefinition.User.GetString(props) ?? throw new Exception(PropertyDefinition.User.Name + " is null or empty.");
         string iamHost = PropertyDefinition.IamHost.GetString(props) ?? hostSpec?.Host ?? throw new Exception("Could not determine host for IAM authentication provider.");
@@ -70,7 +71,7 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
 
         try
         {
-            methodFunc();
+            return methodFunc();
         }
         catch
         {
@@ -89,7 +90,7 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
             // token is non-null here, as the above try-catch block must have succeeded
             PropertyDefinition.Password.Set(props, token);
 
-            methodFunc();
+            return methodFunc();
         }
     }
 }

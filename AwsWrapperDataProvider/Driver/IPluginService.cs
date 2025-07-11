@@ -33,9 +33,9 @@ public interface IPluginService : IExceptionHandlerService
 
     ITargetConnectionDialect TargetConnectionDialect { get; }
 
-    DbConnection? CurrentConnection { get; set; }
+    DbConnection? CurrentConnection { get; }
 
-    HostSpec? CurrentHostSpec { get; set; }
+    HostSpec? CurrentHostSpec { get; }
 
     HostSpec? InitialConnectionHostSpec { get; }
 
@@ -107,7 +107,8 @@ public interface IPluginService : IExceptionHandlerService
     /// <param name="hostSpec">The host specification.</param>
     /// <param name="props">Connection properties.</param>
     /// <param name="isInitialConnection">Is initial connection.</param>
-    void OpenConnection(HostSpec hostSpec, Dictionary<string, string> props,  bool isInitialConnection);
+    /// <returns>The created database connection.</returns>
+    DbConnection OpenConnection(HostSpec hostSpec, Dictionary<string, string> props, bool isInitialConnection);
 
     /// <summary>
     /// Forces a connection to a host, bypassing certain plugins like failover to prevent cyclic dependencies.

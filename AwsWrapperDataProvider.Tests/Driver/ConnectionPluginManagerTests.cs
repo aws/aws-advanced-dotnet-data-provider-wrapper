@@ -169,16 +169,11 @@ public class ConnectionPluginManagerTests
             new HostSpecBuilder().WithHost("anyHost").Build(),
             [],
             true,
-            null,
-            () =>
-            {
-                calls.Add("open connection");
-            });
+            null);
 
         Assert.Equal(5, calls.Count);
         Assert.Equal("TestPluginOne:before open", calls[0]);
         Assert.Equal("TestPluginThree:before open", calls[1]);
-        Assert.Equal("open connection", calls[2]);
         Assert.Equal("TestPluginThree:after open", calls[3]);
         Assert.Equal("TestPluginOne:after open", calls[4]);
     }
@@ -207,15 +202,10 @@ public class ConnectionPluginManagerTests
             new HostSpecBuilder().WithHost("anyHost").Build(),
             [],
             true,
-            pluginOne,
-            () =>
-            {
-                calls.Add("open connection");
-            });
+            pluginOne);
 
         Assert.Equal(3, calls.Count);
         Assert.Equal("TestPluginThree:before open", calls[0]);
-        Assert.Equal("open connection", calls[1]);
         Assert.Equal("TestPluginThree:after open", calls[2]);
     }
 

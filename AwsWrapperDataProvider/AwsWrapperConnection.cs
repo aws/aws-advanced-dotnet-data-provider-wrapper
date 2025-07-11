@@ -150,12 +150,12 @@ public class AwsWrapperConnection : DbConnection
 
         this.PluginManager.InitHostProvider(this.connectionString!, this.ConnectionProperties!, this.hostListProviderService);
 
-        WrapperUtils.OpenWithPlugins(
+        DbConnection connection = WrapperUtils.OpenWithPlugins(
             this.PluginManager,
             this.pluginService.InitialConnectionHostSpec,
             this.ConnectionProperties!,
-            true,
-            () => { });
+            true);
+        this.pluginService.SetCurrentConnection(connection, this.pluginService.InitialConnectionHostSpec);
         this.pluginService.RefreshHostList();
     }
 

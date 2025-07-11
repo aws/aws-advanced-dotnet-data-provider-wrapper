@@ -203,14 +203,14 @@ public class PluginService : IPluginService, IHostListProviderService
         throw new NotImplementedException();
     }
 
-    public void OpenConnection(HostSpec hostSpec, Dictionary<string, string> props, bool isInitialConnection)
+    public DbConnection OpenConnection(HostSpec hostSpec, Dictionary<string, string> props, bool isInitialConnection)
     {
-        this.pluginManager.Open(hostSpec, props, isInitialConnection, null, () => { });
+        return this.pluginManager.Open(hostSpec, props, isInitialConnection, null);
     }
 
     public DbConnection ForceOpenConnection(HostSpec hostSpec, Dictionary<string, string> props, bool isInitialConnection)
     {
-        return this.pluginManager.ForceOpen(hostSpec, props, isInitialConnection, null, () => { });
+        return this.pluginManager.ForceOpen(hostSpec, props, isInitialConnection, null);
     }
 
     public Task OpenConnectionAsync(HostSpec hostSpec, Dictionary<string, string> props)

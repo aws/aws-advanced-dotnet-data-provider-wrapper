@@ -138,12 +138,13 @@ public class FailoverPlugin : AbstractConnectionPlugin
         }
     }
 
-    public override void OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate methodFunc)
+    public override DbConnection OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
     {
+        DbConnection connection = null;
+        
         if (!this.enableConnectFailover || hostSpec == null)
         {
-            methodFunc();
-            return;
+            return methodFunc();
         }
 
         var hostSpecWithAvailability = this.pluginService.GetHosts()
@@ -153,7 +154,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
         {
             try
             {
-                methodFunc();
+                connection = methodFunc();
             }
             catch (Exception e)
             {
@@ -196,6 +197,8 @@ public class FailoverPlugin : AbstractConnectionPlugin
         {
             this.pluginService.RefreshHostList(this.pluginService.CurrentConnection);
         }
+
+        return connection;
     }
 
     public override void InitHostProvider(string initialUrl, Dictionary<string, string> props, IHostListProviderService hostListProviderService, ADONetDelegate initHostProviderFunc)

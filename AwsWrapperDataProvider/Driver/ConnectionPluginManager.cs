@@ -160,25 +160,19 @@ public class ConnectionPluginManager
             null)!;
     }
 
-    public virtual void Open(
+    public virtual DbConnection Open(
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
-        IConnectionPlugin? pluginToSkip,
-        ADONetDelegate openFunc)
+        IConnectionPlugin? pluginToSkip)
     {
-        // Type object does not mean anything
-        this.ExecuteWithSubscribedPlugins<object>(
+        // Execute the plugin chain and return the connection
+        return this.ExecuteWithSubscribedPlugins<DbConnection>(
             ConnectMethod,
-            (plugin, methodFunc) =>
-            {
-                plugin.OpenConnection(hostSpec, props, isInitialConnection, () => methodFunc());
-                return default!;
-            },
+            (plugin, methodFunc) => plugin.OpenConnection(hostSpec, props, isInitialConnection, () => methodFunc()),
             () =>
             {
-                openFunc();
-                return default!;
+                throw new InvalidOperationException("Function should not be called.");
             },
             pluginToSkip);
     }
@@ -187,8 +181,7 @@ public class ConnectionPluginManager
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
-        IConnectionPlugin? pluginToSkip,
-        ADONetDelegate openFunc)
+        IConnectionPlugin? pluginToSkip)
     {
         // Execute the plugin chain and return the connection
         return this.ExecuteWithSubscribedPlugins<DbConnection>(
@@ -196,8 +189,7 @@ public class ConnectionPluginManager
             (plugin, methodFunc) => plugin.ForceOpenConnection(hostSpec, props, isInitialConnection, () => methodFunc()),
             () =>
             {
-                // This should not be reached since DefaultConnectionPlugin should handle it
-                throw new InvalidOperationException("ForceOpen should be handled by DefaultConnectionPlugin");
+                throw new InvalidOperationException("Function should not be called.");
             },
             pluginToSkip);
     }
