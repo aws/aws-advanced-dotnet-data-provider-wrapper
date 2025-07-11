@@ -14,7 +14,6 @@
 
 using System.Data;
 using System.Data.Common;
-using AwsWrapperDataProvider;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Utils;
 
@@ -26,68 +25,49 @@ public class AwsWrapperBatch : DbBatch
     protected DbConnection? targetConnection;
     protected DbTransaction? targetTransaction;
 
-    private readonly ConnectionPluginManager connectionPluginManager;
+    private readonly ConnectionPluginManager? connectionPluginManager;
 
-    public AwsWrapperBatch(DbBatch targetBatch, ConnectionPluginManager connectionPluginManager)
+    internal AwsWrapperBatch(DbBatch targetBatch, ConnectionPluginManager connectionPluginManager)
     {
         this.targetBatch = targetBatch;
         this.connectionPluginManager = connectionPluginManager;
     }
 
+    public AwsWrapperBatch(DbBatch targetBatch, DbConnection? connection)
+    {
+        this.targetBatch = targetBatch;
+        connection ??= this.targetBatch.Connection;
+        this.connectionPluginManager = connection is AwsWrapperConnection awsWrapperConnection
+            ? awsWrapperConnection.PluginManager
+            : throw new InvalidOperationException(Properties.Resources.Error_NotAwsWrapperConnection);
+    }
+
     internal DbBatch TargetDbBatch => this.targetBatch;
 
-    protected override DbBatchCommandCollection DbBatchCommands => WrapperUtils.ExecuteWithPlugins<DbBatchCommandCollection>(
-        this.connectionPluginManager,
-        this.targetBatch,
-        "DbBatch.BatchCommands",
-        () => this.targetBatch.BatchCommands);
+    protected override DbBatchCommandCollection DbBatchCommands => this.targetBatch.BatchCommands;
 
     public override int Timeout
     {
-        get => WrapperUtils.ExecuteWithPlugins<int>(
-            this.connectionPluginManager,
-            this.targetBatch,
-            "DbBatch.Timeout",
-            () => this.targetBatch.Timeout);
-        set => WrapperUtils.RunWithPlugins(
-            this.connectionPluginManager,
-            this.targetBatch,
-            "DbBatch.Timeout",
-            () => this.targetBatch.Timeout = value);
+        get => this.targetBatch.Timeout;
+        set => this.targetBatch.Timeout = value;
     }
 
     protected override DbConnection? DbConnection
     {
-        get => WrapperUtils.ExecuteWithPlugins<DbConnection?>(
-            this.connectionPluginManager,
-            this.targetBatch,
-            "DbBatch.Connection",
-            () => this.targetBatch.Connection);
-        set => WrapperUtils.RunWithPlugins(
-            this.connectionPluginManager,
-            this.targetBatch,
-            "DbBatch.Connection",
-            () => this.targetBatch.Connection = value);
+        get => this.targetBatch.Connection;
+        set => this.targetBatch.Connection = value;
     }
 
     protected override DbTransaction? DbTransaction
     {
-        get => WrapperUtils.ExecuteWithPlugins<DbTransaction?>(
-            this.connectionPluginManager,
-            this.targetBatch,
-            "DbBatch.Transaction",
-            () => this.targetBatch.Transaction);
-        set => WrapperUtils.RunWithPlugins(
-            this.connectionPluginManager,
-            this.targetBatch,
-            "DbBatch.Transaction",
-            () => this.targetBatch.Transaction = value);
+        get => this.targetBatch.Transaction;
+        set => this.targetBatch.Transaction = value;
     }
 
     protected override DbBatchCommand CreateDbBatchCommand()
     {
         DbBatchCommand batchCommand = WrapperUtils.ExecuteWithPlugins<DbBatchCommand>(
-            this.connectionPluginManager,
+            this.connectionPluginManager!,
             this.targetBatch,
             "DbBatch.CreateBatchCommand",
             () => this.targetBatch.CreateBatchCommand());
@@ -101,35 +81,35 @@ public class AwsWrapperBatch : DbBatch
     protected override async Task<DbDataReader> ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
     {
         AwsWrapperDataReader dataReader = await this.ExecuteReaderAsync(behavior, cancellationToken);
-        return (DbDataReader)dataReader;
+        return dataReader;
     }
 
-    public new AwsWrapperDataReader ExecuteReader(CommandBehavior behavior)
+    public virtual new AwsWrapperDataReader ExecuteReader(CommandBehavior behavior)
     {
         DbDataReader dataReader = WrapperUtils.ExecuteWithPlugins<DbDataReader>(
-                this.connectionPluginManager,
+                this.connectionPluginManager!,
                 this.targetBatch,
                 "DbBatch.ExecuteReader",
                 () => this.targetBatch.ExecuteReader(behavior));
 
-        return new AwsWrapperDataReader(dataReader, this.connectionPluginManager);
+        return new AwsWrapperDataReader(dataReader, this.connectionPluginManager!);
     }
 
     public new async Task<AwsWrapperDataReader> ExecuteReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
     {
         DbDataReader dataReader = await WrapperUtils.ExecuteWithPlugins<Task<DbDataReader>>(
-                this.connectionPluginManager,
+                this.connectionPluginManager!,
                 this.targetBatch,
                 "DbBatch.ExecuteReaderAsync",
                 () => this.targetBatch.ExecuteReaderAsync(behavior, cancellationToken));
 
-        return new AwsWrapperDataReader(dataReader, this.connectionPluginManager);
+        return new AwsWrapperDataReader(dataReader, this.connectionPluginManager!);
     }
 
     public override int ExecuteNonQuery()
     {
         return WrapperUtils.ExecuteWithPlugins<int>(
-            this.connectionPluginManager,
+            this.connectionPluginManager!,
             this.targetBatch,
             "DbBatch.ExecuteNonQuery",
             () => this.targetBatch.ExecuteNonQuery());
@@ -138,7 +118,7 @@ public class AwsWrapperBatch : DbBatch
     public override async Task<int> ExecuteNonQueryAsync(CancellationToken cancellationToken = default)
     {
         return await WrapperUtils.ExecuteWithPlugins<Task<int>>(
-            this.connectionPluginManager,
+            this.connectionPluginManager!,
             this.targetBatch,
             "DbBatch.ExecuteNonQueryAsync",
             () => this.targetBatch.ExecuteNonQueryAsync(cancellationToken));
@@ -147,7 +127,7 @@ public class AwsWrapperBatch : DbBatch
     public override object? ExecuteScalar()
     {
         return WrapperUtils.ExecuteWithPlugins<object?>(
-            this.connectionPluginManager,
+            this.connectionPluginManager!,
             this.targetBatch,
             "DbBatch.ExecuteScalar",
             () => this.targetBatch.ExecuteScalar());
@@ -156,7 +136,7 @@ public class AwsWrapperBatch : DbBatch
     public override async Task<object?> ExecuteScalarAsync(CancellationToken cancellationToken = default)
     {
         return await WrapperUtils.ExecuteWithPlugins<Task<object?>>(
-            this.connectionPluginManager,
+            this.connectionPluginManager!,
             this.targetBatch,
             "DbBatch.ExecuteScalarAsync",
             () => this.targetBatch.ExecuteScalarAsync(cancellationToken));
@@ -165,7 +145,7 @@ public class AwsWrapperBatch : DbBatch
     public override void Prepare()
     {
         WrapperUtils.RunWithPlugins(
-            this.connectionPluginManager,
+            this.connectionPluginManager!,
             this.targetBatch,
             "DbBatch.Prepare",
             () => this.targetBatch.Prepare());
@@ -174,7 +154,7 @@ public class AwsWrapperBatch : DbBatch
     public override Task PrepareAsync(CancellationToken cancellationToken = default)
     {
         return WrapperUtils.ExecuteWithPlugins<Task>(
-            this.connectionPluginManager,
+            this.connectionPluginManager!,
             this.targetBatch,
             "DbBatch.PrepareAsync",
             () => this.targetBatch.PrepareAsync(cancellationToken));
@@ -183,7 +163,7 @@ public class AwsWrapperBatch : DbBatch
     public override void Cancel()
     {
         WrapperUtils.RunWithPlugins(
-            this.connectionPluginManager,
+            this.connectionPluginManager!,
             this.targetBatch,
             "DbBatch.Cancel",
             () => this.targetBatch.Cancel());

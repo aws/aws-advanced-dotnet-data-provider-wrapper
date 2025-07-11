@@ -25,10 +25,19 @@ public class AwsWrapperDataAdapter : DbDataAdapter
 
     private readonly ConnectionPluginManager connectionPluginManager;
 
-    public AwsWrapperDataAdapter(DbDataAdapter targetDataAdapter, ConnectionPluginManager connectionPluginManager)
+    internal AwsWrapperDataAdapter(DbDataAdapter targetDataAdapter, ConnectionPluginManager connectionPluginManager)
     {
         this.targetDataAdapter = targetDataAdapter;
         this.connectionPluginManager = connectionPluginManager;
+    }
+
+    public AwsWrapperDataAdapter(DbDataAdapter targetDataAdapter, DbConnection? connection)
+    {
+        this.targetDataAdapter = targetDataAdapter;
+        connection ??= targetDataAdapter.DeleteCommand?.Connection ?? targetDataAdapter.InsertCommand?.Connection ?? targetDataAdapter.SelectCommand?.Connection;
+        this.connectionPluginManager = connection is AwsWrapperConnection awsWrapperConnection
+            ? awsWrapperConnection.PluginManager
+            : throw new InvalidOperationException(Properties.Resources.Error_NotAwsWrapperConnection);
     }
 
     internal DbDataAdapter TargetDbDataAdapter => this.targetDataAdapter;
@@ -48,20 +57,52 @@ public class AwsWrapperDataAdapter : DbDataAdapter
         set => this.targetDataAdapter.SelectCommand = value;
     }
 
-    public override int UpdateBatchSize => WrapperUtils.ExecuteWithPlugins(
-        this.connectionPluginManager,
-        this.targetDataAdapter,
-        "DbDataAdapter.UpdateBatchSize",
-        () => this.targetDataAdapter.UpdateBatchSize);
+    public override int UpdateBatchSize => this.targetDataAdapter.UpdateBatchSize;
 
     public new AwsWrapperCommand? UpdateCommand
     {
         set => this.targetDataAdapter.UpdateCommand = value;
     }
 
-    protected override int Fill(DataSet dataSet, int startRecord, int maxRecords, string srcTable, IDbCommand command, CommandBehavior behavior)
+    public override int Update(DataSet dataSet)
     {
         return WrapperUtils.ExecuteWithPlugins<int>(
+            this.connectionPluginManager,
+            this.targetDataAdapter,
+            "DbDataAdapter.Update",
+            () => this.targetDataAdapter.Update(dataSet));
+    }
+
+    public new int Update(DataRow[] dataRows)
+    {
+        return WrapperUtils.ExecuteWithPlugins<int>(
+            this.connectionPluginManager,
+            this.targetDataAdapter,
+            "DbDataAdapter.Update",
+            () => this.targetDataAdapter.Update(dataRows));
+    }
+
+    public new int Update(DataTable dataTable)
+    {
+        return WrapperUtils.ExecuteWithPlugins<int>(
+            this.connectionPluginManager,
+            this.targetDataAdapter,
+            "DbDataAdapter.Update",
+            () => this.targetDataAdapter.Update(dataTable));
+    }
+
+    public new int Update(DataSet dataSet, string srcTable)
+    {
+        return WrapperUtils.ExecuteWithPlugins<int>(
+            this.connectionPluginManager,
+            this.targetDataAdapter,
+            "DbDataAdapter.Update",
+            () => this.targetDataAdapter.Update(dataSet, srcTable));
+    }
+
+    protected override int Fill(DataSet dataSet, int startRecord, int maxRecords, string srcTable, IDbCommand command, CommandBehavior behavior)
+    {
+        return WrapperUtils.ExecuteWithPlugins(
             this.connectionPluginManager,
             this.targetDataAdapter,
             "DbDataAdapter.Fill",
@@ -70,7 +111,7 @@ public class AwsWrapperDataAdapter : DbDataAdapter
 
     protected override int Fill(DataTable[] dataTables, int startRecord, int maxRecords, IDbCommand command, CommandBehavior behavior)
     {
-        return WrapperUtils.ExecuteWithPlugins<int>(
+        return WrapperUtils.ExecuteWithPlugins(
             this.connectionPluginManager,
             this.targetDataAdapter,
             "DbDataAdapter.Fill",
@@ -79,7 +120,7 @@ public class AwsWrapperDataAdapter : DbDataAdapter
 
     protected override int Fill(DataTable dataTable, IDbCommand command, CommandBehavior behavior)
     {
-        return WrapperUtils.ExecuteWithPlugins<int>(
+        return WrapperUtils.ExecuteWithPlugins(
             this.connectionPluginManager,
             this.targetDataAdapter,
             "DbDataAdapter.Fill",

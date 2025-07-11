@@ -13,79 +13,77 @@
 // limitations under the License.
 
 using System.Data.Common;
-using AwsWrapperDataProvider.Driver;
-using AwsWrapperDataProvider.Driver.Utils;
 
 namespace AwsWrapperDataProvider;
 
 public class AwsWrapperDataSource : DbDataSource
 {
-    public override string ConnectionString { get; }
+    private readonly DbDataSource targetDataSource;
 
-    private readonly Type? targetConnectionType;
-
-    private AwsWrapperConnection? mostRecentConnection;
-
-    public AwsWrapperDataSource(Type? targetConnectionType, string connectionString)
+    public AwsWrapperDataSource(DbDataSource targetDataSource)
     {
-        this.targetConnectionType = targetConnectionType;
-        this.ConnectionString = connectionString;
+        this.targetDataSource = targetDataSource;
     }
 
-    protected override DbBatch CreateDbBatch() => this.CreateBatch();
+    public override string ConnectionString => this.targetDataSource.ConnectionString;
 
-    public new AwsWrapperBatch CreateBatch()
+    public new AwsWrapperConnection CreateConnection() => (AwsWrapperConnection)base.CreateConnection();
+
+    public new AwsWrapperConnection OpenConnection() => (AwsWrapperConnection)base.OpenConnection();
+
+    public async ValueTask<AwsWrapperConnection> OpenConnectionAsync()
     {
-        return this.mostRecentConnection!.CreateBatch();
+        return (AwsWrapperConnection)await base.OpenConnectionAsync();
     }
 
-    protected override DbCommand CreateDbCommand(string? commandText = default) => this.CreateCommand<DbCommand>(commandText);
+    public new DbCommand CreateCommand(string? commandText = null) => base.CreateCommand(commandText);
 
-    public AwsWrapperCommand<TCommand> CreateCommand<TCommand>(string? commandText = default) where TCommand : DbCommand
+    public new DbBatch CreateBatch() => base.CreateBatch();
+
+    protected override DbConnection CreateDbConnection()
     {
-        AwsWrapperCommand<TCommand> command = this.mostRecentConnection!.CreateCommand<TCommand>();
-        command.CommandText = commandText;
-        return command;
+        DbConnection connection = this.targetDataSource.CreateConnection();
+
+        return new AwsWrapperConnection(connection);
     }
 
-    protected override DbConnection CreateDbConnection() => this.CreateConnection();
-
-    public new AwsWrapperConnection CreateConnection()
+    protected override DbCommand CreateDbCommand(string? commandText = null)
     {
-        this.mostRecentConnection = new AwsWrapperConnection(this.targetConnectionType, this.ConnectionString);
-        return this.mostRecentConnection;
+        var connection = this.CreateDbConnection();
+
+        if (connection is AwsWrapperConnection awsWrapperConnection)
+        {
+            AwsWrapperCommand<DbCommand> command = awsWrapperConnection.CreateCommand<DbCommand>();
+            command.CommandText = commandText;
+            return command;
+        }
+        else
+        {
+            throw new InvalidOperationException(Properties.Resources.Error_NotAwsWrapperConnection);
+        }
+    }
+
+    protected override DbBatch CreateDbBatch()
+    {
+        var connection = this.CreateDbConnection();
+
+        if (connection is AwsWrapperConnection awsWrapperConnection)
+        {
+            AwsWrapperBatch batch = awsWrapperConnection.CreateBatch();
+            return batch;
+        }
+        else
+        {
+            throw new InvalidOperationException(Properties.Resources.Error_NotAwsWrapperConnection);
+        }
     }
 
     protected override void Dispose(bool disposing)
     {
-        this.mostRecentConnection = null;
     }
 
     protected override ValueTask DisposeAsyncCore()
     {
-        this.mostRecentConnection = null;
         return ValueTask.CompletedTask;
-    }
-
-    protected override DbConnection OpenDbConnection() => this.OpenConnection();
-
-    public new AwsWrapperConnection OpenConnection()
-    {
-        this.mostRecentConnection = this.CreateConnection();
-        this.mostRecentConnection.Open();
-        return this.mostRecentConnection;
-    }
-
-    protected override async ValueTask<DbConnection> OpenDbConnectionAsync(CancellationToken cancellationToken = default)
-    {
-        AwsWrapperConnection connection = await this.OpenConnectionAsync(cancellationToken);
-        return connection;
-    }
-
-    public new async ValueTask<AwsWrapperConnection> OpenConnectionAsync(CancellationToken cancellationToken = default)
-    {
-        this.mostRecentConnection = this.CreateConnection();
-        await this.mostRecentConnection.OpenAsync(cancellationToken);
-        return this.mostRecentConnection;
     }
 }

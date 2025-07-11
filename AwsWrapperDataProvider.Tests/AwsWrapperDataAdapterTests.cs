@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data;
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
@@ -48,43 +49,89 @@ public class AwsWrapperDataAdapterTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void UpdateBatchSize_DelegatesToTargetDataAdapter()
+    public void Fill_WithDataSet_PerformsExecutePipeline()
     {
-        var result = this.wrapper.UpdateBatchSize;
-        TestUtils.VerifyDelegatesToExecutePipeline(this.mockPluginManager, this.mockTargetDataAdapter, r => r.UpdateBatchSize);
+        _ = this.wrapper.Fill(new DataSet());
+        TestUtils.VerifyDelegatesToExecutePipeline<DbDataAdapter, int>(this.mockPluginManager, this.mockTargetDataAdapter, "DbDataAdapter.Fill");
     }
 
-    // [Fact]
-    // [Trait("Category", "Unit")]
-    // public void FillWithDataSet_DelegatesToTargetDataAdapter()
-    // {
-    //     var result = this.wrapper.Fill(new System.Data.DataSet());
-    //     TestUtils.VerifyDelegatesToExecutePipeline(this.mockPluginManager, this.mockTargetDataAdapter, r => r.Fill(new System.Data.DataSet()));
-    // }
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void Fill_WithDataTable_PerformsExecutePipeline()
+    {
+        _ = this.wrapper.Fill(new DataTable());
+        TestUtils.VerifyDelegatesToExecutePipeline<DbDataAdapter, int>(this.mockPluginManager, this.mockTargetDataAdapter, "DbDataAdapter.Fill");
+    }
 
-    // [Fact]
-    // [Trait("Category", "Unit")]
-    // public void FillWithDataTables_DelegatesToTargetDataAdapter()
-    // {
-    //     System.Data.DataTable[] tables = [];
-    //     var result = this.wrapper.Fill(0, 1, tables);
-    //     TestUtils.VerifyDelegatesToExecutePipeline(this.mockPluginManager, this.mockTargetDataAdapter, r => r.Fill(0, 1, tables));
-    // }
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void Fill_WithDataSetAndString_PerformsExecutePipeline()
+    {
+        _ = this.wrapper.Fill(new DataSet(), string.Empty);
+        TestUtils.VerifyDelegatesToExecutePipeline<DbDataAdapter, int>(this.mockPluginManager, this.mockTargetDataAdapter, "DbDataAdapter.Fill");
+    }
 
-    // [Fact]
-    // [Trait("Category", "Unit")]
-    // public void FillWithDataTable_DelegatesToTargetDataAdapter()
-    // {
-    //     var result = this.wrapper.Fill(new System.Data.DataTable());
-    //     TestUtils.VerifyDelegatesToExecutePipeline(this.mockPluginManager, this.mockTargetDataAdapter, r => r.Fill(new System.Data.DataTable()));
-    // }
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void Fill_WithBoundsAndTables_PerformsExecutePipeline()
+    {
+        _ = this.wrapper.Fill(0, 1, []);
+        TestUtils.VerifyDelegatesToExecutePipeline<DbDataAdapter, int>(this.mockPluginManager, this.mockTargetDataAdapter, "DbDataAdapter.Fill");
+    }
 
-    // [Fact]
-    // [Trait("Category", "Unit")]
-    // public void Update_DelegatesToTargetDataAdapter()
-    // {
-    //     System.Data.DataRow[] dataRows = [];
-    //     var result = this.wrapper.Update(dataRows);
-    //     TestUtils.VerifyDelegatesToExecutePipeline(this.mockPluginManager, this.mockTargetDataAdapter, r => r.Update(dataRows));
-    // }
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void Fill_WithDataSetAndBoundsAndString_PerformsExecutePipeline()
+    {
+        _ = this.wrapper.Fill(new DataSet(), 0, 1, string.Empty);
+        TestUtils.VerifyDelegatesToExecutePipeline<DbDataAdapter, int>(this.mockPluginManager, this.mockTargetDataAdapter, "DbDataAdapter.Fill");
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void FillSchema_WithDataSetAndSchemaType_PerformsExecutePipeline()
+    {
+        _ = this.wrapper.FillSchema(new DataSet(), SchemaType.Source);
+        TestUtils.VerifyDelegatesToExecutePipeline<DbDataAdapter, DataTable[]>(this.mockPluginManager, this.mockTargetDataAdapter, "DbDataAdapter.FillSchema");
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void FillSchema_WithDataTableAndSchemaType_PerformsExecutePipeline()
+    {
+        _ = this.wrapper.FillSchema(new DataTable(), SchemaType.Source);
+        TestUtils.VerifyDelegatesToExecutePipeline<DbDataAdapter, DataTable?>(this.mockPluginManager, this.mockTargetDataAdapter, "DbDataAdapter.FillSchema");
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void FillSchema_WithDataSetAndSchemaTypeAndString_PerformsExecutePipeline()
+    {
+        _ = this.wrapper.FillSchema(new DataSet(), SchemaType.Source, string.Empty);
+        TestUtils.VerifyDelegatesToExecutePipeline<DbDataAdapter, DataTable[]>(this.mockPluginManager, this.mockTargetDataAdapter, "DbDataAdapter.FillSchema");
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void Update_WithDataRows_PerformsExecutePipeline()
+    {
+        _ = this.wrapper.Update([]);
+        TestUtils.VerifyDelegatesToExecutePipeline<DbDataAdapter, int>(this.mockPluginManager, this.mockTargetDataAdapter, "DbDataAdapter.Update");
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void Update_WithDataSet_PerformsExecutePipeline()
+    {
+        _ = this.wrapper.Update(new DataSet());
+        TestUtils.VerifyDelegatesToExecutePipeline<DbDataAdapter, int>(this.mockPluginManager, this.mockTargetDataAdapter, "DbDataAdapter.Update");
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void Update_WithDataTable_PerformsExecutePipeline()
+    {
+        _ = this.wrapper.Update(new DataTable());
+        TestUtils.VerifyDelegatesToExecutePipeline<DbDataAdapter, int>(this.mockPluginManager, this.mockTargetDataAdapter, "DbDataAdapter.Update");
+    }
 }

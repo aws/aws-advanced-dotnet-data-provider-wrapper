@@ -46,54 +46,6 @@ public class AwsWrapperBatchTests
         this.wrapper = new(this.mockTargetBatch.Object, this.mockPluginManager.Object);
     }
 
-    // [Fact]
-    // [Trait("Category", "Unit")]
-    // public void BatchCommands_DelegatesToTargetBatch()
-    // {
-    //     var result = this.wrapper.BatchCommands;
-    //     TestUtils.VerifyDelegatesToExecutePipeline(this.mockPluginManager, this.mockTargetBatch, r => r.BatchCommands);
-    // }
-
-    [Fact]
-    [Trait("Category", "Unit")]
-    public void Timeout_DelegatesToTargetBatch()
-    {
-        var result = this.wrapper.Timeout;
-        TestUtils.VerifyDelegatesToExecutePipeline(this.mockPluginManager, this.mockTargetBatch, r => r.Timeout);
-    }
-
-    // [Fact]
-    // [Trait("Category", "Unit")]
-    // public void Connection_DelegatesToTargetBatch()
-    // {
-    //     var result = this.wrapper.Connection;
-    //     TestUtils.VerifyDelegatesToExecutePipeline(this.mockPluginManager, this.mockTargetBatch, r => r.Connection);
-    // }
-
-    // [Fact]
-    // [Trait("Category", "Unit")]
-    // public void Transaction_DelegatesToTargetBatch()
-    // {
-    //     var result = this.wrapper.Transaction;
-    //     TestUtils.VerifyDelegatesToExecutePipeline(this.mockPluginManager, this.mockTargetBatch, r => r.Transaction);
-    // }
-
-    // [Fact]
-    // [Trait("Category", "Unit")]
-    // public void ExecuteReader_DelegatesToTargetBatch()
-    // {
-    //     var result = this.wrapper.ExecuteReader();
-    //     TestUtils.VerifyDelegatesToExecutePipeline(this.mockPluginManager, this.mockTargetBatch, r => r.ExecuteReader(System.Data.CommandBehavior.Default));
-    // }
-
-    // [Fact]
-    // [Trait("Category", "Unit")]
-    // public async Task ExecuteReaderAsync_DelegatesToTargetBatch()
-    // {
-    //     var result = await this.wrapper.ExecuteReaderAsync(TestContext.Current.CancellationToken);
-    //     TestUtils.VerifyDelegatesToExecutePipeline(this.mockPluginManager, this.mockTargetBatch, r => r.ExecuteReaderAsync(TestContext.Current.CancellationToken));
-    // }
-
     [Fact]
     [Trait("Category", "Unit")]
     public void ExecuteNonQuery_DelegatesToTargetBatch()
@@ -149,12 +101,4 @@ public class AwsWrapperBatchTests
         this.wrapper.Cancel();
         TestUtils.VerifyDelegatesToExecutePipeline(this.mockPluginManager, this.mockTargetBatch, r => r.Cancel());
     }
-
-    // [Fact]
-    // [Trait("Category", "Unit")]
-    // public void CreateBatchCommand_DelegatesToTargetBatch()
-    // {
-    //     var result = this.wrapper.CreateBatchCommand();
-    //     TestUtils.VerifyDelegatesToExecutePipeline(this.mockPluginManager, this.mockTargetBatch, r => r.CreateBatchCommand());
-    // }
 }
