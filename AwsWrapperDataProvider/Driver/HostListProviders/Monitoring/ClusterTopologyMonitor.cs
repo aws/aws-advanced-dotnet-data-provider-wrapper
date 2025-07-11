@@ -39,7 +39,6 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
     protected readonly TimeSpan refreshRate;
     protected readonly TimeSpan highRefreshRate;
     protected readonly TimeSpan topologyCacheExpiration;
-    protected readonly Dictionary<string, string> properties;
     protected readonly Dictionary<string, string> monitoringProperties;
     protected readonly IPluginService pluginService;
     protected readonly HostSpec initialHostSpec;
@@ -59,16 +58,16 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
     protected string clusterId;
     protected HostSpec? writerHostSpec;
     protected DbConnection? monitoringConnection;
-    protected bool isVerifiedWriterConnection = false;
+    protected bool isVerifiedWriterConnection;
     protected DateTime highRefreshRateEndTime = DateTime.MinValue;
-    protected volatile bool requestToUpdateTopology = false;
+    protected volatile bool requestToUpdateTopology;
     protected DateTime ignoreNewTopologyRequestsEndTime = DateTime.MinValue;
-    protected volatile bool nodeThreadsStop = false;
+    protected volatile bool nodeThreadsStop;
     protected DbConnection? nodeThreadsWriterConnection;
     protected HostSpec? nodeThreadsWriterHostSpec;
     protected DbConnection? nodeThreadsReaderConnection;
     protected IList<HostSpec>? nodeThreadsLatestTopology;
-    protected bool disposed = false;
+    protected bool disposed;
 
     public ClusterTopologyMonitor(
         string clusterId,
@@ -91,7 +90,6 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         this.pluginService = pluginService;
         this.hostListProviderService = hostListProviderService;
         this.clusterInstanceTemplate = clusterInstanceTemplate;
-        this.properties = properties;
         this.refreshRate = refreshRate;
         this.highRefreshRate = highRefreshRate;
         this.topologyCacheExpiration = topologyCacheExpiration;
