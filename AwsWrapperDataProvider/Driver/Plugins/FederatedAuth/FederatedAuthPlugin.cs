@@ -25,7 +25,7 @@ namespace AwsWrapperDataProvider.Driver.Plugins.FederatedAuth;
 
 public partial class FederatedAuthPlugin(IPluginService pluginService, Dictionary<string, string> props, CredentialsProviderFactory credentialsFactory) : AbstractConnectionPlugin
 {
-    public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string> { "DbConnection.Open", "DbConnection.OpenAsync" };
+    public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string> { "DbConnection.Open", "DbConnection.OpenAsync", "DbConnection.ForceOpen" };
 
     public static readonly int DefaultHttpTimeoutMs = 60000;
 
@@ -43,6 +43,11 @@ public partial class FederatedAuthPlugin(IPluginService pluginService, Dictionar
     public static partial Regex SamlResponsePattern();
 
     public override DbConnection OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
+    {
+        return this.ConnectInternal(hostSpec, props, methodFunc);
+    }
+
+    public override DbConnection ForceOpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
     {
         return this.ConnectInternal(hostSpec, props, methodFunc);
     }

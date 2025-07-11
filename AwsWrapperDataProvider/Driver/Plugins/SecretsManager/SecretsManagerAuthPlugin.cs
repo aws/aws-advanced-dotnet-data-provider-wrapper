@@ -22,7 +22,7 @@ namespace AwsWrapperDataProvider.Driver.Plugins.SecretsManager;
 
 public class SecretsManagerAuthPlugin(IPluginService pluginService, Dictionary<string, string> props, string secretId, string region, int secretValueExpirySecs, AmazonSecretsManagerClient client) : AbstractConnectionPlugin
 {
-    public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string> { "DbConnection.Open", "DbConnection.OpenAsync" };
+    public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string> { "DbConnection.Open", "DbConnection.OpenAsync", "DbConnection.ForceOpen" };
 
     private static readonly MemoryCache SecretValueCache = new(new MemoryCacheOptions());
 
@@ -49,6 +49,12 @@ public class SecretsManagerAuthPlugin(IPluginService pluginService, Dictionary<s
 
     public override DbConnection OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
     {
+        return this.ConnectInternal(hostSpec, props, methodFunc);
+    }
+
+    public override DbConnection ForceOpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
+    {
+        // For ForceOpenConnection, we can reuse the same logic as OpenConnection
         return this.ConnectInternal(hostSpec, props, methodFunc);
     }
 

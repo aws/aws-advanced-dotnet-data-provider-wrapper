@@ -36,6 +36,12 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
         return this.ConnectInternal(hostSpec, props, methodFunc);
     }
 
+    public override DbConnection ForceOpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
+    {
+        // For ForceOpenConnection, we need to create a DbConnection-returning delegate from the void delegate
+        return this.ConnectInternal(hostSpec, props, methodFunc);
+    }
+
     private DbConnection ConnectInternal(HostSpec? hostSpec, Dictionary<string, string> props, ADONetDelegate<DbConnection> methodFunc)
     {
         string iamUser = PropertyDefinition.User.GetString(props) ?? throw new Exception(PropertyDefinition.User.Name + " is null or empty.");
