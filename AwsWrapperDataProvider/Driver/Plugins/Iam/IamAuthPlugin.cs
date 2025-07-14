@@ -51,6 +51,7 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
         string iamRegion = RegionUtils.GetRegion(iamHost, props, PropertyDefinition.IamRegion) ?? throw new Exception("Could not determine region for IAM authentication provider.");
 
         string cacheKey = IamTokenUtility.GetCacheKey(iamUser, iamHost, iamPort, iamRegion);
+        bool isCachedToken = true;
         if (!IamTokenCache.TryGetValue(cacheKey, out string? token))
         {
             try
@@ -58,6 +59,7 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
                 token = IamTokenUtility.GenerateAuthenticationToken(iamRegion, iamHost, iamPort, iamUser, null);
                 int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? DefaultIamExpirationSeconds;
                 IamTokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
+                isCachedToken = false;
             }
             catch (Exception ex)
             {
@@ -72,18 +74,23 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
         {
             methodFunc();
         }
-        catch
+        catch (Exception ex)
         {
-            // should the token not work (expired on the server), generate a new one and try again
+            if (!this.pluginService.IsLoginException(ex) || !isCachedToken)
+            {
+                throw;
+            }
+
+            // should the token not work (login exception + is cached token), generate a new one and try again
             try
             {
                 token = IamTokenUtility.GenerateAuthenticationToken(iamRegion, iamHost, iamPort, iamUser, null);
                 int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? DefaultIamExpirationSeconds;
                 IamTokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
             }
-            catch (Exception ex)
+            catch (Exception ex2)
             {
-                throw new Exception("Could not generate authentication token for IAM user " + iamUser + ".", ex);
+                throw new Exception("Could not generate authentication token for IAM user " + iamUser + ".", ex2);
             }
 
             // token is non-null here, as the above try-catch block must have succeeded

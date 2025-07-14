@@ -60,15 +60,17 @@ public class SecretsManagerAuthPlugin(IPluginService pluginService, Dictionary<s
         {
             methodFunc();
         }
-        catch
+        catch (Exception ex)
         {
-            // TODO: check that this was due to a login error
-            if (!secretsWasFetched)
+            if (!this.pluginService.IsLoginException(ex) || secretsWasFetched)
             {
-                this.UpdateSecrets(true);
-                this.ApplySecretToProperties(props);
-                methodFunc();
+                throw;
             }
+
+            // should the token not work (login exception + is cached token), generate a new one and try again
+            this.UpdateSecrets(true);
+            this.ApplySecretToProperties(props);
+            methodFunc();
         }
     }
 
