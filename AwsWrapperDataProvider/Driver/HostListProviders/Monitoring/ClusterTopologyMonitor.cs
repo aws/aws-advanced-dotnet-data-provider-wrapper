@@ -626,10 +626,10 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         HostSpec hostSpec,
         HostSpec? writerHostSpec)
     {
-        private ClusterTopologyMonitor monitor = monitor;
-        private HostSpec hostSpec = hostSpec;
-        private HostSpec? writerHostSpec = writerHostSpec;
-        private bool writerChanged = false;
+        private readonly ClusterTopologyMonitor monitor = monitor;
+        private readonly HostSpec hostSpec = hostSpec;
+        private readonly HostSpec? writerHostSpec = writerHostSpec;
+        private readonly bool writerChanged = false;
 
         public async Task RunNodeMonitoringAsync(HostSpec hostSpec, HostSpec? writerHostSpec)
         {
@@ -713,7 +713,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                 this.monitor.CloseConnection(connection);
             }
         }
-        
+
         protected async Task ReaderThreadFetchTopologyAsync(DbConnection connection, HostSpec? writerHostSpec)
         {
             if (connection == null)
@@ -743,6 +743,5 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                 // Ignore errors
             }
         }
-
     }
 }

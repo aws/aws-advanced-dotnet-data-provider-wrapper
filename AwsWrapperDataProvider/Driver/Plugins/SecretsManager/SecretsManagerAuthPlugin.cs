@@ -76,6 +76,7 @@ public class SecretsManagerAuthPlugin(IPluginService pluginService, Dictionary<s
                 this.ApplySecretToProperties(props);
                 return methodFunc();
             }
+
             throw;
         }
     }

@@ -35,7 +35,7 @@ public class PluginService : IPluginService, IHostListProviderService
 {
     private static readonly DateTimeOffset DefaultHostAvailabilityCacheExpiration = DateTimeOffset.Now.AddMinutes(5);
     internal static readonly MemoryCache HostAvailabilityExpiringCache = new(new MemoryCacheOptions());
-    private static readonly ILogger<PluginService> logger = LoggerUtils.GetLogger<PluginService>();
+    private static readonly ILogger<PluginService> Logger = LoggerUtils.GetLogger<PluginService>();
 
     private readonly ConnectionPluginManager pluginManager;
     private readonly Dictionary<string, string> props;

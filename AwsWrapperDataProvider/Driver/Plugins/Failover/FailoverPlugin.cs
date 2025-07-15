@@ -17,7 +17,6 @@ using System.Data.Common;
 using System.Diagnostics;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
-using AwsWrapperDataProvider.Driver.Plugins.ExecutionTime;
 using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Logging;
 using ThreadState = System.Threading.ThreadState;
@@ -31,32 +30,29 @@ namespace AwsWrapperDataProvider.Driver.Plugins.Failover;
 /// </summary>
 public class FailoverPlugin : AbstractConnectionPlugin
 {
-    private static readonly ILogger<FailoverPlugin> logger = LoggerUtils.GetLogger<FailoverPlugin>();
-
     // Method names
     private const string MethodAbort = "DbConnection.Abort";
     private const string MethodClose = "DbConnection.Close";
     private const string MethodIsClosed = "DbConnection.IsClosed";
     private const string MethodDispose = "DbConnection.Dispose";
 
+    private static readonly ILogger<FailoverPlugin> Logger = LoggerUtils.GetLogger<FailoverPlugin>();
+
     private readonly IPluginService pluginService;
     private readonly Dictionary<string, string> props;
-    private IHostListProviderService? hostListProviderService;
-    private RdsUrlType? rdsUrlType;
-
-
-    // Configuration settings
     private readonly int failoverTimeoutMs;
     private readonly FailoverMode failoverMode;
     private readonly string failoverReaderHostSelectorStrategy;
     private readonly bool enableConnectFailover;
     private readonly bool skipFailoverOnInterruptedThread;
+    private readonly bool closedExplicitly = false;
 
-    // State tracking
-    private bool closedExplicitly = false;
-    private bool isClosed = false;
-    private Exception? lastExceptionDealtWith = null;
-    private bool isInTransaction = false;
+    private IHostListProviderService? hostListProviderService;
+    private RdsUrlType? rdsUrlType;
+
+    private bool isClosed;
+    private Exception? lastExceptionDealtWith;
+    private bool isInTransaction;
 
     public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string>()
     {
@@ -123,7 +119,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
         try
         {
-           return methodFunc();
+            return methodFunc();
         }
         catch (Exception exception)
         {
@@ -142,7 +138,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
         this.rdsUrlType = RdsUtils.IdentifyRdsType(this.hostListProviderService.InitialConnectionHostSpec.Host);
     }
 
-    public override DbConnection OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
+    public override DbConnection OpenConnection(HostSpec? hostSpec, Dictionary<string, string> properties, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
     {
         this.InitFailoverMode();
 
@@ -203,9 +199,9 @@ public class FailoverPlugin : AbstractConnectionPlugin
         throw new InvalidOperationException("Unable to establish connection");
     }
 
-    public override void InitHostProvider(string initialUrl, Dictionary<string, string> props, IHostListProviderService hostListProviderService, ADONetDelegate initHostProviderFunc)
+    public override void InitHostProvider(string initialUrl, Dictionary<string, string> properties, IHostListProviderService initHostListProviderService, ADONetDelegate initHostProviderFunc)
     {
-        this.hostListProviderService = hostListProviderService;
+        this.hostListProviderService = initHostListProviderService;
         initHostProviderFunc();
     }
 
@@ -334,8 +330,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
                 try
                 {
-                    this.pluginService.OpenConnection(readerCandidate, this.props, false);
-                    DbConnection candidateConn = this.pluginService.CurrentConnection;
+                    DbConnection candidateConn = this.pluginService.OpenConnection(readerCandidate, this.props, false);
                     var role = this.pluginService.GetHostRole(candidateConn);
 
                     if (role == HostRole.Reader || this.failoverMode != FailoverMode.StrictReader)
@@ -369,8 +364,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
                 try
                 {
-                    this.pluginService.OpenConnection(originalWriter, this.props, false);
-                    DbConnection candidateConn = this.pluginService.CurrentConnection;
+                    DbConnection candidateConn = this.pluginService.OpenConnection(originalWriter, this.props, false);
                     var role = this.pluginService.GetHostRole(candidateConn);
 
                     if (role == HostRole.Reader || this.failoverMode != FailoverMode.StrictReader)
@@ -463,10 +457,8 @@ public class FailoverPlugin : AbstractConnectionPlugin
             this.isInTransaction = false;
             throw new TransactionStateUnknownException("Transaction resolution unknown. Please re-configure session state if required and try restarting transaction.");
         }
-        else
-        {
-            throw new FailoverSuccessException("The active SQL connection has changed due to a connection failure. Please re-configure session state if required.");
-        }
+
+        throw new FailoverSuccessException("The active SQL connection has changed due to a connection failure. Please re-configure session state if required.");
     }
 
     private void InvalidateCurrentConnection()
@@ -477,22 +469,22 @@ public class FailoverPlugin : AbstractConnectionPlugin
             return;
         }
 
-        // Handle transaction rollback if needed
-        if (conn.State == ConnectionState.Open)
-        {
-            try
-            {
-                // Check if we're in a transaction and roll it back
-                using var cmd = conn.CreateCommand();
-                cmd.CommandText = "SELECT 1"; // Simple query to test connection
-                cmd.ExecuteScalar();
-            }
-            catch (Exception)
-            {
-                // Connection is likely broken, mark as in transaction for proper handling
-                this.isInTransaction = true;
-            }
-        }
+        // TODO : handle when transaction support is added.
+
+        // bool isInTransaction = false;
+        //
+        // if (this.pluginService.IsInTransaction())
+        // {
+        //     isInTransaction = true;
+        //     try
+        //     {
+        //         conn.Rollback(); // if conn.Rollback() exists — see note below
+        //     }
+        //     catch
+        //     {
+        //         // Swallow exception
+        //     }
+        // }
 
         try
         {
@@ -501,9 +493,9 @@ public class FailoverPlugin : AbstractConnectionPlugin
                 conn.Close();
             }
         }
-        catch (Exception)
+        catch
         {
-            // Swallow exception, current connection should be useless anyway
+            // Swallow exception, current connection should be useless anyway.
         }
     }
 
@@ -511,7 +503,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
     {
         if (this.isClosed && this.closedExplicitly)
         {
-            logger.LogInformation("Failover connection closed explicitly.");
+            Logger.LogInformation("Failover connection closed explicitly.");
             return;
         }
 

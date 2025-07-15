@@ -99,5 +99,6 @@ public class AuroraPgDialect : PgDialect
                     hostListProviderService,
                     TopologyQuery,
                     NodeIdQuery,
-                    IsReaderQuery);    }
+                    IsReaderQuery);
+    }
 }

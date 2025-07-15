@@ -1,18 +1,17 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 // http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data.Common;
 using System.Net;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
@@ -27,11 +26,11 @@ namespace AwsWrapperDataProvider.Driver.Plugins.AuroraStaleDns;
 /// </summary>
 public class AuroraStaleDnsHelper
 {
-    private readonly IPluginService pluginService;
-    private HostSpec? writerHostSpec = null;
-    private string? writerHostAddress = null;
-
     private const int DnsRetries = 3;
+
+    private readonly IPluginService pluginService;
+    private HostSpec? writerHostSpec;
+    private string? writerHostAddress;
 
     public AuroraStaleDnsHelper(IPluginService pluginService)
     {
@@ -134,11 +133,6 @@ public class AuroraStaleDnsHelper
         return true;
     }
 
-    /// <summary>
-    /// Notifies the helper about changes in the node list, allowing it to reset cached information
-    /// when the writer changes.
-    /// </summary>
-    /// <param name="changes">Dictionary of host URLs to their change options</param>
     public void NotifyNodeListChanged(Dictionary<string, NodeChangeOptions> changes)
     {
         if (this.writerHostSpec == null)
@@ -159,20 +153,12 @@ public class AuroraStaleDnsHelper
         }
     }
 
-    /// <summary>
-    /// Resets the cached writer information. This can be called when topology changes are detected.
-    /// </summary>
     public void Reset()
     {
         this.writerHostSpec = null;
         this.writerHostAddress = null;
     }
 
-    /// <summary>
-    /// Gets the IP address for a given hostname with retry logic.
-    /// </summary>
-    /// <param name="hostname">The hostname to resolve</param>
-    /// <returns>The IP address as a string, or null if resolution fails</returns>
     private static string? GetHostIpAddress(string hostname)
     {
         for (int attempt = 0; attempt < DnsRetries; attempt++)
@@ -203,23 +189,13 @@ public class AuroraStaleDnsHelper
         return null;
     }
 
-    /// <summary>
-    /// Finds the writer host in the current topology.
-    /// </summary>
-    /// <returns>The writer host specification, or null if no writer is found</returns>
-    private HostSpec? GetWriter()
-    {
-        return this.pluginService.AllHosts.FirstOrDefault(host => host.Role == HostRole.Writer);
-    }
-
-    /// <summary>
-    /// Checks if the given host URL is contained in the list of host specifications.
-    /// </summary>
-    /// <param name="hosts">List of host specifications.</param>
-    /// <param name="hostUrl">The host URL to search for.</param>
-    /// <returns>True if the host URL is found in the list.</returns>
     private static bool ContainsHostUrl(IList<HostSpec> hosts, string hostUrl)
     {
         return hosts.Any(host => host.Host.Equals(hostUrl, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private HostSpec? GetWriter()
+    {
+        return this.pluginService.AllHosts.FirstOrDefault(host => host.Role == HostRole.Writer);
     }
 }
