@@ -22,14 +22,14 @@ namespace AwsWrapperDataProvider;
 public class AwsWrapperBatch : DbBatch
 {
     protected DbBatch targetBatch;
-    protected DbConnection? targetConnection;
-    protected DbTransaction? targetTransaction;
+    protected AwsWrapperConnection? wrapperConnection;
+    protected AwsWrapperTransaction? wrapperTransaction;
+    private ConnectionPluginManager? connectionPluginManager;
 
-    private readonly ConnectionPluginManager? connectionPluginManager;
-
-    internal AwsWrapperBatch(DbBatch targetBatch, ConnectionPluginManager connectionPluginManager)
+    internal AwsWrapperBatch(DbBatch targetBatch, AwsWrapperConnection connection, ConnectionPluginManager connectionPluginManager)
     {
         this.targetBatch = targetBatch;
+        this.wrapperConnection = connection;
         this.connectionPluginManager = connectionPluginManager;
     }
 
@@ -37,10 +37,19 @@ public class AwsWrapperBatch : DbBatch
     {
         this.targetBatch = targetBatch;
         connection ??= this.targetBatch.Connection;
-        this.connectionPluginManager = connection is AwsWrapperConnection awsWrapperConnection
-            ? awsWrapperConnection.PluginManager
-            : throw new InvalidOperationException(Properties.Resources.Error_NotAwsWrapperConnection);
+
+        if (connection is AwsWrapperConnection awsWrapperConnection)
+        {
+            this.wrapperConnection = awsWrapperConnection;
+            this.connectionPluginManager = awsWrapperConnection.PluginManager;
+        }
+        else
+        {
+            throw new InvalidOperationException(Properties.Resources.Error_NotAwsWrapperConnection);
+        }
     }
+
+    public AwsWrapperBatch(DbBatch targetBatch) : this(targetBatch, null) { }
 
     internal DbBatch TargetDbBatch => this.targetBatch;
 
@@ -54,14 +63,48 @@ public class AwsWrapperBatch : DbBatch
 
     protected override DbConnection? DbConnection
     {
-        get => this.targetBatch.Connection;
-        set => this.targetBatch.Connection = value;
+        get => this.wrapperConnection;
+        set
+        {
+            if (value == null)
+            {
+                this.wrapperConnection = null;
+                this.targetBatch.Connection = null;
+                this.connectionPluginManager = null;
+                return;
+            }
+
+            if (value is not AwsWrapperConnection)
+            {
+                throw new InvalidOperationException("Provided connection is not of type AwsWrapperConnection.");
+            }
+
+            this.targetBatch.Connection = value;
+            this.wrapperConnection = (AwsWrapperConnection)value;
+            this.connectionPluginManager = this.wrapperConnection.PluginManager;
+        }
     }
 
     protected override DbTransaction? DbTransaction
     {
-        get => this.targetBatch.Transaction;
-        set => this.targetBatch.Transaction = value;
+        get => this.wrapperTransaction;
+        set
+        {
+            if (value == null)
+            {
+                this.wrapperTransaction = null;
+                this.targetBatch.Transaction = null;
+                return;
+            }
+
+            if (value is not AwsWrapperTransaction)
+            {
+                throw new InvalidOperationException("Provided transaction is not of type AwsWrapperTransaction.");
+            }
+
+            this.targetBatch.Transaction = value;
+            this.wrapperTransaction = (AwsWrapperTransaction)value;
+        }
     }
 
     protected override DbBatchCommand CreateDbBatchCommand()

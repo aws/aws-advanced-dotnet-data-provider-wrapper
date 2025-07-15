@@ -42,26 +42,82 @@ public class AwsWrapperDataAdapter : DbDataAdapter
 
     internal DbDataAdapter TargetDbDataAdapter => this.targetDataAdapter;
 
-    public new AwsWrapperCommand? DeleteCommand
+    public new DbCommand? DeleteCommand
     {
-        set => this.targetDataAdapter.DeleteCommand = value;
+        set
+        {
+            if (value == null)
+            {
+                this.targetDataAdapter.DeleteCommand = null;
+                return;
+            }
+
+            if (value is not AwsWrapperCommand)
+            {
+                throw new InvalidOperationException("Provided command is not of type AwsWrapperCommand.");
+            }
+
+            this.targetDataAdapter.DeleteCommand = value;
+        }
     }
 
-    public new AwsWrapperCommand? InsertCommand
+    public new DbCommand? InsertCommand
     {
-        set => this.targetDataAdapter.InsertCommand = value;
+        set
+        {
+            if (value == null)
+            {
+                this.targetDataAdapter.InsertCommand = null;
+                return;
+            }
+
+            if (value is not AwsWrapperCommand)
+            {
+                throw new InvalidOperationException("Provided command is not of type AwsWrapperCommand.");
+            }
+
+            this.targetDataAdapter.InsertCommand = value;
+        }
     }
 
-    public new AwsWrapperCommand? SelectCommand
+    public new DbCommand? SelectCommand
     {
-        set => this.targetDataAdapter.SelectCommand = value;
+        set
+        {
+            if (value == null)
+            {
+                this.targetDataAdapter.SelectCommand = null;
+                return;
+            }
+
+            if (value is not AwsWrapperCommand)
+            {
+                throw new InvalidOperationException("Provided command is not of type AwsWrapperCommand.");
+            }
+
+            this.targetDataAdapter.SelectCommand = value;
+        }
     }
 
     public override int UpdateBatchSize => this.targetDataAdapter.UpdateBatchSize;
 
-    public new AwsWrapperCommand? UpdateCommand
+    public new DbCommand? UpdateCommand
     {
-        set => this.targetDataAdapter.UpdateCommand = value;
+        set
+        {
+            if (value == null)
+            {
+                this.targetDataAdapter.UpdateCommand = null;
+                return;
+            }
+
+            if (value is not AwsWrapperCommand)
+            {
+                throw new InvalidOperationException("Provided command is not of type AwsWrapperCommand.");
+            }
+
+            this.targetDataAdapter.UpdateCommand = value;
+        }
     }
 
     public override int Update(DataSet dataSet)

@@ -43,7 +43,7 @@ public class AwsWrapperBatchTests
             CallBase = true,
         };
 
-        this.wrapper = new(this.mockTargetBatch.Object, this.mockPluginManager.Object);
+        this.wrapper = new(this.mockTargetBatch.Object, connection, this.mockPluginManager.Object);
     }
 
     [Fact]

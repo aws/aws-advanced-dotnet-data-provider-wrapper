@@ -205,8 +205,8 @@ public class AwsWrapperConnection : DbConnection
 
     public new AwsWrapperBatch CreateBatch()
     {
-        DbBatch batch = this.pluginService.CurrentConnection!.CreateBatch();
-        return new AwsWrapperBatch(batch, this.PluginManager);
+        DbBatch batch = this.TargetDbConnection!.CreateBatch();
+        return new AwsWrapperBatch(batch, this, this.PluginManager);
     }
 
     private Type GetTargetType(Dictionary<string, string> props)
