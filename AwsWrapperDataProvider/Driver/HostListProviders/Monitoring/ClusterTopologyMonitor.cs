@@ -28,18 +28,16 @@ namespace AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 public class ClusterTopologyMonitor : IClusterTopologyMonitor
 {
     protected const int DefaultTopologyQueryTimeoutMs = 1000;
-    protected const int CloseConnectionNetworkTimeoutMs = 500;
-    protected const int DefaultConnectionTimeoutMs = 5000;
-    protected const int DefaultSocketTimeoutMs = 5000;
 
     // Keep monitoring topology with a high rate for 30s after failover
     protected static readonly TimeSpan HighRefreshPeriodAfterPanic = TimeSpan.FromSeconds(30);
     protected static readonly TimeSpan IgnoreTopologyRequestDuration = TimeSpan.FromSeconds(10);
+    protected static readonly float CloseConnectionNetworkTimeout = 0.5f;
 
     protected readonly TimeSpan refreshRate;
     protected readonly TimeSpan highRefreshRate;
     protected readonly TimeSpan topologyCacheExpiration;
-    protected readonly Dictionary<string, string> monitoringProperties;
+    protected readonly Dictionary<string, string> properties;
     protected readonly IPluginService pluginService;
     protected readonly HostSpec initialHostSpec;
     protected readonly MemoryCache topologyMap;
@@ -97,32 +95,8 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         this.writerTopologyQuery = writerTopologyQuery;
         this.nodeIdQuery = nodeIdQuery;
 
-        this.monitoringProperties = new Dictionary<string, string>(properties);
-
-        // Process monitoring-specific properties
-        var keysToRemove = new List<string>();
-        foreach (var kvp in properties.Where(p => p.Key.StartsWith("topology-monitoring-")))
-        {
-            string newKey = kvp.Key.Substring("topology-monitoring-".Length);
-            this.monitoringProperties[newKey] = kvp.Value;
-            keysToRemove.Add(kvp.Key);
-        }
-
-        foreach (string key in keysToRemove)
-        {
-            this.monitoringProperties.Remove(key);
-        }
-
-        // Set default values if not provided
-        if (!this.monitoringProperties.ContainsKey("SocketTimeout"))
-        {
-            this.monitoringProperties["SocketTimeout"] = DefaultSocketTimeoutMs.ToString();
-        }
-
-        if (!this.monitoringProperties.ContainsKey("ConnectTimeout"))
-        {
-            this.monitoringProperties["ConnectTimeout"] = DefaultConnectionTimeoutMs.ToString();
-        }
+        // Use original properties directly
+        this.properties = properties;
 
         this.monitoringTask = Task.Run(this.RunMonitoringLoop, this.cancellationTokenSource.Token);
     }
@@ -134,78 +108,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         this.clusterId = clusterId;
     }
 
-    public async Task<IList<HostSpec>> ForceRefreshAsync(bool shouldVerifyWriter, long timeoutMs)
-    {
-        if (this.ignoreNewTopologyRequestsEndTime > DateTime.UtcNow)
-        {
-            // Previous failover has just completed. We can use results of it without triggering a new topology update.
-            if (this.topologyMap.TryGetValue(this.clusterId, out IList<HostSpec>? currentHosts) && currentHosts != null)
-            {
-                return currentHosts;
-            }
-        }
-
-        if (shouldVerifyWriter)
-        {
-            var connectionToClose = Interlocked.Exchange(ref this.monitoringConnection, null);
-            this.isVerifiedWriterConnection = false;
-            this.CloseConnection(connectionToClose);
-        }
-
-        return await this.WaitTillTopologyGetsUpdatedAsync(timeoutMs);
-    }
-
-    public async Task<IList<HostSpec>> ForceRefreshAsync(DbConnection? connection, long timeoutMs)
-    {
-        if (this.isVerifiedWriterConnection)
-        {
-            // Push monitoring thread to refresh topology with a verified connection
-            return await this.WaitTillTopologyGetsUpdatedAsync(timeoutMs);
-        }
-
-        // Otherwise use provided unverified connection to update topology
-        return await this.FetchTopologyAndUpdateCacheAsync(connection) ?? new List<HostSpec>();
-    }
-
-    protected async Task<IList<HostSpec>> WaitTillTopologyGetsUpdatedAsync(long timeoutMs)
-    {
-        this.topologyMap.TryGetValue(this.clusterId, out IList<HostSpec>? currentHosts);
-
-        lock (this.topologyUpdatedLock)
-        {
-            this.requestToUpdateTopology = true;
-        }
-
-        if (timeoutMs == 0)
-        {
-            return currentHosts ?? new List<HostSpec>();
-        }
-
-        var timeout = TimeSpan.FromMilliseconds(timeoutMs);
-        var cancellationToken = new CancellationTokenSource(timeout).Token;
-
-        try
-        {
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                await this.topologyUpdatedSemaphore.WaitAsync(1000, cancellationToken);
-
-                if (this.topologyMap.TryGetValue(this.clusterId, out IList<HostSpec>? latestHosts) &&
-                    !ReferenceEquals(currentHosts, latestHosts))
-                {
-                    return latestHosts ?? new List<HostSpec>();
-                }
-            }
-        }
-        catch (OperationCanceledException)
-        {
-            throw new TimeoutException($"Topology was not updated within {timeoutMs} milliseconds");
-        }
-
-        return currentHosts ?? new List<HostSpec>();
-    }
-
-    protected async Task RunMonitoringLoop()
+    public async Task RunMonitoringLoop()
     {
         try
         {
@@ -222,13 +125,16 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                         this.nodeThreadsWriterHostSpec = null;
                         this.nodeThreadsLatestTopology = null;
 
-                        var hosts = this.topologyMap.Get<IList<HostSpec>>(this.clusterId) ?? await this.OpenAnyConnectionAndUpdateTopologyAsync();
+                        var hosts = this.topologyMap.Get<IList<HostSpec>>(this.clusterId) ??
+                                    await this.OpenAnyConnectionAndUpdateTopologyAsync();
 
                         if (hosts != null && !this.isVerifiedWriterConnection)
                         {
                             foreach (var hostSpec in hosts)
                             {
-                                this.nodeThreads.TryAdd(hostSpec.Host, Task.Run(() => this.RunNodeMonitoringAsync(hostSpec, this.writerHostSpec)));
+                                NodeMonitoringTask nodeMonitoringTask = new(this, hostSpec, this.writerHostSpec);
+                                this.nodeThreads.TryAdd(hostSpec.Host,
+                                    Task.Run(() => nodeMonitoringTask.RunNodeMonitoringAsync(hostSpec, this.writerHostSpec)));
                             }
                         }
                     }
@@ -249,23 +155,24 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                             }
                             else
                             {
-                                this.ignoreNewTopologyRequestsEndTime = DateTime.UtcNow.Add(IgnoreTopologyRequestDuration);
+                                this.ignoreNewTopologyRequestsEndTime =
+                                    DateTime.UtcNow.Add(IgnoreTopologyRequestDuration);
                             }
 
                             this.nodeThreadsStop = true;
                             this.nodeThreads.Clear();
                             continue;
                         }
-                        else
+
+                        // Update node threads with new nodes in the topology
+                        var hosts = this.nodeThreadsLatestTopology;
+                        if (hosts != null && !this.nodeThreadsStop)
                         {
-                            // Update node threads with new nodes in the topology
-                            var hosts = this.nodeThreadsLatestTopology;
-                            if (hosts != null && !this.nodeThreadsStop)
+                            foreach (var hostSpec in hosts)
                             {
-                                foreach (var hostSpec in hosts)
-                                {
-                                    this.nodeThreads.TryAdd(hostSpec.Host, Task.Run(() => this.RunNodeMonitoringAsync(hostSpec, this.writerHostSpec)));
-                                }
+                                NodeMonitoringTask nodeMonitoringTask = new(this, hostSpec, this.writerHostSpec);
+                                this.nodeThreads.TryAdd(hostSpec.Host,
+                                    Task.Run(() => nodeMonitoringTask.RunNodeMonitoringAsync(hostSpec, this.writerHostSpec)));
                             }
                         }
                     }
@@ -316,121 +223,80 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         }
     }
 
-    protected bool IsInPanicMode()
+    public async Task<IList<HostSpec>> ForceRefreshAsync(bool shouldVerifyWriter, long timeoutMs)
     {
-        return this.monitoringConnection == null || !this.isVerifiedWriterConnection;
+        if (this.ignoreNewTopologyRequestsEndTime > DateTime.UtcNow)
+        {
+            // Previous failover has just completed. We can use results of it without triggering a new topology update.
+            if (this.topologyMap.TryGetValue(this.clusterId, out IList<HostSpec>? currentHosts) && currentHosts != null)
+            {
+                return currentHosts;
+            }
+        }
+
+        if (shouldVerifyWriter)
+        {
+            var connectionToClose = Interlocked.Exchange(ref this.monitoringConnection, null);
+            this.isVerifiedWriterConnection = false;
+            this.CloseConnection(connectionToClose);
+        }
+
+        return await this.WaitTillTopologyGetsUpdatedAsync(timeoutMs);
     }
 
-    protected async Task RunNodeMonitoringAsync(HostSpec hostSpec, HostSpec? writerHostSpec)
+    public async Task<IList<HostSpec>> ForceRefreshAsync(DbConnection? connection, long timeoutMs)
     {
-        DbConnection? connection = null;
-        bool updateTopology = false;
+        if (this.isVerifiedWriterConnection)
+        {
+            // Push monitoring thread to refresh topology with a verified connection
+            return await this.WaitTillTopologyGetsUpdatedAsync(timeoutMs);
+        }
+
+        // Otherwise use provided unverified connection to update topology
+        return await this.FetchTopologyAndUpdateCacheAsync(connection) ?? new List<HostSpec>();
+    }
+
+    protected async Task<IList<HostSpec>> WaitTillTopologyGetsUpdatedAsync(long timeoutMs)
+    {
+        this.topologyMap.TryGetValue(this.clusterId, out IList<HostSpec>? currentHosts);
+
+        lock (this.topologyUpdatedLock)
+        {
+            this.requestToUpdateTopology = true;
+        }
+
+        if (timeoutMs == 0)
+        {
+            return currentHosts ?? new List<HostSpec>();
+        }
+
+        TimeSpan timeout = TimeSpan.FromMilliseconds(timeoutMs);
+        CancellationToken cancellationToken = new CancellationTokenSource(timeout).Token;
 
         try
         {
-            while (!this.nodeThreadsStop && !this.cancellationTokenSource.Token.IsCancellationRequested)
+            while (!cancellationToken.IsCancellationRequested)
             {
-                if (connection == null)
+                await this.topologyUpdatedSemaphore.WaitAsync(1000, cancellationToken);
+
+                if (this.topologyMap.TryGetValue(this.clusterId, out IList<HostSpec>? latestHosts) &&
+                    !ReferenceEquals(currentHosts, latestHosts))
                 {
-                    try
-                    {
-                        connection = this.pluginService.ForceOpenConnection(hostSpec, this.monitoringProperties, false);
-                        this.pluginService.SetAvailability(hostSpec.AsAliases(), HostAvailability.Available);
-                    }
-                    catch
-                    {
-                        this.pluginService.SetAvailability(hostSpec.AsAliases(), HostAvailability.Unavailable);
-                        connection = null;
-                    }
+                    return latestHosts!;
                 }
-
-                if (connection != null)
-                {
-                    string? writerId = null;
-                    try
-                    {
-                        writerId = await this.GetWriterNodeIdAsync(connection);
-                    }
-                    catch
-                    {
-                        this.CloseConnection(connection);
-                        connection = null;
-                    }
-
-                    if (!string.IsNullOrEmpty(writerId))
-                    {
-                        if (Interlocked.CompareExchange(ref this.nodeThreadsWriterConnection, connection, null) == null)
-                        {
-                            await this.FetchTopologyAndUpdateCacheAsync(connection);
-                            this.nodeThreadsWriterHostSpec = hostSpec;
-                            this.nodeThreadsStop = true;
-                            connection = null; // Prevent disposal
-                            return;
-                        }
-                        else
-                        {
-                            this.CloseConnection(connection);
-                        }
-                    }
-                    else if (connection != null)
-                    {
-                        // Reader connection
-                        if (this.nodeThreadsWriterConnection == null)
-                        {
-                            if (updateTopology)
-                            {
-                                await this.ReaderThreadFetchTopologyAsync(connection, writerHostSpec);
-                            }
-                            else if (Interlocked.CompareExchange(ref this.nodeThreadsReaderConnection, connection, null) == null)
-                            {
-                                updateTopology = true;
-                                await this.ReaderThreadFetchTopologyAsync(connection, writerHostSpec);
-                            }
-                        }
-                    }
-                }
-
-                await Task.Delay(100, this.cancellationTokenSource.Token);
             }
         }
         catch (OperationCanceledException)
         {
-            // Expected
+            throw new TimeoutException($"Topology was not updated within {timeoutMs} milliseconds");
         }
-        finally
-        {
-            this.CloseConnection(connection);
-        }
+
+        throw new Exception($"Unable to update Topology: {this.clusterId}");
     }
 
-    protected async Task ReaderThreadFetchTopologyAsync(DbConnection connection, HostSpec? writerHostSpec)
+    protected bool IsInPanicMode()
     {
-        if (connection == null)
-        {
-            return;
-        }
-
-        try
-        {
-            var hosts = await this.QueryForTopologyAsync(connection);
-            if (hosts == null)
-            {
-                return;
-            }
-
-            this.nodeThreadsLatestTopology = hosts;
-
-            var latestWriterHostSpec = hosts.FirstOrDefault(x => x.Role == HostRole.Writer);
-            if (latestWriterHostSpec != null && writerHostSpec != null &&
-                !latestWriterHostSpec.GetHostAndPort().Equals(writerHostSpec.GetHostAndPort()))
-            {
-                this.UpdateTopologyCache(hosts);
-            }
-        }
-        catch
-        {
-            // Ignore errors
-        }
+        return this.monitoringConnection == null || !this.isVerifiedWriterConnection;
     }
 
     protected async Task<IList<HostSpec>?> OpenAnyConnectionAndUpdateTopologyAsync()
@@ -441,7 +307,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             DbConnection? newConnection = null;
             try
             {
-                newConnection = this.pluginService.ForceOpenConnection(this.initialHostSpec, this.monitoringProperties, false);
+                newConnection = this.pluginService.ForceOpenConnection(this.initialHostSpec, this.properties, false);
                 if (Interlocked.CompareExchange(ref this.monitoringConnection, newConnection, null) == null)
                 {
                     // SUCCESS: This thread won the race
@@ -451,7 +317,18 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                         {
                             this.isVerifiedWriterConnection = true;
                             writerVerifiedByThisThread = true;
-                            this.writerHostSpec = this.initialHostSpec;
+                            if (RdsUtils.IsRdsInstance(this.initialHostSpec.Host))
+                            {
+                                this.writerHostSpec = this.initialHostSpec;
+                            }
+                            else
+                            {
+                                string? nodeId = await this.GetNodeIdAsync(this.monitoringConnection);
+                                if (!string.IsNullOrEmpty(nodeId))
+                                {
+                                    this.writerHostSpec = this.CreateHost(nodeId, true, 0, null);
+                                }
+                            }
                         }
                     }
                     catch
@@ -510,6 +387,27 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         return hosts;
     }
 
+    protected HostSpec CreateHost(string nodeId, bool isWriter, int weight, DateTime? lastUpdateTime)
+    {
+        string endpoint = this.clusterInstanceTemplate.Host.Replace("?", nodeId);
+        int port = this.clusterInstanceTemplate.IsPortSpecified
+            ? this.clusterInstanceTemplate.Port
+            : this.initialHostSpec.Port;
+
+        HostSpec host = this.hostListProviderService.HostSpecBuilder
+            .WithHost(endpoint)
+            .WithHostId(nodeId)
+            .WithPort(port)
+            .WithRole(isWriter ? HostRole.Writer : HostRole.Reader)
+            .WithAvailability(HostAvailability.Available)
+            .WithWeight(weight)
+            .WithLastUpdateTime(lastUpdateTime)
+            .Build();
+
+        host.AddAlias(nodeId);
+        return host;
+    }
+
     protected async Task<string?> GetNodeIdAsync(DbConnection connection)
     {
         try
@@ -550,20 +448,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         return null;
     }
 
-    protected void CloseConnection(DbConnection? connection)
-    {
-        try
-        {
-            if (connection != null && connection.State != ConnectionState.Closed)
-            {
-                connection.Close();
-            }
-        }
-        catch
-        {
-            // Ignore
-        }
-    }
+    protected void CloseConnection(DbConnection? connection) => connection?.Close();
 
     protected async Task DelayAsync(bool useHighRefreshRate)
     {
@@ -734,5 +619,130 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
         this.cancellationTokenSource.Dispose();
         this.topologyUpdatedSemaphore.Dispose();
+    }
+
+    private class NodeMonitoringTask(
+        ClusterTopologyMonitor monitor,
+        HostSpec hostSpec,
+        HostSpec? writerHostSpec)
+    {
+        private ClusterTopologyMonitor monitor = monitor;
+        private HostSpec hostSpec = hostSpec;
+        private HostSpec? writerHostSpec = writerHostSpec;
+        private bool writerChanged = false;
+
+        public async Task RunNodeMonitoringAsync(HostSpec hostSpec, HostSpec? writerHostSpec)
+        {
+            DbConnection? connection = null;
+            bool updateTopology = false;
+
+            try
+            {
+                while (!this.monitor.nodeThreadsStop && !this.monitor.cancellationTokenSource.Token.IsCancellationRequested)
+                {
+                    if (connection == null)
+                    {
+                        try
+                        {
+                            connection = this.monitor.pluginService.ForceOpenConnection(hostSpec, this.monitor.properties, false);
+                            this.monitor.pluginService.SetAvailability(hostSpec.AsAliases(), HostAvailability.Available);
+                        }
+                        catch
+                        {
+                            this.monitor.pluginService.SetAvailability(hostSpec.AsAliases(), HostAvailability.Unavailable);
+                            connection = null;
+                        }
+                    }
+
+                    if (connection != null)
+                    {
+                        string? writerId = null;
+                        try
+                        {
+                            writerId = await this.monitor.GetWriterNodeIdAsync(connection);
+                        }
+                        catch
+                        {
+                            this.monitor.CloseConnection(connection);
+                            connection = null;
+                        }
+
+                        if (!string.IsNullOrEmpty(writerId))
+                        {
+                            if (Interlocked.CompareExchange(ref this.monitor.nodeThreadsWriterConnection, connection, null) == null)
+                            {
+                                await this.monitor.FetchTopologyAndUpdateCacheAsync(connection);
+                                this.monitor.nodeThreadsWriterHostSpec = hostSpec;
+                                this.monitor.nodeThreadsStop = true;
+                            }
+                            else
+                            {
+                                this.monitor.CloseConnection(connection);
+                            }
+
+                            connection = null; // Prevent disposal
+                            return;
+                        }
+                        else if (connection != null)
+                        {
+                            // Reader connection
+                            if (this.monitor.nodeThreadsWriterConnection == null)
+                            {
+                                if (updateTopology)
+                                {
+                                    await this.ReaderThreadFetchTopologyAsync(connection, writerHostSpec);
+                                }
+                                else if (Interlocked.CompareExchange(ref this.monitor.nodeThreadsReaderConnection, connection, null) == null)
+                                {
+                                    updateTopology = true;
+                                    await this.ReaderThreadFetchTopologyAsync(connection, writerHostSpec);
+                                }
+                            }
+                        }
+                    }
+
+                    await Task.Delay(100, this.monitor.cancellationTokenSource.Token);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected
+            }
+            finally
+            {
+                this.monitor.CloseConnection(connection);
+            }
+        }
+        
+        protected async Task ReaderThreadFetchTopologyAsync(DbConnection connection, HostSpec? writerHostSpec)
+        {
+            if (connection == null)
+            {
+                return;
+            }
+
+            try
+            {
+                var hosts = await this.monitor.QueryForTopologyAsync(connection);
+                if (hosts == null)
+                {
+                    return;
+                }
+
+                this.monitor.nodeThreadsLatestTopology = hosts;
+
+                var latestWriterHostSpec = hosts.FirstOrDefault(x => x.Role == HostRole.Writer);
+                if (latestWriterHostSpec != null && writerHostSpec != null &&
+                    !latestWriterHostSpec.GetHostAndPort().Equals(writerHostSpec.GetHostAndPort()))
+                {
+                    this.monitor.UpdateTopologyCache(hosts);
+                }
+            }
+            catch
+            {
+                // Ignore errors
+            }
+        }
+
     }
 }

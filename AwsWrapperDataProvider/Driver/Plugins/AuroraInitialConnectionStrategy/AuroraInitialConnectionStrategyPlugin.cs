@@ -127,7 +127,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
                     return writerConnectionCandidate;
                 }
 
-                writerConnectionCandidate = this.pluginService.OpenConnection(writerCandidate, props, isInitialConnection);
+                writerConnectionCandidate = this.pluginService.ForceOpenConnection(writerCandidate, props, isInitialConnection);
 
                 if (this.pluginService.GetHostRole(writerConnectionCandidate) != HostRole.Writer)
                 {
@@ -226,7 +226,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
                     return readerConnectionCandidate;
                 }
 
-                readerConnectionCandidate = this.pluginService.OpenConnection(readerCandidate, props, isInitialConnection);
+                readerConnectionCandidate = this.pluginService.ForceOpenConnection(readerCandidate, props, isInitialConnection);
 
                 if (this.pluginService.GetHostRole(readerConnectionCandidate) != HostRole.Reader)
                 {

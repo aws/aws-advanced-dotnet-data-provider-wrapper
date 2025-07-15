@@ -24,7 +24,7 @@ namespace AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 /// RDS host list provider with enhanced monitoring capabilities for cluster topology changes.
 /// This provider uses background monitoring to detect topology changes and maintain up-to-date host information.
 /// </summary>
-public class MonitoringRdsHostListProvider : RdsHostListProvider
+public class MonitoringRdsHostListProvider : RdsHostListProvider, IBlockingHostListProvider
 {
     public static readonly AwsWrapperProperty ClusterTopologyHighRefreshRateMs =
         new("ClusterTopologyHighRefreshRateMs", "100", "Cluster topology high refresh rate in milliseconds.");
@@ -63,20 +63,16 @@ public class MonitoringRdsHostListProvider : RdsHostListProvider
     {
         // Dispose the current cache (which will trigger disposal of all cached monitors)
         var oldCache = Monitors;
-        Monitors = new MemoryCache(new MemoryCacheOptions { SizeLimit = 1000 });
+        Monitors = new MemoryCache(new MemoryCacheOptions { SizeLimit = 100 });
         oldCache.Dispose();
         ClearAll();
     }
 
-    public override IList<HostSpec> ForceRefresh(IDbConnection? connection)
+    public IList<HostSpec> ForceRefresh(bool shouldVerifyWriter, long timeoutMs)
     {
-        this.EnsureInitialized();
+        IClusterTopologyMonitor monitor = Monitors.Get<IClusterTopologyMonitor>(this.ClusterId) ?? this.InitMonitor();
 
-        var monitor = Monitors.Get<IClusterTopologyMonitor>(this.ClusterId) ?? this.InitMonitor();
-
-        var task = monitor.ForceRefreshAsync((DbConnection?)connection, DefaultTopologyQueryTimeoutSec * 1000);
-        task.Wait(TimeSpan.FromSeconds(DefaultTopologyQueryTimeoutSec + 5));
-
+        Task<IList<HostSpec>> task = monitor.ForceRefreshAsync(shouldVerifyWriter, timeoutMs);
         this.hostList = task.Result.ToList();
         return this.hostList.AsReadOnly();
     }

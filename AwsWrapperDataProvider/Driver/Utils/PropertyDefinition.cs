@@ -138,19 +138,26 @@ public static class PropertyDefinition
 
     // Failover Plugin Properties
     public static readonly AwsWrapperProperty FailoverTimeoutMs = new(
-        "failoverTimeoutMs", "300000", "Maximum allowed time for the failover process in milliseconds.");
+        "FailoverTimeoutMs", "300000", "Maximum allowed time for the failover process in milliseconds.");
 
     public static readonly AwsWrapperProperty FailoverMode = new(
-        "failoverMode", null, "Set node role to follow during failover. Valid values: StrictWriter, StrictReader, ReaderOrWriter.");
+        "FailoverMode", null, "Set node role to follow during failover. Valid values: StrictWriter, StrictReader, ReaderOrWriter.");
 
     public static readonly AwsWrapperProperty FailoverReaderHostSelectorStrategy = new(
-        "failoverReaderHostSelectorStrategy", "random", "The strategy that should be used to select a new reader host while opening a new connection.");
+        "FailoverReaderHostSelectorStrategy", "random", "The strategy that should be used to select a new reader host while opening a new connection.");
 
     public static readonly AwsWrapperProperty EnableConnectFailover = new(
-        "enableConnectFailover", "false", "Enable/disable cluster-aware failover if the initial connection to the database fails due to a network exception.");
+        "EnableConnectFailover", "false", "Enable/disable cluster-aware failover if the initial connection to the database fails due to a network exception.");
 
     public static readonly AwsWrapperProperty SkipFailoverOnInterruptedThread = new(
-        "skipFailoverOnInterruptedThread", "false", "Enable to skip failover if the current thread is interrupted.");
+        "SkipFailoverOnInterruptedThread", "false", "Enable to skip failover if the current thread is interrupted.");
+
+    // Connection Timeout Properties
+    public static readonly AwsWrapperProperty SocketTimeout = new(
+        "SocketTimeout", "5000", "The socket timeout value in milliseconds for database connections.");
+
+    public static readonly AwsWrapperProperty ConnectTimeout = new(
+        "ConnectTimeout", "5000", "The connection timeout value in milliseconds for establishing database connections.");
 
     /// <summary>
     /// A set of AwsWrapperProperties that is used by the wrapper and should not be passed to the target driver.
@@ -194,6 +201,10 @@ public static class PropertyDefinition
         FailoverReaderHostSelectorStrategy,
         EnableConnectFailover,
         SkipFailoverOnInterruptedThread,
+
+        // Connection Timeout Properties
+        SocketTimeout,
+        ConnectTimeout,
     ];
 
     public static string GetConnectionUrl(Dictionary<string, string> props)

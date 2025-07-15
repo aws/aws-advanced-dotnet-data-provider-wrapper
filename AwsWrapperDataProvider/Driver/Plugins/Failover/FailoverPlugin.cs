@@ -14,11 +14,13 @@
 
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Plugins.ExecutionTime;
 using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Logging;
+using ThreadState = System.Threading.ThreadState;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.Failover;
 
@@ -101,20 +103,12 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
     public override T Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, params object[] methodArgs)
     {
-        try
+        if (this.pluginService.CurrentConnection != null
+            && !this.CanDirectExecute(methodName)
+            && !this.closedExplicitly
+            && this.pluginService.CurrentConnection.State == ConnectionState.Closed)
         {
-            // Check if current connection is closed and needs to be replaced
-            if (this.pluginService.CurrentConnection != null
-                && !this.CanDirectExecute(methodName)
-                && !this.closedExplicitly
-                && this.pluginService.CurrentConnection.State == ConnectionState.Closed)
-            {
-                this.PickNewConnection();
-            }
-        }
-        catch (Exception ex)
-        {
-            throw new InvalidOperationException("Failed to establish new connection", ex);
+            this.PickNewConnection();
         }
 
         if (this.CanDirectExecute(methodName))
@@ -129,19 +123,29 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
         try
         {
-            return methodFunc();
+           return methodFunc();
         }
-        catch (Exception e)
+        catch (Exception exception)
         {
-            this.DealWithOriginalException(e);
-            throw; // This line should not be reached due to exception handling above
+            // This handles runtime failover - when operations fail on existing connections
+            this.DealWithOriginalException(exception);
         }
+
+        throw new UnreachableException("[FailoverPlugin] Should not reach here.");
+    }
+
+    private void InitFailoverMode()
+    {
+        ArgumentNullException.ThrowIfNull(this.hostListProviderService);
+        ArgumentNullException.ThrowIfNull(this.hostListProviderService.InitialConnectionHostSpec);
+
+        this.rdsUrlType = RdsUtils.IdentifyRdsType(this.hostListProviderService.InitialConnectionHostSpec.Host);
     }
 
     public override DbConnection OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
     {
-        DbConnection connection = null;
-        
+        this.InitFailoverMode();
+
         if (!this.enableConnectFailover || hostSpec == null)
         {
             return methodFunc();
@@ -154,7 +158,13 @@ public class FailoverPlugin : AbstractConnectionPlugin
         {
             try
             {
-                connection = methodFunc();
+                var connection = methodFunc();
+                if (isInitialConnection)
+                {
+                    this.pluginService.RefreshHostList(connection);
+                }
+
+                return connection;
             }
             catch (Exception e)
             {
@@ -172,6 +182,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
                 catch (FailoverSuccessException)
                 {
                     // Connection established successfully through failover
+                    return this.pluginService.CurrentConnection!;
                 }
             }
         }
@@ -185,20 +196,11 @@ public class FailoverPlugin : AbstractConnectionPlugin
             catch (FailoverSuccessException)
             {
                 // Connection established successfully through failover
+                return this.pluginService.CurrentConnection!;
             }
         }
 
-        if (this.pluginService.CurrentConnection == null)
-        {
-            throw new InvalidOperationException("Unable to establish connection");
-        }
-
-        if (isInitialConnection)
-        {
-            this.pluginService.RefreshHostList(this.pluginService.CurrentConnection);
-        }
-
-        return connection;
+        throw new InvalidOperationException("Unable to establish connection");
     }
 
     public override void InitHostProvider(string initialUrl, Dictionary<string, string> props, IHostListProviderService hostListProviderService, ADONetDelegate initHostProviderFunc)
@@ -226,8 +228,17 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
     private void DealWithOriginalException(Exception originalException)
     {
-        if (this.lastExceptionDealtWith != originalException && this.ShouldExceptionTriggerConnectionSwitch(originalException))
+        // Check if we should trigger failover for this exception
+        if (this.ShouldExceptionTriggerConnectionSwitch(originalException))
         {
+            // Avoid processing the same exception multiple times by checking if it's the exact same instance
+            // and if we've already dealt with it recently
+            if (this.lastExceptionDealtWith == originalException)
+            {
+                // Same exception instance already processed, don't retry failover
+                throw originalException;
+            }
+
             this.InvalidateCurrentConnection();
             if (this.pluginService.CurrentHostSpec != null)
             {
@@ -237,6 +248,10 @@ public class FailoverPlugin : AbstractConnectionPlugin
             try
             {
                 this.PickNewConnection();
+            }
+            catch (FailoverSuccessException)
+            {
+                throw;
             }
             catch (Exception e)
             {
@@ -384,8 +399,6 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
     private void FailoverWriter()
     {
-        var failoverStartTime = DateTime.UtcNow;
-
         try
         {
             // Force refresh host list and wait for topology to stabilize
@@ -408,8 +421,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
             DbConnection writerCandidateConn;
             try
             {
-                this.pluginService.OpenConnection(writerCandidate, this.props, false);
-                writerCandidateConn = this.pluginService.CurrentConnection ?? throw new Exception($"Unable to open connection to {writerCandidate.Host}");
+                writerCandidateConn = this.pluginService.OpenConnection(writerCandidate, this.props, false);
             }
             catch (Exception ex)
             {
@@ -531,8 +543,19 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
     private bool IsFailoverEnabled()
     {
-        return RdsUrlType.RdsProxy.Equals(this.rdsUrlType)
-            && !(this.pluginService.AllHosts.Count == 0);
+        // Check if this is an Aurora cluster URL type
+        bool isAuroraCluster = this.rdsUrlType == RdsUrlType.RdsWriterCluster ||
+                               this.rdsUrlType == RdsUrlType.RdsReaderCluster ||
+                               this.rdsUrlType == RdsUrlType.RdsCustomCluster;
+
+        if (!isAuroraCluster)
+        {
+            return false;
+        }
+
+        // For Aurora clusters, allow failover even if host list is not yet populated
+        // This can happen during initial connection or if host discovery is still in progress
+        return true;
     }
 
     private FailoverMode GetFailoverMode()
