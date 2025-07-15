@@ -88,17 +88,15 @@ public partial class FederatedAuthPlugin(IPluginService pluginService, Dictionar
         }
         catch (Exception ex)
         {
-            // should the token not work (expired on the server), generate a new one and try again
-            if (isCachedToken)
+            if (!this.pluginService.IsLoginException(ex) || !isCachedToken)
             {
-                this.UpdateAuthenticationToken(hostSpec, props, host, port, region, cacheKey, dbUser);
-            }
-            else
-            {
-                throw new Exception("Failed to connect; token generation may be at fault.", ex);
+                throw;
             }
 
-            return methodFunc();
+            // should the token not work (login exception + is cached token), generate a new one and try again
+            this.UpdateAuthenticationToken(hostSpec, props, host, port, region, cacheKey, dbUser);
+
+            methodFunc();
         }
     }
 

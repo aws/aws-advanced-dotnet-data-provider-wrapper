@@ -269,6 +269,11 @@ public class AwsWrapperCommand : DbCommand
             "DbCommand.ExecuteReader",
             () => this._targetDbCommand!.ExecuteReader(behavior));
 
+        if (reader.GetType() == typeof(Npgsql.NpgsqlDataReader))
+        {
+            return reader;
+        }
+
         return new AwsWrapperDataReader(reader, this._pluginManager!);
     }
 

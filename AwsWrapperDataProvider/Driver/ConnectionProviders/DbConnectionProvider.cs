@@ -65,7 +65,6 @@ public class DbConnectionProvider() : IConnectionProvider
 
     public bool AcceptsStrategy(string strategy)
     {
-        // TODO: implement Functions to use strategy.
         return AcceptedStrategies.ContainsKey(strategy);
     }
 
