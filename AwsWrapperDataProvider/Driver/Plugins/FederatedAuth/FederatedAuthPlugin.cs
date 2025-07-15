@@ -96,7 +96,7 @@ public partial class FederatedAuthPlugin(IPluginService pluginService, Dictionar
             // should the token not work (login exception + is cached token), generate a new one and try again
             this.UpdateAuthenticationToken(hostSpec, props, host, port, region, cacheKey, dbUser);
 
-            methodFunc();
+            return methodFunc();
         }
     }
 

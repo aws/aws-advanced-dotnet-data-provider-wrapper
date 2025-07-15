@@ -77,7 +77,7 @@ public class SecretsManagerAuthPlugin(IPluginService pluginService, Dictionary<s
             // should the token not work (login exception + is cached token), generate a new one and try again
             this.UpdateSecrets(true);
             this.ApplySecretToProperties(props);
-            methodFunc();
+            return methodFunc();
         }
     }
 
