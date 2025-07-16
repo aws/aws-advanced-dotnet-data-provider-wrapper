@@ -38,6 +38,36 @@ public class MySqlExceptionHandler : GenericExceptionHandler
 
     protected override HashSet<string> LoginErrorStates => this._loginErrorStates;
 
+    public override bool IsLoginException(Exception exception)
+    {
+        Exception? currException = exception;
+
+        while (currException is not null)
+        {
+            if (currException is DbException dbException)
+            {
+                return this.IsLoginException(dbException);
+            }
+
+            currException = currException.InnerException;
+        }
+
+        return false;
+    }
+
+    private bool IsLoginException(DbException exception)
+    {
+        if (exception.SqlState == null && exception is MySqlException mySqlException)
+        {
+            // invalid username/password
+            return mySqlException.Number == 1045;
+        }
+        else
+        {
+            return this.ExceptionHasSqlState(exception, this.LoginErrorStates);
+        }
+    }
+
     public override bool IsNetworkException(Exception exception)
     {
         Exception? currException = exception;
