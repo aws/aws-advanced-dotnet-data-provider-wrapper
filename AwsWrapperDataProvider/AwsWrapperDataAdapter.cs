@@ -31,13 +31,10 @@ public class AwsWrapperDataAdapter : DbDataAdapter
         this.connectionPluginManager = connectionPluginManager;
     }
 
-    public AwsWrapperDataAdapter(DbDataAdapter targetDataAdapter, DbConnection? connection)
+    public AwsWrapperDataAdapter(DbDataAdapter targetDataAdapter, AwsWrapperConnection connection)
     {
         this.targetDataAdapter = targetDataAdapter;
-        connection ??= targetDataAdapter.DeleteCommand?.Connection ?? targetDataAdapter.InsertCommand?.Connection ?? targetDataAdapter.SelectCommand?.Connection;
-        this.connectionPluginManager = connection is AwsWrapperConnection awsWrapperConnection
-            ? awsWrapperConnection.PluginManager
-            : throw new InvalidOperationException(Properties.Resources.Error_NotAwsWrapperConnection);
+        this.connectionPluginManager = connection.PluginManager;
     }
 
     internal DbDataAdapter TargetDbDataAdapter => this.targetDataAdapter;
@@ -208,5 +205,16 @@ public class AwsWrapperDataAdapter : DbDataAdapter
             this.targetDataAdapter,
             "DbDataAdapter.Update",
             () => this.targetDataAdapter.Update(dataRows));
+    }
+}
+
+public class AwsWrapperDataAdapter<TDataAdapter> : AwsWrapperDataAdapter where TDataAdapter : DbDataAdapter
+{
+    public AwsWrapperDataAdapter(string query, AwsWrapperConnection connection)
+        : base((DbDataAdapter)Activator.CreateInstance(typeof(TDataAdapter))!, connection)
+    {
+        DbCommand command = connection.CreateCommand<DbCommand>();
+        command.CommandText = query;
+        this.SelectCommand = command;
     }
 }

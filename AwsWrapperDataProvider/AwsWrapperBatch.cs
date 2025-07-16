@@ -33,7 +33,7 @@ public class AwsWrapperBatch : DbBatch
         this.connectionPluginManager = connectionPluginManager;
     }
 
-    public AwsWrapperBatch(DbBatch targetBatch, DbConnection? connection)
+    internal AwsWrapperBatch(DbBatch targetBatch, DbConnection? connection)
     {
         this.targetBatch = targetBatch;
         connection ??= this.targetBatch.Connection;
@@ -48,8 +48,6 @@ public class AwsWrapperBatch : DbBatch
             throw new InvalidOperationException(Properties.Resources.Error_NotAwsWrapperConnection);
         }
     }
-
-    public AwsWrapperBatch(DbBatch targetBatch) : this(targetBatch, null) { }
 
     internal DbBatch TargetDbBatch => this.targetBatch;
 
