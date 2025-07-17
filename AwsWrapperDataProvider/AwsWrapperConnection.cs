@@ -201,6 +201,14 @@ public class AwsWrapperConnection : DbConnection
         return new AwsWrapperCommand<TCommand>(command, this, this.PluginManager);
     }
 
+    protected override DbBatch CreateDbBatch() => this.CreateBatch();
+
+    public new AwsWrapperBatch CreateBatch()
+    {
+        DbBatch batch = this.TargetDbConnection!.CreateBatch();
+        return new AwsWrapperBatch(batch, this, this.PluginManager);
+    }
+
     private Type GetTargetType(Dictionary<string, string> props)
     {
         string? targetConnectionTypeString = PropertyDefinition.TargetConnectionType.GetString(props);
