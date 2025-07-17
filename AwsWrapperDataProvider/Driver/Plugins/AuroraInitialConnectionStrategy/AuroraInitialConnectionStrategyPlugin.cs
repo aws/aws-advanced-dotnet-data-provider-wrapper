@@ -188,9 +188,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
 
                 if (readerCandidate == null || RdsUtils.IsRdsClusterDns(readerCandidate.Host))
                 {
-                    methodFunc();
-                    readerConnectionCandidate = this.pluginService.CurrentConnection ??
-                                                throw new Exception("Could not find connection.");
+                    readerConnectionCandidate = methodFunc();
                     this.pluginService.ForceRefreshHostList(readerConnectionCandidate);
                     readerCandidate = this.pluginService.IdentifyConnection(readerConnectionCandidate);
 
