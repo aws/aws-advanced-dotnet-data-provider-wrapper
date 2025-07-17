@@ -210,7 +210,6 @@ public class ConnectionPluginManagerTests
                 [],
                 true,
                 pluginOne);
-
         }
         catch
         {
