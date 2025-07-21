@@ -177,7 +177,6 @@ public class FailoverPlugin : AbstractConnectionPlugin
                 }
                 catch (FailoverSuccessException)
                 {
-                    // Connection established successfully through failover
                     return this.pluginService.CurrentConnection!;
                 }
             }
@@ -191,7 +190,6 @@ public class FailoverPlugin : AbstractConnectionPlugin
             }
             catch (FailoverSuccessException)
             {
-                // Connection established successfully through failover
                 return this.pluginService.CurrentConnection!;
             }
         }
@@ -241,18 +239,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
                 this.pluginService.SetAvailability(this.pluginService.CurrentHostSpec.AsAliases(), HostAvailability.Unavailable);
             }
 
-            try
-            {
-                this.PickNewConnection();
-            }
-            catch (FailoverSuccessException)
-            {
-                throw;
-            }
-            catch (Exception e)
-            {
-                throw new InvalidOperationException("Failed to establish new connection during failover", e);
-            }
+            this.PickNewConnection();
 
             this.lastExceptionDealtWith = originalException;
         }
@@ -277,28 +264,13 @@ public class FailoverPlugin : AbstractConnectionPlugin
         var failoverStartTime = DateTime.UtcNow;
         var failoverEndTime = failoverStartTime.AddMilliseconds(this.failoverTimeoutMs);
 
-        try
-        {
-            // Force refresh host list without waiting for topology update
-            this.pluginService.ForceRefreshHostList(false, 0);
+        // Force refresh host list without waiting for topology update
+        this.pluginService.ForceRefreshHostList(false, 0);
 
-            var result = this.GetReaderFailoverConnection(failoverEndTime);
-            this.pluginService.SetCurrentConnection(result.Connection, result.HostSpec);
+        var result = this.GetReaderFailoverConnection(failoverEndTime);
+        this.pluginService.SetCurrentConnection(result.Connection, result.HostSpec);
 
-            this.ThrowFailoverSuccessException();
-        }
-        catch (FailoverSuccessException)
-        {
-            throw;
-        }
-        catch (TimeoutException)
-        {
-            throw new FailoverFailedException("Unable to connect to reader within timeout period");
-        }
-        catch (Exception ex)
-        {
-            throw new FailoverFailedException("Reader failover failed", ex);
-        }
+        this.ThrowFailoverSuccessException();
     }
 
     private ReaderFailoverResult GetReaderFailoverConnection(DateTime failoverEndTime)
@@ -393,61 +365,50 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
     private void FailoverWriter()
     {
+        // Force refresh host list and wait for topology to stabilize
+        this.pluginService.ForceRefreshHostList(true, this.failoverTimeoutMs);
+
+        var updatedHosts = this.pluginService.AllHosts;
+        var writerCandidate = updatedHosts.FirstOrDefault(x => x.Role == HostRole.Writer);
+
+        if (writerCandidate == null)
+        {
+            throw new FailoverFailedException("No writer host found in updated topology");
+        }
+
+        var allowedHosts = this.pluginService.GetHosts();
+        if (!allowedHosts.Any(h => h.Host == writerCandidate.Host && h.Port == writerCandidate.Port))
+        {
+            throw new FailoverFailedException($"New writer {writerCandidate.Host}:{writerCandidate.Port} is not in allowed hosts list");
+        }
+
+        DbConnection writerCandidateConn;
         try
         {
-            // Force refresh host list and wait for topology to stabilize
-            this.pluginService.ForceRefreshHostList(true, this.failoverTimeoutMs);
-
-            var updatedHosts = this.pluginService.AllHosts;
-            var writerCandidate = updatedHosts.FirstOrDefault(x => x.Role == HostRole.Writer);
-
-            if (writerCandidate == null)
-            {
-                throw new FailoverFailedException("No writer host found in updated topology");
-            }
-
-            var allowedHosts = this.pluginService.GetHosts();
-            if (!allowedHosts.Any(h => h.Host == writerCandidate.Host && h.Port == writerCandidate.Port))
-            {
-                throw new FailoverFailedException($"New writer {writerCandidate.Host}:{writerCandidate.Port} is not in allowed hosts list");
-            }
-
-            DbConnection writerCandidateConn;
-            try
-            {
-                writerCandidateConn = this.pluginService.OpenConnection(writerCandidate, this.props, false, this);
-            }
-            catch (Exception ex)
-            {
-                throw new FailoverFailedException($"Exception connecting to writer {writerCandidate.Host}", ex);
-            }
-
-            var role = this.pluginService.GetHostRole(writerCandidateConn);
-            if (role != HostRole.Writer)
-            {
-                try
-                {
-                    writerCandidateConn.Close();
-                }
-                catch (Exception)
-                {
-                    // Ignore close exception
-                }
-
-                throw new FailoverFailedException($"Unexpected role {role} for writer candidate {writerCandidate.Host}");
-            }
-
-            this.pluginService.SetCurrentConnection(writerCandidateConn, writerCandidate);
-            this.ThrowFailoverSuccessException();
-        }
-        catch (FailoverSuccessException)
-        {
-            throw;
+            writerCandidateConn = this.pluginService.OpenConnection(writerCandidate, this.props, false, this);
         }
         catch (Exception ex)
         {
-            throw new FailoverFailedException("Writer failover failed", ex);
+            throw new FailoverFailedException($"Exception connecting to writer {writerCandidate.Host}", ex);
         }
+
+        var role = this.pluginService.GetHostRole(writerCandidateConn);
+        if (role != HostRole.Writer)
+        {
+            try
+            {
+                writerCandidateConn.Close();
+            }
+            catch (Exception)
+            {
+                // Ignore close exception
+            }
+
+            throw new FailoverFailedException($"Unexpected role {role} for writer candidate {writerCandidate.Host}");
+        }
+
+        this.pluginService.SetCurrentConnection(writerCandidateConn, writerCandidate);
+        this.ThrowFailoverSuccessException();
     }
 
     private void ThrowFailoverSuccessException()

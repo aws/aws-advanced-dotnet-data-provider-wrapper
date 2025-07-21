@@ -13,6 +13,8 @@
 // limitations under the License.
 
 using System.Data.Common;
+using System.Diagnostics;
+using System.Reflection;
 using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.HostInfo;
@@ -108,10 +110,22 @@ public class ConnectionPluginManager
             throw new Exception(Properties.Resources.Error_ProcessingAdoNetCall);
         }
 
-        return (T)pluginChainDelegate.DynamicInvoke(
-            pluginPipelineDelegate,
-            methodFunc,
-            pluginToSkip)!;
+        try
+        {
+            return (T)pluginChainDelegate.DynamicInvoke(
+                pluginPipelineDelegate,
+                methodFunc,
+                pluginToSkip)!;
+        }
+        catch (TargetInvocationException exception)
+        {
+            if (exception.InnerException != null)
+            {
+                throw exception.InnerException;
+            }
+        }
+
+        throw new UnreachableException("Should not get here.");
     }
 
     private PluginChainADONetDelegate<T> MakePluginChainDelegate<T>(string methodName)
