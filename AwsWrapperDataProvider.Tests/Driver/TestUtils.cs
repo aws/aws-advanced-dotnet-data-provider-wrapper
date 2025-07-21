@@ -91,4 +91,18 @@ public static class TestUtils
             Times.Once);
         mockObject.Verify(expression, Times.Once);
     }
+
+    public static void VerifyDelegatesToExecutePipeline<TMock, TReturn>(
+        Mock<ConnectionPluginManager> mockPluginManager,
+        Mock<TMock> mockObject,
+        string methodName)
+        where TMock : class
+    {
+        mockPluginManager.Verify(p => p.Execute<TReturn>(
+                mockObject.Object,
+                methodName,
+                It.IsAny<ADONetDelegate<TReturn>>(),
+                It.IsAny<object[]>()),
+            Times.Once);
+    }
 }
