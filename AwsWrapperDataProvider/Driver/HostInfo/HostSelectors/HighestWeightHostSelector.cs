@@ -21,9 +21,9 @@ namespace AwsWrapperDataProvider.Driver.HostInfo.HostSelectors;
 /// </summary>
 public class HighestWeightHostSelector : IHostSelector
 {
-    public static string StrategyName { get; } = "HighestWeight";
+    public static string StrategyName = "HighestWeight";
 
-    public HostSpec GetHost(List<HostSpec> hosts, HostRole hostRole, Dictionary<string, string> props)
+    public HostSpec GetHost(IList<HostSpec> hosts, HostRole hostRole, Dictionary<string, string> props)
     {
         List<HostSpec> eligibleHosts = hosts
             .Where(hostSpec => hostRole == hostSpec.Role && hostSpec.Availability == HostAvailability.Available)

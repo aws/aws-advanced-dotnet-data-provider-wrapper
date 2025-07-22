@@ -92,7 +92,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
         // Initialize configuration settings using PropertyDefinition
         this.failoverTimeoutMs = PropertyDefinition.FailoverTimeoutMs.GetInt(props) ?? 300000;
         this.failoverMode = this.GetFailoverMode();
-        this.failoverReaderHostSelectorStrategy = PropertyDefinition.FailoverReaderHostSelectorStrategy.GetString(props) ?? "random";
+        this.failoverReaderHostSelectorStrategy = PropertyDefinition.FailoverReaderHostSelectorStrategy.GetString(props)!;
         this.enableConnectFailover = PropertyDefinition.EnableConnectFailover.GetBoolean(props);
         this.skipFailoverOnInterruptedThread = PropertyDefinition.SkipFailoverOnInterruptedThread.GetBoolean(props);
     }

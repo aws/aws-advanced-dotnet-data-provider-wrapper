@@ -16,5 +16,5 @@ namespace AwsWrapperDataProvider.Driver.HostInfo.HostSelectors;
 
 public interface IHostSelector
 {
-    HostSpec GetHost(List<HostSpec> hosts, HostRole hostRole, Dictionary<string, string> props);
+    HostSpec GetHost(IList<HostSpec> hosts, HostRole hostRole, Dictionary<string, string> props);
 }

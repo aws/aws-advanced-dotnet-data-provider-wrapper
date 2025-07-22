@@ -27,7 +27,7 @@ namespace AwsWrapperDataProvider.Driver.HostInfo.HostSelectors;
 /// </summary>
 public partial class RoundRobinHostSelector : IHostSelector
 {
-    public static string StrategyName { get; } = "RoundRobin";
+    public static string StrategyName = "RoundRobin";
 
     private const int DefaultWeight = 1;
 
@@ -38,7 +38,7 @@ public partial class RoundRobinHostSelector : IHostSelector
     [GeneratedRegex(@"(?<host>[^:/?#]*):(?<weight>[0-9]+)")]
     private static partial Regex HostWeightPairsPattern();
 
-    public HostSpec GetHost(List<HostSpec> hosts, HostRole hostRole, Dictionary<string, string> props)
+    public HostSpec GetHost(IList<HostSpec> hosts, HostRole hostRole, Dictionary<string, string> props)
     {
         lock (Lock)
         {

@@ -387,7 +387,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         return hosts;
     }
 
-    protected HostSpec CreateHost(string nodeId, bool isWriter, int weight, DateTime? lastUpdateTime)
+    protected HostSpec CreateHost(string nodeId, bool isWriter, long weight, DateTime? lastUpdateTime)
     {
         string endpoint = this.clusterInstanceTemplate.Host.Replace("?", nodeId);
         int port = this.clusterInstanceTemplate.IsPortSpecified
@@ -535,22 +535,10 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                     {
                         lastUpdateTime = DateTime.UtcNow;
                     }
-
                     long weight = (long)((Math.Round(nodeLag) * 100L) + Math.Round(cpuUtilization));
-                    string endpoint = this.clusterInstanceTemplate.Host.Replace("?", hostName);
-                    int port = this.clusterInstanceTemplate.IsPortSpecified
-                        ? this.clusterInstanceTemplate.Port
-                        : this.initialHostSpec.Port;
 
-                    var hostSpec = this.hostListProviderService.HostSpecBuilder
-                        .WithHost(endpoint)
-                        .WithHostId(hostName)
-                        .WithPort(port)
-                        .WithRole(isWriter ? HostRole.Writer : HostRole.Reader)
-                        .WithAvailability(HostAvailability.Available)
-                        .WithWeight(weight)
-                        .WithLastUpdateTime(lastUpdateTime)
-                        .Build();
+
+                    var hostSpec = this.CreateHost(hostName, isWriter, weight, lastUpdateTime);
                     hostSpec.AddAlias(hostName);
 
                     if (!isWriter)

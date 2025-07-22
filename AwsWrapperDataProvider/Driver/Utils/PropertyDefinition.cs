@@ -144,7 +144,7 @@ public static class PropertyDefinition
         "FailoverMode", null, "Set node role to follow during failover. Valid values: StrictWriter, StrictReader, ReaderOrWriter.");
 
     public static readonly AwsWrapperProperty FailoverReaderHostSelectorStrategy = new(
-        "FailoverReaderHostSelectorStrategy", "random", "The strategy that should be used to select a new reader host while opening a new connection.");
+        "FailoverReaderHostSelectorStrategy", "Random", "The strategy that should be used to select a new reader host while opening a new connection.");
 
     public static readonly AwsWrapperProperty EnableConnectFailover = new(
         "EnableConnectFailover", "false", "Enable/disable cluster-aware failover if the initial connection to the database fails due to a network exception.");
