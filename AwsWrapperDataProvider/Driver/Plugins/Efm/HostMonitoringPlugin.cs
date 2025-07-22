@@ -15,13 +15,142 @@
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
+using AwsWrapperDataProvider.Driver.Utils;
+using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.Efm;
 
-public class HostMonitoringPlugin(IPluginService pluginService, Dictionary<string, string> props) : AbstractConnectionPlugin
+public class HostMonitoringPlugin : AbstractConnectionPlugin
 {
-    private readonly IPluginService pluginService = pluginService;
-    private readonly Dictionary<string, string> props = props;
+    private static readonly ILogger<HostMonitoringPlugin> Logger = LoggerUtils.GetLogger<HostMonitoringPlugin>();
+    private static int DefaultFailureDetectionTime = 30000;
+    private static int DefaultFailureDetectionInterval = 5000;
+    private static int DefaultFailureDetectionCount = 3;
 
-    public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string> { "*" };
+    private readonly IPluginService pluginService;
+    private readonly Dictionary<string, string> props;
+    private HostSpec? monitoringHostSpec;
+    private IHostMonitorService? monitorService;
+
+    protected readonly bool isEnabled;
+
+    public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string> { "DbConnection.Open", "DbConnection.OpenAsync", "DbConnection.ForceOpen" };
+
+    public HostMonitoringPlugin(IPluginService pluginService, Dictionary<string, string> props)
+    {
+        this.pluginService = pluginService;
+        this.props = props;
+        this.isEnabled = PropertyDefinition.FailureDetectionEnabled.GetBoolean(props);
+    }
+
+    public override T Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, params object[] methodArgs)
+    {
+        if (!this.isEnabled)
+        {
+            return methodFunc();
+        }
+
+        int failureDetectionTimeMillis = PropertyDefinition.FailureDetectionTime.GetInt(this.props) ?? DefaultFailureDetectionTime;
+        int failureDetectionIntervalMillis = PropertyDefinition.FailureDetectionInterval.GetInt(this.props) ?? DefaultFailureDetectionInterval;
+        int failureDetectionCount = PropertyDefinition.FailureDetectionCount.GetInt(this.props) ?? DefaultFailureDetectionCount;
+
+        this.InitMonitorService();
+
+        T result;
+        HostMonitorConnectionContext? monitorContext = null;
+
+        try
+        {
+            Logger.LogInformation("Activated monitoring");
+
+            HostSpec monitoringHostSpec = this.GetMonitoringHostSpec();
+
+            monitorContext = this.monitorService!.StartMonitoring(
+                this.pluginService.CurrentConnection!,
+                monitoringHostSpec,
+                this.props,
+                failureDetectionTimeMillis,
+                failureDetectionIntervalMillis,
+                failureDetectionCount);
+
+            result = methodFunc();
+        }
+        finally
+        {
+            if (monitorContext != null && this.monitorService != null && this.pluginService.CurrentConnection != null)
+            {
+                this.monitorService.StopMonitoring(monitorContext, this.pluginService.CurrentConnection);
+            }
+
+            Logger.LogInformation("Deactivated monitoring");
+        }
+
+        return result;
+    }
+
+    public override DbConnection OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
+    {
+        return this.ConnectInternal(hostSpec, methodFunc);
+    }
+
+    public override DbConnection ForceOpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
+    {
+        return this.ConnectInternal(hostSpec, methodFunc);
+    }
+
+    private DbConnection ConnectInternal(HostSpec? hostSpec, ADONetDelegate<DbConnection> methodFunc)
+    {
+        DbConnection conn = methodFunc();
+
+        if (hostSpec != null)
+        {
+            RdsUrlType type = RdsUtils.IdentifyRdsType(hostSpec.Host);
+
+            if (type.IsRdsCluster)
+            {
+                hostSpec.ResetAliases();
+                this.pluginService.FillAliases(conn, hostSpec);
+            }
+        }
+
+        return conn;
+    }
+
+    private void InitMonitorService()
+    {
+        if (this.monitorService == null)
+        {
+            this.monitorService = new HostMonitorService(this.pluginService);
+        }
+    }
+
+    public HostSpec GetMonitoringHostSpec()
+    {
+        if (this.monitoringHostSpec == null)
+        {
+            this.monitoringHostSpec = this.pluginService.CurrentHostSpec!;
+            RdsUrlType rdsUrlType = RdsUtils.IdentifyRdsType(this.monitoringHostSpec.Host);
+
+            try
+            {
+                if (rdsUrlType.IsRdsCluster)
+                {
+                    this.monitoringHostSpec = this.pluginService.IdentifyConnection(this.pluginService.CurrentConnection!);
+                    if (this.monitoringHostSpec == null)
+                    {
+                        throw new Exception("Unable to identify connection and gather monitoring host spec");
+                    }
+
+                    this.pluginService.FillAliases(this.pluginService.CurrentConnection!, this.monitoringHostSpec);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Error identifying connection: ${ex.Message}");
+                throw new Exception("Error identifying connection", ex);
+            }
+        }
+
+        return this.monitoringHostSpec;
+    }
 }
