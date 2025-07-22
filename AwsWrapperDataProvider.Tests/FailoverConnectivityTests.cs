@@ -25,11 +25,10 @@ public class FailoverConnectivityTests
     [Trait("Category", "Manual")]
     public void FailoverPluginTest_WithStrictWriterMode()
     {
-        // TODO: Replace with your actual Aurora PostgreSQL cluster endpoint
-        const string clusterEndpoint = "atlas-postgres.cluster-cx422ywmsto6.us-east-2.rds.amazonaws.com";
-        const string username = "pgadmin"; // Replace with your username
-        const string password = "my_password_2020"; // Replace with your password
-        const string database = "postgres"; // Replace with your database name
+        const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
+        const string username = "username"; // Replace with your username
+        const string password = "password"; // Replace with your password
+        const string database = "database"; // Replace with your database name
 
         // Build connection string as simple string - AWS wrapper will parse it properly
         var connectionString = $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
@@ -159,18 +158,18 @@ public class FailoverConnectivityTests
     [Trait("Category", "Manual")]
     public void FailoverPluginTest_WithStrictReaderMode()
     {
-        const string clusterEndpointRo = "atlas-postgres.cluster-cx422ywmsto6.us-east-2.rds.amazonaws.com";
-        const string username = "pgadmin";
-        const string password = "my_password_2020";
-        const string database = "postgres";
+        const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
+        const string username = "username"; // Replace with your username
+        const string password = "password"; // Replace with your password
+        const string database = "database"; // Replace with your database name
 
         var connectionString =
-            $"Host={clusterEndpointRo};Username={username};Password={password};Database={database};Port=5432;" +
+            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
             $"Plugins=failover;FailoverTimeoutMs=60000;FailoverMode=StrictReader;EnableConnectFailover=true;" +
             $"FailoverReaderHostSelectorStrategy=random;";
 
         Console.WriteLine("=== Aurora PostgreSQL Failover Test: STRICT READER ===");
-        Console.WriteLine($"Cluster Endpoint: {clusterEndpointRo}");
+        Console.WriteLine($"Cluster Endpoint: {clusterEndpoint}");
         Console.WriteLine($"Connection String: {connectionString}");
 
         using var connection = new AwsWrapperConnection<NpgsqlConnection>(connectionString);
@@ -241,18 +240,18 @@ public class FailoverConnectivityTests
     [Trait("Category", "Manual")]
     public void FailoverPluginTest_ReadOnlyNode_WithStrictReaderMode()
     {
-        const string clusterEndpointRo = "atlas-postgres.cluster-ro-cx422ywmsto6.us-east-2.rds.amazonaws.com";
-        const string username = "pgadmin";
-        const string password = "my_password_2020";
-        const string database = "postgres";
+        const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
+        const string username = "username"; // Replace with your username
+        const string password = "password"; // Replace with your password
+        const string database = "database"; // Replace with your database name
 
         var connectionString =
-            $"Host={clusterEndpointRo};Username={username};Password={password};Database={database};Port=5432;" +
+            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
             $"Plugins=failover;FailoverTimeoutMs=60000;FailoverMode=StrictReader;EnableConnectFailover=true;" +
             $"FailoverReaderHostSelectorStrategy=random;";
 
         Console.WriteLine("=== Aurora PostgreSQL Failover Test: STRICT READER ===");
-        Console.WriteLine($"Cluster Endpoint: {clusterEndpointRo}");
+        Console.WriteLine($"Cluster Endpoint: {clusterEndpoint}");
         Console.WriteLine($"Connection String: {connectionString}");
 
         using var connection = new AwsWrapperConnection<NpgsqlConnection>(connectionString);
@@ -323,18 +322,18 @@ public class FailoverConnectivityTests
     [Trait("Category", "Manual")]
     public void FailoverPluginTest_WithReaderOrWriterMode()
     {
-        const string clusterEndpointRo = "atlas-postgres.cluster-cx422ywmsto6.us-east-2.rds.amazonaws.com";
-        const string username = "pgadmin";
-        const string password = "my_password_2020";
-        const string database = "postgres";
+        const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
+        const string username = "username"; // Replace with your username
+        const string password = "password"; // Replace with your password
+        const string database = "database"; // Replace with your database name
 
         var connectionString =
-            $"Host={clusterEndpointRo};Username={username};Password={password};Database={database};Port=5432;" +
+            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
             $"Plugins=failover;FailoverTimeoutMs=60000;FailoverMode=ReaderOrWriter;EnableConnectFailover=true;" +
             $"FailoverReaderHostSelectorStrategy=random;";
 
         Console.WriteLine("=== Aurora PostgreSQL Failover Test: STRICT READER ===");
-        Console.WriteLine($"Cluster Endpoint: {clusterEndpointRo}");
+        Console.WriteLine($"Cluster Endpoint: {clusterEndpoint}");
         Console.WriteLine($"Connection String: {connectionString}");
 
         using var connection = new AwsWrapperConnection<NpgsqlConnection>(connectionString);
