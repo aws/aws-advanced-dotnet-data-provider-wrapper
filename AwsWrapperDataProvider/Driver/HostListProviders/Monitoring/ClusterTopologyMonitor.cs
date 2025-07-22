@@ -535,8 +535,8 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                     {
                         lastUpdateTime = DateTime.UtcNow;
                     }
-                    long weight = (long)((Math.Round(nodeLag) * 100L) + Math.Round(cpuUtilization));
 
+                    long weight = (long)((Math.Round(nodeLag) * 100L) + Math.Round(cpuUtilization));
 
                     var hostSpec = this.CreateHost(hostName, isWriter, weight, lastUpdateTime);
                     hostSpec.AddAlias(hostName);

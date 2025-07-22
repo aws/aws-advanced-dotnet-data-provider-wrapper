@@ -25,21 +25,106 @@ public class FailoverConnectivityTests
     [Trait("Category", "Manual")]
     public void FailoverPluginTest_WithStrictWriterMode()
     {
+        const string clusterEndpoint = "atlas-postgres.cluster-cx422ywmsto6.us-east-2.rds.amazonaws.com";
+        const string username = "pgadmin"; // Replace with your username
+        const string password = "my_password_2020"; // Replace with your password
+        const string database = "postgres"; // Replace with your database name
+
+        // Build connection string as simple string - AWS wrapper will parse it properly
+        var connectionString = $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
+                              $"Plugins=failover;FailoverMode=StrictWriter;EnableConnectFailover=true;";
+        PerformFailoverTest(connectionString);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    [Trait("Category", "Manual")]
+    public void FailoverPluginTest_WithStrictReaderMode()
+    {
         const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
         const string username = "username"; // Replace with your username
         const string password = "password"; // Replace with your password
         const string database = "database"; // Replace with your database name
 
-        // Build connection string as simple string - AWS wrapper will parse it properly
-        var connectionString = $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
-                              $"Plugins=failover;FailoverTimeoutMs=60000;FailoverMode=StrictWriter;EnableConnectFailover=true;" +
-                              $"FailoverReaderHostSelectorStrategy=random;";
+        var connectionString =
+            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
+            $"Plugins=failover;FailoverMode=StrictReader;EnableConnectFailover=true;";
+        PerformFailoverTest(connectionString);
+    }
 
-        Console.WriteLine("=== Aurora PostgreSQL Failover Test ===");
-        Console.WriteLine($"Cluster Endpoint: {clusterEndpoint}");
-        Console.WriteLine($"Connection String: {connectionString}");
-        Console.WriteLine();
+    [Fact]
+    [Trait("Category", "Integration")]
+    [Trait("Category", "Manual")]
+    public void FailoverPluginTest_ReadOnlyNode_WithStrictReaderMode()
+    {
+        const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
+        const string username = "username"; // Replace with your username
+        const string password = "password"; // Replace with your password
+        const string database = "database"; // Replace with your database name
 
+        var connectionString =
+            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
+            $"Plugins=failover;FailoverMode=StrictReader;EnableConnectFailover=true;";
+        PerformFailoverTest(connectionString);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    [Trait("Category", "Manual")]
+    public void FailoverPluginTest_WithReaderOrWriterMode()
+    {
+        const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
+        const string username = "username"; // Replace with your username
+        const string password = "password"; // Replace with your password
+        const string database = "database"; // Replace with your database name
+
+        var connectionString =
+            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
+            $"Plugins=failover;FailoverMode=ReaderOrWriter;EnableConnectFailover=true;";
+        PerformFailoverTest(connectionString);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    [Trait("Category", "Manual")]
+    public void FailoverPluginTest_WithStrictWriterMode_WithRoundRobinHostSelectorStrategy()
+    {
+        const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
+        const string username = "username"; // Replace with your username
+        const string password = "password"; // Replace with your password
+        const string database = "database"; // Replace with your database name
+
+        var connectionString =
+            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
+            $"Plugins=failover;FailoverMode=ReaderOrWriter;EnableConnectFailover=true;" +
+            $"FailoverReaderHostSelectorStrategy=RoundRobin;";
+        PerformFailoverTest(connectionString);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    [Trait("Category", "Manual")]
+    public void FailoverPluginTest_WithStrictWriterMode_WithHighestWeightHostSelectorStrategy()
+    {
+        // const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
+        // const string username = "username"; // Replace with your username
+        // const string password = "password"; // Replace with your password
+        // const string database = "database"; // Replace with your database name
+
+        const string clusterEndpoint = "atlas-postgres.cluster-cx422ywmsto6.us-east-2.rds.amazonaws.com";
+        const string username = "pgadmin"; // Replace with your username
+        const string password = "my_password_2020"; // Replace with your password
+        const string database = "postgres"; // Replace with your database name
+
+        var connectionString =
+            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
+            $"Plugins=failover;FailoverMode=ReaderOrWriter;EnableConnectFailover=true;" +
+            $"FailoverReaderHostSelectorStrategy=HighestWeight;";
+        PerformFailoverTest(connectionString);
+    }
+
+    private static void PerformFailoverTest(string connectionString)
+    {
         using var connection = new AwsWrapperConnection<NpgsqlConnection>(connectionString);
 
         try
@@ -52,20 +137,19 @@ public class FailoverConnectivityTests
             // Get initial writer information
             Console.WriteLine("\n2. Identifying current writer...");
             var writerInfo = GetCurrentConnectionInfo(connection);
-            Console.WriteLine($"   Current Writer: {writerInfo.Host}:{writerInfo.Port}");
-            Console.WriteLine($"   Current Writer Role: {writerInfo.Role}");
+            Console.WriteLine($"   Current Host: {writerInfo.Host}:{writerInfo.Port}");
+            Console.WriteLine($"   Current Host Role: {writerInfo.Role}");
             Console.WriteLine($"   Server Version: {writerInfo.Version}");
 
             Console.WriteLine("\n3. Starting long-running query (60 second wait)...");
-            Console.WriteLine("   ⚠️  TRIGGER FAILOVER NOW using:");
+            Console.WriteLine("   TRIGGER FAILOVER NOW using:");
             Console.WriteLine("   aws rds failover-db-cluster --db-cluster-identifier atlas-postgres");
-            Console.WriteLine("   (You have about 10 seconds before the query starts)");
 
             // Execute long-running query that should survive failover
             var startTime = DateTime.UtcNow;
             Console.WriteLine($"   Query started at: {startTime:HH:mm:ss}");
 
-            string serverIp = "unknown";
+            string serverIp;
             DateTime queryTime = DateTime.UtcNow;
 
             using (var command = connection.CreateCommand<NpgsqlCommand>())
@@ -96,10 +180,8 @@ public class FailoverConnectivityTests
                     if (writerInfo.Host != newWriterInfo.Host || writerInfo.Port != newWriterInfo.Port)
                     {
                         Console.WriteLine("   ✓ FAILOVER DETECTED! Writer changed successfully.");
-                        Console.WriteLine($"   Old Writer: {writerInfo.Host}:{writerInfo.Port}");
-                        Console.WriteLine($"   Old Writer Role: {writerInfo.Role}");
-                        Console.WriteLine($"   New Writer: {newWriterInfo.Host}:{newWriterInfo.Port}");
-                        Console.WriteLine($"   New Writer Role: {newWriterInfo.Role}");
+                        Console.WriteLine($"   New Host: {newWriterInfo.Host}:{newWriterInfo.Port}");
+                        Console.WriteLine($"   New Host Role: {newWriterInfo.Role}");
                     }
                 }
                 catch (Exception ex)
@@ -153,252 +235,6 @@ public class FailoverConnectivityTests
         }
     }
 
-    [Fact]
-    [Trait("Category", "Integration")]
-    [Trait("Category", "Manual")]
-    public void FailoverPluginTest_WithStrictReaderMode()
-    {
-        const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
-        const string username = "username"; // Replace with your username
-        const string password = "password"; // Replace with your password
-        const string database = "database"; // Replace with your database name
-
-        var connectionString =
-            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
-            $"Plugins=failover;FailoverTimeoutMs=60000;FailoverMode=StrictReader;EnableConnectFailover=true;" +
-            $"FailoverReaderHostSelectorStrategy=random;";
-
-        Console.WriteLine("=== Aurora PostgreSQL Failover Test: STRICT READER ===");
-        Console.WriteLine($"Cluster Endpoint: {clusterEndpoint}");
-        Console.WriteLine($"Connection String: {connectionString}");
-
-        using var connection = new AwsWrapperConnection<NpgsqlConnection>(connectionString);
-
-        try
-        {
-            Console.WriteLine("1. Opening initial connection...");
-            connection.Open();
-            Console.WriteLine($"   ✓ Connected successfully");
-            Console.WriteLine($"   Connection State: {connection.State}");
-
-            var readerInfo = GetCurrentConnectionInfo(connection);
-            Console.WriteLine($"\n2. Identifying current reader...");
-            Console.WriteLine($"   Current Reader: {readerInfo.Host}:{readerInfo.Port}");
-            Console.WriteLine($"   Current Reader Role: {readerInfo.Role}");
-            Console.WriteLine($"   Server Version: {readerInfo.Version}");
-
-            Console.WriteLine("\n3. Starting long-running query (60 second wait)...");
-            Console.WriteLine("   ⚠️  TRIGGER FAILOVER NOW using:");
-            Console.WriteLine("   aws rds failover-db-cluster --db-cluster-identifier atlas-postgres");
-            Console.WriteLine("   (You have about 10 seconds before the query starts)");
-
-            var startTime = DateTime.UtcNow;
-            Console.WriteLine($"   Query started at: {startTime:HH:mm:ss}");
-
-            using (var command = connection.CreateCommand<NpgsqlCommand>())
-            {
-                command.CommandText =
-                    "SELECT pg_sleep(500), now() as query_time, inet_server_addr()::text as server_ip";
-                command.CommandTimeout = 500;
-
-                try
-                {
-                    using (var reader = command.ExecuteReader())
-                    {
-                        if (reader.Read())
-                        {
-                            var queryTime = reader.GetDateTime("query_time");
-                            var serverIp = reader.IsDBNull("server_ip") ? "unknown" : reader.GetString("server_ip");
-                            Console.WriteLine($"   Query: {queryTime:HH:mm:ss.fff} from {serverIp}");
-                        }
-                    }
-                }
-                catch (FailoverSuccessException)
-                {
-                    var newReaderInfo = GetCurrentConnectionInfo(connection);
-                    Console.WriteLine("\n4. Verifying connection after failover...");
-                    Console.WriteLine($"   New Reader: {newReaderInfo.Host}:{newReaderInfo.Port}");
-                    Console.WriteLine($"   New Reader Role: {newReaderInfo.Role}");
-                }
-            }
-
-            Console.WriteLine("\n✓ Strict Reader failover test completed successfully!");
-        }
-        finally
-        {
-            Console.WriteLine("\n5. Cleaning up connection...");
-            if (connection.State == ConnectionState.Open)
-            {
-                connection.Close();
-                Console.WriteLine("   Connection closed.");
-            }
-        }
-    }
-
-    [Fact]
-    [Trait("Category", "Integration")]
-    [Trait("Category", "Manual")]
-    public void FailoverPluginTest_ReadOnlyNode_WithStrictReaderMode()
-    {
-        const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
-        const string username = "username"; // Replace with your username
-        const string password = "password"; // Replace with your password
-        const string database = "database"; // Replace with your database name
-
-        var connectionString =
-            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
-            $"Plugins=failover;FailoverTimeoutMs=60000;FailoverMode=StrictReader;EnableConnectFailover=true;" +
-            $"FailoverReaderHostSelectorStrategy=random;";
-
-        Console.WriteLine("=== Aurora PostgreSQL Failover Test: STRICT READER ===");
-        Console.WriteLine($"Cluster Endpoint: {clusterEndpoint}");
-        Console.WriteLine($"Connection String: {connectionString}");
-
-        using var connection = new AwsWrapperConnection<NpgsqlConnection>(connectionString);
-
-        try
-        {
-            Console.WriteLine("1. Opening initial connection...");
-            connection.Open();
-            Console.WriteLine($"   ✓ Connected successfully");
-            Console.WriteLine($"   Connection State: {connection.State}");
-
-            var readerInfo = GetCurrentConnectionInfo(connection);
-            Console.WriteLine($"\n2. Identifying current reader...");
-            Console.WriteLine($"   Current Reader: {readerInfo.Host}:{readerInfo.Port}");
-            Console.WriteLine($"   Current Reader Role: {readerInfo.Role}");
-            Console.WriteLine($"   Server Version: {readerInfo.Version}");
-
-            Console.WriteLine("\n3. Starting long-running query (60 second wait)...");
-            Console.WriteLine("   ⚠️  TRIGGER FAILOVER NOW using:");
-            Console.WriteLine("   aws rds failover-db-cluster --db-cluster-identifier atlas-postgres");
-            Console.WriteLine("   (You have about 10 seconds before the query starts)");
-
-            var startTime = DateTime.UtcNow;
-            Console.WriteLine($"   Query started at: {startTime:HH:mm:ss}");
-
-            using (var command = connection.CreateCommand<NpgsqlCommand>())
-            {
-                command.CommandText =
-                    "SELECT pg_sleep(500), now() as query_time, inet_server_addr()::text as server_ip";
-                command.CommandTimeout = 500;
-
-                try
-                {
-                    using (var reader = command.ExecuteReader())
-                    {
-                        if (reader.Read())
-                        {
-                            var queryTime = reader.GetDateTime("query_time");
-                            var serverIp = reader.IsDBNull("server_ip") ? "unknown" : reader.GetString("server_ip");
-                            Console.WriteLine($"   Query: {queryTime:HH:mm:ss.fff} from {serverIp}");
-                        }
-                    }
-                }
-                catch (FailoverSuccessException)
-                {
-                    var newReaderInfo = GetCurrentConnectionInfo(connection);
-                    Console.WriteLine("\n4. Verifying connection after failover...");
-                    Console.WriteLine($"   New Reader: {newReaderInfo.Host}:{newReaderInfo.Port}");
-                    Console.WriteLine($"   New Reader Role: {newReaderInfo.Role}");
-                }
-            }
-
-            Console.WriteLine("\n✓ Strict Reader failover test completed successfully!");
-        }
-        finally
-        {
-            Console.WriteLine("\n5. Cleaning up connection...");
-            if (connection.State == ConnectionState.Open)
-            {
-                connection.Close();
-                Console.WriteLine("   Connection closed.");
-            }
-        }
-    }
-
-    [Fact]
-    [Trait("Category", "Integration")]
-    [Trait("Category", "Manual")]
-    public void FailoverPluginTest_WithReaderOrWriterMode()
-    {
-        const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
-        const string username = "username"; // Replace with your username
-        const string password = "password"; // Replace with your password
-        const string database = "database"; // Replace with your database name
-
-        var connectionString =
-            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
-            $"Plugins=failover;FailoverTimeoutMs=60000;FailoverMode=ReaderOrWriter;EnableConnectFailover=true;" +
-            $"FailoverReaderHostSelectorStrategy=random;";
-
-        Console.WriteLine("=== Aurora PostgreSQL Failover Test: STRICT READER ===");
-        Console.WriteLine($"Cluster Endpoint: {clusterEndpoint}");
-        Console.WriteLine($"Connection String: {connectionString}");
-
-        using var connection = new AwsWrapperConnection<NpgsqlConnection>(connectionString);
-
-        try
-        {
-            Console.WriteLine("1. Opening initial connection...");
-            connection.Open();
-            Console.WriteLine($"   ✓ Connected successfully");
-            Console.WriteLine($"   Connection State: {connection.State}");
-
-            var readerInfo = GetCurrentConnectionInfo(connection);
-            Console.WriteLine($"\n2. Identifying current reader...");
-            Console.WriteLine($"   Current Reader: {readerInfo.Host}:{readerInfo.Port}");
-            Console.WriteLine($"   Current Reader Role: {readerInfo.Role}");
-            Console.WriteLine($"   Server Version: {readerInfo.Version}");
-
-            Console.WriteLine("\n3. Starting long-running query (60 second wait)...");
-            Console.WriteLine("   ⚠️  TRIGGER FAILOVER NOW using:");
-            Console.WriteLine("   aws rds failover-db-cluster --db-cluster-identifier atlas-postgres");
-            Console.WriteLine("   (You have about 10 seconds before the query starts)");
-
-            var startTime = DateTime.UtcNow;
-            Console.WriteLine($"   Query started at: {startTime:HH:mm:ss}");
-
-            using (var command = connection.CreateCommand<NpgsqlCommand>())
-            {
-                command.CommandText =
-                    "SELECT pg_sleep(500), now() as query_time, inet_server_addr()::text as server_ip";
-                command.CommandTimeout = 500;
-
-                try
-                {
-                    using (var reader = command.ExecuteReader())
-                    {
-                        if (reader.Read())
-                        {
-                            var queryTime = reader.GetDateTime("query_time");
-                            var serverIp = reader.IsDBNull("server_ip") ? "unknown" : reader.GetString("server_ip");
-                            Console.WriteLine($"   Query: {queryTime:HH:mm:ss.fff} from {serverIp}");
-                        }
-                    }
-                }
-                catch (FailoverSuccessException)
-                {
-                    var newReaderInfo = GetCurrentConnectionInfo(connection);
-                    Console.WriteLine("\n4. Verifying connection after failover...");
-                    Console.WriteLine($"   New Reader: {newReaderInfo.Host}:{newReaderInfo.Port}");
-                    Console.WriteLine($"   New Reader Role: {newReaderInfo.Role}");
-                }
-            }
-
-            Console.WriteLine("\n✓ Strict Reader failover test completed successfully!");
-        }
-        finally
-        {
-            Console.WriteLine("\n5. Cleaning up connection...");
-            if (connection.State == ConnectionState.Open)
-            {
-                connection.Close();
-                Console.WriteLine("   Connection closed.");
-            }
-        }
-    }
-
     private static (string Host, int Port, string Version, string Role) GetCurrentConnectionInfo(AwsWrapperConnection<NpgsqlConnection> connection)
     {
         using var command = connection.CreateCommand<NpgsqlCommand>();
@@ -422,4 +258,17 @@ public class FailoverConnectivityTests
 
         return ("unknown", 5432, "unknown", "unknown");
     }
+
+    // TODO: Cases I need to test:
+    // 1. Failover with different FailoverReaderHostSelectorStrategy values:
+    //    - Random
+    //    - RoundRobin
+    //    - HighestWeight
+    // 2. Failover with AuroraInitialConnectionStrategyPlugin
+    // 3. Failover with Authentication
+    //    - IAM Authentication
+    //    - Secrets Manager Authentication
+    //    - Federated Authentication
+    // 4. Failover with different FailoverTimeoutMs values
+    // 6. Failover with different EnableConnectFailover values
 }
