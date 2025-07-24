@@ -107,7 +107,7 @@ public class TestEnvironmentConfig implements AutoCloseable {
   public static TestEnvironmentConfig build(TestEnvironmentRequest request) throws IOException, URISyntaxException {
 
     LOGGER.finest("Building test env: " + request.getEnvPreCreateIndex());
-    preCreateEnvironment(request.getEnvPreCreateIndex());
+    //preCreateEnvironment(request.getEnvPreCreateIndex());
 
     TestEnvironmentConfig env;
 
@@ -161,7 +161,7 @@ public class TestEnvironmentConfig implements AutoCloseable {
     if ((USE_OTLP_CONTAINER_FOR_TRACES
         && request.getFeatures().contains(TestEnvironmentFeatures.TELEMETRY_TRACES_ENABLED))
         || request.getFeatures().contains(TestEnvironmentFeatures.TELEMETRY_METRICS_ENABLED)) {
-      createTelemetryOtlpContainer(env);
+      //createTelemetryOtlpContainer(env);
     }
 
     createTestContainer(env);
@@ -259,14 +259,14 @@ public class TestEnvironmentConfig implements AutoCloseable {
           break;
         case AURORA:
           initEnv(env);
-          authorizeRunnerIpAddress(env);
+          //authorizeRunnerIpAddress(env);
 
           if (!env.reuseDb
               && env.info.getRequest().getFeatures().contains(TestEnvironmentFeatures.BLUE_GREEN_DEPLOYMENT)) {
             createCustomClusterParameterGroup(env);
           }
-          createDbCluster(env);
-          configureIamAccess(env);
+          //createDbCluster(env);
+          //configureIamAccess(env);
           break;
         default:
           throw new NotImplementedException(request.getDatabaseEngineDeployment().toString());
@@ -1225,7 +1225,7 @@ public class TestEnvironmentConfig implements AutoCloseable {
     }
   }
 
-  private static String getEnvironmentInfoAsString(TestEnvironmentConfig env) {
+  public static String getEnvironmentInfoAsString(TestEnvironmentConfig env) {
     try {
       final ObjectMapper mapper = new ObjectMapper();
       return mapper.writeValueAsString(env.info);

@@ -1,0 +1,69 @@
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License").
+// You may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+using System.Text.Json.Serialization;
+
+namespace AwsWrapperDataProvider.Tests.Container.Utils;
+
+public class TestEnvironmentRequest
+{
+    [JsonIgnore]
+    public int EnvPreCreateIndex { get; set; }
+
+    [JsonPropertyName("engine")]
+    public DatabaseEngine Engine { get; set; }
+
+    [JsonPropertyName("instances")]
+    public DatabaseInstances Instances { get; set; }
+
+    [JsonPropertyName("deployment")]
+    public DatabaseEngineDeployment Deployment { get; set; }
+
+    [JsonPropertyName("features")]
+    public HashSet<TestEnvironmentFeatures> Features { get; set; } = new();
+
+    [JsonPropertyName("numOfInstances")]
+    public int NumOfInstances { get; set; } = 1;
+
+    // Parameterless constructor for deserialization
+    public TestEnvironmentRequest() { }
+
+    public TestEnvironmentRequest(
+        DatabaseEngine engine,
+        DatabaseInstances instances,
+        int numOfInstances,
+        DatabaseEngineDeployment deployment,
+        params TestEnvironmentFeatures[] features)
+    {
+        Engine = engine;
+        Instances = instances;
+        Deployment = deployment;
+        NumOfInstances = numOfInstances;
+
+        if (features != null)
+        {
+            foreach (var feature in features)
+            {
+                if (feature != null)
+                {
+                    Features.Add(feature);
+                }
+            }
+        }
+    }
+
+    [JsonIgnore]
+    public string DisplayName =>
+        $"Test environment [{Deployment}, {Engine}, {Instances}, {NumOfInstances}, {string.Join(", ", Features)}]";
+}
