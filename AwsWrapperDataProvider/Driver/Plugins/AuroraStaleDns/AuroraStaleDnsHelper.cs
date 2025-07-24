@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data.Common;
 using System.Net;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
@@ -37,72 +38,57 @@ public class AuroraStaleDnsHelper
         this.pluginService = pluginService;
     }
 
-    public bool OpenVerifiedConnection(
+    public DbConnection OpenVerifiedConnection(
         bool isInitialConnection,
         IHostListProviderService hostListProviderService,
         HostSpec hostSpec,
         Dictionary<string, string> props,
-        ADONetDelegate openFunc)
+        ADONetDelegate<DbConnection> openFunc)
     {
         // If this is not a writer cluster DNS, no verification needed
         if (!RdsUtils.IsWriterClusterDns(hostSpec.Host))
         {
-            openFunc();
-            return true;
+            return openFunc();
         }
 
-        openFunc();
+        DbConnection connection = openFunc();
 
         // Get the IP address that the cluster endpoint resolved to
         string? clusterInetAddress = GetHostIpAddress(hostSpec.Host);
         if (clusterInetAddress == null)
         {
-            return true;
+            return connection;
         }
 
         // Check the role of the connection we actually got
-        HostRole connectionRole = this.pluginService.GetHostRole(this.pluginService.CurrentConnection);
+        HostRole connectionRole = this.pluginService.GetHostRole(connection);
 
         if (connectionRole == HostRole.Reader)
         {
             // If the connection URL is a writer cluster endpoint but we got a reader,
             // this indicates the topology is outdated. Force refresh to update it.
-            this.pluginService.ForceRefreshHostList();
+            this.pluginService.ForceRefreshHostList(connection);
         }
         else
         {
             // Normal refresh for writer connections
-            this.pluginService.RefreshHostList();
+            this.pluginService.RefreshHostList(connection);
         }
 
-        // Find the current writer in the topology
-        if (this.writerHostSpec == null)
-        {
-            HostSpec? writerCandidate = this.GetWriter();
-            if (writerCandidate != null && RdsUtils.IsRdsClusterDns(writerCandidate.Host))
-            {
-                return false;
-            }
-
-            this.writerHostSpec = writerCandidate;
-        }
+        this.writerHostSpec ??= this.GetWriter();
 
         if (this.writerHostSpec == null)
         {
             // No writer found in topology, return original connection
-            return true;
+            return connection;
         }
 
-        // Get the IP address of the actual writer instance
-        if (this.writerHostAddress == null)
-        {
-            this.writerHostAddress = GetHostIpAddress(this.writerHostSpec.Host);
-        }
+        this.writerHostAddress ??= GetHostIpAddress(this.writerHostSpec.Host);
 
         if (this.writerHostAddress == null)
         {
             // Can't resolve writer IP, return original connection
-            return true;
+            return connection;
         }
 
         // Compare the cluster endpoint IP with the actual writer IP
@@ -120,43 +106,20 @@ public class AuroraStaleDnsHelper
             }
 
             // Create a new connection to the correct writer instance
-            this.pluginService.OpenConnection(this.writerHostSpec, props, isInitialConnection);
+            DbConnection writerConnection = this.pluginService.OpenConnection(this.writerHostSpec, props, isInitialConnection);
 
             // Update the initial connection host spec if this is the initial connection
             if (isInitialConnection)
             {
                 hostListProviderService.InitialConnectionHostSpec = this.writerHostSpec;
             }
+
+            connection.Close();
+            return writerConnection;
         }
 
         // No stale DNS detected, return the original connection
-        return true;
-    }
-
-    public void NotifyNodeListChanged(Dictionary<string, NodeChangeOptions> changes)
-    {
-        if (this.writerHostSpec == null)
-        {
-            return;
-        }
-
-        foreach (var entry in changes)
-        {
-            if (entry.Key.Equals(this.writerHostSpec.Host) &&
-                entry.Value.HasFlag(NodeChangeOptions.PromotedToReader))
-            {
-                // The current writer was demoted to reader, reset our cached information
-                this.writerHostSpec = null;
-                this.writerHostAddress = null;
-                break;
-            }
-        }
-    }
-
-    public void Reset()
-    {
-        this.writerHostSpec = null;
-        this.writerHostAddress = null;
+        return connection;
     }
 
     private static string? GetHostIpAddress(string hostname)

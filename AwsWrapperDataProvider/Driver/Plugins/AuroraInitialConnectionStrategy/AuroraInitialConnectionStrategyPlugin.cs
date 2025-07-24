@@ -282,7 +282,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
 
     private HostSpec? GetReader(Dictionary<string, string> props)
     {
-        string strategy = PropertyDefinition.ReaderHostSelectionStrategy.GetString(props)!;
+        string strategy = PropertyDefinition.ReaderHostSelectorStrategy.GetString(props)!;
         if (this.pluginService.AcceptsStrategy(strategy))
         {
             try

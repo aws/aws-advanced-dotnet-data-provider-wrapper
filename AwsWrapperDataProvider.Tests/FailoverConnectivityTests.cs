@@ -123,6 +123,53 @@ public class FailoverConnectivityTests
         PerformFailoverTest(connectionString);
     }
 
+    [Fact]
+    [Trait("Category", "Integration")]
+    [Trait("Category", "Manual")]
+    public void FailoverPluginTest_WithAuroraInitialConnectionStrategyPlugin()
+    {
+        const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
+        const string username = "username"; // Replace with your username
+        const string password = "password"; // Replace with your password
+        const string database = "database"; // Replace with your database name
+
+        var connectionString =
+            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
+            $"Plugins=failover,initialConnection;FailoverMode=StrictReader;EnableConnectFailover=true;";
+        PerformFailoverTest(connectionString);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    [Trait("Category", "Manual")]
+    public void FailoverPluginTest_WithIamAuth()
+    {
+        const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
+        const string username = "username"; // Replace with your username
+        const string database = "database"; // Replace with your database name
+
+        var connectionString =
+            $"Host={clusterEndpoint};Username={username};Database={database};Port=5432;" +
+            $"Plugins=failover,iam;FailoverMode=ReaderOrWriter;EnableConnectFailover=true;";
+        PerformFailoverTest(connectionString);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    [Trait("Category", "Manual")]
+    public void FailoverPluginTest_WithSecretAuth()
+    {
+        const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
+        const string username = "username"; // Replace with your username
+        const string password = "password"; // Replace with your password
+        const string database = "database"; // Replace with your database name
+
+        var connectionString =
+            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
+            $"Plugins=failover,awsSecretsManager;FailoverMode=ReaderOrWriter;EnableConnectFailover=true;";
+        PerformFailoverTest(connectionString);
+    }
+
     private static void PerformFailoverTest(string connectionString)
     {
         using var connection = new AwsWrapperConnection<NpgsqlConnection>(connectionString);
@@ -135,11 +182,11 @@ public class FailoverConnectivityTests
             Console.WriteLine($"   Connection State: {connection.State}");
 
             // Get initial writer information
-            Console.WriteLine("\n2. Identifying current writer...");
-            var writerInfo = GetCurrentConnectionInfo(connection);
-            Console.WriteLine($"   Current Host: {writerInfo.Host}:{writerInfo.Port}");
-            Console.WriteLine($"   Current Host Role: {writerInfo.Role}");
-            Console.WriteLine($"   Server Version: {writerInfo.Version}");
+            Console.WriteLine("\n2. Identifying current host...");
+            var hostInfo = GetCurrentConnectionInfo(connection);
+            Console.WriteLine($"   Current Host: {hostInfo.Host}:{hostInfo.Port}");
+            Console.WriteLine($"   Current Host Role: {hostInfo.Role}");
+            Console.WriteLine($"   Server Version: {hostInfo.Version}");
 
             Console.WriteLine("\n3. Starting long-running query (60 second wait)...");
             Console.WriteLine("   TRIGGER FAILOVER NOW using:");
@@ -172,16 +219,17 @@ public class FailoverConnectivityTests
                 }
                 catch (FailoverSuccessException)
                 {
-                    var newWriterInfo = GetCurrentConnectionInfo(connection);
+                    var newHostInfo = GetCurrentConnectionInfo(connection);
 
                     Console.WriteLine("\n4. Verifying connection after potential failover...");
-                    Console.WriteLine($"   Current Writer: {newWriterInfo.Host}:{newWriterInfo.Port}");
+                    Console.WriteLine($"   Current Host: {hostInfo.Host}:{hostInfo.Port}");
+                    Console.WriteLine($"   Current Host Role: {hostInfo.Role}");
 
-                    if (writerInfo.Host != newWriterInfo.Host || writerInfo.Port != newWriterInfo.Port)
+                    if (hostInfo.Host != newHostInfo.Host || hostInfo.Port != newHostInfo.Port)
                     {
-                        Console.WriteLine("   ✓ FAILOVER DETECTED! Writer changed successfully.");
-                        Console.WriteLine($"   New Host: {newWriterInfo.Host}:{newWriterInfo.Port}");
-                        Console.WriteLine($"   New Host Role: {newWriterInfo.Role}");
+                        Console.WriteLine("   ✓ FAILOVER DETECTED! Host changed successfully.");
+                        Console.WriteLine($"   New Host: {newHostInfo.Host}:{newHostInfo.Port}");
+                        Console.WriteLine($"   New Host Role: {newHostInfo.Role}");
                     }
                 }
                 catch (Exception ex)
@@ -258,17 +306,4 @@ public class FailoverConnectivityTests
 
         return ("unknown", 5432, "unknown", "unknown");
     }
-
-    // TODO: Cases I need to test:
-    // 1. Failover with different FailoverReaderHostSelectorStrategy values:
-    //    - Random
-    //    - RoundRobin
-    //    - HighestWeight
-    // 2. Failover with AuroraInitialConnectionStrategyPlugin
-    // 3. Failover with Authentication
-    //    - IAM Authentication
-    //    - Secrets Manager Authentication
-    //    - Federated Authentication
-    // 4. Failover with different FailoverTimeoutMs values
-    // 6. Failover with different EnableConnectFailover values
 }

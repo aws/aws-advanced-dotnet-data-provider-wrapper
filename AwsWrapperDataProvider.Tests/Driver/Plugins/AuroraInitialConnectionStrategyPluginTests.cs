@@ -41,7 +41,7 @@ public class AuroraInitialConnectionStrategyPluginTests
         {
             { PropertyDefinition.OpenConnectionRetryTimeoutMs.Name, "30000" },
             { PropertyDefinition.OpenConnectionRetryIntervalMs.Name, "1000" },
-            { PropertyDefinition.ReaderHostSelectionStrategy.Name, "random" },
+            { PropertyDefinition.ReaderHostSelectorStrategy.Name, "random" },
         };
 
         this.plugin = new AuroraInitialConnectionStrategyPlugin(this.mockPluginService.Object, this.defaultProps);
@@ -145,7 +145,7 @@ public class AuroraInitialConnectionStrategyPluginTests
             { PropertyDefinition.VerifyOpenedConnectionType.Name, "writer" },
             { PropertyDefinition.OpenConnectionRetryTimeoutMs.Name, "30000" },
             { PropertyDefinition.OpenConnectionRetryIntervalMs.Name, "1000" },
-            { PropertyDefinition.ReaderHostSelectionStrategy.Name, "random" },
+            { PropertyDefinition.ReaderHostSelectorStrategy.Name, "random" },
         };
         var pluginWithVerify = new AuroraInitialConnectionStrategyPlugin(this.mockPluginService.Object, props);
         var hostSpec = new HostSpec("regular-host.us-east-1.rds.amazonaws.com", 5432, null, HostRole.Writer, HostAvailability.Available);
@@ -172,7 +172,7 @@ public class AuroraInitialConnectionStrategyPluginTests
             { PropertyDefinition.VerifyOpenedConnectionType.Name, "reader" },
             { PropertyDefinition.OpenConnectionRetryTimeoutMs.Name, "30000" },
             { PropertyDefinition.OpenConnectionRetryIntervalMs.Name, "1000" },
-            { PropertyDefinition.ReaderHostSelectionStrategy.Name, "random" },
+            { PropertyDefinition.ReaderHostSelectorStrategy.Name, "random" },
         };
         var pluginWithVerify = new AuroraInitialConnectionStrategyPlugin(this.mockPluginService.Object, props);
         var hostSpec = new HostSpec("regular-host.us-east-1.rds.amazonaws.com", 5432, null, HostRole.Reader, HostAvailability.Available);
@@ -201,7 +201,7 @@ public class AuroraInitialConnectionStrategyPluginTests
         {
             { PropertyDefinition.OpenConnectionRetryTimeoutMs.Name, "5000" },
             { PropertyDefinition.OpenConnectionRetryIntervalMs.Name, "100" },
-            { PropertyDefinition.ReaderHostSelectionStrategy.Name, "random" },
+            { PropertyDefinition.ReaderHostSelectorStrategy.Name, "random" },
         };
         var methodFunc = new Mock<ADONetDelegate<DbConnection>>();
         var writerHost = new HostSpec("test-cluster.cluster-xyz.us-east-1.rds.amazonaws.com", 5432, null, HostRole.Writer, HostAvailability.Available);
@@ -228,7 +228,7 @@ public class AuroraInitialConnectionStrategyPluginTests
         {
             { PropertyDefinition.OpenConnectionRetryTimeoutMs.Name, "5000" },
             { PropertyDefinition.OpenConnectionRetryIntervalMs.Name, "100" },
-            { PropertyDefinition.ReaderHostSelectionStrategy.Name, "random" },
+            { PropertyDefinition.ReaderHostSelectorStrategy.Name, "random" },
         };
         var methodFunc = new Mock<ADONetDelegate<DbConnection>>();
         var readerHost = new HostSpec("test-cluster.cluster-ro-xyz.us-east-1.rds.amazonaws.com", 5432, null, HostRole.Reader, HostAvailability.Available);
@@ -256,7 +256,7 @@ public class AuroraInitialConnectionStrategyPluginTests
     {
         var props = new Dictionary<string, string>
         {
-            { PropertyDefinition.ReaderHostSelectionStrategy.Name, "invalid-strategy" },
+            { PropertyDefinition.ReaderHostSelectorStrategy.Name, "invalid-strategy" },
             { PropertyDefinition.OpenConnectionRetryTimeoutMs.Name, "5000" },
             { PropertyDefinition.OpenConnectionRetryIntervalMs.Name, "100" },
         };

@@ -103,9 +103,6 @@ public static class PropertyDefinition
     public static readonly AwsWrapperProperty SecretsManagerEndpoint = new(
         "SecretsManagerEndpoint", null, "The endpoint of the secret to retrieve.");
 
-    public static readonly AwsWrapperProperty ReaderHostSelectionStrategy = new(
-        "ReaderInitialConnectionHostSelectorStrategy", "random", "The strategy that should be used to select a new reader host while opening a new connection.");
-
     public static readonly AwsWrapperProperty OpenConnectionRetryTimeoutMs = new(
         "OpenConnectionRetryTimeoutMs", "30000", "Maximum allowed time for the retries opening a connection.");
 
@@ -143,8 +140,8 @@ public static class PropertyDefinition
     public static readonly AwsWrapperProperty FailoverMode = new(
         "FailoverMode", null, "Set node role to follow during failover. Valid values: StrictWriter, StrictReader, ReaderOrWriter.");
 
-    public static readonly AwsWrapperProperty FailoverReaderHostSelectorStrategy = new(
-        "FailoverReaderHostSelectorStrategy", "Random", "The strategy that should be used to select a new reader host while opening a new connection.");
+    public static readonly AwsWrapperProperty ReaderHostSelectorStrategy = new(
+        "ReaderHostSelectorStrategy", "Random", "The strategy that should be used to select a new reader host while opening a new connection.");
 
     public static readonly AwsWrapperProperty EnableConnectFailover = new(
         "EnableConnectFailover", "false", "Enable/disable cluster-aware failover if the initial connection to the database fails due to a network exception.");
@@ -201,7 +198,6 @@ public static class PropertyDefinition
         ClusterTopologyRefreshRateMs,
         ClusterInstanceHostPattern,
         ClusterId,
-        ReaderHostSelectionStrategy,
         OpenConnectionRetryTimeoutMs,
         OpenConnectionRetryIntervalMs,
         VerifyOpenedConnectionType,
@@ -209,7 +205,7 @@ public static class PropertyDefinition
         // Failover Plugin Properties
         FailoverTimeoutMs,
         FailoverMode,
-        FailoverReaderHostSelectorStrategy,
+        ReaderHostSelectorStrategy,
         EnableConnectFailover,
         SkipFailoverOnInterruptedThread,
 

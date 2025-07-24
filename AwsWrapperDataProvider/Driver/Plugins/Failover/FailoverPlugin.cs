@@ -17,6 +17,7 @@ using System.Data.Common;
 using System.Diagnostics;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
+using AwsWrapperDataProvider.Driver.Plugins.AuroraStaleDns;
 using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Logging;
 using ThreadState = System.Threading.ThreadState;
@@ -46,6 +47,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
     private readonly bool enableConnectFailover;
     private readonly bool skipFailoverOnInterruptedThread;
     private readonly bool closedExplicitly = false;
+    private readonly AuroraStaleDnsHelper auroraStaleDnsHelper;
 
     private IHostListProviderService? hostListProviderService;
     private RdsUrlType? rdsUrlType;
@@ -92,9 +94,10 @@ public class FailoverPlugin : AbstractConnectionPlugin
         // Initialize configuration settings using PropertyDefinition
         this.failoverTimeoutMs = PropertyDefinition.FailoverTimeoutMs.GetInt(props) ?? 300000;
         this.failoverMode = this.GetFailoverMode();
-        this.failoverReaderHostSelectorStrategy = PropertyDefinition.FailoverReaderHostSelectorStrategy.GetString(props)!;
+        this.failoverReaderHostSelectorStrategy = PropertyDefinition.ReaderHostSelectorStrategy.GetString(props)!;
         this.enableConnectFailover = PropertyDefinition.EnableConnectFailover.GetBoolean(props);
         this.skipFailoverOnInterruptedThread = PropertyDefinition.SkipFailoverOnInterruptedThread.GetBoolean(props);
+        this.auroraStaleDnsHelper = new AuroraStaleDnsHelper(pluginService);
     }
 
     public override T Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, params object[] methodArgs)
@@ -144,7 +147,12 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
         if (!this.enableConnectFailover || hostSpec == null)
         {
-            return methodFunc();
+            return this.auroraStaleDnsHelper.OpenVerifiedConnection(
+                isInitialConnection,
+                this.hostListProviderService!,
+                hostSpec!,
+                properties,
+                methodFunc);
         }
 
         var hostSpecWithAvailability = this.pluginService.GetHosts()
