@@ -105,15 +105,10 @@ public class FailoverConnectivityTests
     [Trait("Category", "Manual")]
     public void FailoverPluginTest_WithStrictWriterMode_WithHighestWeightHostSelectorStrategy()
     {
-        // const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
-        // const string username = "username"; // Replace with your username
-        // const string password = "password"; // Replace with your password
-        // const string database = "database"; // Replace with your database name
-
-        const string clusterEndpoint = "atlas-postgres.cluster-cx422ywmsto6.us-east-2.rds.amazonaws.com";
-        const string username = "pgadmin"; // Replace with your username
-        const string password = "my_password_2020"; // Replace with your password
-        const string database = "postgres"; // Replace with your database name
+        const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
+        const string username = "username"; // Replace with your username
+        const string password = "password"; // Replace with your password
+        const string database = "database"; // Replace with your database name
 
         var connectionString =
             $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
@@ -153,22 +148,6 @@ public class FailoverConnectivityTests
         PerformFailoverTest(connectionString);
     }
 
-    [Fact]
-    [Trait("Category", "Integration")]
-    [Trait("Category", "Manual")]
-    public void FailoverPluginTest_WithSecretAuth()
-    {
-        const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
-        const string username = "username"; // Replace with your username
-        const string password = "password"; // Replace with your password
-        const string database = "database"; // Replace with your database name
-
-        var connectionString =
-            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
-            $"Plugins=failover,awsSecretsManager;FailoverMode=ReaderOrWriter;EnableConnectFailover=true;";
-        PerformFailoverTest(connectionString);
-    }
-
     private static void PerformFailoverTest(string connectionString)
     {
         using var connection = new AwsWrapperConnection<NpgsqlConnection>(connectionString);
@@ -184,6 +163,7 @@ public class FailoverConnectivityTests
             Console.WriteLine("\n2. Identifying current host...");
             var hostInfo = GetCurrentConnectionInfo(connection);
             Console.WriteLine($"   Current Host: {hostInfo.Host}:{hostInfo.Port}");
+            Console.WriteLine($"   Current Host Name: {hostInfo.HostName}");
             Console.WriteLine($"   Current Host Role: {hostInfo.Role}");
             Console.WriteLine($"   Server Version: {hostInfo.Version}");
 
@@ -222,12 +202,14 @@ public class FailoverConnectivityTests
 
                     Console.WriteLine("\n4. Verifying connection after potential failover...");
                     Console.WriteLine($"   Current Host: {hostInfo.Host}:{hostInfo.Port}");
+                    Console.WriteLine($"   Current Host Name: {hostInfo.HostName}");
                     Console.WriteLine($"   Current Host Role: {hostInfo.Role}");
 
                     if (hostInfo.Host != newHostInfo.Host || hostInfo.Port != newHostInfo.Port)
                     {
                         Console.WriteLine("   ✓ FAILOVER DETECTED! Host changed successfully.");
                         Console.WriteLine($"   New Host: {newHostInfo.Host}:{newHostInfo.Port}");
+                        Console.WriteLine($"   Current Host Name: {newHostInfo.HostName}");
                         Console.WriteLine($"   New Host Role: {newHostInfo.Role}");
                     }
                 }
@@ -282,11 +264,12 @@ public class FailoverConnectivityTests
         }
     }
 
-    private static (string Host, int Port, string Version, string Role) GetCurrentConnectionInfo(AwsWrapperConnection<NpgsqlConnection> connection)
+    private static (string HostName, string Host, int Port, string Version, string Role) GetCurrentConnectionInfo(AwsWrapperConnection<NpgsqlConnection> connection)
     {
         using var command = connection.CreateCommand<NpgsqlCommand>();
         command.CommandText = @"
-        SELECT 
+        SELECT
+            aurora_db_instance_identifier()::text as server_name,
             inet_server_addr()::text as server_ip,
             inet_server_port() as server_port,
             version() as server_version,
@@ -295,14 +278,15 @@ public class FailoverConnectivityTests
         using var reader = command.ExecuteReader();
         if (reader.Read())
         {
+            var hostName = reader.IsDBNull("server_name") ? "unknow" : reader.GetString("server_name");
             var host = reader.IsDBNull("server_ip") ? "unknown" : reader.GetString("server_ip");
             var port = reader.IsDBNull("server_port") ? 5432 : reader.GetInt32("server_port");
             var version = reader.IsDBNull("server_version") ? "unknown" : reader.GetString("server_version");
             var role = reader.IsDBNull("node_role") ? "unknown" : reader.GetString("node_role");
 
-            return (host, port, version, role);
+            return (hostName, host, port, version, role);
         }
 
-        return ("unknown", 5432, "unknown", "unknown");
+        return ("unknown", "unknown", 5432, "unknown", "unknown");
     }
 }

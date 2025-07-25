@@ -13,12 +13,11 @@
 // limitations under the License.
 
 using System.Collections.Concurrent;
-using System.Data;
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
-using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 
@@ -27,12 +26,12 @@ namespace AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 /// </summary>
 public class ClusterTopologyMonitor : IClusterTopologyMonitor
 {
+    private static readonly ILogger<ClusterTopologyMonitor> Logger = LoggerUtils.GetLogger<ClusterTopologyMonitor>();
     protected const int DefaultTopologyQueryTimeoutMs = 1000;
 
     // Keep monitoring topology with a high rate for 30s after failover
     protected static readonly TimeSpan HighRefreshPeriodAfterPanic = TimeSpan.FromSeconds(30);
     protected static readonly TimeSpan IgnoreTopologyRequestDuration = TimeSpan.FromSeconds(10);
-    protected static readonly float CloseConnectionNetworkTimeout = 0.5f;
 
     protected readonly TimeSpan refreshRate;
     protected readonly TimeSpan highRefreshRate;
@@ -339,13 +338,12 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                     // Don't close this connection - it's now the monitoring connection
                     newConnection = null;
                 }
-
-                // If we reach here and newConnection != null, another thread won the race
             }
             catch (Exception ex)
             {
                 // Log the exception but don't rethrow
                 // The monitoring will continue to retry
+                Logger.LogError(ex, "Failed to open initial connection for cluster topology monitoring.");
             }
             finally
             {
