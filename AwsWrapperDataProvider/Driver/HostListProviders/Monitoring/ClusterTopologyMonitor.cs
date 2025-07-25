@@ -109,14 +109,20 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
     public async Task RunMonitoringLoop()
     {
+        Logger.LogInformation("Starting monitoring loop for cluster: {ClusterId}", this.clusterId);
+
         try
         {
             while (!this.cancellationTokenSource.Token.IsCancellationRequested)
             {
                 if (this.IsInPanicMode())
                 {
+                    Logger.LogWarning("Cluster {ClusterId} is in panic mode. Attempting to recover...", this.clusterId);
+
                     if (this.nodeThreads.IsEmpty)
                     {
+                        Logger.LogInformation("No active node threads for cluster {ClusterId}. Starting node threads...", this.clusterId);
+
                         // Start node threads
                         this.nodeThreadsStop = false;
                         this.nodeThreadsWriterConnection = null;
@@ -180,6 +186,8 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                 }
                 else
                 {
+                    Logger.LogInformation("Cluster {ClusterId} is in regular mode. Fetching topology...", this.clusterId);
+
                     // Regular mode (not panic mode)
                     if (!this.nodeThreads.IsEmpty)
                     {
@@ -190,6 +198,8 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                     var hosts = await this.FetchTopologyAndUpdateCacheAsync(this.monitoringConnection);
                     if (hosts == null)
                     {
+                        Logger.LogError("Failed to fetch topology for cluster {ClusterId}. Switching to panic mode.", this.clusterId);
+
                         // Can't get topology, switch to panic mode
                         var conn = Interlocked.Exchange(ref this.monitoringConnection, null);
                         this.isVerifiedWriterConnection = false;
@@ -213,10 +223,11 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         }
         catch (OperationCanceledException)
         {
-            // Expected when cancellation is requested
+            Logger.LogInformation("Monitoring loop for cluster {ClusterId} was canceled.", this.clusterId);
         }
         finally
         {
+            Logger.LogInformation("Cleaning up resources for cluster {ClusterId}.", this.clusterId);
             var conn = Interlocked.Exchange(ref this.monitoringConnection, null);
             this.CloseConnection(conn);
         }
@@ -259,6 +270,13 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
     {
         this.topologyMap.TryGetValue(this.clusterId, out IList<HostSpec>? currentHosts);
 
+        if (currentHosts != null)
+        {
+            Logger.LogDebug("Current topology for cluster {ClusterId}: {CurrentHosts}",
+                this.clusterId,
+                string.Join(", ", currentHosts.Select(h => h.Host)));
+        }
+
         lock (this.topologyUpdatedLock)
         {
             this.requestToUpdateTopology = true;
@@ -281,15 +299,20 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                 if (this.topologyMap.TryGetValue(this.clusterId, out IList<HostSpec>? latestHosts) &&
                     !ReferenceEquals(currentHosts, latestHosts))
                 {
+                    Logger.LogInformation("Topology updated for cluster {ClusterId}. New topology: {NewHosts}",
+                        this.clusterId,
+                        string.Join(", ", latestHosts!.Select(h => h.HostId + ": " + h.Role)));
                     return latestHosts!;
                 }
             }
         }
         catch (OperationCanceledException)
         {
+            Logger.LogWarning("Timeout occurred while waiting for topology update for cluster {ClusterId}.", this.clusterId);
             throw new TimeoutException($"Topology was not updated within {timeoutMs} milliseconds");
         }
 
+        Logger.LogError("Unable to update topology for cluster {ClusterId}.", this.clusterId);
         throw new Exception($"Unable to update Topology: {this.clusterId}");
     }
 
@@ -300,6 +323,8 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
     protected async Task<IList<HostSpec>?> OpenAnyConnectionAndUpdateTopologyAsync()
     {
+        Logger.LogInformation("Attempting to open a connection and update topology for cluster {ClusterId}.", this.clusterId);
+
         bool writerVerifiedByThisThread = false;
         if (this.monitoringConnection == null)
         {
@@ -341,9 +366,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             }
             catch (Exception ex)
             {
-                // Log the exception but don't rethrow
-                // The monitoring will continue to retry
-                Logger.LogError(ex, "Failed to open initial connection for cluster topology monitoring.");
+                Logger.LogError(ex, "Failed to open initial connection for cluster {ClusterId}.", this.clusterId);
             }
             finally
             {
@@ -377,6 +400,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
         if (hosts == null)
         {
+            Logger.LogWarning("Failed to fetch topology for cluster {ClusterId}. Closing connection.", this.clusterId);
             var connToClose = Interlocked.Exchange(ref this.monitoringConnection, null);
             this.isVerifiedWriterConnection = false;
             this.CloseConnection(connToClose);
@@ -568,16 +592,23 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                 hosts.Add(writers.OrderByDescending(x => x.LastUpdateTime).First());
             }
 
+            Logger.LogInformation("Topology query completed for cluster {ClusterId}. Found {HostCount} hosts: {Hosts}",
+                this.clusterId,
+                hosts.Count,
+                string.Join(", ", hosts.Select(h => h.HostId + ": " + h.Role)));
             return hosts;
         }
-        catch
+        catch (Exception ex)
         {
+            Logger.LogError(ex, "Error occurred while querying topology for cluster {ClusterId}.", this.clusterId);
             return null;
         }
     }
 
     public void Dispose()
     {
+        Logger.LogInformation("Disposing resources for cluster {ClusterId}.", this.clusterId);
+
         lock (this.disposeLock)
         {
             if (this.disposed)
@@ -605,6 +636,8 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
         this.cancellationTokenSource.Dispose();
         this.topologyUpdatedSemaphore.Dispose();
+
+        Logger.LogInformation("Resources disposed for cluster {ClusterId}.", this.clusterId);
     }
 
     private class NodeMonitoringTask(
