@@ -25,12 +25,11 @@ public class FailoverConnectivityTests
     [Trait("Category", "Manual")]
     public void FailoverPluginTest_WithStrictWriterMode()
     {
-        const string clusterEndpoint = "atlas-postgres.cluster-cx422ywmsto6.us-east-2.rds.amazonaws.com";
-        const string username = "pgadmin"; // Replace with your username
-        const string password = "my_password_2020"; // Replace with your password
-        const string database = "postgres"; // Replace with your database name
+        const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
+        const string username = "username"; // Replace with your username
+        const string password = "password"; // Replace with your password
+        const string database = "database"; // Replace with your database name
 
-        // Build connection string as simple string - AWS wrapper will parse it properly
         var connectionString = $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
                               $"Plugins=failover;FailoverMode=StrictWriter;EnableConnectFailover=true;";
         PerformFailoverTest(connectionString);
