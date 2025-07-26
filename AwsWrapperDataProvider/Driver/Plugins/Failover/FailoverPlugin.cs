@@ -102,21 +102,26 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
     public override T Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, params object[] methodArgs)
     {
+        Logger.LogDebug("Executing method {MethodName}.", methodName);
+
         if (this.pluginService.CurrentConnection != null
             && !this.CanDirectExecute(methodName)
             && !this.closedExplicitly
             && this.pluginService.CurrentConnection.State == ConnectionState.Closed)
         {
+            Logger.LogWarning("Connection is closed. Picking a new connection.");
             this.PickNewConnection();
         }
 
         if (this.CanDirectExecute(methodName))
         {
+            Logger.LogDebug("Direct execution allowed for method {MethodName}.", methodName);
             return methodFunc();
         }
 
         if (this.isClosed && !this.AllowedOnClosedConnection(methodName))
         {
+            Logger.LogError("Invalid invocation of method {MethodName} on a closed connection.", methodName);
             this.InvalidInvocationOnClosedConnection();
         }
 
@@ -126,7 +131,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
         }
         catch (Exception exception)
         {
-            // This handles runtime failover - when operations fail on existing connections
+            Logger.LogError(exception, "Exception during execution of method {MethodName}.", methodName);
             this.DealWithOriginalException(exception);
         }
 
@@ -230,25 +235,26 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
     private void DealWithOriginalException(Exception originalException)
     {
-        // Check if we should trigger failover for this exception
+        Logger.LogDebug("Processing exception: {ExceptionMessage}", originalException.Message);
+
         if (this.ShouldExceptionTriggerConnectionSwitch(originalException))
         {
-            // Avoid processing the same exception multiple times by checking if it's the exact same instance
-            // and if we've already dealt with it recently
+            Logger.LogWarning("Exception triggers failover: {ExceptionMessage}", originalException.Message);
+
             if (this.lastExceptionDealtWith == originalException)
             {
-                // Same exception instance already processed, don't retry failover
                 throw originalException;
             }
 
             this.InvalidateCurrentConnection();
+
             if (this.pluginService.CurrentHostSpec != null)
             {
+                Logger.LogInformation("Marking host {Host} as unavailable.", this.pluginService.CurrentHostSpec.Host);
                 this.pluginService.SetAvailability(this.pluginService.CurrentHostSpec.AsAliases(), HostAvailability.Unavailable);
             }
 
             this.PickNewConnection();
-
             this.lastExceptionDealtWith = originalException;
         }
 
@@ -257,6 +263,8 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
     private void Failover()
     {
+        Logger.LogInformation("Initiating failover in mode: {FailoverMode}.", this.failoverMode);
+
         if (this.failoverMode == FailoverMode.StrictWriter)
         {
             this.FailoverWriter();
@@ -269,15 +277,13 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
     private void FailoverReader()
     {
-        var failoverStartTime = DateTime.UtcNow;
-        var failoverEndTime = failoverStartTime.AddMilliseconds(this.failoverTimeoutMs);
-
-        // Force refresh host list without waiting for topology update
+        Logger.LogInformation("Starting reader failover process.");
         this.pluginService.ForceRefreshHostList(false, 0);
 
-        var result = this.GetReaderFailoverConnection(failoverEndTime);
-        this.pluginService.SetCurrentConnection(result.Connection, result.HostSpec);
+        var result = this.GetReaderFailoverConnection(DateTime.UtcNow.AddMilliseconds(this.failoverTimeoutMs));
+        Logger.LogInformation("Reader failover successful. Switching to host: {Host}.", result.HostSpec.Host);
 
+        this.pluginService.SetCurrentConnection(result.Connection, result.HostSpec);
         this.ThrowFailoverSuccessException();
     }
 
@@ -470,9 +476,10 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
     private void PickNewConnection()
     {
+        Logger.LogInformation("Picking a new connection.");
         if (this.isClosed && this.closedExplicitly)
         {
-            Logger.LogInformation("Failover connection closed explicitly.");
+            Logger.LogInformation("Connection was closed explicitly. No failover will be performed.");
             return;
         }
 
