@@ -648,7 +648,6 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         private readonly ClusterTopologyMonitor monitor = monitor;
         private readonly HostSpec hostSpec = hostSpec;
         private readonly HostSpec? writerHostSpec = writerHostSpec;
-        private readonly bool writerChanged = false;
 
         public async Task RunNodeMonitoringAsync(HostSpec hostSpec, HostSpec? writerHostSpec)
         {

@@ -32,9 +32,8 @@ namespace AwsWrapperDataProvider.Driver.Plugins.Failover;
 public class FailoverPlugin : AbstractConnectionPlugin
 {
     // Method names
-    private const string MethodAbort = "DbConnection.Abort";
     private const string MethodClose = "DbConnection.Close";
-    private const string MethodIsClosed = "DbConnection.IsClosed";
+    private const string MethodCloseAsync = "DbConnection.CloseAsync";
     private const string MethodDispose = "DbConnection.Dispose";
 
     private static readonly ILogger<FailoverPlugin> Logger = LoggerUtils.GetLogger<FailoverPlugin>();
@@ -92,7 +91,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
         this.props = props;
 
         // Initialize configuration settings using PropertyDefinition
-        this.failoverTimeoutMs = PropertyDefinition.FailoverTimeoutMs.GetInt(props) ?? 300000;
+        this.failoverTimeoutMs = (int)PropertyDefinition.FailoverTimeoutMs.GetInt(props)!;
         this.failoverMode = this.GetFailoverMode();
         this.failoverReaderHostSelectorStrategy = PropertyDefinition.ReaderHostSelectorStrategy.GetString(props)!;
         this.enableConnectFailover = PropertyDefinition.EnableConnectFailover.GetBoolean(props);
@@ -503,10 +502,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
     private bool CanDirectExecute(string methodName)
     {
-        return methodName == MethodClose ||
-               methodName == MethodIsClosed ||
-               methodName == MethodAbort ||
-               methodName == MethodDispose;
+        return methodName is MethodClose or MethodCloseAsync or MethodDispose;
     }
 
     private bool IsFailoverEnabled()
