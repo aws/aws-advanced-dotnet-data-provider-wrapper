@@ -12,11 +12,42 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using MySqlConnector;
+using Npgsql;
+
 namespace AwsWrapperDataProvider.Tests.Container.Utils;
 public class ConnectionStringHelper
 {
-    public static string GetUrl(string host, int port, string username, string password, string dbName)
+    public static string GetUrl(DatabaseEngine engine, string host, int port, string username, string password, string dbName)
     {
-        return $"Server={host};Port={port};User Id={username};Password={password};Database={dbName};Pooling=true;Min Pool Size=0;Max Pool Size=100;Connection Idle Lifetime=300;Ssl Mode=Preferred;";
+        switch (engine)
+            {
+            case DatabaseEngine.MYSQL:
+                MySqlConnectionStringBuilder mySqlConnectionStringBuilder = new()
+                {
+                    Server = host,
+                    Port = (uint)port,
+                    UserID = username,
+                    Password = password,
+                    Database = dbName,
+                    DefaultCommandTimeout = 30,
+                    ConnectionTimeout = 30,
+                };
+                return mySqlConnectionStringBuilder.ConnectionString;
+            case DatabaseEngine.PG:
+                NpgsqlConnectionStringBuilder npgsqlConnectionStringBuilder = new()
+                {
+                    Host = host,
+                    Port = port,
+                    Username = username,
+                    Password = password,
+                    Database = dbName,
+                    Timeout = 30,
+                    CommandTimeout = 30,
+                };
+                return npgsqlConnectionStringBuilder.ConnectionString;
+            default:
+                throw new NotSupportedException($"Unsupported database engine: {engine}");
+        }
     }
 }

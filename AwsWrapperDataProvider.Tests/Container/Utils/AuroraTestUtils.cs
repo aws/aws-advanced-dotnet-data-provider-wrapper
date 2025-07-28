@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Collections.Concurrent;
+using System.Data;
 using System.Data.Common;
 using Amazon;
 using Amazon.EC2;
@@ -109,7 +110,6 @@ public class AuroraTestUtils
         Console.WriteLine($"Cluster status (after wait): {status}");
     }
 
-
     public async Task MakeSureInstancesUpAsync(TimeSpan timeout)
     {
         var envInfo = TestEnvironment.Env.Info;
@@ -123,6 +123,7 @@ public class AuroraTestUtils
         var dbName = TestEnvironment.Env.Info.DatabaseInfo!.DefaultDbName;
         var username = TestEnvironment.Env.Info.DatabaseInfo!.Username;
         var password = TestEnvironment.Env.Info.DatabaseInfo!.Password;
+        var engine = TestEnvironment.Env.Info.Request!.Engine;
 
         foreach (var instance in instances)
         {
@@ -130,9 +131,7 @@ public class AuroraTestUtils
         }
 
         var tasks = new List<Task>();
-        var cts = new CancellationTokenSource(TimeSpan.FromSeconds(timeout));
-        var connectTimeout = 30;
-        var socketTimeout = 30;
+        var cts = new CancellationTokenSource(timeout);
 
         foreach (var instance in instances)
         {
@@ -140,28 +139,33 @@ public class AuroraTestUtils
             {
                 var host = instance.Host;
                 var port = instance.Port;
-                var url = ConnectionStringHelper.GetUrl(host, port, username, password, dbName);
+                var url = ConnectionStringHelper.GetUrl(engine, host, port, username, password, dbName);
 
                 while (!cts.Token.IsCancellationRequested)
                 {
                     try
                     {
-                        using var connection = new SqlConnection(url); // Replace with NpgsqlConnection if PostgreSQL
-                        connection.ConnectionTimeout = connectTimeout;
+                        using var connection = DriverHelper.CreateUnopenedConnection(engine, url);
                         await connection.OpenAsync(cts.Token);
-
-                        Console.WriteLine($"Host {host} is up.");
-                        if (host.Contains(".proxied"))
+                        if (connection.State == ConnectionState.Open)
                         {
-                            Console.WriteLine($"Proxied host {host} resolves to IP address {HostToIP(host)}");
-                        }
+                            Console.WriteLine($"Host {host} is up.");
+                            if (host.Contains(".proxied"))
+                            {
+                                Console.WriteLine($"Proxied host {host} resolves to IP address {this.HostToIP(host)}");
+                            }
 
-                        remainingInstances.TryRemove(host, out _);
-                        break;
+                            remainingInstances.TryRemove(host, out _);
+                            break;
+                        }
                     }
                     catch (DbException ex)
                     {
-                        Console.WriteLine($"Retrying connection to {host}: {ex.Message}");
+                        Console.WriteLine($"Exception while trying to connect to host {host}: {ex.Message}");
+                    }
+                    catch (TaskCanceledException)
+                    {
+                        break;
                     }
                     catch (Exception ex)
                     {
@@ -182,7 +186,14 @@ public class AuroraTestUtils
             cts.Token));
         }
 
-        await Task.WhenAll(tasks);
+        try
+        {
+            await Task.WhenAll(tasks);
+        }
+        catch (OperationCanceledException)
+        {
+            Console.WriteLine("Timed out while waiting for instances to come up.");
+        }
 
         if (!remainingInstances.IsEmpty)
         {
@@ -194,34 +205,6 @@ public class AuroraTestUtils
     {
         // Implement DNS resolution if needed
         return System.Net.Dns.GetHostAddresses(host).FirstOrDefault()?.ToString() ?? "Unknown";
-    }
-
-    public async Task<DBCluster?> GetDBClusterAsync(string clusterId)
-    {
-        int remainingTries = 5;
-        for (int i = 0; i < remainingTries; i++)
-        {
-            try
-            {
-                var response = await this.rdsClient.DescribeDBClustersAsync(
-                    new DescribeDBClustersRequest
-                {
-                    DBClusterIdentifier = clusterId,
-                });
-
-                return response.DBClusters.First();
-            }
-            catch (DBClusterNotFoundException)
-            {
-                return null;
-            }
-            catch (AmazonServiceException) when (i < 4)
-            {
-                // Retry
-            }
-        }
-
-        throw new Exception($"Unable to get DB cluster info for cluster with ID {clusterId}");
     }
 
     public async Task<DBInstance?> GetDBInstanceAsync(string instanceId)
@@ -246,5 +229,78 @@ public class AuroraTestUtils
         }
 
         throw new Exception($"Unable to get DB instance info for instance with ID {instanceId}");
+    }
+
+    public async Task<bool> IsDBInstanceWriterAsync(string instanceId)
+    {
+        return await IsDBInstanceWriterAsync(TestEnvironment.Env.Info.RdsDbName, instanceId);
+    }
+
+    public async Task<bool> IsDBInstanceWriterAsync(string clusterId, string instanceId)
+    {
+        var dbClusterMember = await GetMatchedDBClusterMemberAsync(clusterId, instanceId);
+        return dbClusterMember.IsClusterWriter.Value;
+    }
+
+    public async Task<DBClusterMember> GetMatchedDBClusterMemberAsync(string clusterId, string instanceId)
+    {
+        var members = await this.GetDBClusterMemberListAsync(clusterId);
+        var matchedMember = members.FirstOrDefault(m => m.DBInstanceIdentifier == instanceId);
+
+        if (matchedMember == null)
+        {
+            throw new InvalidOperationException($"Cannot find cluster member whose DB instance identifier is {instanceId}");
+        }
+
+        return matchedMember;
+    }
+
+    public async Task<List<DBClusterMember>> GetDBClusterMemberListAsync(string clusterId)
+    {
+        var cluster = await this.GetDBClusterAsync(clusterId);
+        if (cluster == null || cluster.DBClusterMembers == null)
+        {
+            throw new InvalidOperationException($"Unable to retrieve DB cluster members for cluster with ID {clusterId}");
+        }
+
+        return cluster.DBClusterMembers;
+    }
+
+    public async Task<DBCluster?> GetDBClusterAsync(string clusterId)
+    {
+        DescribeDBClustersResponse? response = null;
+        int remainingTries = 5;
+
+        while (remainingTries-- > 0)
+        {
+            try
+            {
+                response = await this.rdsClient.DescribeDBClustersAsync(
+                    new DescribeDBClustersRequest
+                    {
+                        DBClusterIdentifier = clusterId,
+                    });
+
+                break;
+            }
+            catch (DBClusterNotFoundException)
+            {
+                return null;
+            }
+            catch (AmazonServiceException)
+            {
+                if (remainingTries == 0)
+                {
+                    throw;
+                }
+            }
+        }
+
+        if (response == null || response.DBClusters.Count == 0)
+        {
+            throw new InvalidOperationException($"Unable to get DB cluster info for cluster with ID {clusterId}");
+        }
+
+        return response.DBClusters.First();
     }
 }

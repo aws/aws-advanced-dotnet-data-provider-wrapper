@@ -30,7 +30,6 @@ public class TestEnvironment
 
     public IReadOnlyCollection<Proxy> Proxies => this.proxies.Values;
 
-
     public async Task CheckClusterHealthAsync(bool makeSureFirstInstanceWriter)
     {
         var testInfo = TestEnvironment.Env.Info;

@@ -26,12 +26,13 @@ namespace AwsWrapperDataProvider.Tests
         [Trait("Category", "Integration")]
         public async Task MysqlWrapperCommandCancelTest()
         {
-            const string connectionString = "Server=<insert_rds_instance_here>;User ID=admin;Password=my_password_2020;Initial Catalog=test;";
+            const string connectionString = "Server=dev-yan-ams.cluster-cr28trhgdnv7.us-west-2.rds.amazonaws.com;User ID=admin;Password=password;Initial Catalog=test;Plugins=";
 
             using (AwsWrapperConnection<MySqlConnection> connection = new(connectionString))
             {
                 connection.Open();
                 AwsWrapperCommand<MySqlCommand> command = connection.CreateCommand<MySqlCommand>();
+                var command1 = connection.CreateCommand();
                 command.CommandText = "select sleep(60)";
 
                 var queryExecutionStopwatch = Stopwatch.StartNew();
@@ -86,7 +87,7 @@ namespace AwsWrapperDataProvider.Tests
         [Trait("Category", "Integration")]
         public async Task PgWrapperCommandCancelTest()
         {
-            const string connectionString = "Host=<insert_rds_instance_here>;Username=pgadmin;Password=my_password_2020;Database=postgres;";
+            const string connectionString = "Host=dev-yan-apg.cluster-cr28trhgdnv7.us-west-2.rds.amazonaws.com;Username=postgres;Password=postgres;Database=postgres;Plugins=;";
 
             using (AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString))
             {
