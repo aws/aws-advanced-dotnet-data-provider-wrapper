@@ -101,26 +101,21 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
     public override T Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, params object[] methodArgs)
     {
-        Logger.LogDebug("Executing method {MethodName}.", methodName);
-
         if (this.pluginService.CurrentConnection != null
             && !this.CanDirectExecute(methodName)
             && !this.closedExplicitly
             && this.pluginService.CurrentConnection.State == ConnectionState.Closed)
         {
-            Logger.LogWarning("Connection is closed. Picking a new connection.");
             this.PickNewConnection();
         }
 
         if (this.CanDirectExecute(methodName))
         {
-            Logger.LogDebug("Direct execution allowed for method {MethodName}.", methodName);
             return methodFunc();
         }
 
         if (this.isClosed && !this.AllowedOnClosedConnection(methodName))
         {
-            Logger.LogError("Invalid invocation of method {MethodName} on a closed connection.", methodName);
             this.InvalidInvocationOnClosedConnection();
         }
 
@@ -130,7 +125,6 @@ public class FailoverPlugin : AbstractConnectionPlugin
         }
         catch (Exception exception)
         {
-            Logger.LogError(exception, "Exception during execution of method {MethodName}.", methodName);
             this.DealWithOriginalException(exception);
         }
 
@@ -221,6 +215,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
         {
             this.isClosed = false;
             this.PickNewConnection();
+            Logger.LogWarning("Connection was closed but not explicitly. Attempting to pick a new connection.");
             throw new FailoverSuccessException("The active connection has changed. Please re-configure session state if required.");
         }
 
