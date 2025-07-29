@@ -162,7 +162,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
         var hostSpecWithAvailability = this.pluginService.GetHosts()
             .FirstOrDefault(x => x.Host == hostSpec.Host && x.Port == hostSpec.Port);
 
-        if (hostSpecWithAvailability == null || hostSpecWithAvailability.Availability != HostAvailability.Unavailable)
+        if (hostSpecWithAvailability is not { Availability: HostAvailability.Unavailable })
         {
             try
             {
