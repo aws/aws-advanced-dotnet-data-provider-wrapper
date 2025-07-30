@@ -30,10 +30,10 @@ public class TestEnvironment
 
     public IReadOnlyCollection<Proxy> Proxies => this.proxies.Values;
 
-    public async Task CheckClusterHealthAsync(bool makeSureFirstInstanceWriter)
+    public static async Task CheckClusterHealthAsync(bool makeSureFirstInstanceWriter)
     {
         var testInfo = TestEnvironment.Env.Info;
-        var testRequest = testInfo.Request;
+        var testRequest = testInfo.Request!;
 
         AuroraTestUtils auroraUtil = AuroraTestUtils.GetUtility(testInfo);
         await auroraUtil.WaitUntilClusterHasRightStateAsync(testInfo.RdsDbName!);
@@ -52,49 +52,71 @@ public class TestEnvironment
             {
                 await Task.Delay(5000);
 
-                try
-                {
-                    instanceIDs = await auroraUtil.GetAuroraInstanceIdsAsync();
-                }
-                catch (SqlException ex)
-                {
-                    if (ex.State.ToString() == POSTGRES_AUTH_ERROR_CODE)
-                        throw;
-
-                    instanceIDs = new List<string>();
-                }
+                instanceIDs = auroraUtil.GetAuroraInstanceIds();
             }
 
-            if (instanceIDs.Count == 0 || !await auroraUtil.IsDBInstanceWriterAsync(testInfo.RdsDbName, instanceIDs[0]))
-                throw new Exception("Writer instance validation failed.");
+            if (instanceIDs.Count == 0 || !await auroraUtil.IsDBInstanceWriterAsync(testInfo.RdsDbName!, instanceIDs[0]))
+            {
+                throw new Exception("First instance is not a writer.");
+            }
 
             var currentWriter = instanceIDs[0];
 
-            var dbInfo = testInfo.DatabaseInfo;
+            var dbInfo = testInfo.DatabaseInfo!;
             dbInfo.MoveInstanceFirst(currentWriter);
-            testInfo.ProxyDatabaseInfo.MoveInstanceFirst(currentWriter);
+            testInfo.ProxyDatabaseInfo!.MoveInstanceFirst(currentWriter);
 
-            var dnsOk = await auroraUtil.WaitDnsEqualAsync(
+            var dnsOk = auroraUtil.WaitForDnsCondition(
                 dbInfo.ClusterEndpoint,
                 dbInfo.Instances[0].Host,
                 TimeSpan.FromMinutes(5),
+                true,
                 false);
 
             if (!dnsOk)
+            {
                 throw new Exception("Cluster endpoint isn't updated.");
+            }
 
             if (instanceIDs.Count > 1)
             {
-                var dnsROOk = await auroraUtil.WaitDnsNotEqualAsync(
+                // Wait for cluster RO endpoint to resolve NOT to the writer
+                var dnsROOk = auroraUtil.WaitForDnsCondition(
                     dbInfo.ClusterReadOnlyEndpoint,
                     dbInfo.Instances[0].Host,
                     TimeSpan.FromMinutes(5),
+                    false,
                     false);
 
                 if (!dnsROOk)
+                {
                     throw new Exception("Cluster RO endpoint isn't updated.");
+                }
             }
         }
+    }
+
+    public static async Task RebootAllClusterInstancesAsync()
+    {
+        var testInfo = Env.Info;
+        var auroraUtil = AuroraTestUtils.GetUtility(testInfo);
+        var instancesIDs = testInfo.DatabaseInfo!.Instances.Select(i => i.InstanceId);
+
+        await auroraUtil.WaitUntilClusterHasRightStateAsync(testInfo.RdsDbName!);
+
+        foreach (var instanceId in instancesIDs)
+        {
+            await auroraUtil.RebootInstanceAsync(instanceId);
+        }
+
+        await auroraUtil.WaitUntilClusterHasRightStateAsync(testInfo.RdsDbName!);
+
+        foreach (var instanceId in instancesIDs)
+        {
+            await auroraUtil.WaitUntilInstanceHasRightStateAsync(instanceId);
+        }
+
+        await auroraUtil.MakeSureInstancesUpAsync(TimeSpan.FromMinutes(10));
     }
 
     private static TestEnvironment Create()
@@ -104,7 +126,7 @@ public class TestEnvironment
 
         try
         {
-            JsonSerializerOptions options = new JsonSerializerOptions
+            JsonSerializerOptions options = new()
             {
                 PropertyNameCaseInsensitive = true,
             };

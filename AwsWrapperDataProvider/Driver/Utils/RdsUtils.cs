@@ -235,4 +235,19 @@ public static partial class RdsUtils
     {
         CachedPatterns.Clear();
     }
+
+    public static bool IsIp(string ip)
+    {
+        return IsIpV4(ip) || IsIpV6(ip);
+    }
+
+    public static bool IsIpV4(string ip)
+    {
+        return IpV4Pattern().IsMatch(ip);
+    }
+
+    public static bool IsIpV6(string ip)
+    {
+        return IpV6Pattern().IsMatch(ip) || IpV6CompressedPattern().IsMatch(ip);
+    }
 }

@@ -20,205 +20,197 @@ using Npgsql;
 
 namespace AwsWrapperDataProvider.Tests.Container.Tests;
 
-public class BasicConnectivityTests
+public class BasicConnectivityTests : IAsyncLifetime
 {
+    private readonly string defaultDbName = TestEnvironment.Env.Info.DatabaseInfo!.DefaultDbName;
+    private readonly string username = TestEnvironment.Env.Info.DatabaseInfo!.Username;
+    private readonly string password = TestEnvironment.Env.Info.DatabaseInfo!.Password;
+    private readonly DatabaseEngine engine = TestEnvironment.Env.Info.Request!.Engine;
+    private readonly string clusterEndpoint = TestEnvironment.Env.Info.DatabaseInfo!.ClusterEndpoint;
+    private readonly int port = TestEnvironment.Env.Info.DatabaseInfo!.ClusterEndpointPort;
+
+    public async ValueTask InitializeAsync()
+    {
+        if (TestEnvironment.Env.Info.Request!.Features.Contains(TestEnvironmentFeatures.NETWORK_OUTAGES_ENABLED))
+        {
+            ProxyHelper.EnableAllConnectivity();
+        }
+
+        var deployment = TestEnvironment.Env.Info.Request.Deployment;
+        if (deployment == DatabaseEngineDeployment.AURORA || deployment == DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER)
+        {
+            int remainingTries = 3;
+            bool success = false;
+
+            while (remainingTries-- > 0 && !success)
+            {
+                try
+                {
+                    await TestEnvironment.CheckClusterHealthAsync(false);
+                    success = true;
+                }
+                catch (Exception)
+                {
+                    switch (deployment)
+                    {
+                        case DatabaseEngineDeployment.AURORA:
+                            await TestEnvironment.RebootAllClusterInstancesAsync();
+                            break;
+                        default:
+                            throw new InvalidOperationException($"Unsupported deployment {deployment}");
+                    }
+
+                    Console.WriteLine($"Remaining attempts: {remainingTries}");
+                }
+            }
+
+            if (!success)
+            {
+                throw new Exception($"Cluster {TestEnvironment.Env.Info.RdsDbName} is not healthy.");
+            }
+
+            Console.WriteLine($"Cluster {TestEnvironment.Env.Info.RdsDbName} is healthy.");
+        }
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        return ValueTask.CompletedTask;
+    }
+
+    public BasicConnectivityTests()
+    {
+    }
+
     [Fact]
     [Trait("Category", "Integration")]
+    [Trait("Database", "mysql")]
     public void MySqlClientWrapperConnectionTest()
     {
-        TestEnvironment.Env.ToString();
-        const string connectionString = "Server=127.0.0.1;User ID=root;Password=password;Initial Catalog=mysql;";
-        const string query = "select * from test";
+        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, this.username, this.password, this.defaultDbName);
+        const string query = "select 1";
 
-        using (AwsWrapperConnection<MySql.Data.MySqlClient.MySqlConnection> connection =
-               new(connectionString))
+        using AwsWrapperConnection<MySql.Data.MySqlClient.MySqlConnection> connection = new(connectionString);
+        AwsWrapperCommand<MySql.Data.MySqlClient.MySqlCommand> command = connection.CreateCommand<MySql.Data.MySqlClient.MySqlCommand>();
+        command.CommandText = query;
+        connection.Open();
+        IDataReader reader = command.ExecuteReader();
+        while (reader.Read())
         {
-            AwsWrapperCommand<MySql.Data.MySqlClient.MySqlCommand> command = connection.CreateCommand<MySql.Data.MySqlClient.MySqlCommand>();
-            command.CommandText = query;
-
-            try
-            {
-                connection.Open();
-                IDataReader reader = command.ExecuteReader();
-                while (reader.Read())
-                {
-                    Console.WriteLine(reader.GetInt32(0));
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.ToString());
-            }
+            Assert.Equal(1, reader.GetInt32(0));
         }
     }
 
     [Fact]
     [Trait("Category", "Integration")]
+    [Trait("Database", "mysql")]
     public void MySqlConnectorWrapperConnectionTest()
     {
-        const string connectionString = "Server=localhost;Port=3306;User ID=root;Password=password;Initial Catalog=mysql;";
-        const string query = "select @@aurora_server_id";
+        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, this.username, this.password, this.defaultDbName);
+        const string query = "select 1";
 
-        using (AwsWrapperConnection<MySqlConnection> connection = new(connectionString))
+        using AwsWrapperConnection<MySqlConnection> connection = new(connectionString);
+        AwsWrapperCommand<MySqlCommand> command = connection.CreateCommand<MySqlCommand>();
+        command.CommandText = query;
+        connection.Open();
+        IDataReader reader = command.ExecuteReader();
+        while (reader.Read())
         {
-            AwsWrapperCommand<MySqlCommand> command = connection.CreateCommand<MySqlCommand>();
-            command.CommandText = query;
-
-            // Alternative syntax
-            // IDbCommand command = connection.CreateCommand();
-            // command.CommandText = query;
-
-            // Alternative syntax
-            // AwsWrapperCommand2 command = connection.CreateCommand();
-            // command.CommandText = query;
-
-            // Alternative syntax
-            // AwsWrapperCommand2<MySqlCommand> command = new AwsWrapperCommand2<MySqlCommand>(query, connection);
-
-            // Alternative syntax
-            // AwsWrapperCommand2<MySqlCommand> command = new();
-            // command.Connection = connection;
-            // command.CommandText = query;
-
-            try
-            {
-                connection.Open();
-                IDataReader reader = command.ExecuteReader();
-                while (reader.Read())
-                {
-                    Console.WriteLine(reader.GetInt32(0));
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.ToString());
-            }
+            Assert.Equal(1, reader.GetInt32(0));
         }
     }
 
     [Fact]
     [Trait("Category", "Integration")]
+    [Trait("Database", "mysql")]
     public void MysqlWrapperConnectionDynamicTest()
     {
-        const string connectionString = "Server=<insert_rds_instance_here>;User ID=admin;Password=my_password_2020;Initial Catalog=test;" +
-            "TargetConnectionType=MySqlConnector.MySqlConnection,MySqlConnector;" +
-            "TargetCommandType=MySqlConnector.MySqlCommand,MySqlConnector";
+        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, this.username, this.password, this.defaultDbName);
+        connectionString = $"{connectionString};" +
+            $"TargetConnectionType=MySqlConnector.MySqlConnection,MySqlConnector;" +
+            $"TargetCommandType=MySqlConnector.MySqlCommand,MySqlConnector";
 
-        const string query = "select @@aurora_server_id";
+        const string query = "select 1";
 
-        using (AwsWrapperConnection connection = new(connectionString))
+        using AwsWrapperConnection connection = new(connectionString);
+        IDbCommand command = connection.CreateCommand();
+        command.CommandText = query;
+
+        connection.Open();
+        IDataReader reader = command.ExecuteReader();
+        while (reader.Read())
         {
-            IDbCommand command = connection.CreateCommand();
-            command.CommandText = query;
-
-            try
-            {
-                connection.Open();
-                IDataReader reader = command.ExecuteReader();
-                while (reader.Read())
-                {
-                    Console.WriteLine(reader.GetString(0));
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.ToString());
-            }
+            Assert.Equal(1, reader.GetInt32(0));
         }
     }
 
     [Fact]
     [Trait("Category", "Integration")]
+    [Trait("Database", "mysql")]
     public void MysqlWrapperConnectionWithParametersTest()
     {
-        const string connectionString = "Server=<insert_rds_instance_here>;User ID=admin;Password=my_password_2020;Initial Catalog=test;";
+        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, this.username, this.password, this.defaultDbName);
         const string query = "select @var1";
 
-        using (AwsWrapperConnection<MySqlConnection> connection = new(connectionString))
+        using AwsWrapperConnection<MySqlConnection> connection = new(connectionString);
+        AwsWrapperCommand<MySqlCommand> command = connection.CreateCommand<MySqlCommand>();
+        command.CommandText = query;
+
+        DbParameter dbParameter = command.CreateParameter();
+        dbParameter.ParameterName = "@var1";
+        dbParameter.DbType = DbType.String;
+        dbParameter.Value = "qwerty";
+        command.Parameters.Add(dbParameter);
+
+        connection.Open();
+        IDataReader reader = command.ExecuteReader();
+        while (reader.Read())
         {
-            AwsWrapperCommand<MySqlCommand> command = connection.CreateCommand<MySqlCommand>();
-            command.CommandText = query;
-
-            DbParameter dbParameter = command.CreateParameter();
-            dbParameter.ParameterName = "@var1";
-            dbParameter.DbType = DbType.String;
-            dbParameter.Value = "qwerty";
-            command.Parameters.Add(dbParameter);
-
-            try
-            {
-                connection.Open();
-                IDataReader reader = command.ExecuteReader();
-                while (reader.Read())
-                {
-                    Console.WriteLine(reader.GetString(0));
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.ToString());
-            }
+            Assert.Equal("qwerty", reader.GetString(0));
         }
     }
 
     [Fact]
     [Trait("Category", "Integration")]
+    [Trait("Database", "pg")]
     public void PgWrapperConnectionTest()
     {
-        const string connectionString =
-            "Host=<insert_rds_instance_here>;Username=pgadmin;Password=my_password_2020;Database=postgres;";
-        const string query = "select aurora_db_instance_identifier()";
+        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, this.username, this.password, this.defaultDbName);
+        const string query = "select 1";
 
-        using (AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString))
+        using AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
+        AwsWrapperCommand<NpgsqlCommand> command = connection.CreateCommand<NpgsqlCommand>();
+        command.CommandText = query;
+
+        connection.Open();
+        IDataReader reader = command.ExecuteReader();
+        while (reader.Read())
         {
-            AwsWrapperCommand<NpgsqlCommand> command = connection.CreateCommand<NpgsqlCommand>();
-            command.CommandText = query;
-
-            try
-            {
-                connection.Open();
-                IDataReader reader = command.ExecuteReader();
-                while (reader.Read())
-                {
-                    Console.WriteLine(reader.GetString(0));
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.ToString());
-            }
+            Assert.Equal(1, reader.GetInt32(0));
         }
     }
 
     [Fact]
     [Trait("Category", "Integration")]
+    [Trait("Database", "pg")]
     public void OpenPgWrapperConnectionDynamicTest()
     {
-        const string connectionString =
-            "Host=<insert_rds_instance_here>;Username=pgadmin;Password=my_password_2020;Database=postgres;" +
+        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, this.username, this.password, this.defaultDbName);
+        connectionString = $"{connectionString}" +
             "TargetConnectionType=Npgsql.NpgsqlConnection,Npgsql;" +
             "TargetCommandType=Npgsql.NpgsqlCommand,Npgsql";
 
-        const string query = "select aurora_db_instance_identifier()";
+        const string query = "select 1";
 
-        using (AwsWrapperConnection connection = new(connectionString))
+        using AwsWrapperConnection connection = new(connectionString);
+        IDbCommand command = connection.CreateCommand();
+        command.CommandText = query;
+
+        connection.Open();
+        IDataReader reader = command.ExecuteReader();
+        while (reader.Read())
         {
-            IDbCommand command = connection.CreateCommand();
-            command.CommandText = query;
-
-            try
-            {
-                connection.Open();
-                IDataReader reader = command.ExecuteReader();
-                while (reader.Read())
-                {
-                    Console.WriteLine(reader.GetString(0));
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.ToString());
-            }
+            Assert.Equal(1, reader.GetInt32(0));
         }
     }
 }

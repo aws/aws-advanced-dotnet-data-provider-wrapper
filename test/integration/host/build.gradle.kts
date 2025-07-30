@@ -83,7 +83,7 @@ tasks.withType<Test> {
 
 tasks.register<Test>("test-all-mysql-aurora") {
     group = "verification"
-    filter.includeTestsMatching("integration.host.TestRunner.runTests")
+    filter.includeTestsMatching("integration.host.TestRunner.runMySQLTests")
     doFirst {
         systemProperty("test-no-docker", "true")
         systemProperty("test-no-performance", "true")
@@ -98,7 +98,7 @@ tasks.register<Test>("test-all-mysql-aurora") {
 
 tasks.register<Test>("test-all-pg-aurora") {
     group = "verification"
-    filter.includeTestsMatching("integration.host.TestRunner.runTests")
+    filter.includeTestsMatching("integration.host.TestRunner.runPGTests")
     doFirst {
         systemProperty("test-no-docker", "true")
         systemProperty("test-no-performance", "true")

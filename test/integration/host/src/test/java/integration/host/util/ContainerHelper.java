@@ -99,7 +99,9 @@ public class ContainerHelper {
     Consumer<OutputFrame> consumer = new ConsoleConsumer(true);
     execInContainer(container, consumer, "printenv", "TEST_ENV_DESCRIPTION");
 
-    Long exitCode = execInContainer(container, consumer, "dotnet", "test", "--filter", "Category!=Integration");
+    Long exitCode = execInContainer(container, consumer, "dotnet", "test", "--filter",
+            "Category=Integration&Database=" + task);
+
     System.out.println("==== Container console feed ==== <<<<");
     assertEquals(0, exitCode, "Some tests failed.");
   }

@@ -15,6 +15,8 @@
 using System.Collections.Concurrent;
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics;
+using System.Net;
 using Amazon;
 using Amazon.EC2;
 using Amazon.EC2.Model;
@@ -22,6 +24,7 @@ using Amazon.RDS;
 using Amazon.RDS.Model;
 using Amazon.Runtime;
 using Amazon.Runtime.Credentials;
+using AwsWrapperDataProvider.Driver.Utils;
 
 namespace AwsWrapperDataProvider.Tests.Container.Utils;
 public class AuroraTestUtils
@@ -90,12 +93,13 @@ public class AuroraTestUtils
     public async Task WaitUntilClusterHasRightStateAsync(string clusterId, params string[] allowedStatuses)
     {
         var allowedStatusSet = new HashSet<string>(allowedStatuses.Select(s => s.ToLower()));
-        var waitUntil = DateTime.UtcNow.AddMinutes(15);
+        var timeout = TimeSpan.FromMinutes(15);
+        var stopwatch = Stopwatch.StartNew();
 
-        string? status = (await this.GetDBClusterAsync(clusterId))?.Status;
+        string status = (await this.GetDBClusterAsync(clusterId))!.Status;
         Console.WriteLine($"Cluster status: {status}, waiting for: {string.Join(", ", allowedStatuses)}");
 
-        while (!allowedStatusSet.Contains(status?.ToLower()) && DateTime.UtcNow < waitUntil)
+        while (!allowedStatusSet.Contains(status.ToLower()) && stopwatch.Elapsed < timeout)
         {
             await Task.Delay(1000);
             var tmpStatus = (await this.GetDBClusterAsync(clusterId))?.Status;
@@ -108,6 +112,31 @@ public class AuroraTestUtils
         }
 
         Console.WriteLine($"Cluster status (after wait): {status}");
+    }
+
+    public async Task WaitUntilInstanceHasRightStateAsync(string instanceId, params string[] allowedStatuses)
+    {
+        string status = (await this.GetDBInstanceAsync(instanceId))!.DBInstanceStatus;
+        Console.WriteLine($"Instance {instanceId} status: {status}, waiting for status: {string.Join(", ", allowedStatuses)}");
+
+        var allowedStatusSet = new HashSet<string>(allowedStatuses.Select(s => s.ToLower()));
+        var timeout = TimeSpan.FromMinutes(15);
+        var stopwatch = Stopwatch.StartNew();
+
+        while (!allowedStatusSet.Contains(status.ToLower()) && stopwatch.Elapsed < timeout)
+        {
+            await Task.Delay(1000);
+            string tmpStatus = (await this.GetDBInstanceAsync(instanceId))!.DBInstanceStatus;
+
+            if (!tmpStatus.Equals(status, StringComparison.OrdinalIgnoreCase))
+            {
+                Console.WriteLine($"Instance {instanceId} status (waiting): {tmpStatus}");
+            }
+
+            status = tmpStatus;
+        }
+
+        Console.WriteLine($"Instance {instanceId} status (after wait): {status}");
     }
 
     public async Task MakeSureInstancesUpAsync(TimeSpan timeout)
@@ -152,7 +181,7 @@ public class AuroraTestUtils
                             Console.WriteLine($"Host {host} is up.");
                             if (host.Contains(".proxied"))
                             {
-                                Console.WriteLine($"Proxied host {host} resolves to IP address {this.HostToIP(host)}");
+                                Console.WriteLine($"Proxied host {host} resolves to IP address {this.HostToIP(host, true)}");
                             }
 
                             remainingInstances.TryRemove(host, out _);
@@ -201,10 +230,36 @@ public class AuroraTestUtils
         }
     }
 
-    private string HostToIP(string host)
+    public string? HostToIP(string hostname, bool fail)
     {
-        // Implement DNS resolution if needed
-        return System.Net.Dns.GetHostAddresses(host).FirstOrDefault()?.ToString() ?? "Unknown";
+        int remainingTries = 5;
+        string ipAddress;
+
+        while (remainingTries-- > 0)
+        {
+            try
+            {
+                var inet = Dns.GetHostEntry(hostname);
+                if (inet.AddressList.Length > 0)
+                {
+                    ipAddress = inet.AddressList[0].ToString();
+                    return ipAddress;
+                }
+            }
+            catch (Exception)
+            {
+                // Swallow exception, retry
+            }
+
+            Thread.Sleep(TimeSpan.FromSeconds(1));
+        }
+
+        if (remainingTries <= 0 && fail)
+        {
+            throw new Exception($"The IP address of host {hostname} could not be determined");
+        }
+
+        return null;
     }
 
     public async Task<DBInstance?> GetDBInstanceAsync(string instanceId)
@@ -233,12 +288,17 @@ public class AuroraTestUtils
 
     public async Task<bool> IsDBInstanceWriterAsync(string instanceId)
     {
-        return await IsDBInstanceWriterAsync(TestEnvironment.Env.Info.RdsDbName, instanceId);
+        return await this.IsDBInstanceWriterAsync(TestEnvironment.Env.Info.RdsDbName!, instanceId);
     }
 
     public async Task<bool> IsDBInstanceWriterAsync(string clusterId, string instanceId)
     {
-        var dbClusterMember = await GetMatchedDBClusterMemberAsync(clusterId, instanceId);
+        var dbClusterMember = await this.GetMatchedDBClusterMemberAsync(clusterId, instanceId);
+        if (dbClusterMember.IsClusterWriter == null)
+        {
+            throw new InvalidOperationException($"DBClusterMember.IsClusterWriter is null for instance {instanceId} in cluster {clusterId}.");
+        }
+
         return dbClusterMember.IsClusterWriter.Value;
     }
 
@@ -303,4 +363,140 @@ public class AuroraTestUtils
 
         return response.DBClusters.First();
     }
+
+    public List<string> GetAuroraInstanceIds()
+    {
+        var databaseEngine = TestEnvironment.Env.Info.Request!.Engine;
+        var deployment = TestEnvironment.Env.Info.Request!.Deployment;
+        var dbName = TestEnvironment.Env.Info.DatabaseInfo!.DefaultDbName;
+        var username = TestEnvironment.Env.Info.DatabaseInfo!.Username;
+        var password = TestEnvironment.Env.Info.DatabaseInfo!.Password;
+        var host = TestEnvironment.Env.Info.DatabaseInfo.Instances[0].Host;
+        var port = TestEnvironment.Env.Info.DatabaseInfo.Instances[0].Port;
+        var connectionUrl = ConnectionStringHelper.GetUrl(databaseEngine, host, port, username, password, dbName);
+        string retrieveTopologySql;
+
+        switch (deployment)
+        {
+            case DatabaseEngineDeployment.AURORA:
+                switch (databaseEngine)
+                {
+                    case DatabaseEngine.MYSQL:
+                        retrieveTopologySql =
+                            "SELECT SERVER_ID, SESSION_ID FROM information_schema.replica_host_status " +
+                            "ORDER BY IF(SESSION_ID = 'MASTER_SESSION_ID', 0, 1)";
+                        break;
+                    case DatabaseEngine.PG:
+                        retrieveTopologySql =
+                            "SELECT SERVER_ID, SESSION_ID FROM aurora_replica_status() " +
+                            "ORDER BY CASE WHEN SESSION_ID = 'MASTER_SESSION_ID' THEN 0 ELSE 1 END";
+                        break;
+                    default:
+                        throw new NotSupportedException(databaseEngine.ToString());
+                }
+
+                break;
+
+            default:
+                throw new NotSupportedException(deployment.ToString());
+        }
+
+        var auroraInstances = new List<string>();
+
+        using var connection = DriverHelper.CreateUnopenedConnection(databaseEngine, connectionUrl);
+        connection.Open();
+        using var command = connection.CreateCommand();
+        command.CommandText = retrieveTopologySql;
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            auroraInstances.Add(reader.GetString(reader.GetOrdinal("SERVER_ID")));
+        }
+
+        return auroraInstances;
+    }
+
+    public bool WaitForDnsCondition(string hostToCheck, string targetHostIpOrName, TimeSpan timeout, bool expectEqual, bool fail)
+    {
+        string? hostIpAddress = this.HostToIP(hostToCheck, false);
+        if (hostIpAddress == null)
+        {
+            var startTime = Stopwatch.StartNew();
+            while (hostIpAddress == null && startTime.Elapsed < timeout)
+            {
+                Thread.Sleep(TimeSpan.FromSeconds(5));
+                hostIpAddress = this.HostToIP(hostToCheck, false);
+            }
+
+            if (hostIpAddress == null)
+            {
+                throw new Exception($"Can't get IP address for {hostToCheck}");
+            }
+        }
+
+        string? expectedHostIpAddress = RdsUtils.IsIp(targetHostIpOrName)
+            ? targetHostIpOrName
+            : this.HostToIP(targetHostIpOrName, true);
+
+        Console.WriteLine($"Wait for {hostToCheck} (current IP address {hostIpAddress}) resolves to {targetHostIpOrName} (IP address {expectedHostIpAddress})");
+
+        var checkStartTime = Stopwatch.StartNew();
+        var stillNotExpected = expectEqual ? expectedHostIpAddress != hostIpAddress : expectedHostIpAddress == hostIpAddress;
+        while (stillNotExpected && checkStartTime.Elapsed < timeout)
+        {
+            Thread.Sleep(TimeSpan.FromSeconds(5));
+            hostIpAddress = this.HostToIP(hostToCheck, false);
+            Console.WriteLine($"{hostToCheck} resolves to {hostIpAddress}");
+        }
+
+        bool result = expectEqual ? expectedHostIpAddress == hostIpAddress : expectedHostIpAddress != hostIpAddress;
+        if (fail && !result)
+        {
+            throw new Exception("DNS resolution did not match expected value.");
+        }
+
+        Console.WriteLine("Completed.");
+        return result;
+    }
+
+    public async Task RebootInstanceAsync(string instanceId)
+    {
+        int remainingAttempts = 5;
+
+        while (--remainingAttempts > 0)
+        {
+            try
+            {
+                var response = await this.rdsClient.RebootDBInstanceAsync(
+                    new RebootDBInstanceRequest
+                    {
+                        DBInstanceIdentifier = instanceId,
+                    });
+
+                if (!IsSuccessfulResponse(response))
+                {
+                    Console.WriteLine($"rebootDBInstance for {instanceId} response: {response.HttpStatusCode}");
+                }
+                else
+                {
+                    Console.WriteLine($"rebootDBInstance for {instanceId} request is sent");
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"rebootDBInstance '{instanceId}' instance request failed: {ex.Message}");
+                await Task.Delay(1000);
+            }
+        }
+
+        throw new InvalidOperationException($"Failed to request an instance {instanceId} reboot.");
+    }
+
+    public static bool IsSuccessfulResponse(AmazonWebServiceResponse response)
+    {
+        int statusCode = (int)response.HttpStatusCode;
+        return statusCode >= 200 && statusCode < 300;
+    }
+
 }
