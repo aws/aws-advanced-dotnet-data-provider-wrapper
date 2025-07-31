@@ -158,5 +158,125 @@ namespace AwsWrapperDataProvider.Properties {
                 return ResourceManager.GetString("Error_TargetConnectionTypeNotFound", resourceCulture);
             }
         }
+        
+        internal static string ClusterTopologyMonitor_StartMonitoringThread {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor.StartMonitoringThread", resourceCulture);
+            }
+        }
+        
+        internal static string ClusterTopologyMonitor_StopMonitoringThread {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor.StopMonitoringThread", resourceCulture);
+            }
+        }
+        
+        internal static string ClusterTopologyMonitor_ExceptionDuringMonitoringStop {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor.ExceptionDuringMonitoringStop", resourceCulture);
+            }
+        }
+        
+        internal static string ClusterTopologyMonitor_InvalidQuery {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor.InvalidQuery", resourceCulture);
+            }
+        }
+        
+        internal static string ClusterTopologyMonitor_ErrorGettingNetworkTimeout {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor.ErrorGettingNetworkTimeout", resourceCulture);
+            }
+        }
+        
+        internal static string ClusterTopologyMonitor_InvalidTopology {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor.InvalidTopology", resourceCulture);
+            }
+        }
+        
+        internal static string ClusterTopologyMonitor_TopologyNotUpdated {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor.TopologyNotUpdated", resourceCulture);
+            }
+        }
+        
+        internal static string ClusterTopologyMonitor_OpenedMonitoringConnection {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor.OpenedMonitoringConnection", resourceCulture);
+            }
+        }
+        
+        internal static string ClusterTopologyMonitor_IgnoringTopologyRequest {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor.IgnoringTopologyRequest", resourceCulture);
+            }
+        }
+        
+        internal static string ClusterTopologyMonitor_TimeoutSetToZero {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor.TimeoutSetToZero", resourceCulture);
+            }
+        }
+        
+        internal static string ClusterTopologyMonitor_Interrupted {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor.Interrupted", resourceCulture);
+            }
+        }
+        
+        internal static string ClusterTopologyMonitor_StartingNodeMonitoringThreads {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor.StartingNodeMonitoringThreads", resourceCulture);
+            }
+        }
+        
+        internal static string ClusterTopologyMonitor_WriterPickedUpFromNodeMonitors {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor.WriterPickedUpFromNodeMonitors", resourceCulture);
+            }
+        }
+        
+        internal static string ClusterTopologyMonitor_WriterMonitoringConnection {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor.WriterMonitoringConnection", resourceCulture);
+            }
+        }
+        
+        internal static string ClusterTopologyMonitor_ErrorFetchingTopology {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor.ErrorFetchingTopology", resourceCulture);
+            }
+        }
+        
+        internal static string ClusterTopologyMonitor_ErrorProcessingQueryResults {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor.ErrorProcessingQueryResults", resourceCulture);
+            }
+        }
+        
+        internal static string ClusterTopologyMonitor_UnexpectedTopologyQueryColumnCount {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor.UnexpectedTopologyQueryColumnCount", resourceCulture);
+            }
+        }
+        
+        internal static string NodeMonitoringTask_DetectedWriter {
+            get {
+                return ResourceManager.GetString("NodeMonitoringTask_DetectedWriter", resourceCulture);
+            }
+        }
+        
+        internal static string NodeMonitoringTask_ThreadCompleted {
+            get {
+                return ResourceManager.GetString("NodeMonitoringTask_ThreadCompleted", resourceCulture);
+            }
+        }
+        
+        internal static string NodeMonitoringTask_WriterNodeChanged {
+            get {
+                return ResourceManager.GetString("NodeMonitoringTask_WriterNodeChanged", resourceCulture);
+            }
+        }
     }
 }

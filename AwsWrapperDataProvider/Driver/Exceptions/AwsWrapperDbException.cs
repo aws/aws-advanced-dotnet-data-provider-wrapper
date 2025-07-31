@@ -14,23 +14,25 @@
 
 using System.Data.Common;
 
-namespace AwsWrapperDataProvider.Driver.Plugins.Failover;
+namespace AwsWrapperDataProvider.Driver.Exceptions;
 
-/// <summary>
-/// Exception thrown when a failover occurs during a transaction and the transaction state becomes unknown.
-/// This indicates that the application should re-configure session state and restart the transaction.
-/// </summary>
-public class TransactionStateUnknownException : DbException
+public class AwsWrapperDbException : DbException
 {
-    public TransactionStateUnknownException() : base("Transaction state is unknown after failover")
+    public AwsWrapperDbException(string message)
+        : base(message)
     {
     }
 
-    public TransactionStateUnknownException(string message) : base(message)
+    public AwsWrapperDbException(string message, Exception innerException)
+        : base(message, innerException)
     {
     }
 
-    public TransactionStateUnknownException(string message, Exception innerException) : base(message, innerException)
+    public AwsWrapperDbException(string message, string sqlState)
+        : base(message)
     {
+        this.SqlState = sqlState;
     }
+
+    public new string? SqlState { get; set; }
 }

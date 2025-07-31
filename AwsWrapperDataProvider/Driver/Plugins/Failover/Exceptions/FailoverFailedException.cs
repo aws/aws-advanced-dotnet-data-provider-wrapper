@@ -12,12 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data.Common;
+
 namespace AwsWrapperDataProvider.Driver.Plugins.Failover;
 
 /// <summary>
 /// Exception thrown when a failover operation fails to complete successfully.
 /// </summary>
-public class FailoverFailedException : Exception
+public class FailoverFailedException : DbException
 {
     public FailoverFailedException() : base("Failover operation failed")
     {
