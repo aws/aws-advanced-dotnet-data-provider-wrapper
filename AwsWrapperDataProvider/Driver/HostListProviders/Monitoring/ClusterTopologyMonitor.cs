@@ -14,8 +14,6 @@
 
 using System.Collections.Concurrent;
 using System.Data.Common;
-using Amazon.Auth.AccessControlPolicy;
-using AwsWrapperDataProvider.Driver.Exceptions;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
 using AwsWrapperDataProvider.Properties;
@@ -61,7 +59,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
     protected bool isVerifiedWriterConnection;
     protected DateTime highRefreshRateEndTime = DateTime.MinValue;
     protected volatile bool requestToUpdateTopology;
-    protected DateTime ignoreNewTopologyRequestsEndTime = DateTime.MinValue;
+    protected long ignoreNewTopologyRequestsEndTime = -1;
     protected volatile bool nodeThreadsStop;
     protected DbConnection? nodeThreadsWriterConnection;
     protected HostSpec? nodeThreadsWriterHostSpec;
@@ -161,10 +159,12 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                             this.isVerifiedWriterConnection = true;
                             this.highRefreshRateEndTime = DateTime.UtcNow.Add(HighRefreshPeriodAfterPanic);
 
-                            if (this.ignoreNewTopologyRequestsEndTime != DateTime.MinValue)
+                            // We verify the writer on initial connection and on failover, but we only want to ignore new topology
+                            // requests after failover. To accomplish this, the first time we verify the writer we set the ignore end
+                            // time to 0. Any future writer verifications will set it to a positive value.
+                            if (Interlocked.CompareExchange(ref this.ignoreNewTopologyRequestsEndTime, 0, -1) != -1)
                             {
-                                this.ignoreNewTopologyRequestsEndTime =
-                                    DateTime.UtcNow.Add(IgnoreTopologyRequestDuration);
+                                Interlocked.Exchange(ref this.ignoreNewTopologyRequestsEndTime, DateTime.UtcNow.Add(IgnoreTopologyRequestDuration).Ticks);
                             }
 
                             this.nodeThreadsStop = true;
@@ -222,9 +222,10 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                     await this.DelayAsync(false);
                 }
 
-                if (this.ignoreNewTopologyRequestsEndTime > DateTime.MinValue && this.ignoreNewTopologyRequestsEndTime < DateTime.UtcNow)
+                long endTime = Interlocked.Read(ref this.ignoreNewTopologyRequestsEndTime);
+                if (endTime > 0 && endTime < DateTime.UtcNow.Ticks)
                 {
-                    this.ignoreNewTopologyRequestsEndTime = DateTime.MinValue;
+                    Interlocked.Exchange(ref this.ignoreNewTopologyRequestsEndTime, 0);
                 }
             }
         }
@@ -250,7 +251,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
     public async Task<IList<HostSpec>> ForceRefreshAsync(bool shouldVerifyWriter, long timeoutMs)
     {
-        if (this.ignoreNewTopologyRequestsEndTime > DateTime.UtcNow)
+        if (Interlocked.Read(ref this.ignoreNewTopologyRequestsEndTime) > DateTime.UtcNow.Ticks)
         {
             // Previous failover has just completed. We can use results of it without triggering a new topology update.
             if (this.topologyMap.TryGetValue(this.clusterId, out IList<HostSpec>? currentHosts) && currentHosts != null)
@@ -391,9 +392,12 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         IList<HostSpec>? hosts = await this.FetchTopologyAndUpdateCacheAsync(this.monitoringConnection);
         if (writerVerifiedByThisThread)
         {
-            if (this.ignoreNewTopologyRequestsEndTime != DateTime.MinValue)
+            // We verify the writer on initial connection and on failover, but we only want to ignore new topology
+            // requests after failover. To accomplish this, the first time we verify the writer we set the ignore end
+            // time to 0. Any future writer verifications will set it to a positive value.
+            if (Interlocked.CompareExchange(ref this.ignoreNewTopologyRequestsEndTime, 0, -1) != -1)
             {
-                this.ignoreNewTopologyRequestsEndTime = DateTime.UtcNow.Add(IgnoreTopologyRequestDuration);
+                Interlocked.Exchange(ref this.ignoreNewTopologyRequestsEndTime, DateTime.UtcNow.Add(IgnoreTopologyRequestDuration).Ticks);
             }
         }
 
@@ -472,7 +476,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
     protected async Task DelayAsync(bool useHighRefreshRate)
     {
-        if (this.highRefreshRateEndTime > DateTime.UtcNow)
+        if (this.highRefreshRateEndTime > DateTime.UtcNow && this.highRefreshRateEndTime < DateTime.UtcNow)
         {
             useHighRefreshRate = true;
         }
