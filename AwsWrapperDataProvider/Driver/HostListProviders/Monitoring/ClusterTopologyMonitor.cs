@@ -215,7 +215,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                     await this.DelayAsync(false);
                 }
 
-                if (this.ignoreNewTopologyRequestsEndTime > DateTime.UtcNow)
+                if (this.ignoreNewTopologyRequestsEndTime > DateTime.MinValue && this.ignoreNewTopologyRequestsEndTime < DateTime.UtcNow)
                 {
                     this.ignoreNewTopologyRequestsEndTime = DateTime.MinValue;
                 }
