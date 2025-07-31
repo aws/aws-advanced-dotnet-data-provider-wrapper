@@ -161,11 +161,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                             this.isVerifiedWriterConnection = true;
                             this.highRefreshRateEndTime = DateTime.UtcNow.Add(HighRefreshPeriodAfterPanic);
 
-                            if (this.ignoreNewTopologyRequestsEndTime == DateTime.MinValue)
-                            {
-                                this.ignoreNewTopologyRequestsEndTime = DateTime.MinValue;
-                            }
-                            else
+                            if (this.ignoreNewTopologyRequestsEndTime != DateTime.MinValue)
                             {
                                 this.ignoreNewTopologyRequestsEndTime =
                                     DateTime.UtcNow.Add(IgnoreTopologyRequestDuration);
@@ -395,11 +391,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         IList<HostSpec>? hosts = await this.FetchTopologyAndUpdateCacheAsync(this.monitoringConnection);
         if (writerVerifiedByThisThread)
         {
-            if (this.ignoreNewTopologyRequestsEndTime == DateTime.MinValue)
-            {
-                this.ignoreNewTopologyRequestsEndTime = DateTime.MinValue;
-            }
-            else
+            if (this.ignoreNewTopologyRequestsEndTime != DateTime.MinValue)
             {
                 this.ignoreNewTopologyRequestsEndTime = DateTime.UtcNow.Add(IgnoreTopologyRequestDuration);
             }
