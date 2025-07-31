@@ -98,6 +98,7 @@ public class ContainerHelper {
     System.out.println("==== Container console feed ==== >>>>");
     Consumer<OutputFrame> consumer = new ConsoleConsumer(true);
     execInContainer(container, consumer, "printenv", "TEST_ENV_DESCRIPTION");
+      execInContainer(container, consumer, "printenv", "TEST_ENV_INFO_JSON");
 
     Long exitCode = execInContainer(container, consumer, "dotnet", "test", "--filter",
             "Category=Integration&Database=" + task);
