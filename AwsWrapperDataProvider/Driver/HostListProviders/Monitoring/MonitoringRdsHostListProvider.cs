@@ -79,7 +79,9 @@ public class MonitoringRdsHostListProvider : RdsHostListProvider, IBlockingHostL
 
     protected IClusterTopologyMonitor InitMonitor()
     {
-        return Monitors.Set(this.ClusterId, new ClusterTopologyMonitor(
+        return Monitors.Set(
+            this.ClusterId,
+            new ClusterTopologyMonitor(
                 this.ClusterId,
                 TopologyCache,
                 this.initialHostSpec!,
@@ -92,7 +94,8 @@ public class MonitoringRdsHostListProvider : RdsHostListProvider, IBlockingHostL
                 TopologyCacheExpirationTime,
                 this.topologyQuery,
                 this.isWriterQuery,
-                this.nodeIdQuery));
+                this.nodeIdQuery),
+            this.CreateCacheEntryOptions());
     }
 
     internal override List<HostSpec>? QueryForTopology(IDbConnection connection)
@@ -137,6 +140,13 @@ public class MonitoringRdsHostListProvider : RdsHostListProvider, IBlockingHostL
         {
             TopologyCache.Set(this.ClusterId, existingHosts, TopologyCacheExpirationTime);
         }
+    }
+
+    private void ConfigureCacheEntry(ICacheEntry factory)
+    {
+        factory.SetAbsoluteExpiration(MonitorExpirationTime);
+        factory.SetSize(1);
+        factory.RegisterPostEvictionCallback(this.OnMonitorEvicted);
     }
 
     private void OnMonitorEvicted(object key, object? value, EvictionReason reason, object? state)
