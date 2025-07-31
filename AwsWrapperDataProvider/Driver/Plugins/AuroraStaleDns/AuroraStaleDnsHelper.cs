@@ -138,12 +138,6 @@ public class AuroraStaleDnsHelper
             }
             catch (Exception)
             {
-                // If this is not the last attempt, continue to retry
-                if (attempt == DnsRetries - 1)
-                {
-                    return null;
-                }
-
                 // Brief delay before retry
                 Thread.Sleep(100);
             }
