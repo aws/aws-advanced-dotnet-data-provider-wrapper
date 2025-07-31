@@ -207,7 +207,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                         continue;
                     }
 
-                    if (this.highRefreshRateEndTime > DateTime.UtcNow)
+                    if (this.highRefreshRateEndTime > DateTime.MinValue && this.highRefreshRateEndTime < DateTime.UtcNow)
                     {
                         this.highRefreshRateEndTime = DateTime.MinValue;
                     }
