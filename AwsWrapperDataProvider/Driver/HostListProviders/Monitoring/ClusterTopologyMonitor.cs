@@ -48,7 +48,6 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
     protected readonly HostSpec clusterInstanceTemplate;
     protected readonly CancellationTokenSource cancellationTokenSource = new();
     protected readonly object topologyUpdatedLock = new();
-    protected readonly SemaphoreSlim topologyUpdatedSemaphore = new(0);
     protected readonly ConcurrentDictionary<string, Task> nodeThreads = new();
     protected readonly Task monitoringTask;
     protected readonly object disposeLock = new();
@@ -214,7 +213,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
                     if (this.highRefreshRateEndTime == DateTime.MinValue)
                     {
-                        Logger.LogTrace("Topology query completed. Found {HostCount} hosts: {Hosts}",
+                        Logger.LogTrace("Running Monitoring Loop. Found {HostCount} hosts: {Hosts}",
                             hosts.Count,
                             string.Join(", ", hosts.Select(h => h.HostId + ": " + h.Role)));
                     }
@@ -257,6 +256,8 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             if (this.topologyMap.TryGetValue(this.clusterId, out IList<HostSpec>? currentHosts) && currentHosts != null)
             {
                 Logger.LogTrace(Resources.ClusterTopologyMonitor_IgnoringTopologyRequest);
+                Logger.LogTrace("\n    {Hosts}", string.Join("\n    ", currentHosts.Select(h => h.HostId + ": " + h.Role)));
+
                 return currentHosts;
             }
         }
@@ -295,30 +296,26 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         if (timeoutMs == 0)
         {
             Logger.LogTrace(Resources.ClusterTopologyMonitor_TimeoutSetToZero);
-            return currentHosts ?? new List<HostSpec>();
+            Logger.LogTrace("\n    {Hosts}", string.Join("\n    ", currentHosts!.Select(h => h.HostId + ": " + h.Role)));
+            return currentHosts!;
         }
 
         TimeSpan timeout = TimeSpan.FromMilliseconds(timeoutMs);
-        CancellationToken cancellationToken = new CancellationTokenSource(timeout).Token;
 
-        // TODO: FIX THIS LOL
-        try
+        lock (this.topologyUpdatedLock)
         {
-            while (!cancellationToken.IsCancellationRequested)
+            if (Monitor.Wait(this.topologyUpdatedLock, timeout))
             {
-                await this.topologyUpdatedSemaphore.WaitAsync(1000, cancellationToken);
-
                 if (this.topologyMap.TryGetValue(this.clusterId, out IList<HostSpec>? latestHosts) &&
                     !ReferenceEquals(currentHosts, latestHosts))
                 {
                     return latestHosts!;
                 }
             }
-        }
-        catch (OperationCanceledException)
-        {
-            Logger.LogDebug(Resources.ClusterTopologyMonitor_Interrupted);
-            throw;
+            else
+            {
+                Logger.LogDebug(Resources.ClusterTopologyMonitor_Interrupted);
+            }
         }
 
         throw new TimeoutException(string.Format(Resources.ClusterTopologyMonitor_TopologyNotUpdated, timeout));
@@ -527,7 +524,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         {
             this.topologyMap.Set(this.clusterId, hosts, this.topologyCacheExpiration);
             this.requestToUpdateTopology = false;
-            this.topologyUpdatedSemaphore.Release();
+            Monitor.PulseAll(this.topologyUpdatedLock);
         }
     }
 
@@ -558,7 +555,6 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                     long weight = (long)((Math.Round(nodeLag) * 100L) + Math.Round(cpuUtilization));
 
                     var hostSpec = this.CreateHost(hostName, isWriter, weight, lastUpdateTime);
-                    hostSpec.AddAlias(hostName);
 
                     (isWriter ? writers : hosts).Add(hostSpec);
                 }
@@ -620,7 +616,6 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         this.CloseConnection(conn);
 
         this.cancellationTokenSource.Dispose();
-        this.topologyUpdatedSemaphore.Dispose();
     }
 
     private class NodeMonitoringTask(
@@ -628,7 +623,9 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         HostSpec hostSpec,
         HostSpec? writerHostSpec)
     {
-        private static readonly ILogger<NodeMonitoringTask> Logger = LoggerUtils.GetLogger<NodeMonitoringTask>();
+        private static readonly ILogger<NodeMonitoringTask> NodeMonitorLogger = LoggerUtils.GetLogger<NodeMonitoringTask>();
+
+        private bool writerChanged;
 
         public async Task RunNodeMonitoringAsync()
         {
@@ -670,7 +667,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                         {
                             if (Interlocked.CompareExchange(ref monitor.nodeThreadsWriterConnection, connection, null) == null)
                             {
-                                Logger.LogInformation(string.Format(Resources.NodeMonitoringTask_DetectedWriter, writerId));
+                                NodeMonitorLogger.LogInformation(string.Format(Resources.NodeMonitoringTask_DetectedWriter, writerId));
                                 await monitor.FetchTopologyAndUpdateCacheAsync(connection);
                                 monitor.nodeThreadsWriterHostSpec = hostSpec;
                                 monitor.nodeThreadsStop = true;
@@ -711,7 +708,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             finally
             {
                 monitor.CloseConnection(connection);
-                Logger.LogTrace(Resources.NodeMonitoringTask_ThreadCompleted);
+                NodeMonitorLogger.LogTrace(Resources.NodeMonitoringTask_ThreadCompleted);
             }
         }
 
@@ -725,22 +722,32 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                     return;
                 }
 
-                monitor.nodeThreadsLatestTopology = hosts;
+                if (this.writerChanged)
+                {
+                    monitor.UpdateTopologyCache(hosts);
+                    NodeMonitorLogger.LogTrace("Topology Cache Updated. Found {HostCount} hosts:\n    {Hosts}",
+                        hosts.Count,
+                        string.Join("\n    ", hosts.Select(h => h.HostId + ": " + h.Role)));
+                    return;
+                }
 
+                monitor.nodeThreadsLatestTopology = hosts;
                 var latestWriterHostSpec = hosts.FirstOrDefault(x => x.Role == HostRole.Writer);
+
                 if (latestWriterHostSpec != null && writerHostSpec != null &&
                     !latestWriterHostSpec.GetHostAndPort().Equals(writerHostSpec.GetHostAndPort()))
                 {
-                    Logger.LogTrace(string.Format(
+                    NodeMonitorLogger.LogTrace(string.Format(
                         Resources.NodeMonitoringTask_WriterNodeChanged,
                         writerHostSpec.Host,
                         latestWriterHostSpec.Host));
 
+                    this.writerChanged = true;
                     monitor.UpdateTopologyCache(hosts);
 
-                    Logger.LogTrace("Topology Cache Updated. Found {HostCount} hosts: {Hosts}",
+                    NodeMonitorLogger.LogTrace("Topology Cache Updated. Found {HostCount} hosts:\n    {Hosts}",
                         hosts.Count,
-                        string.Join(", ", hosts.Select(h => h.HostId + ": " + h.Role)));
+                        string.Join("\n    ", hosts.Select(h => h.HostId + ": " + h.Role)));
                 }
             }
             catch

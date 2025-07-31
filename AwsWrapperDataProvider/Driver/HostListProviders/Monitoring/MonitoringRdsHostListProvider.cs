@@ -79,10 +79,8 @@ public class MonitoringRdsHostListProvider : RdsHostListProvider, IBlockingHostL
 
     protected IClusterTopologyMonitor InitMonitor()
     {
-        return Monitors.GetOrCreate(this.ClusterId, factory =>
-        {
-            var monitor = new ClusterTopologyMonitor(
-                (string)factory.Key,
+        return Monitors.Set(this.ClusterId, new ClusterTopologyMonitor(
+                this.ClusterId,
                 TopologyCache,
                 this.initialHostSpec!,
                 this.properties,
@@ -94,10 +92,7 @@ public class MonitoringRdsHostListProvider : RdsHostListProvider, IBlockingHostL
                 TopologyCacheExpirationTime,
                 this.topologyQuery,
                 this.isWriterQuery,
-                this.nodeIdQuery);
-            this.ConfigureCacheEntry(factory);
-            return monitor;
-        }) ?? throw new Exception("Unable to create monitor");
+                this.nodeIdQuery));
     }
 
     internal override List<HostSpec>? QueryForTopology(IDbConnection connection)
@@ -107,7 +102,7 @@ public class MonitoringRdsHostListProvider : RdsHostListProvider, IBlockingHostL
         try
         {
             var task = monitor.ForceRefreshAsync((DbConnection)connection, DefaultTopologyQueryTimeoutSec * 1000);
-            task.Wait(TimeSpan.FromSeconds(DefaultTopologyQueryTimeoutSec + 5));
+            task.Wait(TimeSpan.FromSeconds(DefaultTopologyQueryTimeoutSec));
             return task.Result.ToList();
         }
         catch (TimeoutException)
@@ -142,13 +137,6 @@ public class MonitoringRdsHostListProvider : RdsHostListProvider, IBlockingHostL
         {
             TopologyCache.Set(this.ClusterId, existingHosts, TopologyCacheExpirationTime);
         }
-    }
-
-    private void ConfigureCacheEntry(ICacheEntry factory)
-    {
-        factory.SetAbsoluteExpiration(MonitorExpirationTime);
-        factory.SetSize(1);
-        factory.RegisterPostEvictionCallback(this.OnMonitorEvicted);
     }
 
     private void OnMonitorEvicted(object key, object? value, EvictionReason reason, object? state)
