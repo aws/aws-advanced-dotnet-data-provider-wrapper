@@ -259,14 +259,14 @@ public class TestEnvironmentConfig implements AutoCloseable {
           break;
         case AURORA:
           initEnv(env);
-          //authorizeRunnerIpAddress(env);
+          authorizeRunnerIpAddress(env);
 
           if (!env.reuseDb
               && env.info.getRequest().getFeatures().contains(TestEnvironmentFeatures.BLUE_GREEN_DEPLOYMENT)) {
             createCustomClusterParameterGroup(env);
           }
-          //createDbCluster(env);
-          //configureIamAccess(env);
+          createDbCluster(env);
+          configureIamAccess(env);
           break;
         default:
           throw new NotImplementedException(request.getDatabaseEngineDeployment().toString());

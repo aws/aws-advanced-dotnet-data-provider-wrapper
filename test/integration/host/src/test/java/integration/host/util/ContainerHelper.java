@@ -98,10 +98,13 @@ public class ContainerHelper {
     System.out.println("==== Container console feed ==== >>>>");
     Consumer<OutputFrame> consumer = new ConsoleConsumer(true);
     execInContainer(container, consumer, "printenv", "TEST_ENV_DESCRIPTION");
-      execInContainer(container, consumer, "printenv", "TEST_ENV_INFO_JSON");
+    execInContainer(container, consumer, "printenv", "TEST_ENV_INFO_JSON");
 
-    Long exitCode = execInContainer(container, consumer, "dotnet", "test", "--filter",
-            "Category=Integration&Database=" + task);
+    Long exitCode = execInContainer(container, consumer, "dotnet", "build");
+    assertEquals(0, exitCode, "Build failed.");
+
+    exitCode = execInContainer(container, consumer, "dotnet", "test", "--filter",
+            "Category=Integration&Database=" + task, "--no-build");
 
     System.out.println("==== Container console feed ==== <<<<");
     assertEquals(0, exitCode, "Some tests failed.");
