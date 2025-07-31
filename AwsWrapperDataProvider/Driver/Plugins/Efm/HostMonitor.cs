@@ -15,38 +15,34 @@
 using System.Collections.Concurrent;
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
+using AwsWrapperDataProvider.Driver.Utils;
+using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.Efm;
 
 public class HostMonitor : IHostMonitor
 {
-    public struct ConnectionStatus
-    {
-        public bool IsValid { get; set; }
-        public TimeSpan ElapsedTime { get; set; }
-
-        public ConnectionStatus(bool isValid, TimeSpan elapsedTime)
-        {
-            this.IsValid = isValid;
-            this.ElapsedTime = elapsedTime;
-        }
-    }
-
-    private static readonly long ThreadSleepWhenInactiveMillis = 100;
-    private static readonly long MinConnectionCheckTimeoutMillis = 100;
+    private static readonly ILogger<HostMonitor> Logger = LoggerUtils.GetLogger<HostMonitor>();
+    private static readonly int ThreadSleepMillis = 100;
     private static readonly string MonitoringPropertyPrefix = "monitoring-";
 
-    public ConcurrentQueue<HostMonitorConnectionContext> ActiveContexts = new();
-
-    private readonly ConcurrentQueue<HostMonitorConnectionContext> newContexts = new();
+    private readonly ConcurrentQueue<WeakReference<HostMonitorConnectionContext>> activeContexts = new();
+    private readonly ConcurrentDictionary<int, ConcurrentQueue<WeakReference<HostMonitorConnectionContext>>> newContexts = new();
     private readonly IPluginService pluginService;
     private readonly Dictionary<string, string> properties;
     private readonly HostSpec hostSpec;
-    private readonly HostMonitorThreadContainer threadContainer;
-    private readonly long monitorDisposalTimeMillis;
-    private DbConnection? monitoringConn;
-    private DateTime contextLastUsed;
-    private volatile bool stopped;
+    private readonly int failureDetectionTimeMillis;
+    private readonly int failureDetectionIntervalMillis;
+    private readonly int failureDetectionCount;
+    private readonly CancellationTokenSource cts = new();
+    private readonly Task runTask;
+    private readonly Task newContextRunTask;
+
+    private DateTime? invalidNodeStartTime = null;
+    private volatile int failureCount = 0;
+    private volatile bool stopped = false;
+    private volatile bool nodeUnhealthy = false;
+    private DbConnection? monitoringConn = null;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="HostMonitor"/> class.
@@ -54,186 +50,201 @@ public class HostMonitor : IHostMonitor
     /// <param name="pluginService">A service for creating new connections.</param>
     /// <param name="hostSpec">The HostSpec of the server this HostMonitorImpl instance is monitoring.</param>
     /// <param name="properties">The Properties containing additional monitoring configuration.</param>
-    /// <param name="monitorDisposalTimeMillis">Time in milliseconds before stopping the monitoring thread where there are no active connection to the server this HostMonitor instance is monitoring.</param>
-    /// <param name="threadContainer">A reference to the HostMonitorThreadContainer implementation that initialized this class.</param>
+    /// <param name="failureDetectionTimeMillis">A failure detection time in millis.</param>
+    /// <param name="failureDetectionIntervalMillis">A failure detection interval in millis.</param>
+    /// <param name="failureDetectionCount">A failure detection count.</param>
     public HostMonitor(
         IPluginService pluginService,
         HostSpec hostSpec,
         Dictionary<string, string> properties,
-        long monitorDisposalTimeMillis,
-        HostMonitorThreadContainer threadContainer)
+        int failureDetectionTimeMillis,
+        int failureDetectionIntervalMillis,
+        int failureDetectionCount)
     {
         this.pluginService = pluginService;
         this.hostSpec = hostSpec;
         this.properties = properties;
-        this.monitorDisposalTimeMillis = monitorDisposalTimeMillis;
-        this.threadContainer = threadContainer;
+        this.failureDetectionTimeMillis = failureDetectionTimeMillis;
+        this.failureDetectionIntervalMillis = failureDetectionIntervalMillis;
+        this.failureDetectionCount = failureDetectionCount;
 
-        this.monitoringConn = null;
-        this.contextLastUsed = DateTime.Now;
+        this.newContextRunTask = Task.Run(() => this.NewContextRun(this.cts.Token));
+        this.runTask = Task.Run(() => this.Run(this.cts.Token));
     }
 
     public void StartMonitoring(HostMonitorConnectionContext context)
     {
         if (this.stopped)
         {
-            // warning: monitor is stopped
+            Logger.LogWarning("Starting monitoring for a monitor that is stopped.");
         }
 
-        DateTime currentTime = DateTime.Now;
-        context.SetStartMonitorTime(currentTime);
-        this.contextLastUsed = currentTime;
-        this.newContexts.Enqueue(context);
+        DateTime startMonitoringTime = DateTime.Now + TimeSpan.FromMilliseconds(this.failureDetectionTimeMillis);
+        int startMonitoringTimeSeconds = (int)(startMonitoringTime - DateTime.UnixEpoch).TotalSeconds;
+
+        ConcurrentQueue<WeakReference<HostMonitorConnectionContext>> queue = this.newContexts.GetOrAdd(
+            startMonitoringTimeSeconds, (_) => new());
+
+        queue.Enqueue(new WeakReference<HostMonitorConnectionContext>(context));
     }
 
-    public void StopMonitoring(HostMonitorConnectionContext context)
+    public bool CanDispose()
     {
-        context.SetInactive();
-        this.contextLastUsed = DateTime.Now;
+        return this.activeContexts.IsEmpty && this.newContexts.IsEmpty;
     }
 
-    public void ClearContexts()
+    public void Close()
     {
-        this.newContexts.Clear();
-        this.ActiveContexts.Clear();
+        this.stopped = true;
+        this.cts.Cancel();
+
+        Task.WaitAll([this.newContextRunTask, this.runTask], (int)TimeSpan.FromSeconds(30).TotalMilliseconds);
+        this.newContextRunTask.Dispose();
+        this.runTask.Dispose();
+
+        Logger.LogInformation($"Stopped monitoring for {this.hostSpec.Host}.");
     }
 
-    public bool IsStopped()
+    public async void NewContextRun(CancellationToken token)
     {
-        return this.stopped;
+        Logger.LogInformation($"Started monitoring thread to poll new contexts for {this.hostSpec.Host}.");
+
+        try
+        {
+            while (!this.stopped)
+            {
+                token.ThrowIfCancellationRequested();
+                DateTime currentTime = DateTime.Now;
+
+                int[] processedKeys = [];
+
+                foreach (int key in this.newContexts.Keys)
+                {
+                    if (DateTime.UnixEpoch.AddSeconds(key) < currentTime)
+                    {
+                        ConcurrentQueue<WeakReference<HostMonitorConnectionContext>> queue = this.newContexts[key];
+                        processedKeys.Append(key);
+
+                        while (queue.TryDequeue(out WeakReference<HostMonitorConnectionContext>? contextRef))
+                        {
+                            if (contextRef != null
+                                && contextRef.TryGetTarget(out HostMonitorConnectionContext? context)
+                                && context != null
+                                && context.IsActive())
+                            {
+                                this.activeContexts.Enqueue(contextRef);
+                            }
+                        }
+                    }
+                }
+
+                foreach (int key in processedKeys)
+                {
+                    this.newContexts.Remove(key, out _);
+                }
+
+                // sleep for one second before polling new contexts
+                await Task.Delay(1000);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // pass
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning($"Exception thrown while polling new contexts for {this.hostSpec.Host}: {ex.Message} {ex.StackTrace}");
+        }
+
+        Logger.LogInformation($"Stopped monitoring thread to poll new contexts for {this.hostSpec.Host}.");
     }
 
     public async void Run(CancellationToken token)
     {
+        Logger.LogInformation($"Started monitoring thread to monitor active contexts for host {this.hostSpec.Host}.");
+
         try
         {
-            this.stopped = false;
-            while (true)
+            while (!this.stopped)
             {
                 token.ThrowIfCancellationRequested();
-                try
+
+                if (this.activeContexts.IsEmpty && !this.nodeUnhealthy)
                 {
-                    HostMonitorConnectionContext? firstAddedNewMonitorContext = null;
-                    DateTime currentTime = DateTime.Now;
+                    await Task.Delay(ThreadSleepMillis);
+                    continue;
+                }
 
-                    // process new contexts and add them to the active contexts when it is past their monitoring start time
-                    while (this.newContexts.TryDequeue(out HostMonitorConnectionContext? newMonitorContext))
+                DateTime statusCheckStartTime = DateTime.Now;
+                bool isValid = this.CheckConnectionStatus();
+                DateTime statusCheckEndTime = DateTime.Now;
+
+                this.UpdateNodeHealthStatus(isValid, statusCheckStartTime, statusCheckEndTime);
+
+                WeakReference<HostMonitorConnectionContext>[] tmpActiveContexts = [];
+
+                while (this.activeContexts.TryDequeue(out WeakReference<HostMonitorConnectionContext>? monitorContextRef))
+                {
+                    token.ThrowIfCancellationRequested();
+                    if (this.stopped)
                     {
-                        if (firstAddedNewMonitorContext == newMonitorContext)
-                        {
-                            // this context has already been processed; add it back and break the loop
-                            this.newContexts.Enqueue(newMonitorContext);
-                            break;
-                        }
-
-                        if (newMonitorContext.IsActiveContext())
-                        {
-                            if (newMonitorContext.ExpectedActiveMonitoringStartTime > currentTime)
-                            {
-                                this.newContexts.Enqueue(newMonitorContext);
-                                firstAddedNewMonitorContext ??= newMonitorContext;
-                            }
-                            else
-                            {
-                                this.ActiveContexts.Enqueue(newMonitorContext);
-                            }
-                        }
+                        break;
                     }
 
-                    if (!this.ActiveContexts.IsEmpty
-                        || this.monitoringConn == null
-                        || this.monitoringConn.State == System.Data.ConnectionState.Closed)
+                    if (!monitorContextRef.TryGetTarget(out HostMonitorConnectionContext? monitorContext) || monitorContext == null)
                     {
-                        DateTime statusCheckStart = DateTime.Now;
-                        this.contextLastUsed = statusCheckStart;
-
-                        ConnectionStatus status = this.CheckConnectionStatus();
-
-                        long delayMillis = -1;
-                        HostMonitorConnectionContext? firstAddedMonitorContext = null;
-
-                        while (this.ActiveContexts.TryDequeue(out HostMonitorConnectionContext? monitorContext))
-                        {
-                            monitorContext.Lock.WaitOne();
-                            try
-                            {
-                                if (!monitorContext.IsActiveContext())
-                                {
-                                    continue;
-                                }
-
-                                if (firstAddedMonitorContext == monitorContext)
-                                {
-                                    this.ActiveContexts.Enqueue(monitorContext);
-                                    break;
-                                }
-
-                                monitorContext.UpdateConnectionStatus(
-                                    this.hostSpec.Host,
-                                    statusCheckStart,
-                                    statusCheckStart.Add(status.ElapsedTime),
-                                    status.IsValid);
-
-                                if (monitorContext.IsActiveContext() && !monitorContext.IsNodeUnhealthy())
-                                {
-                                    this.ActiveContexts.Enqueue(monitorContext);
-                                    firstAddedMonitorContext ??= monitorContext;
-
-                                    if (delayMillis == -1 || delayMillis > monitorContext.FailureDetectionIntervalMillis)
-                                    {
-                                        delayMillis = monitorContext.FailureDetectionIntervalMillis;
-                                    }
-                                }
-                            }
-                            finally
-                            {
-                                monitorContext.Lock.ReleaseMutex();
-                            }
-                        }
-
-                        if (delayMillis == -1)
-                        {
-                            delayMillis = ThreadSleepWhenInactiveMillis;
-                        }
-                        else
-                        {
-                            delayMillis -= (long)status.ElapsedTime.TotalMilliseconds;
-
-                            if (delayMillis <= MinConnectionCheckTimeoutMillis)
-                            {
-                                delayMillis = MinConnectionCheckTimeoutMillis;
-                            }
-                        }
-
-                        await Task.Delay((int)delayMillis, token);
+                        continue;
                     }
-                    else
-                    {
-                        if (DateTime.Now - this.contextLastUsed >= TimeSpan.FromMilliseconds(this.monitorDisposalTimeMillis))
-                        {
-                            this.threadContainer.ReleaseResource(this);
-                            break;
-                        }
 
-                        await Task.Delay((int)ThreadSleepWhenInactiveMillis, token);
+                    if (this.nodeUnhealthy)
+                    {
+                        monitorContext.NodeUnhealthy = true;
+                        DbConnection? connectionToAbort = monitorContext.GetConnection();
+                        monitorContext.SetInactive();
+
+                        if (connectionToAbort != null)
+                        {
+                            this.AbortConnection(connectionToAbort);
+                        }
+                    }
+                    else if (monitorContext.IsActive())
+                    {
+                        tmpActiveContexts.Append(monitorContextRef);
                     }
                 }
-                catch
+
+                // this.activeContexts is now empty, and tmpActiveContexts contains all still active contexts
+                // add those back into this.activeContexts
+                foreach (WeakReference<HostMonitorConnectionContext> contextRef in tmpActiveContexts)
                 {
-                    // ignore
+                    this.activeContexts.Enqueue(contextRef);
                 }
+
+                int delayMillis = this.failureDetectionIntervalMillis - (int)(statusCheckEndTime - statusCheckStartTime).TotalMilliseconds;
+                if (delayMillis < ThreadSleepMillis)
+                {
+                    delayMillis = ThreadSleepMillis;
+                }
+
+                await Task.Delay(delayMillis);
             }
+        }
+        catch (OperationCanceledException)
+        {
+            // ignore
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning($"Exception thrown while monitoring active contexts for {this.hostSpec.Host}: {ex.Message} {ex.StackTrace}");
         }
         finally
         {
-            this.threadContainer.ReleaseResource(this);
             this.stopped = true;
             if (this.monitoringConn != null)
             {
                 try
                 {
                     this.monitoringConn.Close();
-                    this.monitoringConn.Dispose();
                 }
                 catch
                 {
@@ -242,43 +253,104 @@ public class HostMonitor : IHostMonitor
             }
         }
 
-        // stopped monitoring thread
+        Logger.LogInformation($"Stopped monitoring thread to monitor active contexts for {this.hostSpec.Host}.");
     }
 
-    /// <summary>
-    /// Check the status of the monitored server by sending a ping.
-    /// </summary>
-    /// <returns>
-    /// whether the server is still alive and the elapsed time spent checking.
-    /// </returns>
-    private ConnectionStatus CheckConnectionStatus()
+    private bool CheckConnectionStatus()
     {
-        DateTime startTime = DateTime.Now;
         try
         {
             if (this.monitoringConn == null || this.monitoringConn.State == System.Data.ConnectionState.Closed)
             {
                 Dictionary<string, string> monitoringConnProperties = new(this.properties);
 
-                foreach (string propertyName in this.properties.Keys)
+                foreach (string key in this.properties.Keys)
                 {
-                    if (propertyName.StartsWith(MonitoringPropertyPrefix))
+                    if (key.StartsWith(MonitoringPropertyPrefix))
                     {
-                        string monitoringPropertyName = propertyName[MonitoringPropertyPrefix.Length..];
-                        monitoringConnProperties[monitoringPropertyName] = this.properties[propertyName];
+                        monitoringConnProperties[key[MonitoringPropertyPrefix.Length..]] = this.properties[key];
+                        monitoringConnProperties.Remove(key);
                     }
                 }
 
+                Logger.LogInformation($"Opening a monitoring connection to {this.hostSpec.Host}...");
                 this.monitoringConn = this.pluginService.OpenConnection(this.hostSpec, monitoringConnProperties, null);
-                return new ConnectionStatus(true, DateTime.Now - startTime);
+                Logger.LogInformation($"Opened a monitoring connection to {this.hostSpec.Host}");
+
+                return true;
             }
 
-            bool isValid = this.monitoringConn.State != System.Data.ConnectionState.Open;
-            return new ConnectionStatus(isValid, DateTime.Now - startTime);
+            try
+            {
+                DbCommand validityCheckCommand = this.monitoringConn.CreateCommand();
+                validityCheckCommand.CommandText = "SELECT 1";
+
+                // JDBC: Some drivers, like MySQL Connector/J, execute isValid() in a double of specified timeout time.
+                int validTimeoutSeconds = (this.failureDetectionIntervalMillis - ThreadSleepMillis) / 2000;
+                validityCheckCommand.CommandTimeout = validTimeoutSeconds;
+
+                _ = validityCheckCommand.ExecuteScalar();
+
+                // was able to execute command within the timeout - connection is still valid
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
-        catch
+        catch (DbException)
         {
-            return new ConnectionStatus(false, DateTime.Now - startTime);
+            return false;
+        }
+    }
+
+    private void UpdateNodeHealthStatus(bool connectionValid, DateTime statusCheckStartTime, DateTime statusCheckEndTime)
+    {
+        if (!connectionValid)
+        {
+            this.failureCount++;
+
+            if (this.invalidNodeStartTime == null)
+            {
+                this.invalidNodeStartTime = statusCheckStartTime;
+            }
+
+            TimeSpan invalidNodeDuration = statusCheckEndTime - statusCheckStartTime;
+            int maxInvalidNodeDurationMillis = this.failureDetectionIntervalMillis * Math.Max(0, this.failureDetectionCount - 1);
+
+            if (invalidNodeDuration >= TimeSpan.FromMilliseconds(maxInvalidNodeDurationMillis))
+            {
+                Logger.LogInformation($"Host is dead: {this.hostSpec.Host}");
+                this.nodeUnhealthy = true;
+            }
+            else
+            {
+                Logger.LogInformation($"Host is not responding: {this.hostSpec.Host}, failure count: {this.failureCount}");
+            }
+
+            return;
+        }
+
+        if (this.failureCount > 0)
+        {
+            Logger.LogInformation($"Host is alive: {this.hostSpec.Host}");
+        }
+
+        this.failureCount = 0;
+        this.invalidNodeStartTime = null;
+        this.nodeUnhealthy = false;
+    }
+
+    private void AbortConnection(DbConnection connection)
+    {
+        try
+        {
+            connection.Dispose();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning($"Exception thrown while aborting connection: {ex.Message}");
         }
     }
 }

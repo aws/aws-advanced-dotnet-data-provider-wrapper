@@ -18,20 +18,9 @@ public interface IHostMonitor
 {
     public void StartMonitoring(HostMonitorConnectionContext context);
 
-    public void StopMonitoring(HostMonitorConnectionContext context);
+    public bool CanDispose();
 
-    /// <summary>
-    /// Clear all HostMonitorConnectionContext associated with this HostMonitor instance.
-    /// </summary>
-    public void ClearContexts();
-
-    /// <summary>
-    /// Whether this HostMonitor has stopped monitoring a particular server.
-    /// </summary>
-    /// <returns>
-    /// True if the monitoring has stopped; false otherwise.
-    /// </returns>
-    public bool IsStopped();
+    public void Close();
 
     public void Run(CancellationToken token);
 }

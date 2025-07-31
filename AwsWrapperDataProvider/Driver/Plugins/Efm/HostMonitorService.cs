@@ -14,93 +14,117 @@
 
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
+using AwsWrapperDataProvider.Driver.Utils;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.Efm;
 
 public class HostMonitorService : IHostMonitorService
 {
-    public static readonly long DefaultMonitorDisposalTimeMs = 600000;
+    private static readonly ILogger<HostMonitorService> Logger = LoggerUtils.GetLogger<HostMonitorService>();
 
-    public HostMonitorThreadContainer? ThreadContainer { get; private set; }
+    protected static readonly int CacheCleanupMillis = (int)TimeSpan.FromMinutes(1).TotalMilliseconds;
+    protected static readonly MemoryCache Monitors = new(new MemoryCacheOptions());
 
     private readonly IPluginService pluginService;
-    private readonly WeakReference<IHostMonitor?> cachedMonitor = new(null);
-    private HashSet<string> cachedMonitorNodeKeys = new();
+
+    public static readonly int DefaultMonitorDisposalTimeMs = 600000;
 
     public HostMonitorService(IPluginService pluginService)
     {
         this.pluginService = pluginService;
-        this.ThreadContainer = HostMonitorThreadContainer.GetInstance();
+    }
+
+    public static void CloseAllMonitors()
+    {
+        foreach (object key in Monitors.Keys)
+        {
+            if (Monitors.TryGetValue(key, out IHostMonitor? monitor) && monitor != null)
+            {
+                try
+                {
+                    monitor.Close();
+                }
+                catch
+                {
+                    // ignore
+                }
+            }
+
+            Monitors.Clear();
+        }
     }
 
     public HostMonitorConnectionContext StartMonitoring(
         DbConnection connectionToAbort,
-        HashSet<string> nodeKeys,
         HostSpec hostSpec,
         Dictionary<string, string> properties,
         int failureDetectionTimeMillis,
         int failureDetectionIntervalMillis,
         int failureDetectionCount)
     {
-        if (nodeKeys.Count == 0)
-        {
-            throw new Exception("Cannot start monitoring without alias set.");
-        }
+        IHostMonitor monitor = this.GetMonitor(
+            hostSpec,
+            properties,
+            failureDetectionTimeMillis,
+            failureDetectionIntervalMillis,
+            failureDetectionCount);
 
-        IHostMonitor? monitor;
-        if (!this.cachedMonitor.TryGetTarget(out monitor))
-        {
-            monitor = null;
-        }
-
-        if (monitor == null
-            || monitor.IsStopped()
-            || this.cachedMonitorNodeKeys == null
-            || !this.cachedMonitorNodeKeys.SetEquals(nodeKeys))
-        {
-            monitor = this.GetMonitor(nodeKeys, hostSpec, properties);
-            this.cachedMonitor.SetTarget(monitor);
-            this.cachedMonitorNodeKeys = nodeKeys;
-        }
-
-        HostMonitorConnectionContext context = new(monitor, connectionToAbort, failureDetectionTimeMillis, failureDetectionIntervalMillis, failureDetectionCount);
+        HostMonitorConnectionContext context = new HostMonitorConnectionContext(connectionToAbort);
         monitor.StartMonitoring(context);
 
         return context;
     }
 
-    public void StopMonitoring(HostMonitorConnectionContext context)
+    public void StopMonitoring(HostMonitorConnectionContext context, DbConnection connectionToAbort)
     {
-        IHostMonitor monitor = context.Monitor;
-        monitor.StopMonitoring(context);
-    }
-
-    public void StopMonitoringForAllConnections(HashSet<string> nodeKeys)
-    {
-        foreach (string nodeKey in nodeKeys.ToArray())
+        if (context.ShouldAbort())
         {
-            IHostMonitor? monitor = this.ThreadContainer!.GetMonitor(nodeKey);
-            if (monitor != null)
+            context.SetInactive();
+            try
             {
-                monitor.ClearContexts();
-                return;
+                connectionToAbort.Dispose();
             }
+            catch
+            {
+                // ignore
+            }
+        }
+        else
+        {
+            context.SetInactive();
         }
     }
 
     public void ReleaseResources()
     {
-        this.ThreadContainer = null;
+        // do nothing
     }
 
     protected IHostMonitor GetMonitor(
-        HashSet<string> nodeKeys,
         HostSpec hostSpec,
-        Dictionary<string, string> properties)
+        Dictionary<string, string> properties,
+        int failureDetectionTimeMillis,
+        int failureDetectionIntervalMillis,
+        int failureDetectionCount)
     {
-        long monitorDisposalTimeMillis = Utils.PropertyDefinition.MonitorDisposalTimeMs.GetLong(properties) ?? DefaultMonitorDisposalTimeMs;
-        return this.ThreadContainer!.GetOrCreateMonitor(
-            nodeKeys.ToArray(),
-            () => new HostMonitor(this.pluginService, hostSpec, properties, monitorDisposalTimeMillis, this.ThreadContainer!));
+        string monitorKey = $"{failureDetectionTimeMillis}:{failureDetectionIntervalMillis}:{failureDetectionCount}:{hostSpec.Host}";
+        int cacheExpirationMillis = PropertyDefinition.MonitorDisposalTimeMs.GetInt(properties) ?? DefaultMonitorDisposalTimeMs;
+
+        if (!Monitors.TryGetValue(monitorKey, out IHostMonitor? monitor))
+        {
+            monitor = new HostMonitor(
+                this.pluginService,
+                hostSpec,
+                properties,
+                failureDetectionTimeMillis,
+                failureDetectionIntervalMillis,
+                failureDetectionCount);
+
+            Monitors.Set(monitorKey, monitor, TimeSpan.FromMilliseconds(cacheExpirationMillis));
+        }
+
+        return monitor ?? throw new Exception("Could not create or get monitor.");
     }
 }

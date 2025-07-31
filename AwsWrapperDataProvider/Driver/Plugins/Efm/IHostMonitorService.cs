@@ -21,16 +21,13 @@ public interface IHostMonitorService
 {
     public HostMonitorConnectionContext StartMonitoring(
         DbConnection connectionToAbort,
-        HashSet<string> nodeKeys,
         HostSpec hostSpec,
         Dictionary<string, string> properties,
         int failureDetectionTimeMillis,
         int failureDetectionIntervalMillis,
         int failureDetectionCount);
 
-    public void StopMonitoring(HostMonitorConnectionContext context);
-
-    public void StopMonitoringForAllConnections(HashSet<string> nodeKeys);
+    public void StopMonitoring(HostMonitorConnectionContext context, DbConnection connectionToAbort);
 
     public void ReleaseResources();
 }
