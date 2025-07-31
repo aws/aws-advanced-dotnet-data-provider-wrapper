@@ -123,7 +123,6 @@ public class TestEnvironment
     {
         TestEnvironment env = new();
         string infoJson = Environment.GetEnvironmentVariable("TEST_ENV_INFO_JSON") ?? throw new Exception("Environment variable TEST_ENV_INFO_JSON is required.");
-
         try
         {
             JsonSerializerOptions options = new()

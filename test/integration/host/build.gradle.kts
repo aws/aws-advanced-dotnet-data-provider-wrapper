@@ -93,6 +93,8 @@ tasks.register<Test>("test-all-mysql-aurora") {
         systemProperty("test-no-multi-az-cluster", "true")
         systemProperty("test-no-multi-az-instance", "true")
         systemProperty("test-no-bg", "true")
+        systemProperty("test-no-traces-telemetry", "true")
+        systemProperty("test-no-metrics-telemetry", "true")
     }
 }
 
@@ -109,6 +111,8 @@ tasks.register<Test>("test-all-pg-aurora") {
         systemProperty("test-no-multi-az-cluster", "true")
         systemProperty("test-no-multi-az-instance", "true")
         systemProperty("test-no-bg", "true")
+        systemProperty("test-no-traces-telemetry", "true")
+        systemProperty("test-no-metrics-telemetry", "true")
     }
 }
 
