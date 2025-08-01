@@ -248,7 +248,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         }
     }
 
-    public async Task<IList<HostSpec>> ForceRefreshAsync(bool shouldVerifyWriter, long timeoutMs)
+    public IList<HostSpec> ForceRefresh(bool shouldVerifyWriter, long timeoutMs)
     {
         if (Interlocked.Read(ref this.ignoreNewTopologyRequestsEndTime) > DateTime.UtcNow.Ticks)
         {
@@ -269,22 +269,22 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             this.CloseConnection(connectionToClose);
         }
 
-        return await this.WaitTillTopologyGetsUpdatedAsync(timeoutMs);
+        return this.WaitTillTopologyGetsUpdatedAsync(timeoutMs);
     }
 
-    public async Task<IList<HostSpec>> ForceRefreshAsync(DbConnection? connection, long timeoutMs)
+    public async Task<IList<HostSpec>> ForceRefresh(DbConnection? connection, long timeoutMs)
     {
         if (this.isVerifiedWriterConnection)
         {
             // Push monitoring thread to refresh topology with a verified connection
-            return await this.WaitTillTopologyGetsUpdatedAsync(timeoutMs);
+            return this.WaitTillTopologyGetsUpdatedAsync(timeoutMs);
         }
 
         // Otherwise use provided unverified connection to update topology
         return await this.FetchTopologyAndUpdateCacheAsync(connection) ?? new List<HostSpec>();
     }
 
-    protected async Task<IList<HostSpec>> WaitTillTopologyGetsUpdatedAsync(long timeoutMs)
+    protected IList<HostSpec> WaitTillTopologyGetsUpdatedAsync(long timeoutMs)
     {
         this.topologyMap.TryGetValue(this.clusterId, out IList<HostSpec>? currentHosts);
 

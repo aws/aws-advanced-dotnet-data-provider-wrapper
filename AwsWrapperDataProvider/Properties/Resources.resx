@@ -106,7 +106,7 @@
     <value>No dialect found for connection type {0}</value>
   </data>
   <data name="Error_FailedToInstantiateDialectType" xml:space="preserve">
-    <value>Failed to instantiate dialect type '{0}'</value>
+    <value>Failed to instantiate dialect type {0}</value>
   </data>
   <data name="Error_InvalidDialectType" xml:space="preserve">
     <value>Invalid dialect type provided.</value>
@@ -118,13 +118,13 @@
     <value>Target connection type not found.</value>
   </data>
   <data name="ClusterTopologyMonitor.StartMonitoringThread" xml:space="preserve">
-      <value>Start cluster topology monitoring thread for ''{0}''.</value>
+      <value>Start cluster topology monitoring thread for {0}.</value>
   </data>
   <data name="ClusterTopologyMonitor.StopMonitoringThread" xml:space="preserve">
-      <value>Stop cluster topology monitoring thread for ''{0}''.</value>
+      <value>Stop cluster topology monitoring thread for {0}.</value>
   </data>
   <data name="ClusterTopologyMonitor.ExceptionDuringMonitoringStop" xml:space="preserve">
-      <value>Stopping cluster topology monitoring after unhandled exception was thrown in monitoring thread for node ''{0}''.</value>
+      <value>Stopping cluster topology monitoring after unhandled exception was thrown in monitoring thread for node {0}.</value>
     </data>
     <data name="ClusterTopologyMonitor.InvalidQuery" xml:space="preserve">
       <value>An error occurred while attempting to obtain the topology because the topology query was invalid. Please ensure you are connecting to an Aurora or RDS Db cluster.</value>
@@ -139,7 +139,7 @@
       <value>Topology hasn't been updated after {0} ms.</value>
     </data>
     <data name="ClusterTopologyMonitor.OpenedMonitoringConnection" xml:space="preserve">
-      <value>Opened monitoring connection to node ''{0}''.</value>
+      <value>Opened monitoring connection to node {0}.</value>
     </data>
     <data name="ClusterTopologyMonitor.IgnoringTopologyRequest" xml:space="preserve">
       <value>A topology refresh was requested, but the topology was already updated recently. Returning cached hosts:</value>
@@ -154,10 +154,10 @@
       <value>Starting node monitoring threads.</value>
     </data>
     <data name="ClusterTopologyMonitor.WriterPickedUpFromNodeMonitors" xml:space="preserve">
-      <value>The writer host detected by the node monitors was picked up by the topology monitor: ''{0}''.</value>
+      <value>The writer host detected by the node monitors was picked up by the topology monitor: {0}.</value>
     </data>
     <data name="ClusterTopologyMonitor.WriterMonitoringConnection" xml:space="preserve">
-      <value>The monitoring connection is connected to a writer: ''{0}''.</value>
+      <value>The monitoring connection is connected to a writer: {0}.</value>
     </data>
     <data name="ClusterTopologyMonitor.ErrorFetchingTopology" xml:space="preserve">
       <value>An error occurred while querying for topology: {0}</value>
@@ -169,12 +169,12 @@
       <value>The topology query returned a result with 0 columns. This may occur if the topology query is executed when the server is failing over.</value>
     </data>
     <data name="NodeMonitoringTask_DetectedWriter" xml:space="preserve">
-      <value>Writer detected by node monitoring thread: ''{0}''.</value>
+      <value>Writer detected by node monitoring thread: {0}.</value>
     </data>
     <data name="NodeMonitoringTask_ThreadCompleted" xml:space="preserve">
       <value>Node monitoring thread completed.</value>
     </data>
     <data name="NodeMonitoringTask_WriterNodeChanged" xml:space="preserve">
-      <value>Writer node changed from ''{0}'' to node ''{1}''.</value>
+      <value>Writer node changed from {0} to node {1}.</value>
     </data>
 </root>

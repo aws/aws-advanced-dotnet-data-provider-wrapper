@@ -72,8 +72,8 @@ public class MonitoringRdsHostListProvider : RdsHostListProvider, IBlockingHostL
     {
         IClusterTopologyMonitor monitor = Monitors.Get<IClusterTopologyMonitor>(this.ClusterId) ?? this.InitMonitor();
 
-        Task<IList<HostSpec>> task = monitor.ForceRefreshAsync(shouldVerifyWriter, timeoutMs);
-        this.hostList = task.Result.ToList();
+        IList<HostSpec> task = monitor.ForceRefresh(shouldVerifyWriter, timeoutMs);
+        this.hostList = task.ToList();
         return this.hostList.AsReadOnly();
     }
 
@@ -104,7 +104,7 @@ public class MonitoringRdsHostListProvider : RdsHostListProvider, IBlockingHostL
         var monitor = Monitors.Get<IClusterTopologyMonitor>(this.ClusterId) ?? this.InitMonitor();
         try
         {
-            var task = monitor.ForceRefreshAsync((DbConnection)connection, DefaultTopologyQueryTimeoutSec * 1000);
+            var task = monitor.ForceRefresh((DbConnection)connection, DefaultTopologyQueryTimeoutSec * 1000);
             task.Wait(TimeSpan.FromSeconds(DefaultTopologyQueryTimeoutSec));
             return task.Result.ToList();
         }
