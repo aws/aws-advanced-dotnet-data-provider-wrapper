@@ -14,133 +14,129 @@
 
 using System.Data;
 using System.Diagnostics;
+using AwsWrapperDataProvider.Tests.Container.Utils;
 using MySqlConnector;
 using Npgsql;
-using Xunit;
 
-namespace AwsWrapperDataProvider.Tests
+namespace AwsWrapperDataProvider.Tests;
+
+public class AbortConnectionTests : IntegrationTestBase
 {
-    public class AbortConnectionTests
+    [Fact]
+    [Trait("Category", "Integration")]
+    [Trait("Database", "mysql")]
+    public async Task MysqlWrapperCommandCancelTest()
     {
-        [Fact]
-        [Trait("Category", "Integration")]
-        public async Task MysqlWrapperCommandCancelTest()
-        {
-            const string connectionString = "Server=dev-yan-ams.cluster-cr28trhgdnv7.us-west-2.rds.amazonaws.com;User ID=admin;Password=password;Initial Catalog=test;Plugins=";
+        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, this.username, this.password, this.defaultDbName);
 
-            using (AwsWrapperConnection<MySqlConnection> connection = new(connectionString))
-            {
-                connection.Open();
-                AwsWrapperCommand<MySqlCommand> command = connection.CreateCommand<MySqlCommand>();
-                var command1 = connection.CreateCommand();
-                command.CommandText = "select sleep(60)";
+        using AwsWrapperConnection<MySqlConnection> connection = new(connectionString);
+        connection.Open();
+        AwsWrapperCommand<MySqlCommand> command = connection.CreateCommand<MySqlCommand>();
+        var command1 = connection.CreateCommand();
+        command.CommandText = "select sleep(60)";
 
-                var queryExecutionStopwatch = Stopwatch.StartNew();
+        var queryExecutionStopwatch = Stopwatch.StartNew();
 
-                await Task.WhenAll([
-                    Task.Run(() =>
+        await Task.WhenAll([
+            Task.Run(() =>
+                {
+                    try
                     {
-                        try
-                        {
-                            IDataReader reader = command.ExecuteReader();
+                        IDataReader reader = command.ExecuteReader();
 
-                            Console.WriteLine("Query executed.");
-                            queryExecutionStopwatch.Stop();
+                        Console.WriteLine("Query executed.");
+                        queryExecutionStopwatch.Stop();
 
-                            while (reader.Read())
-                            {
-                                Console.WriteLine("Returned data: " + reader.GetInt64(0));
-                            }
-                        }
-                        catch (Exception ex)
+                        while (reader.Read())
                         {
-                            Console.WriteLine("Executing query error: " + ex);
+                            Console.WriteLine("Returned data: " + reader.GetInt64(0));
                         }
-                        finally
-                        {
-                            queryExecutionStopwatch.Stop();
-                            Console.WriteLine("Query execution time: " + queryExecutionStopwatch.Elapsed.ToString());
-                        }
-                    },
-                    TestContext.Current.CancellationToken),
-
-                    Task.Run(async () =>
+                    }
+                    catch (Exception ex)
                     {
-                        await Task.Delay(5000);
-                        Console.WriteLine("Cancelling command...");
-                        try
-                        {
-                            command.Cancel();
-                            Console.WriteLine("Command cancelled");
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine("Error cancelling command: " + ex);
-                        }
-                    },
-                    TestContext.Current.CancellationToken)
-                ]);
-            }
-        }
-
-        [Fact]
-        [Trait("Category", "Integration")]
-        public async Task PgWrapperCommandCancelTest()
-        {
-            const string connectionString = "Host=dev-yan-apg.cluster-cr28trhgdnv7.us-west-2.rds.amazonaws.com;Username=postgres;Password=postgres;Database=postgres;Plugins=;";
-
-            using (AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString))
-            {
-                connection.Open();
-                AwsWrapperCommand<NpgsqlCommand> command = connection.CreateCommand<NpgsqlCommand>();
-                command.CommandText = "select pg_sleep(60)";
-
-                var queryExecutionStopwatch = Stopwatch.StartNew();
-
-                await Task.WhenAll([
-                    Task.Run(() =>
+                        Console.WriteLine("Executing query error: " + ex);
+                    }
+                    finally
                     {
-                        try
-                        {
-                            IDataReader reader = command.ExecuteReader();
+                        queryExecutionStopwatch.Stop();
+                        Console.WriteLine("Query execution time: " + queryExecutionStopwatch.Elapsed.ToString());
+                    }
+                },
+                TestContext.Current.CancellationToken),
 
-                            Console.WriteLine("Query executed.");
-                            queryExecutionStopwatch.Stop();
-
-                            while (reader.Read())
-                            {
-                                Console.WriteLine("Returned data: " + reader.GetInt64(0));
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine("Executing query error: " + ex);
-                        }
-                        finally
-                        {
-                            queryExecutionStopwatch.Stop();
-                            Console.WriteLine("Query execution time: " + queryExecutionStopwatch.Elapsed.ToString());
-                        }
-                    },
-                    TestContext.Current.CancellationToken),
-
-                    Task.Run(async () =>
+                Task.Run(async () =>
+                {
+                    await Task.Delay(5000);
+                    Console.WriteLine("Cancelling command...");
+                    try
                     {
-                        await Task.Delay(5000);
-                        Console.WriteLine("Cancelling command...");
-                        try
+                        command.Cancel();
+                        Console.WriteLine("Command cancelled");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Error cancelling command: " + ex);
+                    }
+                },
+                TestContext.Current.CancellationToken)
+        ]);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    [Trait("Database", "pg")]
+    public async Task PgWrapperCommandCancelTest()
+    {
+        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, this.username, this.password, this.defaultDbName);
+        using AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
+        connection.Open();
+        AwsWrapperCommand<NpgsqlCommand> command = connection.CreateCommand<NpgsqlCommand>();
+        command.CommandText = "select pg_sleep(60)";
+
+        var queryExecutionStopwatch = Stopwatch.StartNew();
+
+        await Task.WhenAll([
+            Task.Run(() =>
+                {
+                    try
+                    {
+                        IDataReader reader = command.ExecuteReader();
+
+                        Console.WriteLine("Query executed.");
+                        queryExecutionStopwatch.Stop();
+
+                        while (reader.Read())
                         {
-                            command.Cancel();
-                            Console.WriteLine("Command cancelled");
+                            Console.WriteLine("Returned data: " + reader.GetInt64(0));
                         }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine("Error cancelling command: " + ex);
-                        }
-                    },
-                    TestContext.Current.CancellationToken)
-                ]);
-            }
-        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Executing query error: " + ex);
+                    }
+                    finally
+                    {
+                        queryExecutionStopwatch.Stop();
+                        Console.WriteLine("Query execution time: " + queryExecutionStopwatch.Elapsed.ToString());
+                    }
+                },
+                TestContext.Current.CancellationToken),
+
+                Task.Run(async () =>
+                {
+                    await Task.Delay(5000);
+                    Console.WriteLine("Cancelling command...");
+                    try
+                    {
+                        command.Cancel();
+                        Console.WriteLine("Command cancelled");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Error cancelling command: " + ex);
+                    }
+                },
+                TestContext.Current.CancellationToken)
+        ]);
     }
 }

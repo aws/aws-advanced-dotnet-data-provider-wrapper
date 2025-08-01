@@ -13,184 +13,169 @@
 // limitations under the License.
 
 using System.Data;
-
+using AwsWrapperDataProvider.Tests.Container.Utils;
 using Npgsql;
 
-namespace AwsWrapperDataProvider.Tests
+namespace AwsWrapperDataProvider.Tests;
+
+public class PluginConnectivityTests : IntegrationTestBase
 {
-    public class PluginConnectivityTests
+    [Fact]
+    [Trait("Category", "Integration")]
+    public void PgWrapperAdfsConnectionTest()
     {
-        [Fact]
-        [Trait("Category", "Integration")]
-        public void PgWrapperAdfsConnectionTest()
+        const string connectionString =
+            "Host=<insert_rds_instance_here>;Database=<database_name_here>;dbUser=<db_user_with_iam_login>;Plugins=federatedAuth;iamRegion=<iam_region>;iamRoleArn=<iam_role_arn>;iamIdpArn=<iam_idp_arn>;idpEndpoint=<idp_endpoint>;idpUsername=<idp_username>;idpPassword=<idp_password>;";
+        const string query = "select aurora_db_instance_identifier()";
+
+        using AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
+        AwsWrapperCommand<NpgsqlCommand> command = connection.CreateCommand<NpgsqlCommand>();
+        command.CommandText = query;
+
+        try
         {
-            const string connectionString =
-                "Host=<insert_rds_instance_here>;Database=<database_name_here>;dbUser=<db_user_with_iam_login>;Plugins=federatedAuth;iamRegion=<iam_region>;iamRoleArn=<iam_role_arn>;iamIdpArn=<iam_idp_arn>;idpEndpoint=<idp_endpoint>;idpUsername=<idp_username>;idpPassword=<idp_password>;";
-            const string query = "select aurora_db_instance_identifier()";
-
-            using (AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString))
+            connection.Open();
+            IDataReader reader = command.ExecuteReader();
+            while (reader.Read())
             {
-                AwsWrapperCommand<NpgsqlCommand> command = connection.CreateCommand<NpgsqlCommand>();
-                command.CommandText = query;
-
-                try
-                {
-                    connection.Open();
-                    IDataReader reader = command.ExecuteReader();
-                    while (reader.Read())
-                    {
-                        Console.WriteLine(reader.GetString(0));
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.ToString());
-                }
+                Console.WriteLine(reader.GetString(0));
             }
         }
-
-        [Fact]
-        [Trait("Category", "Integration")]
-        public void MySqlClientWrapperAdfsConnectionTest()
+        catch (Exception ex)
         {
-            const string connectionString = "Server=<insert_rds_instance_here>;Initial Catalog=mysql;Database=<database_name_here>;dbUser=<db_user_with_iam_login>;Plugins=federatedAuth;iamRegion=<iam_region>;iamRoleArn=<iam_role_arn>;iamIdpArn=<iam_idp_arn>;idpEndpoint=<idp_endpoint>;idpUsername=<idp_username>;idpPassword=<idp_password>;";
-            const string query = "select * from test";
+            Console.WriteLine(ex.ToString());
+        }
+    }
 
-            using (AwsWrapperConnection<MySql.Data.MySqlClient.MySqlConnection> connection =
-                   new(connectionString))
+    [Fact]
+    [Trait("Category", "Integration")]
+    public void MySqlClientWrapperAdfsConnectionTest()
+    {
+        const string connectionString = "Server=<insert_rds_instance_here>;Initial Catalog=mysql;Database=<database_name_here>;dbUser=<db_user_with_iam_login>;Plugins=federatedAuth;iamRegion=<iam_region>;iamRoleArn=<iam_role_arn>;iamIdpArn=<iam_idp_arn>;idpEndpoint=<idp_endpoint>;idpUsername=<idp_username>;idpPassword=<idp_password>;";
+        const string query = "select * from test";
+
+        using (AwsWrapperConnection<MySql.Data.MySqlClient.MySqlConnection> connection =
+               new(connectionString))
+        {
+            AwsWrapperCommand<MySql.Data.MySqlClient.MySqlCommand> command = connection.CreateCommand<MySql.Data.MySqlClient.MySqlCommand>();
+            command.CommandText = query;
+
+            try
             {
-                AwsWrapperCommand<MySql.Data.MySqlClient.MySqlCommand> command = connection.CreateCommand<MySql.Data.MySqlClient.MySqlCommand>();
-                command.CommandText = query;
-
-                try
+                connection.Open();
+                IDataReader reader = command.ExecuteReader();
+                while (reader.Read())
                 {
-                    connection.Open();
-                    IDataReader reader = command.ExecuteReader();
-                    while (reader.Read())
-                    {
-                        Console.WriteLine(reader.GetInt32(0));
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.ToString());
+                    Console.WriteLine(reader.GetInt32(0));
                 }
             }
-        }
-
-        [Fact]
-        [Trait("Category", "Integration")]
-        public void PgWrapperIamConnectionTest()
-        {
-            const string connectionString =
-                "Host=<insert_rds_instance_here>;Username=<db_user_with_iam_login>;Database=<database_name_here>;Plugins=iam;";
-            const string query = "select aurora_db_instance_identifier()";
-
-            using (AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString))
+            catch (Exception ex)
             {
-                AwsWrapperCommand<NpgsqlCommand> command = connection.CreateCommand<NpgsqlCommand>();
-                command.CommandText = query;
-
-                try
-                {
-                    connection.Open();
-                    IDataReader reader = command.ExecuteReader();
-                    while (reader.Read())
-                    {
-                        Console.WriteLine(reader.GetString(0));
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.ToString());
-                }
+                Console.WriteLine(ex.ToString());
             }
         }
+    }
 
-        [Fact]
-        [Trait("Category", "Integration")]
-        public void MySqlClientWrapperIamConnectionTest()
+    [Fact]
+    [Trait("Category", "Integration")]
+    [Trait("Database", "pg")]
+    public void PgWrapperIamConnectionTest()
+    {
+        var iamUser = TestEnvironment.Env.Info.IamUsername!;
+        var iamRegion = TestEnvironment.Env.Info.Region!;
+        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, iamUser, string.Empty, this.defaultDbName);
+        connectionString += $";Plugins=iam;IamRegion={iamRegion}";
+        const string query = "select aurora_db_instance_identifier()";
+
+        using AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
+        AwsWrapperCommand<NpgsqlCommand> command = connection.CreateCommand<NpgsqlCommand>();
+        command.CommandText = query;
+
+        connection.Open();
+        IDataReader reader = command.ExecuteReader();
+        while (reader.Read())
         {
-            const string connectionString = "Server=<insert_rds_instance_here>;Initial Catalog=mysql;Username=<db_user_with_iam_login>;Database=<database_name_here>;Plugins=iam;";
-            const string query = "select * from test";
+            Console.WriteLine(reader.GetString(0));
+        }
+    }
 
-            using (AwsWrapperConnection<MySql.Data.MySqlClient.MySqlConnection> connection =
-                   new(connectionString))
+    [Fact]
+    [Trait("Category", "Integration")]
+    [Trait("Database", "mysql")]
+    public void MySqlClientWrapperIamConnectionTest()
+    {
+        var iamUser = TestEnvironment.Env.Info.IamUsername!;
+        var iamRegion = TestEnvironment.Env.Info.Region!;
+        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, iamUser, string.Empty, this.defaultDbName);
+        connectionString += $";Plugins=iam;IamRegion={iamRegion}";
+        const string query = "select 1";
+
+        using AwsWrapperConnection<MySql.Data.MySqlClient.MySqlConnection> connection = new(connectionString);
+        AwsWrapperCommand<MySql.Data.MySqlClient.MySqlCommand> command = connection.CreateCommand<MySql.Data.MySqlClient.MySqlCommand>();
+        command.CommandText = query;
+
+        connection.Open();
+        IDataReader reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            Console.WriteLine(reader.GetInt32(0));
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public void PgWrapperSecretsManagerConnectionTest()
+    {
+        const string connectionString =
+            "Host=<insert_rds_instance_here>;Database=<database_name_here>;Plugins=awsSecretsManager;secretsManagerSecretId=<secret_name_or_arn>;secretsManagerRegion=<optional_secret_region>;";
+        const string query = "select aurora_db_instance_identifier()";
+
+        using (AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString))
+        {
+            AwsWrapperCommand<NpgsqlCommand> command = connection.CreateCommand<NpgsqlCommand>();
+            command.CommandText = query;
+
+            try
             {
-                AwsWrapperCommand<MySql.Data.MySqlClient.MySqlCommand> command = connection.CreateCommand<MySql.Data.MySqlClient.MySqlCommand>();
-                command.CommandText = query;
-
-                try
+                connection.Open();
+                IDataReader reader = command.ExecuteReader();
+                while (reader.Read())
                 {
-                    connection.Open();
-                    IDataReader reader = command.ExecuteReader();
-                    while (reader.Read())
-                    {
-                        Console.WriteLine(reader.GetInt32(0));
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.ToString());
+                    Console.WriteLine(reader.GetString(0));
                 }
             }
-        }
-
-        [Fact]
-        [Trait("Category", "Integration")]
-        public void PgWrapperSecretsManagerConnectionTest()
-        {
-            const string connectionString =
-                "Host=<insert_rds_instance_here>;Database=<database_name_here>;Plugins=awsSecretsManager;secretsManagerSecretId=<secret_name_or_arn>;secretsManagerRegion=<optional_secret_region>;";
-            const string query = "select aurora_db_instance_identifier()";
-
-            using (AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString))
+            catch (Exception ex)
             {
-                AwsWrapperCommand<NpgsqlCommand> command = connection.CreateCommand<NpgsqlCommand>();
-                command.CommandText = query;
-
-                try
-                {
-                    connection.Open();
-                    IDataReader reader = command.ExecuteReader();
-                    while (reader.Read())
-                    {
-                        Console.WriteLine(reader.GetString(0));
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.ToString());
-                }
+                Console.WriteLine(ex.ToString());
             }
         }
+    }
 
-        [Fact]
-        [Trait("Category", "Integration")]
-        public void MySqlClientWrapperSecretsManagerConnectionTest()
+    [Fact]
+    [Trait("Category", "Integration")]
+    public void MySqlClientWrapperSecretsManagerConnectionTest()
+    {
+        const string connectionString = "Server=<insert_rds_instance_here>;Initial Catalog=mysql;Plugins=awsSecretsManager;secretsManagerSecretId=<secret_name_or_arn>;secretsManagerRegion=<optional_secret_region>;";
+        const string query = "select * from test";
+
+        using (AwsWrapperConnection<MySql.Data.MySqlClient.MySqlConnection> connection =
+               new(connectionString))
         {
-            const string connectionString = "Server=<insert_rds_instance_here>;Initial Catalog=mysql;Plugins=awsSecretsManager;secretsManagerSecretId=<secret_name_or_arn>;secretsManagerRegion=<optional_secret_region>;";
-            const string query = "select * from test";
+            AwsWrapperCommand<MySql.Data.MySqlClient.MySqlCommand> command = connection.CreateCommand<MySql.Data.MySqlClient.MySqlCommand>();
+            command.CommandText = query;
 
-            using (AwsWrapperConnection<MySql.Data.MySqlClient.MySqlConnection> connection =
-                   new(connectionString))
+            try
             {
-                AwsWrapperCommand<MySql.Data.MySqlClient.MySqlCommand> command = connection.CreateCommand<MySql.Data.MySqlClient.MySqlCommand>();
-                command.CommandText = query;
-
-                try
+                connection.Open();
+                IDataReader reader = command.ExecuteReader();
+                while (reader.Read())
                 {
-                    connection.Open();
-                    IDataReader reader = command.ExecuteReader();
-                    while (reader.Read())
-                    {
-                        Console.WriteLine(reader.GetInt32(0));
-                    }
+                    Console.WriteLine(reader.GetInt32(0));
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.ToString());
-                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
             }
         }
     }
