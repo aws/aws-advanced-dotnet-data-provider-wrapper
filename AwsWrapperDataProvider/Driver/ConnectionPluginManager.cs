@@ -203,7 +203,7 @@ public class ConnectionPluginManager
             (plugin, methodFunc) => plugin.ForceOpenConnection(hostSpec, props, isInitialConnection, () => methodFunc()),
             () =>
             {
-                throw new InvalidOperationException("Function should not be called.");
+                throw new UnreachableException("Function should not be called.");
             },
             pluginToSkip);
     }
