@@ -65,7 +65,7 @@ public class HostSpecBuilder
 
     public HostSpecBuilder WithLastUpdateTime(DateTime? lastUpdateTime)
     {
-        this.lastUpateTime = lastUpdateTime ?? DateTime.Now;
+        this.lastUpateTime = lastUpdateTime ?? DateTime.UtcNow;
         return this;
     }
 

@@ -209,10 +209,6 @@ public static class PropertyDefinition
         EnableConnectFailover,
         SkipFailoverOnInterruptedThread,
 
-        // Connection Timeout Properties
-        SocketTimeout,
-        ConnectTimeout,
-
         // Host Selector Stratagy Properties
         RoundRobinHostWeightPairs,
         RoundRobinDefaultWeight,
