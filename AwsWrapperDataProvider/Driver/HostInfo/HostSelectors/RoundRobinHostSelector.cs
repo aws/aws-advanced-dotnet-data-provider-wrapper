@@ -12,9 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Collections.Concurrent;
-using System.Data.Common;
-using System.Data.Common;
 using System.Text.RegularExpressions;
 using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Caching.Memory;

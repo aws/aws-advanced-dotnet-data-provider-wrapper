@@ -317,7 +317,7 @@ public class RdsHostListProvider : IDynamicHostListProvider
                 return new FetchTopologyResult(false, this.initialHostList);
             }
 
-            List<HostSpec> hosts = this.QueryForTopology(connection);
+            List<HostSpec>? hosts = this.QueryForTopology(connection);
             if (hosts != null && hosts.Count > 0)
             {
                 TopologyCache.Set(this.ClusterId, hosts, this.topologyRefreshRate);
@@ -342,7 +342,7 @@ public class RdsHostListProvider : IDynamicHostListProvider
 
     private void SuggestPrimaryCluster(List<HostSpec> primaryClusterHosts)
     {
-        if (primaryClusterHosts == null || primaryClusterHosts.Count == 0)
+        if (primaryClusterHosts.Count == 0)
         {
             return;
         }
