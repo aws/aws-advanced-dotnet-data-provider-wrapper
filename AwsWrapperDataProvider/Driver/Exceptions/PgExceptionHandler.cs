@@ -51,7 +51,7 @@ public class PgExceptionHandler : GenericExceptionHandler
 
         while (currException is not null)
         {
-            if (currException is SocketException or TimeoutException)
+            if (currException is SocketException or TimeoutException or System.IO.EndOfStreamException)
             {
                 return true;
             }

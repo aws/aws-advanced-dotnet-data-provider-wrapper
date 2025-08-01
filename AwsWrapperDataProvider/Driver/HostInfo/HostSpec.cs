@@ -64,6 +64,15 @@ public class HostSpec
     public HostSpec(
         string host,
         int port,
+        HostRole hostRole,
+        HostAvailability availability)
+        : this(host, port, null, hostRole, availability, DefaultWeight, DateTime.UtcNow)
+    {
+    }
+
+    public HostSpec(
+        string host,
+        int port,
         string? hostId,
         HostRole hostRole,
         HostAvailability availability,

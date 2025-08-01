@@ -12,9 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace AwsWrapperDataProvider.Driver.HostInfo.HostSelectors;
+using System.Data.Common;
 
-public interface IHostSelector
+namespace AwsWrapperDataProvider.Driver.Exceptions;
+
+public class AwsWrapperDbException : DbException
 {
-    HostSpec GetHost(IList<HostSpec> hosts, HostRole hostRole, Dictionary<string, string> props);
+    public AwsWrapperDbException(string message)
+        : base(message)
+    {
+    }
+
+    public AwsWrapperDbException(string message, Exception innerException)
+        : base(message, innerException)
+    {
+    }
+
+    public AwsWrapperDbException(string message, string sqlState)
+        : base(message)
+    {
+        this.SqlState = sqlState;
+    }
+
+    public new string? SqlState { get; set; }
 }

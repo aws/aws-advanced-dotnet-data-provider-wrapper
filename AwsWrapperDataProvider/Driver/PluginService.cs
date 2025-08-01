@@ -12,17 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Data.Common;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.Exceptions;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
+using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
+using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver;
 
@@ -30,6 +35,7 @@ public class PluginService : IPluginService, IHostListProviderService
 {
     private static readonly DateTimeOffset DefaultHostAvailabilityCacheExpiration = DateTimeOffset.Now.AddMinutes(5);
     internal static readonly MemoryCache HostAvailabilityExpiringCache = new(new MemoryCacheOptions());
+    private static readonly ILogger<PluginService> Logger = LoggerUtils.GetLogger<PluginService>();
 
     private readonly ConnectionPluginManager pluginManager;
     private readonly Dictionary<string, string> props;
@@ -103,9 +109,9 @@ public class PluginService : IPluginService, IHostListProviderService
         return this.AllHosts;
     }
 
-    public HostRole GetHostRole(DbConnection connection)
+    public HostRole GetHostRole(DbConnection? connection)
     {
-        return this.hostListProvider.GetHostRole(connection);
+        return this.hostListProvider.GetHostRole(connection!);
     }
 
     public void SetAvailability(ICollection<string> hostAliases, HostAvailability availability)
@@ -200,15 +206,39 @@ public class PluginService : IPluginService, IHostListProviderService
 
     public void ForceRefreshHostList(bool shouldVerifyWriter, long timeoutMs)
     {
-        throw new NotImplementedException();
+        if (this.HostListProvider is IBlockingHostListProvider blockingHostListProvider)
+        {
+            IList<HostSpec> updateHostList = blockingHostListProvider.ForceRefresh(shouldVerifyWriter, timeoutMs);
+            this.UpdateHostAvailability(updateHostList);
+            this.NotifyNodeChangeList(this.AllHosts, updateHostList);
+            this.AllHosts = updateHostList;
+        }
+        else
+        {
+            throw new InvalidOperationException("[PluginService] Required IBlockingHostListProvider");
+        }
     }
 
-    public DbConnection OpenConnection(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin? pluginToSkip)
+    public DbConnection OpenConnection(HostSpec hostSpec, Dictionary<string, string> props, bool isInitialConnection)
     {
-        throw new NotImplementedException();
+        return this.pluginManager.Open(hostSpec, props, isInitialConnection, null);
     }
 
-    public DbConnection ForceConnect(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin pluginToSkip)
+    public DbConnection OpenConnection(
+        HostSpec hostSpec,
+        Dictionary<string, string> props,
+        bool isInitialConnection,
+        IConnectionPlugin pluginToSkip)
+    {
+        return this.pluginManager.Open(hostSpec, props, isInitialConnection, pluginToSkip);
+    }
+
+    public DbConnection ForceOpenConnection(HostSpec hostSpec, Dictionary<string, string> props, bool isInitialConnection)
+    {
+        return this.pluginManager.ForceOpen(hostSpec, props, isInitialConnection, null);
+    }
+
+    public Task OpenConnectionAsync(HostSpec hostSpec, Dictionary<string, string> props)
     {
         throw new NotImplementedException();
     }

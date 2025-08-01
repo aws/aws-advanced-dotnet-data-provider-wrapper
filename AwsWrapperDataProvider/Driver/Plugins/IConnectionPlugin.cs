@@ -51,11 +51,29 @@ public interface IConnectionPlugin
     /// <param name="props">Connection properties.</param>
     /// <param name="isInitialConnection">Whether this is the initial connection.</param>
     /// <param name="methodFunc">The callable that executes the actual connection.</param>
-    void OpenConnection(
+    /// <returns>The created database connection.</returns>
+    DbConnection OpenConnection(
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
-        ADONetDelegate methodFunc);
+        ADONetDelegate<DbConnection> methodFunc);
+
+    /// <summary>
+    /// Forces a connection to the given host using the given properties.
+    /// This method bypasses certain plugins (like failover) to prevent cyclic dependencies
+    /// and ensures the connection is made to the specified hostSpec.
+    /// Used primarily for monitoring and internal connections.
+    /// </summary>
+    /// <param name="hostSpec">The host specification to connect to.</param>
+    /// <param name="props">Connection properties.</param>
+    /// <param name="isInitialConnection">Whether this is the initial connection.</param>
+    /// <param name="methodFunc">The callable that executes the actual connection.</param>
+    /// <returns>The created database connection.</returns>
+    DbConnection ForceOpenConnection(
+        HostSpec? hostSpec,
+        Dictionary<string, string> props,
+        bool isInitialConnection,
+        ADONetDelegate<DbConnection> methodFunc);
 
     /// <summary>
     /// Initializes the host provider.

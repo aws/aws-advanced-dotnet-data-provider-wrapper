@@ -196,12 +196,12 @@ public class RdsHostListProvider : IDynamicHostListProvider
         }
     }
 
-    public IList<HostSpec> ForceRefresh()
+    public virtual IList<HostSpec> ForceRefresh()
     {
         return this.ForceRefresh(null);
     }
 
-    public IList<HostSpec> ForceRefresh(IDbConnection? connection)
+    public virtual IList<HostSpec> ForceRefresh(IDbConnection? connection)
     {
         this.EnsureInitialized();
         IDbConnection? currentConnection = connection ?? this.hostListProviderService.CurrentConnection;
@@ -211,13 +211,13 @@ public class RdsHostListProvider : IDynamicHostListProvider
         return this.hostList.AsReadOnly();
     }
 
-    public string GetClusterId()
+    public virtual string GetClusterId()
     {
         this.EnsureInitialized();
         return this.ClusterId;
     }
 
-    public HostSpec? IdentifyConnection(DbConnection connection)
+    public virtual HostSpec? IdentifyConnection(DbConnection connection)
     {
         using DbCommand command = connection.CreateCommand();
         command.CommandText = this.nodeIdQuery;
@@ -265,7 +265,7 @@ public class RdsHostListProvider : IDynamicHostListProvider
         return foundHost;
     }
 
-    public HostRole GetHostRole(IDbConnection connection)
+    public virtual HostRole GetHostRole(IDbConnection connection)
     {
         using IDbCommand command = connection.CreateCommand();
         command.CommandText = this.isReaderQuery;
@@ -281,12 +281,12 @@ public class RdsHostListProvider : IDynamicHostListProvider
         throw new InvalidOperationException("Failed to determine host role from the database.");
     }
 
-    public IList<HostSpec> Refresh()
+    public virtual IList<HostSpec> Refresh()
     {
         return this.Refresh(null);
     }
 
-    public IList<HostSpec> Refresh(IDbConnection? connection)
+    public virtual IList<HostSpec> Refresh(IDbConnection? connection)
     {
         this.EnsureInitialized();
         IDbConnection? currentConnection = connection ?? this.hostListProviderService.CurrentConnection;
@@ -303,6 +303,7 @@ public class RdsHostListProvider : IDynamicHostListProvider
         string? suggestedPrimaryClusterId = SuggestedPrimaryClusterIdCache.Get<string>(this.ClusterId);
         if (!string.IsNullOrEmpty(suggestedPrimaryClusterId) && !this.ClusterId.Equals(suggestedPrimaryClusterId))
         {
+            this.ClusterIdChanged(this.ClusterId);
             this.ClusterId = suggestedPrimaryClusterId;
             this.IsPrimaryClusterId = true;
         }
@@ -316,7 +317,7 @@ public class RdsHostListProvider : IDynamicHostListProvider
                 return new FetchTopologyResult(false, this.initialHostList);
             }
 
-            List<HostSpec> hosts = this.QueryForTopology(connection);
+            List<HostSpec>? hosts = this.QueryForTopology(connection);
             if (hosts != null && hosts.Count > 0)
             {
                 TopologyCache.Set(this.ClusterId, hosts, this.topologyRefreshRate);
@@ -341,7 +342,7 @@ public class RdsHostListProvider : IDynamicHostListProvider
 
     private void SuggestPrimaryCluster(List<HostSpec> primaryClusterHosts)
     {
-        if (primaryClusterHosts == null || primaryClusterHosts.Count == 0)
+        if (primaryClusterHosts.Count == 0)
         {
             return;
         }
@@ -373,7 +374,7 @@ public class RdsHostListProvider : IDynamicHostListProvider
         }
     }
 
-    internal virtual List<HostSpec> QueryForTopology(IDbConnection connection)
+    internal virtual List<HostSpec>? QueryForTopology(IDbConnection connection)
     {
         using IDbCommand command = connection.CreateCommand();
         command.CommandTimeout = DefaultTopologyQueryTimeoutSec;
@@ -451,6 +452,11 @@ public class RdsHostListProvider : IDynamicHostListProvider
         public string ClusterId { get; } = clusterId;
 
         public bool IsPrimaryClusterId { get; } = isPrimaryClusterId;
+    }
+
+    protected virtual void ClusterIdChanged(string clusterId)
+    {
+        // Do nothing.
     }
 
     internal class FetchTopologyResult(bool isCachedData, List<HostSpec> hosts)

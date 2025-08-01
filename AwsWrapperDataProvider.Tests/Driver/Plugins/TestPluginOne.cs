@@ -57,11 +57,20 @@ public class TestPluginOne : IConnectionPlugin
         throw new NotImplementedException();
     }
 
-    public virtual void OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate methodFunc)
+    public virtual DbConnection OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
     {
         this.calls.Add(this.GetType().Name + ":before open");
-        methodFunc();
+        DbConnection connection = methodFunc();
         this.calls.Add(this.GetType().Name + ":after open");
+        return connection;
+    }
+
+    public virtual DbConnection ForceOpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
+    {
+        this.calls.Add(this.GetType().Name + ":before open");
+        DbConnection connection = methodFunc();
+        this.calls.Add(this.GetType().Name + ":after open");
+        return connection;
     }
 
     public DbConnection ForceConnect(HostSpec hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> forceConnectmethodFunc)

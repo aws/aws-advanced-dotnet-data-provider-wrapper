@@ -33,4 +33,8 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Driver\Plugins\Failover\" />
+  </ItemGroup>
+
 </Project>

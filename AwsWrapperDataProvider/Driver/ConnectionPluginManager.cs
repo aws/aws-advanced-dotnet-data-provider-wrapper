@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data.Common;
+using System.Diagnostics;
+using System.Reflection;
 using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.HostInfo;
@@ -32,6 +35,7 @@ public class ConnectionPluginManager
     private const string AllMethods = "*";
     private const string GetHostSpecByStrategyMethod = "GetHostSpecByStrategy";
     private const string ConnectMethod = "DbConnection.Open";
+    private const string ForceConnectMethod = "DbConnection.ForceOpen";
     private const string InitHostMethod = "initHostProvider";
 
     private delegate T PluginPipelineDelegate<T>(IConnectionPlugin plugin, ADONetDelegate<T> methodFunc);
@@ -106,10 +110,22 @@ public class ConnectionPluginManager
             throw new Exception(Properties.Resources.Error_ProcessingAdoNetCall);
         }
 
-        return (T)pluginChainDelegate.DynamicInvoke(
-            pluginPipelineDelegate,
-            methodFunc,
-            pluginToSkip)!;
+        try
+        {
+            return (T)pluginChainDelegate.DynamicInvoke(
+                pluginPipelineDelegate,
+                methodFunc,
+                pluginToSkip)!;
+        }
+        catch (TargetInvocationException exception)
+        {
+            if (exception.InnerException != null)
+            {
+                throw exception.InnerException;
+            }
+        }
+
+        throw new UnreachableException("Should not get here.");
     }
 
     private PluginChainADONetDelegate<T> MakePluginChainDelegate<T>(string methodName)
@@ -158,25 +174,36 @@ public class ConnectionPluginManager
             null)!;
     }
 
-    public virtual void Open(
+    public virtual DbConnection Open(
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
-        IConnectionPlugin? pluginToSkip,
-        ADONetDelegate openFunc)
+        IConnectionPlugin? pluginToSkip)
     {
-        // Type object does not mean anything
-        this.ExecuteWithSubscribedPlugins<object>(
+        // Execute the plugin chain and return the connection
+        return this.ExecuteWithSubscribedPlugins<DbConnection>(
             ConnectMethod,
-            (plugin, methodFunc) =>
-            {
-                plugin.OpenConnection(hostSpec, props, isInitialConnection, () => methodFunc());
-                return default!;
-            },
+            (plugin, methodFunc) => plugin.OpenConnection(hostSpec, props, isInitialConnection, () => methodFunc()),
             () =>
             {
-                openFunc();
-                return default!;
+                throw new UnreachableException("Function should not be called.");
+            },
+            pluginToSkip);
+    }
+
+    public virtual DbConnection ForceOpen(
+        HostSpec? hostSpec,
+        Dictionary<string, string> props,
+        bool isInitialConnection,
+        IConnectionPlugin? pluginToSkip)
+    {
+        // Execute the plugin chain and return the connection
+        return this.ExecuteWithSubscribedPlugins<DbConnection>(
+            ForceConnectMethod,
+            (plugin, methodFunc) => plugin.ForceOpenConnection(hostSpec, props, isInitialConnection, () => methodFunc()),
+            () =>
+            {
+                throw new UnreachableException("Function should not be called.");
             },
             pluginToSkip);
     }

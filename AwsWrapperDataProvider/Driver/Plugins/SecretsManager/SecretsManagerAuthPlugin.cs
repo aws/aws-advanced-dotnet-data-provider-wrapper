@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data.Common;
 using Amazon.SecretsManager;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -21,7 +22,7 @@ namespace AwsWrapperDataProvider.Driver.Plugins.SecretsManager;
 
 public class SecretsManagerAuthPlugin(IPluginService pluginService, Dictionary<string, string> props, string secretId, string region, int secretValueExpirySecs, AmazonSecretsManagerClient client) : AbstractConnectionPlugin
 {
-    public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string> { "DbConnection.Open", "DbConnection.OpenAsync" };
+    public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string> { "DbConnection.Open", "DbConnection.OpenAsync", "DbConnection.ForceOpen" };
 
     private static readonly MemoryCache SecretValueCache = new(new MemoryCacheOptions());
 
@@ -46,19 +47,25 @@ public class SecretsManagerAuthPlugin(IPluginService pluginService, Dictionary<s
         return secretId + ":" + region;
     }
 
-    public override void OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate methodFunc)
+    public override DbConnection OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
     {
-        this.ConnectInternal(hostSpec, props, methodFunc);
+        return this.ConnectInternal(hostSpec, props, methodFunc);
     }
 
-    private void ConnectInternal(HostSpec? hostSpec, Dictionary<string, string> props, ADONetDelegate methodFunc)
+    public override DbConnection ForceOpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
+    {
+        // For ForceOpenConnection, we can reuse the same logic as OpenConnection
+        return this.ConnectInternal(hostSpec, props, methodFunc);
+    }
+
+    private DbConnection ConnectInternal(HostSpec? hostSpec, Dictionary<string, string> props, ADONetDelegate<DbConnection> methodFunc)
     {
         bool secretsWasFetched = this.UpdateSecrets(false);
         this.ApplySecretToProperties(props);
 
         try
         {
-            methodFunc();
+            return methodFunc();
         }
         catch (Exception ex)
         {
@@ -70,7 +77,7 @@ public class SecretsManagerAuthPlugin(IPluginService pluginService, Dictionary<s
             // should the token not work (login exception + is cached token), generate a new one and try again
             this.UpdateSecrets(true);
             this.ApplySecretToProperties(props);
-            methodFunc();
+            return methodFunc();
         }
     }
 

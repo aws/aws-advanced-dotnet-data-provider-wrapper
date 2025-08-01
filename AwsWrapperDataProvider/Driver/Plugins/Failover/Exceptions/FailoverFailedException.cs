@@ -12,9 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace AwsWrapperDataProvider.Driver.HostInfo.HostSelectors;
+using System.Data.Common;
 
-public interface IHostSelector
+namespace AwsWrapperDataProvider.Driver.Plugins.Failover;
+
+/// <summary>
+/// Exception thrown when a failover operation fails to complete successfully.
+/// </summary>
+public class FailoverFailedException : DbException
 {
-    HostSpec GetHost(IList<HostSpec> hosts, HostRole hostRole, Dictionary<string, string> props);
+    public FailoverFailedException() : base("Failover operation failed")
+    {
+    }
+
+    public FailoverFailedException(string message) : base(message)
+    {
+    }
+
+    public FailoverFailedException(string message, Exception innerException) : base(message, innerException)
+    {
+    }
 }

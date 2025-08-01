@@ -109,5 +109,24 @@ namespace AwsWrapperDataProvider.Tests.Driver.Exceptions
             var result = this._handler.IsLoginException(exception);
             Assert.Equal(expected, result);
         }
+
+        [Fact]
+        [Trait("Category", "Unit")]
+        public void IsNetworkException_WithEndOfStreamException_ReturnsTrue()
+        {
+            var exception = new System.IO.EndOfStreamException("Attempted to read past the end of the stream.");
+            var result = this._handler.IsNetworkException(exception);
+            Assert.True(result);
+        }
+
+        [Fact]
+        [Trait("Category", "Unit")]
+        public void IsNetworkException_WithNestedEndOfStreamException_ReturnsTrue()
+        {
+            var innerException = new System.IO.EndOfStreamException("Attempted to read past the end of the stream.");
+            var exception = new NpgsqlException("Exception while reading from stream", innerException);
+            var result = this._handler.IsNetworkException(exception);
+            Assert.True(result);
+        }
     }
 }

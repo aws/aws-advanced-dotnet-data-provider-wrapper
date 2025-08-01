@@ -15,6 +15,8 @@
 using System.Data;
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostListProviders;
+using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
+using AwsWrapperDataProvider.Driver.Utils;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
@@ -35,6 +37,9 @@ public class AuroraPgDialect : PgDialect
     private static readonly string NodeIdQuery = "SELECT aurora_db_instance_identifier()";
 
     private static readonly string IsReaderQuery = "SELECT pg_is_in_recovery()";
+
+    private static readonly string IsWriterQuery = "SELECT SERVER_ID FROM aurora_replica_status() "
+        + "WHERE SESSION_ID = 'MASTER_SESSION_ID' AND SERVER_ID = aurora_db_instance_identifier()";
 
     public override IList<Type> DialectUpdateCandidates { get; } = [];
 
@@ -79,8 +84,21 @@ public class AuroraPgDialect : PgDialect
 
     private HostListProviderSupplier GetHostListProviderSupplier()
     {
-        // TODO add MonitoringRdsHostListProvider for failover plugin
-        return (props, hostListProviderService, pluginService) => new RdsHostListProvider(
-            props, hostListProviderService, TopologyQuery, NodeIdQuery, IsReaderQuery);
+        return (props, hostListProviderService, pluginService) =>
+            PropertyDefinition.Plugins.GetString(props)!.Contains("failover") ?
+                new MonitoringRdsHostListProvider(
+                    props,
+                    hostListProviderService,
+                    TopologyQuery,
+                    NodeIdQuery,
+                    IsReaderQuery,
+                    IsWriterQuery,
+                    pluginService) :
+                new RdsHostListProvider(
+                    props,
+                    hostListProviderService,
+                    TopologyQuery,
+                    NodeIdQuery,
+                    IsReaderQuery);
     }
 }

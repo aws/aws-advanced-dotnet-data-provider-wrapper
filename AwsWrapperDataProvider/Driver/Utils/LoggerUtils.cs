@@ -25,7 +25,8 @@ public static class LoggerUtils
         _loggerFactory = LoggerFactory.Create(builder =>
         {
             builder
-                .SetMinimumLevel(LogLevel.Information);
+                .SetMinimumLevel(LogLevel.Trace)
+                .AddDebug();
         });
     }
 

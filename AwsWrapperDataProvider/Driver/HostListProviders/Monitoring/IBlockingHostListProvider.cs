@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace AwsWrapperDataProvider.Driver.HostInfo.HostSelectors;
+using AwsWrapperDataProvider.Driver.HostInfo;
 
-public interface IHostSelector
+namespace AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
+
+public interface IBlockingHostListProvider : IHostListProvider
 {
-    HostSpec GetHost(IList<HostSpec> hosts, HostRole hostRole, Dictionary<string, string> props);
+    IList<HostSpec> ForceRefresh(bool shouldVerifyWriter, long timeoutMs);
 }

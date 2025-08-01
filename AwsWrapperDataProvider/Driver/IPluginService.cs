@@ -33,9 +33,9 @@ public interface IPluginService : IExceptionHandlerService
 
     ITargetConnectionDialect TargetConnectionDialect { get; }
 
-    DbConnection? CurrentConnection { get; set; }
+    DbConnection? CurrentConnection { get; }
 
-    HostSpec? CurrentHostSpec { get; set; }
+    HostSpec? CurrentHostSpec { get; }
 
     HostSpec? InitialConnectionHostSpec { get; }
 
@@ -53,14 +53,6 @@ public interface IPluginService : IExceptionHandlerService
     void SetCurrentConnection(DbConnection connection, HostSpec? hostSpec);
 
     /// <summary>
-    /// Sets the current connection and associated host specification, skipping a specific plugin.
-    /// </summary>
-    /// <param name="connection">The database connection.</param>
-    /// <param name="hostSpec">The host specification.</param>
-    /// <param name="pluginToSkip">The plugin to skip during the operation.</param>
-    void SetCurrentConnection(DbConnection connection, HostSpec hostSpec, IConnectionPlugin pluginToSkip);
-
-    /// <summary>
     /// Gets the currently active hosts.
     /// </summary>
     /// <returns>List of active host specifications.</returns>
@@ -71,7 +63,7 @@ public interface IPluginService : IExceptionHandlerService
     /// </summary>
     /// <param name="connection">The database connection.</param>
     /// <returns>The host role.</returns>
-    HostRole GetHostRole(DbConnection connection);
+    HostRole GetHostRole(DbConnection? connection);
 
     /// <summary>
     /// Sets the availability of hosts.
@@ -110,22 +102,33 @@ public interface IPluginService : IExceptionHandlerService
     void ForceRefreshHostList(bool shouldVerifyWriter, long timeoutMs);
 
     /// <summary>
+    /// Connects to a host.
+    /// </summary>
+    /// <param name="hostSpec">The host specification.</param>
+    /// <param name="props">Connection properties.</param>
+    /// <param name="isInitialConnection">Is initial connection.</param>
+    /// <returns>The created database connection.</returns>
+    DbConnection OpenConnection(HostSpec hostSpec, Dictionary<string, string> props, bool isInitialConnection);
+
+    /// <summary>
     /// Connects to a host, skipping a specific plugin.
     /// </summary>
     /// <param name="hostSpec">The host specification.</param>
     /// <param name="props">Connection properties.</param>
-    /// <param name="pluginToSkip">The plugin to skip.</param>
-    /// <returns>The database connection.</returns>
-    DbConnection OpenConnection(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin? pluginToSkip);
+    /// <param name="isInitialConnection">Is initial connection.</param>
+    /// <param name="pluginToSkip">Plugin to skip.</param>
+    /// <returns>The created database connection.</returns>
+    DbConnection OpenConnection(HostSpec hostSpec, Dictionary<string, string> props, bool isInitialConnection, IConnectionPlugin pluginToSkip);
 
     /// <summary>
-    /// Forces a connection to a host, skipping a specific plugin.
+    /// Forces a connection to a host, bypassing certain plugins like failover to prevent cyclic dependencies.
+    /// Used primarily for monitoring and internal connections.
     /// </summary>
     /// <param name="hostSpec">The host specification.</param>
     /// <param name="props">Connection properties.</param>
-    /// <param name="pluginToSkip">The plugin to skip.</param>
-    /// <returns>The database connection.</returns>
-    DbConnection ForceConnect(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin pluginToSkip);
+    /// <param name="isInitialConnection">Is initial connection.</param>
+    /// <returns>The created database connection.</returns>
+    DbConnection ForceOpenConnection(HostSpec hostSpec, Dictionary<string, string> props, bool isInitialConnection);
 
     /// <summary>
     /// Updates the dialect based on the given connection.

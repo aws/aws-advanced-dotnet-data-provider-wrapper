@@ -12,9 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace AwsWrapperDataProvider.Driver.HostInfo.HostSelectors;
+namespace AwsWrapperDataProvider.Driver.Plugins.Failover;
 
-public interface IHostSelector
+/// <summary>
+/// Enumeration of failover modes that determine the behavior during failover scenarios.
+/// </summary>
+public enum FailoverMode
 {
-    HostSpec GetHost(IList<HostSpec> hosts, HostRole hostRole, Dictionary<string, string> props);
+    StrictWriter,
+    StrictReader,
+    ReaderOrWriter,
 }

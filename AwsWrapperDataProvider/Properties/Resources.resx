@@ -106,7 +106,7 @@
     <value>No dialect found for connection type {0}</value>
   </data>
   <data name="Error_FailedToInstantiateDialectType" xml:space="preserve">
-    <value>Failed to instantiate dialect type '{0}'</value>
+    <value>Failed to instantiate dialect type {0}</value>
   </data>
   <data name="Error_InvalidDialectType" xml:space="preserve">
     <value>Invalid dialect type provided.</value>
@@ -117,4 +117,64 @@
   <data name="Error_TargetConnectionTypeNotFound" xml:space="preserve">
     <value>Target connection type not found.</value>
   </data>
+  <data name="ClusterTopologyMonitor.StartMonitoringThread" xml:space="preserve">
+      <value>Start cluster topology monitoring thread for {0}.</value>
+  </data>
+  <data name="ClusterTopologyMonitor.StopMonitoringThread" xml:space="preserve">
+      <value>Stop cluster topology monitoring thread for {0}.</value>
+  </data>
+  <data name="ClusterTopologyMonitor.ExceptionDuringMonitoringStop" xml:space="preserve">
+      <value>Stopping cluster topology monitoring after unhandled exception was thrown in monitoring thread for node {0}.</value>
+    </data>
+    <data name="ClusterTopologyMonitor.InvalidQuery" xml:space="preserve">
+      <value>An error occurred while attempting to obtain the topology because the topology query was invalid. Please ensure you are connecting to an Aurora or RDS Db cluster.</value>
+    </data>
+    <data name="ClusterTopologyMonitor.ErrorGettingNetworkTimeout" xml:space="preserve">
+      <value>An error occurred while getting the connection network timeout: {0}</value>
+    </data>
+    <data name="ClusterTopologyMonitor.InvalidTopology" xml:space="preserve">
+      <value>The topology query returned an invalid topology - no writer instance detected.</value>
+    </data>
+    <data name="ClusterTopologyMonitor.TopologyNotUpdated" xml:space="preserve">
+      <value>Topology hasn't been updated after {0} ms.</value>
+    </data>
+    <data name="ClusterTopologyMonitor.OpenedMonitoringConnection" xml:space="preserve">
+      <value>Opened monitoring connection to node {0}.</value>
+    </data>
+    <data name="ClusterTopologyMonitor.IgnoringTopologyRequest" xml:space="preserve">
+      <value>A topology refresh was requested, but the topology was already updated recently. Returning cached hosts:</value>
+    </data>
+    <data name="ClusterTopologyMonitor.TimeoutSetToZero" xml:space="preserve">
+      <value>A topology refresh was requested, but the given timeout for the request was 0ms. Returning cached hosts:</value>
+    </data>
+    <data name="ClusterTopologyMonitor.Interrupted" xml:space="preserve">
+      <value>The thread was interrupted while waiting for updated topology.</value>
+    </data>
+    <data name="ClusterTopologyMonitor.StartingNodeMonitoringThreads" xml:space="preserve">
+      <value>Starting node monitoring threads.</value>
+    </data>
+    <data name="ClusterTopologyMonitor.WriterPickedUpFromNodeMonitors" xml:space="preserve">
+      <value>The writer host detected by the node monitors was picked up by the topology monitor: {0}.</value>
+    </data>
+    <data name="ClusterTopologyMonitor.WriterMonitoringConnection" xml:space="preserve">
+      <value>The monitoring connection is connected to a writer: {0}.</value>
+    </data>
+    <data name="ClusterTopologyMonitor.ErrorFetchingTopology" xml:space="preserve">
+      <value>An error occurred while querying for topology: {0}</value>
+    </data>
+    <data name="ClusterTopologyMonitor.ErrorProcessingQueryResults" xml:space="preserve">
+      <value>An error occurred while processing the results from the topology query: {0}</value>
+    </data>
+    <data name="ClusterTopologyMonitor.UnexpectedTopologyQueryColumnCount" xml:space="preserve">
+      <value>The topology query returned a result with 0 columns. This may occur if the topology query is executed when the server is failing over.</value>
+    </data>
+    <data name="NodeMonitoringTask_DetectedWriter" xml:space="preserve">
+      <value>Writer detected by node monitoring thread: {0}.</value>
+    </data>
+    <data name="NodeMonitoringTask_ThreadCompleted" xml:space="preserve">
+      <value>Node monitoring thread completed.</value>
+    </data>
+    <data name="NodeMonitoringTask_WriterNodeChanged" xml:space="preserve">
+      <value>Writer node changed from {0} to node {1}.</value>
+    </data>
 </root>

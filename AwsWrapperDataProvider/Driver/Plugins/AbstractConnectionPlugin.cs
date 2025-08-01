@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 
@@ -29,13 +30,22 @@ public abstract class AbstractConnectionPlugin : IConnectionPlugin
         return methodFunc();
     }
 
-    public virtual void OpenConnection(
+    public virtual DbConnection OpenConnection(
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
-        ADONetDelegate methodFunc)
+        ADONetDelegate<DbConnection> methodFunc)
     {
-        methodFunc();
+        return methodFunc();
+    }
+
+    public virtual DbConnection ForceOpenConnection(
+        HostSpec? hostSpec,
+        Dictionary<string, string> props,
+        bool isInitialConnection,
+        ADONetDelegate<DbConnection> methodFunc)
+    {
+        return methodFunc();
     }
 
     public virtual void InitHostProvider(

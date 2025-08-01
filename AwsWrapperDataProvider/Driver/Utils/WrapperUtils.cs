@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
 
@@ -53,19 +54,22 @@ public class WrapperUtils
             methodArgs);
     }
 
-    public static void OpenWithPlugins(
+    public static DbConnection OpenWithPlugins(
+        ConnectionPluginManager connectionPluginManager,
+        HostSpec? hostSpec,
+        Dictionary<string, string> props,
+        bool isInitialConnection)
+    {
+        return connectionPluginManager.Open(hostSpec, props, isInitialConnection, null);
+    }
+
+    public static DbConnection ForceOpenWithPlugins(
         ConnectionPluginManager connectionPluginManager,
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
         ADONetDelegate openFunc)
     {
-        connectionPluginManager.Open(hostSpec, props, isInitialConnection, null, openFunc);
-    }
-
-    private static T WrapWithProxyIfNeeded<T>(T toProxy, ConnectionPluginManager connectionPluginManager)
-    {
-        // TODO: stub implementation, please replace.
-        return toProxy;
+        return connectionPluginManager.ForceOpen(hostSpec, props, isInitialConnection, null);
     }
 }

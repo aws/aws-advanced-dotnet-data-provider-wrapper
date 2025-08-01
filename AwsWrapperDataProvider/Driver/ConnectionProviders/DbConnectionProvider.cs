@@ -25,7 +25,7 @@ namespace AwsWrapperDataProvider.Driver.ConnectionProviders;
 public class DbConnectionProvider() : IConnectionProvider
 {
     private static readonly ReadOnlyDictionary<string, IHostSelector> AcceptedStrategies =
-        new(new Dictionary<string, IHostSelector>()
+        new(new Dictionary<string, IHostSelector>
         {
             { HighestWeightHostSelector.StrategyName,  new HighestWeightHostSelector() },
             { RandomHostSelector.StrategyName, new RandomHostSelector() },
@@ -74,16 +74,8 @@ public class DbConnectionProvider() : IConnectionProvider
         string strategy,
         Dictionary<string, string> props)
     {
-        // TODO: Implement Function to use strategy.
-        foreach (HostSpec hostSpec in hosts)
-        {
-            if (hostSpec.Role == hostRole)
-            {
-                return hostSpec;
-            }
-        }
-
-        return null;
+        IHostSelector hostSelector = AcceptedStrategies.GetValueOrDefault(strategy, AcceptedStrategies[RandomHostSelector.StrategyName]);
+        return hostSelector.GetHost(hosts, hostRole, props);
     }
 
     public string GetTargetName()

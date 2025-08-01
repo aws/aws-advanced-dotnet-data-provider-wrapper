@@ -103,13 +103,6 @@ public class AwsWrapperConnection : DbConnection
         this.PluginManager.InitConnectionPluginChain(this.pluginService, this.ConnectionProperties);
 
         this.pluginService.RefreshHostList();
-        this.pluginService.SetCurrentConnection(
-            connectionProvider.CreateDbConnection(
-                this.pluginService.Dialect,
-                this.pluginService.TargetConnectionDialect,
-                null,
-                this.ConnectionProperties),
-            this.pluginService.InitialConnectionHostSpec);
     }
 
     public override string Database => this.pluginService!.CurrentConnection?.Database ?? this.database ?? string.Empty;
@@ -152,18 +145,17 @@ public class AwsWrapperConnection : DbConnection
         }
 
         ArgumentNullException.ThrowIfNull(this.pluginService);
-        ArgumentNullException.ThrowIfNull(this.pluginService.CurrentConnection);
         ArgumentNullException.ThrowIfNull(this.PluginManager);
         ArgumentNullException.ThrowIfNull(this.hostListProviderService);
 
         this.PluginManager.InitHostProvider(this.connectionString!, this.ConnectionProperties!, this.hostListProviderService);
 
-        WrapperUtils.OpenWithPlugins(
+        DbConnection connection = WrapperUtils.OpenWithPlugins(
             this.PluginManager,
             this.pluginService.InitialConnectionHostSpec,
             this.ConnectionProperties!,
-            true,
-            () => this.pluginService.CurrentConnection!.Open());
+            true);
+        this.pluginService.SetCurrentConnection(connection, this.pluginService.InitialConnectionHostSpec);
         this.pluginService.RefreshHostList();
     }
 

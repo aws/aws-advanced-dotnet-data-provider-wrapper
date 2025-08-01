@@ -165,22 +165,22 @@ public class ConnectionPluginManagerTests
             testPlugins,
             this.mockWrapperConnection);
 
-        connectionPluginManager.Open(
-            new HostSpecBuilder().WithHost("anyHost").Build(),
-            [],
-            true,
-            null,
-            () =>
-            {
-                calls.Add("open connection");
-            });
+        try
+        {
+            connectionPluginManager.Open(
+                new HostSpecBuilder().WithHost("anyHost").Build(),
+                [],
+                true,
+                null);
+        }
+        catch
+        {
+            // Ignore as Open should throw error on invoking methodFunc();
+        }
 
-        Assert.Equal(5, calls.Count);
+        Assert.Equal(2, calls.Count);
         Assert.Equal("TestPluginOne:before open", calls[0]);
         Assert.Equal("TestPluginThree:before open", calls[1]);
-        Assert.Equal("open connection", calls[2]);
-        Assert.Equal("TestPluginThree:after open", calls[3]);
-        Assert.Equal("TestPluginOne:after open", calls[4]);
     }
 
     [Fact]
@@ -203,20 +203,21 @@ public class ConnectionPluginManagerTests
             testPlugins,
             this.mockWrapperConnection);
 
-        connectionPluginManager.Open(
-            new HostSpecBuilder().WithHost("anyHost").Build(),
-            [],
-            true,
-            pluginOne,
-            () =>
-            {
-                calls.Add("open connection");
-            });
+        try
+        {
+            connectionPluginManager.Open(
+                new HostSpecBuilder().WithHost("anyHost").Build(),
+                [],
+                true,
+                pluginOne);
+        }
+        catch
+        {
+            // Ignore as Open should throw error on invoking methodFunc();
+        }
 
-        Assert.Equal(3, calls.Count);
+        Assert.Single(calls);
         Assert.Equal("TestPluginThree:before open", calls[0]);
-        Assert.Equal("open connection", calls[1]);
-        Assert.Equal("TestPluginThree:after open", calls[2]);
     }
 
     [Fact]

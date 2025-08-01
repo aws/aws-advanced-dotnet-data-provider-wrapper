@@ -1,4 +1,4 @@
-﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -12,21 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data.Common;
+
 namespace AwsWrapperDataProvider.Driver.Plugins.Failover;
 
 /// <summary>
-/// Factory for creating FailoverPlugin instances.
+/// Exception thrown when a failover operation completes successfully.
+/// This exception is used to signal that the connection has changed and
+/// the application should re-configure session state if required.
 /// </summary>
-public class FailoverPluginFactory : IConnectionPluginFactory
+public class FailoverSuccessException : DbException
 {
-    /// <summary>
-    /// Creates a new instance of the FailoverPlugin.
-    /// </summary>
-    /// <param name="pluginService">The plugin service.</param>
-    /// <param name="props">Connection properties.</param>
-    /// <returns>A new FailoverPlugin instance.</returns>
-    public IConnectionPlugin GetInstance(IPluginService pluginService, Dictionary<string, string> props)
+    public FailoverSuccessException() : base("Failover completed successfully")
     {
-        return new FailoverPlugin(pluginService, props);
+    }
+
+    public FailoverSuccessException(string message) : base(message)
+    {
+    }
+
+    public FailoverSuccessException(string message, Exception innerException) : base(message, innerException)
+    {
     }
 }

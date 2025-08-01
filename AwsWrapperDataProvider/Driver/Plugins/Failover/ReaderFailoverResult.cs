@@ -1,4 +1,4 @@
-﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -12,21 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data.Common;
+using AwsWrapperDataProvider.Driver.HostInfo;
+
 namespace AwsWrapperDataProvider.Driver.Plugins.Failover;
 
 /// <summary>
-/// Factory for creating FailoverPlugin instances.
+/// Represents the result of a reader failover operation, containing the new connection and host specification.
 /// </summary>
-public class FailoverPluginFactory : IConnectionPluginFactory
+public class ReaderFailoverResult
 {
-    /// <summary>
-    /// Creates a new instance of the FailoverPlugin.
-    /// </summary>
-    /// <param name="pluginService">The plugin service.</param>
-    /// <param name="props">Connection properties.</param>
-    /// <returns>A new FailoverPlugin instance.</returns>
-    public IConnectionPlugin GetInstance(IPluginService pluginService, Dictionary<string, string> props)
+    public DbConnection Connection { get; }
+
+    public HostSpec HostSpec { get; }
+
+    public ReaderFailoverResult(DbConnection connection, HostSpec hostSpec)
     {
-        return new FailoverPlugin(pluginService, props);
+        this.Connection = connection ?? throw new ArgumentNullException(nameof(connection));
+        this.HostSpec = hostSpec ?? throw new ArgumentNullException(nameof(hostSpec));
     }
 }

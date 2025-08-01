@@ -41,10 +41,16 @@ public class BenchmarkPlugin : IConnectionPlugin
         return methodFunc();
     }
 
-    public void OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate methodFunc)
+    public DbConnection OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
     {
         // Pass through to the next plugin
-        methodFunc();
+        return methodFunc();
+    }
+
+    public DbConnection ForceOpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
+    {
+        // Pass through to the next plugin
+        return methodFunc();
     }
 
     public void InitHostProvider(string initialUrl, Dictionary<string, string> props, IHostListProviderService hostListProviderService, ADONetDelegate initHostProviderFunc)

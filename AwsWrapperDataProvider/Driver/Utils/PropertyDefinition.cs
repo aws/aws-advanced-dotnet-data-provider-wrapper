@@ -103,9 +103,6 @@ public static class PropertyDefinition
     public static readonly AwsWrapperProperty SecretsManagerEndpoint = new(
         "SecretsManagerEndpoint", null, "The endpoint of the secret to retrieve.");
 
-    public static readonly AwsWrapperProperty ReaderHostSelectionStrategy = new(
-        "ReaderInitialConnectionHostSelectorStrategy", "random", "The strategy that should be used to select a new reader host while opening a new connection.");
-
     public static readonly AwsWrapperProperty OpenConnectionRetryTimeoutMs = new(
         "OpenConnectionRetryTimeoutMs", "30000", "Maximum allowed time for the retries opening a connection.");
 
@@ -136,6 +133,30 @@ public static class PropertyDefinition
     public static readonly AwsWrapperProperty HttpClientConnectTimeout = new AwsWrapperProperty(
       "httpClientConnectTimeout", "60000", "The connect timeout value in milliseconds for the HttpClient used by the FederatedAuthPlugin");
 
+    // Failover Plugin Properties
+    public static readonly AwsWrapperProperty FailoverTimeoutMs = new(
+        "FailoverTimeoutMs", "300000", "Maximum allowed time for the failover process in milliseconds.");
+
+    public static readonly AwsWrapperProperty FailoverMode = new(
+        "FailoverMode", null, "Set node role to follow during failover. Valid values: StrictWriter, StrictReader, ReaderOrWriter.");
+
+    public static readonly AwsWrapperProperty ReaderHostSelectorStrategy = new(
+        "ReaderHostSelectorStrategy", "Random", "The strategy that should be used to select a new reader host while opening a new connection.");
+
+    public static readonly AwsWrapperProperty EnableConnectFailover = new(
+        "EnableConnectFailover", "false", "Enable/disable cluster-aware failover if the initial connection to the database fails due to a network exception.");
+
+    public static readonly AwsWrapperProperty SkipFailoverOnInterruptedThread = new(
+        "SkipFailoverOnInterruptedThread", "false", "Enable to skip failover if the current thread is interrupted.");
+
+    // Connection Timeout Properties
+    public static readonly AwsWrapperProperty SocketTimeout = new(
+        "SocketTimeout", "5000", "The socket timeout value in milliseconds for database connections.");
+
+    public static readonly AwsWrapperProperty ConnectTimeout = new(
+        "ConnectTimeout", "5000", "The connection timeout value in milliseconds for establishing database connections.");
+
+    // Host Selector Stratagy Properties
     public static readonly AwsWrapperProperty RoundRobinHostWeightPairs = new(
         "roundRobinHostWeightPairs",
         null,
@@ -177,10 +198,18 @@ public static class PropertyDefinition
         ClusterTopologyRefreshRateMs,
         ClusterInstanceHostPattern,
         ClusterId,
-        ReaderHostSelectionStrategy,
         OpenConnectionRetryTimeoutMs,
         OpenConnectionRetryIntervalMs,
         VerifyOpenedConnectionType,
+
+        // Failover Plugin Properties
+        FailoverTimeoutMs,
+        FailoverMode,
+        ReaderHostSelectorStrategy,
+        EnableConnectFailover,
+        SkipFailoverOnInterruptedThread,
+
+        // Host Selector Stratagy Properties
         RoundRobinHostWeightPairs,
         RoundRobinDefaultWeight,
     ];

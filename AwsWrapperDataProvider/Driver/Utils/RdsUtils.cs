@@ -177,12 +177,34 @@ public static partial class RdsUtils
         return CacheMatcher(host, AuroraDnsPatterns)?.Groups[RegionGroup].Value;
     }
 
+    public static bool IsRdsDns(string host)
+    {
+        return CacheMatcher(host, AuroraDnsPatterns)?.Success ?? false;
+    }
+
+    public static bool IsRdsInstance(string host)
+    {
+        return GetDnsGroup(host) == null && IsRdsDns(host);
+    }
+
     public static bool IsRdsClusterDns(string host)
     {
         string? dnsGroup = GetDnsGroup(host);
         return dnsGroup != null
                && (string.Equals(dnsGroup, "cluster-", StringComparison.OrdinalIgnoreCase)
                    || string.Equals(dnsGroup, "cluster-ro-", StringComparison.OrdinalIgnoreCase));
+    }
+
+    public static bool IsWriterClusterDns(string host)
+    {
+        string? dnsGroup = GetDnsGroup(host);
+        return dnsGroup != null && string.Equals(dnsGroup, "cluster-", StringComparison.OrdinalIgnoreCase);
+    }
+
+    public static bool IsReaderClusterDns(string host)
+    {
+        string? dnsGroup = GetDnsGroup(host);
+        return dnsGroup != null && string.Equals(dnsGroup, "cluster-ro-", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string? GetDnsGroup(string host)

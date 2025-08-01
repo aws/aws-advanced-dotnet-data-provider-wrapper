@@ -51,11 +51,11 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
         initHostProviderFunc.Invoke();
     }
 
-    public override void OpenConnection(
+    public override DbConnection OpenConnection(
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
-        ADONetDelegate methodFunc)
+        ADONetDelegate<DbConnection> methodFunc)
     {
         RdsUrlType urlType = RdsUtils.IdentifyRdsType(hostSpec?.Host);
         DbConnection? connectionCandidate = null;
@@ -79,17 +79,16 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
 
         if (connectionCandidate == null)
         {
-            methodFunc();
-            return;
+            return methodFunc();
         }
 
-        this.pluginService.CurrentConnection = connectionCandidate;
+        return connectionCandidate;
     }
 
     private DbConnection? GetVerifiedWriterConnection(
         Dictionary<string, string> props,
         bool isInitialConnection,
-        ADONetDelegate methodFunc)
+        ADONetDelegate<DbConnection> methodFunc)
     {
         ArgumentNullException.ThrowIfNull(this.hostListProviderService);
 
@@ -108,9 +107,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
 
                 if (writerCandidate == null || RdsUtils.IsRdsClusterDns(writerCandidate.Host))
                 {
-                    methodFunc();
-                    writerConnectionCandidate = this.pluginService.CurrentConnection ??
-                                                throw new Exception("Could not find connection.");
+                    writerConnectionCandidate = methodFunc();
                     this.pluginService.ForceRefreshHostList(writerConnectionCandidate);
                     writerCandidate = this.pluginService.IdentifyConnection(writerConnectionCandidate);
 
@@ -130,9 +127,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
                     return writerConnectionCandidate;
                 }
 
-                this.pluginService.OpenConnection(writerCandidate, props, null);
-                writerConnectionCandidate = this.pluginService.CurrentConnection
-                    ?? throw new Exception("Could not find connection.");
+                writerConnectionCandidate = this.pluginService.ForceOpenConnection(writerCandidate, props, isInitialConnection);
 
                 if (this.pluginService.GetHostRole(writerConnectionCandidate) != HostRole.Writer)
                 {
@@ -174,7 +169,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
     private DbConnection? GetVerifiedReaderConnection(
         Dictionary<string, string> props,
         bool isInitialConnection,
-        ADONetDelegate methodFunc)
+        ADONetDelegate<DbConnection> methodFunc)
     {
         ArgumentNullException.ThrowIfNull(this.hostListProviderService);
 
@@ -193,9 +188,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
 
                 if (readerCandidate == null || RdsUtils.IsRdsClusterDns(readerCandidate.Host))
                 {
-                    methodFunc();
-                    readerConnectionCandidate = this.pluginService.CurrentConnection ??
-                                                throw new Exception("Could not find connection.");
+                    readerConnectionCandidate = methodFunc();
                     this.pluginService.ForceRefreshHostList(readerConnectionCandidate);
                     readerCandidate = this.pluginService.IdentifyConnection(readerConnectionCandidate);
 
@@ -231,8 +224,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
                     return readerConnectionCandidate;
                 }
 
-                this.pluginService.OpenConnection(readerCandidate, props, null);
-                readerConnectionCandidate = this.pluginService.CurrentConnection!;
+                readerConnectionCandidate = this.pluginService.ForceOpenConnection(readerCandidate, props, isInitialConnection);
 
                 if (this.pluginService.GetHostRole(readerConnectionCandidate) != HostRole.Reader)
                 {
@@ -290,7 +282,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
 
     private HostSpec? GetReader(Dictionary<string, string> props)
     {
-        string strategy = PropertyDefinition.ReaderHostSelectionStrategy.GetString(props)!;
+        string strategy = PropertyDefinition.ReaderHostSelectorStrategy.GetString(props)!;
         if (this.pluginService.AcceptsStrategy(strategy))
         {
             try
