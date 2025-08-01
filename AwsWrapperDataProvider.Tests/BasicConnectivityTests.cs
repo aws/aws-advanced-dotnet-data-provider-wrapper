@@ -66,9 +66,9 @@ public class BasicConnectivityTests : IntegrationTestBase
     public void MysqlWrapperConnectionDynamicTest()
     {
         var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, this.username, this.password, this.defaultDbName);
-        connectionString = $"{connectionString};" +
-            $"TargetConnectionType=MySqlConnector.MySqlConnection,MySqlConnector;" +
-            $"TargetCommandType=MySqlConnector.MySqlCommand,MySqlConnector";
+        connectionString +=
+            ";TargetConnectionType=MySqlConnector.MySqlConnection,MySqlConnector;" +
+            "TargetCommandType=MySqlConnector.MySqlCommand,MySqlConnector";
 
         const string query = "select 1";
 
@@ -136,8 +136,8 @@ public class BasicConnectivityTests : IntegrationTestBase
     public void OpenPgWrapperConnectionDynamicTest()
     {
         var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, this.username, this.password, this.defaultDbName);
-        connectionString = $"{connectionString}" +
-            "TargetConnectionType=Npgsql.NpgsqlConnection,Npgsql;" +
+        connectionString +=
+            ";TargetConnectionType=Npgsql.NpgsqlConnection,Npgsql;" +
             "TargetCommandType=Npgsql.NpgsqlCommand,Npgsql";
 
         const string query = "select 1";

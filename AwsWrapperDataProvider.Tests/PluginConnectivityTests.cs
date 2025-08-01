@@ -124,6 +124,29 @@ public class PluginConnectivityTests : IntegrationTestBase
 
     [Fact]
     [Trait("Category", "Integration")]
+    [Trait("Database", "mysql")]
+    public void MySqlConnectorWrapperIamConnectionTest()
+    {
+        var iamUser = TestEnvironment.Env.Info.IamUsername!;
+        var iamRegion = TestEnvironment.Env.Info.Region!;
+        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, iamUser, string.Empty, this.defaultDbName);
+        connectionString += $";Plugins=iam;IamRegion={iamRegion}";
+        const string query = "select 1";
+
+        using AwsWrapperConnection<MySqlConnector.MySqlConnection> connection = new(connectionString);
+        AwsWrapperCommand<MySqlConnector.MySqlCommand> command = connection.CreateCommand<MySqlConnector.MySqlCommand>();
+        command.CommandText = query;
+
+        connection.Open();
+        IDataReader reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            Console.WriteLine(reader.GetInt32(0));
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
     public void PgWrapperSecretsManagerConnectionTest()
     {
         const string connectionString =
