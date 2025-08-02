@@ -18,8 +18,6 @@ using System.Data.Common;
 using System.Diagnostics;
 using System.Net;
 using Amazon;
-using Amazon.EC2;
-using Amazon.EC2.Model;
 using Amazon.RDS;
 using Amazon.RDS.Model;
 using Amazon.Runtime;
@@ -27,10 +25,10 @@ using Amazon.Runtime.Credentials;
 using AwsWrapperDataProvider.Driver.Utils;
 
 namespace AwsWrapperDataProvider.Tests.Container.Utils;
+
 public class AuroraTestUtils
 {
     private readonly AmazonRDSClient rdsClient;
-    private readonly AmazonEC2Client ec2Client;
 
     public AuroraTestUtils(string region, string? endpoint) : this(
             region: GetRegionInternal(region),
@@ -60,7 +58,6 @@ public class AuroraTestUtils
         }
 
         this.rdsClient = new AmazonRDSClient(credentials, rdsConfig);
-        this.ec2Client = new AmazonEC2Client(credentials, region);
     }
 
     public static AuroraTestUtils GetUtility()
@@ -70,10 +67,7 @@ public class AuroraTestUtils
 
     public static AuroraTestUtils GetUtility(TestEnvironmentInfo? info)
     {
-        if (info == null)
-        {
-            info = TestEnvironment.Env.Info;
-        }
+        info ??= TestEnvironment.Env.Info;
 
         return new AuroraTestUtils(info.Region!, info.RdsEndpoint);
     }
@@ -82,7 +76,13 @@ public class AuroraTestUtils
     {
         RegionEndpoint? region = RegionEndpoint.EnumerableAllRegions.FirstOrDefault(r => string.Equals(r.SystemName, rdsRegion, StringComparison.OrdinalIgnoreCase));
 
-        return region != null ? region : throw new ArgumentException($"Unknown AWS region '{rdsRegion}'.");
+        return region ?? throw new ArgumentException($"Unknown AWS region '{rdsRegion}'.");
+    }
+
+    public static bool IsSuccessfulResponse(AmazonWebServiceResponse response)
+    {
+        int statusCode = (int)response.HttpStatusCode;
+        return statusCode >= 200 && statusCode < 300;
     }
 
     public async Task WaitUntilClusterHasRightStateAsync(string clusterId)
@@ -99,10 +99,10 @@ public class AuroraTestUtils
         string status = (await this.GetDBClusterAsync(clusterId))!.Status;
         Console.WriteLine($"Cluster status: {status}, waiting for: {string.Join(", ", allowedStatuses)}");
 
-        while (!allowedStatusSet.Contains(status.ToLower()) && stopwatch.Elapsed < timeout)
+        while (!allowedStatusSet.Contains(status!.ToLower()) && stopwatch.Elapsed < timeout)
         {
             await Task.Delay(1000);
-            var tmpStatus = (await this.GetDBClusterAsync(clusterId))?.Status;
+            var tmpStatus = (await this.GetDBClusterAsync(clusterId))?.Status!;
             if (!string.Equals(tmpStatus, status, StringComparison.OrdinalIgnoreCase))
             {
                 Console.WriteLine($"Cluster status (waiting): {tmpStatus}");
@@ -374,33 +374,18 @@ public class AuroraTestUtils
         var host = TestEnvironment.Env.Info.DatabaseInfo.Instances[0].Host;
         var port = TestEnvironment.Env.Info.DatabaseInfo.Instances[0].Port;
         var connectionUrl = ConnectionStringHelper.GetUrl(databaseEngine, host, port, username, password, dbName);
-        string retrieveTopologySql;
-
-        switch (deployment)
+        string retrieveTopologySql = deployment switch
         {
-            case DatabaseEngineDeployment.AURORA:
-                switch (databaseEngine)
-                {
-                    case DatabaseEngine.MYSQL:
-                        retrieveTopologySql =
-                            "SELECT SERVER_ID, SESSION_ID FROM information_schema.replica_host_status " +
-                            "ORDER BY IF(SESSION_ID = 'MASTER_SESSION_ID', 0, 1)";
-                        break;
-                    case DatabaseEngine.PG:
-                        retrieveTopologySql =
-                            "SELECT SERVER_ID, SESSION_ID FROM aurora_replica_status() " +
-                            "ORDER BY CASE WHEN SESSION_ID = 'MASTER_SESSION_ID' THEN 0 ELSE 1 END";
-                        break;
-                    default:
-                        throw new NotSupportedException(databaseEngine.ToString());
-                }
-
-                break;
-
-            default:
-                throw new NotSupportedException(deployment.ToString());
-        }
-
+            DatabaseEngineDeployment.AURORA => databaseEngine switch
+            {
+                DatabaseEngine.MYSQL => "SELECT SERVER_ID, SESSION_ID FROM information_schema.replica_host_status " +
+                                            "ORDER BY IF(SESSION_ID = 'MASTER_SESSION_ID', 0, 1)",
+                DatabaseEngine.PG => "SELECT SERVER_ID, SESSION_ID FROM aurora_replica_status() " +
+                                            "ORDER BY CASE WHEN SESSION_ID = 'MASTER_SESSION_ID' THEN 0 ELSE 1 END",
+                _ => throw new NotSupportedException(databaseEngine.ToString()),
+            },
+            _ => throw new NotSupportedException(deployment.ToString()),
+        };
         var auroraInstances = new List<string>();
 
         using var connection = DriverHelper.CreateUnopenedConnection(databaseEngine, connectionUrl);
@@ -492,11 +477,4 @@ public class AuroraTestUtils
 
         throw new InvalidOperationException($"Failed to request an instance {instanceId} reboot.");
     }
-
-    public static bool IsSuccessfulResponse(AmazonWebServiceResponse response)
-    {
-        int statusCode = (int)response.HttpStatusCode;
-        return statusCode >= 200 && statusCode < 300;
-    }
-
 }

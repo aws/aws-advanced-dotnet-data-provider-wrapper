@@ -32,7 +32,6 @@ public class AbortConnectionTests : IntegrationTestBase
         using AwsWrapperConnection<MySqlConnection> connection = new(connectionString);
         connection.Open();
         AwsWrapperCommand<MySqlCommand> command = connection.CreateCommand<MySqlCommand>();
-        var command1 = connection.CreateCommand();
         command.CommandText = "select sleep(60)";
 
         var queryExecutionStopwatch = Stopwatch.StartNew();
@@ -42,7 +41,7 @@ public class AbortConnectionTests : IntegrationTestBase
                 {
                     try
                     {
-                        IDataReader reader = command.ExecuteReader();
+                        var reader = command.ExecuteReader();
 
                         Console.WriteLine("Query executed.");
                         queryExecutionStopwatch.Stop();

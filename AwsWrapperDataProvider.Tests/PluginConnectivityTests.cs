@@ -83,7 +83,7 @@ public class PluginConnectivityTests : IntegrationTestBase
     {
         var iamUser = TestEnvironment.Env.Info.IamUsername!;
         var iamRegion = TestEnvironment.Env.Info.Region!;
-        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, iamUser, string.Empty, this.defaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, iamUser, null, this.defaultDbName);
         connectionString += $";Plugins=iam;IamRegion={iamRegion}";
         const string query = "select aurora_db_instance_identifier()";
 
@@ -106,7 +106,7 @@ public class PluginConnectivityTests : IntegrationTestBase
     {
         var iamUser = TestEnvironment.Env.Info.IamUsername!;
         var iamRegion = TestEnvironment.Env.Info.Region!;
-        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, iamUser, string.Empty, this.defaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, iamUser, null, this.defaultDbName);
         connectionString += $";Plugins=iam;IamRegion={iamRegion}";
         const string query = "select 1";
 
@@ -129,7 +129,7 @@ public class PluginConnectivityTests : IntegrationTestBase
     {
         var iamUser = TestEnvironment.Env.Info.IamUsername!;
         var iamRegion = TestEnvironment.Env.Info.Region!;
-        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, iamUser, string.Empty, this.defaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, iamUser, null, this.defaultDbName);
         connectionString += $";Plugins=iam;IamRegion={iamRegion}";
         const string query = "select 1";
 

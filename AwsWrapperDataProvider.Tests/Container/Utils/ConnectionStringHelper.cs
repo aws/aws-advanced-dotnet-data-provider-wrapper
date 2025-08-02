@@ -16,35 +16,66 @@ using MySqlConnector;
 using Npgsql;
 
 namespace AwsWrapperDataProvider.Tests.Container.Utils;
+
 public class ConnectionStringHelper
 {
-    public static string GetUrl(DatabaseEngine engine, string host, int port, string username, string password, string dbName)
+    public static string GetUrl(DatabaseEngine engine, string host, int? port, string? username, string? password, string? dbName)
     {
         switch (engine)
             {
             case DatabaseEngine.MYSQL:
-                MySqlConnectionStringBuilder mySqlConnectionStringBuilder = new()
+                MySqlConnectionStringBuilder mySqlConnectionStringBuilder = new();
+                mySqlConnectionStringBuilder.Server = host;
+                if (port != null)
                 {
-                    Server = host,
-                    Port = (uint)port,
-                    UserID = username,
-                    Password = password,
-                    Database = dbName,
-                    DefaultCommandTimeout = 30,
-                    ConnectionTimeout = 30,
-                };
+                    mySqlConnectionStringBuilder.Port = (uint)port;
+                }
+
+                if (username != null)
+                {
+                    mySqlConnectionStringBuilder.Add("Username", username);
+                }
+
+                if (password != null)
+                {
+                    mySqlConnectionStringBuilder.Password = password;
+                }
+
+                if (dbName != null)
+                {
+                    mySqlConnectionStringBuilder.Database = dbName;
+                }
+
+                mySqlConnectionStringBuilder.DefaultCommandTimeout = 30;
+                mySqlConnectionStringBuilder.ConnectionTimeout = 30;
+
                 return mySqlConnectionStringBuilder.ConnectionString;
             case DatabaseEngine.PG:
-                NpgsqlConnectionStringBuilder npgsqlConnectionStringBuilder = new()
+                NpgsqlConnectionStringBuilder npgsqlConnectionStringBuilder = new();
+                npgsqlConnectionStringBuilder.Host = host;
+                if (port != null)
                 {
-                    Host = host,
-                    Port = port,
-                    Username = username,
-                    Password = password,
-                    Database = dbName,
-                    Timeout = 30,
-                    CommandTimeout = 30,
-                };
+                    npgsqlConnectionStringBuilder.Port = (int)port;
+                }
+
+                if (username != null)
+                {
+                    npgsqlConnectionStringBuilder.Username = username;
+                }
+
+                if (password != null)
+                {
+                    npgsqlConnectionStringBuilder.Password = password;
+                }
+
+                if (dbName != null)
+                {
+                    npgsqlConnectionStringBuilder.Database = dbName;
+                }
+
+                npgsqlConnectionStringBuilder.Timeout = 30;
+                npgsqlConnectionStringBuilder.CommandTimeout = 30;
+
                 return npgsqlConnectionStringBuilder.ConnectionString;
             default:
                 throw new NotSupportedException($"Unsupported database engine: {engine}");
