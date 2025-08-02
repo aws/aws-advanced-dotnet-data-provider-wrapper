@@ -107,7 +107,7 @@ public class PluginConnectivityTests : IntegrationTestBase
         var iamUser = TestEnvironment.Env.Info.IamUsername!;
         var iamRegion = TestEnvironment.Env.Info.Region!;
         var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, null, null, this.defaultDbName);
-        connectionString += $"Username={iamUser};Plugins=iam;IamRegion={iamRegion}";
+        connectionString += $";Username={iamUser};Plugins=iam;IamRegion={iamRegion}";
         const string query = "select 1";
 
         using AwsWrapperConnection<MySql.Data.MySqlClient.MySqlConnection> connection = new(connectionString);
@@ -130,7 +130,7 @@ public class PluginConnectivityTests : IntegrationTestBase
         var iamUser = TestEnvironment.Env.Info.IamUsername!;
         var iamRegion = TestEnvironment.Env.Info.Region!;
         var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, null, null, this.defaultDbName);
-        connectionString += $"Username={iamUser};Plugins=iam;IamRegion={iamRegion}";
+        connectionString += $";Username={iamUser};Plugins=iam;IamRegion={iamRegion}";
         const string query = "select 1";
 
         using AwsWrapperConnection<MySqlConnector.MySqlConnection> connection = new(connectionString);
