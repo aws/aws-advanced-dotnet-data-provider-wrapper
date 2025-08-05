@@ -16,6 +16,7 @@ using System.Collections.Concurrent;
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.Efm;
@@ -27,7 +28,7 @@ public class HostMonitor : IHostMonitor
     private static readonly string MonitoringPropertyPrefix = "monitoring-";
 
     private readonly ConcurrentQueue<WeakReference<HostMonitorConnectionContext>> activeContexts = new();
-    private readonly ConcurrentDictionary<int, ConcurrentQueue<WeakReference<HostMonitorConnectionContext>>> newContexts = new();
+    private readonly MemoryCache newContexts = new(new MemoryCacheOptions());
     private readonly IPluginService pluginService;
     private readonly Dictionary<string, string> properties;
     private readonly HostSpec hostSpec;
@@ -82,15 +83,20 @@ public class HostMonitor : IHostMonitor
         DateTime startMonitoringTime = DateTime.Now + TimeSpan.FromMilliseconds(this.failureDetectionTimeMillis);
         int startMonitoringTimeSeconds = (int)(startMonitoringTime - DateTime.UnixEpoch).TotalSeconds;
 
-        ConcurrentQueue<WeakReference<HostMonitorConnectionContext>> queue = this.newContexts.GetOrAdd(
-            startMonitoringTimeSeconds, (_) => new());
+        ConcurrentQueue<WeakReference<HostMonitorConnectionContext>>? queue;
+
+        if (!this.newContexts.TryGetValue(startMonitoringTimeSeconds, out queue) || queue == null)
+        {
+            queue = new();
+            this.newContexts.Set(startMonitoringTime, queue);
+        }
 
         queue.Enqueue(new WeakReference<HostMonitorConnectionContext>(context));
     }
 
     public bool CanDispose()
     {
-        return this.activeContexts.IsEmpty && this.newContexts.IsEmpty;
+        return this.activeContexts.IsEmpty && this.newContexts.Count == 0;
     }
 
     public void Close()
@@ -102,7 +108,7 @@ public class HostMonitor : IHostMonitor
         this.newContextRunTask.Dispose();
         this.runTask.Dispose();
 
-        if (!this.newContexts.IsEmpty)
+        if (this.newContexts.Count > 0)
         {
             this.newContexts.Clear();
         }
@@ -132,17 +138,19 @@ public class HostMonitor : IHostMonitor
                 {
                     if (DateTime.UnixEpoch.AddSeconds(key) < currentTime)
                     {
-                        ConcurrentQueue<WeakReference<HostMonitorConnectionContext>> queue = this.newContexts[key];
-                        processedKeys.Add(key);
-
-                        while (queue.TryDequeue(out WeakReference<HostMonitorConnectionContext>? contextRef))
+                        if (this.newContexts.TryGetValue(key, out ConcurrentQueue<WeakReference<HostMonitorConnectionContext>>? queue) && queue != null)
                         {
-                            if (contextRef != null
-                                && contextRef.TryGetTarget(out HostMonitorConnectionContext? context)
-                                && context != null
-                                && context.IsActive())
+                            processedKeys.Add(key);
+
+                            while (queue.TryDequeue(out WeakReference<HostMonitorConnectionContext>? contextRef))
                             {
-                                this.activeContexts.Enqueue(contextRef);
+                                if (contextRef != null
+                                    && contextRef.TryGetTarget(out HostMonitorConnectionContext? context)
+                                    && context != null
+                                    && context.IsActive())
+                                {
+                                    this.activeContexts.Enqueue(contextRef);
+                                }
                             }
                         }
                     }
@@ -150,7 +158,7 @@ public class HostMonitor : IHostMonitor
 
                 foreach (int key in processedKeys)
                 {
-                    this.newContexts.Remove(key, out _);
+                    this.newContexts.Remove(key);
                 }
 
                 // sleep for one second before polling new contexts
