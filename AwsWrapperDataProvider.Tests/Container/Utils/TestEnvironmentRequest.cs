@@ -46,24 +46,21 @@ public class TestEnvironmentRequest
         DatabaseEngineDeployment deployment,
         params TestEnvironmentFeatures[] features)
     {
-        Engine = engine;
-        Instances = instances;
-        Deployment = deployment;
-        NumOfInstances = numOfInstances;
+        this.Engine = engine;
+        this.Instances = instances;
+        this.Deployment = deployment;
+        this.NumOfInstances = numOfInstances;
 
         if (features != null)
         {
             foreach (var feature in features)
             {
-                if (feature != null)
-                {
-                    Features.Add(feature);
-                }
+                this.Features.Add(feature);
             }
         }
     }
 
     [JsonIgnore]
     public string DisplayName =>
-        $"Test environment [{Deployment}, {Engine}, {Instances}, {NumOfInstances}, {string.Join(", ", Features)}]";
+        $"Test environment [{this.Deployment}, {this.Engine}, {this.Instances}, {this.NumOfInstances}, {string.Join(", ", this.Features)}]";
 }

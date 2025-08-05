@@ -31,9 +31,9 @@ public class BasicConnectivityTests : IntegrationTestBase
         const string query = "select 1";
 
         using AwsWrapperConnection<MySql.Data.MySqlClient.MySqlConnection> connection = new(connectionString);
+        connection.Open();
         AwsWrapperCommand<MySql.Data.MySqlClient.MySqlCommand> command = connection.CreateCommand<MySql.Data.MySqlClient.MySqlCommand>();
         command.CommandText = query;
-        connection.Open();
         IDataReader reader = command.ExecuteReader();
         while (reader.Read())
         {
@@ -50,9 +50,9 @@ public class BasicConnectivityTests : IntegrationTestBase
         const string query = "select 1";
 
         using AwsWrapperConnection<MySqlConnection> connection = new(connectionString);
+        connection.Open();
         AwsWrapperCommand<MySqlCommand> command = connection.CreateCommand<MySqlCommand>();
         command.CommandText = query;
-        connection.Open();
         IDataReader reader = command.ExecuteReader();
         while (reader.Read())
         {
@@ -73,10 +73,10 @@ public class BasicConnectivityTests : IntegrationTestBase
         const string query = "select 1";
 
         using AwsWrapperConnection connection = new(connectionString);
+        connection.Open();
         IDbCommand command = connection.CreateCommand();
         command.CommandText = query;
 
-        connection.Open();
         IDataReader reader = command.ExecuteReader();
         while (reader.Read())
         {
@@ -93,6 +93,7 @@ public class BasicConnectivityTests : IntegrationTestBase
         const string query = "select @var1";
 
         using AwsWrapperConnection<MySqlConnection> connection = new(connectionString);
+        connection.Open();
         AwsWrapperCommand<MySqlCommand> command = connection.CreateCommand<MySqlCommand>();
         command.CommandText = query;
 
@@ -102,7 +103,6 @@ public class BasicConnectivityTests : IntegrationTestBase
         dbParameter.Value = "qwerty";
         command.Parameters.Add(dbParameter);
 
-        connection.Open();
         IDataReader reader = command.ExecuteReader();
         while (reader.Read())
         {
@@ -119,10 +119,10 @@ public class BasicConnectivityTests : IntegrationTestBase
         const string query = "select 1";
 
         using AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
+        connection.Open();
         AwsWrapperCommand<NpgsqlCommand> command = connection.CreateCommand<NpgsqlCommand>();
         command.CommandText = query;
 
-        connection.Open();
         IDataReader reader = command.ExecuteReader();
         while (reader.Read())
         {
@@ -143,10 +143,10 @@ public class BasicConnectivityTests : IntegrationTestBase
         const string query = "select 1";
 
         using AwsWrapperConnection connection = new(connectionString);
+        connection.Open();
         IDbCommand command = connection.CreateCommand();
         command.CommandText = query;
 
-        connection.Open();
         IDataReader reader = command.ExecuteReader();
         while (reader.Read())
         {

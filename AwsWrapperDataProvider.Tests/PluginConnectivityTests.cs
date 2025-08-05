@@ -88,10 +88,10 @@ public class PluginConnectivityTests : IntegrationTestBase
         const string query = "select aurora_db_instance_identifier()";
 
         using AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
+        connection.Open();
         AwsWrapperCommand<NpgsqlCommand> command = connection.CreateCommand<NpgsqlCommand>();
         command.CommandText = query;
 
-        connection.Open();
         IDataReader reader = command.ExecuteReader();
         while (reader.Read())
         {
@@ -111,10 +111,10 @@ public class PluginConnectivityTests : IntegrationTestBase
         const string query = "select 1";
 
         using AwsWrapperConnection<MySql.Data.MySqlClient.MySqlConnection> connection = new(connectionString);
+        connection.Open();
         AwsWrapperCommand<MySql.Data.MySqlClient.MySqlCommand> command = connection.CreateCommand<MySql.Data.MySqlClient.MySqlCommand>();
         command.CommandText = query;
 
-        connection.Open();
         IDataReader reader = command.ExecuteReader();
         while (reader.Read())
         {
@@ -134,10 +134,10 @@ public class PluginConnectivityTests : IntegrationTestBase
         const string query = "select 1";
 
         using AwsWrapperConnection<MySqlConnector.MySqlConnection> connection = new(connectionString);
+        connection.Open();
         AwsWrapperCommand<MySqlConnector.MySqlCommand> command = connection.CreateCommand<MySqlConnector.MySqlCommand>();
         command.CommandText = query;
 
-        connection.Open();
         IDataReader reader = command.ExecuteReader();
         while (reader.Read())
         {

@@ -22,7 +22,7 @@ public class ConnectionStringHelper
     public static string GetUrl(DatabaseEngine engine, string host, int? port, string? username, string? password, string? dbName)
     {
         switch (engine)
-            {
+        {
             case DatabaseEngine.MYSQL:
                 MySqlConnectionStringBuilder mySqlConnectionStringBuilder = new();
                 mySqlConnectionStringBuilder.Server = host;

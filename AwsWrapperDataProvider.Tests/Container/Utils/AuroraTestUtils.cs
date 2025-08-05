@@ -271,9 +271,9 @@ public class AuroraTestUtils
             {
                 var response = await this.rdsClient.DescribeDBInstancesAsync(
                     new DescribeDBInstancesRequest
-                {
-                    DBInstanceIdentifier = instanceId,
-                });
+                    {
+                        DBInstanceIdentifier = instanceId,
+                    });
 
                 return response.DBInstances.First();
             }
