@@ -102,6 +102,16 @@ public class HostMonitor : IHostMonitor
         this.newContextRunTask.Dispose();
         this.runTask.Dispose();
 
+        if (!this.newContexts.IsEmpty)
+        {
+            this.newContexts.Clear();
+        }
+
+        if (!this.activeContexts.IsEmpty)
+        {
+            this.activeContexts.Clear();
+        }
+
         Logger.LogInformation($"Stopped monitoring for {this.hostSpec.Host}.");
     }
 
@@ -116,14 +126,14 @@ public class HostMonitor : IHostMonitor
                 token.ThrowIfCancellationRequested();
                 DateTime currentTime = DateTime.Now;
 
-                int[] processedKeys = [];
+                List<int> processedKeys = [];
 
                 foreach (int key in this.newContexts.Keys)
                 {
                     if (DateTime.UnixEpoch.AddSeconds(key) < currentTime)
                     {
                         ConcurrentQueue<WeakReference<HostMonitorConnectionContext>> queue = this.newContexts[key];
-                        processedKeys.Append(key);
+                        processedKeys.Add(key);
 
                         while (queue.TryDequeue(out WeakReference<HostMonitorConnectionContext>? contextRef))
                         {
@@ -274,7 +284,7 @@ public class HostMonitor : IHostMonitor
                 }
 
                 Logger.LogInformation($"Opening a monitoring connection to {this.hostSpec.Host}...");
-                this.monitoringConn = this.pluginService.OpenConnection(this.hostSpec, monitoringConnProperties, null);
+                this.monitoringConn = this.pluginService.ForceOpenConnection(this.hostSpec, monitoringConnProperties, false);
                 Logger.LogInformation($"Opened a monitoring connection to {this.hostSpec.Host}");
 
                 return true;
@@ -294,7 +304,7 @@ public class HostMonitor : IHostMonitor
                 // was able to execute command within the timeout - connection is still valid
                 return true;
             }
-            catch (Exception)
+            catch
             {
                 return false;
             }
