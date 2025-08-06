@@ -16,7 +16,7 @@ namespace AwsWrapperDataProvider.Tests.Container.Utils;
 
 public class TestEnvironmentInfo
 {
-    public TestEnvironmentRequest? Request { get; set; }
+    public TestEnvironmentRequest Request { get; set; } = null!;
     public string? AwsAccessKeyId { get; set; }
     public string? AwsSecretAccessKey { get; set; }
     public string? AwsSessionToken { get; set; }
@@ -26,10 +26,10 @@ public class TestEnvironmentInfo
     public string? RdsDbName { get; set; }
     public string? IamUsername { get; set; }
 
-    public TestDatabaseInfo? DatabaseInfo { get; set; }
+    public TestDatabaseInfo DatabaseInfo { get; set; } = null!;
     public TestProxyDatabaseInfo? ProxyDatabaseInfo { get; set; }
-    public string? DatabaseEngine { get; set; }
-    public string? DatabaseEngineVersion { get; set; }
+    public string DatabaseEngine { get; set; } = null!;
+    public string DatabaseEngineVersion { get; set; } = null!;
     public TestTelemetryInfo? TracesTelemetryInfo { get; set; }
     public TestTelemetryInfo? MetricsTelemetryInfo { get; set; }
 

@@ -142,17 +142,17 @@ public class AuroraTestUtils
     public async Task MakeSureInstancesUpAsync(TimeSpan timeout)
     {
         var envInfo = TestEnvironment.Env.Info;
-        List<TestInstanceInfo> instances = [.. envInfo.DatabaseInfo!.Instances, .. envInfo.ProxyDatabaseInfo!.Instances];
+        List<TestInstanceInfo> instances = [.. envInfo.DatabaseInfo.Instances, .. envInfo.ProxyDatabaseInfo!.Instances];
         await this.MakeSureInstancesUpAsync(instances, timeout);
     }
 
     public async Task MakeSureInstancesUpAsync(List<TestInstanceInfo> instances, TimeSpan timeout)
     {
         var remainingInstances = new ConcurrentDictionary<string, bool>();
-        var dbName = TestEnvironment.Env.Info.DatabaseInfo!.DefaultDbName;
-        var username = TestEnvironment.Env.Info.DatabaseInfo!.Username;
-        var password = TestEnvironment.Env.Info.DatabaseInfo!.Password;
-        var engine = TestEnvironment.Env.Info.Request!.Engine;
+        var dbName = TestEnvironment.Env.Info.DatabaseInfo.DefaultDbName;
+        var username = TestEnvironment.Env.Info.DatabaseInfo.Username;
+        var password = TestEnvironment.Env.Info.DatabaseInfo.Password;
+        var engine = TestEnvironment.Env.Info.Request.Engine;
 
         foreach (var instance in instances)
         {
@@ -366,11 +366,11 @@ public class AuroraTestUtils
 
     public List<string> GetAuroraInstanceIds()
     {
-        var databaseEngine = TestEnvironment.Env.Info.Request!.Engine;
-        var deployment = TestEnvironment.Env.Info.Request!.Deployment;
-        var dbName = TestEnvironment.Env.Info.DatabaseInfo!.DefaultDbName;
-        var username = TestEnvironment.Env.Info.DatabaseInfo!.Username;
-        var password = TestEnvironment.Env.Info.DatabaseInfo!.Password;
+        var databaseEngine = TestEnvironment.Env.Info.Request.Engine;
+        var deployment = TestEnvironment.Env.Info.Request.Deployment;
+        var dbName = TestEnvironment.Env.Info.DatabaseInfo.DefaultDbName;
+        var username = TestEnvironment.Env.Info.DatabaseInfo.Username;
+        var password = TestEnvironment.Env.Info.DatabaseInfo.Password;
         var host = TestEnvironment.Env.Info.DatabaseInfo.Instances[0].Host;
         var port = TestEnvironment.Env.Info.DatabaseInfo.Instances[0].Port;
         var connectionUrl = ConnectionStringHelper.GetUrl(databaseEngine, host, port, username, password, dbName);

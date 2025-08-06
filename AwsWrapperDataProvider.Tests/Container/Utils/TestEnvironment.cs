@@ -23,16 +23,15 @@ public class TestEnvironment
 
     public static TestEnvironment Env = LazyTestEnvironmentInstance.Value;
 
-    public TestEnvironmentInfo Info { get; private set; }
+    public TestEnvironmentInfo Info { get; private set; } = null!;
 
-    private Dictionary<string, Proxy> proxies;
-    private TestEnvironment() { }
+    private Dictionary<string, Proxy>? proxies;
 
-    public IReadOnlyCollection<Proxy> Proxies => this.proxies.Values;
+    public IReadOnlyCollection<Proxy> Proxies => this.proxies!.Values;
 
     public static async Task CheckClusterHealthAsync(bool makeSureFirstInstanceWriter)
     {
-        var testInfo = TestEnvironment.Env.Info;
+        var testInfo = TestEnvironment.Env.Info!;
         var testRequest = testInfo.Request!;
 
         AuroraTestUtils auroraUtil = AuroraTestUtils.GetUtility(testInfo);
@@ -98,7 +97,7 @@ public class TestEnvironment
 
     public static async Task RebootAllClusterInstancesAsync()
     {
-        var testInfo = Env.Info;
+        var testInfo = Env.Info!;
         var auroraUtil = AuroraTestUtils.GetUtility(testInfo);
         var instancesIDs = testInfo.DatabaseInfo!.Instances.Select(i => i.InstanceId);
 
@@ -182,7 +181,7 @@ public class TestEnvironment
 
     public Proxy GetProxy(string instanceName)
     {
-        if (this.proxies.TryGetValue(instanceName, out Proxy? proxy))
+        if (this.proxies!.TryGetValue(instanceName, out Proxy? proxy))
         {
             return proxy;
         }

@@ -18,17 +18,8 @@ namespace AwsWrapperDataProvider.Tests.Container.Utils;
 
 public class TestTelemetryInfo
 {
-    public string Endpoint { get; set; }
-    public int EndpointPort { get; set; }
-
-    // Parameterless constructor for deserialization
-    public TestTelemetryInfo() { }
-
-    public TestTelemetryInfo(string endpoint, int endpointPort)
-    {
-        this.Endpoint = endpoint;
-        this.EndpointPort = endpointPort;
-    }
+    public string? Endpoint { get; set; }
+    public int? EndpointPort { get; set; }
 
     [JsonIgnore]
     public string Url => $"{this.Endpoint}:{this.EndpointPort}";

@@ -207,6 +207,7 @@ public class ContainerHelper {
                 ).build()))
         .withFixedExposedPort(5005, 5005) // Mapping container port to host
         .withFileSystemBind("../../../AwsWrapperDataProvider.sln", "/app/AwsWrapperDataProvider.sln", BindMode.READ_ONLY)
+        .withFileSystemBind("../../../.editorconfig", "/app/.editorconfig", BindMode.READ_ONLY)
         .withFileSystemBind("../../../Directory.Build.props", "/app/Directory.Build.props", BindMode.READ_ONLY)
         .withFileSystemBind("../../../global.json", "/app/global.json", BindMode.READ_ONLY)
         .withFileSystemBind("../../../AwsWrapperDataProvider.Benchmarks", "/app/AwsWrapperDataProvider.Benchmarks", BindMode.READ_WRITE)

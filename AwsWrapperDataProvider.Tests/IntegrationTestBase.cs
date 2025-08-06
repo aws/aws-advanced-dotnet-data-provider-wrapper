@@ -17,16 +17,16 @@ using AwsWrapperDataProvider.Tests.Container.Utils;
 namespace AwsWrapperDataProvider.Tests;
 public abstract class IntegrationTestBase : IAsyncLifetime
 {
-    protected readonly string defaultDbName = TestEnvironment.Env.Info.DatabaseInfo!.DefaultDbName;
-    protected readonly string username = TestEnvironment.Env.Info.DatabaseInfo!.Username;
-    protected readonly string password = TestEnvironment.Env.Info.DatabaseInfo!.Password;
-    protected readonly DatabaseEngine engine = TestEnvironment.Env.Info.Request!.Engine;
-    protected readonly string clusterEndpoint = TestEnvironment.Env.Info.DatabaseInfo!.ClusterEndpoint;
-    protected readonly int port = TestEnvironment.Env.Info.DatabaseInfo!.ClusterEndpointPort;
+    protected readonly string defaultDbName = TestEnvironment.Env.Info.DatabaseInfo.DefaultDbName;
+    protected readonly string username = TestEnvironment.Env.Info.DatabaseInfo.Username;
+    protected readonly string password = TestEnvironment.Env.Info.DatabaseInfo.Password;
+    protected readonly DatabaseEngine engine = TestEnvironment.Env.Info.Request.Engine;
+    protected readonly string clusterEndpoint = TestEnvironment.Env.Info.DatabaseInfo.ClusterEndpoint;
+    protected readonly int port = TestEnvironment.Env.Info.DatabaseInfo.ClusterEndpointPort;
 
     public async ValueTask InitializeAsync()
     {
-        if (TestEnvironment.Env.Info.Request!.Features.Contains(TestEnvironmentFeatures.NETWORK_OUTAGES_ENABLED))
+        if (TestEnvironment.Env.Info.Request.Features.Contains(TestEnvironmentFeatures.NETWORK_OUTAGES_ENABLED))
         {
             ProxyHelper.EnableAllConnectivity();
         }

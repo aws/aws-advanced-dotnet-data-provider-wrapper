@@ -81,8 +81,8 @@ public class PluginConnectivityTests : IntegrationTestBase
     [Trait("Database", "pg")]
     public void PgWrapperIamConnectionTest()
     {
-        var iamUser = TestEnvironment.Env.Info.IamUsername!;
-        var iamRegion = TestEnvironment.Env.Info.Region!;
+        var iamUser = TestEnvironment.Env.Info.IamUsername;
+        var iamRegion = TestEnvironment.Env.Info.Region;
         var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, iamUser, null, this.defaultDbName);
         connectionString += $";Plugins=iam;IamRegion={iamRegion}";
         const string query = "select aurora_db_instance_identifier()";
@@ -104,8 +104,8 @@ public class PluginConnectivityTests : IntegrationTestBase
     [Trait("Database", "mysql")]
     public void MySqlClientWrapperIamConnectionTest()
     {
-        var iamUser = TestEnvironment.Env.Info.IamUsername!;
-        var iamRegion = TestEnvironment.Env.Info.Region!;
+        var iamUser = TestEnvironment.Env.Info.IamUsername;
+        var iamRegion = TestEnvironment.Env.Info.Region;
         var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, null, null, this.defaultDbName);
         connectionString += $";Username={iamUser};Plugins=iam;IamRegion={iamRegion}";
         const string query = "select 1";
@@ -127,8 +127,8 @@ public class PluginConnectivityTests : IntegrationTestBase
     [Trait("Database", "mysql")]
     public void MySqlConnectorWrapperIamConnectionTest()
     {
-        var iamUser = TestEnvironment.Env.Info.IamUsername!;
-        var iamRegion = TestEnvironment.Env.Info.Region!;
+        var iamUser = TestEnvironment.Env.Info.IamUsername;
+        var iamRegion = TestEnvironment.Env.Info.Region;
         var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, null, null, this.defaultDbName);
         connectionString += $";Username={iamUser};Plugins=iam;IamRegion={iamRegion}";
         const string query = "select 1";

@@ -37,7 +37,6 @@ public class TestRunner {
     }
   }
 
-
   @TestTemplate
   public void debugTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
 

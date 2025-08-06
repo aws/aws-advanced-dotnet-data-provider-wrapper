@@ -18,19 +18,9 @@ using System.Text.Json.Serialization;
 
 public class TestInstanceInfo
 {
-    public string InstanceId { get; set; } // e.g., "instance-1"
-    public string Host { get; set; } // e.g., "instance-1.ABC.cluster-XYZ.us-west-2.rds.amazonaws.com"
+    public string InstanceId { get; set; } = null!; // e.g., "instance-1"
+    public string Host { get; set; } = null!; // e.g., "instance-1.ABC.cluster-XYZ.us-west-2.rds.amazonaws.com"
     public int Port { get; set; }
-
-    // Parameterless constructor for deserialization
-    public TestInstanceInfo() { }
-
-    public TestInstanceInfo(string instanceId, string host, int port)
-    {
-        this.InstanceId = instanceId;
-        this.Host = host;
-        this.Port = port;
-    }
 
     [JsonIgnore]
     public string Url => $"{this.Host}:{this.Port}/";

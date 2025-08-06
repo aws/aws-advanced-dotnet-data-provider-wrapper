@@ -16,22 +16,17 @@ namespace AwsWrapperDataProvider.Tests.Container.Utils;
 
 public class TestDatabaseInfo
 {
-    public string Username { get; set; }
-    public string Password { get; set; }
-    public string DefaultDbName { get; set; }
-
-    public string ClusterEndpoint { get; set; }
+    public string Username { get; set; } = null!;
+    public string Password { get; set; } = null!;
+    public string DefaultDbName { get; set; } = null!;
+    public string ClusterEndpoint { get; set; } = null!;
     public int ClusterEndpointPort { get; set; }
-
-    public string ClusterReadOnlyEndpoint { get; set; }
+    public string ClusterReadOnlyEndpoint { get; set; } = null!;
     public int ClusterReadOnlyEndpointPort { get; set; }
-
-    public string InstanceEndpointSuffix { get; set; }
+    public string InstanceEndpointSuffix { get; set; } = null!;
     public int InstanceEndpointPort { get; set; }
 
     public List<TestInstanceInfo> Instances { get; set; } = new();
-
-    public TestDatabaseInfo() { }
 
     public void SetClusterEndpoint(string clusterEndpoint, int clusterEndpointPort)
     {

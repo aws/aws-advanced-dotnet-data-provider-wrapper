@@ -36,30 +36,6 @@ public class TestEnvironmentRequest
     [JsonPropertyName("numOfInstances")]
     public int NumOfInstances { get; set; } = 1;
 
-    // Parameterless constructor for deserialization
-    public TestEnvironmentRequest() { }
-
-    public TestEnvironmentRequest(
-        DatabaseEngine engine,
-        DatabaseInstances instances,
-        int numOfInstances,
-        DatabaseEngineDeployment deployment,
-        params TestEnvironmentFeatures[] features)
-    {
-        this.Engine = engine;
-        this.Instances = instances;
-        this.Deployment = deployment;
-        this.NumOfInstances = numOfInstances;
-
-        if (features != null)
-        {
-            foreach (var feature in features)
-            {
-                this.Features.Add(feature);
-            }
-        }
-    }
-
     [JsonIgnore]
     public string DisplayName =>
         $"Test environment [{this.Deployment}, {this.Engine}, {this.Instances}, {this.NumOfInstances}, {string.Join(", ", this.Features)}]";

@@ -236,18 +236,18 @@ public static partial class RdsUtils
         CachedPatterns.Clear();
     }
 
-    public static bool IsIp(string ip)
+    public static bool IsIp(string host)
     {
-        return IsIpV4(ip) || IsIpV6(ip);
+        return IsIpV4(host) || IsIpV6(host);
     }
 
-    public static bool IsIpV4(string ip)
+    public static bool IsIpV4(string host)
     {
-        return IpV4Pattern().IsMatch(ip);
+        return IpV4Pattern().IsMatch(host);
     }
 
-    public static bool IsIpV6(string ip)
+    public static bool IsIpV6(string host)
     {
-        return IpV6Pattern().IsMatch(ip) || IpV6CompressedPattern().IsMatch(ip);
+        return IpV6Pattern().IsMatch(host) || IpV6CompressedPattern().IsMatch(host);
     }
 }
