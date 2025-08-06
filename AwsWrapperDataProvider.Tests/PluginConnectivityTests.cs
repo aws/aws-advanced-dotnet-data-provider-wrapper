@@ -147,59 +147,94 @@ public class PluginConnectivityTests : IntegrationTestBase
 
     [Fact]
     [Trait("Category", "Integration")]
-    public void PgWrapperSecretsManagerConnectionTest()
+    [Trait("Database", "pg")]
+    public void PgWrapperSecretsManagerWithSecretIdConnectionTest()
     {
-        const string connectionString =
-            "Host=<insert_rds_instance_here>;Database=<database_name_here>;Plugins=awsSecretsManager;secretsManagerSecretId=<secret_name_or_arn>;secretsManagerRegion=<optional_secret_region>;";
-        const string query = "select aurora_db_instance_identifier()";
+        var auroraTestUtils = AuroraTestUtils.GetUtility();
+        var secretId = "PGValidSecretId";
+        var secretsARN = auroraTestUtils.CreateSecrets(secretId);
+        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, null, null, this.defaultDbName);
+        connectionString += $";Plugins=awsSecretsManager;secretsManagerSecretId={secretId};secretsManagerRegion={TestEnvironment.Env.Info.Region};";
+        const string query = "select 1";
 
-        using (AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString))
+        try
         {
+            using AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
+            connection.Open();
             AwsWrapperCommand<NpgsqlCommand> command = connection.CreateCommand<NpgsqlCommand>();
             command.CommandText = query;
 
-            try
+            IDataReader reader = command.ExecuteReader();
+            while (reader.Read())
             {
-                connection.Open();
-                IDataReader reader = command.ExecuteReader();
-                while (reader.Read())
-                {
-                    Console.WriteLine(reader.GetString(0));
-                }
+                Console.WriteLine(reader.GetString(0));
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.ToString());
-            }
+        }
+        finally
+        {
+            auroraTestUtils.DeleteSecrets(secretId);
         }
     }
 
     [Fact]
     [Trait("Category", "Integration")]
-    public void MySqlClientWrapperSecretsManagerConnectionTest()
+    [Trait("Database", "mysql")]
+    public void MySqlClientWrapperSecretsManagerWithSecretIdConnectionTest()
     {
-        const string connectionString = "Server=<insert_rds_instance_here>;Initial Catalog=mysql;Plugins=awsSecretsManager;secretsManagerSecretId=<secret_name_or_arn>;secretsManagerRegion=<optional_secret_region>;";
-        const string query = "select * from test";
+        var auroraTestUtils = AuroraTestUtils.GetUtility();
+        var secretId = "MySQLValidSecretId";
+        auroraTestUtils.CreateSecrets(secretId);
+        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, null, null, this.defaultDbName);
+        connectionString += $";Plugins=awsSecretsManager;secretsManagerSecretId={secretId};secretsManagerRegion={TestEnvironment.Env.Info.Region};";
+        const string query = "select 1";
 
-        using (AwsWrapperConnection<MySql.Data.MySqlClient.MySqlConnection> connection =
-               new(connectionString))
+        try
         {
+            using AwsWrapperConnection<MySql.Data.MySqlClient.MySqlConnection> connection = new(connectionString);
+            connection.Open();
             AwsWrapperCommand<MySql.Data.MySqlClient.MySqlCommand> command = connection.CreateCommand<MySql.Data.MySqlClient.MySqlCommand>();
             command.CommandText = query;
 
-            try
+            IDataReader reader = command.ExecuteReader();
+            while (reader.Read())
             {
-                connection.Open();
-                IDataReader reader = command.ExecuteReader();
-                while (reader.Read())
-                {
-                    Console.WriteLine(reader.GetInt32(0));
-                }
+                Console.WriteLine(reader.GetInt32(0));
             }
-            catch (Exception ex)
+        }
+        finally
+        {
+            auroraTestUtils.DeleteSecrets(secretId);
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    [Trait("Database", "mysql")]
+    public void MySqlClientWrapperSecretsManagerWithSecretARNConnectionTest()
+    {
+        var auroraTestUtils = AuroraTestUtils.GetUtility();
+        var secretId = "MySQLValidSecretARN";
+        var secretsARN = auroraTestUtils.CreateSecrets(secretId);
+        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, null, null, this.defaultDbName);
+        connectionString += $";Plugins=awsSecretsManager;secretsManagerSecretId={secretsARN};secretsManagerRegion={TestEnvironment.Env.Info.Region};";
+        const string query = "select 1";
+
+        try
+        {
+            using AwsWrapperConnection<MySql.Data.MySqlClient.MySqlConnection> connection = new(connectionString);
+            connection.Open();
+            AwsWrapperCommand<MySql.Data.MySqlClient.MySqlCommand> command = connection.CreateCommand<MySql.Data.MySqlClient.MySqlCommand>();
+            command.CommandText = query;
+
+            IDataReader reader = command.ExecuteReader();
+            while (reader.Read())
             {
-                Console.WriteLine(ex.ToString());
+                Console.WriteLine(reader.GetInt32(0));
             }
+        }
+        finally
+        {
+            auroraTestUtils.DeleteSecrets(secretId);
         }
     }
 }
