@@ -191,10 +191,10 @@ public class HostMonitor : IHostMonitor
                 }
 
                 if (this.activeContexts.IsEmpty && !isNodeUnhealthy)
-                    {
-                        await Task.Delay(ThreadSleepMs);
-                        continue;
-                    }
+                {
+                    await Task.Delay(ThreadSleepMs);
+                    continue;
+                }
 
                 DateTime statusCheckStartTime = DateTime.Now;
                 bool isValid = this.CheckConnectionStatus();
