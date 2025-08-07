@@ -154,7 +154,7 @@ public class PluginConnectivityTests : IntegrationTestBase
         var secretId = "PGValidSecretId";
         var secretsARN = auroraTestUtils.CreateSecrets(secretId);
         var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, null, null, this.defaultDbName);
-        connectionString += $";Plugins=awsSecretsManager;secretsManagerSecretId={secretId};secretsManagerRegion={TestEnvironment.Env.Info.Region};";
+        connectionString += $";Plugins=awsSecretsManager;SecretsManagerSecretId={secretId};SecretsManagerRegion={TestEnvironment.Env.Info.Region};";
         const string query = "select 1";
 
         try
@@ -185,7 +185,7 @@ public class PluginConnectivityTests : IntegrationTestBase
         var secretId = "MySQLValidSecretId";
         auroraTestUtils.CreateSecrets(secretId);
         var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, null, null, this.defaultDbName);
-        connectionString += $";Plugins=awsSecretsManager;secretsManagerSecretId={secretId};secretsManagerRegion={TestEnvironment.Env.Info.Region};";
+        connectionString += $";Plugins=awsSecretsManager;SecretsManagerSecretId={secretId};SecretsManagerRegion={TestEnvironment.Env.Info.Region};";
         const string query = "select 1";
 
         try
@@ -216,7 +216,7 @@ public class PluginConnectivityTests : IntegrationTestBase
         var secretId = "MySQLValidSecretARN";
         var secretsARN = auroraTestUtils.CreateSecrets(secretId);
         var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, null, null, this.defaultDbName);
-        connectionString += $";Plugins=awsSecretsManager;secretsManagerSecretId={secretsARN};secretsManagerRegion={TestEnvironment.Env.Info.Region};";
+        connectionString += $";Plugins=awsSecretsManager;SecretsManagerSecretId={secretsARN};SecretsManagerRegion={TestEnvironment.Env.Info.Region};";
         const string query = "select 1";
 
         try
