@@ -167,7 +167,7 @@ public class PluginConnectivityTests : IntegrationTestBase
             IDataReader reader = command.ExecuteReader();
             while (reader.Read())
             {
-                Console.WriteLine(reader.GetString(0));
+                Console.WriteLine(reader.GetInt32(0));
             }
         }
         finally
