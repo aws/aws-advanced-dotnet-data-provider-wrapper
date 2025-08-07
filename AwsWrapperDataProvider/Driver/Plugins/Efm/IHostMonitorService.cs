@@ -23,8 +23,8 @@ public interface IHostMonitorService
         DbConnection connectionToAbort,
         HostSpec hostSpec,
         Dictionary<string, string> properties,
-        int failureDetectionTimeMillis,
-        int failureDetectionIntervalMillis,
+        int failureDetectionTimeMs,
+        int failureDetectionIntervalMs,
         int failureDetectionCount);
 
     public void StopMonitoring(HostMonitorConnectionContext context, DbConnection connectionToAbort);

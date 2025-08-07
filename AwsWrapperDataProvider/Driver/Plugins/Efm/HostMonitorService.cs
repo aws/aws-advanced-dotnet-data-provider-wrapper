@@ -24,7 +24,7 @@ public class HostMonitorService : IHostMonitorService
 {
     private static readonly ILogger<HostMonitorService> Logger = LoggerUtils.GetLogger<HostMonitorService>();
 
-    protected static readonly int CacheCleanupMillis = (int)TimeSpan.FromMinutes(1).TotalMilliseconds;
+    protected static readonly int CacheCleanupMs = (int)TimeSpan.FromMinutes(1).TotalMilliseconds;
     protected static readonly MemoryCache Monitors = new(new MemoryCacheOptions());
 
     private readonly IPluginService pluginService;
@@ -60,15 +60,15 @@ public class HostMonitorService : IHostMonitorService
         DbConnection connectionToAbort,
         HostSpec hostSpec,
         Dictionary<string, string> properties,
-        int failureDetectionTimeMillis,
-        int failureDetectionIntervalMillis,
+        int failureDetectionTimeMs,
+        int failureDetectionIntervalMs,
         int failureDetectionCount)
     {
         IHostMonitor monitor = this.GetMonitor(
             hostSpec,
             properties,
-            failureDetectionTimeMillis,
-            failureDetectionIntervalMillis,
+            failureDetectionTimeMs,
+            failureDetectionIntervalMs,
             failureDetectionCount);
 
         HostMonitorConnectionContext context = new HostMonitorConnectionContext(connectionToAbort);
@@ -105,12 +105,12 @@ public class HostMonitorService : IHostMonitorService
     protected IHostMonitor GetMonitor(
         HostSpec hostSpec,
         Dictionary<string, string> properties,
-        int failureDetectionTimeMillis,
-        int failureDetectionIntervalMillis,
+        int failureDetectionTimeMs,
+        int failureDetectionIntervalMs,
         int failureDetectionCount)
     {
-        string monitorKey = $"{failureDetectionTimeMillis}:{failureDetectionIntervalMillis}:{failureDetectionCount}:{hostSpec.Host}";
-        int cacheExpirationMillis = PropertyDefinition.MonitorDisposalTimeMs.GetInt(properties) ?? DefaultMonitorDisposalTimeMs;
+        string monitorKey = $"{failureDetectionTimeMs}:{failureDetectionIntervalMs}:{failureDetectionCount}:{hostSpec.Host}";
+        int cacheExpirationMs = PropertyDefinition.MonitorDisposalTimeMs.GetInt(properties) ?? DefaultMonitorDisposalTimeMs;
 
         if (!Monitors.TryGetValue(monitorKey, out IHostMonitor? monitor))
         {
@@ -118,11 +118,11 @@ public class HostMonitorService : IHostMonitorService
                 this.pluginService,
                 hostSpec,
                 properties,
-                failureDetectionTimeMillis,
-                failureDetectionIntervalMillis,
+                failureDetectionTimeMs,
+                failureDetectionIntervalMs,
                 failureDetectionCount);
 
-            Monitors.Set(monitorKey, monitor, TimeSpan.FromMilliseconds(cacheExpirationMillis));
+            Monitors.Set(monitorKey, monitor, TimeSpan.FromMilliseconds(cacheExpirationMs));
         }
 
         return monitor ?? throw new Exception("Could not create or get monitor.");
