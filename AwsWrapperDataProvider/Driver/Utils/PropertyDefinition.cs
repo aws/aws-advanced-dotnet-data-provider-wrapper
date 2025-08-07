@@ -168,7 +168,7 @@ public static class PropertyDefinition
         "The default weight for any hosts that have not been configured with the `roundRobinHostWeightPairs` parameter.");
 
     public static readonly AwsWrapperProperty MonitorDisposalTimeMs = new(
-        "monitorDisposalTime",
+        "MonitorDisposalTime",
         "600000", // 10min
         "Interval in milliseconds for a monitor to be considered inactive and to be disposed.");
 
