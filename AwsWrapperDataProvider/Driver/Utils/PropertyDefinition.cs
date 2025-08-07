@@ -167,6 +167,11 @@ public static class PropertyDefinition
         "1",
         "The default weight for any hosts that have not been configured with the `roundRobinHostWeightPairs` parameter.");
 
+    public static readonly AwsWrapperProperty MonitorDisposalTimeMs = new(
+        "MonitorDisposalTime",
+        "600000", // 10min
+        "Interval in milliseconds for a monitor to be considered inactive and to be disposed.");
+
     /// <summary>
     /// A set of AwsWrapperProperties that is used by the wrapper and should not be passed to the target driver.
     /// </summary>
@@ -212,6 +217,7 @@ public static class PropertyDefinition
         // Host Selector Stratagy Properties
         RoundRobinHostWeightPairs,
         RoundRobinDefaultWeight,
+        MonitorDisposalTimeMs,
     ];
 
     public static string GetConnectionUrl(Dictionary<string, string> props)
