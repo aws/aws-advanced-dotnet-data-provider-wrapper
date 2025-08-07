@@ -37,19 +37,19 @@ public class AwsWrapperConnection : DbConnection
 
     internal Dictionary<string, string> ConnectionProperties { get; private set; }
 
-    internal DbConnection? TargetDbConnection => this.pluginService?.CurrentConnection;
+    internal DbConnection? TargetDbConnection => this.pluginService.CurrentConnection;
 
     [AllowNull]
     public override string ConnectionString
     {
-        get => this.pluginService!.CurrentConnection?.ConnectionString ?? this.connectionString ?? string.Empty;
+        get => this.pluginService.CurrentConnection?.ConnectionString ?? this.connectionString ?? string.Empty;
         set
         {
             this.connectionString = value ?? string.Empty;
             this.ConnectionProperties = ConnectionPropertiesUtils.ParseConnectionStringParameters(this.connectionString);
             this.targetType = this.GetTargetType(this.ConnectionProperties);
 
-            if (this.pluginService?.CurrentConnection != null)
+            if (this.pluginService.CurrentConnection != null)
             {
                 this.pluginService.CurrentConnection.ConnectionString = value;
             }
@@ -103,26 +103,33 @@ public class AwsWrapperConnection : DbConnection
         this.PluginManager.InitConnectionPluginChain(this.pluginService, this.ConnectionProperties);
 
         this.pluginService.RefreshHostList();
+        this.pluginService.SetCurrentConnection(
+            connectionProvider.CreateDbConnection(
+                this.pluginService.Dialect,
+                this.pluginService.TargetConnectionDialect,
+                null,
+                this.ConnectionProperties),
+            this.pluginService.InitialConnectionHostSpec);
     }
 
-    public override string Database => this.pluginService!.CurrentConnection?.Database ?? this.database ?? string.Empty;
+    public override string Database => this.pluginService.CurrentConnection?.Database ?? this.database ?? string.Empty;
 
-    public override string DataSource => this.pluginService!.CurrentConnection is DbConnection dbConnection
+    public override string DataSource => this.pluginService.CurrentConnection is DbConnection dbConnection
         ? dbConnection.DataSource
         : string.Empty;
 
-    public override string ServerVersion => this.pluginService!.CurrentConnection is DbConnection dbConnection
+    public override string ServerVersion => this.pluginService.CurrentConnection is DbConnection dbConnection
         ? dbConnection.ServerVersion
         : string.Empty;
 
-    public override ConnectionState State => this.pluginService!.CurrentConnection?.State ?? ConnectionState.Closed;
+    public override ConnectionState State => this.pluginService.CurrentConnection?.State ?? ConnectionState.Closed;
 
     public override void ChangeDatabase(string databaseName)
     {
         this.database = databaseName;
         WrapperUtils.RunWithPlugins(
-            this.PluginManager!,
-            this.pluginService!.CurrentConnection!,
+            this.PluginManager,
+            this.pluginService.CurrentConnection!,
             "DbConnection.ChangeDatabase",
             () => this.pluginService.CurrentConnection!.ChangeDatabase(databaseName),
             databaseName);
@@ -131,8 +138,8 @@ public class AwsWrapperConnection : DbConnection
     public override void Close()
     {
         WrapperUtils.RunWithPlugins(
-            this.PluginManager!,
-            this.pluginService!.CurrentConnection!,
+            this.PluginManager,
+            this.pluginService.CurrentConnection!,
             "DbConnection.Close",
             () => this.pluginService.CurrentConnection!.Close());
     }
@@ -148,12 +155,12 @@ public class AwsWrapperConnection : DbConnection
         ArgumentNullException.ThrowIfNull(this.PluginManager);
         ArgumentNullException.ThrowIfNull(this.hostListProviderService);
 
-        this.PluginManager.InitHostProvider(this.connectionString!, this.ConnectionProperties!, this.hostListProviderService);
+        this.PluginManager.InitHostProvider(this.connectionString, this.ConnectionProperties, this.hostListProviderService);
 
         DbConnection connection = WrapperUtils.OpenWithPlugins(
             this.PluginManager,
             this.pluginService.InitialConnectionHostSpec,
-            this.ConnectionProperties!,
+            this.ConnectionProperties,
             true);
         this.pluginService.SetCurrentConnection(connection, this.pluginService.InitialConnectionHostSpec);
         this.pluginService.RefreshHostList();

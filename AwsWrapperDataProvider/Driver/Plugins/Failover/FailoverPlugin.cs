@@ -310,7 +310,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
                 try
                 {
-                    DbConnection candidateConn = this.pluginService.OpenConnection(readerCandidate, this.props, false, this);
+                    DbConnection candidateConn = this.pluginService.OpenConnection(readerCandidate, this.props, this);
                     var role = this.pluginService.GetHostRole(candidateConn);
 
                     if (role == HostRole.Reader || this.failoverMode != FailoverMode.StrictReader)
@@ -344,7 +344,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
                 try
                 {
-                    DbConnection candidateConn = this.pluginService.OpenConnection(originalWriter, this.props, false, this);
+                    DbConnection candidateConn = this.pluginService.OpenConnection(originalWriter, this.props, this);
                     var role = this.pluginService.GetHostRole(candidateConn);
 
                     if (role == HostRole.Reader || this.failoverMode != FailoverMode.StrictReader)
@@ -393,7 +393,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
         DbConnection writerCandidateConn;
         try
         {
-            writerCandidateConn = this.pluginService.OpenConnection(writerCandidate, this.props, false, this);
+            writerCandidateConn = this.pluginService.OpenConnection(writerCandidate, this.props, this);
         }
         catch (Exception ex)
         {

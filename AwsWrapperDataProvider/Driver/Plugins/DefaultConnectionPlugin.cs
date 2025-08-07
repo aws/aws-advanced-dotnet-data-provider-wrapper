@@ -67,14 +67,15 @@ public class DefaultConnectionPlugin(
         IConnectionProvider connProvider,
         bool isInitialConnection)
     {
-        // Create a new connection using the connection provider (like JDBC wrapper)
-        DbConnection conn = connProvider.CreateDbConnection(
-            this.pluginService.Dialect,
-            this.pluginService.TargetConnectionDialect,
-            hostSpec,
-            props);
+        // Create a new connection if it's not the initial connection or CurrentConnection is not null
+        DbConnection? conn = isInitialConnection && this.pluginService.CurrentConnection != null
+            ? this.pluginService.CurrentConnection
+            : connProvider.CreateDbConnection(
+                this.pluginService.Dialect,
+                this.pluginService.TargetConnectionDialect,
+                hostSpec,
+                props);
 
-        // Open the connection
         conn.Open();
 
         // Set availability and update dialect

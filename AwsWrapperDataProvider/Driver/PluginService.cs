@@ -54,7 +54,7 @@ public class PluginService : IPluginService, IHostListProviderService
     public IList<HostSpec> AllHosts { get; private set; } = [];
     public IHostListProvider? HostListProvider { get => this.hostListProvider; set => this.hostListProvider = value ?? throw new ArgumentNullException(nameof(value)); }
     public HostSpecBuilder HostSpecBuilder { get => new HostSpecBuilder(); }
-    public DbConnection? CurrentConnection { get; set; }
+    public DbConnection? CurrentConnection { get; private set; }
 
     public PluginService(
         Type connectionType,
@@ -93,7 +93,7 @@ public class PluginService : IPluginService, IHostListProviderService
 
     public void SetCurrentConnection(DbConnection connection, HostSpec? hostSpec)
     {
-        // TODO implement stub method.
+        // TODO use lock when switching connection
         this.CurrentConnection = connection;
         this.currentHostSpec = hostSpec;
     }
@@ -219,18 +219,12 @@ public class PluginService : IPluginService, IHostListProviderService
         }
     }
 
-    public DbConnection OpenConnection(HostSpec hostSpec, Dictionary<string, string> props, bool isInitialConnection)
-    {
-        return this.pluginManager.Open(hostSpec, props, isInitialConnection, null);
-    }
-
     public DbConnection OpenConnection(
         HostSpec hostSpec,
         Dictionary<string, string> props,
-        bool isInitialConnection,
-        IConnectionPlugin pluginToSkip)
+        IConnectionPlugin? pluginToSkip)
     {
-        return this.pluginManager.Open(hostSpec, props, isInitialConnection, pluginToSkip);
+        return this.pluginManager.Open(hostSpec, props, this.CurrentConnection == null, pluginToSkip);
     }
 
     public DbConnection ForceOpenConnection(HostSpec hostSpec, Dictionary<string, string> props, bool isInitialConnection)
