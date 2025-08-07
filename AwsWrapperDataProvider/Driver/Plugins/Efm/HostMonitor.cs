@@ -16,6 +16,7 @@ using System.Collections.Concurrent;
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
@@ -77,7 +78,7 @@ public class HostMonitor : IHostMonitor
     {
         if (this.cancellationTokenSource.Token.IsCancellationRequested)
         {
-            Logger.LogWarning("Starting monitoring for a monitor that is stopped.");
+            Logger.LogWarning(Resources.EfmHostMonitor_StartMonitoringWhenStopped);
         }
 
         DateTime startMonitoringTime = DateTime.Now + TimeSpan.FromMilliseconds(this.failureDetectionTimeMs);
@@ -117,12 +118,12 @@ public class HostMonitor : IHostMonitor
             this.activeContexts.Clear();
         }
 
-        Logger.LogTrace($"Stopped monitoring for {this.hostSpec.Host}.");
+        Logger.LogTrace(string.Format(Resources.EfmHostMonitor_StoppedMonitoring, this.hostSpec.Host));
     }
 
     public async void NewContextRun(CancellationToken token)
     {
-        Logger.LogTrace($"Started monitoring thread to poll new contexts for {this.hostSpec.Host}.");
+        Logger.LogTrace(string.Format(Resources.EfmHostMonitor_StartedPollingNewContexts, this.hostSpec.Host));
 
         try
         {
@@ -169,15 +170,15 @@ public class HostMonitor : IHostMonitor
         }
         catch (Exception ex)
         {
-            Logger.LogWarning($"Exception thrown while polling new contexts for {this.hostSpec.Host}: {ex.Message} {ex.StackTrace}");
+            Logger.LogWarning(string.Format(Resources.EfmHostMonitor_NewContextsException, this.hostSpec.Host, ex.Message, ex.StackTrace));
         }
 
-        Logger.LogTrace($"Stopped monitoring thread to poll new contexts for {this.hostSpec.Host}.");
+        Logger.LogTrace(string.Format(Resources.EfmHostMonitor_StoppedPollingNewContexts, this.hostSpec.Host));
     }
 
     public async void Run(CancellationToken token)
     {
-        Logger.LogTrace($"Started monitoring thread to monitor active contexts for host {this.hostSpec.Host}.");
+        Logger.LogTrace(string.Format(Resources.EfmHostMonitor_StartedMonitoringActiveContexts, this.hostSpec.Host));
 
         try
         {
@@ -260,7 +261,7 @@ public class HostMonitor : IHostMonitor
         }
         catch (Exception ex)
         {
-            Logger.LogWarning($"Exception thrown while monitoring active contexts for {this.hostSpec.Host}: {ex.Message} {ex.StackTrace}");
+            Logger.LogWarning(string.Format(Resources.EfmHostMonitor_ActiveContextsException, this.hostSpec.Host, ex.Message, ex.StackTrace));
         }
         finally
         {
@@ -285,7 +286,7 @@ public class HostMonitor : IHostMonitor
             }
         }
 
-        Logger.LogTrace($"Stopped monitoring thread to monitor active contexts for {this.hostSpec.Host}.");
+        Logger.LogTrace(string.Format(Resources.EfmHostMonitor_StoppedMonitoringActiveContexts, this.hostSpec.Host));
     }
 
     private bool CheckConnectionStatus()
@@ -312,9 +313,9 @@ public class HostMonitor : IHostMonitor
                     }
                 }
 
-                Logger.LogTrace($"Opening a monitoring connection to {this.hostSpec.Host}...");
+                Logger.LogTrace(string.Format(Resources.EfmHostMonitor_OpeningMonitoringConnection, this.hostSpec.Host));
                 conn = this.pluginService.ForceOpenConnection(this.hostSpec, monitoringConnProperties, false);
-                Logger.LogTrace($"Opened a monitoring connection to {this.hostSpec.Host}");
+                Logger.LogTrace(string.Format(Resources.EfmHostMonitor_OpenedMonitoringConnection, this.hostSpec.Host));
 
                 lock (this.monitorLock)
                 {
@@ -368,7 +369,7 @@ public class HostMonitor : IHostMonitor
 
             if (invalidNodeDuration >= TimeSpan.FromMilliseconds(maxInvalidNodeDurationMs))
             {
-                Logger.LogTrace($"Host is dead: {this.hostSpec.Host}");
+                Logger.LogTrace(string.Format(Resources.EfmHostMonitor_HostDead, this.hostSpec.Host));
                 lock (this.monitorLock)
                 {
                     this.nodeUnhealthy = true;
@@ -378,7 +379,7 @@ public class HostMonitor : IHostMonitor
             {
                 lock (this.monitorLock)
                 {
-                    Logger.LogTrace($"Host is not responding: {this.hostSpec.Host}, failure count: {this.failureCount}");
+                    Logger.LogTrace(string.Format(Resources.EfmHostMonitor_HostNotResponding, this.hostSpec.Host, this.failureCount));
                 }
             }
 
@@ -389,7 +390,7 @@ public class HostMonitor : IHostMonitor
         {
             if (this.failureCount > 0)
             {
-                Logger.LogTrace($"Host is alive: {this.hostSpec.Host}");
+                Logger.LogTrace(string.Format(Resources.EfmHostMonitor_HostAlive, this.hostSpec.Host));
             }
 
             this.failureCount = 0;
@@ -406,7 +407,7 @@ public class HostMonitor : IHostMonitor
         }
         catch (Exception ex)
         {
-            Logger.LogWarning($"Exception thrown while aborting connection: {ex.Message}");
+            Logger.LogTrace(string.Format(Resources.EfmHostMonitor_ExceptionAbortingConnection, ex.Message));
         }
     }
 }

@@ -187,7 +187,7 @@
       <value>Started thread to poll new contexts for host {0}.</value>
     </data>
     <data name="EfmHostMonitor_NewContextsException" xml:space="preserve">
-      <value>Encountered exception while polling new contexts for host {0}: {1}.</value>
+      <value>Encountered exception while polling new contexts for host {0}: {1}, stack trace: {2}.</value>
     </data>
     <data name="EfmHostMonitor_StoppedPollingNewContexts" xml:space="preserve">
       <value>Stopped thread to poll new contexts for host {0}.</value>
@@ -196,7 +196,7 @@
       <value>Started thread to monitor active contexts for host {0}.</value>
     </data>
     <data name="EfmHostMonitor_ActiveContextsException" xml:space="preserve">
-      <value>Encountered exception while monitoring active contexts for host {0}: {1}.</value>
+      <value>Encountered exception while monitoring active contexts for host {0}: {1}, stack trace: {2}.</value>
     </data>
     <data name="EfmHostMonitor_StoppedMonitoringActiveContexts" xml:space="preserve">
       <value>Stopped thread to monitor active contexts for host {0}.</value>
@@ -211,7 +211,7 @@
       <value>Host is dead: {0}.</value>
     </data>
     <data name="EfmHostMonitor_HostNotResponding" xml:space="preserve">
-      <value>Host is not responding: {0}.</value>
+      <value>Host is not responding: {0}, failure count: {1}.</value>
     </data>
     <data name="EfmHostMonitor_HostAlive" xml:space="preserve">
       <value>Host is alive: {0}.</value>
