@@ -219,4 +219,13 @@
     <data name="EfmHostMonitor_ExceptionAbortingConnection" xml:space="preserve">
       <value>Encountered exception while aborting connection: {0}.</value>
     </data>
+    <data name="EfmHostMonitor_ActivatedMonitoring" xml:space="preserve">
+      <value>Activated monitoring.</value>
+    </data>
+    <data name="EfmHostMonitor_DeactivatedMonitoring" xml:space="preserve">
+      <value>Deactivated monitoring.</value>
+    </data>
+    <data name="EfmHostMonitor_ErrorIdentifyingConnection" xml:space="preserve">
+      <value>Encountered exception when identifying connection: {0}.</value>
+    </data>
 </root>

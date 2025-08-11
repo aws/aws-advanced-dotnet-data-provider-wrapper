@@ -14,8 +14,8 @@
 
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
-using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.Efm;
@@ -23,9 +23,10 @@ namespace AwsWrapperDataProvider.Driver.Plugins.Efm;
 public class HostMonitoringPlugin : AbstractConnectionPlugin
 {
     private static readonly ILogger<HostMonitoringPlugin> Logger = LoggerUtils.GetLogger<HostMonitoringPlugin>();
-    private static int DefaultFailureDetectionTime = 30000;
-    private static int DefaultFailureDetectionInterval = 5000;
-    private static int DefaultFailureDetectionCount = 3;
+
+    public static readonly int DefaultFailureDetectionTime = 30000;
+    public static readonly int DefaultFailureDetectionInterval = 5000;
+    public static readonly int DefaultFailureDetectionCount = 3;
 
     private readonly IPluginService pluginService;
     private readonly Dictionary<string, string> props;
@@ -61,7 +62,7 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
 
         try
         {
-            Logger.LogInformation("Activated monitoring");
+            Logger.LogTrace(Resources.EfmHostMonitor_ActivatedMonitoring);
 
             HostSpec monitoringHostSpec = this.GetMonitoringHostSpec();
 
@@ -82,7 +83,7 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
                 this.monitorService.StopMonitoring(monitorContext, this.pluginService.CurrentConnection);
             }
 
-            Logger.LogInformation("Deactivated monitoring");
+            Logger.LogTrace(Resources.EfmHostMonitor_DeactivatedMonitoring);
         }
 
         return result;
@@ -118,10 +119,7 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
 
     private void InitMonitorService()
     {
-        if (this.monitorService == null)
-        {
-            this.monitorService = new HostMonitorService(this.pluginService);
-        }
+        this.monitorService ??= new HostMonitorService(this.pluginService);
     }
 
     public HostSpec GetMonitoringHostSpec()
@@ -146,8 +144,8 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
             }
             catch (Exception ex)
             {
-                Logger.LogError($"Error identifying connection: ${ex.Message}");
-                throw new Exception("Error identifying connection", ex);
+                Logger.LogError(string.Format(Resources.EfmHostMonitor_ErrorIdentifyingConnection, ex.Message));
+                throw new Exception("Couldn't identify connection", ex);
             }
         }
 
