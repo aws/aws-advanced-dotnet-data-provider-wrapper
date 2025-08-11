@@ -71,10 +71,10 @@ public static class PropertyDefinition
         new("IamExpiration", "870", "IAM token cache expiration in seconds.");
 
     public static readonly AwsWrapperProperty IamRoleArn = new(
-        "iamRoleArn", null, "The ARN of the IAM Role that is to be assumed.");
+        "IamRoleArn", null, "The ARN of the IAM Role that is to be assumed.");
 
     public static readonly AwsWrapperProperty IamIdpArn = new(
-        "iamIdpArn", null, "The ARN of the Identity Provider");
+        "IamIdpArn", null, "The ARN of the Identity Provider");
 
     public static readonly AwsWrapperProperty ClusterTopologyRefreshRateMs = new(
         "ClusterTopologyRefreshRateMs",
@@ -113,25 +113,25 @@ public static class PropertyDefinition
         "VerifyOpenedConnectionType", null, "Force to verify an opened connection to be either a writer or a reader.");
 
     public static readonly AwsWrapperProperty IdpEndpoint = new(
-        "idpEndpoint", null, "The hosting URL of the Identity Provider");
+        "IdpEndpoint", null, "The hosting URL of the Identity Provider");
 
     public static readonly AwsWrapperProperty IdpPort = new(
-      "idpPort", "443", "The hosting port of Identity Provider");
+        "IdpPort", "443", "The hosting port of Identity Provider");
 
     public static readonly AwsWrapperProperty IdpUsername = new(
-        "idpUsername", null, "The federated user name");
+        "IdpUsername", null, "The federated user name");
 
     public static readonly AwsWrapperProperty IdpPassword = new(
-        "idpPassword", null, "The federated user password");
+        "IdpPassword", null, "The federated user password");
 
     public static readonly AwsWrapperProperty RelayingPartyId = new(
-        "rpIdentifier", "urn:amazon:webservices", "The relaying party identifier");
+        "RpIdentifier", "urn:amazon:webservices", "The relaying party identifier");
 
     public static readonly AwsWrapperProperty DbUser = new(
-        "dbUser", null, "The database user used to access the database");
+        "DbUser", null, "The database user used to access the database");
 
     public static readonly AwsWrapperProperty HttpClientConnectTimeout = new AwsWrapperProperty(
-      "httpClientConnectTimeout", "60000", "The connect timeout value in milliseconds for the HttpClient used by the FederatedAuthPlugin");
+        "HttpClientConnectTimeout", "60000", "The connect timeout value in milliseconds for the HttpClient used by the FederatedAuthPlugin");
 
     // Failover Plugin Properties
     public static readonly AwsWrapperProperty FailoverTimeoutMs = new(
@@ -158,12 +158,12 @@ public static class PropertyDefinition
 
     // Host Selector Stratagy Properties
     public static readonly AwsWrapperProperty RoundRobinHostWeightPairs = new(
-        "roundRobinHostWeightPairs",
+        "RoundRobinHostWeightPairs",
         null,
         "Comma separated list of database host-weight pairs in the format of `<host>:<weight>`.");
 
     public static readonly AwsWrapperProperty RoundRobinDefaultWeight = new(
-        "roundRobinDefaultWeight",
+        "RoundRobinDefaultWeight",
         "1",
         "The default weight for any hosts that have not been configured with the `roundRobinHostWeightPairs` parameter.");
 

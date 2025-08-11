@@ -14,7 +14,6 @@
 
 using System.Data;
 using System.Data.Common;
-using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Utils;

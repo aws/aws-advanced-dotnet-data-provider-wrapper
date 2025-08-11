@@ -98,8 +98,14 @@ public class ContainerHelper {
     System.out.println("==== Container console feed ==== >>>>");
     Consumer<OutputFrame> consumer = new ConsoleConsumer(true);
     execInContainer(container, consumer, "printenv", "TEST_ENV_DESCRIPTION");
+    execInContainer(container, consumer, "printenv", "TEST_ENV_INFO_JSON");
 
-    Long exitCode = execInContainer(container, consumer, "dotnet", "test", "--filter", "Category!=Integration");
+    Long exitCode = execInContainer(container, consumer, "dotnet", "build");
+    assertEquals(0, exitCode, "Build failed.");
+
+    exitCode = execInContainer(container, consumer, "dotnet", "test", "--filter",
+            "Category=Integration&Database=" + task, "--no-build");
+
     System.out.println("==== Container console feed ==== <<<<");
     assertEquals(0, exitCode, "Some tests failed.");
   }
@@ -201,6 +207,7 @@ public class ContainerHelper {
                 ).build()))
         .withFixedExposedPort(5005, 5005) // Mapping container port to host
         .withFileSystemBind("../../../AwsWrapperDataProvider.sln", "/app/AwsWrapperDataProvider.sln", BindMode.READ_ONLY)
+        .withFileSystemBind("../../../.editorconfig", "/app/.editorconfig", BindMode.READ_ONLY)
         .withFileSystemBind("../../../Directory.Build.props", "/app/Directory.Build.props", BindMode.READ_ONLY)
         .withFileSystemBind("../../../global.json", "/app/global.json", BindMode.READ_ONLY)
         .withFileSystemBind("../../../AwsWrapperDataProvider.Benchmarks", "/app/AwsWrapperDataProvider.Benchmarks", BindMode.READ_WRITE)

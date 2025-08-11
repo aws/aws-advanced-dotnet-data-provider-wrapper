@@ -1225,7 +1225,7 @@ public class TestEnvironmentConfig implements AutoCloseable {
     }
   }
 
-  private static String getEnvironmentInfoAsString(TestEnvironmentConfig env) {
+  public static String getEnvironmentInfoAsString(TestEnvironmentConfig env) {
     try {
       final ObjectMapper mapper = new ObjectMapper();
       return mapper.writeValueAsString(env.info);

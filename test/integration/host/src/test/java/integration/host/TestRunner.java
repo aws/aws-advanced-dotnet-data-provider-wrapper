@@ -23,10 +23,17 @@ import org.junit.jupiter.api.extension.ExtendWith;
 public class TestRunner {
 
   @TestTemplate
-  public void runTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
+  public void runMySQLTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
 
     try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
-      env.runTests("in-container");
+      env.runTests("mysql");
+    }
+  }
+
+  @TestTemplate
+  public void runPGTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
+    try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
+      env.runTests("pg");
     }
   }
 

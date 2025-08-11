@@ -14,27 +14,34 @@
 
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostInfo.HostSelectors;
+using AwsWrapperDataProvider.Driver.Utils;
 
 namespace AwsWrapperDataProvider.Tests.Driver.HostInfo;
 
 public class HostSelectorTests
 {
-    private readonly List<HostSpec> _testHosts;
-    private readonly Dictionary<string, string> _emptyProps;
+    private const string Reader1 = "reader-host-1.example.com";
+    private const string Reader2 = "reader-host-2.example.com";
+    private const string Reader3 = "reader-host-3.example.com";
+    private const string Writer1 = "writer-host.example.com";
+    private const string Unavailable1 = "unavailable-host-1.example.com";
+    private const string Unavailable2 = "unavailable-host-2.example.com";
+    private readonly List<HostSpec> testHosts;
+    private readonly Dictionary<string, string> emptyProps;
 
     public HostSelectorTests()
     {
-        this._emptyProps = new Dictionary<string, string>();
+        this.emptyProps = [];
 
         // Create test hosts with different roles and availability
-        this._testHosts = new List<HostSpec>
-        {
-            new("writer-host.example.com", 3306, "writer-1", HostRole.Writer, HostAvailability.Available, 100, DateTime.UtcNow),
-            new("reader-host-1.example.com", 3306, "reader-1", HostRole.Reader, HostAvailability.Available, 80, DateTime.UtcNow),
-            new("reader-host-2.example.com", 3306, "reader-2", HostRole.Reader, HostAvailability.Available, 60, DateTime.UtcNow),
-            new("reader-host-3.example.com", 3306, "reader-3", HostRole.Reader, HostAvailability.Available, 40, DateTime.UtcNow),
-            new("unavailable-host.example.com", 3306, "unavailable-1", HostRole.Reader, HostAvailability.Unavailable, 90, DateTime.UtcNow),
-        };
+        this.testHosts =
+        [
+            new(Writer1, 3306, "writer-1", HostRole.Writer, HostAvailability.Available, 100, DateTime.UtcNow),
+            new(Reader1, 3306, "reader-1", HostRole.Reader, HostAvailability.Available, 80, DateTime.UtcNow),
+            new(Reader2, 3306, "reader-2", HostRole.Reader, HostAvailability.Available, 60, DateTime.UtcNow),
+            new(Reader3, 3306, "reader-3", HostRole.Reader, HostAvailability.Available, 40, DateTime.UtcNow),
+            new(Unavailable1, 3306, "unavailable-1", HostRole.Reader, HostAvailability.Unavailable, 90, DateTime.UtcNow),
+        ];
     }
 
     [Fact]
@@ -43,12 +50,12 @@ public class HostSelectorTests
     {
         var selector = new RandomHostSelector();
 
-        var selectedHost = selector.GetHost(this._testHosts, HostRole.Writer, this._emptyProps);
+        var selectedHost = selector.GetHost(this.testHosts, HostRole.Writer, this.emptyProps);
 
         Assert.NotNull(selectedHost);
         Assert.Equal(HostRole.Writer, selectedHost.Role);
         Assert.Equal(HostAvailability.Available, selectedHost.Availability);
-        Assert.Equal("writer-host.example.com", selectedHost.Host);
+        Assert.Equal(Writer1, selectedHost.Host);
     }
 
     [Fact]
@@ -57,12 +64,12 @@ public class HostSelectorTests
     {
         var selector = new RandomHostSelector();
 
-        var selectedHost = selector.GetHost(this._testHosts, HostRole.Reader, this._emptyProps);
+        var selectedHost = selector.GetHost(this.testHosts, HostRole.Reader, this.emptyProps);
 
         Assert.NotNull(selectedHost);
         Assert.Equal(HostRole.Reader, selectedHost.Role);
         Assert.Equal(HostAvailability.Available, selectedHost.Availability);
-        Assert.Contains(selectedHost.Host, new[] { "reader-host-1.example.com", "reader-host-2.example.com", "reader-host-3.example.com" });
+        Assert.Contains(selectedHost.Host, new[] { Reader1, Reader2, Reader3 });
     }
 
     [Fact]
@@ -72,7 +79,7 @@ public class HostSelectorTests
         var selector = new RandomHostSelector();
 
         var exception = Assert.Throws<InvalidOperationException>(() =>
-            selector.GetHost(this._testHosts, HostRole.Unknown, this._emptyProps));
+            selector.GetHost(this.testHosts, HostRole.Unknown, this.emptyProps));
 
         Assert.Contains("No hosts found matching role: Unknown", exception.Message);
     }
@@ -87,15 +94,15 @@ public class HostSelectorTests
 
         for (int i = 0; i < iterations; i++)
         {
-            var selectedHost = selector.GetHost(this._testHosts, HostRole.Reader, this._emptyProps);
+            var selectedHost = selector.GetHost(this.testHosts, HostRole.Reader, this.emptyProps);
             selectionCounts[selectedHost.Host] = selectionCounts.GetValueOrDefault(selectedHost.Host, 0) + 1;
         }
 
-        Assert.True(selectionCounts.ContainsKey("reader-host-1.example.com"));
-        Assert.True(selectionCounts.ContainsKey("reader-host-2.example.com"));
-        Assert.True(selectionCounts.ContainsKey("reader-host-3.example.com"));
+        Assert.True(selectionCounts.ContainsKey(Reader1));
+        Assert.True(selectionCounts.ContainsKey(Reader2));
+        Assert.True(selectionCounts.ContainsKey(Reader3));
 
-        Assert.False(selectionCounts.ContainsKey("unavailable-host.example.com"));
+        Assert.False(selectionCounts.ContainsKey(Unavailable1));
     }
 
     [Fact]
@@ -104,10 +111,10 @@ public class HostSelectorTests
     {
         var selector = new HighestWeightHostSelector();
 
-        var selectedHost = selector.GetHost(this._testHosts, HostRole.Reader, this._emptyProps);
+        var selectedHost = selector.GetHost(this.testHosts, HostRole.Reader, this.emptyProps);
 
         Assert.NotNull(selectedHost);
-        Assert.Equal("reader-host-1.example.com", selectedHost.Host);
+        Assert.Equal(Reader1, selectedHost.Host);
         Assert.Equal(80, selectedHost.Weight);
     }
 
@@ -117,10 +124,10 @@ public class HostSelectorTests
     {
         var selector = new HighestWeightHostSelector();
 
-        var selectedHost = selector.GetHost(this._testHosts, HostRole.Writer, this._emptyProps);
+        var selectedHost = selector.GetHost(this.testHosts, HostRole.Writer, this.emptyProps);
 
         Assert.NotNull(selectedHost);
-        Assert.Equal("writer-host.example.com", selectedHost.Host);
+        Assert.Equal(Writer1, selectedHost.Host);
         Assert.Equal(100, selectedHost.Weight);
     }
 
@@ -131,7 +138,7 @@ public class HostSelectorTests
         var selector = new HighestWeightHostSelector();
 
         var exception = Assert.Throws<InvalidOperationException>(() =>
-            selector.GetHost(this._testHosts, HostRole.Unknown, this._emptyProps));
+            selector.GetHost(this.testHosts, HostRole.Unknown, this.emptyProps));
 
         Assert.Contains("No hosts found matching role: Unknown", exception.Message);
     }
@@ -147,15 +154,15 @@ public class HostSelectorTests
 
         for (int i = 0; i < 6; i++)
         {
-            var selectedHost = selector.GetHost(this._testHosts, HostRole.Reader, this._emptyProps);
+            var selectedHost = selector.GetHost(this.testHosts, HostRole.Reader, this.emptyProps);
             selectedHosts.Add(selectedHost.Host);
         }
 
-        Assert.Contains("reader-host-1.example.com", selectedHosts);
-        Assert.Contains("reader-host-2.example.com", selectedHosts);
-        Assert.Contains("reader-host-3.example.com", selectedHosts);
+        Assert.Contains(Reader1, selectedHosts);
+        Assert.Contains(Reader2, selectedHosts);
+        Assert.Contains(Reader3, selectedHosts);
 
-        Assert.DoesNotContain("unavailable-host.example.com", selectedHosts);
+        Assert.DoesNotContain(Unavailable1, selectedHosts);
     }
 
     [Fact]
@@ -167,20 +174,20 @@ public class HostSelectorTests
 
         var props = new Dictionary<string, string>
         {
-            ["roundRobinHostWeightPairs"] = "reader-host-1.example.com:3,reader-host-2.example.com:1,reader-host-3.example.com:1",
+            [PropertyDefinition.RoundRobinHostWeightPairs.Name] = $"{Reader1}:3,{Reader2}:1,{Reader3}:1",
         };
 
         var selectedHosts = new List<string>();
 
         for (int i = 0; i < 10; i++)
         {
-            var selectedHost = selector.GetHost(this._testHosts, HostRole.Reader, props);
+            var selectedHost = selector.GetHost(this.testHosts, HostRole.Reader, props);
             selectedHosts.Add(selectedHost.Host);
         }
 
-        var host1Count = selectedHosts.Count(h => h == "reader-host-1.example.com");
-        var host2Count = selectedHosts.Count(h => h == "reader-host-2.example.com");
-        var host3Count = selectedHosts.Count(h => h == "reader-host-3.example.com");
+        var host1Count = selectedHosts.Count(h => h == Reader1);
+        var host2Count = selectedHosts.Count(h => h == Reader2);
+        var host3Count = selectedHosts.Count(h => h == Reader3);
 
         Assert.True(host1Count > host2Count);
         Assert.True(host1Count > host3Count);
@@ -195,11 +202,11 @@ public class HostSelectorTests
 
         var props = new Dictionary<string, string>
         {
-            ["roundRobinHostWeightPairs"] = "invalid-format",
+            [PropertyDefinition.RoundRobinHostWeightPairs.Name] = "invalid-format",
         };
 
         var exception = Assert.Throws<InvalidOperationException>(() =>
-            selector.GetHost(this._testHosts, HostRole.Reader, props));
+            selector.GetHost(this.testHosts, HostRole.Reader, props));
 
         Assert.Contains("Invalid round robin host weight pairs format", exception.Message);
     }
@@ -213,11 +220,11 @@ public class HostSelectorTests
 
         var props = new Dictionary<string, string>
         {
-            ["roundRobinDefaultWeight"] = "2",
+            [PropertyDefinition.RoundRobinDefaultWeight.Name] = "2",
         };
 
         // Should work without throwing exceptions
-        var selectedHost = selector.GetHost(this._testHosts, HostRole.Reader, props);
+        var selectedHost = selector.GetHost(this.testHosts, HostRole.Reader, props);
         Assert.NotNull(selectedHost);
     }
 
@@ -230,11 +237,11 @@ public class HostSelectorTests
 
         var props = new Dictionary<string, string>
         {
-            ["roundRobinDefaultWeight"] = "0",
+            [PropertyDefinition.RoundRobinDefaultWeight.Name] = "0",
         };
 
         var exception = Assert.Throws<InvalidOperationException>(() =>
-            selector.GetHost(this._testHosts, HostRole.Reader, props));
+            selector.GetHost(this.testHosts, HostRole.Reader, props));
 
         Assert.Contains("Invalid round robin default weight", exception.Message);
     }
@@ -253,14 +260,14 @@ public class HostSelectorTests
         // Create a list with only unavailable hosts
         var unavailableHosts = new List<HostSpec>
         {
-            new("unavailable-1.example.com", 3306, "unavailable-1", HostRole.Reader, HostAvailability.Unavailable),
-            new("unavailable-2.example.com", 3306, "unavailable-2", HostRole.Reader, HostAvailability.Unavailable),
+            new(Unavailable1, 3306, "unavailable-1", HostRole.Reader, HostAvailability.Unavailable),
+            new(Unavailable2, 3306, "unavailable-2", HostRole.Reader, HostAvailability.Unavailable),
         };
 
         foreach (var selector in selectors)
         {
             var exception = Assert.Throws<InvalidOperationException>(() =>
-                selector.GetHost(unavailableHosts, HostRole.Reader, this._emptyProps));
+                selector.GetHost(unavailableHosts, HostRole.Reader, this.emptyProps));
 
             Assert.Contains("No hosts found matching role", exception.Message);
         }
@@ -282,7 +289,7 @@ public class HostSelectorTests
         foreach (var selector in selectors)
         {
             var exception = Assert.Throws<InvalidOperationException>(() =>
-                selector.GetHost(emptyHosts, HostRole.Reader, this._emptyProps));
+                selector.GetHost(emptyHosts, HostRole.Reader, this.emptyProps));
 
             Assert.Contains("No hosts found matching role", exception.Message);
         }

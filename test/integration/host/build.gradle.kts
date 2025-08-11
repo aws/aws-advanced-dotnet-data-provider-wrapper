@@ -83,7 +83,7 @@ tasks.withType<Test> {
 
 tasks.register<Test>("test-all-mysql-aurora") {
     group = "verification"
-    filter.includeTestsMatching("integration.host.TestRunner.runTests")
+    filter.includeTestsMatching("integration.host.TestRunner.runMySQLTests")
     doFirst {
         systemProperty("test-no-docker", "true")
         systemProperty("test-no-performance", "true")
@@ -93,12 +93,14 @@ tasks.register<Test>("test-all-mysql-aurora") {
         systemProperty("test-no-multi-az-cluster", "true")
         systemProperty("test-no-multi-az-instance", "true")
         systemProperty("test-no-bg", "true")
+        systemProperty("test-no-traces-telemetry", "true")
+        systemProperty("test-no-metrics-telemetry", "true")
     }
 }
 
 tasks.register<Test>("test-all-pg-aurora") {
     group = "verification"
-    filter.includeTestsMatching("integration.host.TestRunner.runTests")
+    filter.includeTestsMatching("integration.host.TestRunner.runPGTests")
     doFirst {
         systemProperty("test-no-docker", "true")
         systemProperty("test-no-performance", "true")
@@ -109,6 +111,8 @@ tasks.register<Test>("test-all-pg-aurora") {
         systemProperty("test-no-multi-az-cluster", "true")
         systemProperty("test-no-multi-az-instance", "true")
         systemProperty("test-no-bg", "true")
+        systemProperty("test-no-traces-telemetry", "true")
+        systemProperty("test-no-metrics-telemetry", "true")
     }
 }
 
