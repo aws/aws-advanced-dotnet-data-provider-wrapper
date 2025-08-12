@@ -171,10 +171,10 @@ public class BasicConnectivityTests : IntegrationTestBase
         const string query = "select 1";
 
         using AwsWrapperConnection<MySqlConnection> connection = new(connectionString);
-        using AwsWrapperCommand<MySqlCommand> command = connection.CreateCommand<MySqlCommand>();
-        command.CommandText = query;
         connection.Open();
         Assert.Equal(ConnectionState.Open, connection.State);
+        using AwsWrapperCommand<MySqlCommand> command = connection.CreateCommand<MySqlCommand>();
+        command.CommandText = query;
 
         using IDataReader reader = command.ExecuteReader();
         while (reader.Read())
@@ -208,10 +208,10 @@ public class BasicConnectivityTests : IntegrationTestBase
         const string query = "select 1";
 
         using AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
-        using var command = connection.CreateCommand();
-        command.CommandText = query;
         connection.Open();
         Assert.Equal(ConnectionState.Open, connection.State);
+        using var command = connection.CreateCommand();
+        command.CommandText = query;
 
         using IDataReader reader = command.ExecuteReader();
         while (reader.Read())
