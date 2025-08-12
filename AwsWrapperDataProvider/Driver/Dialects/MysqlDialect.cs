@@ -72,11 +72,6 @@ public class MysqlDialect : IDialect
 
     public virtual void PrepareConnectionProperties(Dictionary<string, string> props, HostSpec hostSpec)
     {
-        // If PORT is not set, assign to default port.
-        int? port = PropertyDefinition.Port.GetInt(props);
-        if (port is null)
-        {
-            PropertyDefinition.Port.Set(props, this.DefaultPort.ToString());
-        }
+        // Do nothing.
     }
 }

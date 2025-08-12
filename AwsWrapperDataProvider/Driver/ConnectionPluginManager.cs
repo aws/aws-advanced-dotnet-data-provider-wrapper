@@ -184,10 +184,7 @@ public class ConnectionPluginManager
         return this.ExecuteWithSubscribedPlugins<DbConnection>(
             ConnectMethod,
             (plugin, methodFunc) => plugin.OpenConnection(hostSpec, props, isInitialConnection, () => methodFunc()),
-            () =>
-            {
-                throw new UnreachableException("Function should not be called.");
-            },
+            () => throw new UnreachableException("Function should not be called."),
             pluginToSkip);
     }
 
@@ -201,10 +198,7 @@ public class ConnectionPluginManager
         return this.ExecuteWithSubscribedPlugins<DbConnection>(
             ForceConnectMethod,
             (plugin, methodFunc) => plugin.ForceOpenConnection(hostSpec, props, isInitialConnection, () => methodFunc()),
-            () =>
-            {
-                throw new UnreachableException("Function should not be called.");
-            },
+            () => throw new UnreachableException("Function should not be called."),
             pluginToSkip);
     }
 

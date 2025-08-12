@@ -16,6 +16,7 @@ using System.Data.Common;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
+using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 
 namespace AwsWrapperDataProvider.Driver.Plugins;
 
@@ -67,14 +68,17 @@ public class DefaultConnectionPlugin(
         IConnectionProvider connProvider,
         bool isInitialConnection)
     {
-        // Create a new connection using the connection provider (like JDBC wrapper)
-        DbConnection conn = connProvider.CreateDbConnection(
-            this.pluginService.Dialect,
-            this.pluginService.TargetConnectionDialect,
-            hostSpec,
-            props);
+        // Create a new connection if it's not the initial connection or CurrentConnection is not null
+        DbConnection? conn = isInitialConnection && this.pluginService.CurrentConnection != null
+            ? this.pluginService.CurrentConnection
+            : connProvider.CreateDbConnection(
+                this.pluginService.Dialect,
+                this.pluginService.TargetConnectionDialect,
+                hostSpec,
+                props);
 
-        // Open the connection
+        // Update connection string that may have been modified by other plugins
+        conn.ConnectionString = this.pluginService.TargetConnectionDialect.PrepareConnectionString(this.pluginService.Dialect, hostSpec, props);
         conn.Open();
 
         // Set availability and update dialect

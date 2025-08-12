@@ -102,23 +102,13 @@ public interface IPluginService : IExceptionHandlerService
     void ForceRefreshHostList(bool shouldVerifyWriter, long timeoutMs);
 
     /// <summary>
-    /// Connects to a host.
-    /// </summary>
-    /// <param name="hostSpec">The host specification.</param>
-    /// <param name="props">Connection properties.</param>
-    /// <param name="isInitialConnection">Is initial connection.</param>
-    /// <returns>The created database connection.</returns>
-    DbConnection OpenConnection(HostSpec hostSpec, Dictionary<string, string> props, bool isInitialConnection);
-
-    /// <summary>
     /// Connects to a host, skipping a specific plugin.
     /// </summary>
     /// <param name="hostSpec">The host specification.</param>
     /// <param name="props">Connection properties.</param>
-    /// <param name="isInitialConnection">Is initial connection.</param>
     /// <param name="pluginToSkip">Plugin to skip.</param>
     /// <returns>The created database connection.</returns>
-    DbConnection OpenConnection(HostSpec hostSpec, Dictionary<string, string> props, bool isInitialConnection, IConnectionPlugin pluginToSkip);
+    DbConnection OpenConnection(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin? pluginToSkip);
 
     /// <summary>
     /// Forces a connection to a host, bypassing certain plugins like failover to prevent cyclic dependencies.
@@ -126,9 +116,9 @@ public interface IPluginService : IExceptionHandlerService
     /// </summary>
     /// <param name="hostSpec">The host specification.</param>
     /// <param name="props">Connection properties.</param>
-    /// <param name="isInitialConnection">Is initial connection.</param>
+    /// <param name="pluginToSkip">Plugin to skip.</param>
     /// <returns>The created database connection.</returns>
-    DbConnection ForceOpenConnection(HostSpec hostSpec, Dictionary<string, string> props, bool isInitialConnection);
+    DbConnection ForceOpenConnection(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin? pluginToSkip);
 
     /// <summary>
     /// Updates the dialect based on the given connection.

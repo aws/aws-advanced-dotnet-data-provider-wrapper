@@ -88,10 +88,10 @@ public class PluginConnectivityTests : IntegrationTestBase
         const string query = "select aurora_db_instance_identifier()";
 
         using AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
-        connection.Open();
         AwsWrapperCommand<NpgsqlCommand> command = connection.CreateCommand<NpgsqlCommand>();
         command.CommandText = query;
 
+        connection.Open();
         IDataReader reader = command.ExecuteReader();
         while (reader.Read())
         {
@@ -160,10 +160,10 @@ public class PluginConnectivityTests : IntegrationTestBase
         try
         {
             using AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
-            connection.Open();
             AwsWrapperCommand<NpgsqlCommand> command = connection.CreateCommand<NpgsqlCommand>();
             command.CommandText = query;
 
+            connection.Open();
             IDataReader reader = command.ExecuteReader();
             while (reader.Read())
             {
