@@ -16,6 +16,7 @@ using System.Data.Common;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
+using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 
 namespace AwsWrapperDataProvider.Driver.Plugins;
 
@@ -76,6 +77,8 @@ public class DefaultConnectionPlugin(
                 hostSpec,
                 props);
 
+        // Update connection string that may have been modified by other plugins
+        conn.ConnectionString = this.pluginService.TargetConnectionDialect.PrepareConnectionString(this.pluginService.Dialect, hostSpec, props);
         conn.Open();
 
         // Set availability and update dialect
