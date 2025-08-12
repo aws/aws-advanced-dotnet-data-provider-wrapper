@@ -56,10 +56,22 @@ public class ProxyHelper
                 }
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // ignore
+            Console.WriteLine($"Error enabling connectivity: {ex}");
         }
+
+        try
+        {
+            proxy.Enabled = true;
+            proxy.Update();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating enable-connectivity proxy: {ex}");
+        }
+
+        Console.WriteLine($"Enabled connectivity to {proxy.Name}");
     }
 
     public static void DisableAllConnectivity()
@@ -88,9 +100,9 @@ public class ProxyHelper
             bandWidthToxic.Attributes.Rate = 0;
             proxy.Add(bandWidthToxic);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // ignore
+            Console.WriteLine($"Error disabling connectivity DOWN-STREAM: {ex}");
         }
 
         try
@@ -103,18 +115,21 @@ public class ProxyHelper
             bandWidthToxic.Attributes.Rate = 0;
             proxy.Add(bandWidthToxic);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // ignore
+            Console.WriteLine($"Error disabling connectivity UP-STREAM: {ex}");
         }
 
         try
         {
+            proxy.Enabled = true;
             proxy.Update();
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // ignore
+            Console.WriteLine($"Error updating disable-connectivity proxy: {ex}");
         }
+
+        Console.WriteLine($"Disabled connectivity to {proxy.Name}");
     }
 }
