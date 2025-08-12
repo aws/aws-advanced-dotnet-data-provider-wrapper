@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Data;
 using System.Data.Common;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -37,12 +38,15 @@ public class PluginService : IPluginService, IHostListProviderService
     internal static readonly MemoryCache HostAvailabilityExpiringCache = new(new MemoryCacheOptions());
     private static readonly ILogger<PluginService> Logger = LoggerUtils.GetLogger<PluginService>();
 
+    private readonly object connectionSwitchLock = new();
+
     private readonly ConnectionPluginManager pluginManager;
     private readonly Dictionary<string, string> props;
-    private readonly string originalConnectionString;
     private readonly DialectProvider dialectProvider;
     private volatile IHostListProvider hostListProvider;
     private HostSpec? currentHostSpec;
+
+    private DbTransaction? transaction;
 
     // private ExceptionManager _exceptionManager;
     // private IExceptionHandler _exceptionHandler;
@@ -54,7 +58,28 @@ public class PluginService : IPluginService, IHostListProviderService
     public IList<HostSpec> AllHosts { get; private set; } = [];
     public IHostListProvider? HostListProvider { get => this.hostListProvider; set => this.hostListProvider = value ?? throw new ArgumentNullException(nameof(value)); }
     public HostSpecBuilder HostSpecBuilder { get => new HostSpecBuilder(); }
-    public DbConnection? CurrentConnection { get; set; }
+    public DbConnection? CurrentConnection { get; private set; }
+
+    public DbTransaction? CurrentTransaction
+    {
+        get => this.transaction;
+        set
+        {
+            try
+            {
+                this.transaction?.Rollback();
+                this.transaction?.Dispose();
+            }
+            catch (Exception)
+            {
+                // Do nothing.
+            }
+            finally
+            {
+                this.transaction = value;
+            }
+        }
+    }
 
     public PluginService(
         Type connectionType,
@@ -66,7 +91,6 @@ public class PluginService : IPluginService, IHostListProviderService
     {
         this.pluginManager = pluginManager;
         this.props = props;
-        this.originalConnectionString = connectionString;
         this.TargetConnectionDialect = configurationProfile?.TargetConnectionDialect ?? targetConnectionDialect ?? throw new ArgumentNullException(nameof(targetConnectionDialect));
         this.dialectProvider = new(this);
         this.Dialect = configurationProfile?.Dialect ?? this.dialectProvider.GuessDialect(this.props);
@@ -91,16 +115,36 @@ public class PluginService : IPluginService, IHostListProviderService
         throw new NotImplementedException();
     }
 
-    public void SetCurrentConnection(DbConnection connection, HostSpec? hostSpec)
+    public void SetCurrentConnection(DbConnection connection, HostSpec hostSpec)
     {
-        // TODO implement stub method.
-        this.CurrentConnection = connection;
-        this.currentHostSpec = hostSpec;
+        this.SetCurrentConnection(connection, hostSpec, null);
     }
 
-    public void SetCurrentConnection(DbConnection connection, HostSpec hostSpec, IConnectionPlugin pluginToSkip)
+    public void SetCurrentConnection(DbConnection connection, HostSpec hostSpec, IConnectionPlugin? pluginToSkip)
     {
-        throw new NotImplementedException();
+        lock (this.connectionSwitchLock)
+        {
+            DbConnection? oldConnection = this.CurrentConnection;
+
+            if (this.CurrentTransaction != null && !ReferenceEquals(oldConnection, connection))
+            {
+                IsolationLevel iso = this.CurrentTransaction.IsolationLevel;
+                this.CurrentTransaction = connection.BeginTransaction(iso);
+            }
+
+            this.CurrentConnection = connection;
+            this.currentHostSpec = hostSpec;
+
+            try
+            {
+                oldConnection?.Close();
+                oldConnection?.Dispose();
+            }
+            catch (DbException)
+            {
+                // Do nothing;
+            }
+        }
     }
 
     public IList<HostSpec> GetHosts()

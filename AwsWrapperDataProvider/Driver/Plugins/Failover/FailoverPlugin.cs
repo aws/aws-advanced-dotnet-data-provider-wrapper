@@ -53,7 +53,6 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
     private bool isClosed;
     private Exception? lastExceptionDealtWith;
-    private bool isInTransaction;
 
     public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string>()
     {
@@ -421,46 +420,23 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
     private void ThrowFailoverSuccessException()
     {
-        if (this.isInTransaction)
-        {
-            this.isInTransaction = false;
-            throw new TransactionStateUnknownException("Transaction resolution unknown. Please re-configure session state if required and try restarting transaction.");
-        }
-
         throw new FailoverSuccessException("The active SQL connection has changed due to a connection failure. Please re-configure session state if required.");
     }
 
     private void InvalidateCurrentConnection()
     {
-        var conn = this.pluginService.CurrentConnection;
-        if (conn == null)
+        try
         {
-            return;
+            this.pluginService.CurrentTransaction = null;
         }
-
-        // TODO : handle when transaction support is added.
-
-        // bool isInTransaction = false;
-        //
-        // if (this.pluginService.IsInTransaction())
-        // {
-        //     isInTransaction = true;
-        //     try
-        //     {
-        //         conn.Rollback(); // if conn.Rollback() exists — see note below
-        //     }
-        //     catch
-        //     {
-        //         // Swallow exception
-        //     }
-        // }
+        catch
+        {
+            // Swallow exception, current transaction should be useless anyway.
+        }
 
         try
         {
-            if (conn.State != ConnectionState.Closed)
-            {
-                conn.Close();
-            }
+            this.pluginService.CurrentConnection?.Close();
         }
         catch
         {

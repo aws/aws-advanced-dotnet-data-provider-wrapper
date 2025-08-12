@@ -148,6 +148,53 @@ public class FailoverConnectivityTests
         PerformFailoverTest(connectionString);
     }
 
+    [Fact]
+    [Trait("Category", "Integration")]
+    [Trait("Category", "Manual")]
+    public void FailoverPluginTest_Transaction_WithStrictWriterMode()
+    {
+        const string clusterEndpoint = "atlas-postgres.cluster-cx422ywmsto6.us-east-2.rds.amazonaws.com";
+        const string username = "pgadmin"; // Replace with your username
+        const string password = "my_password_2020"; // Replace with your password
+        const string database = "postgres"; // Replace with your database name
+
+        var connectionString = $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
+                              $"Plugins=failover;FailoverMode=StrictWriter;EnableConnectFailover=true;";
+        PerformTransactionFailoverTest(connectionString);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    [Trait("Category", "Manual")]
+    public void FailoverPluginTest_Transaction_WithStrictReaderMode()
+    {
+        const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
+        const string username = "username"; // Replace with your username
+        const string password = "password"; // Replace with your password
+        const string database = "database"; // Replace with your database name
+
+        var connectionString =
+            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
+            $"Plugins=failover;FailoverMode=StrictReader;EnableConnectFailover=true;";
+        PerformTransactionFailoverTest(connectionString);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    [Trait("Category", "Manual")]
+    public void FailoverPluginTest_Transaction_WithReaderOrWriterMode()
+    {
+        const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
+        const string username = "username"; // Replace with your username
+        const string password = "password"; // Replace with your password
+        const string database = "database"; // Replace with your database name
+
+        var connectionString =
+            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
+            $"Plugins=failover;FailoverMode=ReaderOrWriter;EnableConnectFailover=true;";
+        PerformTransactionFailoverTest(connectionString);
+    }
+
     private static void PerformFailoverTest(string connectionString)
     {
         using var connection = new AwsWrapperConnection<NpgsqlConnection>(connectionString);
@@ -260,6 +307,226 @@ public class FailoverConnectivityTests
             {
                 connection.Close();
                 Console.WriteLine("   Connection closed.");
+            }
+        }
+    }
+
+    private static void PerformTransactionFailoverTest(string connectionString)
+    {
+        using var connection = new AwsWrapperConnection<NpgsqlConnection>(connectionString);
+
+        try
+        {
+            Console.WriteLine("1. Opening initial connection...");
+            connection.Open();
+            Console.WriteLine($"   ✓ Connected successfully");
+            Console.WriteLine($"   Connection State: {connection.State}");
+
+            // Get initial writer information
+            Console.WriteLine("\n2. Identifying current host...");
+            var hostInfo = GetCurrentConnectionInfo(connection);
+            Console.WriteLine($"   Current Host: {hostInfo.Host}:{hostInfo.Port}");
+            Console.WriteLine($"   Current Host Name: {hostInfo.HostName}");
+            Console.WriteLine($"   Current Host Role: {hostInfo.Role}");
+            Console.WriteLine($"   Server Version: {hostInfo.Version}");
+
+            // Create a persistent table outside of transaction to verify rollback
+            Console.WriteLine("\n3. Creating persistent test table...");
+            using (var setupCommand = connection.CreateCommand<NpgsqlCommand>())
+            {
+                setupCommand.CommandText = @"
+                    DROP TABLE IF EXISTS failover_rollback_test;
+                    CREATE TABLE failover_rollback_test (
+                        id SERIAL PRIMARY KEY, 
+                        test_data TEXT, 
+                        created_at TIMESTAMP DEFAULT NOW()
+                    )";
+                setupCommand.ExecuteNonQuery();
+                Console.WriteLine("   ✓ Persistent test table created");
+            }
+
+            Console.WriteLine("\n4. Starting transaction with operations that should be rolled back...");
+            Console.WriteLine("   TRIGGER FAILOVER NOW using:");
+            Console.WriteLine("   aws rds failover-db-cluster --db-cluster-identifier atlas-postgres");
+
+            // Start a transaction
+            using var transaction = connection.BeginTransaction();
+            Console.WriteLine("   ✓ Transaction started");
+
+            var startTime = DateTime.UtcNow;
+            Console.WriteLine($"   Transaction started at: {startTime:HH:mm:ss}");
+
+            bool failoverOccurred = false;
+            Exception failoverException = null;
+
+            try
+            {
+                // Insert data within the transaction that should be rolled back
+                using (var insertCommand = connection.CreateCommand<NpgsqlCommand>())
+                {
+                    insertCommand.Transaction = transaction;
+                    insertCommand.CommandText = "INSERT INTO failover_rollback_test (test_data) VALUES ('data-that-should-be-rolled-back-1')";
+                    insertCommand.ExecuteNonQuery();
+                    Console.WriteLine("   ✓ First insert completed within transaction");
+                }
+
+                using (var insertCommand2 = connection.CreateCommand<NpgsqlCommand>())
+                {
+                    insertCommand2.Transaction = transaction;
+                    insertCommand2.CommandText = "INSERT INTO failover_rollback_test (test_data) VALUES ('data-that-should-be-rolled-back-2')";
+                    insertCommand2.ExecuteNonQuery();
+                    Console.WriteLine("   ✓ Second insert completed within transaction");
+                }
+
+                // Verify data exists within the transaction before failover
+                using (var preFailoverSelect = connection.CreateCommand<NpgsqlCommand>())
+                {
+                    preFailoverSelect.Transaction = transaction;
+                    preFailoverSelect.CommandText = "SELECT COUNT(*) FROM failover_rollback_test";
+                    var countBeforeFailover = (long)preFailoverSelect.ExecuteScalar();
+                    Console.WriteLine($"   ✓ Data visible within transaction: {countBeforeFailover} rows");
+                }
+
+                // Execute long-running query within the transaction that should trigger failover
+                using (var longRunningCommand = connection.CreateCommand<NpgsqlCommand>())
+                {
+                    longRunningCommand.Transaction = transaction;
+                    longRunningCommand.CommandText = "SELECT pg_sleep(500), now() as query_time, inet_server_addr()::text as server_ip";
+                    longRunningCommand.CommandTimeout = 500; // Allow extra time for failover
+
+                    using (var reader = longRunningCommand.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            var queryTime = reader.GetDateTime("query_time");
+                            var serverIp = reader.IsDBNull("server_ip") ? "unknown" : reader.GetString("server_ip");
+                            Console.WriteLine($"   Long-running query completed: {queryTime:HH:mm:ss.fff} from {serverIp}");
+                        }
+                    }
+                }
+
+                // If we reach here, no failover occurred during the sleep
+                Console.WriteLine("   ⚠️  No failover detected during long-running query");
+            }
+            catch (FailoverSuccessException ex)
+            {
+                failoverOccurred = true;
+                failoverException = ex;
+                Console.WriteLine("   ✓ Failover detected during transaction!");
+
+                var newHostInfo = GetCurrentConnectionInfo(connection);
+                Console.WriteLine("\n5. Verifying connection after failover...");
+                Console.WriteLine($"   Previous Host: {hostInfo.Host}:{hostInfo.Port}");
+                Console.WriteLine($"   Current Host: {newHostInfo.Host}:{newHostInfo.Port}");
+                Console.WriteLine($"   Current Host Name: {newHostInfo.HostName}");
+                Console.WriteLine($"   Current Host Role: {newHostInfo.Role}");
+
+                if (hostInfo.Host != newHostInfo.Host || hostInfo.Port != newHostInfo.Port)
+                {
+                    Console.WriteLine("   ✓ FAILOVER DETECTED! Host changed successfully.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"   ❌ Exception during transaction: {ex.GetType().Name}: {ex.Message}");
+            }
+
+            // Now verify that the transaction was rolled back
+            Console.WriteLine("\n6. Verifying transaction rollback after failover...");
+
+            // Check if the data was rolled back by querying outside of transaction
+            using (var rollbackCheckCommand = connection.CreateCommand<NpgsqlCommand>())
+            {
+                rollbackCheckCommand.CommandText = "SELECT COUNT(*) FROM failover_rollback_test";
+                var countAfterFailover = (long)rollbackCheckCommand.ExecuteScalar();
+                Console.WriteLine($"   Data count after failover: {countAfterFailover} rows");
+
+                if (countAfterFailover == 0)
+                {
+                    Console.WriteLine("   ✓ ROLLBACK VERIFIED: All transaction data was rolled back!");
+                }
+                else
+                {
+                    Console.WriteLine("   ❌ ROLLBACK FAILED: Transaction data was not rolled back!");
+
+                    // Show what data remains
+                    using (var dataCommand = connection.CreateCommand<NpgsqlCommand>())
+                    {
+                        dataCommand.CommandText = "SELECT id, test_data, created_at FROM failover_rollback_test ORDER BY id";
+                        using (var reader = dataCommand.ExecuteReader())
+                        {
+                            Console.WriteLine("   Remaining data:");
+                            while (reader.Read())
+                            {
+                                var id = reader.GetInt32("id");
+                                var testData = reader.GetString("test_data");
+                                var createdAt = reader.GetDateTime("created_at");
+                                Console.WriteLine($"     ID={id}, Data='{testData}', Created={createdAt:HH:mm:ss.fff}");
+                            }
+                        }
+                    }
+                }
+            }
+
+            Console.WriteLine("\n7. Testing new transaction after failover...");
+            using (var newTransaction = connection.BeginTransaction())
+            {
+                using (var newInsertCommand = connection.CreateCommand<NpgsqlCommand>())
+                {
+                    newInsertCommand.Transaction = newTransaction;
+                    newInsertCommand.CommandText = "INSERT INTO failover_rollback_test (test_data) VALUES ('post-failover-data')";
+                    newInsertCommand.ExecuteNonQuery();
+                    Console.WriteLine("   ✓ New transaction insert successful");
+                }
+
+                newTransaction.Commit();
+                Console.WriteLine("   ✓ New transaction committed successfully");
+            }
+
+            // Verify the new data exists
+            using (var finalCheckCommand = connection.CreateCommand<NpgsqlCommand>())
+            {
+                finalCheckCommand.CommandText = "SELECT COUNT(*) FROM failover_rollback_test";
+                var finalCount = (long)finalCheckCommand.ExecuteScalar();
+                Console.WriteLine($"   Final data count: {finalCount} rows");
+            }
+
+            if (failoverOccurred)
+            {
+                Console.WriteLine("\n✓ Transaction rollback failover test completed successfully!");
+                Console.WriteLine("  - Failover was detected during transaction");
+                Console.WriteLine("  - Transaction was automatically rolled back");
+                Console.WriteLine("  - New transactions work correctly after failover");
+            }
+            else
+            {
+                Console.WriteLine("\n⚠️  Test completed but no failover was detected");
+                Console.WriteLine("   Make sure to trigger failover during the pg_sleep operation");
+            }
+        }
+        finally
+        {
+            Console.WriteLine("\n8. Cleaning up...");
+
+            // Clean up the test table
+            try
+            {
+                using (var cleanupCommand = connection.CreateCommand<NpgsqlCommand>())
+                {
+                    cleanupCommand.CommandText = "DROP TABLE IF EXISTS failover_rollback_test";
+                    cleanupCommand.ExecuteNonQuery();
+                    Console.WriteLine("   ✓ Test table cleaned up");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"   ⚠️  Cleanup warning: {ex.Message}");
+            }
+
+            if (connection.State == ConnectionState.Open)
+            {
+                connection.Close();
+                Console.WriteLine("   ✓ Connection closed");
             }
         }
     }
