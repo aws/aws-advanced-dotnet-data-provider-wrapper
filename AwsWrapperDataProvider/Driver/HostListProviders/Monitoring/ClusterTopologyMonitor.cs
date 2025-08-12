@@ -137,9 +137,9 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                             foreach (var hostSpec in hosts)
                             {
                                 NodeMonitoringTask nodeMonitoringTask = new(this, hostSpec, this.writerHostSpec);
-                                this.nodeThreads.TryAdd(hostSpec.Host,
-                                    Task.Run(() =>
-                                        nodeMonitoringTask.RunNodeMonitoringAsync()));
+                                this.nodeThreads.TryAdd(
+                                    hostSpec.Host,
+                                    Task.Run(nodeMonitoringTask.RunNodeMonitoringAsync));
                             }
                         }
                     }
@@ -178,9 +178,9 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                             foreach (var hostSpec in hosts)
                             {
                                 NodeMonitoringTask nodeMonitoringTask = new(this, hostSpec, this.writerHostSpec);
-                                this.nodeThreads.TryAdd(hostSpec.Host,
-                                    Task.Run(() =>
-                                        nodeMonitoringTask.RunNodeMonitoringAsync()));
+                                this.nodeThreads.TryAdd(
+                                    hostSpec.Host,
+                                    Task.Run(nodeMonitoringTask.RunNodeMonitoringAsync));
                             }
                         }
                     }
@@ -435,7 +435,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         {
             using var command = connection.CreateCommand();
             command.CommandText = this.nodeIdQuery;
-            using var reader = await command.ExecuteReaderAsync();
+            await using var reader = await command.ExecuteReaderAsync();
             if (await reader.ReadAsync())
             {
                 return reader.GetString(0);
@@ -455,7 +455,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         {
             using var command = connection.CreateCommand();
             command.CommandText = this.writerTopologyQuery;
-            using var reader = await command.ExecuteReaderAsync();
+            await using var reader = await command.ExecuteReaderAsync();
             if (await reader.ReadAsync())
             {
                 return reader.GetString(0);
@@ -535,7 +535,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             using var command = connection.CreateCommand();
             command.CommandTimeout = DefaultTopologyQueryTimeoutMs / 1000;
             command.CommandText = this.topologyQuery;
-            using var reader = await command.ExecuteReaderAsync();
+            await using var reader = await command.ExecuteReaderAsync();
 
             var hosts = new List<HostSpec>();
             var writers = new List<HostSpec>();
