@@ -35,7 +35,35 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
 
     protected readonly bool isEnabled;
 
-    public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string> { "DbConnection.Open", "DbConnection.OpenAsync", "DbConnection.ForceOpen" };
+    public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string>()
+    {
+        // Network-bound methods that might fail and trigger failover
+        "DbConnection.Open",
+        "DbConnection.OpenAsync",
+        "DbCommand.ExecuteNonQuery",
+        "DbCommand.ExecuteNonQueryAsync",
+        "DbCommand.ExecuteReader",
+        "DbCommand.ExecuteReaderAsync",
+        "DbCommand.ExecuteScalar",
+        "DbCommand.ExecuteScalarAsync",
+        "DbDataReader.Read",
+        "DbDataReader.ReadAsync",
+        "DbDataReader.NextResult",
+        "DbDataReader.NextResultAsync",
+        "DbTransaction.Commit",
+        "DbTransaction.CommitAsync",
+        "DbTransaction.Rollback",
+        "DbTransaction.RollbackAsync",
+
+        // Connection management methods
+        "DbConnection.Close",
+        "DbConnection.Dispose",
+        "DbConnection.Abort",
+
+        // Special methods
+        "DbConnection.ClearWarnings",
+        "initHostProvider",
+    };
 
     public HostMonitoringPlugin(IPluginService pluginService, Dictionary<string, string> props)
     {

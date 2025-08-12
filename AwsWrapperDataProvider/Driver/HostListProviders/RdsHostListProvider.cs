@@ -219,16 +219,19 @@ public class RdsHostListProvider : IDynamicHostListProvider
 
     public virtual HostSpec? IdentifyConnection(DbConnection connection)
     {
-        using DbCommand command = connection.CreateCommand();
-        command.CommandText = this.nodeIdQuery;
-        using DbDataReader resultSet = command.ExecuteReader();
-
-        if (!resultSet.Read())
+        string instanceName;
+        using (DbCommand command = connection.CreateCommand())
         {
-            return null;
-        }
+            command.CommandText = this.nodeIdQuery;
+            using DbDataReader resultSet = command.ExecuteReader();
 
-        string instanceName = resultSet.GetString(0);
+            if (!resultSet.Read())
+            {
+                return null;
+            }
+
+            instanceName = resultSet.GetString(0);
+        }
 
         IList<HostSpec> topology = this.Refresh(connection);
         bool isForcedRefresh = false;
