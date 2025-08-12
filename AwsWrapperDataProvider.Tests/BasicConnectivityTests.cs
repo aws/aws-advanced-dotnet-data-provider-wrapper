@@ -173,14 +173,16 @@ public class BasicConnectivityTests : IntegrationTestBase
         using AwsWrapperConnection<MySqlConnection> connection = new(connectionString);
         connection.Open();
         Assert.Equal(ConnectionState.Open, connection.State);
-        using AwsWrapperCommand<MySqlCommand> command = connection.CreateCommand<MySqlCommand>();
+        using var command = connection.CreateCommand();
         command.CommandText = query;
 
-        using IDataReader reader = command.ExecuteReader();
+        using var reader = command.ExecuteReader();
         while (reader.Read())
         {
             Assert.Equal(1, reader.GetInt32(0));
         }
+
+        reader.Close();
 
         ProxyHelper.DisableConnectivity(instanceInfo.InstanceId);
 
@@ -213,17 +215,19 @@ public class BasicConnectivityTests : IntegrationTestBase
         using var command = connection.CreateCommand();
         command.CommandText = query;
 
-        using IDataReader reader = command.ExecuteReader();
+        using var reader = command.ExecuteReader();
         while (reader.Read())
         {
             Assert.Equal(1, reader.GetInt32(0));
         }
 
+        reader.Close();
+
         ProxyHelper.DisableConnectivity(instanceInfo.InstanceId);
 
         using var command2 = connection.CreateCommand();
         command2.CommandText = query;
-        var ex = Assert.Throws<MySqlException>(command2.ExecuteScalar);
+        var ex = Assert.Throws<NpgsqlException>(command2.ExecuteScalar);
         Console.WriteLine("DbException caught:");
         Console.WriteLine($"Message: {ex.Message}");
         Console.WriteLine($"Error Code: {ex.ErrorCode}");
