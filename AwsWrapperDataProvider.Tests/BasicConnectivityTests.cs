@@ -188,6 +188,52 @@ public class BasicConnectivityTests : IntegrationTestBase
 
         using var command2 = connection.CreateCommand();
         command2.CommandText = query;
+        var ex = Assert.Throws<MySqlException>(() =>
+        {
+            using var reader2 = command2.ExecuteReader();
+            if (reader2.Read())
+            {
+                Assert.Equal(1, reader2.GetInt32(0));
+            }
+        });
+        Console.WriteLine("DbException caught:");
+        Console.WriteLine($"Message: {ex.Message}");
+        Console.WriteLine($"Error Code: {ex.ErrorCode}");
+        Console.WriteLine($"Source: {ex.Source}");
+        Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+        Console.WriteLine($"Target Site: {ex.TargetSite}");
+
+        ProxyHelper.EnableConnectivity(instanceInfo.InstanceId);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    [Trait("Database", "mysql")]
+    public void MySqlConnectorWrapperProxiedConnectionTest2()
+    {
+        var instanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First();
+        var connectionString = ConnectionStringHelper.GetUrl(this.engine, instanceInfo.Host, instanceInfo.Port, this.username, this.password, this.defaultDbName);
+        connectionString += ";Plugins=";
+        const string query = "select 1";
+
+        using AwsWrapperConnection<MySqlConnection> connection = new(connectionString);
+        connection.Open();
+        Assert.Equal(ConnectionState.Open, connection.State);
+        using var command = connection.CreateCommand();
+        command.CommandText = query;
+
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            Assert.Equal(1, reader.GetInt32(0));
+        }
+
+        reader.Close();
+
+        ProxyHelper.DisableConnectivity(instanceInfo.InstanceId);
+
+        using var command2 = connection.CreateCommand();
+        command2.CommandText = query;
         var ex = Assert.Throws<MySqlException>(command2.ExecuteScalar);
         Console.WriteLine("DbException caught:");
         Console.WriteLine($"Message: {ex.Message}");
