@@ -185,6 +185,7 @@ public class BasicConnectivityTests : IntegrationTestBase
         reader.Close();
 
         ProxyHelper.DisableConnectivity(instanceInfo.InstanceId);
+        Thread.Sleep(3000);
 
         using var command2 = connection.CreateCommand();
         command2.CommandText = query;
@@ -231,6 +232,7 @@ public class BasicConnectivityTests : IntegrationTestBase
         reader.Close();
 
         ProxyHelper.DisableConnectivity(instanceInfo.InstanceId);
+        Thread.Sleep(3000);
 
         using var command2 = connection.CreateCommand();
         command2.CommandText = query;
@@ -270,6 +272,7 @@ public class BasicConnectivityTests : IntegrationTestBase
         reader.Close();
 
         ProxyHelper.DisableConnectivity(instanceInfo.InstanceId);
+        Thread.Sleep(3000);
 
         using var command2 = connection.CreateCommand();
         command2.CommandText = query;
