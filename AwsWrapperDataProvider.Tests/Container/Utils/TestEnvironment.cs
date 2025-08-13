@@ -160,6 +160,7 @@ public class TestEnvironment
             }
 
             environment.proxies[instance.InstanceId] = proxies.First().Value;
+            Console.WriteLine($"Proxy for {instance.InstanceId} is initialized: {environment.proxies[instance.InstanceId]}");
         }
 
         if (!string.IsNullOrEmpty(environment.Info.ProxyDatabaseInfo.ClusterEndpoint))
@@ -167,6 +168,7 @@ public class TestEnvironment
             var client = new Connection(environment.Info.ProxyDatabaseInfo.ClusterEndpoint, proxyControlPort).Client();
             Proxy proxy = GetProxy(client, environment.Info.DatabaseInfo!.ClusterEndpoint, environment.Info.DatabaseInfo.ClusterEndpointPort);
             environment.proxies[environment.Info.ProxyDatabaseInfo.ClusterEndpoint] = proxy;
+            Console.WriteLine($"Proxy for {environment.Info.ProxyDatabaseInfo.ClusterEndpoint} is initialized: {proxy}");
         }
 
         if (!string.IsNullOrEmpty(environment.Info.ProxyDatabaseInfo.ClusterReadOnlyEndpoint))
@@ -174,6 +176,7 @@ public class TestEnvironment
             var client = new Connection(environment.Info.ProxyDatabaseInfo.ClusterReadOnlyEndpoint, proxyControlPort).Client();
             Proxy proxy = GetProxy(client, environment.Info.DatabaseInfo!.ClusterReadOnlyEndpoint, environment.Info.DatabaseInfo.ClusterReadOnlyEndpointPort);
             environment.proxies[environment.Info.ProxyDatabaseInfo.ClusterReadOnlyEndpoint] = proxy;
+            Console.WriteLine($"Proxy for {environment.Info.ProxyDatabaseInfo.ClusterReadOnlyEndpoint} is initialized: {proxy}");
         }
     }
 

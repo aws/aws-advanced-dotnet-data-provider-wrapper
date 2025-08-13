@@ -29,8 +29,7 @@ public class ProxyHelper
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Failed to disable proxy {proxy.Name}: {ex.Message}");
-                throw;
+                Console.WriteLine($"Failed to enable proxy {proxy.Name}: {ex.Message}");
             }
         }
     }
@@ -51,28 +50,15 @@ public class ProxyHelper
                 {
                     proxy.RemoveToxic(toxic.Name);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    // ignore
-                    throw;
+                    Console.WriteLine($"Error removing toxic: {ex}");
                 }
             }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error enabling connectivity: {ex}");
-            throw;
-        }
-
-        try
-        {
-            proxy.Enabled = true;
-            proxy.Update();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error updating enable-connectivity proxy: {ex}");
-            throw;
         }
 
         Console.WriteLine($"Enabled connectivity to {proxy.Name}");
@@ -100,14 +86,15 @@ public class ProxyHelper
             {
                 Name = "DOWN-STREAM",
                 Stream = ToxicDirection.DownStream, // from database server towards driver
+                Toxicity = 1.0f,
             };
+
             bandWidthToxic.Attributes.Rate = 0;
             proxy.Add(bandWidthToxic);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error disabling connectivity DOWN-STREAM: {ex}");
-            throw;
         }
 
         try
@@ -116,25 +103,15 @@ public class ProxyHelper
             {
                 Name = "UP-STREAM",
                 Stream = ToxicDirection.UpStream, // from driver towards database server
+                Toxicity = 1.0f,
             };
+
             bandWidthToxic.Attributes.Rate = 0;
             proxy.Add(bandWidthToxic);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error disabling connectivity UP-STREAM: {ex}");
-            throw;
-        }
-
-        try
-        {
-            proxy.Enabled = true;
-            proxy.Update();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error updating disable-connectivity proxy: {ex}");
-            throw;
         }
 
         Console.WriteLine($"Disabled connectivity to {proxy.Name}");
