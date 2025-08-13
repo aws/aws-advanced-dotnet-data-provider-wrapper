@@ -188,18 +188,13 @@ public class BasicConnectivityTests : IntegrationTestBase
 
         using var command2 = connection.CreateCommand();
         command2.CommandText = query;
-        using var reader2 = command2.ExecuteReader();
-        while (reader2.Read())
-        {
-            Assert.Equal(1, reader2.GetInt32(0));
-        }
-
-        //Console.WriteLine("DbException caught:");
-        //Console.WriteLine($"Message: {ex.Message}");
-        //Console.WriteLine($"Error Code: {ex.ErrorCode}");
-        //Console.WriteLine($"Source: {ex.Source}");
-        //Console.WriteLine($"Stack Trace: {ex.StackTrace}");
-        //Console.WriteLine($"Target Site: {ex.TargetSite}");
+        var ex = Assert.Throws<MySqlException>(command2.ExecuteScalar);
+        Console.WriteLine("DbException caught:");
+        Console.WriteLine($"Message: {ex.Message}");
+        Console.WriteLine($"Error Code: {ex.ErrorCode}");
+        Console.WriteLine($"Source: {ex.Source}");
+        Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+        Console.WriteLine($"Target Site: {ex.TargetSite}");
 
         ProxyHelper.EnableConnectivity(instanceInfo.InstanceId);
     }
@@ -232,19 +227,13 @@ public class BasicConnectivityTests : IntegrationTestBase
 
         using var command2 = connection.CreateCommand();
         command2.CommandText = query;
-        using var reader2 = command2.ExecuteReader();
-        while (reader2.Read())
-        {
-            Assert.Equal(1, reader2.GetInt32(0));
-        }
-
-        //var ex = Assert.Throws<NpgsqlException>(command2.ExecuteScalar);
-        //Console.WriteLine("DbException caught:");
-        //Console.WriteLine($"Message: {ex.Message}");
-        //Console.WriteLine($"Error Code: {ex.ErrorCode}");
-        //Console.WriteLine($"Source: {ex.Source}");
-        //Console.WriteLine($"Stack Trace: {ex.StackTrace}");
-        //Console.WriteLine($"Target Site: {ex.TargetSite}");
+        var ex = Assert.Throws<NpgsqlException>(command2.ExecuteScalar);
+        Console.WriteLine("DbException caught:");
+        Console.WriteLine($"Message: {ex.Message}");
+        Console.WriteLine($"Error Code: {ex.ErrorCode}");
+        Console.WriteLine($"Source: {ex.Source}");
+        Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+        Console.WriteLine($"Target Site: {ex.TargetSite}");
 
         ProxyHelper.EnableConnectivity(instanceInfo.InstanceId);
     }
