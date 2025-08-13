@@ -15,12 +15,13 @@
 using System.Data;
 using AwsWrapperDataProvider.Driver.Plugins.Efm;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Tests.Container.Utils;
 using Microsoft.Extensions.Caching.Memory;
 using Npgsql;
 
 namespace AwsWrapperDataProvider.Tests;
 
-public class EfmConnectivityTests
+public class EfmConnectivityTests : IntegrationTestBase
 {
     private static readonly int TestCommandTimeoutSecs = 500;
     private static readonly int TestFailureDetectionTime = 1000;
@@ -29,16 +30,12 @@ public class EfmConnectivityTests
 
     [Fact]
     [Trait("Category", "Integration")]
-    [Trait("Category", "Manual")]
+    [Trait("Database", "pg")]
     public async Task EfmPluginTest_WithBasicAuth()
     {
-        const string clusterEndpoint = "endpoint"; // Replace with your cluster endpoint
-        const string username = "username"; // Replace with your username
-        const string password = "password"; // Replace with your password
-        const string database = "database"; // Replace with your database name
-
-        var connectionString = $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;Plugins=efm;";
-        await PerformEfmTest(connectionString, clusterEndpoint);
+        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, this.username, this.password, this.defaultDbName);
+        connectionString += "Plugins=efm;";
+        await PerformEfmTest(connectionString, this.clusterEndpoint);
     }
 
     [Fact]
@@ -91,7 +88,7 @@ public class EfmConnectivityTests
             Assert.False(monitor.CanDispose());
             Console.WriteLine("   ✓ Monitor exists");
 
-            bool monitorCaughtFailure = false;
+            bool monitorCaughtFailure = false, disabledConnectivity = false;
 
             Console.WriteLine("\n5. Monitoring for failure...");
             Console.WriteLine("   ! Please turn off your internet or cause the connection to become unresponsive during this time.");
@@ -109,6 +106,11 @@ public class EfmConnectivityTests
                     }
 
                     break;
+                }
+                else if (timeWaited > 0 && !disabledConnectivity)
+                {
+                    ProxyHelper.DisableAllConnectivity();
+                    disabledConnectivity = true;
                 }
             }
 
@@ -135,10 +137,14 @@ public class EfmConnectivityTests
 
             Assert.NotEqual(ConnectionState.Open, connection.State);
             Assert.True(monitorCaughtFailure);
+
+            // done with the test; restore proxy connectivity
+            ProxyHelper.EnableAllConnectivity();
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"   ❌ Test failed due to uncaught exception: {ex.Message}");
+            Console.WriteLine($"   ❌ Test failed due to unexpected exception: {ex.Message}");
+            throw new Exception("EFM2 plugin integration test failed.", ex);
         }
     }
 
