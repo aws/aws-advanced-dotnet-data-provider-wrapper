@@ -173,36 +173,37 @@ public class BasicConnectivityTests : IntegrationTestBase
         using AwsWrapperConnection<MySqlConnection> connection = new(connectionString);
         connection.Open();
         Assert.Equal(ConnectionState.Open, connection.State);
-        using var command = connection.CreateCommand();
-        command.CommandText = query;
-
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
+        using (var command = connection.CreateCommand())
         {
-            Assert.Equal(1, reader.GetInt32(0));
+            command.CommandText = query;
+
+            using var reader = command.ExecuteReader();
+            if (reader.Read())
+            {
+                Assert.Equal(1, reader.GetInt32(0));
+            }
         }
 
-        reader.Close();
-
         ProxyHelper.DisableConnectivity(instanceInfo.InstanceId);
-        Thread.Sleep(3000);
 
-        using var command2 = connection.CreateCommand();
-        command2.CommandText = query;
-        var ex = Assert.Throws<MySqlException>(() =>
+        using (var command = connection.CreateCommand())
         {
-            using var reader2 = command2.ExecuteReader();
-            if (reader2.Read())
+            command.CommandText = query;
+            var ex = Assert.Throws<MySqlException>(() =>
             {
-                Assert.Equal(1, reader2.GetInt32(0));
-            }
-        });
-        Console.WriteLine("DbException caught:");
-        Console.WriteLine($"Message: {ex.Message}");
-        Console.WriteLine($"Error Code: {ex.ErrorCode}");
-        Console.WriteLine($"Source: {ex.Source}");
-        Console.WriteLine($"Stack Trace: {ex.StackTrace}");
-        Console.WriteLine($"Target Site: {ex.TargetSite}");
+                using var reader = command.ExecuteReader();
+                if (reader.Read())
+                {
+                    Assert.Equal(1, reader.GetInt32(0));
+                }
+            });
+            Console.WriteLine("DbException caught:");
+            Console.WriteLine($"Message: {ex.Message}");
+            Console.WriteLine($"Error Code: {ex.ErrorCode}");
+            Console.WriteLine($"Source: {ex.Source}");
+            Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+            Console.WriteLine($"Target Site: {ex.TargetSite}");
+        }
 
         ProxyHelper.EnableConnectivity(instanceInfo.InstanceId);
     }
@@ -220,29 +221,30 @@ public class BasicConnectivityTests : IntegrationTestBase
         using AwsWrapperConnection<MySqlConnection> connection = new(connectionString);
         connection.Open();
         Assert.Equal(ConnectionState.Open, connection.State);
-        using var command = connection.CreateCommand();
-        command.CommandText = query;
-
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
+        using (var command = connection.CreateCommand())
         {
-            Assert.Equal(1, reader.GetInt32(0));
+            command.CommandText = query;
+
+            using var reader = command.ExecuteReader();
+            if (reader.Read())
+            {
+                Assert.Equal(1, reader.GetInt32(0));
+            }
         }
 
-        reader.Close();
-
         ProxyHelper.DisableConnectivity(instanceInfo.InstanceId);
-        Thread.Sleep(3000);
 
-        using var command2 = connection.CreateCommand();
-        command2.CommandText = query;
-        var ex = Assert.Throws<MySqlException>(command2.ExecuteScalar);
-        Console.WriteLine("DbException caught:");
-        Console.WriteLine($"Message: {ex.Message}");
-        Console.WriteLine($"Error Code: {ex.ErrorCode}");
-        Console.WriteLine($"Source: {ex.Source}");
-        Console.WriteLine($"Stack Trace: {ex.StackTrace}");
-        Console.WriteLine($"Target Site: {ex.TargetSite}");
+        using (var command = connection.CreateCommand())
+        {
+            command.CommandText = query;
+            var ex = Assert.Throws<MySqlException>(command.ExecuteScalar);
+            Console.WriteLine("DbException caught:");
+            Console.WriteLine($"Message: {ex.Message}");
+            Console.WriteLine($"Error Code: {ex.ErrorCode}");
+            Console.WriteLine($"Source: {ex.Source}");
+            Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+            Console.WriteLine($"Target Site: {ex.TargetSite}");
+        }
 
         ProxyHelper.EnableConnectivity(instanceInfo.InstanceId);
     }
@@ -272,7 +274,6 @@ public class BasicConnectivityTests : IntegrationTestBase
         reader.Close();
 
         ProxyHelper.DisableConnectivity(instanceInfo.InstanceId);
-        Thread.Sleep(3000);
 
         using var command2 = connection.CreateCommand();
         command2.CommandText = query;
