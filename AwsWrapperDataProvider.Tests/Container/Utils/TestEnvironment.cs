@@ -21,6 +21,8 @@ public class TestEnvironment
 {
     private static readonly Lazy<TestEnvironment> LazyTestEnvironmentInstance = new(Create);
 
+    private static readonly JsonSerializerOptions Options = new() { PropertyNameCaseInsensitive = true };
+
     public static TestEnvironment Env = LazyTestEnvironmentInstance.Value;
 
     public TestEnvironmentInfo Info { get; private set; } = null!;
@@ -124,11 +126,7 @@ public class TestEnvironment
         string infoJson = Environment.GetEnvironmentVariable("TEST_ENV_INFO_JSON") ?? throw new Exception("Environment variable TEST_ENV_INFO_JSON is required.");
         try
         {
-            JsonSerializerOptions options = new()
-            {
-                PropertyNameCaseInsensitive = true,
-            };
-            env.Info = JsonSerializer.Deserialize<TestEnvironmentInfo>(infoJson, options) ?? throw new Exception("Deserialized TestEnvironmentInfo is null.");
+            env.Info = JsonSerializer.Deserialize<TestEnvironmentInfo>(infoJson, Options) ?? throw new Exception("Deserialized TestEnvironmentInfo is null.");
         }
         catch (JsonException ex)
         {
@@ -167,14 +165,14 @@ public class TestEnvironment
         if (!string.IsNullOrEmpty(environment.Info.ProxyDatabaseInfo.ClusterEndpoint))
         {
             var client = new Connection(environment.Info.ProxyDatabaseInfo.ClusterEndpoint, proxyControlPort).Client();
-            Proxy proxy = environment.GetProxy(client, environment.Info.DatabaseInfo!.ClusterEndpoint, environment.Info.DatabaseInfo.ClusterEndpointPort);
+            Proxy proxy = GetProxy(client, environment.Info.DatabaseInfo!.ClusterEndpoint, environment.Info.DatabaseInfo.ClusterEndpointPort);
             environment.proxies[environment.Info.ProxyDatabaseInfo.ClusterEndpoint] = proxy;
         }
 
         if (!string.IsNullOrEmpty(environment.Info.ProxyDatabaseInfo.ClusterReadOnlyEndpoint))
         {
             var client = new Connection(environment.Info.ProxyDatabaseInfo.ClusterReadOnlyEndpoint, proxyControlPort).Client();
-            Proxy proxy = environment.GetProxy(client, environment.Info.DatabaseInfo!.ClusterReadOnlyEndpoint, environment.Info.DatabaseInfo.ClusterReadOnlyEndpointPort);
+            Proxy proxy = GetProxy(client, environment.Info.DatabaseInfo!.ClusterReadOnlyEndpoint, environment.Info.DatabaseInfo.ClusterReadOnlyEndpointPort);
             environment.proxies[environment.Info.ProxyDatabaseInfo.ClusterReadOnlyEndpoint] = proxy;
         }
     }
@@ -189,7 +187,7 @@ public class TestEnvironment
         throw new Exception($"Proxy for {instanceName} not found.");
     }
 
-    private Proxy GetProxy(Client proxyClient, string host, int port)
+    private static Proxy GetProxy(Client proxyClient, string host, int port)
     {
         string upstream = $"{host}:{port}";
         return proxyClient.FindProxy(upstream);
