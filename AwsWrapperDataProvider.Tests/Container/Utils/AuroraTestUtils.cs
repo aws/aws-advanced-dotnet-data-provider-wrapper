@@ -201,8 +201,9 @@ public class AuroraTestUtils
                     {
                         Console.WriteLine($"Exception while trying to connect to host {host}: {ex.Message}");
                     }
-                    catch (TaskCanceledException)
+                    catch (TaskCanceledException ex)
                     {
+                        Console.WriteLine($"Task is cancelled while waiting for {host} to come up: {ex.Message}");
                         break;
                     }
                     catch (Exception ex)
@@ -215,8 +216,9 @@ public class AuroraTestUtils
                     {
                         await Task.Delay(5000, cts.Token);
                     }
-                    catch (TaskCanceledException)
+                    catch (TaskCanceledException ex)
                     {
+                        Console.WriteLine($"Task is cancelled while waiting for {host} to come up: {ex.Message}");
                         break;
                     }
                 }
