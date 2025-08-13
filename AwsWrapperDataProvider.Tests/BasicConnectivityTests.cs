@@ -31,10 +31,10 @@ public class BasicConnectivityTests : IntegrationTestBase
         const string query = "select 1";
 
         using AwsWrapperConnection<MySql.Data.MySqlClient.MySqlConnection> connection = new(connectionString);
-        connection.Open();
-        Assert.Equal(ConnectionState.Open, connection.State);
         using AwsWrapperCommand<MySql.Data.MySqlClient.MySqlCommand> command = connection.CreateCommand<MySql.Data.MySqlClient.MySqlCommand>();
         command.CommandText = query;
+        connection.Open();
+        Assert.Equal(ConnectionState.Open, connection.State);
         using IDataReader reader = command.ExecuteReader();
         while (reader.Read())
         {
@@ -51,10 +51,10 @@ public class BasicConnectivityTests : IntegrationTestBase
         const string query = "select 1";
 
         using AwsWrapperConnection<MySqlConnection> connection = new(connectionString);
-        connection.Open();
-        Assert.Equal(ConnectionState.Open, connection.State);
         using AwsWrapperCommand<MySqlCommand> command = connection.CreateCommand<MySqlCommand>();
         command.CommandText = query;
+        connection.Open();
+        Assert.Equal(ConnectionState.Open, connection.State);
         using IDataReader reader = command.ExecuteReader();
         while (reader.Read())
         {
@@ -176,60 +176,7 @@ public class BasicConnectivityTests : IntegrationTestBase
         using (var command = connection.CreateCommand())
         {
             command.CommandText = query;
-
-            using var reader = command.ExecuteReader();
-            if (reader.Read())
-            {
-                Assert.Equal(1, reader.GetInt32(0));
-            }
-        }
-
-        ProxyHelper.DisableConnectivity(instanceInfo.InstanceId);
-
-        using (var command = connection.CreateCommand())
-        {
-            command.CommandText = query;
-            var ex = Assert.Throws<MySqlException>(() =>
-            {
-                using var reader = command.ExecuteReader();
-                if (reader.Read())
-                {
-                    Assert.Equal(1, reader.GetInt32(0));
-                }
-            });
-            Console.WriteLine("DbException caught:");
-            Console.WriteLine($"Message: {ex.Message}");
-            Console.WriteLine($"Error Code: {ex.ErrorCode}");
-            Console.WriteLine($"Source: {ex.Source}");
-            Console.WriteLine($"Stack Trace: {ex.StackTrace}");
-            Console.WriteLine($"Target Site: {ex.TargetSite}");
-        }
-
-        ProxyHelper.EnableConnectivity(instanceInfo.InstanceId);
-    }
-
-    [Fact]
-    [Trait("Category", "Integration")]
-    [Trait("Database", "mysql")]
-    public void MySqlConnectorWrapperProxiedConnectionTest2()
-    {
-        var instanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First();
-        var connectionString = ConnectionStringHelper.GetUrl(this.engine, instanceInfo.Host, instanceInfo.Port, this.username, this.password, this.defaultDbName);
-        connectionString += ";Plugins=";
-        const string query = "select 1";
-
-        using AwsWrapperConnection<MySqlConnection> connection = new(connectionString);
-        connection.Open();
-        Assert.Equal(ConnectionState.Open, connection.State);
-        using (var command = connection.CreateCommand())
-        {
-            command.CommandText = query;
-
-            using var reader = command.ExecuteReader();
-            if (reader.Read())
-            {
-                Assert.Equal(1, reader.GetInt32(0));
-            }
+            Assert.Equal(1, command.ExecuteScalar());
         }
 
         ProxyHelper.DisableConnectivity(instanceInfo.InstanceId);
@@ -262,28 +209,25 @@ public class BasicConnectivityTests : IntegrationTestBase
         using AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
         connection.Open();
         Assert.Equal(ConnectionState.Open, connection.State);
-        using var command = connection.CreateCommand();
-        command.CommandText = query;
-
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
+        using (var command = connection.CreateCommand())
         {
-            Assert.Equal(1, reader.GetInt32(0));
+            command.CommandText = query;
+            Assert.Equal(1, command.ExecuteScalar());
         }
-
-        reader.Close();
 
         ProxyHelper.DisableConnectivity(instanceInfo.InstanceId);
 
-        using var command2 = connection.CreateCommand();
-        command2.CommandText = query;
-        var ex = Assert.Throws<NpgsqlException>(command2.ExecuteScalar);
-        Console.WriteLine("DbException caught:");
-        Console.WriteLine($"Message: {ex.Message}");
-        Console.WriteLine($"Error Code: {ex.ErrorCode}");
-        Console.WriteLine($"Source: {ex.Source}");
-        Console.WriteLine($"Stack Trace: {ex.StackTrace}");
-        Console.WriteLine($"Target Site: {ex.TargetSite}");
+        using (var command = connection.CreateCommand())
+        {
+            command.CommandText = query;
+            var ex = Assert.Throws<MySqlException>(command.ExecuteScalar);
+            Console.WriteLine("DbException caught:");
+            Console.WriteLine($"Message: {ex.Message}");
+            Console.WriteLine($"Error Code: {ex.ErrorCode}");
+            Console.WriteLine($"Source: {ex.Source}");
+            Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+            Console.WriteLine($"Target Site: {ex.TargetSite}");
+        }
 
         ProxyHelper.EnableConnectivity(instanceInfo.InstanceId);
     }
