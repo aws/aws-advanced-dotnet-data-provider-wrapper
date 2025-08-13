@@ -30,6 +30,7 @@ public class ProxyHelper
             catch (Exception ex)
             {
                 Console.WriteLine($"Failed to disable proxy {proxy.Name}: {ex.Message}");
+                throw;
             }
         }
     }
@@ -53,12 +54,14 @@ public class ProxyHelper
                 catch (Exception)
                 {
                     // ignore
+                    throw;
                 }
             }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error enabling connectivity: {ex}");
+            throw;
         }
 
         try
@@ -69,6 +72,7 @@ public class ProxyHelper
         catch (Exception ex)
         {
             Console.WriteLine($"Error updating enable-connectivity proxy: {ex}");
+            throw;
         }
 
         Console.WriteLine($"Enabled connectivity to {proxy.Name}");
@@ -103,6 +107,7 @@ public class ProxyHelper
         catch (Exception ex)
         {
             Console.WriteLine($"Error disabling connectivity DOWN-STREAM: {ex}");
+            throw;
         }
 
         try
@@ -118,6 +123,7 @@ public class ProxyHelper
         catch (Exception ex)
         {
             Console.WriteLine($"Error disabling connectivity UP-STREAM: {ex}");
+            throw;
         }
 
         try
@@ -128,6 +134,7 @@ public class ProxyHelper
         catch (Exception ex)
         {
             Console.WriteLine($"Error updating disable-connectivity proxy: {ex}");
+            throw;
         }
 
         Console.WriteLine($"Disabled connectivity to {proxy.Name}");
