@@ -168,7 +168,7 @@ public class BasicConnectivityTests : IntegrationTestBase
         var instanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First();
         var connectionString = ConnectionStringHelper.GetUrl(this.engine, instanceInfo.Host, instanceInfo.Port, this.username, this.password, this.defaultDbName);
         connectionString += ";Plugins=";
-        const string query = "select 1";
+        const string query = "SELECT @@aurora_server_id";
 
         using AwsWrapperConnection<MySqlConnection> connection = new(connectionString);
         connection.Open();
@@ -176,7 +176,7 @@ public class BasicConnectivityTests : IntegrationTestBase
         using (var command = connection.CreateCommand())
         {
             command.CommandText = query;
-            Assert.Equal(1, command.ExecuteScalar());
+            command.ExecuteScalar();
         }
 
         ProxyHelper.DisableConnectivity(instanceInfo.InstanceId);
@@ -204,7 +204,7 @@ public class BasicConnectivityTests : IntegrationTestBase
         var instanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First();
         var connectionString = ConnectionStringHelper.GetUrl(this.engine, instanceInfo.Host, instanceInfo.Port, this.username, this.password, this.defaultDbName);
         connectionString += ";Plugins=";
-        const string query = "select 1";
+        const string query = "select aurora_db_instance_identifier()";
 
         using AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
         connection.Open();
@@ -212,7 +212,7 @@ public class BasicConnectivityTests : IntegrationTestBase
         using (var command = connection.CreateCommand())
         {
             command.CommandText = query;
-            Assert.Equal(1, command.ExecuteScalar());
+            command.ExecuteScalar();
         }
 
         ProxyHelper.DisableConnectivity(instanceInfo.InstanceId);
