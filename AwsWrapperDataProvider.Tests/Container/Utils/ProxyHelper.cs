@@ -19,13 +19,13 @@ namespace AwsWrapperDataProvider.Tests.Container.Utils;
 
 public class ProxyHelper
 {
-    public static void EnableAllConnectivity()
+    public static async Task EnableAllConnectivityAsync()
     {
         foreach (Proxy proxy in TestEnvironment.Env.Proxies)
         {
             try
             {
-                EnableConnectivity(proxy);
+                await EnableConnectivityAsync(proxy);
             }
             catch (Exception ex)
             {
@@ -34,21 +34,22 @@ public class ProxyHelper
         }
     }
 
-    public static void EnableConnectivity(string instanceName)
+    public static async Task EnableConnectivityAsync(string instanceName)
     {
         Proxy proxy = TestEnvironment.Env.GetProxy(instanceName);
-        EnableConnectivity(proxy);
+        await EnableConnectivityAsync(proxy);
     }
 
-    private static void EnableConnectivity(Proxy proxy)
+    private static async Task EnableConnectivityAsync(Proxy proxy)
     {
         try
         {
-            foreach (ToxicBase toxic in proxy.GetAllToxics().Where(t => t.Name == "DOWN-STREAM" || t.Name == "UP-STREAM"))
+            var toxics = await proxy.GetAllToxicsAsync();
+            foreach (ToxicBase toxic in toxics.Where(t => t.Name == "DOWN-STREAM" || t.Name == "UP-STREAM"))
             {
                 try
                 {
-                    proxy.RemoveToxic(toxic.Name);
+                    await proxy.RemoveToxicAsync(toxic.Name);
                 }
                 catch (Exception ex)
                 {
@@ -64,21 +65,21 @@ public class ProxyHelper
         Console.WriteLine($"Enabled connectivity to {proxy.Name}");
     }
 
-    public static void DisableAllConnectivity()
+    public static async Task DisableAllConnectivityAsync()
     {
         foreach (Proxy proxy in TestEnvironment.Env.Proxies)
         {
-            DisableConnectivity(proxy);
+            await DisableConnectivityAsync(proxy);
         }
     }
 
-    public static void DisableConnectivity(string instanceName)
+    public static async Task DisableConnectivityAsync(string instanceName)
     {
         Proxy proxy = TestEnvironment.Env.GetProxy(instanceName);
-        DisableConnectivity(proxy);
+        await DisableConnectivityAsync(proxy);
     }
 
-    private static void DisableConnectivity(Proxy proxy)
+    private static async Task DisableConnectivityAsync(Proxy proxy)
     {
         try
         {
@@ -90,7 +91,7 @@ public class ProxyHelper
             };
 
             bandWidthToxic.Attributes.Rate = 0;
-            proxy.Add(bandWidthToxic);
+            await proxy.AddAsync(bandWidthToxic);
         }
         catch (Exception ex)
         {
@@ -107,7 +108,7 @@ public class ProxyHelper
             };
 
             bandWidthToxic.Attributes.Rate = 0;
-            proxy.Add(bandWidthToxic);
+            await proxy.AddAsync(bandWidthToxic);
         }
         catch (Exception ex)
         {

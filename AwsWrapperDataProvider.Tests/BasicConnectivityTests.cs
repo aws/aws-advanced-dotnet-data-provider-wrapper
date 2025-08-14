@@ -163,7 +163,7 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
-    public void MySqlConnectorWrapperProxiedConnectionTest()
+    public async Task MySqlConnectorWrapperProxiedConnectionTest()
     {
         var instanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First();
         var connectionString = ConnectionStringHelper.GetUrl(this.engine, instanceInfo.Host, instanceInfo.Port, this.username, this.password, this.defaultDbName);
@@ -179,7 +179,7 @@ public class BasicConnectivityTests : IntegrationTestBase
             command.ExecuteScalar();
         }
 
-        ProxyHelper.DisableConnectivity(instanceInfo.InstanceId);
+        await ProxyHelper.DisableConnectivityAsync(instanceInfo.InstanceId);
 
         using (var command = connection.CreateCommand())
         {
@@ -193,13 +193,13 @@ public class BasicConnectivityTests : IntegrationTestBase
             Console.WriteLine($"Target Site: {ex.TargetSite}");
         }
 
-        ProxyHelper.EnableConnectivity(instanceInfo.InstanceId);
+        await ProxyHelper.EnableConnectivityAsync(instanceInfo.InstanceId);
     }
 
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg")]
-    public void PgWrapperProxiedConnectionTest()
+    public async Task PgWrapperProxiedConnectionTest()
     {
         var instanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First();
         var connectionString = ConnectionStringHelper.GetUrl(this.engine, instanceInfo.Host, instanceInfo.Port, this.username, this.password, this.defaultDbName);
@@ -215,7 +215,7 @@ public class BasicConnectivityTests : IntegrationTestBase
             command.ExecuteScalar();
         }
 
-        ProxyHelper.DisableConnectivity(instanceInfo.InstanceId);
+        await ProxyHelper.DisableConnectivityAsync(instanceInfo.InstanceId);
 
         using (var command = connection.CreateCommand())
         {
@@ -229,6 +229,6 @@ public class BasicConnectivityTests : IntegrationTestBase
             Console.WriteLine($"Target Site: {ex.TargetSite}");
         }
 
-        ProxyHelper.EnableConnectivity(instanceInfo.InstanceId);
+        await ProxyHelper.EnableConnectivityAsync(instanceInfo.InstanceId);
     }
 }
