@@ -160,10 +160,15 @@ public class BasicConnectivityTests : IntegrationTestBase
         }
     }
 
-    [Fact]
+    [Theory]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
-    public async Task MySqlConnectorWrapperProxiedConnectionTest()
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(4)]
+    public async Task MySqlConnectorWrapperProxiedConnectionTest(int _)
     {
         var instanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First();
         var connectionString = ConnectionStringHelper.GetUrl(this.engine, instanceInfo.Host, instanceInfo.Port, this.username, this.password, this.defaultDbName);
@@ -181,26 +186,34 @@ public class BasicConnectivityTests : IntegrationTestBase
 
         await ProxyHelper.DisableConnectivityAsync(instanceInfo.InstanceId);
 
-        using (var command = connection.CreateCommand())
-        {
-            command.CommandText = query;
-            Console.WriteLine(command.ExecuteScalar());
-            //var ex = Assert.Throws<MySqlException>(command.ExecuteScalar);
-            //Console.WriteLine("DbException caught:");
-            //Console.WriteLine($"Message: {ex.Message}");
-            //Console.WriteLine($"Error Code: {ex.ErrorCode}");
-            //Console.WriteLine($"Source: {ex.Source}");
-            //Console.WriteLine($"Stack Trace: {ex.StackTrace}");
-            //Console.WriteLine($"Target Site: {ex.TargetSite}");
-        }
+        using var connection2 = new AwsWrapperConnection<MySqlConnection>(connectionString);
+        connection2.Open();
+        Console.WriteLine(connection2.State);
+        //using (var c = connection.CreateCommand())
+        //{
+        //    command.CommandText = query;
+        //    Console.WriteLine(command.ExecuteScalar());
+        //    var ex = Assert.Throws<MySqlException>(command.ExecuteScalar);
+        //    Console.WriteLine("DbException caught:");
+        //    Console.WriteLine($"Message: {ex.Message}");
+        //    Console.WriteLine($"Error Code: {ex.ErrorCode}");
+        //    Console.WriteLine($"Source: {ex.Source}");
+        //    Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+        //    Console.WriteLine($"Target Site: {ex.TargetSite}");
+        //}
 
         await ProxyHelper.EnableConnectivityAsync(instanceInfo.InstanceId);
     }
 
-    [Fact]
+    [Theory]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg")]
-    public async Task PgWrapperProxiedConnectionTest()
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(4)]
+    public async Task PgWrapperProxiedConnectionTest(int _)
     {
         var instanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First();
         var connectionString = ConnectionStringHelper.GetUrl(this.engine, instanceInfo.Host, instanceInfo.Port, this.username, this.password, this.defaultDbName);
@@ -218,18 +231,22 @@ public class BasicConnectivityTests : IntegrationTestBase
 
         await ProxyHelper.DisableConnectivityAsync(instanceInfo.InstanceId);
 
-        using (var command = connection.CreateCommand())
-        {
-            command.CommandText = query;
-            Console.WriteLine(command.ExecuteScalar());
-            //var ex = Assert.Throws<MySqlException>();
-            //Console.WriteLine("DbException caught:");
-            //Console.WriteLine($"Message: {ex.Message}");
-            //Console.WriteLine($"Error Code: {ex.ErrorCode}");
-            //Console.WriteLine($"Source: {ex.Source}");
-            //Console.WriteLine($"Stack Trace: {ex.StackTrace}");
-            //Console.WriteLine($"Target Site: {ex.TargetSite}");
-        }
+        using var connection2 = new AwsWrapperConnection<NpgsqlConnection>(connectionString);
+        connection2.Open();
+        Console.WriteLine(connection2.State);
+
+        //using (var command = connection.CreateCommand())
+        //{
+        //    command.CommandText = query;
+        //    Console.WriteLine(command.ExecuteScalar());
+        //    var ex = Assert.Throws<MySqlException>();
+        //    Console.WriteLine("DbException caught:");
+        //    Console.WriteLine($"Message: {ex.Message}");
+        //    Console.WriteLine($"Error Code: {ex.ErrorCode}");
+        //    Console.WriteLine($"Source: {ex.Source}");
+        //    Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+        //    Console.WriteLine($"Target Site: {ex.TargetSite}");
+        //}
 
         await ProxyHelper.EnableConnectivityAsync(instanceInfo.InstanceId);
     }
