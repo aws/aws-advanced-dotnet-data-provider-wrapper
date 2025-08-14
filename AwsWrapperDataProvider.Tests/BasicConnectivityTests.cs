@@ -189,14 +189,10 @@ public class BasicConnectivityTests : IntegrationTestBase
         using (var command = connection.CreateCommand())
         {
             command.CommandText = query;
-            Console.WriteLine(command.ExecuteScalar());
             var ex = Assert.Throws<MySqlException>(command.ExecuteScalar);
             Console.WriteLine("DbException caught:");
             Console.WriteLine($"Message: {ex.Message}");
             Console.WriteLine($"Error Code: {ex.ErrorCode}");
-            Console.WriteLine($"Source: {ex.Source}");
-            Console.WriteLine($"Stack Trace: {ex.StackTrace}");
-            Console.WriteLine($"Target Site: {ex.TargetSite}");
         }
 
         await ProxyHelper.EnableConnectivityAsync(instanceInfo.InstanceId);
@@ -235,9 +231,6 @@ public class BasicConnectivityTests : IntegrationTestBase
             Console.WriteLine("DbException caught:");
             Console.WriteLine($"Message: {ex.Message}");
             Console.WriteLine($"Error Code: {ex.ErrorCode}");
-            Console.WriteLine($"Source: {ex.Source}");
-            Console.WriteLine($"Stack Trace: {ex.StackTrace}");
-            Console.WriteLine($"Target Site: {ex.TargetSite}");
         }
 
         await ProxyHelper.EnableConnectivityAsync(instanceInfo.InstanceId);

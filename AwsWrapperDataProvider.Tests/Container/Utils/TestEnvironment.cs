@@ -15,8 +15,6 @@
 using System.Text.Json;
 using Toxiproxy.Net;
 
-[assembly: CaptureConsole]
-
 namespace AwsWrapperDataProvider.Tests.Container.Utils;
 
 public class TestEnvironment
