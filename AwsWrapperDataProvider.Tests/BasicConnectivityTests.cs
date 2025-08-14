@@ -172,7 +172,8 @@ public class BasicConnectivityTests : IntegrationTestBase
     {
         var instanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First();
         var connectionString = ConnectionStringHelper.GetUrl(this.engine, instanceInfo.Host, instanceInfo.Port, this.username, this.password, this.defaultDbName);
-        connectionString += ";Plugins=";
+        connectionString += "; Plugins=";
+        Console.WriteLine($"Before create connection: {connectionString}");
         const string query = "SELECT @@aurora_server_id";
 
         using AwsWrapperConnection<MySqlConnection> connection = new(connectionString);
@@ -186,6 +187,7 @@ public class BasicConnectivityTests : IntegrationTestBase
 
         await ProxyHelper.DisableConnectivityAsync(instanceInfo.InstanceId);
 
+        Console.WriteLine($"Before create connection: {connectionString}");
         using var connection2 = new AwsWrapperConnection<MySqlConnection>(connectionString);
         Console.WriteLine($"Before open: {connection2.ConnectionString}");
         connection2.Open();

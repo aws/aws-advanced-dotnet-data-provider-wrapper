@@ -69,6 +69,7 @@ public class ConnectionPluginChainBuilder
         {
             string pluginsCodes = PropertyDefinition.Plugins.GetString(props) ?? DefaultPluginCode;
             string[] pluginsCodesArray = [.. pluginsCodes.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)];
+            Console.WriteLine("Current Plugins: " + string.Join(",", pluginsCodesArray));
 
             pluginFactories = new(pluginsCodesArray.Length);
 
