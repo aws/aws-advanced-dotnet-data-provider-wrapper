@@ -162,7 +162,7 @@ public class BasicConnectivityTests : IntegrationTestBase
 
     [Theory]
     [Trait("Category", "Integration")]
-    [Trait("Database", "mysql-proxy")]
+    [Trait("Database", "mysql")]
     [InlineData(0)]
     [InlineData(1)]
     [InlineData(2)]
@@ -173,7 +173,6 @@ public class BasicConnectivityTests : IntegrationTestBase
         var instanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First();
         var connectionString = ConnectionStringHelper.GetUrl(this.engine, instanceInfo.Host, instanceInfo.Port, this.username, this.password, this.defaultDbName);
         connectionString += "; Plugins=";
-        Console.WriteLine($"Before create connection: {connectionString}");
         const string query = "SELECT @@aurora_server_id";
 
         using AwsWrapperConnection<MySqlConnection> connection = new(connectionString);
@@ -187,31 +186,25 @@ public class BasicConnectivityTests : IntegrationTestBase
 
         await ProxyHelper.DisableConnectivityAsync(instanceInfo.InstanceId);
 
-        Console.WriteLine($"Before create connection: {connectionString}");
-        using var connection2 = new AwsWrapperConnection<MySqlConnection>(connectionString);
-        Console.WriteLine($"Before open: {connection2.ConnectionString}");
-        connection2.Open();
-        Console.WriteLine($"After open: {connection2.ConnectionString}");
-        Console.WriteLine(connection2.State);
-        //using (var c = connection.CreateCommand())
-        //{
-        //    command.CommandText = query;
-        //    Console.WriteLine(command.ExecuteScalar());
-        //    var ex = Assert.Throws<MySqlException>(command.ExecuteScalar);
-        //    Console.WriteLine("DbException caught:");
-        //    Console.WriteLine($"Message: {ex.Message}");
-        //    Console.WriteLine($"Error Code: {ex.ErrorCode}");
-        //    Console.WriteLine($"Source: {ex.Source}");
-        //    Console.WriteLine($"Stack Trace: {ex.StackTrace}");
-        //    Console.WriteLine($"Target Site: {ex.TargetSite}");
-        //}
+        using (var command = connection.CreateCommand())
+        {
+            command.CommandText = query;
+            Console.WriteLine(command.ExecuteScalar());
+            var ex = Assert.Throws<MySqlException>(command.ExecuteScalar);
+            Console.WriteLine("DbException caught:");
+            Console.WriteLine($"Message: {ex.Message}");
+            Console.WriteLine($"Error Code: {ex.ErrorCode}");
+            Console.WriteLine($"Source: {ex.Source}");
+            Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+            Console.WriteLine($"Target Site: {ex.TargetSite}");
+        }
 
         await ProxyHelper.EnableConnectivityAsync(instanceInfo.InstanceId);
     }
 
     [Theory]
     [Trait("Category", "Integration")]
-    [Trait("Database", "pg-proxy")]
+    [Trait("Database", "pg")]
     [InlineData(0)]
     [InlineData(1)]
     [InlineData(2)]
@@ -221,7 +214,7 @@ public class BasicConnectivityTests : IntegrationTestBase
     {
         var instanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First();
         var connectionString = ConnectionStringHelper.GetUrl(this.engine, instanceInfo.Host, instanceInfo.Port, this.username, this.password, this.defaultDbName);
-        connectionString += ";Plugins=";
+        connectionString += "; Plugins=";
         const string query = "select aurora_db_instance_identifier()";
 
         using AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
@@ -235,22 +228,17 @@ public class BasicConnectivityTests : IntegrationTestBase
 
         await ProxyHelper.DisableConnectivityAsync(instanceInfo.InstanceId);
 
-        using var connection2 = new AwsWrapperConnection<NpgsqlConnection>(connectionString);
-        connection2.Open();
-        Console.WriteLine(connection2.State);
-
-        //using (var command = connection.CreateCommand())
-        //{
-        //    command.CommandText = query;
-        //    Console.WriteLine(command.ExecuteScalar());
-        //    var ex = Assert.Throws<MySqlException>();
-        //    Console.WriteLine("DbException caught:");
-        //    Console.WriteLine($"Message: {ex.Message}");
-        //    Console.WriteLine($"Error Code: {ex.ErrorCode}");
-        //    Console.WriteLine($"Source: {ex.Source}");
-        //    Console.WriteLine($"Stack Trace: {ex.StackTrace}");
-        //    Console.WriteLine($"Target Site: {ex.TargetSite}");
-        //}
+        using (var command = connection.CreateCommand())
+        {
+            command.CommandText = query;
+            var ex = Assert.Throws<NpgsqlException>(command.ExecuteScalar);
+            Console.WriteLine("DbException caught:");
+            Console.WriteLine($"Message: {ex.Message}");
+            Console.WriteLine($"Error Code: {ex.ErrorCode}");
+            Console.WriteLine($"Source: {ex.Source}");
+            Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+            Console.WriteLine($"Target Site: {ex.TargetSite}");
+        }
 
         await ProxyHelper.EnableConnectivityAsync(instanceInfo.InstanceId);
     }

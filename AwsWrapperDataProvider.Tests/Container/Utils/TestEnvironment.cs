@@ -13,8 +13,6 @@
 // limitations under the License.
 
 using System.Text.Json;
-using AwsWrapperDataProvider.Driver.Utils;
-using Microsoft.Extensions.Logging;
 using Toxiproxy.Net;
 
 [assembly: CaptureConsole]
@@ -23,8 +21,6 @@ namespace AwsWrapperDataProvider.Tests.Container.Utils;
 
 public class TestEnvironment
 {
-    private static readonly ILogger<TestEnvironment> Logger = LoggerUtils.GetLogger<TestEnvironment>();
-
     private static readonly Lazy<TestEnvironment> LazyTestEnvironmentInstance = new(Create);
 
     private static readonly JsonSerializerOptions Options = new() { PropertyNameCaseInsensitive = true };
@@ -143,10 +139,9 @@ public class TestEnvironment
             throw new Exception($"An error occurred while processing TEST_ENV_INFO_JSON: {ex.Message}", ex);
         }
 
-        Logger.LogTrace("Checking features...");
+        Console.WriteLine("Checking features...");
         if (env.Info.Request!.Features.Contains(TestEnvironmentFeatures.NETWORK_OUTAGES_ENABLED))
         {
-            Logger.LogTrace("Try to init proxies...");
             InitProxies(env).GetAwaiter().GetResult();
         }
 
@@ -155,7 +150,7 @@ public class TestEnvironment
 
     private static async Task InitProxies(TestEnvironment environment)
     {
-        Logger.LogTrace("Initializing toxiproxies...");
+        Console.WriteLine("Initializing toxiproxies...");
         environment.proxies = [];
 
         int proxyControlPort = environment.Info!.ProxyDatabaseInfo!.ControlPort;
@@ -169,7 +164,7 @@ public class TestEnvironment
             }
 
             environment.proxies[instance.InstanceId] = proxies.First().Value;
-            Logger.LogTrace($"Proxy for {instance.InstanceId} is initialized: {environment.proxies[instance.InstanceId]}");
+            Console.WriteLine($"Proxy for {instance.InstanceId} is initialized: {environment.proxies[instance.InstanceId]}");
         }
 
         if (!string.IsNullOrEmpty(environment.Info.ProxyDatabaseInfo.ClusterEndpoint))
@@ -177,7 +172,7 @@ public class TestEnvironment
             var client = new Connection(environment.Info.ProxyDatabaseInfo.ClusterEndpoint, proxyControlPort).Client();
             Proxy proxy = await GetProxy(client, environment.Info.DatabaseInfo!.ClusterEndpoint, environment.Info.DatabaseInfo.ClusterEndpointPort);
             environment.proxies[environment.Info.ProxyDatabaseInfo.ClusterEndpoint] = proxy;
-            Logger.LogTrace($"Proxy for {environment.Info.ProxyDatabaseInfo.ClusterEndpoint} is initialized: {proxy}");
+            Console.WriteLine($"Proxy for {environment.Info.ProxyDatabaseInfo.ClusterEndpoint} is initialized: {proxy}");
         }
 
         if (!string.IsNullOrEmpty(environment.Info.ProxyDatabaseInfo.ClusterReadOnlyEndpoint))
@@ -185,7 +180,7 @@ public class TestEnvironment
             var client = new Connection(environment.Info.ProxyDatabaseInfo.ClusterReadOnlyEndpoint, proxyControlPort).Client();
             Proxy proxy = await GetProxy(client, environment.Info.DatabaseInfo!.ClusterReadOnlyEndpoint, environment.Info.DatabaseInfo.ClusterReadOnlyEndpointPort);
             environment.proxies[environment.Info.ProxyDatabaseInfo.ClusterReadOnlyEndpoint] = proxy;
-            Logger.LogTrace($"Proxy for {environment.Info.ProxyDatabaseInfo.ClusterReadOnlyEndpoint} is initialized: {proxy}");
+            Console.WriteLine($"Proxy for {environment.Info.ProxyDatabaseInfo.ClusterReadOnlyEndpoint} is initialized: {proxy}");
         }
     }
 

@@ -14,6 +14,8 @@
 
 using AwsWrapperDataProvider.Tests.Container.Utils;
 
+[assembly: CollectionBehavior(DisableTestParallelization = true)]
+
 namespace AwsWrapperDataProvider.Tests;
 
 public abstract class IntegrationTestBase : IAsyncLifetime
