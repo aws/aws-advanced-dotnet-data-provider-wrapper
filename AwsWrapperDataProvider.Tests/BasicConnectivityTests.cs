@@ -160,15 +160,10 @@ public class BasicConnectivityTests : IntegrationTestBase
         }
     }
 
-    [Theory]
+    [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
-    [InlineData(0)]
-    [InlineData(1)]
-    [InlineData(2)]
-    [InlineData(3)]
-    [InlineData(4)]
-    public async Task MySqlConnectorWrapperProxiedConnectionTest(int _)
+    public async Task MySqlConnectorWrapperProxiedConnectionTest()
     {
         var instanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First();
         var connectionString = ConnectionStringHelper.GetUrl(this.engine, instanceInfo.Host, instanceInfo.Port, this.username, this.password, this.defaultDbName);
@@ -198,15 +193,10 @@ public class BasicConnectivityTests : IntegrationTestBase
         await ProxyHelper.EnableConnectivityAsync(instanceInfo.InstanceId);
     }
 
-    [Theory]
+    [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg")]
-    [InlineData(0)]
-    [InlineData(1)]
-    [InlineData(2)]
-    [InlineData(3)]
-    [InlineData(4)]
-    public async Task PgWrapperProxiedConnectionTest(int _)
+    public async Task PgWrapperProxiedConnectionTest()
     {
         var instanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First();
         var connectionString = ConnectionStringHelper.GetUrl(this.engine, instanceInfo.Host, instanceInfo.Port, this.username, this.password, this.defaultDbName);

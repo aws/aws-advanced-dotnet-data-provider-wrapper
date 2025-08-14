@@ -78,9 +78,7 @@ public class DefaultConnectionPlugin(
                 props);
 
         // Update connection string that may have been modified by other plugins
-        Console.WriteLine($"connection string before update: {conn.ConnectionString}");
         conn.ConnectionString = this.pluginService.TargetConnectionDialect.PrepareConnectionString(this.pluginService.Dialect, hostSpec, props);
-        Console.WriteLine($"Opening connection with connection string: {conn.ConnectionString}");
         conn.Open();
 
         // Set availability and update dialect
