@@ -14,8 +14,6 @@
 
 using AwsWrapperDataProvider.Tests.Container.Utils;
 
-[assembly: CaptureConsole]
-
 namespace AwsWrapperDataProvider.Tests;
 
 public abstract class IntegrationTestBase : IAsyncLifetime

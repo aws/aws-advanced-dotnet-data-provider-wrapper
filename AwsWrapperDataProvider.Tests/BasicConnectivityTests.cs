@@ -162,7 +162,7 @@ public class BasicConnectivityTests : IntegrationTestBase
 
     [Theory]
     [Trait("Category", "Integration")]
-    [Trait("Database", "mysql")]
+    [Trait("Database", "mysql-proxy")]
     [InlineData(0)]
     [InlineData(1)]
     [InlineData(2)]
@@ -211,7 +211,7 @@ public class BasicConnectivityTests : IntegrationTestBase
 
     [Theory]
     [Trait("Category", "Integration")]
-    [Trait("Database", "pg")]
+    [Trait("Database", "pg-proxy")]
     [InlineData(0)]
     [InlineData(1)]
     [InlineData(2)]

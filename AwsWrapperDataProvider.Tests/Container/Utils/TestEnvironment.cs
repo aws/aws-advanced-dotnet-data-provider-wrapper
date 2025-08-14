@@ -15,6 +15,8 @@
 using System.Text.Json;
 using Toxiproxy.Net;
 
+[assembly: CaptureConsole]
+
 namespace AwsWrapperDataProvider.Tests.Container.Utils;
 
 public class TestEnvironment
@@ -33,7 +35,7 @@ public class TestEnvironment
 
     public static async Task CheckClusterHealthAsync(bool makeSureFirstInstanceWriter)
     {
-        var testInfo = TestEnvironment.Env.Info!;
+        var testInfo = Env.Info!;
         var testRequest = testInfo.Request!;
 
         AuroraTestUtils auroraUtil = AuroraTestUtils.GetUtility(testInfo);
@@ -147,6 +149,7 @@ public class TestEnvironment
 
     private static async Task InitProxies(TestEnvironment environment)
     {
+        Console.WriteLine("Initializing toxiproxies...");
         environment.proxies = [];
 
         int proxyControlPort = environment.Info!.ProxyDatabaseInfo!.ControlPort;
