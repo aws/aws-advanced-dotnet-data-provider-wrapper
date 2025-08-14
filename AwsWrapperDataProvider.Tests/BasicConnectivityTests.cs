@@ -187,7 +187,9 @@ public class BasicConnectivityTests : IntegrationTestBase
         await ProxyHelper.DisableConnectivityAsync(instanceInfo.InstanceId);
 
         using var connection2 = new AwsWrapperConnection<MySqlConnection>(connectionString);
+        Console.WriteLine($"Before open: {connection2.ConnectionString}");
         connection2.Open();
+        Console.WriteLine($"After open: {connection2.ConnectionString}");
         Console.WriteLine(connection2.State);
         //using (var c = connection.CreateCommand())
         //{
