@@ -14,36 +14,23 @@
 
 using System.Data;
 using System.Data.Common;
-using AwsWrapperDataProvider.Driver.Exceptions;
-using AwsWrapperDataProvider.Driver.HostInfo;
-using AwsWrapperDataProvider.Driver.HostListProviders;
-using AwsWrapperDataProvider.Driver.Utils;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
-public class MysqlDialect : IDialect
+public class RdsMySqlDialect : MySqlDialect
 {
-    public int DefaultPort { get; } = 3306;
-
-    public string HostAliasQuery { get; } = "SELECT CONCAT(@@hostname, ':', @@port)";
-
-    public string ServerVersionQuery { get; } = "SHOW VARIABLES LIKE 'version_comment'";
-
-    public IExceptionHandler ExceptionHandler { get; } = new MySqlExceptionHandler();
-
-    public virtual IList<Type> DialectUpdateCandidates { get; } =
+    public override IList<Type> DialectUpdateCandidates { get; } =
     [
-        typeof(AuroraMysqlDialect),
-        typeof(RdsMysqlDialect),
+        typeof(AuroraMySqlDialect),
     ];
 
-    public virtual HostListProviderSupplier HostListProviderSupplier { get; } = (
-        Dictionary<string, string> props,
-        IHostListProviderService hostListProviderService,
-        IPluginService pluginService) => new ConnectionStringHostListProvider(props, hostListProviderService);
-
-    public virtual bool IsDialect(IDbConnection conn)
+    public override bool IsDialect(IDbConnection conn)
     {
+        if (base.IsDialect(conn))
+        {
+            return false;
+        }
+
         try
         {
             using IDbCommand command = conn.CreateCommand();
@@ -55,7 +42,7 @@ public class MysqlDialect : IDialect
                 for (int i = 0; i < columnCount; i++)
                 {
                     string columnValue = reader.GetString(i);
-                    if (columnValue != null && columnValue.Contains("mysql", StringComparison.OrdinalIgnoreCase))
+                    if (string.Equals(columnValue, "Source distribution", StringComparison.OrdinalIgnoreCase))
                     {
                         return true;
                     }
@@ -68,10 +55,5 @@ public class MysqlDialect : IDialect
         }
 
         return false;
-    }
-
-    public virtual void PrepareConnectionProperties(Dictionary<string, string> props, HostSpec hostSpec)
-    {
-        // Do nothing.
     }
 }

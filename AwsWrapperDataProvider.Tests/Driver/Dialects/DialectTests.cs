@@ -39,7 +39,7 @@ public class DialectTests
     [Trait("Category", "Unit")]
     public void IsDialect_MySQL_Success()
     {
-        IDialect mysqlDialect = new MysqlDialect();
+        IDialect mysqlDialect = new MySqlDialect();
         this.mockReader.Setup(reader => reader.Read()).Returns(true);
         this.mockReader.Setup(reader => reader.FieldCount).Returns(1);
         this.mockReader.Setup(reader => reader.GetString(0)).Returns("MySQL Community Server (GPL)");
@@ -50,7 +50,7 @@ public class DialectTests
     [Trait("Category", "Unit")]
     public void IsDialect_MySQL_EmptyReader()
     {
-        IDialect mysqlDialect = new MysqlDialect();
+        IDialect mysqlDialect = new MySqlDialect();
         this.mockReader.Setup(reader => reader.Read()).Returns(false);
         Assert.False(mysqlDialect.IsDialect(this.mockConnection.Object));
     }
@@ -59,7 +59,7 @@ public class DialectTests
     [Trait("Category", "Unit")]
     public void IsDialect_MySQL_ExceptionThrown()
     {
-        IDialect mysqlDialect = new MysqlDialect();
+        IDialect mysqlDialect = new MySqlDialect();
         this.mockReader.Setup(reader => reader.Read()).Throws(new MockDbException());
         Assert.False(mysqlDialect.IsDialect(this.mockConnection.Object));
     }
@@ -68,7 +68,7 @@ public class DialectTests
     [Trait("Category", "Unit")]
     public void IsDialect_MySQL_InvalidVersionComment()
     {
-        IDialect mysqlDialect = new MysqlDialect();
+        IDialect mysqlDialect = new MySqlDialect();
         this.mockReader.SetupSequence(reader => reader.Read()).Returns(true).Returns(false);
         this.mockReader.Setup(reader => reader.FieldCount).Returns(1);
         this.mockReader.Setup(reader => reader.GetString(0)).Returns("Invalid");
@@ -79,7 +79,7 @@ public class DialectTests
     [Trait("Category", "Unit")]
     public void IsDialect_RdsMySQL_Success()
     {
-        IDialect rdsMysqlDialect = new RdsMysqlDialect();
+        IDialect rdsMysqlDialect = new RdsMySqlDialect();
         this.mockReader.SetupSequence(reader => reader.Read()).Returns(true).Returns(false).Returns(true).Returns(false);
         this.mockReader.Setup(reader => reader.FieldCount).Returns(1);
         this.mockReader.Setup(reader => reader.GetString(0)).Returns("Source distribution");
@@ -90,7 +90,7 @@ public class DialectTests
     [Trait("Category", "Unit")]
     public void IsDialect_RdsMySQL_EmptyReader()
     {
-        IDialect rdsMysqlDialect = new RdsMysqlDialect();
+        IDialect rdsMysqlDialect = new RdsMySqlDialect();
         this.mockReader.Setup(reader => reader.Read()).Returns(false);
         Assert.False(rdsMysqlDialect.IsDialect(this.mockConnection.Object));
         this.mockReader.Verify(reader => reader.Read(), Times.Exactly(2));
@@ -100,7 +100,7 @@ public class DialectTests
     [Trait("Category", "Unit")]
     public void IsDialect_RdsMySQL_ExceptionThrown()
     {
-        IDialect rdsMysqlDialect = new RdsMysqlDialect();
+        IDialect rdsMysqlDialect = new RdsMySqlDialect();
         this.mockReader.Setup(reader => reader.Read()).Throws(new MockDbException());
         Assert.False(rdsMysqlDialect.IsDialect(this.mockConnection.Object));
     }
@@ -109,7 +109,7 @@ public class DialectTests
     [Trait("Category", "Unit")]
     public void IsDialect_RdsMySQL_BaseReturnsTrue()
     {
-        IDialect rdsMysqlDialect = new RdsMysqlDialect();
+        IDialect rdsMysqlDialect = new RdsMySqlDialect();
         this.mockReader.SetupSequence(reader => reader.Read()).Returns(true).Returns(false);
         this.mockReader.Setup(reader => reader.FieldCount).Returns(1);
         this.mockReader.Setup(reader => reader.GetString(0)).Returns("MySQL Community Server (GPL)");
@@ -121,7 +121,7 @@ public class DialectTests
     [Trait("Category", "Unit")]
     public void IsDialect_RdsMySQL_InvalidVersionComment()
     {
-        IDialect rdsMysqlDialect = new RdsMysqlDialect();
+        IDialect rdsMysqlDialect = new RdsMySqlDialect();
         this.mockReader.SetupSequence(reader => reader.Read()).Returns(true).Returns(false).Returns(true).Returns(false);
         this.mockReader.Setup(reader => reader.FieldCount).Returns(1);
         this.mockReader.Setup(reader => reader.GetString(0)).Returns("Invalid");

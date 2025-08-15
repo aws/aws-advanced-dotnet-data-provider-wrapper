@@ -20,7 +20,7 @@ using AwsWrapperDataProvider.Driver.Utils;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
-public class AuroraMysqlDialect : MysqlDialect
+public class AuroraMySqlDialect : MySqlDialect
 {
     private static readonly string TopologyQuery = "SELECT SERVER_ID, CASE WHEN SESSION_ID = 'MASTER_SESSION_ID' THEN TRUE ELSE FALSE END, "
           + "CPU, REPLICA_LAG_IN_MILLISECONDS, LAST_UPDATE_TIMESTAMP "
