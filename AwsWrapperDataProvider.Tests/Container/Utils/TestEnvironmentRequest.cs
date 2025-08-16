@@ -21,7 +21,7 @@ public class TestEnvironmentRequest
     [JsonIgnore]
     public int EnvPreCreateIndex { get; set; }
 
-    [JsonPropertyName("Engine")]
+    [JsonPropertyName("engine")]
     public DatabaseEngine Engine { get; set; }
 
     [JsonPropertyName("instances")]

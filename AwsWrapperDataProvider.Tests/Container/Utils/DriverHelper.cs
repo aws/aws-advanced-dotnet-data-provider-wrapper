@@ -26,7 +26,7 @@ public class DriverHelper
         {
             DatabaseEngine.MYSQL => new MySqlConnection(connectionString),
             DatabaseEngine.PG => new NpgsqlConnection(connectionString),
-            _ => throw new NotSupportedException($"Unsupported database Engine: {engine}"),
+            _ => throw new NotSupportedException($"Unsupported database engine: {engine}"),
         };
         return connection;
     }

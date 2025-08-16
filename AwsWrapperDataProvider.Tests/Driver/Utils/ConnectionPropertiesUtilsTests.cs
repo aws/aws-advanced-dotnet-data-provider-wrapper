@@ -21,7 +21,7 @@ public class ConnectionPropertiesUtilsTests
 {
     [Theory]
     [Trait("Category", "Unit")]
-    [InlineData("host=myhost.example.com;Port=5432;database=mydb;Username=myuser;Password=mypassword", 5)]
+    [InlineData("host=myhost.example.com;port=5432;database=mydb;username=myuser;password=mypassword", 5)]
     [InlineData("Host=myhost.example.com;Port=5432", 2)]
     [InlineData("Host=myhost.example.com", 1)]
     public void ParseConnectionStringParameters_WithValidConnectionString_ReturnsDictionary(string connectionString, int expectedCount)
@@ -253,7 +253,7 @@ public class ConnectionPropertiesUtilsTests
         var props = new Dictionary<string, string>
         {
             { "Host", "mydb.123456789012.us-east-1.rds.amazonaws.com:3307" },
-            { "Port", "3306" }, // This should be overridden by the Port in the host string
+            { "Port", "3306" }, // This should be overridden by the port in the host string
         };
 
         var expectedHost = new HostSpec(

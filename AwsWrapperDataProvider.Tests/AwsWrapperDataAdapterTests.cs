@@ -32,7 +32,7 @@ public class AwsWrapperDataAdapterTests
 
     public AwsWrapperDataAdapterTests()
     {
-        AwsWrapperConnection<NpgsqlConnection> connection = new("Server=192.0.0.1;Database=test;User Id=user;Password=Password;");
+        AwsWrapperConnection<NpgsqlConnection> connection = new("Server=192.0.0.1;Database=test;User Id=user;Password=password;");
 
         this.mockTargetDataAdapter = new Mock<DbDataAdapter>();
         this.mockPluginManager = new Mock<ConnectionPluginManager>(

@@ -34,7 +34,7 @@ public class AwsWrapperTransactionTests
 
     public AwsWrapperTransactionTests()
     {
-        AwsWrapperConnection<NpgsqlConnection> connection = new("Server=192.0.0.1;Database=test;User Id=user;Password=Password;");
+        AwsWrapperConnection<NpgsqlConnection> connection = new("Server=192.0.0.1;Database=test;User Id=user;Password=password;");
 
         this.mockTargetTransaction = new Mock<DbTransaction>();
         this.mockPluginManager = new Mock<ConnectionPluginManager>(
