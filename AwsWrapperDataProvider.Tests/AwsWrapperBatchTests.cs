@@ -31,7 +31,7 @@ public class AwsWrapperBatchTests
 
     public AwsWrapperBatchTests()
     {
-        AwsWrapperConnection<NpgsqlConnection> connection = new("Server=192.0.0.1;Database=test;User Id=user;Password=password;");
+        AwsWrapperConnection<NpgsqlConnection> connection = new("Server=192.0.0.1;Database=test;User Id=user;Password=Password;");
 
         this.mockTargetBatch = new Mock<DbBatch>();
         this.mockPluginManager = new Mock<ConnectionPluginManager>(

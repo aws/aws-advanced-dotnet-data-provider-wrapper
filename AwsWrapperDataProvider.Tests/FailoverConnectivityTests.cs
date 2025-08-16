@@ -13,12 +13,61 @@
 // limitations under the License.
 
 using System.Data;
+using System.Reflection;
+using System.Threading.Tasks;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
+using AwsWrapperDataProvider.Tests.Container.Utils;
+using AwsWrapperDataProvider.Tests.Driver;
+using MySqlConnector;
 using Npgsql;
 
 namespace AwsWrapperDataProvider.Tests;
 
-public class FailoverConnectivityTests
+public class FailoverConnectivityTests : IntegrationTestBase
+{
+    protected override bool MakeSureFirstInstanceWriter => true;
+
+    private readonly string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
+
+    public FailoverConnectivityTests()
+    {
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    [Trait("Database", "mysql")]
+    public async Task WriterFailover_FailOnConnectionInvocation()
+    {
+        Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to number of instances less than 2.");
+
+        var initialWriterInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.GetInstance(this.currentWriter);
+
+        var connectionString = ConnectionStringHelper.GetUrl(
+            Engine,
+            initialWriterInstanceInfo.Host,
+            initialWriterInstanceInfo.Port,
+            Username,
+            Password,
+            TestEnvironment.Env.Info.ProxyDatabaseInfo!.DefaultDbName,
+            2,
+            10,
+            "failover");
+        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}";
+
+        using AwsWrapperConnection<MySqlConnection> connection = new(connectionString);
+        connection.Open();
+        Assert.Equal(ConnectionState.Open, connection.State);
+
+        await AuroraUtils.CrashInstance(this.currentWriter);
+
+        Assert.Throws<FailoverSuccessException>(() =>
+        {
+            AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
+        });
+    }
+}
+
+public class ManualFailoverConnectivityTests
 {
     [Fact]
     [Trait("Category", "Integration")]
@@ -26,8 +75,8 @@ public class FailoverConnectivityTests
     public void FailoverPluginTest_WithStrictWriterMode()
     {
         const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
-        const string username = "username"; // Replace with your username
-        const string password = "password"; // Replace with your password
+        const string username = "Username"; // Replace with your Username
+        const string password = "Password"; // Replace with your Password
         const string database = "database"; // Replace with your database name
 
         var connectionString = $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
@@ -41,8 +90,8 @@ public class FailoverConnectivityTests
     public void FailoverPluginTest_WithStrictReaderMode()
     {
         const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
-        const string username = "username"; // Replace with your username
-        const string password = "password"; // Replace with your password
+        const string username = "Username"; // Replace with your Username
+        const string password = "Password"; // Replace with your Password
         const string database = "database"; // Replace with your database name
 
         var connectionString =
@@ -57,8 +106,8 @@ public class FailoverConnectivityTests
     public void FailoverPluginTest_ReadOnlyNode_WithStrictReaderMode()
     {
         const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
-        const string username = "username"; // Replace with your username
-        const string password = "password"; // Replace with your password
+        const string username = "Username"; // Replace with your Username
+        const string password = "Password"; // Replace with your Password
         const string database = "database"; // Replace with your database name
 
         var connectionString =
@@ -73,8 +122,8 @@ public class FailoverConnectivityTests
     public void FailoverPluginTest_WithReaderOrWriterMode()
     {
         const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
-        const string username = "username"; // Replace with your username
-        const string password = "password"; // Replace with your password
+        const string username = "Username"; // Replace with your Username
+        const string password = "Password"; // Replace with your Password
         const string database = "database"; // Replace with your database name
 
         var connectionString =
@@ -89,8 +138,8 @@ public class FailoverConnectivityTests
     public void FailoverPluginTest_WithStrictWriterMode_WithRoundRobinHostSelectorStrategy()
     {
         const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
-        const string username = "username"; // Replace with your username
-        const string password = "password"; // Replace with your password
+        const string username = "Username"; // Replace with your Username
+        const string password = "Password"; // Replace with your Password
         const string database = "database"; // Replace with your database name
 
         var connectionString =
@@ -106,8 +155,8 @@ public class FailoverConnectivityTests
     public void FailoverPluginTest_WithStrictWriterMode_WithHighestWeightHostSelectorStrategy()
     {
         const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
-        const string username = "username"; // Replace with your username
-        const string password = "password"; // Replace with your password
+        const string username = "Username"; // Replace with your Username
+        const string password = "Password"; // Replace with your Password
         const string database = "database"; // Replace with your database name
 
         var connectionString =
@@ -123,8 +172,8 @@ public class FailoverConnectivityTests
     public void FailoverPluginTest_WithAuroraInitialConnectionStrategyPlugin()
     {
         const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
-        const string username = "username"; // Replace with your username
-        const string password = "password"; // Replace with your password
+        const string username = "Username"; // Replace with your Username
+        const string password = "Password"; // Replace with your Password
         const string database = "database"; // Replace with your database name
 
         var connectionString =
@@ -139,7 +188,7 @@ public class FailoverConnectivityTests
     public void FailoverPluginTest_WithIamAuth()
     {
         const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
-        const string username = "username"; // Replace with your username
+        const string username = "Username"; // Replace with your Username
         const string database = "database"; // Replace with your database name
 
         var connectionString =

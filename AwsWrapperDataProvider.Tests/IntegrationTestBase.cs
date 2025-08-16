@@ -21,12 +21,19 @@ namespace AwsWrapperDataProvider.Tests;
 
 public abstract class IntegrationTestBase : IAsyncLifetime
 {
-    protected readonly string defaultDbName = TestEnvironment.Env.Info.DatabaseInfo.DefaultDbName;
-    protected readonly string username = TestEnvironment.Env.Info.DatabaseInfo.Username;
-    protected readonly string password = TestEnvironment.Env.Info.DatabaseInfo.Password;
-    protected readonly DatabaseEngine engine = TestEnvironment.Env.Info.Request.Engine;
-    protected readonly string clusterEndpoint = TestEnvironment.Env.Info.DatabaseInfo.ClusterEndpoint;
-    protected readonly int port = TestEnvironment.Env.Info.DatabaseInfo.ClusterEndpointPort;
+    protected static readonly AuroraTestUtils AuroraUtils = AuroraTestUtils.GetUtility();
+
+    protected static readonly string DefaultDbName = TestEnvironment.Env.Info.DatabaseInfo.DefaultDbName;
+    protected static readonly string Username = TestEnvironment.Env.Info.DatabaseInfo.Username;
+    protected static readonly string Password = TestEnvironment.Env.Info.DatabaseInfo.Password;
+    protected static readonly DatabaseEngine Engine = TestEnvironment.Env.Info.Request.Engine;
+    protected static readonly DatabaseEngineDeployment Deployment = TestEnvironment.Env.Info.Request.Deployment;
+    protected static readonly string ClusterEndpoint = TestEnvironment.Env.Info.DatabaseInfo.ClusterEndpoint;
+    protected static readonly int Port = TestEnvironment.Env.Info.DatabaseInfo.ClusterEndpointPort;
+    protected static readonly int NumberOfInstances = TestEnvironment.Env.Info.DatabaseInfo.Instances.Count;
+    protected static readonly TestProxyDatabaseInfo ProxyDatabaseInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!;
+
+    protected virtual bool MakeSureFirstInstanceWriter => false;
 
     public async ValueTask InitializeAsync()
     {
@@ -45,7 +52,7 @@ public abstract class IntegrationTestBase : IAsyncLifetime
             {
                 try
                 {
-                    await TestEnvironment.CheckClusterHealthAsync(false);
+                    await TestEnvironment.CheckClusterHealthAsync(this.MakeSureFirstInstanceWriter);
                     success = true;
                 }
                 catch (Exception)

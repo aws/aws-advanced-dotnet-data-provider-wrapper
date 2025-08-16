@@ -19,8 +19,9 @@ namespace AwsWrapperDataProvider.Tests.Container.Utils;
 
 public class ConnectionStringHelper
 {
-    public static string GetUrl(DatabaseEngine engine, string host, int? port, string? username, string? password, string? dbName)
+    public static string GetUrl(DatabaseEngine engine, string host, int? port, string? username, string? password, string? dbName, int commandTimeout = 30, int connectionTimeout = 30, string? plugins = null)
     {
+        string url;
         switch (engine)
         {
             case DatabaseEngine.MYSQL:
@@ -46,10 +47,11 @@ public class ConnectionStringHelper
                     mySqlConnectionStringBuilder.Database = dbName;
                 }
 
-                mySqlConnectionStringBuilder.DefaultCommandTimeout = 30;
-                mySqlConnectionStringBuilder.ConnectionTimeout = 30;
+                mySqlConnectionStringBuilder.DefaultCommandTimeout = (uint)commandTimeout;
+                mySqlConnectionStringBuilder.ConnectionTimeout = (uint)connectionTimeout;
 
-                return mySqlConnectionStringBuilder.ConnectionString;
+                url = mySqlConnectionStringBuilder.ConnectionString;
+                break;
             case DatabaseEngine.PG:
                 NpgsqlConnectionStringBuilder npgsqlConnectionStringBuilder = new();
                 npgsqlConnectionStringBuilder.Host = host;
@@ -73,12 +75,20 @@ public class ConnectionStringHelper
                     npgsqlConnectionStringBuilder.Database = dbName;
                 }
 
-                npgsqlConnectionStringBuilder.Timeout = 30;
-                npgsqlConnectionStringBuilder.CommandTimeout = 30;
+                npgsqlConnectionStringBuilder.Timeout = connectionTimeout;
+                npgsqlConnectionStringBuilder.CommandTimeout = commandTimeout;
 
-                return npgsqlConnectionStringBuilder.ConnectionString;
+                url = npgsqlConnectionStringBuilder.ConnectionString;
+                break;
             default:
-                throw new NotSupportedException($"Unsupported database engine: {engine}");
+                throw new NotSupportedException($"Unsupported database Engine: {engine}");
         }
+
+        if (plugins != null)
+        {
+            url += $"; Plugins={plugins}";
+        }
+
+        return url;
     }
 }

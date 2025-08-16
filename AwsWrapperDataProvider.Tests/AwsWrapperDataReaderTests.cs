@@ -31,7 +31,7 @@ public class AwsWrapperDataReaderTests
 
     public AwsWrapperDataReaderTests()
     {
-        AwsWrapperConnection<NpgsqlConnection> connection = new("Server=192.0.0.1;Database=test;User Id=user;Password=password;");
+        AwsWrapperConnection<NpgsqlConnection> connection = new("Server=192.0.0.1;Database=test;User Id=user;Password=Password;");
 
         this.mockTargetReader = new Mock<DbDataReader>();
         this.mockPluginManager = new Mock<ConnectionPluginManager>(

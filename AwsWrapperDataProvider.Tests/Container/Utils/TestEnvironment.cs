@@ -36,7 +36,7 @@ public class TestEnvironment
         var testInfo = Env.Info!;
         var testRequest = testInfo.Request!;
 
-        AuroraTestUtils auroraUtil = AuroraTestUtils.GetUtility(testInfo);
+        var auroraUtil = AuroraTestUtils.GetUtility(testInfo);
         await auroraUtil.WaitUntilClusterHasRightStateAsync(testInfo.RdsDbName!);
 
         await auroraUtil.MakeSureInstancesUpAsync(TimeSpan.FromMinutes(3));

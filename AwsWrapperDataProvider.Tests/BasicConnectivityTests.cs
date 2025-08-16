@@ -27,7 +27,7 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Trait("Database", "mysql")]
     public void MySqlClientWrapperConnectionTest()
     {
-        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, this.username, this.password, this.defaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName);
         const string query = "select 1";
 
         using AwsWrapperConnection<MySql.Data.MySqlClient.MySqlConnection> connection = new(connectionString);
@@ -47,7 +47,7 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Trait("Database", "mysql")]
     public void MySqlConnectorWrapperConnectionTest()
     {
-        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, this.username, this.password, this.defaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName);
         const string query = "select 1";
 
         using AwsWrapperConnection<MySqlConnection> connection = new(connectionString);
@@ -67,7 +67,7 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Trait("Database", "mysql")]
     public void MysqlWrapperConnectionDynamicTest()
     {
-        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, this.username, this.password, this.defaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName);
         connectionString +=
             ";TargetConnectionType=MySqlConnector.MySqlConnection,MySqlConnector;" +
             "TargetCommandType=MySqlConnector.MySqlCommand,MySqlConnector";
@@ -92,7 +92,7 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Trait("Database", "mysql")]
     public void MysqlWrapperConnectionWithParametersTest()
     {
-        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, this.username, this.password, this.defaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName);
         const string query = "select @var1";
 
         using AwsWrapperConnection<MySqlConnection> connection = new(connectionString);
@@ -119,7 +119,7 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Trait("Database", "pg")]
     public void PgWrapperConnectionTest()
     {
-        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, this.username, this.password, this.defaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName);
         const string query = "select 1";
 
         using AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
@@ -140,7 +140,7 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Trait("Database", "pg")]
     public void PgWrapperConnectionDynamicTest()
     {
-        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, this.username, this.password, this.defaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName);
         connectionString +=
             ";TargetConnectionType=Npgsql.NpgsqlConnection,Npgsql;" +
             "TargetCommandType=Npgsql.NpgsqlCommand,Npgsql";
@@ -165,9 +165,8 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Trait("Database", "mysql")]
     public async Task MySqlConnectorWrapperProxiedConnectionTest()
     {
-        var instanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First();
-        var connectionString = ConnectionStringHelper.GetUrl(this.engine, instanceInfo.Host, instanceInfo.Port, this.username, this.password, this.defaultDbName);
-        connectionString += "; Plugins=";
+        var instanceInfo = ProxyDatabaseInfo.Instances.First();
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, instanceInfo.Host, instanceInfo.Port, Username, Password, DefaultDbName, plugins: string.Empty);
         const string query = "SELECT @@aurora_server_id";
 
         using AwsWrapperConnection<MySqlConnection> connection = new(connectionString);
@@ -198,9 +197,8 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Trait("Database", "pg")]
     public async Task PgWrapperProxiedConnectionTest()
     {
-        var instanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First();
-        var connectionString = ConnectionStringHelper.GetUrl(this.engine, instanceInfo.Host, instanceInfo.Port, this.username, this.password, this.defaultDbName);
-        connectionString += "; Plugins=";
+        var instanceInfo = ProxyDatabaseInfo!.Instances.First();
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, instanceInfo.Host, instanceInfo.Port, Username, Password, DefaultDbName, plugins: string.Empty);
         const string query = "select aurora_db_instance_identifier()";
 
         using AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
