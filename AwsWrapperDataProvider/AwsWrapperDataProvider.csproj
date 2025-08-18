@@ -8,7 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="AWSSDK.RDS" Version="4.0.4" />
-    <PackageReference Include="AWSSDK.SecretsManager" Version="4.0.0.11" />
+    <PackageReference Include="AWSSDK.SecretsManager" Version="4.0.0.19" />
     <PackageReference Include="AWSSDK.SecurityToken" Version="4.0.0.6" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.6" />
