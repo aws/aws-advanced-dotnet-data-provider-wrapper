@@ -134,7 +134,7 @@ public class HostMonitor : IHostMonitor
             {
                 DateTime currentTime = DateTime.Now;
 
-                List<DateTime> processedKeys = [];
+                List<DateTime> processedStartTimes = [];
 
                 foreach (DateTime startTime in this.newContexts.Keys)
                 {
@@ -142,7 +142,7 @@ public class HostMonitor : IHostMonitor
                     {
                         if (this.newContexts.TryGetValue(startTime, out ConcurrentQueue<WeakReference<HostMonitorConnectionContext>>? queue) && queue != null)
                         {
-                            processedKeys.Add(startTime);
+                            processedStartTimes.Add(startTime);
 
                             while (queue.TryDequeue(out WeakReference<HostMonitorConnectionContext>? contextRef))
                             {
@@ -158,9 +158,9 @@ public class HostMonitor : IHostMonitor
                     }
                 }
 
-                foreach (DateTime key in processedKeys)
+                foreach (DateTime startTime in processedStartTimes)
                 {
-                    this.newContexts.Remove(key);
+                    this.newContexts.Remove(startTime);
                 }
 
                 // sleep for one second before polling new contexts

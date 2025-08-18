@@ -21,22 +21,12 @@ using Npgsql;
 
 namespace AwsWrapperDataProvider.Tests;
 
-public class EfmConnectivityTests : IntegrationTestBase
+public class EfmConnectivityTests
 {
     private static readonly int TestCommandTimeoutSecs = 500;
     private static readonly int TestFailureDetectionTime = 1000;
     private static readonly int TestFailureDetectionInterval = 5000;
     private static readonly int TestFailureDetectionCount = 1;
-
-    [Fact]
-    [Trait("Category", "Integration")]
-    [Trait("Database", "pg")]
-    public async Task EfmPluginTest_WithBasicAuth()
-    {
-        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, this.username, this.password, this.defaultDbName);
-        connectionString += "Plugins=efm;";
-        await PerformEfmTest(connectionString, this.clusterEndpoint);
-    }
 
     [Fact]
     [Trait("Category", "Integration")]
@@ -51,7 +41,7 @@ public class EfmConnectivityTests : IntegrationTestBase
         await PerformEfmTest(connectionString, clusterEndpoint);
     }
 
-    private static async Task PerformEfmTest(string connectionString, string initialHost)
+    internal static async Task PerformEfmTest(string connectionString, string initialHost)
     {
         connectionString += $"FailureDetectionTime={TestFailureDetectionTime};FailureDetectionInterval={TestFailureDetectionInterval};FailureDetectionCount={TestFailureDetectionCount};";
 
