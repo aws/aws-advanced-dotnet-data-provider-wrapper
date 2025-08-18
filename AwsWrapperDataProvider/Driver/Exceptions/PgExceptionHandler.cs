@@ -14,15 +14,17 @@
 
 using System.Data.Common;
 using System.Net.Sockets;
-using System.Runtime.InteropServices.Marshalling;
-using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
-using Npgsql;
+using System.Text;
+using AwsWrapperDataProvider.Driver.Utils;
+using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Exceptions;
 
 public class PgExceptionHandler : GenericExceptionHandler
 {
-    private readonly HashSet<string> _networkErrorStates = new HashSet<string>
+    private static readonly ILogger<PgExceptionHandler> Logger = LoggerUtils.GetLogger<PgExceptionHandler>();
+
+    private readonly HashSet<string> networkErrorStates = new()
     {
         "53", // insufficient resources
         "57P01", // admin shutdown
@@ -35,15 +37,15 @@ public class PgExceptionHandler : GenericExceptionHandler
         "XX", // internal error (backend)
     };
 
-    private readonly HashSet<string> _loginErrorStates = new HashSet<string>
+    private readonly HashSet<string> loginErrorStates = new()
     {
         "28000", // Invalid authorization specification
         "28P01", // Wrong password
     };
 
-    protected override HashSet<string> NetworkErrorStates => this._networkErrorStates;
+    protected override HashSet<string> NetworkErrorStates => this.networkErrorStates;
 
-    protected override HashSet<string> LoginErrorStates => this._loginErrorStates;
+    protected override HashSet<string> LoginErrorStates => this.loginErrorStates;
 
     public override bool IsNetworkException(Exception exception)
     {
@@ -53,15 +55,27 @@ public class PgExceptionHandler : GenericExceptionHandler
         {
             if (currException is SocketException or TimeoutException or System.IO.EndOfStreamException)
             {
+                Logger.LogDebug("Current exception is a network exception");
                 return true;
             }
 
             if (currException is DbException dbException)
             {
-                string sqlState = dbException.SqlState ??
-                                  string.Empty;
+                string sqlState = dbException.SqlState ?? string.Empty;
+
+                var log = new StringBuilder();
+                log.AppendLine("=== DbException Details ===");
+                log.AppendLine($"Type: {dbException.GetType().FullName}");
+                log.AppendLine($"Message: {dbException.Message}");
+                log.AppendLine($"Sql State: {dbException.SqlState}");
+                log.AppendLine($"Error Code: {dbException.ErrorCode}");
+                log.AppendLine($"Source: {dbException.Source}");
+                log.AppendLine($"Stack Trace: {dbException.StackTrace}");
+                Logger.LogDebug(log.ToString());
+
                 if (this.NetworkErrorStates.Contains(sqlState))
                 {
+                    Logger.LogDebug("Current exception is a network exception");
                     return true;
                 }
             }
@@ -69,6 +83,7 @@ public class PgExceptionHandler : GenericExceptionHandler
             currException = currException.InnerException;
         }
 
+        Logger.LogDebug("Current exception is not a network exception");
         return false;
     }
 }

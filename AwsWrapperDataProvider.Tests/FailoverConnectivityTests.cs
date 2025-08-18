@@ -13,11 +13,8 @@
 // limitations under the License.
 
 using System.Data;
-using System.Reflection;
-using System.Threading.Tasks;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
 using AwsWrapperDataProvider.Tests.Container.Utils;
-using AwsWrapperDataProvider.Tests.Driver;
 using MySqlConnector;
 using Npgsql;
 
@@ -36,6 +33,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
+    [Trait("Database", "pg")]
     public async Task WriterFailover_FailOnConnectionInvocation()
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to number of instances less than 2.");
@@ -54,7 +52,12 @@ public class FailoverConnectivityTests : IntegrationTestBase
             "failover");
         connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}";
 
-        using AwsWrapperConnection<MySqlConnection> connection = new(connectionString);
+        using AwsWrapperConnection connection = Engine switch
+        {
+            DatabaseEngine.MYSQL => new AwsWrapperConnection<MySqlConnection>(connectionString),
+            DatabaseEngine.PG => new AwsWrapperConnection<NpgsqlConnection>(connectionString),
+            _ => throw new NotSupportedException($"Unsupported engine: {Engine}"),
+        };
         connection.Open();
         Assert.Equal(ConnectionState.Open, connection.State);
 

@@ -484,11 +484,13 @@ public class FailoverPlugin : AbstractConnectionPlugin
     {
         if (!this.IsFailoverEnabled())
         {
+            Logger.LogTrace("Cluster-aware failover is disabled.");
             return false;
         }
 
         if (this.skipFailoverOnInterruptedThread && Thread.CurrentThread.ThreadState == ThreadState.AbortRequested)
         {
+            Logger.LogTrace("Do not start failover since the current thread is interrupted.");
             return false;
         }
 

@@ -81,7 +81,7 @@ public class ConnectionStringHelper
                 url = npgsqlConnectionStringBuilder.ConnectionString;
                 break;
             default:
-                throw new NotSupportedException($"Unsupported database Engine: {engine}");
+                throw new NotSupportedException($"Unsupported database engine: {engine}");
         }
 
         if (plugins != null)

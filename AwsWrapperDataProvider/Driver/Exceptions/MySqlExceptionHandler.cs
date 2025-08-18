@@ -13,30 +13,34 @@
 // limitations under the License.
 
 using System.Data.Common;
-using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
+using System.Text;
+using AwsWrapperDataProvider.Driver.Utils;
+using Microsoft.Extensions.Logging;
 using MySql.Data.MySqlClient;
 
 namespace AwsWrapperDataProvider.Driver.Exceptions;
 
 public class MySqlExceptionHandler : GenericExceptionHandler
 {
+    private static readonly ILogger<MySqlExceptionHandler> Logger = LoggerUtils.GetLogger<MySqlExceptionHandler>();
+
     // TODO: Check if we need to handle HikariMariaDb exception codes as well.
-    private readonly HashSet<string> _networkErrorStates = new HashSet<string>
-    {
+    private readonly HashSet<string> networkErrorStates =
+    [
         "08000", // Connection Exception
         "08001", // SQL client unable to establish SQL connection
         "08004", // SQL server rejected SQL connection
         "08S01", // Communication link failure
-    };
+    ];
 
-    private readonly HashSet<string> _loginErrorStates = new HashSet<string>
-    {
+    private readonly HashSet<string> loginErrorStates =
+    [
         "28000", // Invalid authorization specification
-    };
+    ];
 
-    protected override HashSet<string> NetworkErrorStates => this._networkErrorStates;
+    protected override HashSet<string> NetworkErrorStates => this.networkErrorStates;
 
-    protected override HashSet<string> LoginErrorStates => this._loginErrorStates;
+    protected override HashSet<string> LoginErrorStates => this.loginErrorStates;
 
     public override bool IsLoginException(Exception exception)
     {
@@ -74,6 +78,7 @@ public class MySqlExceptionHandler : GenericExceptionHandler
 
         while (currException is not null)
         {
+            Logger.LogDebug("Current exception message: {ExceptionMessage}", exception.Message);
             if (currException is DbException dbException)
             {
                 return this.IsNetworkException(dbException);
@@ -93,15 +98,27 @@ public class MySqlExceptionHandler : GenericExceptionHandler
         {
             if (currException is ArgumentException or TimeoutException)
             {
+                Logger.LogDebug("Current exception is a network exception");
                 return true;
             }
 
             if (currException is DbException dbException)
             {
-                string sqlState = dbException.SqlState ??
-                                  string.Empty;
+                string sqlState = dbException.SqlState ?? string.Empty;
+
+                var log = new StringBuilder();
+                log.AppendLine("=== DbException Details ===");
+                log.AppendLine($"Type: {dbException.GetType().FullName}");
+                log.AppendLine($"Message: {dbException.Message}");
+                log.AppendLine($"Sql State: {dbException.SqlState}");
+                log.AppendLine($"Error Code: {dbException.ErrorCode}");
+                log.AppendLine($"Source: {dbException.Source}");
+                log.AppendLine($"Stack Trace: {dbException.StackTrace}");
+                Logger.LogDebug(log.ToString());
+
                 if (this.NetworkErrorStates.Contains(sqlState))
                 {
+                    Logger.LogDebug("Current exception is a network exception");
                     return true;
                 }
             }
@@ -109,6 +126,7 @@ public class MySqlExceptionHandler : GenericExceptionHandler
             currException = currException.InnerException;
         }
 
+        Logger.LogDebug("Current exception is not a network exception");
         return false;
     }
 }
