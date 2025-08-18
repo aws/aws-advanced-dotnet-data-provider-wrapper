@@ -192,6 +192,11 @@ public static class PropertyDefinition
         "3",
         "Number of failed connection checks before considering database node unhealthy.");
 
+    public static readonly AwsWrapperProperty AppId = new(
+        "AppId",
+        null,
+        "The ID of the AWS application configured on Okta");
+
     /// <summary>
     /// A set of AwsWrapperProperties that is used by the wrapper and should not be passed to the target driver.
     /// </summary>
@@ -226,6 +231,7 @@ public static class PropertyDefinition
         OpenConnectionRetryTimeoutMs,
         OpenConnectionRetryIntervalMs,
         VerifyOpenedConnectionType,
+        AppId,
 
         // Failover Plugin Properties
         FailoverTimeoutMs,

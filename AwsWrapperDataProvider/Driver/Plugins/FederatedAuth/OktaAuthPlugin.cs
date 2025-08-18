@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using System.Data.Common;
-using System.Text.RegularExpressions;
 using Amazon;
 using Amazon.Runtime;
 using AwsWrapperDataProvider.Driver.HostInfo;
@@ -23,11 +22,9 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.FederatedAuth;
 
-public partial class FederatedAuthPlugin(IPluginService pluginService, Dictionary<string, string> props, CredentialsProviderFactory credentialsFactory) : AbstractConnectionPlugin
+public partial class OktaAuthPlugin(IPluginService pluginService, Dictionary<string, string> props, CredentialsProviderFactory credentialsFactory) : AbstractConnectionPlugin
 {
     public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string> { "DbConnection.Open", "DbConnection.OpenAsync", "DbConnection.ForceOpen" };
-
-    public static readonly int DefaultHttpTimeoutMs = 60000;
 
     private static readonly MemoryCache IamTokenCache = new(new MemoryCacheOptions());
 
@@ -36,11 +33,6 @@ public partial class FederatedAuthPlugin(IPluginService pluginService, Dictionar
     private readonly Dictionary<string, string> props = props;
 
     private readonly CredentialsProviderFactory credentialsFactory = credentialsFactory;
-
-    public static readonly string SamlResponsePatternGroup = "saml";
-
-    [GeneratedRegex("SAMLResponse\\W+value=\"(?<saml>[^\"]+)\"", RegexOptions.IgnoreCase, "en-CA")]
-    public static partial Regex SamlResponsePattern();
 
     public override DbConnection OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
     {

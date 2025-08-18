@@ -14,14 +14,14 @@
 
 namespace AwsWrapperDataProvider.Driver.Plugins.FederatedAuth;
 
-public class FederatedAuthPluginFactory : IConnectionPluginFactory
+public class OktaAuthPluginFactory : IConnectionPluginFactory
 {
     public IConnectionPlugin GetInstance(IPluginService pluginService, Dictionary<string, string> props)
     {
-        CredentialsProviderFactory? credentialsProviderFactory = new AdfsCredentialsProviderFactory(pluginService);
+        CredentialsProviderFactory? credentialsProviderFactory = new OktaCredentialsProviderFactory(pluginService);
 
         return credentialsProviderFactory == null
             ? throw new Exception("Could not create credentials provider factory for federated authentication")
-            : (IConnectionPlugin)new FederatedAuthPlugin(pluginService, props, credentialsProviderFactory);
+            : (IConnectionPlugin)new OktaAuthPlugin(pluginService, props, credentialsProviderFactory);
     }
 }
