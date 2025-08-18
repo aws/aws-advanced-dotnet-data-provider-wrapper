@@ -504,19 +504,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
     private bool IsFailoverEnabled()
     {
-        // Check if this is an Aurora cluster URL type
-        bool isAuroraCluster = this.rdsUrlType == RdsUrlType.RdsWriterCluster ||
-                               this.rdsUrlType == RdsUrlType.RdsReaderCluster ||
-                               this.rdsUrlType == RdsUrlType.RdsCustomCluster;
-
-        if (!isAuroraCluster)
-        {
-            return false;
-        }
-
-        // For Aurora clusters, allow failover even if host list is not yet populated
-        // This can happen during initial connection or if host discovery is still in progress
-        return true;
+        return this.rdsUrlType != RdsUrlType.RdsProxy && this.pluginService.AllHosts.Count > 0;
     }
 
     private FailoverMode GetFailoverMode()
