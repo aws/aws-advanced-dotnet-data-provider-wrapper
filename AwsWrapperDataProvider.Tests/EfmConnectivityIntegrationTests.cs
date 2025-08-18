@@ -24,7 +24,7 @@ public class EfmConnectivityIntegrationTests : IntegrationTestBase
     public async Task EfmPluginTest_WithBasicAuth()
     {
         var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, this.username, this.password, this.defaultDbName);
-        connectionString += "Plugins=efm;";
+        connectionString += "; Plugins=efm;";
         await EfmConnectivityTests.PerformEfmTest(connectionString, this.clusterEndpoint);
     }
 }

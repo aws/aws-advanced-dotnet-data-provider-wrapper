@@ -99,7 +99,7 @@ public class EfmConnectivityTests
                 }
                 else if (timeWaited > 0 && !disabledConnectivity)
                 {
-                    ProxyHelper.DisableAllConnectivity();
+                    await ProxyHelper.DisableAllConnectivityAsync();
                     disabledConnectivity = true;
                 }
             }
@@ -129,7 +129,7 @@ public class EfmConnectivityTests
             Assert.True(monitorCaughtFailure);
 
             // done with the test; restore proxy connectivity
-            ProxyHelper.EnableAllConnectivity();
+            await ProxyHelper.EnableAllConnectivityAsync();
         }
         catch (Exception ex)
         {
