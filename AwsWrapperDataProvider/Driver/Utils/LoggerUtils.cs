@@ -18,17 +18,15 @@ namespace AwsWrapperDataProvider.Driver.Utils;
 
 public static class LoggerUtils
 {
-    private static readonly ILoggerFactory _loggerFactory;
+    private static readonly ILoggerFactory LoggerFactory;
 
     static LoggerUtils()
     {
-        _loggerFactory = LoggerFactory.Create(builder =>
-        {
-            builder
+        LoggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder => builder
                 .SetMinimumLevel(LogLevel.Trace)
-                .AddDebug();
-        });
+                .AddDebug()
+                .AddConsole());
     }
 
-    public static ILogger<T> GetLogger<T>() => _loggerFactory.CreateLogger<T>();
+    public static ILogger<T> GetLogger<T>() => LoggerFactory.CreateLogger<T>();
 }

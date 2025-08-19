@@ -21,6 +21,8 @@ public class TestEnvironment
 {
     private static readonly Lazy<TestEnvironment> LazyTestEnvironmentInstance = new(Create);
 
+    private static readonly JsonSerializerOptions Options = new() { PropertyNameCaseInsensitive = true };
+
     public static TestEnvironment Env = LazyTestEnvironmentInstance.Value;
 
     public TestEnvironmentInfo Info { get; private set; } = null!;
@@ -31,7 +33,7 @@ public class TestEnvironment
 
     public static async Task CheckClusterHealthAsync(bool makeSureFirstInstanceWriter)
     {
-        var testInfo = TestEnvironment.Env.Info!;
+        var testInfo = Env.Info!;
         var testRequest = testInfo.Request!;
 
         AuroraTestUtils auroraUtil = AuroraTestUtils.GetUtility(testInfo);
@@ -124,11 +126,7 @@ public class TestEnvironment
         string infoJson = Environment.GetEnvironmentVariable("TEST_ENV_INFO_JSON") ?? throw new Exception("Environment variable TEST_ENV_INFO_JSON is required.");
         try
         {
-            JsonSerializerOptions options = new()
-            {
-                PropertyNameCaseInsensitive = true,
-            };
-            env.Info = JsonSerializer.Deserialize<TestEnvironmentInfo>(infoJson, options) ?? throw new Exception("Deserialized TestEnvironmentInfo is null.");
+            env.Info = JsonSerializer.Deserialize<TestEnvironmentInfo>(infoJson, Options) ?? throw new Exception("Deserialized TestEnvironmentInfo is null.");
         }
         catch (JsonException ex)
         {
@@ -139,43 +137,48 @@ public class TestEnvironment
             throw new Exception($"An error occurred while processing TEST_ENV_INFO_JSON: {ex.Message}", ex);
         }
 
+        Console.WriteLine("Checking features...");
         if (env.Info.Request!.Features.Contains(TestEnvironmentFeatures.NETWORK_OUTAGES_ENABLED))
         {
-            InitProxies(env);
+            InitProxies(env).GetAwaiter().GetResult();
         }
 
         return env;
     }
 
-    private static void InitProxies(TestEnvironment environment)
+    private static async Task InitProxies(TestEnvironment environment)
     {
+        Console.WriteLine("Initializing toxiproxies...");
         environment.proxies = [];
 
         int proxyControlPort = environment.Info!.ProxyDatabaseInfo!.ControlPort;
         foreach (var instance in environment.Info.ProxyDatabaseInfo.Instances)
         {
             Connection proxyConnection = new(instance.Host, proxyControlPort);
-            IDictionary<string, Proxy> proxies = proxyConnection.Client().All();
+            IDictionary<string, Proxy> proxies = await proxyConnection.Client().AllAsync();
             if (proxies.Count == 0)
             {
                 throw new Exception($"Proxy for {instance.InstanceId} is not found.");
             }
 
             environment.proxies[instance.InstanceId] = proxies.First().Value;
+            Console.WriteLine($"Proxy for {instance.InstanceId} is initialized: {environment.proxies[instance.InstanceId]}");
         }
 
         if (!string.IsNullOrEmpty(environment.Info.ProxyDatabaseInfo.ClusterEndpoint))
         {
             var client = new Connection(environment.Info.ProxyDatabaseInfo.ClusterEndpoint, proxyControlPort).Client();
-            Proxy proxy = environment.GetProxy(client, environment.Info.DatabaseInfo!.ClusterEndpoint, environment.Info.DatabaseInfo.ClusterEndpointPort);
+            Proxy proxy = await GetProxy(client, environment.Info.DatabaseInfo!.ClusterEndpoint, environment.Info.DatabaseInfo.ClusterEndpointPort);
             environment.proxies[environment.Info.ProxyDatabaseInfo.ClusterEndpoint] = proxy;
+            Console.WriteLine($"Proxy for {environment.Info.ProxyDatabaseInfo.ClusterEndpoint} is initialized: {proxy}");
         }
 
         if (!string.IsNullOrEmpty(environment.Info.ProxyDatabaseInfo.ClusterReadOnlyEndpoint))
         {
             var client = new Connection(environment.Info.ProxyDatabaseInfo.ClusterReadOnlyEndpoint, proxyControlPort).Client();
-            Proxy proxy = environment.GetProxy(client, environment.Info.DatabaseInfo!.ClusterReadOnlyEndpoint, environment.Info.DatabaseInfo.ClusterReadOnlyEndpointPort);
+            Proxy proxy = await GetProxy(client, environment.Info.DatabaseInfo!.ClusterReadOnlyEndpoint, environment.Info.DatabaseInfo.ClusterReadOnlyEndpointPort);
             environment.proxies[environment.Info.ProxyDatabaseInfo.ClusterReadOnlyEndpoint] = proxy;
+            Console.WriteLine($"Proxy for {environment.Info.ProxyDatabaseInfo.ClusterReadOnlyEndpoint} is initialized: {proxy}");
         }
     }
 
@@ -189,9 +192,9 @@ public class TestEnvironment
         throw new Exception($"Proxy for {instanceName} not found.");
     }
 
-    private Proxy GetProxy(Client proxyClient, string host, int port)
+    private static async Task<Proxy> GetProxy(Client proxyClient, string host, int port)
     {
         string upstream = $"{host}:{port}";
-        return proxyClient.FindProxy(upstream);
+        return await proxyClient.FindProxyAsync(upstream);
     }
 }
