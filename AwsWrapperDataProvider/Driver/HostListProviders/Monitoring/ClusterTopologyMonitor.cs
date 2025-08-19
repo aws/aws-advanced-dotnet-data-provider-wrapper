@@ -213,10 +213,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
                     if (this.highRefreshRateEndTime == DateTime.MinValue)
                     {
-                        Logger.LogTrace(
-                            "Running Monitoring Loop. Found {HostCount} hosts: {Hosts}",
-                            hosts.Count,
-                            string.Join(", ", hosts.Select(h => h.HostId + ": " + h.Role)));
+                        Logger.LogTrace(LoggerUtils.LogTopology(hosts, $"Running Monitoring Loop. Found {hosts.Count} hosts"));
                     }
 
                     await this.DelayAsync(false);
@@ -256,9 +253,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             // Previous failover has just completed. We can use results of it without triggering a new topology update.
             if (this.topologyMap.TryGetValue(this.clusterId, out IList<HostSpec>? currentHosts) && currentHosts != null)
             {
-                Logger.LogTrace(Resources.ClusterTopologyMonitor_IgnoringTopologyRequest);
-                Logger.LogTrace("\n    {Hosts}", string.Join("\n    ", currentHosts.Select(h => h.HostId + ": " + h.Role)));
-
+                Logger.LogTrace(LoggerUtils.LogTopology(currentHosts, Resources.ClusterTopologyMonitor_IgnoringTopologyRequest));
                 return currentHosts;
             }
         }
@@ -296,8 +291,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
         if (timeoutMs == 0)
         {
-            Logger.LogTrace(Resources.ClusterTopologyMonitor_TimeoutSetToZero);
-            Logger.LogTrace("\n    {Hosts}", string.Join("\n    ", currentHosts!.Select(h => h.HostId + ": " + h.Role)));
+            Logger.LogTrace(LoggerUtils.LogTopology(currentHosts!, Resources.ClusterTopologyMonitor_TimeoutSetToZero));
             return currentHosts!;
         }
 
@@ -738,9 +732,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                 if (this.writerChanged)
                 {
                     monitor.UpdateTopologyCache(hosts);
-                    NodeMonitorLogger.LogTrace("Topology Cache Updated. Found {HostCount} hosts:\n    {Hosts}",
-                        hosts.Count,
-                        string.Join("\n    ", hosts.Select(h => h.HostId + ": " + h.Role)));
+                    NodeMonitorLogger.LogTrace(LoggerUtils.LogTopology(hosts, $"Topology Cache Updated. Found {hosts.Count} hosts"));
                     return;
                 }
 
@@ -757,10 +749,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
                     this.writerChanged = true;
                     monitor.UpdateTopologyCache(hosts);
-
-                    NodeMonitorLogger.LogTrace("Topology Cache Updated. Found {HostCount} hosts:\n    {Hosts}",
-                        hosts.Count,
-                        string.Join("\n    ", hosts.Select(h => h.HostId + ": " + h.Role)));
+                    NodeMonitorLogger.LogTrace(LoggerUtils.LogTopology(hosts, $"Topology Cache Updated. Found {hosts.Count} hosts"));
                 }
             }
             catch (Exception ex)

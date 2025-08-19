@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using AwsWrapperDataProvider.Driver.HostInfo;
 using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Utils;
@@ -29,4 +30,10 @@ public static class LoggerUtils
     }
 
     public static ILogger<T> GetLogger<T>() => LoggerFactory.CreateLogger<T>();
+
+    public static string LogTopology(IList<HostSpec> hosts, string? messagePrefix)
+    {
+        var topology = string.Join($"{Environment.NewLine}    ", hosts.Select(h => h.ToString()));
+        return $"{messagePrefix ?? "Topology:"}{Environment.NewLine}{topology}";
+    }
 }

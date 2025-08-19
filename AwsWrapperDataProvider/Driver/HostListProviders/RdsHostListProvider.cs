@@ -17,6 +17,7 @@ using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.HostListProviders;
 
@@ -24,6 +25,7 @@ public class RdsHostListProvider : IDynamicHostListProvider
 {
     protected const int DefaultTopologyQueryTimeoutSec = 5;
 
+    private static readonly ILogger<RdsHostListProvider> Logger = LoggerUtils.GetLogger<RdsHostListProvider>();
     internal static readonly MemoryCache TopologyCache = new(new MemoryCacheOptions());
     internal static readonly MemoryCache PrimaryClusterIdCache = new(new MemoryCacheOptions());
     internal static readonly MemoryCache SuggestedPrimaryClusterIdCache = new(new MemoryCacheOptions());
@@ -206,6 +208,7 @@ public class RdsHostListProvider : IDynamicHostListProvider
         this.EnsureInitialized();
         IDbConnection? currentConnection = connection ?? this.hostListProviderService.CurrentConnection;
         FetchTopologyResult result = this.GetTopology(currentConnection, true);
+        Logger.LogTrace(LoggerUtils.LogTopology(result.Hosts, null));
 
         this.hostList = result.Hosts;
         return this.hostList.AsReadOnly();
@@ -291,7 +294,7 @@ public class RdsHostListProvider : IDynamicHostListProvider
         this.EnsureInitialized();
         IDbConnection? currentConnection = connection ?? this.hostListProviderService.CurrentConnection;
         FetchTopologyResult result = this.GetTopology(currentConnection, false);
-
+        Logger.LogTrace(LoggerUtils.LogTopology(result.Hosts, result.IsCachedData ? "[From cache] Topology:" : null));
         this.hostList = result.Hosts;
         return this.hostList.AsReadOnly();
     }
