@@ -18,6 +18,7 @@ using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
@@ -26,6 +27,7 @@ public class DialectProvider
     private const string MySqlDataSource = "mysql";
     private const string PgDataSource = "postgres";
 
+    private static readonly ILogger<DialectProvider> Logger = LoggerUtils.GetLogger<DialectProvider>();
     private static readonly MemoryCache KnownEndpointDialects = new(new MemoryCacheOptions());
     private static readonly TimeSpan EndpointCacheExpiration = TimeSpan.FromHours(24);
 
@@ -138,6 +140,10 @@ public class DialectProvider
                 KnownEndpointDialects.Set(this.pluginService.InitialConnectionHostSpec!.Host, dialect, EndpointCacheExpiration);
                 KnownEndpointDialects.Set(connection.ConnectionString, dialect, EndpointCacheExpiration);
                 return this.dialect;
+            }
+            else
+            {
+                Logger.LogDebug("Not dialect: {dialect}", dialect.GetType().FullName);
             }
         }
 

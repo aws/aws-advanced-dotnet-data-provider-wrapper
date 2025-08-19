@@ -66,6 +66,8 @@ public class PluginService : IPluginService, IHostListProviderService
         this.TargetConnectionDialect = configurationProfile?.TargetConnectionDialect ?? targetConnectionDialect ?? throw new ArgumentNullException(nameof(targetConnectionDialect));
         this.dialectProvider = new(this);
         this.Dialect = configurationProfile?.Dialect ?? this.dialectProvider.GuessDialect(this.props);
+        Logger.LogDebug("Guessed dialect: {dialect}", this.Dialect.GetType().FullName);
+
         this.hostListProvider =
             this.Dialect.HostListProviderSupplier(this.props, this, this)
             ?? throw new InvalidOperationException(); // TODO : throw proper error
@@ -237,6 +239,7 @@ public class PluginService : IPluginService, IHostListProviderService
     {
         IDialect dialect = this.Dialect;
         this.Dialect = this.dialectProvider.UpdateDialect(connection, this.Dialect);
+        Logger.LogDebug("Dialect updated to: {dialect}", this.Dialect.GetType().FullName);
 
         if (dialect != this.Dialect)
         {

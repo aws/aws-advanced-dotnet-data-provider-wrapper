@@ -78,6 +78,9 @@ public class MySqlExceptionHandler : GenericExceptionHandler
 
         while (currException is not null)
         {
+            Logger.LogDebug("Current exception type: {type}", currException.GetType().FullName);
+            Logger.LogDebug("Current exception message: {message}", currException.Message);
+
             if (currException is ArgumentException or TimeoutException or MySqlEndOfStreamException)
             {
                 Logger.LogDebug("Current exception is a network exception: {type}", currException.GetType().FullName);
@@ -99,7 +102,7 @@ public class MySqlExceptionHandler : GenericExceptionHandler
 
                 if (this.NetworkErrorStates.Contains(sqlState))
                 {
-                    Logger.LogDebug("Current exception is a network exception");
+                    Logger.LogDebug("Current exception is a network exception: {type}", currException.GetType().FullName);
                     return true;
                 }
             }

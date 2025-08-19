@@ -36,7 +36,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
     [Trait("Database", "pg")]
     public async Task WriterFailover_FailOnConnectionInvocation()
     {
-        Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to number of instances less than 2.");
+        Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring database instances more than 1.");
 
         var initialWriterInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.GetInstance(this.currentWriter);
 
@@ -46,7 +46,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
             initialWriterInstanceInfo.Port,
             Username,
             Password,
-            TestEnvironment.Env.Info.ProxyDatabaseInfo!.DefaultDbName,
+            ProxyDatabaseInfo.DefaultDbName,
             2,
             10,
             "failover");
@@ -79,7 +79,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
     [Trait("Database", "pg")]
     public async Task FailFromReaderToWriter()
     {
-        Assert.SkipWhen(NumberOfInstances != 2, "Skipped due to number of instances not equal to 2.");
+        Assert.SkipWhen(NumberOfInstances != 2, "Skipped due to test requiring database instances of 2.");
 
         // Connect to the only available reader instance
         var readerInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances[1];
@@ -90,7 +90,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
             readerInstanceInfo.Port,
             Username,
             Password,
-            TestEnvironment.Env.Info.ProxyDatabaseInfo!.DefaultDbName,
+            ProxyDatabaseInfo.DefaultDbName,
             2,
             10,
             "failover");

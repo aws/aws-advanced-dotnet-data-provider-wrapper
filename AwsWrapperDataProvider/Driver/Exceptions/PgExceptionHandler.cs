@@ -53,6 +53,9 @@ public class PgExceptionHandler : GenericExceptionHandler
 
         while (currException is not null)
         {
+            Logger.LogDebug("Current exception type: {type}", currException.GetType().FullName);
+            Logger.LogDebug("Current exception message: {message}", currException.Message);
+
             if (currException is SocketException or TimeoutException or EndOfStreamException)
             {
                 Logger.LogDebug("Current exception is a network exception: {type}", currException.GetType().FullName);
@@ -74,7 +77,7 @@ public class PgExceptionHandler : GenericExceptionHandler
 
                 if (this.NetworkErrorStates.Contains(sqlState))
                 {
-                    Logger.LogDebug("Current exception is a network exception");
+                    Logger.LogDebug("Current exception is a network exception: {type}", currException.GetType().FullName);
                     return true;
                 }
             }
