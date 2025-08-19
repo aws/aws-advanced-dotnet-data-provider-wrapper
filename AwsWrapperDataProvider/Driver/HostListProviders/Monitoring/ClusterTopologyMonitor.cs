@@ -28,7 +28,7 @@ namespace AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 public class ClusterTopologyMonitor : IClusterTopologyMonitor
 {
     private static readonly ILogger<ClusterTopologyMonitor> Logger = LoggerUtils.GetLogger<ClusterTopologyMonitor>();
-    protected const int DefaultTopologyQueryTimeoutMs = 1000;
+    protected const int DefaultTopologyQueryTimeoutSec = 1;
 
     // Keep monitoring topology with a high rate for 30s after failover
     protected static readonly TimeSpan HighRefreshPeriodAfterPanic = TimeSpan.FromSeconds(30);
@@ -213,7 +213,8 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
                     if (this.highRefreshRateEndTime == DateTime.MinValue)
                     {
-                        Logger.LogTrace("Running Monitoring Loop. Found {HostCount} hosts: {Hosts}",
+                        Logger.LogTrace(
+                            "Running Monitoring Loop. Found {HostCount} hosts: {Hosts}",
                             hosts.Count,
                             string.Join(", ", hosts.Select(h => h.HostId + ": " + h.Role)));
                     }
@@ -539,7 +540,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         try
         {
             using var command = connection.CreateCommand();
-            command.CommandTimeout = DefaultTopologyQueryTimeoutMs / 1000;
+            command.CommandTimeout = DefaultTopologyQueryTimeoutSec;
             command.CommandText = this.topologyQuery;
             await using var reader = await command.ExecuteReaderAsync();
 
@@ -637,7 +638,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
     {
         private static readonly ILogger<NodeMonitoringTask> NodeMonitorLogger = LoggerUtils.GetLogger<NodeMonitoringTask>();
 
-        private bool writerChanged;
+        private bool writerChanged = false;
 
         public async Task RunNodeMonitoringAsync()
         {
@@ -747,7 +748,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                 var latestWriterHostSpec = hosts.FirstOrDefault(x => x.Role == HostRole.Writer);
 
                 if (latestWriterHostSpec != null && writerHostSpec != null &&
-                    !latestWriterHostSpec.GetHostAndPort().Equals(writerHostSpec.GetHostAndPort()))
+                    latestWriterHostSpec.GetHostAndPort() != writerHostSpec.GetHostAndPort())
                 {
                     NodeMonitorLogger.LogTrace(string.Format(
                         Resources.NodeMonitoringTask_WriterNodeChanged,
@@ -762,9 +763,10 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                         string.Join("\n    ", hosts.Select(h => h.HostId + ": " + h.Role)));
                 }
             }
-            catch
+            catch (Exception ex)
             {
                 // Ignore errors
+                NodeMonitorLogger.LogWarning("Exception caught but ignored: {message}", ex.Message);
             }
         }
     }
