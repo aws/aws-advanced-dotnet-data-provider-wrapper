@@ -1,11 +1,11 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 // http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -30,7 +30,7 @@ public class MultiAzRdsPgDialect : PgDialect
         "SELECT 1 AS tmp FROM information_schema.routines"
         + " WHERE routine_schema='rds_tools' AND routine_name='multi_az_db_cluster_source_dbi_resource_id'";
 
-    private static readonly string FetchWriterNodeQuery = 
+    private static readonly string FetchWriterNodeQuery =
         "SELECT multi_az_db_cluster_source_dbi_resource_id FROM rds_tools.multi_az_db_cluster_source_dbi_resource_id()"
         + " WHERE multi_az_db_cluster_source_dbi_resource_id !="
         + " (SELECT dbi_resource_id FROM rds_tools.dbi_resource_id())";
