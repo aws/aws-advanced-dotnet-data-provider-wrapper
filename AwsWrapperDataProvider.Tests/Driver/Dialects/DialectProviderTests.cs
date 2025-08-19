@@ -102,7 +102,14 @@ public class DialectProviderTests
     [Trait("Category", "Unit")]
     public void UpdateDialect_PgToRdsPg()
     {
-        this.mockReader.Setup(reader => reader.Read()).Returns(true);
+        string query = string.Empty;
+        this.mockCommand.SetupSet(c => c.CommandText = It.IsAny<string>()).Callback<string>(commandText => query = commandText);
+        this.mockReader.Setup(reader => reader.Read()).Returns(() => query switch
+        {
+            "SELECT 1 FROM pg_proc LIMIT 1" => true,
+            "SELECT (setting LIKE '%rds_tools%') AS rds_tools, (setting LIKE '%aurora_stat_utils%') AS aurora_stat_utils FROM pg_settings WHERE name='rds.extensions'" => true,
+            _ => false,
+        });
         this.mockReader.Setup(reader => reader.GetOrdinal("rds_tools")).Returns(0);
         this.mockReader.Setup(reader => reader.GetBoolean(0)).Returns(true);
         this.mockReader.Setup(reader => reader.GetOrdinal("aurora_stat_utils")).Returns(1);
@@ -111,7 +118,7 @@ public class DialectProviderTests
         var initialDialect = new PgDialect();
         var updatedDialect = this.dialectProvider.UpdateDialect(this.mockConnection.Object, initialDialect);
         Assert.IsType<RdsPgDialect>(updatedDialect);
-        this.mockConnection.Verify(c => c.CreateCommand(), Times.Exactly(4));
+        this.mockConnection.Verify(c => c.CreateCommand(), Times.Exactly(5));
     }
 
     [Fact]
@@ -181,7 +188,7 @@ public class DialectProviderTests
         var updatedDialect = this.dialectProvider.UpdateDialect(this.mockConnection.Object, mysqlDialect);
 
         Assert.IsType<AuroraMySqlDialect>(updatedDialect);
-        this.mockConnection.Verify(c => c.CreateCommand(), Times.Exactly(1));
+        this.mockConnection.Verify(c => c.CreateCommand(), Times.Exactly(2)); // Updated to account for MultiAzRdsHostListProvider check
     }
 
     [Fact]
@@ -215,7 +222,7 @@ public class DialectProviderTests
         var updatedDialect = this.dialectProvider.UpdateDialect(this.mockConnection.Object, mysqlDialect);
 
         Assert.IsType<RdsMySqlDialect>(updatedDialect);
-        this.mockConnection.Verify(c => c.CreateCommand(), Times.Exactly(3));
+        this.mockConnection.Verify(c => c.CreateCommand(), Times.Exactly(4));
     }
 
     [Fact]
