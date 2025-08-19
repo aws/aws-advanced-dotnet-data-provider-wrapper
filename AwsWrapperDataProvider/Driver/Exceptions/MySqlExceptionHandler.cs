@@ -16,7 +16,7 @@ using System.Data.Common;
 using System.Text;
 using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Logging;
-using MySql.Data.MySqlClient;
+using MySqlConnector;
 
 namespace AwsWrapperDataProvider.Driver.Exceptions;
 
@@ -78,27 +78,9 @@ public class MySqlExceptionHandler : GenericExceptionHandler
 
         while (currException is not null)
         {
-            Logger.LogDebug("Current exception message: {ExceptionMessage}", exception.Message);
-            if (currException is DbException dbException)
+            if (currException is ArgumentException or TimeoutException or MySqlEndOfStreamException)
             {
-                return this.IsNetworkException(dbException);
-            }
-
-            currException = currException.InnerException;
-        }
-
-        return false;
-    }
-
-    private bool IsNetworkException(DbException exception)
-    {
-        Exception? currException = exception;
-
-        while (currException is not null)
-        {
-            if (currException is ArgumentException or TimeoutException)
-            {
-                Logger.LogDebug("Current exception is a network exception");
+                Logger.LogDebug("Current exception is a network exception: {type}", currException.GetType().FullName);
                 return true;
             }
 
@@ -113,7 +95,6 @@ public class MySqlExceptionHandler : GenericExceptionHandler
                 log.AppendLine($"Sql State: {dbException.SqlState}");
                 log.AppendLine($"Error Code: {dbException.ErrorCode}");
                 log.AppendLine($"Source: {dbException.Source}");
-                log.AppendLine($"Stack Trace: {dbException.StackTrace}");
                 Logger.LogDebug(log.ToString());
 
                 if (this.NetworkErrorStates.Contains(sqlState))
@@ -124,6 +105,7 @@ public class MySqlExceptionHandler : GenericExceptionHandler
             }
 
             currException = currException.InnerException;
+            Logger.LogDebug("Checking innner exception");
         }
 
         Logger.LogDebug("Current exception is not a network exception");

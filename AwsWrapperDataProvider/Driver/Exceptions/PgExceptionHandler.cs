@@ -24,8 +24,8 @@ public class PgExceptionHandler : GenericExceptionHandler
 {
     private static readonly ILogger<PgExceptionHandler> Logger = LoggerUtils.GetLogger<PgExceptionHandler>();
 
-    private readonly HashSet<string> networkErrorStates = new()
-    {
+    private readonly HashSet<string> networkErrorStates =
+    [
         "53", // insufficient resources
         "57P01", // admin shutdown
         "57P02", // crash shutdown
@@ -35,13 +35,13 @@ public class PgExceptionHandler : GenericExceptionHandler
         "99", // unexpected error
         "F0", // configuration file error (backend)
         "XX", // internal error (backend)
-    };
+    ];
 
-    private readonly HashSet<string> loginErrorStates = new()
-    {
+    private readonly HashSet<string> loginErrorStates =
+    [
         "28000", // Invalid authorization specification
         "28P01", // Wrong password
-    };
+    ];
 
     protected override HashSet<string> NetworkErrorStates => this.networkErrorStates;
 
@@ -53,9 +53,9 @@ public class PgExceptionHandler : GenericExceptionHandler
 
         while (currException is not null)
         {
-            if (currException is SocketException or TimeoutException or System.IO.EndOfStreamException)
+            if (currException is SocketException or TimeoutException or EndOfStreamException)
             {
-                Logger.LogDebug("Current exception is a network exception");
+                Logger.LogDebug("Current exception is a network exception: {type}", currException.GetType().FullName);
                 return true;
             }
 
@@ -70,7 +70,6 @@ public class PgExceptionHandler : GenericExceptionHandler
                 log.AppendLine($"Sql State: {dbException.SqlState}");
                 log.AppendLine($"Error Code: {dbException.ErrorCode}");
                 log.AppendLine($"Source: {dbException.Source}");
-                log.AppendLine($"Stack Trace: {dbException.StackTrace}");
                 Logger.LogDebug(log.ToString());
 
                 if (this.NetworkErrorStates.Contains(sqlState))
@@ -81,6 +80,7 @@ public class PgExceptionHandler : GenericExceptionHandler
             }
 
             currException = currException.InnerException;
+            Logger.LogDebug("Checking innner exception");
         }
 
         Logger.LogDebug("Current exception is not a network exception");

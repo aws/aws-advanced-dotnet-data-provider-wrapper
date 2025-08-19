@@ -146,7 +146,7 @@ public class DialectProvider
             return currDialect;
         }
 
-        throw new ArgumentException("Unable to find valid dialect type for connection.");
+        throw new ArgumentException(Properties.Resources.Error_UnableToFindValidDialectType);
     }
 
     private static IDialect? GetDialectFromType(Type? dialectType)
