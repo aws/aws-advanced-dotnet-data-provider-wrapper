@@ -36,7 +36,9 @@ public class AuroraMySqlDialect : MySqlDialect
     private static readonly string IsWriterQuery = "SELECT SERVER_ID FROM information_schema.replica_host_status "
         + "WHERE SESSION_ID = 'MASTER_SESSION_ID' AND SERVER_ID = @@aurora_server_id";
 
-    public override IList<Type> DialectUpdateCandidates { get; } = [];
+    public override IList<Type> DialectUpdateCandidates { get; } = [
+        typeof(MultiAzRdsMySqlDialect),
+    ];
 
     public override bool IsDialect(IDbConnection connection)
     {

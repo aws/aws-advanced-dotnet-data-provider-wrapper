@@ -44,6 +44,8 @@ public class DialectProvider
         { typeof(RdsPgDialect), new RdsPgDialect() },
         { typeof(AuroraMySqlDialect), new AuroraMySqlDialect() },
         { typeof(AuroraPgDialect), new AuroraPgDialect() },
+        { typeof(MultiAzRdsMySqlDialect), new MultiAzRdsMySqlDialect() },
+        { typeof(MultiAzRdsPgDialect), new MultiAzRdsPgDialect() },
         { typeof(UnknownDialect), new UnknownDialect() },
     };
 

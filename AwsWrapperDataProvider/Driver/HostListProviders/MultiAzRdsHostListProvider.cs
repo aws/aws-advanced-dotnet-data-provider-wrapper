@@ -12,10 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data;
+using AwsWrapperDataProvider.Driver.HostInfo;
+using AwsWrapperDataProvider.Driver.Utils;
+using Microsoft.Extensions.Logging;
+
 namespace AwsWrapperDataProvider.Driver.HostListProviders;
 
 public class MultiAzRdsHostListProvider : RdsHostListProvider
 {
+    private static readonly ILogger<MultiAzRdsHostListProvider> Logger = LoggerUtils.GetLogger<MultiAzRdsHostListProvider>();
+
+    private readonly string fetchWriterNodeQuery;
+    private readonly string fetchWriterNodeQueryHeader;
+
     public MultiAzRdsHostListProvider(
         Dictionary<string, string> properties,
         IHostListProviderService hostListProviderService,
@@ -25,5 +35,135 @@ public class MultiAzRdsHostListProvider : RdsHostListProvider
         string fetchWriterNodeQuery,
         string fetchWriterNodeQueryHeader) : base(properties, hostListProviderService, topologyQuery, nodeIdQuery, isReaderQuery)
     {
+        this.fetchWriterNodeQuery = fetchWriterNodeQuery;
+        this.fetchWriterNodeQueryHeader = fetchWriterNodeQueryHeader;
+    }
+
+    internal override List<HostSpec>? QueryForTopology(IDbConnection conn)
+    {
+        using IDbCommand fetchWriterNodeCommand = conn.CreateCommand();
+        fetchWriterNodeCommand.CommandTimeout = DefaultTopologyQueryTimeoutSec;
+        fetchWriterNodeCommand.CommandText = this.fetchWriterNodeQuery;
+        using IDataReader writerNodeReader = fetchWriterNodeCommand.ExecuteReader();
+
+        string writerNodeId = this.ProcessWriterNodeId(writerNodeReader);
+
+        if (writerNodeId == null)
+        {
+            using IDbCommand nodeIdCommand = conn.CreateCommand();
+            nodeIdCommand.CommandText = this.nodeIdQuery;
+            using var nodeIdReader = nodeIdCommand.ExecuteReader();
+            while (nodeIdReader.Read())
+            {
+                writerNodeId = nodeIdReader.GetString(0);
+            }
+        }
+
+        using IDbCommand topologyCommand = conn.CreateCommand();
+        topologyCommand.CommandText = this.topologyQuery;
+        using var topologyReader = topologyCommand.ExecuteReader();
+        return this.ProcessTopologyQueryResults(topologyReader, writerNodeId);
+    }
+
+    private string ProcessWriterNodeId(IDataReader fetchWriterNodeReader)
+    {
+        if (fetchWriterNodeReader.Read())
+        {
+            int ordinal = fetchWriterNodeReader.GetOrdinal(this.fetchWriterNodeQueryHeader);
+            if (!fetchWriterNodeReader.IsDBNull(ordinal))
+            {
+                return fetchWriterNodeReader.GetString(ordinal);
+            }
+        }
+
+        throw new InvalidOperationException(
+                "No writer node found in the result of the fetchWriterNodeQuery. " +
+                "Ensure that the query is correct and that the database is configured properly.");
+    }
+
+    private List<HostSpec> ProcessTopologyQueryResults(IDataReader topologyReader, string? writerNodeId)
+    {
+        var hostMap = new Dictionary<string, HostSpec>(StringComparer.Ordinal);
+
+        while (topologyReader.Read())
+        {
+            var host = this.CreateHost(topologyReader, writerNodeId);
+            hostMap[host.Host] = host;
+        }
+
+        var hosts = new List<HostSpec>();
+        var writers = new List<HostSpec>();
+
+        foreach (var host in hostMap.Values)
+        {
+            if (host.Role != HostRole.Writer)
+            {
+                hosts.Add(host);
+            }
+            else
+            {
+                writers.Add(host);
+            }
+        }
+
+        if (writers.Count == 0)
+        {
+            Logger.LogError("Invalid topology: no writer instance found.");
+            hosts.Clear();
+        }
+        else
+        {
+            hosts.Add(writers[0]);
+        }
+
+        return hosts;
+    }
+
+    private HostSpec CreateHost(IDataReader reader, string? writerNodeId)
+    {
+        var endpointOrdinal = reader.GetOrdinal("endpoint");
+        var idOrdinal = reader.GetOrdinal("id");
+        var portOrdinal = reader.GetOrdinal("port");
+
+        if (reader.IsDBNull(endpointOrdinal))
+        {
+            throw new DataException("Topology query result is missing 'endpoint'.");
+        }
+
+        string hostName = reader.GetString(endpointOrdinal); // "instance-name.XYZ.us-west-2.rds.amazonaws.com"
+        int firstDot = hostName.IndexOf('.', StringComparison.Ordinal);
+        string instanceName = firstDot > 0 ? hostName.Substring(0, firstDot) : hostName;
+
+        // Build DNS from template: replace '?' with node/instance name
+        string endpoint = GetHostEndpoint(instanceName);
+
+        string hostId = reader.IsDBNull(idOrdinal) ? "" : reader.GetString(idOrdinal);
+
+        int queryPort = reader.IsDBNull(portOrdinal) ? 0 : reader.GetInt32(portOrdinal);
+        int port = this.clusterInstanceTemplate.IsPortSpecified
+            ? this.clusterInstanceTemplate.Port
+            : queryPort;
+
+        bool isWriter = !string.IsNullOrEmpty(hostId) &&
+                        string.Equals(hostId, writerNodeId, StringComparison.Ordinal);
+
+        var hostSpec = this.hostListProviderService.HostSpecBuilder
+            .WithHost(endpoint)
+            .WithHostId(hostId)
+            .WithPort(port)
+            .WithRole(isWriter ? HostRole.Writer : HostRole.Reader)
+            .WithAvailability(HostAvailability.Available)
+            .WithWeight(0)
+            .WithLastUpdateTime(DateTime.UtcNow)
+            .Build();
+
+        hostSpec.AddAlias(hostName);
+        return hostSpec;
+    }
+
+    protected string GetHostEndpoint(string nodeName)
+    {
+        string host = this.clusterInstanceTemplate.Host;
+        return host.Replace("?", nodeName, StringComparison.Ordinal);
     }
 }
