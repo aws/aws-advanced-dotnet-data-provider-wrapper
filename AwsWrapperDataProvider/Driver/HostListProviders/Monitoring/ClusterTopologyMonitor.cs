@@ -266,7 +266,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         {
             var connectionToClose = Interlocked.Exchange(ref this.monitoringConnection, null);
             this.isVerifiedWriterConnection = false;
-            await this.DisposeConnectionAsync(connectionToClose);
+            this.DisposeConnectionAsync(connectionToClose).GetAwaiter().GetResult();
         }
 
         return this.WaitTillTopologyGetsUpdatedAsync(timeoutMs);
@@ -281,7 +281,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         }
 
         // Otherwise use provided unverified connection to update topology
-        return await this.FetchTopologyAndUpdateCacheAsync(connection) ?? new List<HostSpec>();
+        return await this.FetchTopologyAndUpdateCacheAsync(connection) ?? [];
     }
 
     protected IList<HostSpec> WaitTillTopologyGetsUpdatedAsync(long timeoutMs)
