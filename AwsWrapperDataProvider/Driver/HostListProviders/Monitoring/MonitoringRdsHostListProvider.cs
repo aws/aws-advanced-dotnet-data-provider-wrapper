@@ -26,9 +26,6 @@ namespace AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 /// </summary>
 public class MonitoringRdsHostListProvider : RdsHostListProvider, IBlockingHostListProvider
 {
-    public static readonly AwsWrapperProperty ClusterTopologyHighRefreshRateMs =
-        new("ClusterTopologyHighRefreshRateMs", "100", "Cluster topology high refresh rate in milliseconds.");
-
     protected static readonly TimeSpan MonitorExpirationTime = TimeSpan.FromMinutes(15);
     protected static readonly TimeSpan TopologyCacheExpirationTime = TimeSpan.FromMinutes(5);
 
@@ -55,8 +52,7 @@ public class MonitoringRdsHostListProvider : RdsHostListProvider, IBlockingHostL
     {
         this.pluginService = pluginService;
         this.isWriterQuery = isWriterQuery;
-        this.highRefreshRate = TimeSpan.FromMilliseconds(
-            (double)ClusterTopologyHighRefreshRateMs.GetLong(this.properties)!);
+        this.highRefreshRate = TimeSpan.FromMilliseconds(PropertyDefinition.ClusterTopologyHighRefreshRateMs.GetLong(this.properties) ?? 100);
     }
 
     public static void CloseAllMonitors()

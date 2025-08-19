@@ -152,7 +152,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                                 Resources.ClusterTopologyMonitor_WriterPickedUpFromNodeMonitors,
                                 this.nodeThreadsWriterHostSpec.Host));
 
-                            this.CloseConnection(this.monitoringConnection);
+                            await this.DisposeConnectionAsync(this.monitoringConnection);
                             this.monitoringConnection = this.nodeThreadsWriterConnection;
                             this.writerHostSpec = this.nodeThreadsWriterHostSpec;
                             this.isVerifiedWriterConnection = true;
@@ -202,7 +202,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                         // Can't get topology, switch to panic mode
                         var conn = Interlocked.Exchange(ref this.monitoringConnection, null);
                         this.isVerifiedWriterConnection = false;
-                        this.CloseConnection(conn);
+                        await this.DisposeConnectionAsync(conn);
                         continue;
                     }
 
@@ -242,7 +242,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         finally
         {
             var conn = Interlocked.Exchange(ref this.monitoringConnection, null);
-            this.CloseConnection(conn);
+            await this.DisposeConnectionAsync(conn);
 
             Logger.LogTrace(string.Format(Resources.ClusterTopologyMonitor_StopMonitoringThread, this.initialHostSpec.Host));
         }
@@ -266,7 +266,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         {
             var connectionToClose = Interlocked.Exchange(ref this.monitoringConnection, null);
             this.isVerifiedWriterConnection = false;
-            this.CloseConnection(connectionToClose);
+            await this.DisposeConnectionAsync(connectionToClose);
         }
 
         return this.WaitTillTopologyGetsUpdatedAsync(timeoutMs);
@@ -318,7 +318,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             }
         }
 
-        throw new TimeoutException(string.Format(Resources.ClusterTopologyMonitor_TopologyNotUpdated, timeout));
+        throw new TimeoutException(string.Format(Resources.ClusterTopologyMonitor_TopologyNotUpdated, timeout.TotalMilliseconds));
     }
 
     protected bool IsInPanicMode()
@@ -376,7 +376,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                 {
                     try
                     {
-                        newConnection.Close();
+                        await newConnection.DisposeAsync();
                     }
                     catch
                     {
@@ -402,7 +402,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         {
             var connToClose = Interlocked.Exchange(ref this.monitoringConnection, null);
             this.isVerifiedWriterConnection = false;
-            this.CloseConnection(connToClose);
+            await this.DisposeConnectionAsync(connToClose);
         }
 
         return hosts;
@@ -469,7 +469,13 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         return null;
     }
 
-    protected void CloseConnection(DbConnection? connection) => connection?.Close();
+    protected async Task DisposeConnectionAsync(DbConnection? connection)
+    {
+        if (connection != null)
+        {
+            await connection.DisposeAsync();
+        }
+    }
 
     protected async Task DelayAsync(bool useHighRefreshRate)
     {
@@ -577,7 +583,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             else
             {
                 // Take the latest updated writer node as the current writer
-                hosts.Add(writers.OrderByDescending(x => x.LastUpdateTime).First());
+                hosts.Add(writers.MaxBy(x => x.LastUpdateTime)!);
             }
 
             return hosts;
@@ -613,7 +619,13 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         }
 
         var conn = Interlocked.Exchange(ref this.monitoringConnection, null);
-        this.CloseConnection(conn);
+        this.DisposeConnectionAsync(conn).GetAwaiter().GetResult();
+
+        var readerConn = Interlocked.Exchange(ref this.nodeThreadsReaderConnection, null);
+        this.DisposeConnectionAsync(readerConn).GetAwaiter().GetResult();
+
+        var writerConn = Interlocked.Exchange(ref this.nodeThreadsWriterConnection, null);
+        this.DisposeConnectionAsync(writerConn).GetAwaiter().GetResult();
 
         this.cancellationTokenSource.Dispose();
     }
@@ -659,7 +671,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                         }
                         catch (DbException)
                         {
-                            monitor.CloseConnection(connection);
+                            await monitor.DisposeConnectionAsync(connection);
                             connection = null;
                         }
 
@@ -674,7 +686,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                             }
                             else
                             {
-                                monitor.CloseConnection(connection);
+                                await monitor.DisposeConnectionAsync(connection);
                             }
 
                             connection = null; // Prevent disposal
@@ -707,7 +719,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             }
             finally
             {
-                monitor.CloseConnection(connection);
+                await monitor.DisposeConnectionAsync(connection);
                 NodeMonitorLogger.LogTrace(Resources.NodeMonitoringTask_ThreadCompleted);
             }
         }

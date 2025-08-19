@@ -459,7 +459,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
         {
             if (conn.State != ConnectionState.Closed)
             {
-                conn.Close();
+                conn.Dispose();
             }
         }
         catch
