@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data.Common;
+using System.Net.Sockets;
 using System.Text;
 using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Logging;
@@ -81,7 +82,7 @@ public class MySqlExceptionHandler : GenericExceptionHandler
             Logger.LogDebug("Current exception type: {type}", currException.GetType().FullName);
             Logger.LogDebug("Current exception message: {message}", currException.Message);
 
-            if (currException is ArgumentException or TimeoutException or MySqlEndOfStreamException)
+            if (currException is SocketException or TimeoutException or MySqlEndOfStreamException)
             {
                 Logger.LogDebug("Current exception is a network exception: {type}", currException.GetType().FullName);
                 return true;
