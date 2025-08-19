@@ -557,6 +557,17 @@ public class AuroraTestUtils
             await this.GetRandomDBClusterReaderInstanceIdAsync(clusterId));
     }
 
+    public async Task SimulateTemporaryFailureAsync(string instanceName, TimeSpan delay, TimeSpan duration)
+    {
+        await Task.Run(async () =>
+        {
+            await Task.Delay(delay);
+            await ProxyHelper.DisableConnectivityAsync(instanceName);
+            await Task.Delay(duration);
+            await ProxyHelper.EnableConnectivityAsync(instanceName);
+        });
+    }
+
     public async Task FailoverClusterToATargetAndWaitUntilWriterChanged(string clusterId, string initialWriterId, string targetWriterId)
     {
         // TODO: add support for multi az

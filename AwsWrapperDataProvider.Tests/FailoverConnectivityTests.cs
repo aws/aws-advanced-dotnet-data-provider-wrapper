@@ -36,7 +36,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
     [Trait("Database", "pg")]
     public async Task WriterFailover_FailOnConnectionInvocation()
     {
-        Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring database instances more than 1.");
+        Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
 
         var initialWriterInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.GetInstance(this.currentWriter);
 
@@ -79,7 +79,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
     [Trait("Database", "pg")]
     public async Task FailFromReaderToWriter()
     {
-        Assert.SkipWhen(NumberOfInstances != 2, "Skipped due to test requiring database instances of 2.");
+        Assert.SkipWhen(NumberOfInstances != 2, "Skipped due to test requiring number of database instances = 2.");
 
         // Connect to the only available reader instance
         var readerInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances[1];
@@ -116,6 +116,176 @@ public class FailoverConnectivityTests : IntegrationTestBase
         var currentConnectionId = AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
         Assert.Equal(this.currentWriter, currentConnectionId);
         Assert.True(await AuroraUtils.IsDBInstanceWriterAsync(currentConnectionId));
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    [Trait("Database", "mysql")]
+    [Trait("Database", "pg")]
+    public async Task WriterFailover_WriterReelected()
+    {
+        Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
+
+        var initialWriterInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.GetInstance(this.currentWriter);
+
+        var connectionString = ConnectionStringHelper.GetUrl(
+            Engine,
+            initialWriterInstanceInfo.Host,
+            initialWriterInstanceInfo.Port,
+            Username,
+            Password,
+            ProxyDatabaseInfo.DefaultDbName,
+            2,
+            10,
+            "failover");
+        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}";
+
+        using AwsWrapperConnection connection = Engine switch
+        {
+            DatabaseEngine.MYSQL => new AwsWrapperConnection<MySqlConnection>(connectionString),
+            DatabaseEngine.PG => new AwsWrapperConnection<NpgsqlConnection>(connectionString),
+            _ => throw new NotSupportedException($"Unsupported engine: {Engine}"),
+        };
+        connection.Open();
+        Assert.Equal(ConnectionState.Open, connection.State);
+
+        var simulationTask = AuroraUtils.SimulateTemporaryFailureAsync(this.currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(5));
+
+        Assert.Throws<FailoverSuccessException>(() =>
+        {
+            AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
+        });
+
+        // Assert that we are currently connected to the writer instance.
+        var currentConnectionId = AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
+        Assert.Equal(this.currentWriter, currentConnectionId);
+        Assert.True(await AuroraUtils.IsDBInstanceWriterAsync(currentConnectionId));
+        await simulationTask;
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    [Trait("Database", "mysql")]
+    [Trait("Database", "pg")]
+    public async Task ReaderFailover_ReaderOrWriter()
+    {
+        Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
+
+        var initialWriterInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.GetInstance(this.currentWriter);
+
+        var connectionString = ConnectionStringHelper.GetUrl(
+            Engine,
+            initialWriterInstanceInfo.Host,
+            initialWriterInstanceInfo.Port,
+            Username,
+            Password,
+            ProxyDatabaseInfo.DefaultDbName,
+            2,
+            10,
+            "failover");
+        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}" +
+            $"; FailoverMode=ReaderOrWriter";
+
+        using AwsWrapperConnection connection = Engine switch
+        {
+            DatabaseEngine.MYSQL => new AwsWrapperConnection<MySqlConnection>(connectionString),
+            DatabaseEngine.PG => new AwsWrapperConnection<NpgsqlConnection>(connectionString),
+            _ => throw new NotSupportedException($"Unsupported engine: {Engine}"),
+        };
+        connection.Open();
+        Assert.Equal(ConnectionState.Open, connection.State);
+
+        await ProxyHelper.DisableConnectivityAsync(this.currentWriter);
+
+        Assert.Throws<FailoverSuccessException>(() =>
+        {
+            AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
+        });
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    [Trait("Database", "mysql")]
+    [Trait("Database", "pg")]
+    public async Task ReaderFailover_StrictReader()
+    {
+        Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
+
+        var initialWriterInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.GetInstance(this.currentWriter);
+
+        var connectionString = ConnectionStringHelper.GetUrl(
+            Engine,
+            initialWriterInstanceInfo.Host,
+            initialWriterInstanceInfo.Port,
+            Username,
+            Password,
+            ProxyDatabaseInfo.DefaultDbName,
+            2,
+            10,
+            "failover");
+        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}" +
+            $"; FailoverMode=StrictReader";
+
+        using AwsWrapperConnection connection = Engine switch
+        {
+            DatabaseEngine.MYSQL => new AwsWrapperConnection<MySqlConnection>(connectionString),
+            DatabaseEngine.PG => new AwsWrapperConnection<NpgsqlConnection>(connectionString),
+            _ => throw new NotSupportedException($"Unsupported engine: {Engine}"),
+        };
+        connection.Open();
+        Assert.Equal(ConnectionState.Open, connection.State);
+
+        await AuroraUtils.CrashInstance(this.currentWriter);
+
+        Assert.Throws<FailoverSuccessException>(() =>
+        {
+            AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
+        });
+
+        // Assert that we are currently connected to the reader instance.
+        var currentConnectionId = AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
+        Assert.False(await AuroraUtils.IsDBInstanceWriterAsync(currentConnectionId));
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    [Trait("Database", "mysql")]
+    [Trait("Database", "pg")]
+    public async Task ReaderFailover_WriterReelected()
+    {
+        Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
+
+        var initialWriterInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.GetInstance(this.currentWriter);
+
+        var connectionString = ConnectionStringHelper.GetUrl(
+            Engine,
+            initialWriterInstanceInfo.Host,
+            initialWriterInstanceInfo.Port,
+            Username,
+            Password,
+            ProxyDatabaseInfo.DefaultDbName,
+            2,
+            10,
+            "failover");
+        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}" +
+            $"; FailoverMode=ReaderOrWriter";
+
+        using AwsWrapperConnection connection = Engine switch
+        {
+            DatabaseEngine.MYSQL => new AwsWrapperConnection<MySqlConnection>(connectionString),
+            DatabaseEngine.PG => new AwsWrapperConnection<NpgsqlConnection>(connectionString),
+            _ => throw new NotSupportedException($"Unsupported engine: {Engine}"),
+        };
+        connection.Open();
+        Assert.Equal(ConnectionState.Open, connection.State);
+
+        var simulationTask = AuroraUtils.SimulateTemporaryFailureAsync(this.currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(5));
+
+        Assert.Throws<FailoverSuccessException>(() =>
+        {
+            AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
+        });
+        await simulationTask;
     }
 }
 
