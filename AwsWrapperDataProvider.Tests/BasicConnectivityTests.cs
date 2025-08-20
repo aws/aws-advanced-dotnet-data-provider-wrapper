@@ -165,7 +165,7 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Trait("Database", "mysql")]
     public async Task MySqlConnectorWrapperProxiedConnectionTest()
     {
-        var instanceInfo = ProxyDatabaseInfo.Instances.First();
+        var instanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First();
         var connectionString = ConnectionStringHelper.GetUrl(Engine, instanceInfo.Host, instanceInfo.Port, Username, Password, DefaultDbName, plugins: string.Empty);
         const string query = "SELECT @@aurora_server_id";
 
@@ -197,7 +197,7 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Trait("Database", "pg")]
     public async Task PgWrapperProxiedConnectionTest()
     {
-        var instanceInfo = ProxyDatabaseInfo!.Instances.First();
+        var instanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First();
         var connectionString = ConnectionStringHelper.GetUrl(Engine, instanceInfo.Host, instanceInfo.Port, Username, Password, DefaultDbName, plugins: string.Empty);
         const string query = "select aurora_db_instance_identifier()";
 

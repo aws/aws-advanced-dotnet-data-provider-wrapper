@@ -24,8 +24,6 @@ public class FailoverConnectivityTests : IntegrationTestBase
 {
     protected override bool MakeSureFirstInstanceWriter => true;
 
-    private readonly string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
-
     /// <summary>
     /// Current writer dies, driver failover occurs when executing a method against the connection.
     /// </summary>
@@ -37,8 +35,8 @@ public class FailoverConnectivityTests : IntegrationTestBase
     public async Task WriterFailover_FailOnConnectionInvocation()
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
-
-        var initialWriterInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.GetInstance(this.currentWriter);
+        string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
+        var initialWriterInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.GetInstance(currentWriter);
 
         var connectionString = ConnectionStringHelper.GetUrl(
             Engine,
@@ -61,7 +59,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
         connection.Open();
         Assert.Equal(ConnectionState.Open, connection.State);
 
-        await AuroraUtils.CrashInstance(this.currentWriter);
+        await AuroraUtils.CrashInstance(currentWriter);
 
         Assert.Throws<FailoverSuccessException>(() =>
         {
@@ -82,6 +80,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
         Assert.SkipWhen(NumberOfInstances != 2, "Skipped due to test requiring number of database instances = 2.");
 
         // Connect to the only available reader instance
+        string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
         var readerInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances[1];
 
         var connectionString = ConnectionStringHelper.GetUrl(
@@ -114,7 +113,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
 
         // Assert that we are currently connected to the writer instance.
         var currentConnectionId = AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
-        Assert.Equal(this.currentWriter, currentConnectionId);
+        Assert.Equal(currentWriter, currentConnectionId);
         Assert.True(await AuroraUtils.IsDBInstanceWriterAsync(currentConnectionId));
     }
 
@@ -126,7 +125,8 @@ public class FailoverConnectivityTests : IntegrationTestBase
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
 
-        var initialWriterInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.GetInstance(this.currentWriter);
+        string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
+        var initialWriterInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.GetInstance(currentWriter);
 
         var connectionString = ConnectionStringHelper.GetUrl(
             Engine,
@@ -149,7 +149,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
         connection.Open();
         Assert.Equal(ConnectionState.Open, connection.State);
 
-        var simulationTask = AuroraUtils.SimulateTemporaryFailureAsync(this.currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(5));
+        var simulationTask = AuroraUtils.SimulateTemporaryFailureAsync(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(5));
 
         Assert.Throws<FailoverSuccessException>(() =>
         {
@@ -158,7 +158,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
 
         // Assert that we are currently connected to the writer instance.
         var currentConnectionId = AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
-        Assert.Equal(this.currentWriter, currentConnectionId);
+        Assert.Equal(currentWriter, currentConnectionId);
         Assert.True(await AuroraUtils.IsDBInstanceWriterAsync(currentConnectionId));
         await simulationTask;
     }
@@ -171,7 +171,8 @@ public class FailoverConnectivityTests : IntegrationTestBase
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
 
-        var initialWriterInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.GetInstance(this.currentWriter);
+        string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
+        var initialWriterInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.GetInstance(currentWriter);
 
         var connectionString = ConnectionStringHelper.GetUrl(
             Engine,
@@ -195,7 +196,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
         connection.Open();
         Assert.Equal(ConnectionState.Open, connection.State);
 
-        await ProxyHelper.DisableConnectivityAsync(this.currentWriter);
+        await ProxyHelper.DisableConnectivityAsync(currentWriter);
 
         Assert.Throws<FailoverSuccessException>(() =>
         {
@@ -211,7 +212,8 @@ public class FailoverConnectivityTests : IntegrationTestBase
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
 
-        var initialWriterInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.GetInstance(this.currentWriter);
+        string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
+        var initialWriterInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.GetInstance(currentWriter);
 
         var connectionString = ConnectionStringHelper.GetUrl(
             Engine,
@@ -235,7 +237,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
         connection.Open();
         Assert.Equal(ConnectionState.Open, connection.State);
 
-        await AuroraUtils.CrashInstance(this.currentWriter);
+        await AuroraUtils.CrashInstance(currentWriter);
 
         Assert.Throws<FailoverSuccessException>(() =>
         {
@@ -255,7 +257,8 @@ public class FailoverConnectivityTests : IntegrationTestBase
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
 
-        var initialWriterInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.GetInstance(this.currentWriter);
+        string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
+        var initialWriterInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.GetInstance(currentWriter);
 
         var connectionString = ConnectionStringHelper.GetUrl(
             Engine,
@@ -279,7 +282,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
         connection.Open();
         Assert.Equal(ConnectionState.Open, connection.State);
 
-        var simulationTask = AuroraUtils.SimulateTemporaryFailureAsync(this.currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(5));
+        var simulationTask = AuroraUtils.SimulateTemporaryFailureAsync(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(5));
 
         Assert.Throws<FailoverSuccessException>(() =>
         {

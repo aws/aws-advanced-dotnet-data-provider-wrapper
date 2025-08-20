@@ -310,7 +310,7 @@ public class AuroraTestUtils
             throw new InvalidOperationException($"DBClusterMember.IsClusterWriter is null for instance {instanceId} in cluster {clusterId}.");
         }
 
-        return dbClusterMember.IsClusterWriter.Value;
+        return dbClusterMember.IsClusterWriter.HasValue && dbClusterMember.IsClusterWriter.Value;
     }
 
     public async Task<DBClusterMember> GetMatchedDBClusterMemberAsync(string clusterId, string instanceId)
@@ -434,7 +434,7 @@ public class AuroraTestUtils
             ? targetHostIpOrName
             : this.HostToIP(targetHostIpOrName, true);
 
-        Console.WriteLine($"Wait for {hostToCheck} (current IP address {hostIpAddress}) resolves to {(expectEqual ? string.Empty : "anything except")} {targetHostIpOrName} (IP address {expectedHostIpAddress})");
+        Console.WriteLine($"Wait for {hostToCheck} (current IP address {hostIpAddress}) resolves to {(expectEqual ? string.Empty : "anything except ")}{targetHostIpOrName} (IP address {expectedHostIpAddress})");
 
         var checkStartTime = Stopwatch.StartNew();
         bool StillNotExpected() => expectEqual ? expectedHostIpAddress != hostIpAddress : expectedHostIpAddress == hostIpAddress;
