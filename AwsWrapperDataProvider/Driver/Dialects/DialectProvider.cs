@@ -147,9 +147,16 @@ public class DialectProvider
             }
         }
 
-        if (currDialect.IsDialect(connection))
+        try
         {
-            return currDialect;
+            if (currDialect.IsDialect(connection))
+            {
+                return currDialect;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, ex.Message);
         }
 
         throw new ArgumentException(Properties.Resources.Error_UnableToFindValidDialectType);
