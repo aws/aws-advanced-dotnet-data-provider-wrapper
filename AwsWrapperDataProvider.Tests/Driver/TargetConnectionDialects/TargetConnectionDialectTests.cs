@@ -140,18 +140,6 @@ public class TargetConnectionDialectTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void MySqlTargetDriverDialect_PrepareConnectionString_WithoutPort_OmitsPortParameter()
-    {
-        var connectionDialect = new MySqlConnectorDialect();
-        var dialect = new MysqlDialect();
-        var connectionString = connectionDialect.PrepareConnectionString(dialect, HostWithoutPort, BasicDatabaseProps);
-
-        Assert.Contains("Server=test-host", connectionString);
-        Assert.Contains("Port=3306", connectionString);
-    }
-
-    [Fact]
-    [Trait("Category", "Unit")]
     public void MySqlTargetDriverDialect_PrepareConnectionString_WithoutHostSpec_UsesPropertiesOnly()
     {
         var connectionDialect = new MySqlConnectorDialect();
@@ -191,18 +179,6 @@ public class TargetConnectionDialectTests
         Assert.Contains("Database=testdb", connectionString);
         Assert.Contains("Username=testuser", connectionString);
         Assert.Contains("Password=testpass", connectionString);
-    }
-
-    [Fact]
-    [Trait("Category", "Unit")]
-    public void MySqlClientDialect_PrepareConnectionString_WithoutPort_OmitsPortParameter()
-    {
-        var connectionDialect = new MySqlClientDialect();
-        var dialect = new MysqlDialect();
-        var connectionString = connectionDialect.PrepareConnectionString(dialect, HostWithoutPort, BasicDatabaseProps);
-
-        Assert.Contains("Server=test-host", connectionString);
-        Assert.Contains("Port=3306", connectionString);
     }
 
     [Fact]

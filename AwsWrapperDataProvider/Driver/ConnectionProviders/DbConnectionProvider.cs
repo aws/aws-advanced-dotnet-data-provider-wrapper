@@ -14,7 +14,6 @@
 
 using System.Collections.ObjectModel;
 using System.Data.Common;
-using System.Runtime.InteropServices.Marshalling;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostInfo.HostSelectors;

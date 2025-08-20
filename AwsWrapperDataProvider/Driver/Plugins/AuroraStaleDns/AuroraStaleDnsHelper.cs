@@ -106,7 +106,7 @@ public class AuroraStaleDnsHelper
             }
 
             // Create a new connection to the correct writer instance
-            DbConnection writerConnection = this.pluginService.OpenConnection(this.writerHostSpec, props, isInitialConnection);
+            DbConnection writerConnection = this.pluginService.OpenConnection(this.writerHostSpec, props, null);
 
             // Update the initial connection host spec if this is the initial connection
             if (isInitialConnection)

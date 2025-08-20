@@ -15,12 +15,9 @@
 using System;
 using System.Data;
 using System.Data.Common;
-using System.Runtime.CompilerServices;
-using System.Threading;
 using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.Dialects;
-using AwsWrapperDataProvider.Driver.Exceptions;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
@@ -264,23 +261,17 @@ public class PluginService : IPluginService, IHostListProviderService
         }
     }
 
-    public DbConnection OpenConnection(HostSpec hostSpec, Dictionary<string, string> props, bool isInitialConnection)
-    {
-        return this.pluginManager.Open(hostSpec, props, isInitialConnection, null);
-    }
-
     public DbConnection OpenConnection(
         HostSpec hostSpec,
         Dictionary<string, string> props,
-        bool isInitialConnection,
-        IConnectionPlugin pluginToSkip)
+        IConnectionPlugin? pluginToSkip)
     {
-        return this.pluginManager.Open(hostSpec, props, isInitialConnection, pluginToSkip);
+        return this.pluginManager.Open(hostSpec, props, this.CurrentConnection == null, pluginToSkip);
     }
 
-    public DbConnection ForceOpenConnection(HostSpec hostSpec, Dictionary<string, string> props, bool isInitialConnection)
+    public DbConnection ForceOpenConnection(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin? pluginToSkip)
     {
-        return this.pluginManager.ForceOpen(hostSpec, props, isInitialConnection, null);
+        return this.pluginManager.ForceOpen(hostSpec, props, this.CurrentConnection == null, pluginToSkip);
     }
 
     public Task OpenConnectionAsync(HostSpec hostSpec, Dictionary<string, string> props)

@@ -14,7 +14,11 @@
 
 using AwsWrapperDataProvider.Tests.Container.Utils;
 
+[assembly: CollectionBehavior(DisableTestParallelization = true)]
+[assembly: CaptureConsole]
+
 namespace AwsWrapperDataProvider.Tests;
+
 public abstract class IntegrationTestBase : IAsyncLifetime
 {
     protected readonly string defaultDbName = TestEnvironment.Env.Info.DatabaseInfo.DefaultDbName;
@@ -28,7 +32,7 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     {
         if (TestEnvironment.Env.Info.Request.Features.Contains(TestEnvironmentFeatures.NETWORK_OUTAGES_ENABLED))
         {
-            ProxyHelper.EnableAllConnectivity();
+            await ProxyHelper.EnableAllConnectivityAsync();
         }
 
         var deployment = TestEnvironment.Env.Info.Request.Deployment;

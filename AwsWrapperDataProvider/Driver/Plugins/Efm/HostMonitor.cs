@@ -314,7 +314,7 @@ public class HostMonitor : IHostMonitor
                 }
 
                 Logger.LogTrace(string.Format(Resources.EfmHostMonitor_OpeningMonitoringConnection, this.hostSpec.Host));
-                conn = this.pluginService.ForceOpenConnection(this.hostSpec, monitoringConnProperties, false);
+                conn = this.pluginService.ForceOpenConnection(this.hostSpec, monitoringConnProperties, null);
                 Logger.LogTrace(string.Format(Resources.EfmHostMonitor_OpenedMonitoringConnection, this.hostSpec.Host));
 
                 lock (this.monitorLock)
