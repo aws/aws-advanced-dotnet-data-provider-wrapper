@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Web;
@@ -36,7 +37,6 @@ public partial class OktaCredentialsProviderFactory(IPluginService pluginService
     private static partial Regex ValueAttributePattern();
 
     private static readonly string OktaAwsAppName = "amazon_aws";
-    private static readonly string SessionToken = "sessionToken";
     private static readonly string OneTimeToken = "onetimetoken";
     private static readonly ILogger<OktaCredentialsProviderFactory> Logger = LoggerUtils.GetLogger<OktaCredentialsProviderFactory>();
     private readonly IPluginService pluginService = pluginService;
@@ -120,7 +120,8 @@ public partial class OktaCredentialsProviderFactory(IPluginService pluginService
 
                 if (samlResponseValue.Success)
                 {
-                    return samlResponseValue.Groups[ValueGroup].Value;
+                    // WebUtility.HtmlDecode will convert entities such as &#x3d; to =, which is necessary for the base 64 SAML assertion
+                    return WebUtility.HtmlDecode(samlResponseValue.Groups[ValueGroup].Value);
                 }
             }
 
