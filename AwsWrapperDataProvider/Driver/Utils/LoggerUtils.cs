@@ -34,6 +34,6 @@ public static class LoggerUtils
     public static string LogTopology(IList<HostSpec> hosts, string? messagePrefix)
     {
         var topology = string.Join($"{Environment.NewLine}    ", hosts.Select(h => h.ToString()));
-        return $"{messagePrefix ?? "Topology:"}{Environment.NewLine}{topology}";
+        return $"{messagePrefix ?? "Topology:"}{Environment.NewLine}    {topology}";
     }
 }

@@ -434,11 +434,11 @@ public class AuroraTestUtils
             ? targetHostIpOrName
             : this.HostToIP(targetHostIpOrName, true);
 
-        Console.WriteLine($"Wait for {hostToCheck} (current IP address {hostIpAddress}) resolves to {targetHostIpOrName} (IP address {expectedHostIpAddress})");
+        Console.WriteLine($"Wait for {hostToCheck} (current IP address {hostIpAddress}) resolves to {(expectEqual ? string.Empty : "anything except")} {targetHostIpOrName} (IP address {expectedHostIpAddress})");
 
         var checkStartTime = Stopwatch.StartNew();
-        var stillNotExpected = expectEqual ? expectedHostIpAddress != hostIpAddress : expectedHostIpAddress == hostIpAddress;
-        while (stillNotExpected && checkStartTime.Elapsed < timeout)
+        bool StillNotExpected() => expectEqual ? expectedHostIpAddress != hostIpAddress : expectedHostIpAddress == hostIpAddress;
+        while (StillNotExpected() && checkStartTime.Elapsed < timeout)
         {
             Thread.Sleep(TimeSpan.FromSeconds(5));
             hostIpAddress = this.HostToIP(hostToCheck, false);
