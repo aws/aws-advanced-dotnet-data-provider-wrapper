@@ -581,7 +581,7 @@ public class AuroraTestUtils
                 await Task.Delay(delay);
             }
 
-            await ProxyHelper.DisableConnectivityAsync(instanceName);
+            ProxyHelper.DisableConnectivityAsync(instanceName).GetAwaiter().GetResult();
             await Task.Delay(duration);
             await ProxyHelper.EnableConnectivityAsync(instanceName);
         });

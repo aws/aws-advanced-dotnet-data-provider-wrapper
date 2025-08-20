@@ -63,6 +63,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
 
         Assert.Throws<FailoverSuccessException>(() =>
         {
+            Console.WriteLine("Executing instance ID query to trigger failover...");
             AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
         });
     }
@@ -108,6 +109,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
 
         Assert.Throws<FailoverSuccessException>(() =>
         {
+            Console.WriteLine("Executing instance ID query to trigger failover...");
             AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
         });
 
@@ -153,6 +155,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
 
         Assert.Throws<FailoverSuccessException>(() =>
         {
+            Console.WriteLine("Executing instance ID query to trigger failover...");
             AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
         });
 
@@ -200,6 +203,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
 
         Assert.Throws<FailoverSuccessException>(() =>
         {
+            Console.WriteLine("Executing instance ID query to trigger failover...");
             AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
         });
     }
@@ -241,6 +245,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
 
         Assert.Throws<FailoverSuccessException>(() =>
         {
+            Console.WriteLine("Executing instance ID query to trigger failover...");
             AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
         });
 
@@ -286,6 +291,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
 
         Assert.Throws<FailoverSuccessException>(() =>
         {
+            Console.WriteLine("Executing instance ID query to trigger failover...");
             AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
         });
         await simulationTask;
