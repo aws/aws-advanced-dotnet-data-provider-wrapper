@@ -219,4 +219,7 @@
     <data name="EfmHostMonitor_ExceptionAbortingConnection" xml:space="preserve">
       <value>Encountered exception while aborting connection: {0}.</value>
     </data>
+  <data name="PluginService.ErrorClosingOldConnection" xml:space="preserve">
+      <value>Error closing old connection: {0}</value>
+  </data>
 </root>

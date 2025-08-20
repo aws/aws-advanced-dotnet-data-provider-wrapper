@@ -27,6 +27,7 @@ using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
@@ -140,9 +141,9 @@ public class PluginService : IPluginService, IHostListProviderService
                 oldConnection?.Close();
                 oldConnection?.Dispose();
             }
-            catch (DbException)
+            catch (DbException exception)
             {
-                // Do nothing;
+                Logger.LogTrace(string.Format(Resources.PluginService_ErrorClosingOldConnection, exception.Message));
             }
         }
     }
