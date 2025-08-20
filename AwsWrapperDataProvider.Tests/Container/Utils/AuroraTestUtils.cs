@@ -196,6 +196,8 @@ public class AuroraTestUtils
                             remainingInstances.TryRemove(host, out _);
                             break;
                         }
+
+                        Console.WriteLine($"Host {host} connection state is {connection.State}.");
                     }
                     catch (DbException ex)
                     {
@@ -341,16 +343,28 @@ public class AuroraTestUtils
     {
         DescribeDBClustersResponse? response = null;
         int remainingTries = 5;
+        var results = new List<DBCluster>();
+        DescribeDBClustersRequest request = new()
+        {
+            DBClusterIdentifier = clusterId,
+        };
 
         while (remainingTries-- > 0)
         {
             try
             {
-                response = await this.rdsClient.DescribeDBClustersAsync(
-                    new DescribeDBClustersRequest
+                // Get the full list if there are multiple pages.
+                do
+                {
+                    response = await this.rdsClient.DescribeDBClustersAsync(request);
+                    if (response.DBClusters != null)
                     {
-                        DBClusterIdentifier = clusterId,
-                    });
+                        results.AddRange(response.DBClusters);
+                    }
+
+                    request.Marker = response.Marker;
+                }
+                while (response.Marker is not null);
 
                 break;
             }
@@ -367,12 +381,12 @@ public class AuroraTestUtils
             }
         }
 
-        if (response == null || response.DBClusters.Count == 0)
+        if (response == null || results.Count == 0)
         {
             throw new InvalidOperationException($"Unable to get DB cluster info for cluster with ID {clusterId}");
         }
 
-        return response.DBClusters.First();
+        return results.First();
     }
 
     public List<string> GetAuroraInstanceIds()
@@ -561,7 +575,12 @@ public class AuroraTestUtils
     {
         await Task.Run(async () =>
         {
-            await Task.Delay(delay);
+            Console.WriteLine($"Simulating temporary failure to {instanceName}...");
+            if (delay != TimeSpan.Zero)
+            {
+                await Task.Delay(delay);
+            }
+
             await ProxyHelper.DisableConnectivityAsync(instanceName);
             await Task.Delay(duration);
             await ProxyHelper.EnableConnectivityAsync(instanceName);
