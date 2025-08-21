@@ -95,12 +95,18 @@ public class PluginService : IPluginService, IHostListProviderService
     {
         // TODO use lock when switching connection
         DbConnection? oldConnection = this.CurrentConnection;
+        if (ReferenceEquals(connection, this.CurrentConnection))
+        {
+            return;
+        }
+
         this.CurrentConnection = connection;
         this.currentHostSpec = hostSpec;
 
         try
         {
             oldConnection?.Dispose();
+            Logger.LogTrace("Old connection is disposed: {Type}@{Id}", oldConnection?.GetType().FullName, RuntimeHelpers.GetHashCode(oldConnection));
         }
         catch (Exception exception)
         {
