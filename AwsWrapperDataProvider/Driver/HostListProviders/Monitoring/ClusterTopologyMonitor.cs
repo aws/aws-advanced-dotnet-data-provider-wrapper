@@ -14,6 +14,7 @@
 
 using System.Collections.Concurrent;
 using System.Data.Common;
+using System.Runtime.CompilerServices;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
 using AwsWrapperDataProvider.Properties;
@@ -468,6 +469,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         if (connection != null)
         {
             await connection.DisposeAsync();
+            Logger.LogTrace("Connection {Type}@{Id} is disposed.", connection.GetType().FullName, RuntimeHelpers.GetHashCode(connection));
         }
     }
 

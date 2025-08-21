@@ -13,10 +13,12 @@
 // limitations under the License.
 
 using System.Data.Common;
+using System.Runtime.CompilerServices;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
-using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
+using AwsWrapperDataProvider.Driver.Utils;
+using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Plugins;
 
@@ -25,6 +27,8 @@ public class DefaultConnectionPlugin(
     IConnectionProvider defaultConnProvider,
     IConnectionProvider? effectiveConnProvider) : IConnectionPlugin
 {
+    private static readonly ILogger<DefaultConnectionPlugin> Logger = LoggerUtils.GetLogger<DefaultConnectionPlugin>();
+
     public IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string> { "*" };
 
     private readonly IConnectionProvider defaultConnProvider = defaultConnProvider;
@@ -80,6 +84,7 @@ public class DefaultConnectionPlugin(
         // Update connection string that may have been modified by other plugins
         conn.ConnectionString = this.pluginService.TargetConnectionDialect.PrepareConnectionString(this.pluginService.Dialect, hostSpec, props);
         conn.Open();
+        Logger.LogTrace("Connection {Type}@{Id} is opened.", conn.GetType().FullName, RuntimeHelpers.GetHashCode(conn));
 
         // Set availability and update dialect
         this.pluginService.SetAvailability(hostSpec!.AsAliases(), HostAvailability.Available);

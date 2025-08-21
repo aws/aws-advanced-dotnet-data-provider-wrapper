@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data.Common;
+using System.Runtime.CompilerServices;
 using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.Dialects;
@@ -22,6 +23,7 @@ using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
@@ -92,8 +94,20 @@ public class PluginService : IPluginService, IHostListProviderService
     public void SetCurrentConnection(DbConnection connection, HostSpec? hostSpec)
     {
         // TODO use lock when switching connection
+        DbConnection? oldConnection = this.CurrentConnection;
         this.CurrentConnection = connection;
         this.currentHostSpec = hostSpec;
+
+        try
+        {
+            oldConnection?.Dispose();
+        }
+        catch (Exception exception)
+        {
+            Logger.LogWarning(exception, "Error occoured when disposing old connection {Type}@{Id}", oldConnection?.GetType().FullName, RuntimeHelpers.GetHashCode(oldConnection));
+        }
+
+        Logger.LogTrace("Current connection is set: {Type}@{Id}", this.CurrentConnection.GetType().FullName, RuntimeHelpers.GetHashCode(this.CurrentConnection));
     }
 
     public void SetCurrentConnection(DbConnection connection, HostSpec hostSpec, IConnectionPlugin pluginToSkip)

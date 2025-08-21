@@ -14,15 +14,20 @@
 
 using System.Collections.ObjectModel;
 using System.Data.Common;
+using System.Runtime.CompilerServices;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostInfo.HostSelectors;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
+using AwsWrapperDataProvider.Driver.Utils;
+using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.ConnectionProviders;
 
 public class DbConnectionProvider() : IConnectionProvider
 {
+    private static readonly ILogger<DbConnectionProvider> Logger = LoggerUtils.GetLogger<DbConnectionProvider>();
+
     private static readonly ReadOnlyDictionary<string, IHostSelector> AcceptedStrategies =
         new(new Dictionary<string, IHostSelector>
         {
@@ -58,6 +63,11 @@ public class DbConnectionProvider() : IConnectionProvider
         {
             throw new InvalidCastException("Unable to create connection.");
         }
+
+        Logger.LogTrace(
+            "Connection created: {ConnectionType}@{Id},",
+            targetConnection.GetType().FullName,
+            RuntimeHelpers.GetHashCode(targetConnection));
 
         return targetConnection;
     }

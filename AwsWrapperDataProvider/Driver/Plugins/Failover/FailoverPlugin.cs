@@ -15,6 +15,7 @@
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Plugins.AuroraStaleDns;
@@ -432,7 +433,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
     private void InvalidateCurrentConnection()
     {
-        Logger.LogInformation("Invalidating current connection...");
+        Logger.LogTrace("Invalidating current connection...");
         var conn = this.pluginService.CurrentConnection;
         if (conn == null)
         {
@@ -468,6 +469,8 @@ public class FailoverPlugin : AbstractConnectionPlugin
             // Swallow exception, current connection should be useless anyway.
             Logger.LogWarning("Error occoured when disposing current connection: {message}", ex.Message);
         }
+
+        Logger.LogTrace("Current connection {Type}@{Id} is invalidated.", conn.GetType().FullName, RuntimeHelpers.GetHashCode(conn));
     }
 
     private void PickNewConnection()
