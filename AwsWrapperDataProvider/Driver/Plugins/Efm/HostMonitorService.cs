@@ -22,6 +22,7 @@ namespace AwsWrapperDataProvider.Driver.Plugins.Efm;
 
 public class HostMonitorService : IHostMonitorService
 {
+    private static readonly ILogger<HostMonitorService> Logger = LoggerUtils.GetLogger<HostMonitorService>();
     private readonly IPluginService pluginService;
 
     protected static readonly int CacheCleanupMs = (int)TimeSpan.FromMinutes(1).TotalMilliseconds;

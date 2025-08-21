@@ -24,9 +24,6 @@ namespace AwsWrapperDataProvider.Tests;
 public class EfmConnectivityTests
 {
     private static readonly int TestCommandTimeoutSecs = 500;
-    private static readonly int TestFailureDetectionTime = 1000;
-    private static readonly int TestFailureDetectionInterval = 5000;
-    private static readonly int TestFailureDetectionCount = 1;
 
     [Fact]
     [Trait("Category", "Integration")]
@@ -37,14 +34,17 @@ public class EfmConnectivityTests
         const string dbUser = "username"; // Replace with the name of the db user with IAM auth
         const string database = "database"; // Replace with your database name
 
-        var connectionString = $"Host={clusterEndpoint};Username={dbUser};Database={database};Plugins=iam,efm;";
-        await PerformEfmTest(connectionString, clusterEndpoint);
+        const int failureDetectionTime = 1000;
+        const int failureDetectionInterval = 5000;
+        const int failureDetectionCount = 1;
+
+        var connectionString = $"Host={clusterEndpoint};Username={dbUser};Database={database};Plugins=iam,efm;"
+            + $"FailureDetectionTime={failureDetectionTime};FailureDetectionInterval={failureDetectionInterval};FailureDetectionCount={failureDetectionCount};";
+        await PerformEfmTest(connectionString, clusterEndpoint, true, failureDetectionTime, failureDetectionInterval, failureDetectionCount);
     }
 
-    internal static async Task PerformEfmTest(string connectionString, string initialHost)
+    internal static async Task PerformEfmTest(string connectionString, string initialHost, bool isManualTest, int failureDetectionTime, int failureDetectionInterval, int failureDetectionCount)
     {
-        connectionString += $"FailureDetectionTime={TestFailureDetectionTime};FailureDetectionInterval={TestFailureDetectionInterval};FailureDetectionCount={TestFailureDetectionCount};";
-
         try
         {
             AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
@@ -58,9 +58,9 @@ public class EfmConnectivityTests
             string host = GetConnectedHost(connection, initialHost);
             Console.WriteLine($"   Host: {host}");
             string monitorKey = HostMonitorService.GetMonitorKey(
-                TestFailureDetectionTime,
-                TestFailureDetectionInterval,
-                TestFailureDetectionCount,
+                failureDetectionTime,
+                failureDetectionInterval,
+                failureDetectionCount,
                 host);
             Console.WriteLine($"   Monitor key: {monitorKey}");
 
@@ -71,24 +71,31 @@ public class EfmConnectivityTests
             Console.WriteLine("\n3. Running long command in background task...");
             var readerTask = command.ExecuteReaderAsync();
 
-            await Task.Delay(TestFailureDetectionTime + 1000, TestContext.Current.CancellationToken);
+            await Task.Delay(failureDetectionTime + 1000, TestContext.Current.CancellationToken);
 
             Console.WriteLine("\n4. Asserting that monitor exists...");
             Assert.True(HostMonitorService.Monitors.TryGetValue(monitorKey, out IHostMonitor? monitor) && monitor != null);
             Assert.False(monitor.CanDispose());
             Console.WriteLine("   ✓ Monitor exists");
 
-            bool monitorCaughtFailure = false, disabledConnectivity = false;
+            bool disabledConnectivity = false, monitorCaughtFailure = false;
+            int monitorFailureCount = 0;
 
             Console.WriteLine("\n5. Monitoring for failure...");
-            Console.WriteLine("   ! Please turn off your internet or cause the connection to become unresponsive during this time.");
-            for (int timeWaited = 0; timeWaited < TestCommandTimeoutSecs * 1000; timeWaited += TestFailureDetectionInterval)
+
+            if (isManualTest)
             {
-                await Task.Delay(TestFailureDetectionInterval);
+                Console.WriteLine("   ! Please turn off your internet or cause the connection to become unresponsive during this time.");
+            }
+
+            for (int timeWaited = 0; timeWaited < TestCommandTimeoutSecs * 1000; timeWaited += failureDetectionInterval)
+            {
+                await Task.Delay(failureDetectionInterval);
                 if (monitor.CanDispose())
                 {
                     Console.WriteLine("   ✓ Monitor has caught the failure.");
                     monitorCaughtFailure = true;
+                    monitorFailureCount = monitor.FailureCount;
 
                     if (connection.State != ConnectionState.Open)
                     {
@@ -97,7 +104,7 @@ public class EfmConnectivityTests
 
                     break;
                 }
-                else if (timeWaited > 0 && !disabledConnectivity)
+                else if (timeWaited > 0 && !disabledConnectivity && !isManualTest)
                 {
                     await ProxyHelper.DisableAllConnectivityAsync();
                     disabledConnectivity = true;
@@ -118,6 +125,11 @@ public class EfmConnectivityTests
                 Console.WriteLine("   ❌ Monitor did not catch the failure.");
             }
 
+            if (monitorFailureCount != failureDetectionCount)
+            {
+                Console.WriteLine($"   ❌ Monitor caught {monitorFailureCount} failures when configured to handle {failureDetectionCount} failures.");
+            }
+
             if (connection.State == ConnectionState.Open)
             {
                 Console.WriteLine("   ❌ Monitor did not dispose the connection.");
@@ -125,11 +137,15 @@ public class EfmConnectivityTests
                 connection.Dispose();
             }
 
-            Assert.NotEqual(ConnectionState.Open, connection.State);
             Assert.True(monitorCaughtFailure);
+            Assert.Equal(monitorFailureCount, failureDetectionCount);
+            Assert.NotEqual(ConnectionState.Open, connection.State);
 
-            // done with the test; restore proxy connectivity
-            await ProxyHelper.EnableAllConnectivityAsync();
+            if (!isManualTest)
+            {
+                // done with the test; restore proxy connectivity
+                await ProxyHelper.EnableAllConnectivityAsync();
+            }
         }
         catch (Exception ex)
         {

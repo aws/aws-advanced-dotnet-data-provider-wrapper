@@ -79,7 +79,7 @@ public static class PropertyDefinition
     public static readonly AwsWrapperProperty ClusterTopologyRefreshRateMs = new(
         "ClusterTopologyRefreshRateMs",
         "30000",
-        "Cluster topology refresh rate in millis. The cached topology for the cluster will be invalidated after the specified time, after which it will be updated during the next interaction with the connection.");
+        "Cluster topology refresh rate in milliseconds. The cached topology for the cluster will be invalidated after the specified time, after which it will be updated during the next interaction with the connection.");
 
     public static readonly AwsWrapperProperty ClusterInstanceHostPattern = new(
         "ClusterInstanceHostPattern",
@@ -180,12 +180,12 @@ public static class PropertyDefinition
     public static readonly AwsWrapperProperty FailureDetectionTime = new(
         "FailureDetectionTime",
         "30000",
-        "Interval in millis between sending SQL to the server and the first probe to database node.");
+        "Interval in milliseconds between sending SQL to the server and the first probe to database node.");
 
     public static readonly AwsWrapperProperty FailureDetectionInterval = new(
         "FailureDetectionInterval",
         "5000",
-        "Interval in millis between probes to database node.");
+        "Interval in milliseconds between probes to database node.");
 
     public static readonly AwsWrapperProperty FailureDetectionCount = new(
         "FailureDetectionCount",

@@ -252,6 +252,11 @@ public class PluginService : IPluginService, IHostListProviderService
 
     public void FillAliases(DbConnection connection, HostSpec hostSpec)
     {
+        if (hostSpec.GetAliases().Count > 0)
+        {
+            return;
+        }
+
         hostSpec.AddAlias(hostSpec.AsAlias());
         try
         {

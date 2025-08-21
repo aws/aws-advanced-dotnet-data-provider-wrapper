@@ -46,6 +46,8 @@ public class HostMonitor : IHostMonitor
     private volatile bool nodeUnhealthy = false;
     private DbConnection? monitoringConn = null;
 
+    public int FailureCount { get => this.failureCount; }
+
     /// <summary>
     /// Initializes a new instance of the <see cref="HostMonitor"/> class.
     /// </summary>
@@ -97,10 +99,7 @@ public class HostMonitor : IHostMonitor
 
     public bool CanDispose()
     {
-        lock (this.monitorLock)
-        {
-            return this.activeContexts.IsEmpty && this.newContexts.Count == 0;
-        }
+        return this.activeContexts.IsEmpty && this.newContexts.Count == 0;
     }
 
     public void Close()
