@@ -157,8 +157,11 @@ public class FailoverConnectivityTests : IntegrationTestBase
         connection.Open();
         Assert.Equal(ConnectionState.Open, connection.State);
 
-        var simulationTask = AuroraUtils.SimulateTemporaryFailureAsync(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(5));
+        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var simulationTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(5), tcs);
 
+        // Wait for the simulation to start
+        await tcs.Task;
         Assert.Throws<FailoverSuccessException>(() =>
         {
             this.output.WriteLine("Executing instance ID query to trigger failover...");
@@ -293,8 +296,11 @@ public class FailoverConnectivityTests : IntegrationTestBase
         connection.Open();
         Assert.Equal(ConnectionState.Open, connection.State);
 
-        var simulationTask = AuroraUtils.SimulateTemporaryFailureAsync(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(5));
+        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var simulationTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(5), tcs);
 
+        // Wait for the simulation to start
+        await tcs.Task;
         Assert.Throws<FailoverSuccessException>(() =>
         {
             this.output.WriteLine("Executing instance ID query to trigger failover...");

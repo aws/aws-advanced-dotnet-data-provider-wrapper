@@ -571,19 +571,29 @@ public class AuroraTestUtils
             await this.GetRandomDBClusterReaderInstanceIdAsync(clusterId));
     }
 
-    public async Task SimulateTemporaryFailureAsync(string instanceName, TimeSpan delay, TimeSpan duration)
+    public Task SimulateTemporaryFailureTask(string instanceName, TimeSpan delay, TimeSpan duration, TaskCompletionSource tcs)
     {
-        await Task.Run(async () =>
+        return Task.Run(async () =>
         {
-            Console.WriteLine($"Simulating temporary failure to {instanceName}...");
-            if (delay != TimeSpan.Zero)
+            try
             {
-                await Task.Delay(delay);
-            }
+                Console.WriteLine($"Simulating temporary failure to {instanceName}...");
+                if (delay != TimeSpan.Zero)
+                {
+                    await Task.Delay(delay);
+                }
 
-            ProxyHelper.DisableConnectivityAsync(instanceName).GetAwaiter().GetResult();
-            await Task.Delay(duration);
-            await ProxyHelper.EnableConnectivityAsync(instanceName);
+                await ProxyHelper.DisableConnectivityAsync(instanceName);
+                tcs.TrySetResult();
+
+                await Task.Delay(duration);
+                await ProxyHelper.EnableConnectivityAsync(instanceName);
+            }
+            catch (Exception ex)
+            {
+                tcs.TrySetException(ex);
+                throw;
+            }
         });
     }
 
