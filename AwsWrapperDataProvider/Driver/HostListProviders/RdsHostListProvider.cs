@@ -222,50 +222,63 @@ public class RdsHostListProvider : IDynamicHostListProvider
 
     public virtual HostSpec? IdentifyConnection(DbConnection connection)
     {
-        using DbCommand command = connection.CreateCommand();
-        command.CommandText = this.nodeIdQuery;
-        using DbDataReader resultSet = command.ExecuteReader();
-
-        if (!resultSet.Read())
+        try
         {
-            return null;
-        }
-
-        string instanceName = resultSet.GetString(0);
-
-        IList<HostSpec> topology = this.Refresh(connection);
-        bool isForcedRefresh = false;
-
-        // TODO Clean up if statement
-        if (topology == null)
-        {
-            topology = this.ForceRefresh(connection);
-            isForcedRefresh = true;
-
-            if (topology == null)
+            string instanceName;
+            using (var command = connection.CreateCommand())
             {
-                return null;
-            }
-        }
+                command.CommandText = this.nodeIdQuery;
+                using var resultSet = command.ExecuteReader();
 
-        HostSpec? foundHost = topology
-            .Where(host => host.HostId == instanceName)
-            .FirstOrDefault();
+                if (!resultSet.Read())
+                {
+                    throw new InvalidOperationException("An error occurred while obtaining the connection's host ID.");
+                }
 
-        if (foundHost == null && !isForcedRefresh)
-        {
-            topology = this.ForceRefresh(connection);
-            if (topology == null)
-            {
-                return null;
+                instanceName = resultSet.GetString(0);
             }
 
-            foundHost = topology
+            IList<HostSpec> topology = this.Refresh(connection);
+            bool isForcedRefresh = false;
+
+            // TODO Clean up if statement
+            if (topology == null)
+            {
+                topology = this.ForceRefresh(connection);
+                isForcedRefresh = true;
+
+                if (topology == null)
+                {
+                    return null;
+                }
+            }
+
+            HostSpec? foundHost = topology
                 .Where(host => host.HostId == instanceName)
                 .FirstOrDefault();
+
+            if (foundHost == null && !isForcedRefresh)
+            {
+                topology = this.ForceRefresh(connection);
+                if (topology == null)
+                {
+                    return null;
+                }
+
+                foundHost = topology
+                    .Where(host => host.HostId == instanceName)
+                    .FirstOrDefault();
+            }
+
+            return foundHost;
+        }
+        catch (DbException ex)
+        {
+            Logger.LogError(ex, "An error occurred while obtaining the connection's host ID.");
+            throw;
         }
 
-        return foundHost;
+        throw new InvalidOperationException("An error occurred while obtaining the connection's host ID.");
     }
 
     public virtual HostRole GetHostRole(IDbConnection connection)
