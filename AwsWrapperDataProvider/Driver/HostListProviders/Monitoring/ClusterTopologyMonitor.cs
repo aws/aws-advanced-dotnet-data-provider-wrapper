@@ -372,6 +372,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                     try
                     {
                         await newConnection.DisposeAsync();
+                        Logger.LogTrace("Connection {Type}@{Id} is disposed.", newConnection.GetType().FullName, RuntimeHelpers.GetHashCode(newConnection));
                     }
                     catch
                     {

@@ -23,6 +23,7 @@ namespace AwsWrapperDataProvider.Tests;
 public class FailoverConnectivityTests : IntegrationTestBase
 {
     private readonly ITestOutputHelper output;
+
     protected override bool MakeSureFirstInstanceWriter => true;
 
     public FailoverConnectivityTests(ITestOutputHelper output)
