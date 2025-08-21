@@ -14,6 +14,7 @@
 
 using AwsWrapperDataProvider.Driver.HostInfo;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 
 namespace AwsWrapperDataProvider.Driver.Utils;
 
@@ -23,10 +24,21 @@ public static class LoggerUtils
 
     static LoggerUtils()
     {
-        LoggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder => builder
-                .SetMinimumLevel(LogLevel.Trace)
-                .AddDebug()
-                .AddConsole());
+        LoggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
+        {
+            builder
+            .SetMinimumLevel(LogLevel.Trace)
+            .AddDebug()
+            .AddConsole(options => options.FormatterName = "simple");
+
+            builder.AddSimpleConsole(options =>
+            {
+                options.IncludeScopes = true;
+                options.TimestampFormat = "yyyy-MM-dd HH:mm:ss ";
+                options.UseUtcTimestamp = true;
+                options.ColorBehavior = LoggerColorBehavior.Enabled;
+            });
+        });
     }
 
     public static ILogger<T> GetLogger<T>() => LoggerFactory.CreateLogger<T>();
