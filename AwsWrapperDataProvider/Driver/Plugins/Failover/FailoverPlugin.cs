@@ -321,7 +321,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
                     // The role is Writer or Unknown, and we are in StrictReader mode
                     remainingReaders.Remove(readerCandidate);
-                    candidateConn.Close();
+                    candidateConn.Dispose();
 
                     if (role == HostRole.Writer)
                     {
@@ -353,7 +353,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
                         return new ReaderFailoverResult(candidateConn, updatedHostSpec);
                     }
 
-                    candidateConn.Close();
+                    candidateConn.Dispose();
 
                     if (role == HostRole.Writer)
                     {
@@ -405,7 +405,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
         {
             try
             {
-                writerCandidateConn.Close();
+                writerCandidateConn.Dispose();
             }
             catch (Exception)
             {
@@ -432,6 +432,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
     private void InvalidateCurrentConnection()
     {
+        Logger.LogInformation("Invalidating current connection...");
         var conn = this.pluginService.CurrentConnection;
         if (conn == null)
         {
@@ -462,9 +463,10 @@ public class FailoverPlugin : AbstractConnectionPlugin
                 conn.Dispose();
             }
         }
-        catch
+        catch (Exception ex)
         {
             // Swallow exception, current connection should be useless anyway.
+            Logger.LogWarning("Error occoured when disposing current connection: {message}", ex.Message);
         }
     }
 

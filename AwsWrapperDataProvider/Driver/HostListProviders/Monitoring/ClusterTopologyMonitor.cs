@@ -232,8 +232,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         }
         catch (Exception ex)
         {
-            Logger.Log(
-                LogLevel.Trace,
+            Logger.LogTrace(
                 string.Format(Resources.ClusterTopologyMonitor_ExceptionDuringMonitoringStop, this.initialHostSpec.Host),
                 ex);
         }
@@ -395,9 +394,9 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
         if (hosts == null)
         {
-            var connToClose = Interlocked.Exchange(ref this.monitoringConnection, null);
+            var connToDispose = Interlocked.Exchange(ref this.monitoringConnection, null);
             this.isVerifiedWriterConnection = false;
-            await this.DisposeConnectionAsync(connToClose);
+            await this.DisposeConnectionAsync(connToDispose);
         }
 
         return hosts;
@@ -591,6 +590,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
     public void Dispose()
     {
+        Logger.LogTrace("Disposing cluster topology monitor for host {host}", this.initialHostSpec.Host);
         lock (this.disposeLock)
         {
             if (this.disposed)
@@ -608,9 +608,9 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         {
             this.monitoringTask.Wait(TimeSpan.FromSeconds(30));
         }
-        catch
+        catch (Exception ex)
         {
-            // Ignore
+            Logger.LogWarning("Error occourred when waiting on node monitoring thread to finish: {message}", ex.Message);
         }
 
         var conn = Interlocked.Exchange(ref this.monitoringConnection, null);

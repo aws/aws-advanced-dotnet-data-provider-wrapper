@@ -17,6 +17,7 @@ using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 
@@ -26,6 +27,8 @@ namespace AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 /// </summary>
 public class MonitoringRdsHostListProvider : RdsHostListProvider, IBlockingHostListProvider
 {
+    private static readonly ILogger<MonitoringRdsHostListProvider> Logger = LoggerUtils.GetLogger<MonitoringRdsHostListProvider>();
+
     protected static readonly TimeSpan MonitorExpirationTime = TimeSpan.FromMinutes(15);
     protected static readonly TimeSpan TopologyCacheExpirationTime = TimeSpan.FromMinutes(5);
 
@@ -68,8 +71,8 @@ public class MonitoringRdsHostListProvider : RdsHostListProvider, IBlockingHostL
     {
         IClusterTopologyMonitor monitor = Monitors.Get<IClusterTopologyMonitor>(this.ClusterId) ?? this.InitMonitor();
 
-        IList<HostSpec> task = monitor.ForceRefresh(shouldVerifyWriter, timeoutMs);
-        this.hostList = task.ToList();
+        IList<HostSpec> hosts = monitor.ForceRefresh(shouldVerifyWriter, timeoutMs);
+        this.hostList = hosts.ToList();
         return this.hostList.AsReadOnly();
     }
 
@@ -153,9 +156,9 @@ public class MonitoringRdsHostListProvider : RdsHostListProvider, IBlockingHostL
             {
                 evictedMonitor.Dispose();
             }
-            catch
+            catch (Exception ex)
             {
-                // Ignore disposal errors
+                Logger.LogWarning("Error disposing clustor topology monitor: {message} ", ex.Message);
             }
         }
     }

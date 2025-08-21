@@ -25,6 +25,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
     private readonly VerifyOpenedConnectionType? verifyOpenedConnectionType;
 
     private IHostListProviderService? hostListProviderService;
+
     public AuroraInitialConnectionStrategyPlugin(IPluginService pluginService, Dictionary<string, string> props)
     {
         this.pluginService = pluginService;
