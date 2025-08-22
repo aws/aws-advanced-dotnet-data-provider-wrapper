@@ -104,7 +104,7 @@ public class EfmConnectivityTests
 
                     break;
                 }
-                else if (timeWaited > 0 && !disabledConnectivity && !isManualTest)
+                else if (timeWaited > failureDetectionInterval * 2 && !disabledConnectivity && !isManualTest)
                 {
                     await ProxyHelper.DisableAllConnectivityAsync();
                     disabledConnectivity = true;
