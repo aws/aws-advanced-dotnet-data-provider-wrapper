@@ -53,11 +53,7 @@ public static class LoggerUtils
     {
         int threadId = Environment.CurrentManagedThreadId;
         int taskId = Task.CurrentId ?? -1;
-        return logger.BeginScope(new Dictionary<string, object>
-        {
-            ["ThreadId"] = threadId,
-            ["TaskId"] = taskId,
-        })!;
+        return logger.BeginScope("ThreadId:{ThreadId} TaskId:{TaskId}", threadId, taskId)!;
     }
 
     public static void LogWithThreadId(ILogger logger, LogLevel level, string message, params object?[] args)
