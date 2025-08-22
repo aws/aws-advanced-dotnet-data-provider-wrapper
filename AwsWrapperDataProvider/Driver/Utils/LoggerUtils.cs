@@ -48,4 +48,31 @@ public static class LoggerUtils
         var topology = string.Join($"{Environment.NewLine}    ", hosts.Select(h => h.ToString()));
         return $"{messagePrefix ?? "Topology:"}{Environment.NewLine}    {topology}";
     }
+
+    public static IDisposable BeginThreadScope(ILogger logger)
+    {
+        int threadId = Environment.CurrentManagedThreadId;
+        int taskId = Task.CurrentId ?? -1;
+        return logger.BeginScope(new Dictionary<string, object>
+        {
+            ["ThreadId"] = threadId,
+            ["TaskId"] = taskId,
+        })!;
+    }
+
+    public static void LogWithThreadId(ILogger logger, LogLevel level, string message, params object?[] args)
+    {
+        using (BeginThreadScope(logger))
+        {
+            logger.Log(level, message, args);
+        }
+    }
+
+    public static void LogWithThreadId(ILogger logger, LogLevel level, Exception ex, string message, params object?[] args)
+    {
+        using (BeginThreadScope(logger))
+        {
+            logger.Log(level, ex, message, args);
+        }
+    }
 }
