@@ -682,6 +682,8 @@ public class AuroraTestUtils
     {
         string query = this.GetInstanceIdSql(engine, deployment);
         using var command = connection.CreateCommand();
+        Console.WriteLine($"Command timeout before explicit set: {command.CommandTimeout}");
+        command.CommandTimeout = 2;
         command.CommandText = query;
         var result = Convert.ToString(command.ExecuteScalar());
         if (result == null)

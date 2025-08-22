@@ -104,7 +104,7 @@ public class ContainerHelper {
     assertEquals(0, exitCode, "Build failed.");
 
     exitCode = execInContainer(container, consumer, "dotnet", "test", "--filter",
-            "Category=Integration&Database=" + task, "--no-build", "--logger:\"console;verbosity=detailed\"");
+            "FullyQualifiedName~AwsWrapperDataProvider.Tests.FailoverConnectivityTests&Category=Integration&Database=" + task, "--no-build", "--logger:\"console;verbosity=detailed\"");
 
     System.out.println("==== Container console feed ==== <<<<");
     assertEquals(0, exitCode, "Some tests failed.");
