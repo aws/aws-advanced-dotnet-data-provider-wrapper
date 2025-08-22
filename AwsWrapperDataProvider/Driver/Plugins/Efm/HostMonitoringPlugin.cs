@@ -12,10 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data.Common;
-using AwsWrapperDataProvider.Driver.HostInfo;
-using AwsWrapperDataProvider.Driver.HostListProviders;
-
 namespace AwsWrapperDataProvider.Driver.Plugins.Efm;
 
 public class HostMonitoringPlugin(IPluginService pluginService, Dictionary<string, string> props) : AbstractConnectionPlugin

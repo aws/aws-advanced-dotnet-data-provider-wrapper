@@ -161,13 +161,12 @@ public class FailoverPlugin : AbstractConnectionPlugin
         {
             try
             {
-                var connection = methodFunc();
-                if (isInitialConnection)
-                {
-                    this.pluginService.RefreshHostList(connection);
-                }
-
-                return connection;
+                return this.auroraStaleDnsHelper.OpenVerifiedConnection(
+                    isInitialConnection,
+                    this.hostListProviderService!,
+                    hostSpec!,
+                    properties,
+                    methodFunc);
             }
             catch (Exception e)
             {

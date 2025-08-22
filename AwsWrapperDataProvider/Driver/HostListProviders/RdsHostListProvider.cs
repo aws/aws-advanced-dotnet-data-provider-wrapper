@@ -346,14 +346,7 @@ public class RdsHostListProvider : IDynamicHostListProvider
             }
         }
 
-        if (cachedHosts == null)
-        {
-            return new FetchTopologyResult(false, this.initialHostList);
-        }
-        else
-        {
-            return new FetchTopologyResult(true, cachedHosts);
-        }
+        return cachedHosts == null ? new FetchTopologyResult(false, this.initialHostList) : new FetchTopologyResult(true, cachedHosts);
     }
 
     private void SuggestPrimaryCluster(List<HostSpec> primaryClusterHosts)
