@@ -159,7 +159,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
         Assert.Equal(ConnectionState.Open, connection.State);
 
         var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var simulationTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(5), tcs);
+        var simulationTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(10), tcs);
 
         // Wait for the simulation to start
         await tcs.Task;
@@ -298,7 +298,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
         Assert.Equal(ConnectionState.Open, connection.State);
 
         var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var simulationTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(5), tcs);
+        var simulationTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(10), tcs);
 
         // Wait for the simulation to start
         await tcs.Task;
