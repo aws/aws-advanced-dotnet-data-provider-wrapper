@@ -22,13 +22,13 @@ namespace AwsWrapperDataProvider.Tests;
 
 public class FailoverConnectivityTests : IntegrationTestBase
 {
-    private readonly ITestOutputHelper output;
+    private readonly ITestOutputHelper logger;
 
     protected override bool MakeSureFirstInstanceWriter => true;
 
     public FailoverConnectivityTests(ITestOutputHelper output)
     {
-        this.output = output;
+        this.logger = output;
     }
 
     /// <summary>
@@ -70,7 +70,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
 
         Assert.Throws<FailoverSuccessException>(() =>
         {
-            this.output.WriteLine("Executing instance ID query to trigger failover...");
+            this.logger.WriteLine("Executing instance ID query to trigger failover...");
             AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
         });
     }
@@ -116,7 +116,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
 
         Assert.Throws<FailoverSuccessException>(() =>
         {
-            this.output.WriteLine("Executing instance ID query to trigger failover...");
+            this.logger.WriteLine("Executing instance ID query to trigger failover...");
             AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
         });
 
@@ -165,8 +165,8 @@ public class FailoverConnectivityTests : IntegrationTestBase
         await tcs.Task;
         Assert.Throws<FailoverSuccessException>(() =>
         {
-            this.output.WriteLine("Executing instance ID query to trigger failover...");
-            AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
+            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} Executing instance ID query to trigger failover...");
+            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} {AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment)}");
         });
 
         // Assert that we are currently connected to the writer instance.
@@ -213,7 +213,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
 
         Assert.Throws<FailoverSuccessException>(() =>
         {
-            this.output.WriteLine("Executing instance ID query to trigger failover...");
+            this.logger.WriteLine("Executing instance ID query to trigger failover...");
             AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
         });
     }
@@ -255,7 +255,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
 
         Assert.Throws<FailoverSuccessException>(() =>
         {
-            this.output.WriteLine("Executing instance ID query to trigger failover...");
+            this.logger.WriteLine("Executing instance ID query to trigger failover...");
             AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
         });
 
@@ -304,8 +304,8 @@ public class FailoverConnectivityTests : IntegrationTestBase
         await tcs.Task;
         Assert.Throws<FailoverSuccessException>(() =>
         {
-            this.output.WriteLine("Executing instance ID query to trigger failover...");
-            AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
+            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} Executing instance ID query to trigger failover...");
+            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} {AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment)}");
         });
         await simulationTask;
     }
