@@ -63,6 +63,32 @@ dotnet test --filter "FullyQualifiedName=Namespace.TestClass.TestMethod"
 
 Most IDEs provide integrated test runners that allow you to run and debug tests directly from the test files.
 
+### Running Federated Auth Manual Integration Tests
+
+#### OKTA
+
+To run the OKTA integration tests manually, you will need the following information:
+
+- IDP Endpoint (e.g., *.okta.com)
+- IDP Port (often HTTPS; 443)
+- IDP Username (OKTA)
+- IDP Password (OKTA)
+- IAM Role ARN (AWS)
+- IAM SAML Provider ARN (AWS)
+- App ID
+
+As well as the database connectivity information:
+
+- Host
+- DB user with access via IAM authentication
+- Database
+- Port
+- Etc.
+
+Additionally, your IP address must be on the allowlist on the OKTA dashboard.
+
+With all of this information, you can simply replace the properties as labelled in AwsWrapperDataProvider.Tests/FederatedAuthConnectivityTests.cs.
+
 ## Code Linting and Style Checking
 
 The project uses StyleCop.Analyzers for code style enforcement and .editorconfig for consistent formatting.

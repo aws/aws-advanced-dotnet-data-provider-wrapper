@@ -21,6 +21,7 @@ public class FederatedAuthConnectivityTests
 {
     [Fact]
     [Trait("Category", "Integration")]
+    [Trait("Category", "Manual")]
     public void PgWrapperOktaConnectionTest()
     {
         const string connectionString =
@@ -48,6 +49,7 @@ public class FederatedAuthConnectivityTests
 
     [Fact]
     [Trait("Category", "Integration")]
+    [Trait("Category", "Manual")]
     public void MySqlClientOktaConnectionTest()
     {
         const string connectionString =

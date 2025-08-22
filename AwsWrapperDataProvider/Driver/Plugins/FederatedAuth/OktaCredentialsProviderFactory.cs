@@ -58,7 +58,7 @@ public partial class OktaCredentialsProviderFactory(IPluginService pluginService
 
             if (!resp.IsSuccessStatusCode)
             {
-                throw new Exception("OKTA session token request failed.");
+                throw new Exception("OKTA session token request failed: " + resp.ToString());
             }
 
             string responseJson = resp.Content.ReadAsStringAsync().GetAwaiter().GetResult();
@@ -91,7 +91,8 @@ public partial class OktaCredentialsProviderFactory(IPluginService pluginService
     {
         try
         {
-            HttpClient httpClient = HttpClientFactory.GetDisposableHttpClient(10000);
+            int connectionTimeoutMs = PropertyDefinition.HttpClientConnectTimeout.GetInt(props) ?? FederatedAuthPlugin.DefaultHttpTimeoutMs;
+            HttpClient httpClient = HttpClientFactory.GetDisposableHttpClient(connectionTimeoutMs);
             string sessionToken = GetSessionToken(httpClient, props);
             string baseUri = GetSamlUrl(props);
 
@@ -107,7 +108,7 @@ public partial class OktaCredentialsProviderFactory(IPluginService pluginService
 
             if (!resp.IsSuccessStatusCode)
             {
-                throw new Exception("OKTA SAML request failed.");
+                throw new Exception("OKTA SAML request failed: " + resp.ToString());
             }
 
             string responseHtml = resp.Content.ReadAsStringAsync().GetAwaiter().GetResult();

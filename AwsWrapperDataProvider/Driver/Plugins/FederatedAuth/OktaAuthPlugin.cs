@@ -16,23 +16,26 @@ using System.Data.Common;
 using Amazon;
 using Amazon.Runtime;
 using AwsWrapperDataProvider.Driver.HostInfo;
+using AwsWrapperDataProvider.Driver.Plugins.Efm;
 using AwsWrapperDataProvider.Driver.Plugins.Iam;
 using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.FederatedAuth;
 
-public partial class OktaAuthPlugin(IPluginService pluginService, Dictionary<string, string> props, CredentialsProviderFactory credentialsFactory) : AbstractConnectionPlugin
+public partial class OktaAuthPlugin(IPluginService pluginService, Dictionary<string, string> props, CredentialsProviderFactory credentialsFactory, IIamTokenUtility iamTokenUtility) : AbstractConnectionPlugin
 {
     public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string> { "DbConnection.Open", "DbConnection.OpenAsync", "DbConnection.ForceOpen" };
-
-    private static readonly MemoryCache IamTokenCache = new(new MemoryCacheOptions());
 
     private readonly IPluginService pluginService = pluginService;
 
     private readonly Dictionary<string, string> props = props;
 
     private readonly CredentialsProviderFactory credentialsFactory = credentialsFactory;
+
+    private readonly IIamTokenUtility iamTokenUtility = iamTokenUtility;
+
+    internal static readonly MemoryCache IamTokenCache = new(new MemoryCacheOptions());
 
     public override DbConnection OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
     {
@@ -48,7 +51,7 @@ public partial class OktaAuthPlugin(IPluginService pluginService, Dictionary<str
     {
         SamlUtils.CheckIdpCredentialsWithFallback(PropertyDefinition.IdpUsername, PropertyDefinition.IdpPassword, props);
 
-        string host = PropertyDefinition.IamHost.GetString(props) ?? hostSpec?.Host ?? string.Empty;
+        string host = PropertyDefinition.IamHost.GetString(props) ?? hostSpec?.Host ?? throw new Exception("Host not provided.");
         int port = PropertyDefinition.IamDefaultPort.GetInt(props) ?? hostSpec?.Port ?? this.pluginService.Dialect.DefaultPort;
 
         if (port <= 0)
@@ -59,7 +62,7 @@ public partial class OktaAuthPlugin(IPluginService pluginService, Dictionary<str
         string region = RegionUtils.GetRegion(host, props, PropertyDefinition.IamRegion) ?? throw new Exception("Could not determine region.");
         string dbUser = PropertyDefinition.DbUser.GetString(props) ?? throw new Exception("DB user not provided.");
 
-        string cacheKey = IamTokenUtility.GetCacheKey(dbUser, host, port, region);
+        string cacheKey = this.iamTokenUtility.GetCacheKey(dbUser, host, port, region);
         bool isCachedToken = true;
 
         if (IamTokenCache.TryGetValue(cacheKey, out string? token) && token != null)
@@ -100,7 +103,7 @@ public partial class OktaAuthPlugin(IPluginService pluginService, Dictionary<str
         AWSCredentialsProvider credentialsProvider = this.credentialsFactory.GetAwsCredentialsProvider(host, regionEndpoint, props);
         AWSCredentials credentials = credentialsProvider.GetAWSCredentials();
 
-        string token = IamTokenUtility.GenerateAuthenticationToken(region, host, port, dbUser, credentials);
+        string token = this.iamTokenUtility.GenerateAuthenticationToken(region, host, port, dbUser, credentials);
         props[PropertyDefinition.Password.Name] = token;
         IamTokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
     }

@@ -17,13 +17,14 @@ using System.Text.RegularExpressions;
 using Amazon;
 using Amazon.Runtime;
 using AwsWrapperDataProvider.Driver.HostInfo;
+using AwsWrapperDataProvider.Driver.Plugins.Efm;
 using AwsWrapperDataProvider.Driver.Plugins.Iam;
 using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.FederatedAuth;
 
-public partial class FederatedAuthPlugin(IPluginService pluginService, Dictionary<string, string> props, CredentialsProviderFactory credentialsFactory) : AbstractConnectionPlugin
+public partial class FederatedAuthPlugin(IPluginService pluginService, Dictionary<string, string> props, CredentialsProviderFactory credentialsFactory, IIamTokenUtility iamTokenUtility) : AbstractConnectionPlugin
 {
     public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string> { "DbConnection.Open", "DbConnection.OpenAsync", "DbConnection.ForceOpen" };
 
@@ -36,6 +37,8 @@ public partial class FederatedAuthPlugin(IPluginService pluginService, Dictionar
     private readonly Dictionary<string, string> props = props;
 
     private readonly CredentialsProviderFactory credentialsFactory = credentialsFactory;
+
+    private readonly IIamTokenUtility iamTokenUtility = iamTokenUtility;
 
     public static readonly string SamlResponsePatternGroup = "saml";
 
@@ -56,7 +59,7 @@ public partial class FederatedAuthPlugin(IPluginService pluginService, Dictionar
     {
         SamlUtils.CheckIdpCredentialsWithFallback(PropertyDefinition.IdpUsername, PropertyDefinition.IdpPassword, props);
 
-        string host = PropertyDefinition.IamHost.GetString(props) ?? hostSpec?.Host ?? string.Empty;
+        string host = PropertyDefinition.IamHost.GetString(props) ?? hostSpec?.Host ?? throw new Exception("Host not provided.");
         int port = PropertyDefinition.IamDefaultPort.GetInt(props) ?? hostSpec?.Port ?? this.pluginService.Dialect.DefaultPort;
 
         if (port <= 0)
@@ -67,7 +70,7 @@ public partial class FederatedAuthPlugin(IPluginService pluginService, Dictionar
         string region = RegionUtils.GetRegion(host, props, PropertyDefinition.IamRegion) ?? throw new Exception("Could not determine region.");
         string dbUser = PropertyDefinition.DbUser.GetString(props) ?? throw new Exception("DB user not provided.");
 
-        string cacheKey = IamTokenUtility.GetCacheKey(dbUser, host, port, region);
+        string cacheKey = this.iamTokenUtility.GetCacheKey(dbUser, host, port, region);
         bool isCachedToken = true;
 
         if (IamTokenCache.TryGetValue(cacheKey, out string? token) && token != null)
@@ -108,7 +111,7 @@ public partial class FederatedAuthPlugin(IPluginService pluginService, Dictionar
         AWSCredentialsProvider credentialsProvider = this.credentialsFactory.GetAwsCredentialsProvider(host, regionEndpoint, props);
         AWSCredentials credentials = credentialsProvider.GetAWSCredentials();
 
-        string token = IamTokenUtility.GenerateAuthenticationToken(region, host, port, dbUser, credentials);
+        string token = this.iamTokenUtility.GenerateAuthenticationToken(region, host, port, dbUser, credentials);
         props[PropertyDefinition.Password.Name] = token;
         IamTokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
     }
