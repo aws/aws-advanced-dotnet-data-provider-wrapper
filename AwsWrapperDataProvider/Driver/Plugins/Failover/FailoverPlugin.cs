@@ -112,6 +112,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
         if (this.CanDirectExecute(methodName))
         {
+            Logger.LogTrace("Direct executing...");
             return methodFunc();
         }
 
