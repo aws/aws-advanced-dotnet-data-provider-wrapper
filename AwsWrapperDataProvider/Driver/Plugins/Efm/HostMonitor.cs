@@ -46,6 +46,8 @@ public class HostMonitor : IHostMonitor
     private volatile bool nodeUnhealthy = false;
     private DbConnection? monitoringConn = null;
 
+    internal volatile bool TestUnhealthyCluster = false;
+
     public int FailureCount { get => this.failureCount; }
 
     /// <summary>
@@ -336,7 +338,7 @@ public class HostMonitor : IHostMonitor
 
                 _ = validityCheckCommand.ExecuteScalar();
 
-                return true;
+                return !this.TestUnhealthyCluster;
             }
             catch
             {

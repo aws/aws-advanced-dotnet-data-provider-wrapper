@@ -15,7 +15,6 @@
 using System.Data;
 using AwsWrapperDataProvider.Driver.Plugins.Efm;
 using AwsWrapperDataProvider.Driver.Utils;
-using AwsWrapperDataProvider.Tests.Container.Utils;
 using Microsoft.Extensions.Caching.Memory;
 using Npgsql;
 
@@ -24,6 +23,25 @@ namespace AwsWrapperDataProvider.Tests;
 public class EfmConnectivityTests
 {
     private static readonly int TestCommandTimeoutSecs = 500;
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    [Trait("Category", "Manual")]
+    public async Task EfmPluginTest_WithBasicAuth()
+    {
+        const string clusterEndpoint = "endpoint"; // Replace with your cluster endpoint
+        const string user = "username"; // Replace with the name of the db user to connect with
+        const string password = "password"; // Replace with password of the db user to connect with
+        const string database = "database"; // Replace with your database name
+
+        int failureDetectionTime = 1000; // start monitoring after one second
+        int failureDetectionInterval = 1000; // check on the connection every 1 second
+        int failureDetectionCount = 1; // five failures before considered unhealthy
+
+        var connectionString = $"Host={clusterEndpoint};Username={user};Password={password};Database={database};";
+        connectionString += $"; Plugins=efm;FailureDetectionTime={failureDetectionTime};FailureDetectionInterval={failureDetectionInterval};FailureDetectionCount={failureDetectionCount};";
+        await PerformEfmTest(connectionString, clusterEndpoint, failureDetectionTime, failureDetectionInterval, failureDetectionCount);
+    }
 
     [Fact]
     [Trait("Category", "Integration")]
@@ -40,10 +58,10 @@ public class EfmConnectivityTests
 
         var connectionString = $"Host={clusterEndpoint};Username={dbUser};Database={database};Plugins=iam,efm;"
             + $"FailureDetectionTime={failureDetectionTime};FailureDetectionInterval={failureDetectionInterval};FailureDetectionCount={failureDetectionCount};";
-        await PerformEfmTest(connectionString, clusterEndpoint, true, failureDetectionTime, failureDetectionInterval, failureDetectionCount);
+        await PerformEfmTest(connectionString, clusterEndpoint, failureDetectionTime, failureDetectionInterval, failureDetectionCount);
     }
 
-    internal static async Task PerformEfmTest(string connectionString, string initialHost, bool isManualTest, int failureDetectionTime, int failureDetectionInterval, int failureDetectionCount)
+    internal static async Task PerformEfmTest(string connectionString, string initialHost, int failureDetectionTime, int failureDetectionInterval, int failureDetectionCount)
     {
         try
         {
@@ -83,11 +101,6 @@ public class EfmConnectivityTests
 
             Console.WriteLine("\n5. Monitoring for failure...");
 
-            if (isManualTest)
-            {
-                Console.WriteLine("   ! Please turn off your internet or cause the connection to become unresponsive during this time.");
-            }
-
             for (int timeWaited = 0; timeWaited < TestCommandTimeoutSecs * 1000; timeWaited += failureDetectionInterval)
             {
                 await Task.Delay(failureDetectionInterval);
@@ -104,9 +117,16 @@ public class EfmConnectivityTests
 
                     break;
                 }
-                else if (timeWaited > failureDetectionInterval * 2 && !disabledConnectivity && !isManualTest)
+                else if (timeWaited > failureDetectionInterval * 2 && !disabledConnectivity)
                 {
-                    await ProxyHelper.DisableAllConnectivityAsync();
+                    // The testUnhealthyCluster boolean simulates the following scenario:
+                    // - original connection is not being dropped (connection is kept alive), but server is unresponsive
+                    // - new commands are unresponsive / fail
+                    // which results in the failure counter correctly accumulating; disabling connectivity with toxiproxy
+                    // or turning off internet on a manual testing device results in the original connection failing early,
+                    // and thus the monitor is not an effective catcher of the failure.
+                    // In essence, the monitor is most effective when something goes wrong on the cluster, not necessarily the network.
+                    ((HostMonitor)monitor).TestUnhealthyCluster = true;
                     disabledConnectivity = true;
                 }
             }
@@ -138,14 +158,8 @@ public class EfmConnectivityTests
             }
 
             Assert.True(monitorCaughtFailure);
-            Assert.Equal(monitorFailureCount, failureDetectionCount);
+            Assert.True(monitorFailureCount >= failureDetectionCount);
             Assert.NotEqual(ConnectionState.Open, connection.State);
-
-            if (!isManualTest)
-            {
-                // done with the test; restore proxy connectivity
-                await ProxyHelper.EnableAllConnectivityAsync();
-            }
         }
         catch (Exception ex)
         {

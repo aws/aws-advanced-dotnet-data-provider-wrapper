@@ -30,7 +30,7 @@ public class EfmConnectivityIntegrationTests : IntegrationTestBase
 
         var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, this.username, this.password, this.defaultDbName);
         connectionString += "; Plugins=efm;";
-        await EfmConnectivityTests.PerformEfmTest(connectionString, this.clusterEndpoint, false, failureDetectionTime, failureDetectionInterval, failureDetectionCount);
+        await EfmConnectivityTests.PerformEfmTest(connectionString, this.clusterEndpoint, failureDetectionTime, failureDetectionInterval, failureDetectionCount);
     }
 
     [Fact]
@@ -44,7 +44,7 @@ public class EfmConnectivityIntegrationTests : IntegrationTestBase
 
         var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, this.username, this.password, this.defaultDbName);
         connectionString += $"; Plugins=efm;FailureDetectionTime={failureDetectionTime};FailureDetectionCount={failureDetectionCount};";
-        await EfmConnectivityTests.PerformEfmTest(connectionString, this.clusterEndpoint, false, failureDetectionTime, failureDetectionInterval, failureDetectionCount);
+        await EfmConnectivityTests.PerformEfmTest(connectionString, this.clusterEndpoint, failureDetectionTime, failureDetectionInterval, failureDetectionCount);
     }
 
     [Fact]
@@ -58,6 +58,6 @@ public class EfmConnectivityIntegrationTests : IntegrationTestBase
 
         var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, this.username, this.password, this.defaultDbName);
         connectionString += $"; Plugins=efm;FailureDetectionTime={failureDetectionTime};FailureDetectionInterval={failureDetectionInterval};FailureDetectionCount={failureDetectionCount};";
-        await EfmConnectivityTests.PerformEfmTest(connectionString, this.clusterEndpoint, false, failureDetectionTime, failureDetectionInterval, failureDetectionCount);
+        await EfmConnectivityTests.PerformEfmTest(connectionString, this.clusterEndpoint, failureDetectionTime, failureDetectionInterval, failureDetectionCount);
     }
 }
