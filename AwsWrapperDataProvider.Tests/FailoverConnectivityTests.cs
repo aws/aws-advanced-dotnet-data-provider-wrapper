@@ -145,7 +145,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
             Password,
             ProxyDatabaseInfo.DefaultDbName,
             2,
-            20,
+            10,
             "failover");
         connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}";
 
@@ -159,7 +159,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
         Assert.Equal(ConnectionState.Open, connection.State);
 
         var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var simulationTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(10), tcs);
+        var simulationTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
 
         // Wait for the simulation to start
         await tcs.Task;
@@ -284,7 +284,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
             Password,
             ProxyDatabaseInfo.DefaultDbName,
             2,
-            20,
+            10,
             "failover");
         connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}" +
             $"; FailoverMode=ReaderOrWriter";
@@ -299,7 +299,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
         Assert.Equal(ConnectionState.Open, connection.State);
 
         var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var simulationTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(10), tcs);
+        var simulationTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
 
         // Wait for the simulation to start
         await tcs.Task;
