@@ -77,8 +77,8 @@ public class FailoverPlugin : AbstractConnectionPlugin
         "DbTransaction.RollbackAsync",
 
         // Connection management methods
-        "DbConnection.Close",
-        "DbConnection.Dispose",
+        MethodClose,
+        MethodDispose,
         "DbConnection.Abort",
 
         // Special methods
@@ -123,7 +123,11 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
         try
         {
-            return methodFunc();
+            Logger.LogTrace("Direct executing 2...");
+            var result = methodFunc();
+            Logger.LogTrace("Got result after direct executing 2");
+
+            return result;
         }
         catch (Exception exception)
         {

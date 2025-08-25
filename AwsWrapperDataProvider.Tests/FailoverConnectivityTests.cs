@@ -145,7 +145,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
             Password,
             ProxyDatabaseInfo.DefaultDbName,
             2,
-            10,
+            20,
             "failover");
         connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}";
 
@@ -166,7 +166,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
         Assert.Throws<FailoverSuccessException>(() =>
         {
             this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} Executing instance ID query to trigger failover...");
-            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} {AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment)}");
+            this.logger.WriteLine(AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment));
             this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} Finished executing without exception thrown");
         });
 
@@ -284,7 +284,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
             Password,
             ProxyDatabaseInfo.DefaultDbName,
             2,
-            10,
+            20,
             "failover");
         connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}" +
             $"; FailoverMode=ReaderOrWriter";
@@ -306,7 +306,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
         Assert.Throws<FailoverSuccessException>(() =>
         {
             this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} Executing instance ID query to trigger failover...");
-            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} {AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment)}");
+            AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
             this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} Finished executing without exception thrown");
         });
         await simulationTask;
