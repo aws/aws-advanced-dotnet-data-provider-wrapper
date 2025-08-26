@@ -75,7 +75,7 @@ public class PgExceptionHandler : GenericExceptionHandler
                 log.AppendLine($"Source: {dbException.Source}");
                 Logger.LogDebug(log.ToString());
 
-                if (this.NetworkErrorStates.Contains(sqlState))
+                if (this.NetworkErrorStates.Any(prefix => sqlState.StartsWith(prefix)))
                 {
                     Logger.LogDebug("Current exception is a network exception: {type}", currException.GetType().FullName);
                     return true;
