@@ -147,6 +147,7 @@ namespace AwsWrapperDataProvider.Properties {
             }
         }
         
+        /// <summary>
         ///   Looks up a localized string similar to Activated monitoring..
         /// </summary>
         internal static string EfmHostMonitor_ActivatedMonitoring {
@@ -348,12 +349,6 @@ namespace AwsWrapperDataProvider.Properties {
             }
         }
         
-        internal static string EfmHostMonitor_ActiveContextsException {
-            get {
-                return ResourceManager.GetString("EfmHostMonitor_ActiveContextsException", resourceCulture);
-            }
-        }
-        
         internal static string EfmHostMonitor_StoppedMonitoringActiveContexts {
             get {
                 return ResourceManager.GetString("EfmHostMonitor_StoppedMonitoringActiveContexts", resourceCulture);
@@ -387,12 +382,6 @@ namespace AwsWrapperDataProvider.Properties {
         internal static string EfmHostMonitor_HostAlive {
             get {
                 return ResourceManager.GetString("EfmHostMonitor_HostAlive", resourceCulture);
-            }
-        }
-        
-        internal static string EfmHostMonitor_ExceptionAbortingConnection {
-            get {
-                return ResourceManager.GetString("EfmHostMonitor_ExceptionAbortingConnection", resourceCulture);
             }
         }
 
