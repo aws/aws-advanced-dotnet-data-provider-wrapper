@@ -292,7 +292,38 @@ public class PluginService : IPluginService, IHostListProviderService
 
     public void FillAliases(DbConnection connection, HostSpec hostSpec)
     {
-        throw new NotImplementedException();
+        if (hostSpec.GetAliases().Count > 0)
+        {
+            return;
+        }
+
+        hostSpec.AddAlias(hostSpec.AsAlias());
+        try
+        {
+            using var command = connection.CreateCommand();
+            command.CommandText = this.Dialect.HostAliasQuery;
+
+            using var resultSet = command.ExecuteReader();
+            while (resultSet.Read())
+            {
+                string alias = resultSet.GetString(0);
+                hostSpec.AddAlias(alias);
+            }
+        }
+        catch
+        {
+            // ignore
+        }
+
+        HostSpec? existingHostSpec = this.IdentifyConnection(connection);
+        if (existingHostSpec != null)
+        {
+            var aliases = existingHostSpec.AsAliases();
+            foreach (string alias in aliases)
+            {
+                hostSpec.AddAlias(alias);
+            }
+        }
     }
 
     public IConnectionProvider GetConnectionProvider()

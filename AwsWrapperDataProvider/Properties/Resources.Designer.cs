@@ -147,13 +147,45 @@ namespace AwsWrapperDataProvider.Properties {
             }
         }
         
-        internal static string Error_UnableToFindValidDialectType {
+        ///   Looks up a localized string similar to Activated monitoring..
+        /// </summary>
+        internal static string EfmHostMonitor_ActivatedMonitoring {
+            get {
+                return ResourceManager.GetString("EfmHostMonitor_ActivatedMonitoring", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Encountered exception while monitoring active contexts for host {0}: {1}, stack trace: {2}..
+        /// </summary>
+        internal static string EfmHostMonitor_ActiveContextsException {
             get {
                 return ResourceManager.GetString("Error_UnableToFindValidDialectType", resourceCulture);
             }
         }
         
-        internal static string Error_TargetConnectionTypeNotFound {
+        /// <summary>
+        ///   Looks up a localized string similar to Deactivated monitoring..
+        /// </summary>
+        internal static string EfmHostMonitor_DeactivatedMonitoring {
+            get {
+                return ResourceManager.GetString("EfmHostMonitor_DeactivatedMonitoring", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Encountered exception when identifying connection: {0}..
+        /// </summary>
+        internal static string EfmHostMonitor_ErrorIdentifyingConnection {
+            get {
+                return ResourceManager.GetString("EfmHostMonitor_ErrorIdentifyingConnection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Encountered exception while aborting connection: {0}..
+        /// </summary>
+        internal static string EfmHostMonitor_ExceptionAbortingConnection {
             get {
                 return ResourceManager.GetString("Error_TargetConnectionTypeNotFound", resourceCulture);
             }
@@ -177,6 +209,7 @@ namespace AwsWrapperDataProvider.Properties {
             }
         }
         
+
         internal static string ClusterTopologyMonitor_InvalidQuery {
             get {
                 return ResourceManager.GetString("ClusterTopologyMonitor.InvalidQuery", resourceCulture);
@@ -362,7 +395,7 @@ namespace AwsWrapperDataProvider.Properties {
                 return ResourceManager.GetString("EfmHostMonitor_ExceptionAbortingConnection", resourceCulture);
             }
         }
-        
+
         internal static string PluginService_ErrorClosingOldConnection {
             get {
                 return ResourceManager.GetString("PluginService.ErrorClosingOldConnection", resourceCulture);
