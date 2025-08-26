@@ -23,13 +23,18 @@ namespace AwsWrapperDataProvider.Driver.Plugins.Efm;
 public class HostMonitorService : IHostMonitorService
 {
     private static readonly ILogger<HostMonitorService> Logger = LoggerUtils.GetLogger<HostMonitorService>();
-
-    protected static readonly int CacheCleanupMs = (int)TimeSpan.FromMinutes(1).TotalMilliseconds;
-    protected static readonly MemoryCache Monitors = new(new MemoryCacheOptions());
-
     private readonly IPluginService pluginService;
 
+    protected static readonly int CacheCleanupMs = (int)TimeSpan.FromMinutes(1).TotalMilliseconds;
+
     public static readonly int DefaultMonitorDisposalTimeMs = 600000;
+
+    public static readonly MemoryCache Monitors = new(new MemoryCacheOptions());
+
+    public static string GetMonitorKey(int failureDetectionTimeMs, int failureDetectionIntervalMs, int failureDetectionCount, string host)
+    {
+        return $"{failureDetectionTimeMs}:{failureDetectionIntervalMs}:{failureDetectionCount}:{host}";
+    }
 
     public HostMonitorService(IPluginService pluginService)
     {
@@ -109,7 +114,7 @@ public class HostMonitorService : IHostMonitorService
         int failureDetectionIntervalMs,
         int failureDetectionCount)
     {
-        string monitorKey = $"{failureDetectionTimeMs}:{failureDetectionIntervalMs}:{failureDetectionCount}:{hostSpec.Host}";
+        string monitorKey = GetMonitorKey(failureDetectionTimeMs, failureDetectionIntervalMs, failureDetectionCount, hostSpec.Host);
         int cacheExpirationMs = PropertyDefinition.MonitorDisposalTimeMs.GetInt(properties) ?? DefaultMonitorDisposalTimeMs;
 
         if (!Monitors.TryGetValue(monitorKey, out IHostMonitor? monitor))
