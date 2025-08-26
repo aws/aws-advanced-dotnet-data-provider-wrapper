@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using System.Data.Common;
-using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 
 namespace AwsWrapperDataProvider.Driver.Exceptions;
 
