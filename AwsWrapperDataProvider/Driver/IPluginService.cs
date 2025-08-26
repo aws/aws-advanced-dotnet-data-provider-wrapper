@@ -52,7 +52,7 @@ public interface IPluginService : IExceptionHandlerService
     /// </summary>
     /// <param name="connection">The database connection.</param>
     /// <param name="hostSpec">The host specification.</param>
-    void SetCurrentConnection(DbConnection connection, HostSpec hostSpec);
+    void SetCurrentConnection(DbConnection connection, HostSpec? hostSpec);
 
     /// <summary>
     /// Gets the currently active hosts.

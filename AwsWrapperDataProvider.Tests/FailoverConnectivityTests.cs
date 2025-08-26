@@ -357,7 +357,6 @@ public class FailoverConnectivityTests
             Console.WriteLine($"   Transaction started at: {startTime:HH:mm:ss}");
 
             bool failoverOccurred = false;
-            Exception failoverException = null;
 
             try
             {
@@ -383,7 +382,7 @@ public class FailoverConnectivityTests
                 {
                     preFailoverSelect.Transaction = transaction;
                     preFailoverSelect.CommandText = "SELECT COUNT(*) FROM failover_rollback_test";
-                    var countBeforeFailover = (long)preFailoverSelect.ExecuteScalar();
+                    var countBeforeFailover = (long)(preFailoverSelect.ExecuteScalar() ?? 0L);
                     Console.WriteLine($"   ✓ Data visible within transaction: {countBeforeFailover} rows");
                 }
 
@@ -437,7 +436,7 @@ public class FailoverConnectivityTests
             using (var rollbackCheckCommand = connection.CreateCommand<NpgsqlCommand>())
             {
                 rollbackCheckCommand.CommandText = "SELECT COUNT(*) FROM failover_rollback_test";
-                var countAfterFailover = (long)rollbackCheckCommand.ExecuteScalar();
+                var countAfterFailover = (long)(rollbackCheckCommand.ExecuteScalar() ?? 0L);
                 Console.WriteLine($"   Data count after failover: {countAfterFailover} rows");
 
                 if (countAfterFailover == 0)
@@ -486,7 +485,7 @@ public class FailoverConnectivityTests
             using (var finalCheckCommand = connection.CreateCommand<NpgsqlCommand>())
             {
                 finalCheckCommand.CommandText = "SELECT COUNT(*) FROM failover_rollback_test";
-                var finalCount = (long)finalCheckCommand.ExecuteScalar();
+                var finalCount = (long)(finalCheckCommand.ExecuteScalar() ?? 0L);
                 Console.WriteLine($"   Final data count: {finalCount} rows");
             }
 

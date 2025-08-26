@@ -113,12 +113,12 @@ public class PluginService : IPluginService, IHostListProviderService
         throw new NotImplementedException();
     }
 
-    public void SetCurrentConnection(DbConnection connection, HostSpec hostSpec)
+    public void SetCurrentConnection(DbConnection connection, HostSpec? hostSpec)
     {
         this.SetCurrentConnection(connection, hostSpec, null);
     }
 
-    public void SetCurrentConnection(DbConnection connection, HostSpec hostSpec, IConnectionPlugin? pluginToSkip)
+    public void SetCurrentConnection(DbConnection connection, HostSpec? hostSpec, IConnectionPlugin? pluginToSkip)
     {
         lock (this.connectionSwitchLock)
         {
