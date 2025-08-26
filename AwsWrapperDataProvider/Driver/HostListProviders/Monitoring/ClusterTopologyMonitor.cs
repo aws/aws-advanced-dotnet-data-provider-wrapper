@@ -138,10 +138,11 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                             foreach (var hostSpec in hosts)
                             {
                                 NodeMonitoringTask nodeMonitoringTask = new(this, hostSpec, this.writerHostSpec);
-                                var added = this.nodeThreads.TryAdd(
+                                Task newTask;
+                                var existingOrNewTask = this.nodeThreads.GetOrAdd(
                                     hostSpec.Host,
-                                    Task.Run(nodeMonitoringTask.RunNodeMonitoringAsync));
-                                if (added)
+                                    newTask = Task.Run(nodeMonitoringTask.RunNodeMonitoringAsync));
+                                if (!ReferenceEquals(existingOrNewTask, newTask))
                                 {
                                     LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, $"Task@{RuntimeHelpers.GetHashCode(nodeMonitoringTask)} added to node threads for host {hostSpec.ToString()}");
                                 }
@@ -189,9 +190,18 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                             foreach (var hostSpec in hosts)
                             {
                                 NodeMonitoringTask nodeMonitoringTask = new(this, hostSpec, this.writerHostSpec);
-                                this.nodeThreads.TryAdd(
+                                Task newTask;
+                                var existingOrNewTask = this.nodeThreads.GetOrAdd(
                                     hostSpec.Host,
-                                    Task.Run(nodeMonitoringTask.RunNodeMonitoringAsync));
+                                    newTask = Task.Run(nodeMonitoringTask.RunNodeMonitoringAsync));
+                                if (!ReferenceEquals(existingOrNewTask, newTask))
+                                {
+                                    LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, $"Task@{RuntimeHelpers.GetHashCode(nodeMonitoringTask)} added to node threads for host {hostSpec.ToString()}");
+                                }
+                                else
+                                {
+                                    LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, $"Task already added for host {hostSpec.ToString()}");
+                                }
                             }
                         }
                     }
@@ -298,6 +308,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
     protected IList<HostSpec> WaitTillTopologyGetsUpdated(long timeoutMs)
     {
         this.topologyMap.TryGetValue(this.clusterId, out IList<HostSpec>? currentHosts);
+        LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, LoggerUtils.LogTopology(currentHosts ?? [], $"Current topology@{RuntimeHelpers.GetHashCode(currentHosts)} and wait until it's updated:"));
 
         lock (this.topologyUpdatedLock)
         {
@@ -321,12 +332,21 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                 LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "Waiting on topologyUpdatedLock...");
                 if (Monitor.Wait(this.topologyUpdatedLock, 1000))
                 {
+                    LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "Woke up from Monitor. Wait due to Pulse, rechecking condition...");
                     if (this.topologyMap.TryGetValue(this.clusterId, out latestHosts) &&
                         !ReferenceEquals(currentHosts, latestHosts))
                     {
-                        LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, LoggerUtils.LogTopology(latestHosts ?? [], "Topology is updated"));
+                        LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, LoggerUtils.LogTopology(latestHosts ?? [], $"Topology@{RuntimeHelpers.GetHashCode(latestHosts)} is updated:"));
                         return latestHosts ?? [];
                     }
+                    else
+                    {
+                        LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, LoggerUtils.LogTopology(latestHosts ?? [], $"Topology@{RuntimeHelpers.GetHashCode(latestHosts)} is still not updated:"));
+                    }
+                }
+                else
+                {
+                    LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "Woke up from Monitor. Wait due to timeout, rechecking condition...");
                 }
             }
         }
@@ -336,7 +356,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             throw new TimeoutException(string.Format(Resources.ClusterTopologyMonitor_TopologyNotUpdated, timeoutMs));
         }
 
-        LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, LoggerUtils.LogTopology(latestHosts ?? [], "Topology is updated"));
+        LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, LoggerUtils.LogTopology(latestHosts ?? [], $"Topology@{RuntimeHelpers.GetHashCode(latestHosts)} is updated:"));
         return latestHosts ?? [];
     }
 
