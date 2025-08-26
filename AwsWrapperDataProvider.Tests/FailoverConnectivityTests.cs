@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using System.Data;
-using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 using MySqlConnector;

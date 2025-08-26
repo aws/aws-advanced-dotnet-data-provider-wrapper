@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 
 [assembly: CollectionBehavior(DisableTestParallelization = true)]

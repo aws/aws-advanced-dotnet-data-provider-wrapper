@@ -142,13 +142,6 @@ public class MonitoringRdsHostListProvider : RdsHostListProvider, IBlockingHostL
         }
     }
 
-    private void ConfigureCacheEntry(ICacheEntry factory)
-    {
-        factory.SetAbsoluteExpiration(MonitorExpirationTime);
-        factory.SetSize(1);
-        factory.RegisterPostEvictionCallback(this.OnMonitorEvicted);
-    }
-
     private void OnMonitorEvicted(object key, object? value, EvictionReason reason, object? state)
     {
         if (value is IClusterTopologyMonitor evictedMonitor)
