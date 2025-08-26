@@ -104,9 +104,8 @@ public class MonitoringRdsHostListProvider : RdsHostListProvider, IBlockingHostL
         var monitor = Monitors.Get<IClusterTopologyMonitor>(this.ClusterId) ?? this.InitMonitor();
         try
         {
-            var task = monitor.ForceRefresh((DbConnection)connection, DefaultTopologyQueryTimeoutSec * 1000);
-            task.Wait(TimeSpan.FromSeconds(DefaultTopologyQueryTimeoutSec));
-            return task.Result.ToList();
+            var topology = monitor.ForceRefreshAsync((DbConnection)connection, DefaultTopologyQueryTimeoutSec * 1000).GetAwaiter().GetResult();
+            return [.. topology];
         }
         catch (TimeoutException)
         {

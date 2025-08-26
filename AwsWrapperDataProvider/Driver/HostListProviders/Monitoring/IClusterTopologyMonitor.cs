@@ -49,5 +49,5 @@ public interface IClusterTopologyMonitor : IDisposable
     /// <param name="timeoutMs">Timeout in milliseconds.</param>
     /// <returns>List of host specifications.</returns>
     /// <exception cref="TimeoutException">Thrown when the operation times out.</exception>
-    Task<IList<HostSpec>> ForceRefresh(DbConnection? connection, long timeoutMs);
+    Task<IList<HostSpec>> ForceRefreshAsync(DbConnection? connection, long timeoutMs);
 }

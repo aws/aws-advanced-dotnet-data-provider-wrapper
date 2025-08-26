@@ -155,6 +155,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
                             await this.DisposeConnectionAsync(this.monitoringConnection);
                             this.monitoringConnection = this.nodeThreadsWriterConnection;
+                            Interlocked.Exchange(ref this.monitoringConnection, this.nodeThreadsWriterConnection);
                             this.writerHostSpec = this.nodeThreadsWriterHostSpec;
                             this.isVerifiedWriterConnection = true;
                             this.highRefreshRateEndTime = DateTime.UtcNow.Add(HighRefreshPeriodAfterPanic);
@@ -269,22 +270,22 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             this.DisposeConnectionAsync(connectionToClose).GetAwaiter().GetResult();
         }
 
-        return this.WaitTillTopologyGetsUpdatedAsync(timeoutMs);
+        return this.WaitTillTopologyGetsUpdated(timeoutMs);
     }
 
-    public async Task<IList<HostSpec>> ForceRefresh(DbConnection? connection, long timeoutMs)
+    public async Task<IList<HostSpec>> ForceRefreshAsync(DbConnection? connection, long timeoutMs)
     {
         if (this.isVerifiedWriterConnection)
         {
             // Push monitoring thread to refresh topology with a verified connection
-            return this.WaitTillTopologyGetsUpdatedAsync(timeoutMs);
+            return this.WaitTillTopologyGetsUpdated(timeoutMs);
         }
 
         // Otherwise use provided unverified connection to update topology
         return await this.FetchTopologyAndUpdateCacheAsync(connection) ?? [];
     }
 
-    protected IList<HostSpec> WaitTillTopologyGetsUpdatedAsync(long timeoutMs)
+    protected IList<HostSpec> WaitTillTopologyGetsUpdated(long timeoutMs)
     {
         this.topologyMap.TryGetValue(this.clusterId, out IList<HostSpec>? currentHosts);
 
@@ -548,7 +549,11 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         try
         {
             using var command = connection.CreateCommand();
-            command.CommandTimeout = DefaultTopologyQueryTimeoutSec;
+            if (command.CommandTimeout == 0)
+            {
+                command.CommandTimeout = DefaultTopologyQueryTimeoutSec;
+            }
+
             command.CommandText = this.topologyQuery;
             await using var reader = await command.ExecuteReaderAsync();
 
