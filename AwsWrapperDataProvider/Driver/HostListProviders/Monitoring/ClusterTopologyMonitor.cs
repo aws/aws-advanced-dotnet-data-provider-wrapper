@@ -140,8 +140,12 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                                 NodeMonitoringTask nodeMonitoringTask = new(this, hostSpec, this.writerHostSpec);
                                 var existingOrNewTask = this.nodeThreads.GetOrAdd(
                                     hostSpec.Host,
-                                    _ = Task.Run(nodeMonitoringTask.RunNodeMonitoringAsync));
-                                LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, $"Node Monitoring Task@{RuntimeHelpers.GetHashCode(existingOrNewTask)} created or already existed for host {hostSpec.ToString()}");
+                                    _ =>
+                                    {
+                                        var task = Task.Run(nodeMonitoringTask.RunNodeMonitoringAsync);
+                                        LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, $"Node Monitoring Task@{RuntimeHelpers.GetHashCode(task)} created for host {hostSpec}");
+                                        return task;
+                                    });
                             }
                         }
                     }
@@ -184,8 +188,12 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                                 NodeMonitoringTask nodeMonitoringTask = new(this, hostSpec, this.writerHostSpec);
                                 var existingOrNewTask = this.nodeThreads.GetOrAdd(
                                     hostSpec.Host,
-                                    _ = Task.Run(nodeMonitoringTask.RunNodeMonitoringAsync));
-                                LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, $"Node Monitoring Task@{RuntimeHelpers.GetHashCode(existingOrNewTask)} created or already existed for host {hostSpec.ToString()}");
+                                    _ =>
+                                    {
+                                        var task = Task.Run(nodeMonitoringTask.RunNodeMonitoringAsync);
+                                        LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, $"Node Monitoring Task@{RuntimeHelpers.GetHashCode(task)} created for host {hostSpec}");
+                                        return task;
+                                    });
                             }
                         }
                     }
