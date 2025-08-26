@@ -238,7 +238,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
         if (this.ShouldExceptionTriggerConnectionSwitch(originalException))
         {
-            Logger.LogWarning("Exception triggers failover: {ExceptionMessage}", originalException.Message);
+            Logger.LogDebug("Exception triggers failover: {ExceptionMessage}", originalException.Message);
 
             if (this.lastExceptionDealtWith == originalException)
             {

@@ -78,6 +78,7 @@ public class MonitoringRdsHostListProvider : RdsHostListProvider, IBlockingHostL
 
     protected IClusterTopologyMonitor InitMonitor()
     {
+        Logger.LogTrace("Initializing new cluster topology monitor for clusterId: {clusterId}", this.ClusterId);
         return Monitors.Set(
             this.ClusterId,
             new ClusterTopologyMonitor(
@@ -154,6 +155,7 @@ public class MonitoringRdsHostListProvider : RdsHostListProvider, IBlockingHostL
         {
             try
             {
+                Logger.LogTrace("Disposing cluster topology monitor for clusterId: {clusterId} due to eviction reason: {reason}", key, reason);
                 evictedMonitor.Dispose();
             }
             catch (Exception ex)

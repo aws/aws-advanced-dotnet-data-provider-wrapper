@@ -65,7 +65,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
     protected HostSpec? nodeThreadsWriterHostSpec;
     protected DbConnection? nodeThreadsReaderConnection;
     protected IList<HostSpec>? nodeThreadsLatestTopology;
-    protected bool disposed;
+    protected bool disposed = false;
 
     public ClusterTopologyMonitor(
         string clusterId,
@@ -112,13 +112,13 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
     {
         try
         {
-            LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, string.Format(Resources.ClusterTopologyMonitor_StartMonitoringThread,
-                this.initialHostSpec.Host));
+            LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, string.Format(Resources.ClusterTopologyMonitor_StartMonitoringThread, this.initialHostSpec.Host));
 
             while (!this.cancellationTokenSource.Token.IsCancellationRequested)
             {
                 if (this.IsInPanicMode())
                 {
+                    LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "In panic mode");
                     if (this.nodeThreads.IsEmpty)
                     {
                         LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, Resources.ClusterTopologyMonitor_StartingNodeMonitoringThreads);
@@ -190,6 +190,8 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                 }
                 else
                 {
+                    LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "In regular mode");
+
                     // Regular mode (not panic mode)
                     if (!this.nodeThreads.IsEmpty)
                     {
@@ -293,29 +295,36 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
         if (timeoutMs == 0)
         {
-            LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, LoggerUtils.LogTopology(currentHosts!, Resources.ClusterTopologyMonitor_TimeoutSetToZero));
-            return currentHosts!;
+            LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, LoggerUtils.LogTopology(currentHosts ?? [], Resources.ClusterTopologyMonitor_TimeoutSetToZero));
+            return currentHosts ?? [];
         }
 
-        TimeSpan timeout = TimeSpan.FromMilliseconds(timeoutMs);
-
+        DateTime endTime = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+        IList<HostSpec>? latestHosts = [];
         lock (this.topologyUpdatedLock)
         {
-            if (Monitor.Wait(this.topologyUpdatedLock, timeout))
+            while (this.topologyMap.TryGetValue(this.clusterId, out latestHosts) &&
+                ReferenceEquals(currentHosts, latestHosts) && DateTime.UtcNow < endTime)
             {
-                if (this.topologyMap.TryGetValue(this.clusterId, out IList<HostSpec>? latestHosts) &&
-                    !ReferenceEquals(currentHosts, latestHosts))
+                LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "Waiting on topologyUpdatedLock...");
+                if (Monitor.Wait(this.topologyUpdatedLock, 1000))
                 {
-                    return latestHosts!;
+                    if (this.topologyMap.TryGetValue(this.clusterId, out latestHosts) &&
+                        !ReferenceEquals(currentHosts, latestHosts))
+                    {
+                        LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "Topology is updated");
+                        return latestHosts ?? [];
+                    }
                 }
-            }
-            else
-            {
-                LoggerUtils.LogWithThreadId(Logger, LogLevel.Debug, Resources.ClusterTopologyMonitor_Interrupted);
             }
         }
 
-        throw new TimeoutException(string.Format(Resources.ClusterTopologyMonitor_TopologyNotUpdated, timeout.TotalMilliseconds));
+        if (DateTime.UtcNow > endTime)
+        {
+            throw new TimeoutException(string.Format(Resources.ClusterTopologyMonitor_TopologyNotUpdated, timeoutMs));
+        }
+
+        return latestHosts ?? [];
     }
 
     protected bool IsInPanicMode()
@@ -529,6 +538,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         {
             this.topologyMap.Set(this.clusterId, hosts, this.topologyCacheExpiration);
             this.requestToUpdateTopology = false;
+            LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "Notifying topologyUpdatedLock...");
             Monitor.PulseAll(this.topologyUpdatedLock);
         }
     }
