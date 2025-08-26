@@ -75,14 +75,16 @@ public class MultiAzRdsPgDialect : PgDialect
     {
         return (props, hostListProviderService, pluginService) =>
             PropertyDefinition.Plugins.GetString(props)!.Contains("failover") ?
-                new MonitoringRdsHostListProvider(
+                new MonitoringRdsMultiAzHostListProvider(
                     props,
                     hostListProviderService,
                     TopologyQuery,
                     NodeIdQuery,
                     IsReaderQuery,
                     FetchWriterNodeQuery,
-                    pluginService) :
+                    pluginService,
+                    FetchWriterNodeQuery,
+                    FetchWriterNodeQueryColumnName) :
                 new MultiAzRdsHostListProvider(
                     props,
                     hostListProviderService,

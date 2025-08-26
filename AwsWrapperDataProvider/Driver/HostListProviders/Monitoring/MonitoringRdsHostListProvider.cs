@@ -77,7 +77,7 @@ public class MonitoringRdsHostListProvider : RdsHostListProvider, IBlockingHostL
         return this.hostList.AsReadOnly();
     }
 
-    protected IClusterTopologyMonitor InitMonitor()
+    protected virtual IClusterTopologyMonitor InitMonitor()
     {
         return Monitors.Set(
             this.ClusterId,
@@ -164,7 +164,7 @@ public class MonitoringRdsHostListProvider : RdsHostListProvider, IBlockingHostL
         }
     }
 
-    private MemoryCacheEntryOptions CreateCacheEntryOptions()
+    protected MemoryCacheEntryOptions CreateCacheEntryOptions()
     {
         return new MemoryCacheEntryOptions
         {

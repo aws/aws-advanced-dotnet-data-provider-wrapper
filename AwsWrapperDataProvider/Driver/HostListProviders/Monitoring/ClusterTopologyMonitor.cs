@@ -449,7 +449,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         return null;
     }
 
-    protected async Task<string?> GetWriterNodeIdAsync(DbConnection connection)
+    protected virtual async Task<string?> GetWriterNodeIdAsync(DbConnection connection)
     {
         try
         {
@@ -528,7 +528,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         }
     }
 
-    protected async Task<IList<HostSpec>?> QueryForTopologyAsync(DbConnection connection)
+    protected virtual async Task<IList<HostSpec>?> QueryForTopologyAsync(DbConnection connection)
     {
         try
         {
