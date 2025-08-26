@@ -52,6 +52,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
     private RdsUrlType? rdsUrlType;
 
     private bool isClosed;
+    private bool shouldThrowTransactionError = false;
     private Exception? lastExceptionDealtWith;
 
     public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string>()
@@ -420,6 +421,12 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
     private void ThrowFailoverSuccessException()
     {
+        if (this.shouldThrowTransactionError)
+        {
+            this.shouldThrowTransactionError = false;
+            throw new TransactionStateUnknownException("Transaction resolution unknown. Please re-configure session state if required and try restarting transaction.");
+        }
+
         throw new FailoverSuccessException("The active SQL connection has changed due to a connection failure. Please re-configure session state if required.");
     }
 
@@ -427,7 +434,11 @@ public class FailoverPlugin : AbstractConnectionPlugin
     {
         try
         {
-            this.pluginService.CurrentTransaction = null;
+            if (this.pluginService.CurrentTransaction != null)
+            {
+                this.shouldThrowTransactionError = true;
+                this.pluginService.CurrentTransaction = null;
+            }
         }
         catch
         {

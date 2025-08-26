@@ -124,12 +124,6 @@ public class PluginService : IPluginService, IHostListProviderService
         {
             DbConnection? oldConnection = this.CurrentConnection;
 
-            if (this.CurrentTransaction != null && !ReferenceEquals(oldConnection, connection))
-            {
-                IsolationLevel iso = this.CurrentTransaction.IsolationLevel;
-                this.CurrentTransaction = connection.BeginTransaction(iso);
-            }
-
             this.CurrentConnection = connection;
             this.currentHostSpec = hostSpec;
 

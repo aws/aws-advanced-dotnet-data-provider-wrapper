@@ -408,10 +408,9 @@ public class FailoverConnectivityTests
                 // If we reach here, no failover occurred during the sleep
                 Console.WriteLine("   ⚠️  No failover detected during long-running query");
             }
-            catch (FailoverSuccessException ex)
+            catch (TransactionStateUnknownException)
             {
                 failoverOccurred = true;
-                failoverException = ex;
                 Console.WriteLine("   ✓ Failover detected during transaction!");
 
                 var newHostInfo = GetCurrentConnectionInfo(connection);
