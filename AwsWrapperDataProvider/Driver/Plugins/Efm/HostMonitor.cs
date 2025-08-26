@@ -355,6 +355,8 @@ public class HostMonitor : IHostMonitor
     {
         if (!connectionValid)
         {
+            DateTime invalidNodeDurationStart;
+
             lock (this.monitorLock)
             {
                 this.failureCount++;
@@ -363,9 +365,11 @@ public class HostMonitor : IHostMonitor
                 {
                     this.invalidNodeStartTime = statusCheckStartTime;
                 }
+
+                invalidNodeDurationStart = this.invalidNodeStartTime ?? statusCheckStartTime;
             }
 
-            TimeSpan invalidNodeDuration = statusCheckEndTime - statusCheckStartTime;
+            TimeSpan invalidNodeDuration = statusCheckEndTime - invalidNodeDurationStart;
             int maxInvalidNodeDurationMs = this.failureDetectionIntervalMs * Math.Max(0, this.failureDetectionCount - 1);
 
             if (invalidNodeDuration >= TimeSpan.FromMilliseconds(maxInvalidNodeDurationMs))

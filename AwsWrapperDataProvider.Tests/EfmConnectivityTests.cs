@@ -145,7 +145,7 @@ public class EfmConnectivityTests
                 Console.WriteLine("   ❌ Monitor did not catch the failure.");
             }
 
-            if (monitorFailureCount != failureDetectionCount)
+            if (monitorFailureCount < failureDetectionCount)
             {
                 Console.WriteLine($"   ❌ Monitor caught {monitorFailureCount} failures when configured to handle {failureDetectionCount} failures.");
             }
