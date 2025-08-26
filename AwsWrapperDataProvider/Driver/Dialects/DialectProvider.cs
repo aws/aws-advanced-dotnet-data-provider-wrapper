@@ -88,6 +88,11 @@ public class DialectProvider
         this.pluginService = pluginService;
     }
 
+    public static void ResetEndpointCache()
+    {
+        KnownEndpointDialects.Clear();
+    }
+
     public IDialect GuessDialect(Dictionary<string, string> props)
     {
         this.dialect = null;

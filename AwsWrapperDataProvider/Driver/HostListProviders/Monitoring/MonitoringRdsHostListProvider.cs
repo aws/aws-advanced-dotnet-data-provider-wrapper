@@ -115,6 +115,7 @@ public class MonitoringRdsHostListProvider : RdsHostListProvider, IBlockingHostL
 
     protected override void ClusterIdChanged(string oldClusterId)
     {
+        Logger.LogTrace("Cluster Id changed, old cluster id: {id}", oldClusterId);
         this.TransferExistingMonitor(oldClusterId);
         this.TransferCachedTopology(oldClusterId);
     }
