@@ -214,7 +214,7 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Encountered exception while monitoring active contexts for host {0}: {1}..
+        ///   Looks up a localized string similar to Encountered exception while monitoring active contexts for host {0}: {1}, stack trace: {2}..
         /// </summary>
         internal static string EfmHostMonitor_ActiveContextsException {
             get {
@@ -250,7 +250,7 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Host is not responding: {0}..
+        ///   Looks up a localized string similar to Host is not responding: {0}, failure count: {1}..
         /// </summary>
         internal static string EfmHostMonitor_HostNotResponding {
             get {
@@ -259,7 +259,7 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Encountered exception while polling new contexts for host {0}: {1}..
+        ///   Looks up a localized string similar to Encountered exception while polling new contexts for host {0}: {1}, stack trace: {2}..
         /// </summary>
         internal static string EfmHostMonitor_NewContextsException {
             get {
@@ -520,7 +520,7 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Node monitoring thread completed..
+        ///   Looks up a localized string similar to Node monitoring thread completed in {0} ms..
         /// </summary>
         internal static string NodeMonitoringTask_ThreadCompleted {
             get {

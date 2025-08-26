@@ -23,7 +23,6 @@ using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
-using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
@@ -134,6 +133,7 @@ public class PluginService : IPluginService, IHostListProviderService
 
     public void SetAvailability(ICollection<string> hostAliases, HostAvailability availability)
     {
+        Logger.LogTrace($"Trying to set host aliases {string.Join(",", hostAliases)} to {availability}");
         if (hostAliases.Count == 0)
         {
             return;
@@ -147,7 +147,7 @@ public class PluginService : IPluginService, IHostListProviderService
 
         if (hostsToChange.Count == 0)
         {
-            // TODO: host to change list empty;
+            Logger.LogTrace("There are no changes in the hosts' availability.");
             return;
         }
 
@@ -157,7 +157,7 @@ public class PluginService : IPluginService, IHostListProviderService
         {
             var currentAvailability = host.Availability;
             host.Availability = availability;
-
+            Logger.LogTrace("Host {host} availability changed from {old} to {new}", host.ToString(), currentAvailability, availability);
             if (!HostAvailabilityExpiringCache.TryGetValue(host.Host, out _))
             {
                 HostAvailabilityExpiringCache.Set(host.Host, availability, DefaultHostAvailabilityCacheExpiration);
