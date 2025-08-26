@@ -138,18 +138,10 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                             foreach (var hostSpec in hosts)
                             {
                                 NodeMonitoringTask nodeMonitoringTask = new(this, hostSpec, this.writerHostSpec);
-                                Task newTask;
                                 var existingOrNewTask = this.nodeThreads.GetOrAdd(
                                     hostSpec.Host,
-                                    newTask = Task.Run(nodeMonitoringTask.RunNodeMonitoringAsync));
-                                if (!ReferenceEquals(existingOrNewTask, newTask))
-                                {
-                                    LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, $"Task@{RuntimeHelpers.GetHashCode(nodeMonitoringTask)} added to node threads for host {hostSpec.ToString()}");
-                                }
-                                else
-                                {
-                                    LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, $"Task already added for host {hostSpec.ToString()}");
-                                }
+                                    _ = Task.Run(nodeMonitoringTask.RunNodeMonitoringAsync));
+                                LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, $"Node Monitoring Task@{RuntimeHelpers.GetHashCode(existingOrNewTask)} created or already existed for host {hostSpec.ToString()}");
                             }
                         }
                     }
@@ -190,18 +182,10 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                             foreach (var hostSpec in hosts)
                             {
                                 NodeMonitoringTask nodeMonitoringTask = new(this, hostSpec, this.writerHostSpec);
-                                Task newTask;
                                 var existingOrNewTask = this.nodeThreads.GetOrAdd(
                                     hostSpec.Host,
-                                    newTask = Task.Run(nodeMonitoringTask.RunNodeMonitoringAsync));
-                                if (!ReferenceEquals(existingOrNewTask, newTask))
-                                {
-                                    LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, $"Task@{RuntimeHelpers.GetHashCode(nodeMonitoringTask)} added to node threads for host {hostSpec.ToString()}");
-                                }
-                                else
-                                {
-                                    LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, $"Task already added for host {hostSpec.ToString()}");
-                                }
+                                    _ = Task.Run(nodeMonitoringTask.RunNodeMonitoringAsync));
+                                LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, $"Node Monitoring Task@{RuntimeHelpers.GetHashCode(existingOrNewTask)} created or already existed for host {hostSpec.ToString()}");
                             }
                         }
                     }
@@ -765,9 +749,10 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                     await Task.Delay(100, monitor.cancellationTokenSource.Token);
                 }
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException ex)
             {
                 // Expected
+                LoggerUtils.LogWithThreadId(NodeMonitorLogger, LogLevel.Trace, ex, "Operation canncelled: ", ex.Message);
             }
             finally
             {
