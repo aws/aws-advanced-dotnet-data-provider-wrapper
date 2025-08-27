@@ -23,6 +23,7 @@ using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo.HostSelectors;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
+using AwsWrapperDataProvider.Driver.Plugins.Efm;
 using AwsWrapperDataProvider.Driver.Plugins.FederatedAuth;
 using AwsWrapperDataProvider.Driver.Plugins.Iam;
 using AwsWrapperDataProvider.Driver.Plugins.SecretsManager;
@@ -240,7 +241,9 @@ public class AwsWrapperConnection : DbConnection
 
     public static void ClearCache()
     {
+        RdsHostListProvider.ClearAll();
         MonitoringRdsHostListProvider.CloseAllMonitors();
+        HostMonitorService.CloseAllMonitors();
         PluginService.HostAvailabilityExpiringCache.Clear();
         DialectProvider.ResetEndpointCache();
         SecretsManagerAuthPlugin.ClearCache();

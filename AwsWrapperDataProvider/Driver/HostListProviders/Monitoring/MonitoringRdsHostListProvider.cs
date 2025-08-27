@@ -14,6 +14,7 @@
 
 using System.Data;
 using System.Data.Common;
+using System.Threading;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Caching.Memory;
@@ -60,10 +61,7 @@ public class MonitoringRdsHostListProvider : RdsHostListProvider, IBlockingHostL
 
     public static void CloseAllMonitors()
     {
-        // Dispose the current cache (which will trigger disposal of all cached monitors)
-        var oldCache = Monitors;
-        Monitors = new MemoryCache(new MemoryCacheOptions { SizeLimit = 100 });
-        oldCache.Dispose();
+        Monitors.Clear();
         ClearAll();
     }
 

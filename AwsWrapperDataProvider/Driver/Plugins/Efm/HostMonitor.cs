@@ -104,7 +104,7 @@ public class HostMonitor : IHostMonitor
         return this.activeContexts.IsEmpty && this.newContexts.Count == 0;
     }
 
-    public void Close()
+    public void Dispose()
     {
         this.cancellationTokenSource.Cancel();
 
