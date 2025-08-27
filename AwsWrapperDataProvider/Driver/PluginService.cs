@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Data;
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
@@ -129,8 +127,11 @@ public class PluginService : IPluginService, IHostListProviderService
 
             try
             {
-                oldConnection?.Close();
-                oldConnection?.Dispose();
+                if (!ReferenceEquals(connection, oldConnection))
+                {
+                    oldConnection?.Close();
+                    oldConnection?.Dispose();
+                }
             }
             catch (DbException exception)
             {
