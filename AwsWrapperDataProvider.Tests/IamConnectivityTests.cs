@@ -95,7 +95,7 @@ public class IamConnectivityTests : IntegrationTestBase
             Console.WriteLine($"   ❌ Encountered exception: {ex.Message}.");
         }
 
-        Console.WriteLine("5. Cleaning up...");
+        Console.WriteLine("Cleaning up...");
 
         try
         {
@@ -189,7 +189,7 @@ public class IamConnectivityTests : IntegrationTestBase
             Console.WriteLine($"   ❌ Encountered exception: {ex.Message}.");
         }
 
-        Console.WriteLine("5. Cleaning up...");
+        Console.WriteLine("Cleaning up...");
 
         try
         {
