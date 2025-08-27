@@ -115,6 +115,6 @@ public class ProxyHelper
             Console.WriteLine($"Error disabling connectivity UP-STREAM: {ex}");
         }
 
-        Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} Disabled connectivity to {proxy.Name}");
+        Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Disabled connectivity to {proxy.Name}");
     }
 }

@@ -49,6 +49,12 @@ public class PgDialect : IDialect
     {
         try
         {
+            if (conn.State != ConnectionState.Open)
+            {
+                Logger.LogError("Connection is not open");
+                return false;
+            }
+
             using var command = conn.CreateCommand();
             command.CommandText = "SELECT 1 FROM pg_proc LIMIT 1";
             using var reader = command.ExecuteReader();

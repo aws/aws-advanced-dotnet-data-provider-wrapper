@@ -682,7 +682,6 @@ public class AuroraTestUtils
     {
         string query = this.GetInstanceIdSql(engine, deployment);
         using var command = connection.CreateCommand();
-        command.CommandTimeout = 2;
         command.CommandText = query;
         Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} Before ExecuteScalar with Instance Id Query");
         var result = Convert.ToString(command.ExecuteScalar());
