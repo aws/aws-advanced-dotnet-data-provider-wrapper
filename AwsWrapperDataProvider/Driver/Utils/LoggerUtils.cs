@@ -44,8 +44,13 @@ public static class LoggerUtils
 
     public static ILogger<T> GetLogger<T>() => LoggerFactory.CreateLogger<T>();
 
-    public static string LogTopology(IList<HostSpec> hosts, string? messagePrefix)
+    public static string LogTopology(IList<HostSpec>? hosts, string? messagePrefix)
     {
+        if (hosts == null)
+        {
+            return $"{messagePrefix} Topology is null";
+        }
+
         var topology = string.Join($"{Environment.NewLine}    ", hosts.Select(h => h.ToString()));
         return $"{messagePrefix} Topology@{RuntimeHelpers.GetHashCode(hosts)}{Environment.NewLine}    {topology}";
     }

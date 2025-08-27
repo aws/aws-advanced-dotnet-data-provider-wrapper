@@ -233,7 +233,7 @@ public class ConnectionPluginManager
             return hostSpec;
         }
 
-        throw new InvalidOperationException($"The driver does not support the requested host selection strategy: {strategy}");
+        throw new NotSupportedException($"The driver does not support the requested host selection strategy: {strategy}");
     }
 
     public virtual bool AcceptsStrategy(string strategy)

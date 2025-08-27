@@ -118,7 +118,6 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             {
                 if (this.IsInPanicMode())
                 {
-                    LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "In panic mode");
                     if (this.nodeThreads.IsEmpty)
                     {
                         LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, Resources.ClusterTopologyMonitor_StartingNodeMonitoringThreads);
@@ -202,8 +201,6 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                 }
                 else
                 {
-                    LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "In regular mode");
-
                     // Regular mode (not panic mode)
                     if (!this.nodeThreads.IsEmpty)
                     {
@@ -300,7 +297,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
     protected IList<HostSpec> WaitTillTopologyGetsUpdated(long timeoutMs)
     {
         this.topologyMap.TryGetValue(this.clusterId, out IList<HostSpec>? currentHosts);
-        LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, LoggerUtils.LogTopology(currentHosts ?? [], $"Current topology@{RuntimeHelpers.GetHashCode(currentHosts)} and wait until it's updated:"));
+        LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, LoggerUtils.LogTopology(currentHosts, $"Wait until current topology is updated:"));
 
         lock (this.topologyUpdatedLock)
         {
@@ -309,7 +306,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
         if (timeoutMs == 0)
         {
-            LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, LoggerUtils.LogTopology(currentHosts ?? [], Resources.ClusterTopologyMonitor_TimeoutSetToZero));
+            LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, LoggerUtils.LogTopology(currentHosts, Resources.ClusterTopologyMonitor_TimeoutSetToZero));
             return currentHosts ?? [];
         }
 
@@ -328,12 +325,12 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                     if (this.topologyMap.TryGetValue(this.clusterId, out latestHosts) &&
                         !ReferenceEquals(currentHosts, latestHosts))
                     {
-                        LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, LoggerUtils.LogTopology(latestHosts ?? [], $"Topology@{RuntimeHelpers.GetHashCode(latestHosts)} is updated:"));
+                        LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, LoggerUtils.LogTopology(latestHosts, $"Topology is updated:"));
                         return latestHosts ?? [];
                     }
                     else
                     {
-                        LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, LoggerUtils.LogTopology(latestHosts ?? [], $"Topology@{RuntimeHelpers.GetHashCode(latestHosts)} is still not updated:"));
+                        LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, LoggerUtils.LogTopology(latestHosts, $"Topology is still not updated:"));
                     }
                 }
                 else
@@ -348,7 +345,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             throw new TimeoutException(string.Format(Resources.ClusterTopologyMonitor_TopologyNotUpdated, timeoutMs));
         }
 
-        LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, LoggerUtils.LogTopology(latestHosts ?? [], $"Topology@{RuntimeHelpers.GetHashCode(latestHosts)} is updated:"));
+        LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, LoggerUtils.LogTopology(latestHosts, $"Topology is updated:"));
         return latestHosts ?? [];
     }
 

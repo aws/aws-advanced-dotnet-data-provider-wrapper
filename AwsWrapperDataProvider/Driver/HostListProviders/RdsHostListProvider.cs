@@ -307,7 +307,7 @@ public class RdsHostListProvider : IDynamicHostListProvider
         this.EnsureInitialized();
         IDbConnection? currentConnection = connection ?? this.hostListProviderService.CurrentConnection;
         FetchTopologyResult result = this.GetTopology(currentConnection, false);
-        Logger.LogTrace(LoggerUtils.LogTopology(result.Hosts, result.IsCachedData ? "[From cache] Topology:" : null));
+        Logger.LogTrace(LoggerUtils.LogTopology(result.Hosts, result.IsCachedData ? "From cache" : "New Topology"));
         this.hostList = result.Hosts;
         return this.hostList.AsReadOnly();
     }

@@ -132,7 +132,6 @@ public class PluginService : IPluginService, IHostListProviderService
 
     public void SetAvailability(ICollection<string> hostAliases, HostAvailability availability)
     {
-        Logger.LogTrace($"Trying to set host aliases {string.Join(",", hostAliases)} to {availability}");
         if (hostAliases.Count == 0)
         {
             return;
