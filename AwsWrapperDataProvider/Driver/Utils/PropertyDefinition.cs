@@ -28,6 +28,9 @@ public static class PropertyDefinition
     public static readonly AwsWrapperProperty User =
         new("Username", null, "The user name that the driver will use to connect to database.");
 
+    public static readonly AwsWrapperProperty UserId =
+        new("User ID", null, "The user name and host name that the driver will use to connect to database.");
+
     public static readonly AwsWrapperProperty Password =
         new("Password", null, "The password that the driver will use to connect to database.");
 

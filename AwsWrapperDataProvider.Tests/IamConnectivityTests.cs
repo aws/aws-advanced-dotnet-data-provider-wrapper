@@ -72,7 +72,7 @@ public class IamConnectivityTests : IntegrationTestBase
             using (AwsWrapperConnection<NpgsqlConnection> connection = new(iamConnectionString))
             {
                 using AwsWrapperCommand<NpgsqlCommand> command = connection.CreateCommand<NpgsqlCommand>();
-                command.CommandText = "select aurora_db_instance_identifier()";
+                command.CommandText = "SELECT aurora_db_instance_identifier()";
 
                 Console.WriteLine("3. Opening IAM connection...");
                 connection.Open();
@@ -123,7 +123,7 @@ public class IamConnectivityTests : IntegrationTestBase
             this.engine, this.clusterEndpoint, this.port, this.username, this.password, this.defaultDbName);
 
         Console.WriteLine("1. Opening initial connection...");
-        using AwsWrapperConnection<MySql.Data.MySqlClient.MySqlConnection> basicAuthConnection = new(basicAuthConnectionString);
+        using AwsWrapperConnection<MySqlConnector.MySqlConnection> basicAuthConnection = new(basicAuthConnectionString);
         basicAuthConnection.Open();
         Console.WriteLine("   ✓ Connected successfully");
 
@@ -133,16 +133,16 @@ public class IamConnectivityTests : IntegrationTestBase
         Console.WriteLine("2. Creating db user and granting access via IAM...");
         try
         {
-            using AwsWrapperCommand<MySql.Data.MySqlClient.MySqlCommand> createCommand =
-                basicAuthConnection.CreateCommand<MySql.Data.MySqlClient.MySqlCommand>();
+            using AwsWrapperCommand<MySqlConnector.MySqlCommand> createCommand =
+                basicAuthConnection.CreateCommand<MySqlConnector.MySqlCommand>();
             createCommand.CommandText = $"CREATE USER '{IamUser}' IDENTIFIED WITH AWSAuthenticationPlugin AS 'RDS';";
             _ = createCommand.ExecuteScalar();
             Console.WriteLine("   ✓ Created db user with IAM authentication");
 
-            using AwsWrapperCommand<MySql.Data.MySqlClient.MySqlCommand> sslCommand =
-                basicAuthConnection.CreateCommand<MySql.Data.MySqlClient.MySqlCommand>();
-            sslCommand.CommandText = $"ALTER USER '{IamUser}'@'%' REQUIRE SSL;";
-            _ = sslCommand.ExecuteScalar();
+            using AwsWrapperCommand<MySqlConnector.MySqlCommand> privsCommand =
+                basicAuthConnection.CreateCommand<MySqlConnector.MySqlCommand>();
+            privsCommand.CommandText = $"GRANT ALL PRIVILEGES ON *.* TO '{IamUser}'@'%';";
+            _ = privsCommand.ExecuteScalar();
             Console.WriteLine("   ✓ Allow SSL connections to db user");
         }
         catch (Exception ex)
@@ -151,8 +151,8 @@ public class IamConnectivityTests : IntegrationTestBase
             Console.WriteLine($"   ⚠️ Encountered exception: {ex.Message}; proceeding anyways");
         }
 
-        string iamConnectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, IamUser, null, this.defaultDbName);
-        iamConnectionString += ";Plugins=iam;";
+        string iamConnectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, null, null, this.defaultDbName);
+        iamConnectionString += $";Plugins=iam;Username={IamUser};";
 
         if (TestEnvironment.Env.Info.Region != null)
         {
@@ -163,10 +163,10 @@ public class IamConnectivityTests : IntegrationTestBase
 
         try
         {
-            using (AwsWrapperConnection<MySql.Data.MySqlClient.MySqlConnection> connection = new(iamConnectionString))
+            using (AwsWrapperConnection<MySqlConnector.MySqlConnection> connection = new(iamConnectionString))
             {
-                using AwsWrapperCommand<MySql.Data.MySqlClient.MySqlCommand> command = connection.CreateCommand<MySql.Data.MySqlClient.MySqlCommand>();
-                command.CommandText = "select aurora_db_instance_identifier()";
+                using AwsWrapperCommand<MySqlConnector.MySqlCommand> command = connection.CreateCommand<MySqlConnector.MySqlCommand>();
+                command.CommandText = "SELECT @@aurora_server_id;";
 
                 Console.WriteLine("3. Opening IAM connection...");
                 connection.Open();
@@ -193,7 +193,7 @@ public class IamConnectivityTests : IntegrationTestBase
 
         try
         {
-            using AwsWrapperCommand<MySql.Data.MySqlClient.MySqlCommand> dropCommand = basicAuthConnection.CreateCommand<MySql.Data.MySqlClient.MySqlCommand>();
+            using AwsWrapperCommand<MySqlConnector.MySqlCommand> dropCommand = basicAuthConnection.CreateCommand<MySqlConnector.MySqlCommand>();
             dropCommand.CommandText = $"DROP USER '{IamUser}'@'%';";
             _ = dropCommand.ExecuteScalar();
             Console.WriteLine("   ✓ Dropped db user");

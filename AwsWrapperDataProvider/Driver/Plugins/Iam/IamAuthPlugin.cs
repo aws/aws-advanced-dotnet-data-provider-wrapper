@@ -44,7 +44,8 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
 
     private DbConnection ConnectInternal(HostSpec? hostSpec, Dictionary<string, string> props, ADONetDelegate<DbConnection> methodFunc)
     {
-        string iamUser = PropertyDefinition.User.GetString(props) ?? throw new Exception(PropertyDefinition.User.Name + " is null or empty.");
+        string iamUser = PropertyDefinition.User.GetString(props) ?? PropertyDefinition.UserId.GetString(props) ??
+            throw new Exception("Could not determine user for IAM authentication.");
         string iamHost = PropertyDefinition.IamHost.GetString(props) ?? hostSpec?.Host ?? throw new Exception("Could not determine host for IAM authentication provider.");
 
         // the default value for IamDefaultPort is -1, which should default to the other port property (?)
