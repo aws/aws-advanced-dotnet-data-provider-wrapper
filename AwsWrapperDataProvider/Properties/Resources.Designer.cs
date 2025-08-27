@@ -214,11 +214,38 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Activated monitoring..
+        /// </summary>
+        internal static string EfmHostMonitor_ActivatedMonitoring {
+            get {
+                return ResourceManager.GetString("EfmHostMonitor_ActivatedMonitoring", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Encountered exception while monitoring active contexts for host {0}: {1}, stack trace: {2}..
         /// </summary>
         internal static string EfmHostMonitor_ActiveContextsException {
             get {
                 return ResourceManager.GetString("EfmHostMonitor_ActiveContextsException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Deactivated monitoring..
+        /// </summary>
+        internal static string EfmHostMonitor_DeactivatedMonitoring {
+            get {
+                return ResourceManager.GetString("EfmHostMonitor_DeactivatedMonitoring", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Encountered exception when identifying connection: {0}..
+        /// </summary>
+        internal static string EfmHostMonitor_ErrorIdentifyingConnection {
+            get {
+                return ResourceManager.GetString("EfmHostMonitor_ErrorIdentifyingConnection", resourceCulture);
             }
         }
         

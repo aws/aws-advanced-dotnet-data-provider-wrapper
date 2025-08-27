@@ -232,7 +232,7 @@ public class RdsHostListProvider : IDynamicHostListProvider
 
                 if (!resultSet.Read())
                 {
-                    throw new InvalidOperationException("An error occurred while obtaining the connection's host ID.");
+                    return null;
                 }
 
                 instanceName = resultSet.GetString(0);

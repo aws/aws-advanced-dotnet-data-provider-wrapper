@@ -79,7 +79,7 @@ public static class PropertyDefinition
     public static readonly AwsWrapperProperty ClusterTopologyRefreshRateMs = new(
         "ClusterTopologyRefreshRateMs",
         "30000",
-        "Cluster topology refresh rate in millis. The cached topology for the cluster will be invalidated after the specified time, after which it will be updated during the next interaction with the connection.");
+        "Cluster topology refresh rate in milliseconds. The cached topology for the cluster will be invalidated after the specified time, after which it will be updated during the next interaction with the connection.");
 
     public static readonly AwsWrapperProperty ClusterInstanceHostPattern = new(
         "ClusterInstanceHostPattern",
@@ -174,6 +174,26 @@ public static class PropertyDefinition
         "600000", // 10min
         "Interval in milliseconds for a monitor to be considered inactive and to be disposed.");
 
+    public static readonly AwsWrapperProperty FailureDetectionEnabled = new(
+        "FailureDetectionEnabled",
+        "true",
+        "Enable failure detection logic (aka node monitoring thread).");
+
+    public static readonly AwsWrapperProperty FailureDetectionTime = new(
+        "FailureDetectionTime",
+        "30000",
+        "Interval in milliseconds between sending SQL to the server and the first probe to database node.");
+
+    public static readonly AwsWrapperProperty FailureDetectionInterval = new(
+        "FailureDetectionInterval",
+        "5000",
+        "Interval in milliseconds between probes to database node.");
+
+    public static readonly AwsWrapperProperty FailureDetectionCount = new(
+        "FailureDetectionCount",
+        "3",
+        "Number of failed connection checks before considering database node unhealthy.");
+
     /// <summary>
     /// A set of AwsWrapperProperties that is used by the wrapper and should not be passed to the target driver.
     /// </summary>
@@ -220,7 +240,13 @@ public static class PropertyDefinition
         // Host Selector Stratagy Properties
         RoundRobinHostWeightPairs,
         RoundRobinDefaultWeight,
+
+        // EFM2 Plugin Properties
         MonitorDisposalTimeMs,
+        FailureDetectionEnabled,
+        FailureDetectionTime,
+        FailureDetectionInterval,
+        FailureDetectionCount,
     ];
 
     public static string GetConnectionUrl(Dictionary<string, string> props)
