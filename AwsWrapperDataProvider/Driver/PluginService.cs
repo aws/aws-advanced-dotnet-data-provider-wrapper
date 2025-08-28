@@ -104,14 +104,14 @@ public class PluginService : IPluginService, IHostListProviderService
         try
         {
             oldConnection?.Dispose();
-            Logger.LogTrace("Old connection is disposed: {Type}@{Id}", oldConnection?.GetType().FullName, RuntimeHelpers.GetHashCode(oldConnection));
+            Logger.LogTrace("Old connection {Type}@{Id} is disposed.", oldConnection?.GetType().FullName, RuntimeHelpers.GetHashCode(oldConnection));
         }
         catch (Exception exception)
         {
             Logger.LogWarning(exception, "Error occoured when disposing old connection {Type}@{Id}", oldConnection?.GetType().FullName, RuntimeHelpers.GetHashCode(oldConnection));
         }
 
-        Logger.LogTrace("Current connection is set: {Type}@{Id}", this.CurrentConnection.GetType().FullName, RuntimeHelpers.GetHashCode(this.CurrentConnection));
+        Logger.LogTrace("Current connection {Type}@{Id} is set.", this.CurrentConnection.GetType().FullName, RuntimeHelpers.GetHashCode(this.CurrentConnection));
     }
 
     public void SetCurrentConnection(DbConnection connection, HostSpec hostSpec, IConnectionPlugin pluginToSkip)

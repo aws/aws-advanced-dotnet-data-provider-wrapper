@@ -112,7 +112,6 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
         if (this.CanDirectExecute(methodName))
         {
-            Logger.LogTrace("Direct executing...");
             return methodFunc();
         }
 
@@ -123,10 +122,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
         try
         {
-            Logger.LogTrace("Direct executing 2...");
             var result = methodFunc();
-            Logger.LogTrace("Got result after direct executing 2");
-
             return result;
         }
         catch (Exception exception)
@@ -219,8 +215,8 @@ public class FailoverPlugin : AbstractConnectionPlugin
         if (!this.closedExplicitly)
         {
             this.isClosed = false;
-            this.PickNewConnection();
             Logger.LogWarning("Connection was closed but not explicitly. Attempting to pick a new connection.");
+            this.PickNewConnection();
             throw new FailoverSuccessException("The active connection has changed. Please re-configure session state if required.");
         }
 

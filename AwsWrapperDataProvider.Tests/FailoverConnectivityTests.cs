@@ -165,9 +165,9 @@ public class FailoverConnectivityTests : IntegrationTestBase
         await tcs.Task;
         Assert.Throws<FailoverSuccessException>(() =>
         {
-            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} Executing instance ID query to trigger failover...");
+            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Executing instance ID query to trigger failover...");
             this.logger.WriteLine(AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment));
-            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} Finished executing without exception thrown");
+            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Finished executing without exception thrown");
         });
 
         // Assert that we are currently connected to the writer instance.
@@ -305,9 +305,9 @@ public class FailoverConnectivityTests : IntegrationTestBase
         await tcs.Task;
         Assert.Throws<FailoverSuccessException>(() =>
         {
-            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} Executing instance ID query to trigger failover...");
+            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Executing instance ID query to trigger failover...");
             AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
-            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} Finished executing without exception thrown");
+            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Finished executing without exception thrown");
         });
         await simulationTask;
     }

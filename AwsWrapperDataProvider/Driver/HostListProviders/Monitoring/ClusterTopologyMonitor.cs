@@ -137,6 +137,8 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                             foreach (var hostSpec in hosts)
                             {
                                 NodeMonitoringTask nodeMonitoringTask = new(this, hostSpec, this.writerHostSpec);
+
+                                // Run new task only if not existed
                                 var existingOrNewTask = this.nodeThreads.GetOrAdd(
                                     hostSpec.Host,
                                     _ =>
@@ -185,6 +187,8 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                             foreach (var hostSpec in hosts)
                             {
                                 NodeMonitoringTask nodeMonitoringTask = new(this, hostSpec, this.writerHostSpec);
+
+                                // Run new task only if not existed
                                 var existingOrNewTask = this.nodeThreads.GetOrAdd(
                                     hostSpec.Host,
                                     _ =>
@@ -311,7 +315,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         }
 
         DateTime endTime = DateTime.UtcNow.AddMilliseconds(timeoutMs);
-        LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, $"Timeout is {endTime:yyyy-MM-dd HH:mm:ss}");
+        LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, $"Timeout is {endTime:yyyy-MM-dd HH:mm:ss.fff}");
         IList<HostSpec>? latestHosts = [];
         lock (this.topologyUpdatedLock)
         {

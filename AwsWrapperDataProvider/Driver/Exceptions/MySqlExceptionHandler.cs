@@ -79,8 +79,7 @@ public class MySqlExceptionHandler : GenericExceptionHandler
 
         while (currException is not null)
         {
-            Logger.LogDebug("Current exception type: {type}", currException.GetType().FullName);
-            Logger.LogDebug("Current exception message: {message}", currException.Message);
+            Logger.LogDebug("Current exception {type}: {message}", currException.GetType().FullName, currException.Message);
 
             if (currException is SocketException or TimeoutException or MySqlEndOfStreamException)
             {

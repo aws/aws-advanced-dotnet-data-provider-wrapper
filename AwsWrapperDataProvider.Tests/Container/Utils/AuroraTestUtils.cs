@@ -683,14 +683,14 @@ public class AuroraTestUtils
         string query = this.GetInstanceIdSql(engine, deployment);
         using var command = connection.CreateCommand();
         command.CommandText = query;
-        Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} Before ExecuteScalar with Instance Id Query");
+        Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Before ExecuteScalar with Instance Id Query");
         var result = Convert.ToString(command.ExecuteScalar());
         if (result == null)
         {
             throw new InvalidOperationException("Failed to retrieve instance ID.");
         }
 
-        Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} Finished ExecuteScalar with result: {result}");
+        Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Finished ExecuteScalar with result: {result}");
         return result;
     }
 }

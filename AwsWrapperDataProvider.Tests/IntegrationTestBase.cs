@@ -81,8 +81,9 @@ public abstract class IntegrationTestBase : IAsyncLifetime
 
     public ValueTask DisposeAsync()
     {
-        Console.WriteLine($"Clearing all cache for each integration test.");
+        Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Clearing all cache for each integration test.");
         AwsWrapperConnection.ClearCache();
+        Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Done Clearing all cache for each integration test.");
         return ValueTask.CompletedTask;
     }
 }
