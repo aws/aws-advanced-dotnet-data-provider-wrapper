@@ -63,20 +63,20 @@ public class AbortConnectionTests : IntegrationTestBase
                 },
                 TestContext.Current.CancellationToken),
 
-                Task.Run(async () =>
+            Task.Run(async () =>
+            {
+                await Task.Delay(5000);
+                Console.WriteLine("Cancelling command...");
+                try
                 {
-                    await Task.Delay(5000);
-                    Console.WriteLine("Cancelling command...");
-                    try
-                    {
-                        command.Cancel();
-                        Console.WriteLine("Command cancelled");
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine("Error cancelling command: " + ex);
-                    }
-                },
+                    command.Cancel();
+                    Console.WriteLine("Command cancelled");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Error cancelling command: " + ex);
+                }
+            },
                 TestContext.Current.CancellationToken)
         ]);
     }
@@ -121,20 +121,20 @@ public class AbortConnectionTests : IntegrationTestBase
                 },
                 TestContext.Current.CancellationToken),
 
-                Task.Run(async () =>
+            Task.Run(async () =>
+            {
+                await Task.Delay(5000);
+                Console.WriteLine("Cancelling command...");
+                try
                 {
-                    await Task.Delay(5000);
-                    Console.WriteLine("Cancelling command...");
-                    try
-                    {
-                        command.Cancel();
-                        Console.WriteLine("Command cancelled");
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine("Error cancelling command: " + ex);
-                    }
-                },
+                    command.Cancel();
+                    Console.WriteLine("Command cancelled");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Error cancelling command: " + ex);
+                }
+            },
                 TestContext.Current.CancellationToken)
         ]);
     }

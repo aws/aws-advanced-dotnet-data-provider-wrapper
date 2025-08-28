@@ -30,6 +30,7 @@ public class AwsWrapperTransactionTests
 
     private readonly Mock<DbTransaction> mockTargetTransaction;
     private readonly Mock<ConnectionPluginManager> mockPluginManager;
+    private readonly Mock<IPluginService> mockPluginService;
     private readonly AwsWrapperTransaction wrapper;
 
     public AwsWrapperTransactionTests()
@@ -37,6 +38,8 @@ public class AwsWrapperTransactionTests
         AwsWrapperConnection<NpgsqlConnection> connection = new("Server=192.0.0.1;Database=test;User Id=user;Password=password;");
 
         this.mockTargetTransaction = new Mock<DbTransaction>();
+        this.mockPluginService = new Mock<IPluginService>();
+        this.mockPluginService.SetupGet(s => s.CurrentTransaction).Returns(this.mockTargetTransaction.Object);
         this.mockPluginManager = new Mock<ConnectionPluginManager>(
             new Mock<IConnectionProvider>().Object,
             new Mock<IConnectionProvider>().Object,
@@ -46,7 +49,7 @@ public class AwsWrapperTransactionTests
             CallBase = true,
         };
 
-        this.wrapper = new AwsWrapperTransaction(connection, this.mockTargetTransaction.Object, this.mockPluginManager.Object);
+        this.wrapper = new AwsWrapperTransaction(connection, this.mockPluginService.Object, this.mockPluginManager.Object);
     }
 
     [Fact]
