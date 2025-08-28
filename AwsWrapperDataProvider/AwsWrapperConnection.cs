@@ -179,7 +179,8 @@ public class AwsWrapperConnection : DbConnection
             () => this.pluginService.CurrentConnection!.BeginTransaction(isolationLevel),
             isolationLevel);
 
-        return new AwsWrapperTransaction(this, targetTransaction, this.PluginManager);
+        this.pluginService.CurrentTransaction = targetTransaction;
+        return new AwsWrapperTransaction(this, this.pluginService, this.PluginManager);
     }
 
     protected override DbCommand CreateDbCommand() => this.CreateCommand<DbCommand>();

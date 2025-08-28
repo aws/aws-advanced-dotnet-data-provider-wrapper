@@ -52,8 +52,8 @@ public class FailoverPlugin : AbstractConnectionPlugin
     private RdsUrlType? rdsUrlType;
 
     private bool isClosed;
+    private bool shouldThrowTransactionError = false;
     private Exception? lastExceptionDealtWith;
-    private bool isInTransaction;
 
     public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string>()
     {
@@ -421,9 +421,9 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
     private void ThrowFailoverSuccessException()
     {
-        if (this.isInTransaction)
+        if (this.shouldThrowTransactionError)
         {
-            this.isInTransaction = false;
+            this.shouldThrowTransactionError = false;
             throw new TransactionStateUnknownException("Transaction resolution unknown. Please re-configure session state if required and try restarting transaction.");
         }
 
@@ -432,35 +432,22 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
     private void InvalidateCurrentConnection()
     {
-        var conn = this.pluginService.CurrentConnection;
-        if (conn == null)
+        try
         {
-            return;
+            if (this.pluginService.CurrentTransaction != null)
+            {
+                this.shouldThrowTransactionError = true;
+                this.pluginService.CurrentTransaction = null;
+            }
         }
-
-        // TODO : handle when transaction support is added.
-
-        // bool isInTransaction = false;
-        //
-        // if (this.pluginService.IsInTransaction())
-        // {
-        //     isInTransaction = true;
-        //     try
-        //     {
-        //         conn.Rollback(); // if conn.Rollback() exists — see note below
-        //     }
-        //     catch
-        //     {
-        //         // Swallow exception
-        //     }
-        // }
+        catch
+        {
+            // Swallow exception, current transaction should be useless anyway.
+        }
 
         try
         {
-            if (conn.State != ConnectionState.Closed)
-            {
-                conn.Close();
-            }
+            this.pluginService.CurrentConnection?.Close();
         }
         catch
         {

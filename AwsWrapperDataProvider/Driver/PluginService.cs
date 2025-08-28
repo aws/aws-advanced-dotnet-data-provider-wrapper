@@ -22,6 +22,7 @@ using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
@@ -33,12 +34,15 @@ public class PluginService : IPluginService, IHostListProviderService
     internal static readonly MemoryCache HostAvailabilityExpiringCache = new(new MemoryCacheOptions());
     private static readonly ILogger<PluginService> Logger = LoggerUtils.GetLogger<PluginService>();
 
+    private readonly object connectionSwitchLock = new();
+
     private readonly ConnectionPluginManager pluginManager;
     private readonly Dictionary<string, string> props;
-    private readonly string originalConnectionString;
     private readonly DialectProvider dialectProvider;
     private volatile IHostListProvider hostListProvider;
     private HostSpec? currentHostSpec;
+
+    private DbTransaction? transaction;
 
     // private ExceptionManager _exceptionManager;
     // private IExceptionHandler _exceptionHandler;
@@ -52,6 +56,27 @@ public class PluginService : IPluginService, IHostListProviderService
     public HostSpecBuilder HostSpecBuilder { get => new HostSpecBuilder(); }
     public DbConnection? CurrentConnection { get; private set; }
 
+    public DbTransaction? CurrentTransaction
+    {
+        get => this.transaction;
+        set
+        {
+            try
+            {
+                this.transaction?.Rollback();
+                this.transaction?.Dispose();
+            }
+            catch (Exception)
+            {
+                // Do nothing.
+            }
+            finally
+            {
+                this.transaction = value;
+            }
+        }
+    }
+
     public PluginService(
         Type connectionType,
         ConnectionPluginManager pluginManager,
@@ -62,7 +87,6 @@ public class PluginService : IPluginService, IHostListProviderService
     {
         this.pluginManager = pluginManager;
         this.props = props;
-        this.originalConnectionString = connectionString;
         this.TargetConnectionDialect = configurationProfile?.TargetConnectionDialect ?? targetConnectionDialect ?? throw new ArgumentNullException(nameof(targetConnectionDialect));
         this.dialectProvider = new(this);
         this.Dialect = configurationProfile?.Dialect ?? this.dialectProvider.GuessDialect(this.props);
@@ -89,14 +113,31 @@ public class PluginService : IPluginService, IHostListProviderService
 
     public void SetCurrentConnection(DbConnection connection, HostSpec? hostSpec)
     {
-        // TODO use lock when switching connection
-        this.CurrentConnection = connection;
-        this.currentHostSpec = hostSpec;
+        this.SetCurrentConnection(connection, hostSpec, null);
     }
 
-    public void SetCurrentConnection(DbConnection connection, HostSpec hostSpec, IConnectionPlugin pluginToSkip)
+    public void SetCurrentConnection(DbConnection connection, HostSpec? hostSpec, IConnectionPlugin? pluginToSkip)
     {
-        throw new NotImplementedException();
+        lock (this.connectionSwitchLock)
+        {
+            DbConnection? oldConnection = this.CurrentConnection;
+
+            this.CurrentConnection = connection;
+            this.currentHostSpec = hostSpec;
+
+            try
+            {
+                if (!ReferenceEquals(connection, oldConnection))
+                {
+                    oldConnection?.Close();
+                    oldConnection?.Dispose();
+                }
+            }
+            catch (DbException exception)
+            {
+                Logger.LogTrace(string.Format(Resources.PluginService_ErrorClosingOldConnection, exception.Message));
+            }
+        }
     }
 
     public IList<HostSpec> GetHosts()
