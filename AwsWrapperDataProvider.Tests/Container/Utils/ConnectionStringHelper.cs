@@ -49,7 +49,6 @@ public class ConnectionStringHelper
 
                 mySqlConnectionStringBuilder.DefaultCommandTimeout = 30;
                 mySqlConnectionStringBuilder.ConnectionTimeout = 30;
-                mySqlConnectionStringBuilder.SslMode = MySqlSslMode.Required;
 
                 return mySqlConnectionStringBuilder.ConnectionString;
             case DatabaseEngine.PG:

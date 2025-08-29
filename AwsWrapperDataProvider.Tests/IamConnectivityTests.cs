@@ -20,191 +20,72 @@ namespace AwsWrapperDataProvider.Tests;
 
 public class IamConnectivityTests : IntegrationTestBase
 {
-    private static readonly string IamUser = "test_john_doe";
-
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg")]
-    public void IamPluginTest_WithPgDatabase()
+    public void PgWrapperIamConnectionTest()
     {
-        string basicAuthConnectionString = ConnectionStringHelper.GetUrl(
-            this.engine, this.clusterEndpoint, this.port, this.username, this.password, this.defaultDbName);
+        var iamUser = TestEnvironment.Env.Info.IamUsername;
+        var iamRegion = TestEnvironment.Env.Info.Region;
+        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, iamUser, null, this.defaultDbName);
+        connectionString += $";Plugins=iam;IamRegion={iamRegion}";
+        const string query = "select aurora_db_instance_identifier()";
 
-        Console.WriteLine("1. Opening initial connection...");
-        using AwsWrapperConnection<NpgsqlConnection> basicAuthConnection = new(basicAuthConnectionString);
-        basicAuthConnection.Open();
-        Console.WriteLine("   ✓ Connected successfully");
+        using AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
+        AwsWrapperCommand<NpgsqlCommand> command = connection.CreateCommand<NpgsqlCommand>();
+        command.CommandText = query;
 
-        // cannot proceed with test without the basic connection
-        Assert.Equal(ConnectionState.Open, basicAuthConnection.State);
-
-        Console.WriteLine("2. Creating db user and granting access via IAM...");
-        try
+        connection.Open();
+        IDataReader reader = command.ExecuteReader();
+        while (reader.Read())
         {
-            using AwsWrapperCommand<NpgsqlCommand> createCommand = basicAuthConnection.CreateCommand<NpgsqlCommand>();
-            createCommand.CommandText = $"CREATE USER {IamUser};";
-            _ = createCommand.ExecuteScalar();
-            Console.WriteLine("   ✓ Created db user");
-
-            using AwsWrapperCommand<NpgsqlCommand> grantCommand = basicAuthConnection.CreateCommand<NpgsqlCommand>();
-            grantCommand.CommandText = $"GRANT rds_iam TO {IamUser};";
-            _ = grantCommand.ExecuteScalar();
-            Console.WriteLine("   ✓ Granted access via IAM");
+            Console.WriteLine(reader.GetString(0));
         }
-        catch (Exception ex)
-        {
-            // proceed, if possible, as the user could already exist due to a badly cleaned up previous test
-            Console.WriteLine($"   ⚠️ Encountered exception: {ex.Message}; proceeding anyways");
-        }
-
-        string iamConnectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, IamUser, null, this.defaultDbName);
-        iamConnectionString += ";Plugins=iam;";
-
-        if (TestEnvironment.Env.Info.Region != null)
-        {
-            iamConnectionString += $"IamRegion={TestEnvironment.Env.Info.Region};";
-        }
-
-        bool iamConnectionSuccessful = false;
-
-        try
-        {
-            using (AwsWrapperConnection<NpgsqlConnection> connection = new(iamConnectionString))
-            {
-                using AwsWrapperCommand<NpgsqlCommand> command = connection.CreateCommand<NpgsqlCommand>();
-                command.CommandText = "SELECT aurora_db_instance_identifier()";
-
-                Console.WriteLine("3. Opening IAM connection...");
-                connection.Open();
-                Console.WriteLine("   ✓ Connected successfully");
-
-                Console.WriteLine("4. Executing test query...");
-                IDataReader reader = command.ExecuteReader();
-                while (reader.Read())
-                {
-                    Console.WriteLine(reader.GetString(0));
-                    Console.WriteLine("   ✓ Test query executed successfully");
-                }
-
-                connection.Close();
-                iamConnectionSuccessful = true;
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"   ❌ Encountered exception: {ex.Message}.");
-        }
-
-        Console.WriteLine("Cleaning up...");
-
-        try
-        {
-            using AwsWrapperCommand<NpgsqlCommand> dropCommand = basicAuthConnection.CreateCommand<NpgsqlCommand>();
-            dropCommand.CommandText = $"DROP USER {IamUser};";
-            _ = dropCommand.ExecuteScalar();
-            Console.WriteLine("   ✓ Dropped db user");
-
-            basicAuthConnection.Close();
-        }
-        catch
-        {
-            // ignore
-        }
-
-        Assert.True(iamConnectionSuccessful);
     }
 
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
-    public void IamPluginTest_WithMySqlDatabase()
+    public void MySqlClientWrapperIamConnectionTest()
     {
-        string basicAuthConnectionString = ConnectionStringHelper.GetUrl(
-            this.engine, this.clusterEndpoint, this.port, this.username, this.password, this.defaultDbName);
+        var iamUser = TestEnvironment.Env.Info.IamUsername;
+        var iamRegion = TestEnvironment.Env.Info.Region;
+        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, null, null, this.defaultDbName);
+        connectionString += $";Username={iamUser};Plugins=iam;IamRegion={iamRegion}";
+        const string query = "select 1";
 
-        Console.WriteLine("1. Opening initial connection...");
-        using AwsWrapperConnection<MySqlConnector.MySqlConnection> basicAuthConnection = new(basicAuthConnectionString);
-        basicAuthConnection.Open();
-        Console.WriteLine("   ✓ Connected successfully");
+        using AwsWrapperConnection<MySql.Data.MySqlClient.MySqlConnection> connection = new(connectionString);
+        connection.Open();
+        AwsWrapperCommand<MySql.Data.MySqlClient.MySqlCommand> command = connection.CreateCommand<MySql.Data.MySqlClient.MySqlCommand>();
+        command.CommandText = query;
 
-        // cannot proceed with test without the basic connection
-        Assert.Equal(ConnectionState.Open, basicAuthConnection.State);
-
-        Console.WriteLine("2. Creating db user and granting access via IAM...");
-        try
+        IDataReader reader = command.ExecuteReader();
+        while (reader.Read())
         {
-            using AwsWrapperCommand<MySqlConnector.MySqlCommand> createCommand =
-                basicAuthConnection.CreateCommand<MySqlConnector.MySqlCommand>();
-            createCommand.CommandText = $"CREATE USER '{IamUser}' IDENTIFIED WITH AWSAuthenticationPlugin AS 'RDS';";
-            _ = createCommand.ExecuteScalar();
-            Console.WriteLine("   ✓ Created db user with IAM authentication");
-
-            using AwsWrapperCommand<MySqlConnector.MySqlCommand> privsCommand =
-                basicAuthConnection.CreateCommand<MySqlConnector.MySqlCommand>();
-            privsCommand.CommandText = $"GRANT ALL PRIVILEGES ON *.* TO '{IamUser}'@'%';";
-            _ = privsCommand.ExecuteScalar();
-            Console.WriteLine("   ✓ Allow SSL connections to db user");
+            Console.WriteLine(reader.GetInt32(0));
         }
-        catch (Exception ex)
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    [Trait("Database", "mysql")]
+    public void MySqlConnectorWrapperIamConnectionTest()
+    {
+        var iamUser = TestEnvironment.Env.Info.IamUsername;
+        var iamRegion = TestEnvironment.Env.Info.Region;
+        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, null, null, this.defaultDbName);
+        connectionString += $";Username={iamUser};Plugins=iam;IamRegion={iamRegion}";
+        const string query = "select 1";
+
+        using AwsWrapperConnection<MySqlConnector.MySqlConnection> connection = new(connectionString);
+        connection.Open();
+        AwsWrapperCommand<MySqlConnector.MySqlCommand> command = connection.CreateCommand<MySqlConnector.MySqlCommand>();
+        command.CommandText = query;
+
+        IDataReader reader = command.ExecuteReader();
+        while (reader.Read())
         {
-            // proceed, if possible, as the user could already exist due to a badly cleaned up previous test
-            Console.WriteLine($"   ⚠️ Encountered exception: {ex.Message}; proceeding anyways");
+            Console.WriteLine(reader.GetInt32(0));
         }
-
-        string iamConnectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, null, null, this.defaultDbName);
-        iamConnectionString += $";Plugins=iam;Username={IamUser};";
-
-        if (TestEnvironment.Env.Info.Region != null)
-        {
-            iamConnectionString += $"IamRegion={TestEnvironment.Env.Info.Region};";
-        }
-
-        bool iamConnectionSuccessful = false;
-
-        try
-        {
-            using (AwsWrapperConnection<MySqlConnector.MySqlConnection> connection = new(iamConnectionString))
-            {
-                using AwsWrapperCommand<MySqlConnector.MySqlCommand> command = connection.CreateCommand<MySqlConnector.MySqlCommand>();
-                command.CommandText = "SELECT @@aurora_server_id;";
-
-                Console.WriteLine("3. Opening IAM connection...");
-                connection.Open();
-                Console.WriteLine("   ✓ Connected successfully");
-
-                Console.WriteLine("4. Executing test query...");
-                IDataReader reader = command.ExecuteReader();
-                while (reader.Read())
-                {
-                    Console.WriteLine(reader.GetString(0));
-                    Console.WriteLine("   ✓ Test query executed successfully");
-                }
-
-                connection.Close();
-                iamConnectionSuccessful = true;
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"   ❌ Encountered exception: {ex.Message}.");
-        }
-
-        Console.WriteLine("Cleaning up...");
-
-        try
-        {
-            using AwsWrapperCommand<MySqlConnector.MySqlCommand> dropCommand = basicAuthConnection.CreateCommand<MySqlConnector.MySqlCommand>();
-            dropCommand.CommandText = $"DROP USER '{IamUser}'@'%';";
-            _ = dropCommand.ExecuteScalar();
-            Console.WriteLine("   ✓ Dropped db user");
-
-            basicAuthConnection.Close();
-        }
-        catch
-        {
-            // ignore
-        }
-
-        Assert.True(iamConnectionSuccessful);
     }
 }
