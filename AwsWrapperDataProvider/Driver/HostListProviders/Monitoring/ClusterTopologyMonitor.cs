@@ -630,7 +630,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         }
         catch (Exception ex)
         {
-            LoggerUtils.LogWithThreadId(Logger, LogLevel.Warning, ex, "An error occurred while processing the results from the topology query: {message}", ex.Message);
+            LoggerUtils.LogWithThreadId(Logger, LogLevel.Warning, ex, string.Format(Resources.ClusterTopologyMonitor_ErrorProcessingQueryResults, ex));
             return null;
         }
     }

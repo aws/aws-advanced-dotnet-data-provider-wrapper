@@ -175,11 +175,8 @@ public class PluginService : IPluginService, IHostListProviderService
         {
             var currentAvailability = host.Availability;
             host.Availability = availability;
-            Logger.LogTrace("Host {host} availability changed from {old} to {new}", host.ToString(), currentAvailability, availability);
-            if (!HostAvailabilityExpiringCache.TryGetValue(host.Host, out _))
-            {
-                HostAvailabilityExpiringCache.Set(host.Host, availability, DefaultHostAvailabilityCacheExpiration);
-            }
+            Logger.LogTrace("Host {host} availability changed from {old} to {new}", host, currentAvailability, availability);
+            HostAvailabilityExpiringCache.Set(host.GetHostAndPort(), availability, DefaultHostAvailabilityCacheExpiration);
 
             if (currentAvailability != availability)
             {
@@ -354,7 +351,14 @@ public class PluginService : IPluginService, IHostListProviderService
 
     private void UpdateHostAvailability(IList<HostSpec> hosts)
     {
-        // TODO: deal with availability.
+        foreach (HostSpec host in hosts)
+        {
+            HostAvailabilityExpiringCache.TryGetValue(host.GetHostAndPort(), out HostAvailability? availability);
+            if (availability.HasValue)
+            {
+                host.Availability = availability.Value;
+            }
+        }
     }
 
     private void NotifyNodeChangeList(IList<HostSpec> oldHosts, IList<HostSpec> updateHosts)
