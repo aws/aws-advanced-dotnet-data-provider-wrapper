@@ -12,12 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace AwsWrapperDataProvider.Driver.Plugins.Iam;
+using AwsWrapperDataProvider.Driver.Plugins.Iam;
 
-public class IamAuthPluginFactory : IConnectionPluginFactory
+namespace AwsWrapperDataProvider.Driver.Plugins.FederatedAuth;
+
+public class OktaAuthPluginFactory : IConnectionPluginFactory
 {
     public IConnectionPlugin GetInstance(IPluginService pluginService, Dictionary<string, string> props)
     {
-        return new IamAuthPlugin(pluginService, props, new IamTokenUtility());
+        CredentialsProviderFactory? credentialsProviderFactory = new OktaCredentialsProviderFactory(pluginService);
+
+        return credentialsProviderFactory == null
+            ? throw new Exception("Could not create credentials provider factory for federated authentication")
+            : (IConnectionPlugin)new OktaAuthPlugin(pluginService, props, credentialsProviderFactory, new IamTokenUtility());
     }
 }

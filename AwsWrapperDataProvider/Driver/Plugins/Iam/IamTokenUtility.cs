@@ -15,17 +15,18 @@
 using Amazon;
 using Amazon.RDS.Util;
 using Amazon.Runtime;
+using AwsWrapperDataProvider.Driver.Plugins.Efm;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.Iam;
 
-public class IamTokenUtility
+public class IamTokenUtility : IIamTokenUtility
 {
-    public static string GetCacheKey(string user, string hostname, int port, string region)
+    public string GetCacheKey(string user, string hostname, int port, string region)
     {
         return user + ":" + hostname + ":" + port + ":" + region;
     }
 
-    public static string GenerateAuthenticationToken(string region, string hostname, int port, string user, AWSCredentials? credentials)
+    public string GenerateAuthenticationToken(string region, string hostname, int port, string user, AWSCredentials? credentials)
     {
         try
         {
