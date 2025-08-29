@@ -38,6 +38,7 @@ public partial class OktaCredentialsProviderFactory(IPluginService pluginService
 
     private static readonly string OktaAwsAppName = "amazon_aws";
     private static readonly string OneTimeToken = "onetimetoken";
+    private static readonly string SessionTokenPath = "/api/v1/authn";
     private static readonly ILogger<OktaCredentialsProviderFactory> Logger = LoggerUtils.GetLogger<OktaCredentialsProviderFactory>();
     private readonly IPluginService pluginService = pluginService;
 
@@ -47,7 +48,7 @@ public partial class OktaCredentialsProviderFactory(IPluginService pluginService
         string idpUser = PropertyDefinition.IdpUsername.GetString(props) ?? throw new Exception("IDP Username not provided.");
         string idpPassword = PropertyDefinition.IdpPassword.GetString(props) ?? throw new Exception("IDP Password not provided.");
 
-        string sessionTokenEndpoint = "https://" + idpHost + "/api/v1/authn";
+        string sessionTokenEndpoint = "https://" + idpHost + SessionTokenPath;
 
         try
         {

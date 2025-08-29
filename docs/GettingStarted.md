@@ -67,15 +67,91 @@ Most IDEs provide integrated test runners that allow you to run and debug tests 
 
 #### OKTA
 
+##### Where to Find XYZ
+
+1. Endpoint
+
+    Found on Okta Admin Console
+
+    Okta Admin Dashboard, go to Employee and Customer Identity Solutions | Okta  and login with the admin credentials (sign up information)
+
+    Under Admin Console (Left Sidebar), go to Application → Applications
+
+    Select your application
+
+    Navigate to the Sign On tab
+
+    Within Settings, under SAML 2.0, there will be a Metadata URL
+
+    The Endpoint will be up to, and before, the /app section, e.g. 
+
+    `https://<okta-account-id>.okta.com/app/<application-id>/sso/saml/metadata`, the endpoint will be `<okta-account-id>.okta.com`.
+
+2. AppID
+
+    Found on Okta Admin Console
+
+    Okta Admin Dashboard, go to Employee and Customer Identity Solutions | Okta  and login with the admin credentials (sign up information)
+
+    Under Admin Console (Left Sidebar), go to Application → Applications
+
+    Select your application
+
+    Navigate to the Sign On tab
+
+    Within Settings, under SAML 2.0, there will be a Metadata URL
+
+    The AppID will the section between /app/ and /sso. e.g.
+
+    `https://<okta-account-id>.okta.com/app/<application-id>/sso/saml/metadata` the appid will be `<application-id>`
+
+3. Username / Password
+
+    Found on Okta Admin Console
+
+    Okta Admin Dashboard, go to www.okta.com and login with the admin credentials (sign up information)
+
+    Under Admin Console (Left Sidebar), go to Directory → People
+
+    Can now add person, reset password, etc
+
+    Clicking into the created user, can now also Assign Application
+
+4. SAML Provider ARN
+
+    Found on AWS Console
+
+    Login to AWS Console
+
+    Go to IAM
+
+    In the left sidebar, under Access management select Identity Providers
+
+    Choose your provider, and the ARN will be near the top right in the form of: `arn:aws:iam::<account-id>:saml-provider/<identity-provider-name>`
+
+5. Role ARN
+
+    Found on AWS Console
+
+    Login to AWS Console
+
+    Go to IAM
+
+    In the left sidebar, under Access management select Roles
+
+    Choose your role, and the ARN will be near the top middle in the form of: `arn:aws:iam::<account-id>:role/<role-name>`
+
+#### Running the tests
+
 To run the OKTA integration tests manually, you will need the following information:
 
 - IDP Endpoint (e.g., *.okta.com)
+- App ID
 - IDP Port (often HTTPS; 443)
 - IDP Username (OKTA)
 - IDP Password (OKTA)
 - IAM Role ARN (AWS)
 - IAM SAML Provider ARN (AWS)
-- App ID
 
 As well as the database connectivity information:
 

@@ -80,6 +80,7 @@ public class FederatedAuthConnectivityTests
 
     [Fact]
     [Trait("Category", "Integration")]
+    [Trait("Category", "Manual")]
     public void PgWrapperAdfsConnectionTest()
     {
         const string connectionString =
@@ -107,6 +108,7 @@ public class FederatedAuthConnectivityTests
 
     [Fact]
     [Trait("Category", "Integration")]
+    [Trait("Category", "Manual")]
     public void MySqlClientWrapperAdfsConnectionTest()
     {
         const string connectionString = "Server=<insert_rds_instance_here>;Initial Catalog=mysql;Database=<database_name_here>;DbUser=<db_user_with_iam_login>;Plugins=federatedAuth;IamRegion=<iam_region>;IamRoleArn=<iam_role_arn>;IamIdpArn=<iam_idp_arn>;IdpEndpoint=<idp_endpoint>;IdpUsername=<idp_username>;IdpPassword=<idp_password>;";
