@@ -216,8 +216,8 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                     if (hosts == null)
                     {
                         // Can't get topology, switch to panic mode
-                        var conn = Interlocked.Exchange(ref this.monitoringConnection, null);
                         LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "Monitoring connection@{Id} is set to null", RuntimeHelpers.GetHashCode(this.monitoringConnection));
+                        var conn = Interlocked.Exchange(ref this.monitoringConnection, null);
 
                         this.isVerifiedWriterConnection = false;
                         await this.DisposeConnectionAsync(conn);
@@ -258,8 +258,8 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         }
         finally
         {
-            var conn = Interlocked.Exchange(ref this.monitoringConnection, null);
             LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "Monitoring connection@{Id} is set to null", RuntimeHelpers.GetHashCode(this.monitoringConnection));
+            var conn = Interlocked.Exchange(ref this.monitoringConnection, null);
             await this.DisposeConnectionAsync(conn);
 
             LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, string.Format(Resources.ClusterTopologyMonitor_StopMonitoringThread, this.initialHostSpec.Host));
@@ -280,8 +280,8 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
         if (shouldVerifyWriter)
         {
-            var connectionToClose = Interlocked.Exchange(ref this.monitoringConnection, null);
             LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "Monitoring connection@{Id} is set to null", RuntimeHelpers.GetHashCode(this.monitoringConnection));
+            var connectionToClose = Interlocked.Exchange(ref this.monitoringConnection, null);
             this.isVerifiedWriterConnection = false;
             this.DisposeConnectionAsync(connectionToClose).GetAwaiter().GetResult();
         }
@@ -437,8 +437,8 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
         if (hosts == null)
         {
-            var connToDispose = Interlocked.Exchange(ref this.monitoringConnection, null);
             LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "Monitoring connection@{Id} is set to null", RuntimeHelpers.GetHashCode(this.monitoringConnection));
+            var connToDispose = Interlocked.Exchange(ref this.monitoringConnection, null);
 
             this.isVerifiedWriterConnection = false;
             await this.DisposeConnectionAsync(connToDispose);

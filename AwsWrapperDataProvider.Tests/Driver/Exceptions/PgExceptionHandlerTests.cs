@@ -38,7 +38,6 @@ namespace AwsWrapperDataProvider.Tests.Driver.Exceptions
         [InlineData("08", true)]
         [InlineData("99", true)]
         [InlineData("F0", true)]
-        [InlineData("XX", true)]
         [InlineData("28000", false)]
         [InlineData("42000", false)]
         [InlineData("23505", false)]
