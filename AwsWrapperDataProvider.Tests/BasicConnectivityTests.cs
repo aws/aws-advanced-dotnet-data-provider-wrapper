@@ -31,9 +31,9 @@ public class BasicConnectivityTests : IntegrationTestBase
         const string query = "select 1";
 
         using AwsWrapperConnection<MySql.Data.MySqlClient.MySqlConnection> connection = new(connectionString);
+        connection.Open();
         using AwsWrapperCommand<MySql.Data.MySqlClient.MySqlCommand> command = connection.CreateCommand<MySql.Data.MySqlClient.MySqlCommand>();
         command.CommandText = query;
-        connection.Open();
         Assert.Equal(ConnectionState.Open, connection.State);
         using IDataReader reader = command.ExecuteReader();
         while (reader.Read())
@@ -51,9 +51,9 @@ public class BasicConnectivityTests : IntegrationTestBase
         const string query = "select 1";
 
         using AwsWrapperConnection<MySqlConnection> connection = new(connectionString);
+        connection.Open();
         using AwsWrapperCommand<MySqlCommand> command = connection.CreateCommand<MySqlCommand>();
         command.CommandText = query;
-        connection.Open();
         Assert.Equal(ConnectionState.Open, connection.State);
         using IDataReader reader = command.ExecuteReader();
         while (reader.Read())

@@ -115,17 +115,13 @@ public class PluginService : IPluginService, IHostListProviderService
 
     public void SetCurrentConnection(DbConnection connection, HostSpec? hostSpec)
     {
-        this.SetCurrentConnection(connection, hostSpec, null);
-    }
-
-    public void SetCurrentConnection(DbConnection connection, HostSpec? hostSpec, IConnectionPlugin? pluginToSkip)
-    {
         lock (this.connectionSwitchLock)
         {
             DbConnection? oldConnection = this.CurrentConnection;
 
             this.CurrentConnection = connection;
             this.currentHostSpec = hostSpec;
+            Logger.LogTrace("New connection {Type}@{Id} is set.", connection?.GetType().FullName, RuntimeHelpers.GetHashCode(connection));
 
             try
             {
