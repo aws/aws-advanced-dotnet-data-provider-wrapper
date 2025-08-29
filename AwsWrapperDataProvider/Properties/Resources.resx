@@ -139,7 +139,7 @@
       <value>Topology hasn't been updated after {0} ms.</value>
     </data>
     <data name="ClusterTopologyMonitor.OpenedMonitoringConnection" xml:space="preserve">
-      <value>Opened monitoring connection to node {0}.</value>
+      <value>New monitroing connection@{0} opened for node {1}.</value>
     </data>
     <data name="ClusterTopologyMonitor.IgnoringTopologyRequest" xml:space="preserve">
       <value>A topology refresh was requested, but the topology was already updated recently. Returning cached hosts:</value>

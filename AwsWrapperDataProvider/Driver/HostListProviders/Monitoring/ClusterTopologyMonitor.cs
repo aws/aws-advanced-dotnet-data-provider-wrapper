@@ -160,7 +160,6 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                                 this.nodeThreadsWriterHostSpec.Host));
 
                             await this.DisposeConnectionAsync(this.monitoringConnection);
-                            this.monitoringConnection = this.nodeThreadsWriterConnection;
                             Interlocked.Exchange(ref this.monitoringConnection, this.nodeThreadsWriterConnection);
                             this.writerHostSpec = this.nodeThreadsWriterHostSpec;
                             this.isVerifiedWriterConnection = true;
@@ -218,6 +217,8 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                     {
                         // Can't get topology, switch to panic mode
                         var conn = Interlocked.Exchange(ref this.monitoringConnection, null);
+                        LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "Monitoring connection@{Id} is set to null", RuntimeHelpers.GetHashCode(this.monitoringConnection));
+
                         this.isVerifiedWriterConnection = false;
                         await this.DisposeConnectionAsync(conn);
                         continue;
@@ -258,6 +259,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         finally
         {
             var conn = Interlocked.Exchange(ref this.monitoringConnection, null);
+            LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "Monitoring connection@{Id} is set to null", RuntimeHelpers.GetHashCode(this.monitoringConnection));
             await this.DisposeConnectionAsync(conn);
 
             LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, string.Format(Resources.ClusterTopologyMonitor_StopMonitoringThread, this.initialHostSpec.Host));
@@ -279,6 +281,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         if (shouldVerifyWriter)
         {
             var connectionToClose = Interlocked.Exchange(ref this.monitoringConnection, null);
+            LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "Monitoring connection@{Id} is set to null", RuntimeHelpers.GetHashCode(this.monitoringConnection));
             this.isVerifiedWriterConnection = false;
             this.DisposeConnectionAsync(connectionToClose).GetAwaiter().GetResult();
         }
@@ -360,6 +363,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
     protected async Task<IList<HostSpec>?> OpenAnyConnectionAndUpdateTopologyAsync()
     {
+        LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "OpenAnyConnectionAndUpdateTopologyAsync");
         bool writerVerifiedByThisThread = false;
         if (this.monitoringConnection == null)
         {
@@ -371,7 +375,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
                 if (Interlocked.CompareExchange(ref this.monitoringConnection, newConnection, null) == null)
                 {
-                    LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, string.Format(Resources.ClusterTopologyMonitor_OpenedMonitoringConnection, this.initialHostSpec.Host));
+                    LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, string.Format(Resources.ClusterTopologyMonitor_OpenedMonitoringConnection, RuntimeHelpers.GetHashCode(this.monitoringConnection), this.initialHostSpec.Host));
 
                     if (!string.IsNullOrEmpty(await this.GetWriterNodeIdAsync(this.monitoringConnection)))
                     {
@@ -434,6 +438,8 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         if (hosts == null)
         {
             var connToDispose = Interlocked.Exchange(ref this.monitoringConnection, null);
+            LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "Monitoring connection@{Id} is set to null", RuntimeHelpers.GetHashCode(this.monitoringConnection));
+
             this.isVerifiedWriterConnection = false;
             await this.DisposeConnectionAsync(connToDispose);
         }
@@ -468,15 +474,16 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         {
             using var command = connection.CreateCommand();
             command.CommandText = this.nodeIdQuery;
-            await using var reader = await command.ExecuteReaderAsync();
-            if (await reader.ReadAsync())
+            await using var reader = await command.ExecuteReaderAsync(this.cancellationTokenSource.Token);
+            if (await reader.ReadAsync(this.cancellationTokenSource.Token))
             {
                 return reader.GetString(0);
             }
         }
-        catch
+        catch (DbException ex)
         {
             // Ignore
+            LoggerUtils.LogWithThreadId(Logger, LogLevel.Warning, ex, "DbException thrown during getting the node Id for topology monitoring connection@{id}, and ignored.", RuntimeHelpers.GetHashCode(connection));
         }
 
         return null;
@@ -488,15 +495,16 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         {
             using var command = connection.CreateCommand();
             command.CommandText = this.writerTopologyQuery;
-            await using var reader = await command.ExecuteReaderAsync();
-            if (await reader.ReadAsync())
+            await using var reader = await command.ExecuteReaderAsync(this.cancellationTokenSource.Token);
+            if (await reader.ReadAsync(this.cancellationTokenSource.Token))
             {
                 return reader.GetString(0);
             }
         }
-        catch
+        catch (DbException ex)
         {
             // Ignore
+            LoggerUtils.LogWithThreadId(Logger, LogLevel.Warning, ex, "DbException thrown during getting the writer node Id for topology monitoring connection@{id}, and ignored.", RuntimeHelpers.GetHashCode(connection));
         }
 
         return null;
@@ -580,12 +588,12 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             }
 
             command.CommandText = this.topologyQuery;
-            await using var reader = await command.ExecuteReaderAsync();
+            await using var reader = await command.ExecuteReaderAsync(this.cancellationTokenSource.Token);
 
             var hosts = new List<HostSpec>();
             var writers = new List<HostSpec>();
 
-            while (await reader.ReadAsync())
+            while (await reader.ReadAsync(this.cancellationTokenSource.Token))
             {
                 try
                 {

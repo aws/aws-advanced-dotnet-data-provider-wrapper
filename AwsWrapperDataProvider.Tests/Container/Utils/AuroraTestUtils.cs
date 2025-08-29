@@ -106,7 +106,7 @@ public class AuroraTestUtils
         var stopwatch = Stopwatch.StartNew();
 
         string status = (await this.GetDBClusterAsync(clusterId))!.Status;
-        Console.WriteLine($"Cluster status: {status}, waiting for: {string.Join(", ", allowedStatuses)}");
+        Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Cluster {clusterId} status: {status}, waiting for: {string.Join(", ", allowedStatuses)}");
 
         while (!allowedStatusSet.Contains(status!.ToLower()) && stopwatch.Elapsed < timeout)
         {
@@ -114,19 +114,19 @@ public class AuroraTestUtils
             var tmpStatus = (await this.GetDBClusterAsync(clusterId))?.Status!;
             if (!string.Equals(tmpStatus, status, StringComparison.OrdinalIgnoreCase))
             {
-                Console.WriteLine($"Cluster status (waiting): {tmpStatus}");
+                Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Cluster {clusterId} status (waiting): {tmpStatus}");
             }
 
             status = tmpStatus;
         }
 
-        Console.WriteLine($"Cluster status (after wait): {status}");
+        Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Cluster {clusterId} status (after wait): {status}");
     }
 
     public async Task WaitUntilInstanceHasRightStateAsync(string instanceId, params string[] allowedStatuses)
     {
         string status = (await this.GetDBInstanceAsync(instanceId))!.DBInstanceStatus;
-        Console.WriteLine($"Instance {instanceId} status: {status}, waiting for status: {string.Join(", ", allowedStatuses)}");
+        Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Instance {instanceId} status: {status}, waiting for status: {string.Join(", ", allowedStatuses)}");
 
         var allowedStatusSet = new HashSet<string>(allowedStatuses.Select(s => s.ToLower()));
         var timeout = TimeSpan.FromMinutes(15);
@@ -139,13 +139,13 @@ public class AuroraTestUtils
 
             if (!tmpStatus.Equals(status, StringComparison.OrdinalIgnoreCase))
             {
-                Console.WriteLine($"Instance {instanceId} status (waiting): {tmpStatus}");
+                Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Instance {instanceId} status (waiting): {tmpStatus}");
             }
 
             status = tmpStatus;
         }
 
-        Console.WriteLine($"Instance {instanceId} status (after wait): {status}");
+        Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Instance {instanceId} status (after wait): {status}");
     }
 
     public async Task MakeSureInstancesUpAsync(TimeSpan timeout)
@@ -611,7 +611,7 @@ public class AuroraTestUtils
         // Failover has finished, wait for DNS to be updated so cluster endpoint resolves to the correct writer instance.
         if (deployment == DatabaseEngineDeployment.AURORA)
         {
-            Console.WriteLine($"Cluster endpoint resolves to: {clusterIp}");
+            Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Cluster endpoint resolves to: {clusterIp}");
             var newClusterIp = this.HostToIP(clusterEndpoint, true);
 
             var deadline = DateTime.UtcNow + TimeSpan.FromMinutes(10);
@@ -623,7 +623,7 @@ public class AuroraTestUtils
                 newClusterIp = this.HostToIP(clusterEndpoint, true);
             }
 
-            Console.WriteLine($"Cluster endpoint resolves to (after wait): {newClusterIp}");
+            Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Cluster endpoint resolves to (after wait): {newClusterIp}");
 
             // Wait for initial writer instance to be verified as not writer.
             deadline = DateTime.UtcNow + TimeSpan.FromMinutes(10);
@@ -634,7 +634,7 @@ public class AuroraTestUtils
             }
         }
 
-        Console.WriteLine($"Finished failover from {initialWriterId} to target: {targetWriterId}");
+        Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Finished failover from {initialWriterId} to target: {targetWriterId}");
     }
 
     public async Task FailoverClusterToTargetAsync(string clusterId, string? targetInstanceId)
@@ -651,17 +651,17 @@ public class AuroraTestUtils
                     DBClusterIdentifier = clusterId,
                     TargetDBInstanceIdentifier = targetInstanceId,
                 });
-                Console.WriteLine("FailoverDbCluster request is sent");
+                Console.WriteLine("{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} FailoverDbCluster request is sent");
                 return;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"FailoverDBCluster request to {targetInstanceId} failed: {ex.Message}");
+                Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} FailoverDBCluster request to {targetInstanceId} failed: {ex.Message}");
                 await Task.Delay(1000);
             }
         }
 
-        throw new Exception($"Failed to request a cluster failover.");
+        throw new Exception($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Failed to request a cluster failover.");
     }
 
     public string GetInstanceIdSql(DatabaseEngine engine, DatabaseEngineDeployment deployment)

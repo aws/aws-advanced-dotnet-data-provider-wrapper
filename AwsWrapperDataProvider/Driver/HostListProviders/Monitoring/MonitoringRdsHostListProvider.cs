@@ -14,7 +14,6 @@
 
 using System.Data;
 using System.Data.Common;
-using System.Threading;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Caching.Memory;
