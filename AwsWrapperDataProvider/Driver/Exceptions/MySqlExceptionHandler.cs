@@ -91,7 +91,7 @@ public class MySqlExceptionHandler : GenericExceptionHandler
             {
                 string sqlState = dbException.SqlState ?? string.Empty;
 
-                var log = new StringBuilder();
+                StringBuilder log = new();
                 log.AppendLine("=== DbException Details ===");
                 log.AppendLine($"Type: {dbException.GetType().FullName}");
                 log.AppendLine($"Message: {dbException.Message}");

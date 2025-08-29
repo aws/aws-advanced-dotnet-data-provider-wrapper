@@ -13,6 +13,11 @@
 // limitations under the License.
 
 using System.Data.Common;
+using System.Net.Sockets;
+using System.Text;
+using AwsWrapperDataProvider.Driver.Utils;
+using Microsoft.Extensions.Logging;
+using MySqlConnector;
 
 namespace AwsWrapperDataProvider.Driver.Exceptions;
 
@@ -22,6 +27,8 @@ namespace AwsWrapperDataProvider.Driver.Exceptions;
 /// </summary>
 public class GenericExceptionHandler : IExceptionHandler
 {
+    private static readonly ILogger<GenericExceptionHandler> Logger = LoggerUtils.GetLogger<GenericExceptionHandler>();
+
     // Common SQL states for network-related issues across different databases
     protected virtual HashSet<string> NetworkErrorStates => new(StringComparer.OrdinalIgnoreCase);
 
@@ -30,7 +37,47 @@ public class GenericExceptionHandler : IExceptionHandler
 
     public virtual bool IsNetworkException(string sqlState) => this.NetworkErrorStates.Contains(sqlState);
 
-    public virtual bool IsNetworkException(Exception exception) => this.ExceptionHasSqlState(exception, this.NetworkErrorStates);
+    public virtual bool IsNetworkException(Exception exception, params Type[] types)
+    {
+        Exception? currException = exception;
+
+        while (currException is not null)
+        {
+            Logger.LogDebug("Current exception {type}: {message}", currException.GetType().FullName, currException.Message);
+
+            if (currException is SocketException or TimeoutException or MySqlEndOfStreamException)
+            {
+                Logger.LogDebug("Current exception is a network exception: {type}", currException.GetType().FullName);
+                return true;
+            }
+
+            if (currException is DbException dbException)
+            {
+                string sqlState = dbException.SqlState ?? string.Empty;
+
+                StringBuilder log = new();
+                log.AppendLine("=== DbException Details ===");
+                log.AppendLine($"Type: {dbException.GetType().FullName}");
+                log.AppendLine($"Message: {dbException.Message}");
+                log.AppendLine($"Sql State: {dbException.SqlState}");
+                log.AppendLine($"Error Code: {dbException.ErrorCode}");
+                log.AppendLine($"Source: {dbException.Source}");
+                Logger.LogDebug(log.ToString());
+
+                if (this.NetworkErrorStates.Contains(sqlState))
+                {
+                    Logger.LogDebug("Current exception is a network exception: {type}", currException.GetType().FullName);
+                    return true;
+                }
+            }
+
+            currException = currException.InnerException;
+            Logger.LogDebug("Checking innner exception");
+        }
+
+        Logger.LogDebug("Current exception is not a network exception");
+        return false;
+    }
 
     public virtual bool IsLoginException(string sqlState) => this.LoginErrorStates.Contains(sqlState);
 

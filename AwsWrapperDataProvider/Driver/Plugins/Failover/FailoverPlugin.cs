@@ -457,7 +457,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
         catch (Exception ex)
         {
             // Swallow exception, current connection should be useless anyway.
-            Logger.LogWarning("Error occoured when disposing current connection: {message}", ex.Message);
+            Logger.LogTrace("Error occoured when disposing current connection: {message}", ex.Message);
         }
     }
 

@@ -282,11 +282,6 @@ public class AwsWrapperCommand : DbCommand
                 "DbCommand.ExecuteReaderAsync",
                 () => this._targetDbCommand!.ExecuteReaderAsync(behavior, cancellationToken).GetAwaiter().GetResult());
 
-            if (reader.GetType() == typeof(Npgsql.NpgsqlDataReader))
-            {
-                return reader;
-            }
-
             return new AwsWrapperDataReader(reader, this._pluginManager!);
         });
     }

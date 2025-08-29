@@ -83,6 +83,7 @@ public class HostMonitor : IHostMonitor
         if (this.cancellationTokenSource.Token.IsCancellationRequested)
         {
             Logger.LogWarning(Resources.EfmHostMonitor_StartMonitoringWhenStopped);
+            return;
         }
 
         DateTime startMonitoringTime = DateTime.Now + TimeSpan.FromMilliseconds(this.failureDetectionTimeMs);
@@ -165,7 +166,7 @@ public class HostMonitor : IHostMonitor
                 }
 
                 // sleep for one second before polling new contexts
-                await Task.Delay(1000);
+                await Task.Delay(1000, token);
             }
         }
         catch (OperationCanceledException)
@@ -197,7 +198,7 @@ public class HostMonitor : IHostMonitor
 
                 if (this.activeContexts.IsEmpty && !isNodeUnhealthy)
                 {
-                    await Task.Delay(ThreadSleepMs);
+                    await Task.Delay(ThreadSleepMs, token);
                     continue;
                 }
 
@@ -254,7 +255,7 @@ public class HostMonitor : IHostMonitor
                     delayMs = ThreadSleepMs;
                 }
 
-                await Task.Delay(delayMs);
+                await Task.Delay(delayMs, token);
             }
         }
         catch (OperationCanceledException)

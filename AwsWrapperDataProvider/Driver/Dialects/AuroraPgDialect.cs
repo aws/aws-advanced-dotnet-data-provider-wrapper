@@ -58,9 +58,9 @@ public class AuroraPgDialect : PgDialect
 
         try
         {
-            using var command = connection.CreateCommand();
+            using IDbCommand command = connection.CreateCommand();
             command.CommandText = $"{ExtensionsSql}; {TopologySql}";
-            using var reader = command.ExecuteReader();
+            using IDataReader reader = command.ExecuteReader();
             if (reader.Read())
             {
                 bool auroraUtils = reader.GetBoolean(reader.GetOrdinal("aurora_stat_utils"));

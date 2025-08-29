@@ -42,9 +42,9 @@ public class AuroraMysqlDialect : MysqlDialect
     {
         try
         {
-            using var command = connection.CreateCommand();
+            using IDbCommand command = connection.CreateCommand();
             command.CommandText = IsDialectQuery;
-            using var reader = command.ExecuteReader();
+            using IDataReader reader = command.ExecuteReader();
             return reader.Read();
         }
         catch (DbException)

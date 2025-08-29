@@ -38,9 +38,9 @@ public class RdsPgDialect : PgDialect
 
         try
         {
-            using var command = conn.CreateCommand();
+            using IDbCommand command = conn.CreateCommand();
             command.CommandText = ExtensionsSql;
-            using var reader = command.ExecuteReader();
+            using IDataReader reader = command.ExecuteReader();
             while (reader.Read())
             {
                 bool rdsTools = reader.GetBoolean(reader.GetOrdinal("rds_tools"));

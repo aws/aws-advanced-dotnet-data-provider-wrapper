@@ -78,7 +78,7 @@ public class HostMonitorService : IHostMonitorService
             context.SetInactive();
             try
             {
-                connectionToAbort.Dispose();
+                connectionToAbort.Close();
             }
             catch
             {
