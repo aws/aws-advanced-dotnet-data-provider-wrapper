@@ -281,8 +281,7 @@ public class AwsWrapperCommand : DbCommand
                 this._targetDbCommand!,
                 "DbCommand.ExecuteReaderAsync",
                 () => this._targetDbCommand!.ExecuteReaderAsync(behavior, cancellationToken).GetAwaiter().GetResult());
-
-            return new AwsWrapperDataReader(reader, this._pluginManager!);
+            return (DbDataReader)new AwsWrapperDataReader(reader, this._pluginManager!);
         });
     }
 
