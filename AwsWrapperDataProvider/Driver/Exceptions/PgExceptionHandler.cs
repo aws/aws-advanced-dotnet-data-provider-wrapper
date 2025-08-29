@@ -34,7 +34,6 @@ public class PgExceptionHandler : GenericExceptionHandler
         "08", // connection error
         "99", // unexpected error
         "F0", // configuration file error (backend)
-        "XX", // internal error (backend)
     ];
 
     private readonly HashSet<string> loginErrorStates =

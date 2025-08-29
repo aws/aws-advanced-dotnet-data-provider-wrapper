@@ -651,7 +651,7 @@ public class AuroraTestUtils
                     DBClusterIdentifier = clusterId,
                     TargetDBInstanceIdentifier = targetInstanceId,
                 });
-                Console.WriteLine("{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} FailoverDbCluster request is sent");
+                Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} FailoverDbCluster request is sent");
                 return;
             }
             catch (Exception ex)

@@ -133,7 +133,7 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to New monitroing connection@{0} opened for node {1}..
+        ///   Looks up a localized string similar to New cluster topology monitoring connection@{0} opened for node {1}..
         /// </summary>
         internal static string ClusterTopologyMonitor_OpenedMonitoringConnection {
             get {
@@ -295,7 +295,7 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Opened a monitoring connection for host {0}..
+        ///   Looks up a localized string similar to Opened a new host monitoring connection for host {0}..
         /// </summary>
         internal static string EfmHostMonitor_OpenedMonitoringConnection {
             get {
@@ -304,7 +304,7 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Opening a monitoring connection for host {0}..
+        ///   Looks up a localized string similar to Opening a new host monitoring connection for host {0}..
         /// </summary>
         internal static string EfmHostMonitor_OpeningMonitoringConnection {
             get {
@@ -547,7 +547,7 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Node monitoring thread completed in {0} ms..
+        ///   Looks up a localized string similar to Node monitoring task@{0} completed in {1} ms..
         /// </summary>
         internal static string NodeMonitoringTask_ThreadCompleted {
             get {

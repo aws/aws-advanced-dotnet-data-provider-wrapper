@@ -139,12 +139,12 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                                 NodeMonitoringTask nodeMonitoringTask = new(this, hostSpec, this.writerHostSpec);
 
                                 // Run new task only if not existed
-                                var existingOrNewTask = this.nodeThreads.GetOrAdd(
+                                _ = this.nodeThreads.GetOrAdd(
                                     hostSpec.Host,
                                     _ =>
                                     {
                                         var task = Task.Run(nodeMonitoringTask.RunNodeMonitoringAsync);
-                                        LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, $"Node Monitoring Task@{RuntimeHelpers.GetHashCode(task)} created for host {hostSpec}");
+                                        LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, $"Node Monitoring Task@{RuntimeHelpers.GetHashCode(nodeMonitoringTask)} created for host {hostSpec}");
                                         return task;
                                     });
                             }
@@ -188,7 +188,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                                 NodeMonitoringTask nodeMonitoringTask = new(this, hostSpec, this.writerHostSpec);
 
                                 // Run new task only if not existed
-                                var existingOrNewTask = this.nodeThreads.GetOrAdd(
+                                _ = this.nodeThreads.GetOrAdd(
                                     hostSpec.Host,
                                     _ =>
                                     {
@@ -769,12 +769,16 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             catch (OperationCanceledException ex)
             {
                 // Expected
-                LoggerUtils.LogWithThreadId(NodeMonitorLogger, LogLevel.Trace, ex, "Operation canncelled: ", ex.Message);
+                LoggerUtils.LogWithThreadId(NodeMonitorLogger, LogLevel.Trace, ex, "Operation canncelled: {message}", ex.Message);
+            }
+            catch (Exception ex)
+            {
+                LoggerUtils.LogWithThreadId(NodeMonitorLogger, LogLevel.Warning, ex, "Unknown exception thrown: {message}", ex.Message);
             }
             finally
             {
                 await monitor.DisposeConnectionAsync(connection);
-                LoggerUtils.LogWithThreadId(NodeMonitorLogger, LogLevel.Trace, string.Format(Resources.NodeMonitoringTask_ThreadCompleted, (DateTime.UtcNow - start).TotalMilliseconds));
+                LoggerUtils.LogWithThreadId(NodeMonitorLogger, LogLevel.Trace, string.Format(Resources.NodeMonitoringTask_ThreadCompleted, RuntimeHelpers.GetHashCode(this), (DateTime.UtcNow - start).TotalMilliseconds));
             }
         }
 
