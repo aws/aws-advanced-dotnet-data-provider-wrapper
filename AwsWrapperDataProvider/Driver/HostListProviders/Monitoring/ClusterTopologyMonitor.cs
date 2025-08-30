@@ -47,12 +47,13 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
     protected readonly string writerTopologyQuery;
     protected readonly IHostListProviderService hostListProviderService;
     protected readonly HostSpec clusterInstanceTemplate;
-    protected readonly CancellationTokenSource cancellationTokenSource = new();
+    protected readonly CancellationTokenSource ctsTopologyMonitoring = new();
     protected readonly object topologyUpdatedLock = new();
     protected readonly ConcurrentDictionary<string, Task> nodeThreads = new();
     protected readonly Task monitoringTask;
     protected readonly object disposeLock = new();
 
+    protected CancellationTokenSource ctsNodeMonitoring;
     protected string clusterId;
     protected HostSpec? writerHostSpec;
     protected DbConnection? monitoringConnection;
@@ -98,7 +99,10 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         // Use original properties directly
         this.properties = properties;
 
-        this.monitoringTask = Task.Run(this.RunMonitoringLoop, this.cancellationTokenSource.Token);
+        // Make sure node monitoring tasks are cancelled once topology monitoring task is cancelled
+        this.ctsNodeMonitoring = CancellationTokenSource.CreateLinkedTokenSource(this.ctsTopologyMonitoring.Token);
+
+        this.monitoringTask = Task.Run(this.RunMonitoringLoop, this.ctsTopologyMonitoring.Token);
     }
 
     public bool CanDispose => true;
@@ -114,7 +118,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         {
             LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, string.Format(Resources.ClusterTopologyMonitor_StartMonitoringThread, this.initialHostSpec.Host));
 
-            while (!this.cancellationTokenSource.Token.IsCancellationRequested)
+            while (!this.ctsTopologyMonitoring.Token.IsCancellationRequested)
             {
                 if (this.IsInPanicMode())
                 {
@@ -132,6 +136,10 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                         var hosts = this.topologyMap.Get<IList<HostSpec>>(this.clusterId) ??
                                     await this.OpenAnyConnectionAndUpdateTopologyAsync();
 
+                        this.ctsNodeMonitoring.Cancel();
+                        LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "Restarting cancellation token for node monitoring tasks");
+                        this.ctsNodeMonitoring = CancellationTokenSource.CreateLinkedTokenSource(this.ctsTopologyMonitoring.Token);
+
                         if (hosts != null && !this.isVerifiedWriterConnection)
                         {
                             foreach (var hostSpec in hosts)
@@ -143,7 +151,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                                     hostSpec.Host,
                                     _ =>
                                     {
-                                        var task = Task.Run(nodeMonitoringTask.RunNodeMonitoringAsync);
+                                        var task = Task.Run(() => nodeMonitoringTask.RunNodeMonitoringAsync(this.ctsNodeMonitoring.Token), this.ctsNodeMonitoring.Token);
                                         LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, $"Node Monitoring Task@{RuntimeHelpers.GetHashCode(nodeMonitoringTask)} created for host {hostSpec}");
                                         return task;
                                     });
@@ -174,6 +182,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                             }
 
                             this.nodeThreadsStop = true;
+                            this.ctsNodeMonitoring.Cancel();
                             LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, $"Clearing node threads...");
                             this.nodeThreads.Clear();
                             continue;
@@ -192,7 +201,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                                     hostSpec.Host,
                                     _ =>
                                     {
-                                        var task = Task.Run(nodeMonitoringTask.RunNodeMonitoringAsync);
+                                        var task = Task.Run(() => nodeMonitoringTask.RunNodeMonitoringAsync(this.ctsNodeMonitoring.Token), this.ctsNodeMonitoring.Token);
                                         LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, $"Node Monitoring Task@{RuntimeHelpers.GetHashCode(task)} created for host {hostSpec}");
                                         return task;
                                     });
@@ -207,7 +216,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                     // Regular mode (not panic mode)
                     if (!this.nodeThreads.IsEmpty)
                     {
-                        this.nodeThreadsStop = true;
+                        this.ctsNodeMonitoring.Cancel();
                         LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, $"Clearing node threads...");
                         this.nodeThreads.Clear();
                     }
@@ -258,6 +267,9 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         }
         finally
         {
+            LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "Cancelling all node monitoring tasks from topology monitor connection@{Id}", RuntimeHelpers.GetHashCode(this.monitoringConnection));
+            this.ctsNodeMonitoring.Cancel();
+
             LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "Monitoring connection@{Id} is set to null", RuntimeHelpers.GetHashCode(this.monitoringConnection));
             var conn = Interlocked.Exchange(ref this.monitoringConnection, null);
             await this.DisposeConnectionAsync(conn);
@@ -474,8 +486,8 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         {
             using var command = connection.CreateCommand();
             command.CommandText = this.nodeIdQuery;
-            await using var reader = await command.ExecuteReaderAsync(this.cancellationTokenSource.Token);
-            if (await reader.ReadAsync(this.cancellationTokenSource.Token))
+            await using var reader = await command.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
+            if (await reader.ReadAsync(this.ctsTopologyMonitoring.Token))
             {
                 return reader.GetString(0);
             }
@@ -495,8 +507,8 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         {
             using var command = connection.CreateCommand();
             command.CommandText = this.writerTopologyQuery;
-            await using var reader = await command.ExecuteReaderAsync(this.cancellationTokenSource.Token);
-            if (await reader.ReadAsync(this.cancellationTokenSource.Token))
+            await using var reader = await command.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
+            if (await reader.ReadAsync(this.ctsTopologyMonitoring.Token))
             {
                 return reader.GetString(0);
             }
@@ -537,9 +549,9 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
         do
         {
-            await Task.Delay(50, this.cancellationTokenSource.Token);
+            await Task.Delay(50, this.ctsTopologyMonitoring.Token);
         }
-        while (!this.requestToUpdateTopology && DateTime.UtcNow < end && !this.cancellationTokenSource.Token.IsCancellationRequested);
+        while (!this.requestToUpdateTopology && DateTime.UtcNow < end && !this.ctsTopologyMonitoring.Token.IsCancellationRequested);
     }
 
     protected async Task<IList<HostSpec>?> FetchTopologyAndUpdateCacheAsync(DbConnection? connection)
@@ -588,12 +600,12 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             }
 
             command.CommandText = this.topologyQuery;
-            await using var reader = await command.ExecuteReaderAsync(this.cancellationTokenSource.Token);
+            await using var reader = await command.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
 
             var hosts = new List<HostSpec>();
             var writers = new List<HostSpec>();
 
-            while (await reader.ReadAsync(this.cancellationTokenSource.Token))
+            while (await reader.ReadAsync(this.ctsTopologyMonitoring.Token))
             {
                 try
                 {
@@ -657,7 +669,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         }
 
         this.nodeThreadsStop = true;
-        this.cancellationTokenSource.Cancel();
+        this.ctsTopologyMonitoring.Cancel();
 
         try
         {
@@ -677,7 +689,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         var writerConn = Interlocked.Exchange(ref this.nodeThreadsWriterConnection, null);
         this.DisposeConnectionAsync(writerConn).GetAwaiter().GetResult();
 
-        this.cancellationTokenSource.Dispose();
+        this.ctsTopologyMonitoring.Dispose();
     }
 
     private class NodeMonitoringTask(
@@ -689,7 +701,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
         private bool writerChanged = false;
 
-        public async Task RunNodeMonitoringAsync()
+        public async Task RunNodeMonitoringAsync(CancellationToken token)
         {
             DbConnection? connection = null;
             bool updateTopology = false;
@@ -698,7 +710,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             LoggerUtils.LogWithThreadId(NodeMonitorLogger, LogLevel.Trace, "Running node monitoring task for host: {host}", hostSpec.ToString());
             try
             {
-                while (!monitor.nodeThreadsStop && !monitor.cancellationTokenSource.Token.IsCancellationRequested)
+                while (!monitor.nodeThreadsStop && !token.IsCancellationRequested)
                 {
                     if (connection == null)
                     {
@@ -763,7 +775,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                         }
                     }
 
-                    await Task.Delay(100, monitor.cancellationTokenSource.Token);
+                    await Task.Delay(100, token);
                 }
             }
             catch (OperationCanceledException ex)
