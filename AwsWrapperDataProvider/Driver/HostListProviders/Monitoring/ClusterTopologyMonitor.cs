@@ -492,10 +492,11 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                 return reader.GetString(0);
             }
         }
-        catch (DbException ex)
+        catch (Exception ex)
         {
             // Ignore
-            LoggerUtils.LogWithThreadId(Logger, LogLevel.Warning, ex, "DbException thrown during getting the node Id for topology monitoring connection@{id}, and ignored.", RuntimeHelpers.GetHashCode(connection));
+            LoggerUtils.LogWithThreadId(Logger, LogLevel.Warning, ex, "Exception thrown during getting the node Id for topology monitoring connection@{id}, and ignored.", RuntimeHelpers.GetHashCode(connection));
+            throw;
         }
 
         return null;
@@ -513,10 +514,10 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                 return reader.GetString(0);
             }
         }
-        catch (DbException ex)
+        catch (Exception ex)
         {
-            // Ignore
-            LoggerUtils.LogWithThreadId(Logger, LogLevel.Warning, ex, "DbException thrown during getting the writer node Id for topology monitoring connection@{id}, and ignored.", RuntimeHelpers.GetHashCode(connection));
+            LoggerUtils.LogWithThreadId(Logger, LogLevel.Warning, ex, "Exception thrown during getting the writer node Id for topology monitoring connection@{id}", RuntimeHelpers.GetHashCode(connection));
+            throw;
         }
 
         return null;

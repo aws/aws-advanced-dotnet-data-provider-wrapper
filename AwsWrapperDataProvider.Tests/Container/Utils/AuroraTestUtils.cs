@@ -646,6 +646,7 @@ public class AuroraTestUtils
         {
             try
             {
+                Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Sending FailoverDbCluster request...");
                 var response = await this.rdsClient.FailoverDBClusterAsync(new FailoverDBClusterRequest
                 {
                     DBClusterIdentifier = clusterId,
