@@ -295,17 +295,20 @@ public class FailoverPlugin : AbstractConnectionPlugin
             var remainingReaders = new HashSet<HostSpec>(readerCandidates);
             while (remainingReaders.Count > 0 && DateTime.UtcNow < failoverEndTime)
             {
-                HostSpec readerCandidate;
+                HostSpec? readerCandidate = null;
                 try
                 {
-                    readerCandidate = this.pluginService.GetHostSpecByStrategy(HostRole.Reader, this.failoverReaderHostSelectorStrategy);
-                    if (!remainingReaders.Contains(readerCandidate))
-                    {
-                        break;
-                    }
+                    readerCandidate = this.pluginService.GetHostSpecByStrategy([..remainingReaders], HostRole.Reader, this.failoverReaderHostSelectorStrategy);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    Logger.LogInformation(ex, LoggerUtils.LogTopology([.. remainingReaders], $"An error occurred while attempting to select a reader host candidate {readerCandidate} from Candidates"));
+                    break;
+                }
+
+                if (readerCandidate is null)
+                {
+                    Logger.LogInformation(LoggerUtils.LogTopology([.. remainingReaders], "Unable to find reader in updated host list"));
                     break;
                 }
 
@@ -328,9 +331,14 @@ public class FailoverPlugin : AbstractConnectionPlugin
                     {
                         readerCandidates.Remove(readerCandidate);
                     }
+                    else
+                    {
+                        Logger.LogInformation("Unable to determine host role for {readerCandidate}. Since failover mode is set to STRICT_READER and the host may be a writer, it will not be selected for reader failover.", readerCandidate.GetHostAndPort());
+                    }
                 }
-                catch (Exception)
+                catch (DbException ex)
                 {
+                    Logger.LogInformation(ex, "Exception thrown when getting a reader candidate");
                     remainingReaders.Remove(readerCandidate);
                 }
             }
@@ -345,6 +353,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
                 try
                 {
+                    Logger.LogInformation("Trying the original writer which may have been demoted to a reader");
                     DbConnection candidateConn = this.pluginService.OpenConnection(originalWriter, this.props, this);
                     var role = this.pluginService.GetHostRole(candidateConn);
 
@@ -360,10 +369,15 @@ public class FailoverPlugin : AbstractConnectionPlugin
                     {
                         isOriginalWriterStillWriter = true;
                     }
+                    else
+                    {
+                        Logger.LogInformation("Unable to determine host role for {originalWriter}. Since failover mode is set to STRICT_READER and the host may be a writer, it will not be selected for reader failover.", originalWriter.GetHostAndPort());
+                    }
                 }
-                catch (Exception)
+                catch (DbException ex)
                 {
                     // Continue to next iteration
+                    Logger.LogInformation(ex, $"[Reader Failover] Failed to connect to host: {originalWriter.GetHostAndPort()}");
                 }
             }
         }
