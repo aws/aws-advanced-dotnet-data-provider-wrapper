@@ -298,7 +298,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
                 HostSpec? readerCandidate = null;
                 try
                 {
-                    readerCandidate = this.pluginService.GetHostSpecByStrategy([..remainingReaders], HostRole.Reader, this.failoverReaderHostSelectorStrategy);
+                    readerCandidate = this.pluginService.GetHostSpecByStrategy([.. remainingReaders], HostRole.Reader, this.failoverReaderHostSelectorStrategy);
                 }
                 catch (Exception ex)
                 {
