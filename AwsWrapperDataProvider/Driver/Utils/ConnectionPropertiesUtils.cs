@@ -13,6 +13,8 @@
 // limitations under the License.
 
 using AwsWrapperDataProvider.Driver.HostInfo;
+using AwsWrapperDataProvider.Properties;
+using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Utils;
 
@@ -21,6 +23,8 @@ public static class ConnectionPropertiesUtils
     private const string HostSeperator = ",";
     private const string HostPortSeperator = ":";
 
+    private static readonly ILogger<AwsWrapperProperty> _logger = LoggerUtils.GetLogger<AwsWrapperProperty>();
+
     public static Dictionary<string, string> ParseConnectionStringParameters(string connectionString)
     {
         if (string.IsNullOrEmpty(connectionString))
@@ -28,11 +32,19 @@ public static class ConnectionPropertiesUtils
             throw new ArgumentNullException(nameof(connectionString));
         }
 
-        return connectionString
+        var props = connectionString
             .Split(";", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
             .Select(x => x.Split("=", StringSplitOptions.TrimEntries))
             .Where(pairs => pairs.Length == 2 && !string.IsNullOrEmpty(pairs[0]))
             .ToDictionary(pairs => pairs[0], pairs => pairs[1], StringComparer.OrdinalIgnoreCase);
+
+        // Check and warn about SSL insecure configuration
+        if (PropertyDefinition.SslInsecure.GetBoolean(props))
+        {
+            _logger.LogWarning(Resources.AwsWrapperProperty_SslValidationIsDisabled);
+        }
+
+        return props;
     }
 
     public static IList<HostSpec> GetHostsFromProperties(Dictionary<string, string> props, HostSpecBuilder hostSpecBuilder, bool singleWriterConnectionString)
