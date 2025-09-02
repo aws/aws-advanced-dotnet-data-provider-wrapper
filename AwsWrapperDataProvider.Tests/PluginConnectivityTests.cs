@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using System.Data;
-using AwsWrapperDataProvider.Tests.Container.Utils;
 using Npgsql;
 
 namespace AwsWrapperDataProvider.Tests;
@@ -22,6 +21,7 @@ public class PluginConnectivityTests : IntegrationTestBase
 {
     [Fact]
     [Trait("Category", "Integration")]
+    [Trait("Category", "Manual")]
     public void PgWrapperAdfsConnectionTest()
     {
         const string connectionString =
@@ -49,6 +49,7 @@ public class PluginConnectivityTests : IntegrationTestBase
 
     [Fact]
     [Trait("Category", "Integration")]
+    [Trait("Category", "Manual")]
     public void MySqlClientWrapperAdfsConnectionTest()
     {
         const string connectionString = "Server=<insert_rds_instance_here>;Initial Catalog=mysql;Database=<database_name_here>;dbUser=<db_user_with_iam_login>;Plugins=federatedAuth;iamRegion=<iam_region>;iamRoleArn=<iam_role_arn>;iamIdpArn=<iam_idp_arn>;idpEndpoint=<idp_endpoint>;idpUsername=<idp_username>;idpPassword=<idp_password>;";

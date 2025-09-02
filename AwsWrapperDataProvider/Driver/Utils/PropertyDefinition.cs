@@ -134,7 +134,7 @@ public static class PropertyDefinition
         "DbUser", null, "The database user used to access the database");
 
     public static readonly AwsWrapperProperty HttpClientConnectTimeout = new AwsWrapperProperty(
-        "HttpClientConnectTimeout", "60000", "The connect timeout value in milliseconds for the HttpClient used by the FederatedAuthPlugin");
+        "HttpClientConnectTimeout", "10000", "The connect timeout value in milliseconds for the HttpClient used by the federated auth and OKTA plugins.");
 
     // Failover Plugin Properties
     public static readonly AwsWrapperProperty FailoverTimeoutMs = new(
@@ -195,6 +195,11 @@ public static class PropertyDefinition
         "3",
         "Number of failed connection checks before considering database node unhealthy.");
 
+    public static readonly AwsWrapperProperty AppId = new(
+        "AppId",
+        null,
+        "The ID of the AWS application configured on Okta");
+
     /// <summary>
     /// A set of AwsWrapperProperties that is used by the wrapper and should not be passed to the target driver.
     /// </summary>
@@ -229,6 +234,7 @@ public static class PropertyDefinition
         OpenConnectionRetryTimeoutMs,
         OpenConnectionRetryIntervalMs,
         VerifyOpenedConnectionType,
+        AppId,
 
         // Failover Plugin Properties
         FailoverTimeoutMs,

@@ -42,6 +42,7 @@ public class ConnectionPluginChainBuilder
             { "awsSecretsManager", typeof(SecretsManagerAuthPluginFactory) },
             { "initialConnection", typeof(AuroraInitialConnectionStrategyPluginFactory) },
             { "federatedAuth", typeof(FederatedAuthPluginFactory) },
+            { "okta", typeof(OktaAuthPluginFactory) },
     };
 
     private static readonly Dictionary<Type, int> PluginWeightByPluginFactoryType = new()
@@ -52,6 +53,7 @@ public class ConnectionPluginChainBuilder
             { typeof(IamAuthPluginFactory), 1000 },
             { typeof(SecretsManagerAuthPluginFactory), 1100 },
             { typeof(FederatedAuthPluginFactory), 1200 },
+            { typeof(OktaAuthPluginFactory), 1300 },
             { typeof(ExecutionTimePlugin), WeightRelativeToPriorPlugin },
     };
 
