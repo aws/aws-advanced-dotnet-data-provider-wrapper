@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data;
+using System.Data.Common;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 using Npgsql;
 
@@ -36,11 +36,11 @@ public class IamConnectivityTests : IntegrationTestBase
         connection.Open();
         Console.WriteLine("   ✓ Connected successfully");
 
-        AwsWrapperCommand<NpgsqlCommand> command = connection.CreateCommand<NpgsqlCommand>();
+        using AwsWrapperCommand<NpgsqlCommand> command = connection.CreateCommand<NpgsqlCommand>();
         command.CommandText = "select aurora_db_instance_identifier()";
 
         Console.WriteLine("2. Executing query to connection via IAM...");
-        IDataReader reader = command.ExecuteReader();
+        using DbDataReader reader = command.ExecuteReader();
 
         while (reader.Read())
         {
@@ -56,8 +56,8 @@ public class IamConnectivityTests : IntegrationTestBase
     {
         var iamUser = TestEnvironment.Env.Info.IamUsername;
         var iamRegion = TestEnvironment.Env.Info.Region;
-        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, null, null, this.defaultDbName);
-        connectionString += $";Username={iamUser};Plugins=iam;IamRegion={iamRegion}";
+        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, iamUser, null, this.defaultDbName);
+        connectionString += $";Plugins=iam;IamRegion={iamRegion}";
 
         using AwsWrapperConnection<MySql.Data.MySqlClient.MySqlConnection> connection = new(connectionString);
 
@@ -65,11 +65,11 @@ public class IamConnectivityTests : IntegrationTestBase
         connection.Open();
         Console.WriteLine("   ✓ Connected successfully");
 
-        AwsWrapperCommand<MySql.Data.MySqlClient.MySqlCommand> command = connection.CreateCommand<MySql.Data.MySqlClient.MySqlCommand>();
+        using AwsWrapperCommand<MySql.Data.MySqlClient.MySqlCommand> command = connection.CreateCommand<MySql.Data.MySqlClient.MySqlCommand>();
         command.CommandText = "select 1";
 
         Console.WriteLine("2. Executing query to connection via IAM...");
-        IDataReader reader = command.ExecuteReader();
+        using DbDataReader reader = command.ExecuteReader();
 
         while (reader.Read())
         {
@@ -85,8 +85,8 @@ public class IamConnectivityTests : IntegrationTestBase
     {
         var iamUser = TestEnvironment.Env.Info.IamUsername;
         var iamRegion = TestEnvironment.Env.Info.Region;
-        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, null, null, this.defaultDbName);
-        connectionString += $";Username={iamUser};Plugins=iam;IamRegion={iamRegion}";
+        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, iamUser, null, this.defaultDbName);
+        connectionString += $";Plugins=iam;IamRegion={iamRegion}";
 
         using AwsWrapperConnection<MySqlConnector.MySqlConnection> connection = new(connectionString);
 
@@ -94,11 +94,11 @@ public class IamConnectivityTests : IntegrationTestBase
         connection.Open();
         Console.WriteLine("   ✓ Connected successfully");
 
-        AwsWrapperCommand<MySqlConnector.MySqlCommand> command = connection.CreateCommand<MySqlConnector.MySqlCommand>();
+        using AwsWrapperCommand<MySqlConnector.MySqlCommand> command = connection.CreateCommand<MySqlConnector.MySqlCommand>();
         command.CommandText = "select 1";
 
         Console.WriteLine("2. Executing query to connection via IAM...");
-        IDataReader reader = command.ExecuteReader();
+        using DbDataReader reader = command.ExecuteReader();
         while (reader.Read())
         {
             Console.WriteLine(reader.GetInt32(0));

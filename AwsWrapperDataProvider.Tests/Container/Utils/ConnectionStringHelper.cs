@@ -34,7 +34,6 @@ public class ConnectionStringHelper
                 if (username != null)
                 {
                     mySqlConnectionStringBuilder.UserID = username;
-                    mySqlConnectionStringBuilder.Add("Username", username);
                 }
 
                 if (password != null)

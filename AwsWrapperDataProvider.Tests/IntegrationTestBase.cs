@@ -28,11 +28,6 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     protected readonly string clusterEndpoint = TestEnvironment.Env.Info.DatabaseInfo.ClusterEndpoint;
     protected readonly int port = TestEnvironment.Env.Info.DatabaseInfo.ClusterEndpointPort;
 
-    public virtual void AfterAll()
-    {
-        // do nothing
-    }
-
     public async ValueTask InitializeAsync()
     {
         if (TestEnvironment.Env.Info.Request.Features.Contains(TestEnvironmentFeatures.NETWORK_OUTAGES_ENABLED))

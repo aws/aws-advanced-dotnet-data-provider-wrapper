@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data;
+using System.Data.Common;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 using Npgsql;
 
@@ -21,19 +21,10 @@ namespace AwsWrapperDataProvider.Tests;
 public class SecretsManagerConnectivityTests : IntegrationTestBase
 {
     private readonly AuroraTestUtils auroraTestUtils;
-    private readonly string secretId;
-    private readonly string secretsArn;
 
     public SecretsManagerConnectivityTests()
     {
         this.auroraTestUtils = AuroraTestUtils.GetUtility();
-        this.secretId = this.engine.ToString() + "TestValidSecretId";
-        this.secretsArn = this.auroraTestUtils.CreateSecrets(this.secretId);
-    }
-
-    public override void AfterAll()
-    {
-        this.auroraTestUtils.DeleteSecrets(this.secretId);
     }
 
     [Fact]
@@ -41,82 +32,36 @@ public class SecretsManagerConnectivityTests : IntegrationTestBase
     [Trait("Database", "pg")]
     public void PgWrapper_WithSecretId()
     {
+        var secretId = "PGValidSecretId";
+        var secretsArn = this.auroraTestUtils.CreateSecrets(secretId);
+
         var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, null, null, this.defaultDbName);
-        connectionString += $";Plugins=awsSecretsManager;SecretsManagerSecretId={this.secretId};SecretsManagerRegion={TestEnvironment.Env.Info.Region};";
+        connectionString += $";Plugins=awsSecretsManager;SecretsManagerSecretId={secretId};SecretsManagerRegion={TestEnvironment.Env.Info.Region};";
         const string query = "select 1";
 
-        using AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
-
-        Console.WriteLine("1. Opening connection via Secrets Manager...");
-        connection.Open();
-        Console.WriteLine("   ✓ Connected successfully");
-
-        AwsWrapperCommand<NpgsqlCommand> command = connection.CreateCommand<NpgsqlCommand>();
-        command.CommandText = query;
-
-        Console.WriteLine("2. Executing query to connection via Secrets Manager...");
-        IDataReader reader = command.ExecuteReader();
-
-        while (reader.Read())
+        try
         {
-            Console.WriteLine(reader.GetInt32(0));
-            Console.WriteLine("   ✓ Executed successfully");
+            using AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
+
+            Console.WriteLine("1. Opening connection via Secrets Manager...");
+            connection.Open();
+            Console.WriteLine("   ✓ Connected successfully");
+
+            using AwsWrapperCommand<NpgsqlCommand> command = connection.CreateCommand<NpgsqlCommand>();
+            command.CommandText = query;
+
+            Console.WriteLine("2. Executing query to connection via Secrets Manager...");
+            using DbDataReader reader = command.ExecuteReader();
+
+            while (reader.Read())
+            {
+                Console.WriteLine(reader.GetInt32(0));
+                Console.WriteLine("   ✓ Executed successfully");
+            }
         }
-    }
-
-    [Fact]
-    [Trait("Category", "Integration")]
-    [Trait("Database", "mysql")]
-    public void MySqlClientWrapper_WithSecretId()
-    {
-        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, null, null, this.defaultDbName);
-        connectionString += $";Plugins=awsSecretsManager;SecretsManagerSecretId={this.secretId};SecretsManagerRegion={TestEnvironment.Env.Info.Region};";
-        const string query = "select 1";
-
-        using AwsWrapperConnection<MySql.Data.MySqlClient.MySqlConnection> connection = new(connectionString);
-
-        Console.WriteLine("1. Opening connection via Secrets Manager...");
-        connection.Open();
-        Console.WriteLine("   ✓ Connected successfully");
-
-        AwsWrapperCommand<MySql.Data.MySqlClient.MySqlCommand> command = connection.CreateCommand<MySql.Data.MySqlClient.MySqlCommand>();
-        command.CommandText = query;
-
-        Console.WriteLine("2. Executing query to connection via Secrets Manager...");
-        IDataReader reader = command.ExecuteReader();
-
-        while (reader.Read())
+        finally
         {
-            Console.WriteLine(reader.GetInt32(0));
-            Console.WriteLine("   ✓ Executed successfully");
-        }
-    }
-
-    [Fact]
-    [Trait("Category", "Integration")]
-    [Trait("Database", "mysql")]
-    public void MySqlConnectorWrapper_WithSecretId()
-    {
-        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, null, null, this.defaultDbName);
-        connectionString += $";Plugins=awsSecretsManager;SecretsManagerSecretId={this.secretId};SecretsManagerRegion={TestEnvironment.Env.Info.Region};";
-        const string query = "select 1";
-
-        using AwsWrapperConnection<MySqlConnector.MySqlConnection> connection = new(connectionString);
-
-        Console.WriteLine("1. Opening connection via Secrets Manager...");
-        connection.Open();
-        Console.WriteLine("   ✓ Connected successfully");
-
-        AwsWrapperCommand<MySqlConnector.MySqlCommand> command = connection.CreateCommand<MySqlConnector.MySqlCommand>();
-        command.CommandText = query;
-
-        Console.WriteLine("2. Executing query to connection via Secrets Manager...");
-        IDataReader reader = command.ExecuteReader();
-
-        while (reader.Read())
-        {
-            Console.WriteLine(reader.GetInt32(0));
-            Console.WriteLine("   ✓ Executed successfully");
+            this.auroraTestUtils.DeleteSecrets(secretId);
         }
     }
 
@@ -125,26 +70,74 @@ public class SecretsManagerConnectivityTests : IntegrationTestBase
     [Trait("Database", "pg")]
     public void PgWrapper_WithSecretArn()
     {
+        var secretId = "PgValidSecretArn";
+        var secretsArn = this.auroraTestUtils.CreateSecrets(secretId);
+
         var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, null, null, this.defaultDbName);
-        connectionString += $";Plugins=awsSecretsManager;SecretsManagerSecretId={this.secretsArn};SecretsManagerRegion={TestEnvironment.Env.Info.Region};";
+        connectionString += $";Plugins=awsSecretsManager;SecretsManagerSecretId={secretsArn};SecretsManagerRegion={TestEnvironment.Env.Info.Region};";
         const string query = "select 1";
 
-        using AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
-
-        Console.WriteLine("1. Opening connection via Secrets Manager...");
-        connection.Open();
-        Console.WriteLine("   ✓ Connected successfully");
-
-        AwsWrapperCommand<NpgsqlCommand> command = connection.CreateCommand<NpgsqlCommand>();
-        command.CommandText = query;
-
-        Console.WriteLine("2. Executing query to connection via Secrets Manager...");
-        IDataReader reader = command.ExecuteReader();
-
-        while (reader.Read())
+        try
         {
-            Console.WriteLine(reader.GetInt32(0));
-            Console.WriteLine("   ✓ Executed successfully");
+            using AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
+
+            Console.WriteLine("1. Opening connection via Secrets Manager...");
+            connection.Open();
+            Console.WriteLine("   ✓ Connected successfully");
+
+            using AwsWrapperCommand<NpgsqlCommand> command = connection.CreateCommand<NpgsqlCommand>();
+            command.CommandText = query;
+
+            Console.WriteLine("2. Executing query to connection via Secrets Manager...");
+            using DbDataReader reader = command.ExecuteReader();
+
+            while (reader.Read())
+            {
+                Console.WriteLine(reader.GetInt32(0));
+                Console.WriteLine("   ✓ Executed successfully");
+            }
+        }
+        finally
+        {
+            this.auroraTestUtils.DeleteSecrets(secretId);
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    [Trait("Database", "mysql")]
+    public void MySqlClientWrapper_WithSecretId()
+    {
+        var secretId = "MySqlClientValidSecretId";
+        var secretsArn = this.auroraTestUtils.CreateSecrets(secretId);
+
+        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, null, null, this.defaultDbName);
+        connectionString += $";Plugins=awsSecretsManager;SecretsManagerSecretId={secretId};SecretsManagerRegion={TestEnvironment.Env.Info.Region};";
+        const string query = "select 1";
+
+        try
+        {
+            using AwsWrapperConnection<MySql.Data.MySqlClient.MySqlConnection> connection = new(connectionString);
+
+            Console.WriteLine("1. Opening connection via Secrets Manager...");
+            connection.Open();
+            Console.WriteLine("   ✓ Connected successfully");
+
+            using AwsWrapperCommand<MySql.Data.MySqlClient.MySqlCommand> command = connection.CreateCommand<MySql.Data.MySqlClient.MySqlCommand>();
+            command.CommandText = query;
+
+            Console.WriteLine("2. Executing query to connection via Secrets Manager...");
+            using DbDataReader reader = command.ExecuteReader();
+
+            while (reader.Read())
+            {
+                Console.WriteLine(reader.GetInt32(0));
+                Console.WriteLine("   ✓ Executed successfully");
+            }
+        }
+        finally
+        {
+            this.auroraTestUtils.DeleteSecrets(secretId);
         }
     }
 
@@ -153,26 +146,74 @@ public class SecretsManagerConnectivityTests : IntegrationTestBase
     [Trait("Database", "mysql")]
     public void MySqlClientWrapper_WithSecretArn()
     {
+        var secretId = "MySqlClientValidSecretArn";
+        var secretsArn = this.auroraTestUtils.CreateSecrets(secretId);
+
         var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, null, null, this.defaultDbName);
-        connectionString += $";Plugins=awsSecretsManager;SecretsManagerSecretId={this.secretsArn};SecretsManagerRegion={TestEnvironment.Env.Info.Region};";
+        connectionString += $";Plugins=awsSecretsManager;SecretsManagerSecretId={secretsArn};SecretsManagerRegion={TestEnvironment.Env.Info.Region};";
         const string query = "select 1";
 
-        using AwsWrapperConnection<MySql.Data.MySqlClient.MySqlConnection> connection = new(connectionString);
-
-        Console.WriteLine("1. Opening connection via Secrets Manager...");
-        connection.Open();
-        Console.WriteLine("   ✓ Connected successfully");
-
-        AwsWrapperCommand<MySql.Data.MySqlClient.MySqlCommand> command = connection.CreateCommand<MySql.Data.MySqlClient.MySqlCommand>();
-        command.CommandText = query;
-
-        Console.WriteLine("2. Executing query to connection via Secrets Manager...");
-        IDataReader reader = command.ExecuteReader();
-
-        while (reader.Read())
+        try
         {
-            Console.WriteLine(reader.GetInt32(0));
-            Console.WriteLine("   ✓ Executed successfully");
+            using AwsWrapperConnection<MySql.Data.MySqlClient.MySqlConnection> connection = new(connectionString);
+
+            Console.WriteLine("1. Opening connection via Secrets Manager...");
+            connection.Open();
+            Console.WriteLine("   ✓ Connected successfully");
+
+            using AwsWrapperCommand<MySql.Data.MySqlClient.MySqlCommand> command = connection.CreateCommand<MySql.Data.MySqlClient.MySqlCommand>();
+            command.CommandText = query;
+
+            Console.WriteLine("2. Executing query to connection via Secrets Manager...");
+            using DbDataReader reader = command.ExecuteReader();
+
+            while (reader.Read())
+            {
+                Console.WriteLine(reader.GetInt32(0));
+                Console.WriteLine("   ✓ Executed successfully");
+            }
+        }
+        finally
+        {
+            this.auroraTestUtils.DeleteSecrets(secretId);
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    [Trait("Database", "mysql")]
+    public void MySqlConnectorWrapper_WithSecretId()
+    {
+        var secretId = "MySqlConnectorValidSecretId";
+        var secretsArn = this.auroraTestUtils.CreateSecrets(secretId);
+
+        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, null, null, this.defaultDbName);
+        connectionString += $";Plugins=awsSecretsManager;SecretsManagerSecretId={secretId};SecretsManagerRegion={TestEnvironment.Env.Info.Region};";
+        const string query = "select 1";
+
+        try
+        {
+            using AwsWrapperConnection<MySqlConnector.MySqlConnection> connection = new(connectionString);
+
+            Console.WriteLine("1. Opening connection via Secrets Manager...");
+            connection.Open();
+            Console.WriteLine("   ✓ Connected successfully");
+
+            using AwsWrapperCommand<MySqlConnector.MySqlCommand> command = connection.CreateCommand<MySqlConnector.MySqlCommand>();
+            command.CommandText = query;
+
+            Console.WriteLine("2. Executing query to connection via Secrets Manager...");
+            using DbDataReader reader = command.ExecuteReader();
+
+            while (reader.Read())
+            {
+                Console.WriteLine(reader.GetInt32(0));
+                Console.WriteLine("   ✓ Executed successfully");
+            }
+        }
+        finally
+        {
+            this.auroraTestUtils.DeleteSecrets(secretId);
         }
     }
 
@@ -181,26 +222,36 @@ public class SecretsManagerConnectivityTests : IntegrationTestBase
     [Trait("Database", "mysql")]
     public void MySqlConnectorWrapper_WithSecretArn()
     {
+        var secretId = "MySqlConnectorValidSecretArn";
+        var secretsArn = this.auroraTestUtils.CreateSecrets(secretId);
+
         var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, null, null, this.defaultDbName);
-        connectionString += $";Plugins=awsSecretsManager;SecretsManagerSecretId={this.secretsArn};SecretsManagerRegion={TestEnvironment.Env.Info.Region};";
+        connectionString += $";Plugins=awsSecretsManager;SecretsManagerSecretId={secretsArn};SecretsManagerRegion={TestEnvironment.Env.Info.Region};";
         const string query = "select 1";
 
-        using AwsWrapperConnection<MySqlConnector.MySqlConnection> connection = new(connectionString);
-
-        Console.WriteLine("1. Opening connection via Secrets Manager...");
-        connection.Open();
-        Console.WriteLine("   ✓ Connected successfully");
-
-        AwsWrapperCommand<MySqlConnector.MySqlCommand> command = connection.CreateCommand<MySqlConnector.MySqlCommand>();
-        command.CommandText = query;
-
-        Console.WriteLine("2. Executing query to connection via Secrets Manager...");
-        IDataReader reader = command.ExecuteReader();
-
-        while (reader.Read())
+        try
         {
-            Console.WriteLine(reader.GetInt32(0));
-            Console.WriteLine("   ✓ Executed successfully");
+            using AwsWrapperConnection<MySqlConnector.MySqlConnection> connection = new(connectionString);
+
+            Console.WriteLine("1. Opening connection via Secrets Manager...");
+            connection.Open();
+            Console.WriteLine("   ✓ Connected successfully");
+
+            using AwsWrapperCommand<MySqlConnector.MySqlCommand> command = connection.CreateCommand<MySqlConnector.MySqlCommand>();
+            command.CommandText = query;
+
+            Console.WriteLine("2. Executing query to connection via Secrets Manager...");
+            using DbDataReader reader = command.ExecuteReader();
+
+            while (reader.Read())
+            {
+                Console.WriteLine(reader.GetInt32(0));
+                Console.WriteLine("   ✓ Executed successfully");
+            }
+        }
+        finally
+        {
+            this.auroraTestUtils.DeleteSecrets(secretId);
         }
     }
 }
