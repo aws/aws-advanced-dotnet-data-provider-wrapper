@@ -34,6 +34,11 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
 
     public static readonly int DefaultIamExpirationSeconds = 870;
 
+    public static void ClearCache()
+    {
+        IamTokenCache.Clear();
+    }
+
     public override DbConnection OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
     {
         return this.ConnectInternal(hostSpec, props, methodFunc);

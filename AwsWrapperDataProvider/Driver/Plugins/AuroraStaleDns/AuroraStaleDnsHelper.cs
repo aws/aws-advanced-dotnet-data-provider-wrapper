@@ -17,6 +17,7 @@ using System.Net;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Utils;
+using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.AuroraStaleDns;
 
@@ -28,6 +29,8 @@ namespace AwsWrapperDataProvider.Driver.Plugins.AuroraStaleDns;
 public class AuroraStaleDnsHelper
 {
     private const int DnsRetries = 3;
+
+    private static readonly ILogger<AuroraStaleDnsHelper> Logger = LoggerUtils.GetLogger<AuroraStaleDnsHelper>();
 
     private readonly IPluginService pluginService;
     private HostSpec? writerHostSpec;
@@ -55,6 +58,10 @@ public class AuroraStaleDnsHelper
 
         // Get the IP address that the cluster endpoint resolved to
         string? clusterInetAddress = GetHostIpAddress(hostSpec.Host);
+        Logger.LogTrace(
+            "Cluster endpoint {host} resolved to IP address {ipAddress}",
+            hostSpec.Host,
+            clusterInetAddress ?? "null");
         if (clusterInetAddress == null)
         {
             return connection;
@@ -75,7 +82,10 @@ public class AuroraStaleDnsHelper
             this.pluginService.RefreshHostList(connection);
         }
 
+        Logger.LogTrace(LoggerUtils.LogTopology(this.pluginService.AllHosts, null));
+
         this.writerHostSpec ??= this.GetWriter();
+        Logger.LogTrace("Writer host spec: {hostSpec}", this.writerHostSpec);
 
         if (this.writerHostSpec == null)
         {
@@ -84,6 +94,7 @@ public class AuroraStaleDnsHelper
         }
 
         this.writerHostAddress ??= GetHostIpAddress(this.writerHostSpec.Host);
+        Logger.LogTrace("Writer host address: {address}", this.writerHostAddress);
 
         if (this.writerHostAddress == null)
         {
@@ -92,9 +103,10 @@ public class AuroraStaleDnsHelper
         }
 
         // Compare the cluster endpoint IP with the actual writer IP
-        if (!this.writerHostAddress.Equals(clusterInetAddress))
+        if (this.writerHostAddress != clusterInetAddress)
         {
             // Stale DNS detected! The cluster endpoint resolves to a different IP than the actual writer
+            Logger.LogTrace("Stale DNS data detected. Opening a connection to {host}", this.writerHostSpec);
 
             // Verify the writer is in the allowed hosts list
             var allowedHosts = this.pluginService.GetHosts();
@@ -114,7 +126,7 @@ public class AuroraStaleDnsHelper
                 hostListProviderService.InitialConnectionHostSpec = this.writerHostSpec;
             }
 
-            connection.Close();
+            connection.Dispose();
             return writerConnection;
         }
 

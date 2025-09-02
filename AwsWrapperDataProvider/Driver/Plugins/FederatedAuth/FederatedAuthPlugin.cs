@@ -45,6 +45,11 @@ public partial class FederatedAuthPlugin(IPluginService pluginService, Dictionar
     [GeneratedRegex("SAMLResponse\\W+value=\"(?<saml>[^\"]+)\"", RegexOptions.IgnoreCase, "en-CA")]
     public static partial Regex SamlResponsePattern();
 
+    public static void ClearCache()
+    {
+        IamTokenCache.Clear();
+    }
+
     public override DbConnection OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
     {
         return this.ConnectInternal(hostSpec, props, methodFunc);

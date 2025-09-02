@@ -268,12 +268,6 @@ public class AwsWrapperCommand : DbCommand
             this._targetDbCommand!,
             "DbCommand.ExecuteReader",
             () => this._targetDbCommand!.ExecuteReader(behavior));
-
-        if (reader.GetType() == typeof(Npgsql.NpgsqlDataReader))
-        {
-            return reader;
-        }
-
         return new AwsWrapperDataReader(reader, this._pluginManager!);
     }
 
@@ -287,13 +281,7 @@ public class AwsWrapperCommand : DbCommand
                 this._targetDbCommand!,
                 "DbCommand.ExecuteReaderAsync",
                 () => this._targetDbCommand!.ExecuteReaderAsync(behavior, cancellationToken).GetAwaiter().GetResult());
-
-            if (reader.GetType() == typeof(Npgsql.NpgsqlDataReader))
-            {
-                return reader;
-            }
-
-            return new AwsWrapperDataReader(reader, this._pluginManager!);
+            return (DbDataReader)new AwsWrapperDataReader(reader, this._pluginManager!);
         });
     }
 
