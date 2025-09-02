@@ -23,7 +23,7 @@ public static class ConnectionPropertiesUtils
     private const string HostSeperator = ",";
     private const string HostPortSeperator = ":";
 
-    private static readonly ILogger<AwsWrapperProperty> _logger = LoggerUtils.GetLogger<AwsWrapperProperty>();
+    private static readonly ILogger<AwsWrapperProperty> Logger = LoggerUtils.GetLogger<AwsWrapperProperty>();
 
     public static Dictionary<string, string> ParseConnectionStringParameters(string connectionString)
     {
@@ -41,7 +41,7 @@ public static class ConnectionPropertiesUtils
         // Check and warn about SSL insecure configuration
         if (PropertyDefinition.SslInsecure.GetBoolean(props))
         {
-            _logger.LogWarning(Resources.AwsWrapperProperty_SslValidationIsDisabled);
+            Logger.LogWarning(Resources.AwsWrapperProperty_SslValidationIsDisabled);
         }
 
         return props;
