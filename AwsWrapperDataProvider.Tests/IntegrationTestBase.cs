@@ -74,7 +74,6 @@ public abstract class IntegrationTestBase : IAsyncLifetime
 
     public ValueTask DisposeAsync()
     {
-        this.AfterAll();
         return ValueTask.CompletedTask;
     }
 }
