@@ -36,7 +36,7 @@ public class BasicConnectivityTests : IntegrationTestBase
         command.CommandText = query;
         Assert.Equal(ConnectionState.Open, connection.State);
         using IDataReader reader = command.ExecuteReader();
-        while (reader.Read())
+        if (reader.Read())
         {
             Assert.Equal(1, reader.GetInt32(0));
         }
@@ -81,7 +81,7 @@ public class BasicConnectivityTests : IntegrationTestBase
         command.CommandText = query;
 
         using IDataReader reader = command.ExecuteReader();
-        while (reader.Read())
+        if (reader.Read())
         {
             Assert.Equal(1, reader.GetInt32(0));
         }
@@ -108,7 +108,7 @@ public class BasicConnectivityTests : IntegrationTestBase
         command.Parameters.Add(dbParameter);
 
         using IDataReader reader = command.ExecuteReader();
-        while (reader.Read())
+        if (reader.Read())
         {
             Assert.Equal("qwerty", reader.GetString(0));
         }
@@ -129,7 +129,7 @@ public class BasicConnectivityTests : IntegrationTestBase
         command.CommandText = query;
 
         using IDataReader reader = command.ExecuteReader();
-        while (reader.Read())
+        if (reader.Read())
         {
             Assert.Equal(1, reader.GetInt32(0));
         }
@@ -154,7 +154,7 @@ public class BasicConnectivityTests : IntegrationTestBase
         command.CommandText = query;
 
         using IDataReader reader = command.ExecuteReader();
-        while (reader.Read())
+        if (reader.Read())
         {
             Assert.Equal(1, reader.GetInt32(0));
         }

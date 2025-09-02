@@ -86,18 +86,21 @@ public class HostMonitor : IHostMonitor
             return;
         }
 
-        DateTime startMonitoringTime = DateTime.Now + TimeSpan.FromMilliseconds(this.failureDetectionTimeMs);
-        int startMonitoringTimeSeconds = (int)(startMonitoringTime - DateTime.UnixEpoch).TotalSeconds;
+        DateTime startMonitoringTime = DateTime.UtcNow.AddMilliseconds(this.failureDetectionTimeMs);
 
-        ConcurrentQueue<WeakReference<HostMonitorConnectionContext>>? queue;
+        DateTime truncated = new(
+            startMonitoringTime.Year,
+            startMonitoringTime.Month,
+            startMonitoringTime.Day,
+            startMonitoringTime.Hour,
+            startMonitoringTime.Minute,
+            startMonitoringTime.Second,
+            startMonitoringTime.Kind);
 
-        if (!this.newContexts.TryGetValue(startMonitoringTimeSeconds, out queue) || queue == null)
-        {
-            queue = new();
-            this.newContexts.Set(startMonitoringTime, queue);
-        }
+        ConcurrentQueue<WeakReference<HostMonitorConnectionContext>>? queue = this.newContexts.GetOrCreate(truncated,
+            (key) => new ConcurrentQueue<WeakReference<HostMonitorConnectionContext>>());
 
-        queue.Enqueue(new WeakReference<HostMonitorConnectionContext>(context));
+        queue?.Enqueue(new WeakReference<HostMonitorConnectionContext>(context));
     }
 
     public bool CanDispose()
@@ -109,7 +112,7 @@ public class HostMonitor : IHostMonitor
     {
         this.cancellationTokenSource.Cancel();
 
-        Task.WaitAll([this.newContextRunTask, this.runTask], (int)TimeSpan.FromSeconds(30).TotalMilliseconds);
+        Task.WaitAll([this.newContextRunTask, this.runTask], TimeSpan.FromSeconds(30));
         this.newContextRunTask.Dispose();
         this.runTask.Dispose();
 
@@ -134,36 +137,30 @@ public class HostMonitor : IHostMonitor
         {
             while (!token.IsCancellationRequested)
             {
-                DateTime currentTime = DateTime.Now;
+                DateTime currentTime = DateTime.UtcNow;
 
                 List<DateTime> processedStartTimes = [];
 
-                foreach (DateTime startTime in this.newContexts.Keys)
+                foreach (DateTime startTime in this.newContexts.Keys.Cast<DateTime>().Where(startTime => startTime < currentTime))
                 {
-                    if (startTime < currentTime)
+                    if (this.newContexts.TryGetValue(startTime, out ConcurrentQueue<WeakReference<HostMonitorConnectionContext>>? queue) && queue != null)
                     {
-                        if (this.newContexts.TryGetValue(startTime, out ConcurrentQueue<WeakReference<HostMonitorConnectionContext>>? queue) && queue != null)
-                        {
-                            processedStartTimes.Add(startTime);
+                        processedStartTimes.Add(startTime);
 
-                            while (queue.TryDequeue(out WeakReference<HostMonitorConnectionContext>? contextRef))
+                        while (queue.TryDequeue(out WeakReference<HostMonitorConnectionContext>? contextRef))
+                        {
+                            if (contextRef != null
+                                && contextRef.TryGetTarget(out HostMonitorConnectionContext? context)
+                                && context != null
+                                && context.IsActive())
                             {
-                                if (contextRef != null
-                                    && contextRef.TryGetTarget(out HostMonitorConnectionContext? context)
-                                    && context != null
-                                    && context.IsActive())
-                                {
-                                    this.activeContexts.Enqueue(contextRef);
-                                }
+                                this.activeContexts.Enqueue(contextRef);
                             }
                         }
                     }
                 }
 
-                foreach (DateTime startTime in processedStartTimes)
-                {
-                    this.newContexts.Remove(startTime);
-                }
+                processedStartTimes.ForEach(key => this.newContexts.Remove(key));
 
                 // sleep for one second before polling new contexts
                 await Task.Delay(1000, token);
@@ -202,9 +199,9 @@ public class HostMonitor : IHostMonitor
                     continue;
                 }
 
-                DateTime statusCheckStartTime = DateTime.Now;
+                DateTime statusCheckStartTime = DateTime.UtcNow;
                 bool isValid = this.CheckConnectionStatus();
-                DateTime statusCheckEndTime = DateTime.Now;
+                DateTime statusCheckEndTime = DateTime.UtcNow;
 
                 this.UpdateNodeHealthStatus(isValid, statusCheckStartTime, statusCheckEndTime);
 
@@ -333,7 +330,6 @@ public class HostMonitor : IHostMonitor
                 DbCommand validityCheckCommand = conn.CreateCommand();
                 validityCheckCommand.CommandText = this.pluginService.Dialect.HostAliasQuery;
 
-                // JDBC: Some drivers, like MySQL Connector/J, execute isValid() in a double of specified timeout time.
                 int validTimeoutSeconds = (this.failureDetectionIntervalMs - ThreadSleepMs) / 2000;
                 validityCheckCommand.CommandTimeout = validTimeoutSeconds;
 

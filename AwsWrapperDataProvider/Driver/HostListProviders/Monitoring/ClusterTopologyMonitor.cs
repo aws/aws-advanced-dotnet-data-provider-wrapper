@@ -375,7 +375,6 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
     protected async Task<IList<HostSpec>?> OpenAnyConnectionAndUpdateTopologyAsync()
     {
-        LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "OpenAnyConnectionAndUpdateTopologyAsync");
         bool writerVerifiedByThisThread = false;
         if (this.monitoringConnection == null)
         {
