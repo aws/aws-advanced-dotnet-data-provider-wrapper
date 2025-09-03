@@ -40,7 +40,7 @@ public class SecretsManagerAuthPluginTests
     public SecretsManagerAuthPluginTests()
     {
         this.mockPluginService = new Mock<IPluginService>();
-        this.mockSecretsManagerClient = new Mock<AmazonSecretsManagerClient>();
+        this.mockSecretsManagerClient = new Mock<AmazonSecretsManagerClient>(Mock.Of<Amazon.Runtime.AWSCredentials>(), new AmazonSecretsManagerConfig { RegionEndpoint = Amazon.RegionEndpoint.USEast1 });
 
         // Setup default secret response
         var secretResponse = new GetSecretValueResponse
@@ -92,7 +92,8 @@ public class SecretsManagerAuthPluginTests
             SecretString = "{\"invalid\":\"json\"}",
         };
 
-        this.mockSecretsManagerClient.Setup(
+        var mockClient = new Mock<AmazonSecretsManagerClient>(Mock.Of<Amazon.Runtime.AWSCredentials>(), new AmazonSecretsManagerConfig { RegionEndpoint = Amazon.RegionEndpoint.USEast1 });
+        mockClient.Setup(
             client => client.GetSecretValueAsync(It.IsAny<GetSecretValueRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(invalidSecretResponse);
 
@@ -102,7 +103,7 @@ public class SecretsManagerAuthPluginTests
             SecretId,
             Region,
             870,
-            this.mockSecretsManagerClient.Object);
+            mockClient.Object);
 
         Assert.Throws<Exception>(() =>
             plugin.OpenConnection(new HostSpec(Host, Port, HostRole.Writer, HostAvailability.Available), this.props, true, this.methodFunc));
@@ -114,7 +115,8 @@ public class SecretsManagerAuthPluginTests
     {
         SecretsManagerAuthPlugin.ClearCache();
 
-        this.mockSecretsManagerClient.Setup(
+        var mockClient = new Mock<AmazonSecretsManagerClient>(Mock.Of<Amazon.Runtime.AWSCredentials>(), new AmazonSecretsManagerConfig { RegionEndpoint = Amazon.RegionEndpoint.USEast1 });
+        mockClient.Setup(
             client => client.GetSecretValueAsync(It.IsAny<GetSecretValueRequest>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Secrets Manager error"));
 
@@ -124,7 +126,7 @@ public class SecretsManagerAuthPluginTests
             SecretId,
             Region,
             870,
-            this.mockSecretsManagerClient.Object);
+            mockClient.Object);
 
         Assert.Throws<Exception>(() =>
             plugin.OpenConnection(new HostSpec(Host, Port, HostRole.Writer, HostAvailability.Available), this.props, true, this.methodFunc));
