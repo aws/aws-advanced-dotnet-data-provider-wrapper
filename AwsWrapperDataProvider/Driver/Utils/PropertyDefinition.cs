@@ -28,6 +28,9 @@ public static class PropertyDefinition
     public static readonly AwsWrapperProperty User =
         new("Username", null, "The user name that the driver will use to connect to database.");
 
+    public static readonly AwsWrapperProperty UserId =
+        new("User ID", null, "The user name and host name that the driver will use to connect to database.");
+
     public static readonly AwsWrapperProperty Password =
         new("Password", null, "The password that the driver will use to connect to database.");
 
@@ -173,6 +176,11 @@ public static class PropertyDefinition
         "MonitorDisposalTime",
         "600000", // 10min
         "Interval in milliseconds for a monitor to be considered inactive and to be disposed.");
+
+    public static readonly AwsWrapperProperty SslInsecure = new(
+        "sslInsecure",
+        "false",
+        "When set to true, disables server certificate verification. This poses significant security risks and should never be used in production environments.");
 
     public static readonly AwsWrapperProperty FailureDetectionEnabled = new(
         "FailureDetectionEnabled",

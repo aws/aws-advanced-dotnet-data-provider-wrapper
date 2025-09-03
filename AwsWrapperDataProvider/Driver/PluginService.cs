@@ -102,6 +102,11 @@ public class PluginService : IPluginService, IHostListProviderService
     internal PluginService() { }
 #pragma warning restore CS8618
 
+    public static void ClearCache()
+    {
+        HostAvailabilityExpiringCache.Clear();
+    }
+
     public bool IsStaticHostListProvider()
     {
         return this.HostListProvider is IStaticHostListProvider;
