@@ -37,7 +37,7 @@ public class AuroraMySqlDialect : MySqlDialect
         + "WHERE SESSION_ID = 'MASTER_SESSION_ID' AND SERVER_ID = @@aurora_server_id";
 
     public override IList<Type> DialectUpdateCandidates { get; } = [
-        typeof(MultiAzRdsMySqlDialect),
+        typeof(RdsMultiAzMySqlDialect),
     ];
 
     public override bool IsDialect(IDbConnection connection)

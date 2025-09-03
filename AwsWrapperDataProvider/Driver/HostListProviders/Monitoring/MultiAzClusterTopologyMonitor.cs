@@ -149,7 +149,7 @@ public class MultiAzClusterTopologyMonitor : ClusterTopologyMonitor
             string? suggestedWriterNodeId = await this.GetSuggestedWriterNodeIdAsync(connection);
 
             using var command = connection.CreateCommand();
-            command.CommandTimeout = DefaultTopologyQueryTimeoutMs / 1000;
+            command.CommandTimeout = DefaultTopologyQueryTimeoutSec;
             command.CommandText = this.topologyQuery;
             await using var reader = await command.ExecuteReaderAsync();
 

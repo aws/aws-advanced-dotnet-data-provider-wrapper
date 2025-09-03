@@ -37,7 +37,7 @@ public class PgDialect : IDialect
     public virtual IList<Type> DialectUpdateCandidates { get; } =
     [
         typeof(AuroraPgDialect),
-        typeof(MultiAzRdsPgDialect),
+        typeof(RdsMultiAzPgDialect),
         typeof(RdsPgDialect),
     ];
 

@@ -33,7 +33,7 @@ public class MySqlDialect : IDialect
 
     public virtual IList<Type> DialectUpdateCandidates { get; } =
     [
-        typeof(MultiAzRdsMySqlDialect),
+        typeof(RdsMultiAzMySqlDialect),
         typeof(AuroraMySqlDialect),
         typeof(RdsMySqlDialect),
     ];

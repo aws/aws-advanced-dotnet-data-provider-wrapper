@@ -21,33 +21,15 @@ using AwsWrapperDataProvider.Driver.Utils;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
-public class MultiAzRdsPgDialect : PgDialect
+public class RdsMultiAzMySqlDialect : MySqlDialect
 {
-    private static readonly string TopologyQuery =
-        $"SELECT id, endpoint, port FROM rds_tools.show_topology('aws_jdbc_driver-{PropertyDefinition.MultiAzRdsJdbcDriverVersion.DefaultValue}')";
+    private const string TopologyQuery = "SELECT id, endpoint, port FROM mysql.rds_topology";
 
-    private static readonly string WriterNodeFuncExistsQuery =
-        "SELECT 1 AS tmp FROM information_schema.routines"
-        + " WHERE routine_schema='rds_tools' AND routine_name='multi_az_db_cluster_source_dbi_resource_id'";
+    private const string FetchWriterNodeQuery = "SHOW REPLICA STATUS";
+    private const string FetchWriterNodeQueryColumnName = "Source_Server_Id";
 
-    private static readonly string FetchWriterNodeQuery =
-        "SELECT multi_az_db_cluster_source_dbi_resource_id FROM rds_tools.multi_az_db_cluster_source_dbi_resource_id()"
-        + " WHERE multi_az_db_cluster_source_dbi_resource_id !="
-        + " (SELECT dbi_resource_id FROM rds_tools.dbi_resource_id())";
-
-    private static readonly string FetchWriterNodeQueryColumnName =
-        "multi_az_db_cluster_source_dbi_resource_id";
-
-    private static readonly string NodeIdQuery =
-        "SELECT dbi_resource_id FROM rds_tools.dbi_resource_id()";
-
-    private static readonly string NodeIdFuncExistsQuery =
-        "SELECT 1 AS tmp "
-        + "FROM information_schema.routines "
-        + "WHERE routine_schema='rds_tools' AND routine_name='dbi_resource_id'";
-
-    private static readonly string IsReaderQuery =
-        "SELECT pg_is_in_recovery()";
+    private const string NodeIdQuery = "SELECT @@server_id";
+    private const string IsReaderQuery = "SELECT @@read_only";
 
     public override bool IsDialect(IDbConnection connection)
     {
