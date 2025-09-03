@@ -48,8 +48,8 @@ public class EfmHostMonitorServiceTests
 
         this.mockPluginService = new Mock<IPluginService>();
 
-        this.monitorService = new HostMonitorService(this.mockPluginService.Object);
-    }
+            this.monitorService = new HostMonitorService(this.mockPluginService.Object, this.properties);
+        }
 
     [Fact]
     [Trait("Category", "Integration")]

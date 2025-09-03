@@ -32,6 +32,7 @@ public class DialectTests
         this.mockReader = new Mock<DbDataReader>();
 
         this.mockConnection.Setup(conn => conn.CreateCommand()).Returns(this.mockCommand.Object);
+        this.mockConnection.Setup(conn => conn.State).Returns(ConnectionState.Open);
         this.mockCommand.Setup(cmd => cmd.ExecuteReader()).Returns(this.mockReader.Object);
     }
 

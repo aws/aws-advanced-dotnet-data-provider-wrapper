@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using System.Data.Common;
-using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 
 namespace AwsWrapperDataProvider.Driver.Exceptions;
 
@@ -24,10 +23,10 @@ namespace AwsWrapperDataProvider.Driver.Exceptions;
 public class GenericExceptionHandler : IExceptionHandler
 {
     // Common SQL states for network-related issues across different databases
-    protected virtual HashSet<string> NetworkErrorStates => new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    protected virtual HashSet<string> NetworkErrorStates => new(StringComparer.OrdinalIgnoreCase);
 
     // Common SQL states for authentication-related issues across different databases
-    protected virtual HashSet<string> LoginErrorStates => new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    protected virtual HashSet<string> LoginErrorStates => new(StringComparer.OrdinalIgnoreCase);
 
     public virtual bool IsNetworkException(string sqlState) => this.NetworkErrorStates.Contains(sqlState);
 

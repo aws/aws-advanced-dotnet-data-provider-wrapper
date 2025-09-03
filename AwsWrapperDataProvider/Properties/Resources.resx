@@ -139,7 +139,7 @@
       <value>Topology hasn't been updated after {0} ms.</value>
     </data>
     <data name="ClusterTopologyMonitor.OpenedMonitoringConnection" xml:space="preserve">
-      <value>Opened monitoring connection to node {0}.</value>
+      <value>New cluster topology monitoring connection@{0} opened for node {1}.</value>
     </data>
     <data name="ClusterTopologyMonitor.IgnoringTopologyRequest" xml:space="preserve">
       <value>A topology refresh was requested, but the topology was already updated recently. Returning cached hosts:</value>
@@ -172,7 +172,7 @@
       <value>Writer detected by node monitoring thread: {0}.</value>
     </data>
     <data name="NodeMonitoringTask_ThreadCompleted" xml:space="preserve">
-      <value>Node monitoring thread completed.</value>
+      <value>Node monitoring task@{0} completed in {1} ms.</value>
     </data>
     <data name="NodeMonitoringTask_WriterNodeChanged" xml:space="preserve">
       <value>Writer node changed from {0} to node {1}.</value>
@@ -202,10 +202,10 @@
       <value>Stopped thread to monitor active contexts for host {0}.</value>
     </data>
     <data name="EfmHostMonitor_OpeningMonitoringConnection" xml:space="preserve">
-      <value>Opening a monitoring connection for host {0}.</value>
+      <value>Opening a new host monitoring connection for host {0}.</value>
     </data>
     <data name="EfmHostMonitor_OpenedMonitoringConnection" xml:space="preserve">
-      <value>Opened a monitoring connection for host {0}.</value>
+      <value>Opened a new host monitoring connection for host {0}.</value>
     </data>
     <data name="EfmHostMonitor_HostDead" xml:space="preserve">
       <value>Host is dead: {0}.</value>

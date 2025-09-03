@@ -147,7 +147,7 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
 
     private void InitMonitorService()
     {
-        this.monitorService ??= new HostMonitorService(this.pluginService);
+        this.monitorService ??= new HostMonitorService(this.pluginService, this.props);
     }
 
     public HostSpec GetMonitoringHostSpec()

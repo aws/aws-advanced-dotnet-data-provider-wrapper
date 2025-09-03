@@ -17,6 +17,7 @@ using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.HostListProviders;
 
@@ -24,6 +25,7 @@ public class RdsHostListProvider : IDynamicHostListProvider
 {
     protected const int DefaultTopologyQueryTimeoutSec = 5;
 
+    private static readonly ILogger<RdsHostListProvider> Logger = LoggerUtils.GetLogger<RdsHostListProvider>();
     internal static readonly MemoryCache TopologyCache = new(new MemoryCacheOptions());
     internal static readonly MemoryCache PrimaryClusterIdCache = new(new MemoryCacheOptions());
     internal static readonly MemoryCache SuggestedPrimaryClusterIdCache = new(new MemoryCacheOptions());
@@ -206,6 +208,7 @@ public class RdsHostListProvider : IDynamicHostListProvider
         this.EnsureInitialized();
         IDbConnection? currentConnection = connection ?? this.hostListProviderService.CurrentConnection;
         FetchTopologyResult result = this.GetTopology(currentConnection, true);
+        Logger.LogTrace(LoggerUtils.LogTopology(result.Hosts, null));
 
         this.hostList = result.Hosts;
         return this.hostList.AsReadOnly();
@@ -219,53 +222,63 @@ public class RdsHostListProvider : IDynamicHostListProvider
 
     public virtual HostSpec? IdentifyConnection(DbConnection connection)
     {
-        string instanceName;
-        using (DbCommand command = connection.CreateCommand())
+        try
         {
-            command.CommandText = this.nodeIdQuery;
-            using DbDataReader resultSet = command.ExecuteReader();
-
-            if (!resultSet.Read())
+            string instanceName;
+            using (var command = connection.CreateCommand())
             {
-                return null;
+                command.CommandText = this.nodeIdQuery;
+                using var resultSet = command.ExecuteReader();
+
+                if (!resultSet.Read())
+                {
+                    return null;
+                }
+
+                instanceName = resultSet.GetString(0);
             }
 
-            instanceName = resultSet.GetString(0);
-        }
+            IList<HostSpec> topology = this.Refresh(connection);
+            bool isForcedRefresh = false;
 
-        IList<HostSpec> topology = this.Refresh(connection);
-        bool isForcedRefresh = false;
-
-        // TODO Clean up if statement
-        if (topology == null)
-        {
-            topology = this.ForceRefresh(connection);
-            isForcedRefresh = true;
-
+            // TODO Clean up if statement
             if (topology == null)
             {
-                return null;
-            }
-        }
+                topology = this.ForceRefresh(connection);
+                isForcedRefresh = true;
 
-        HostSpec? foundHost = topology
-            .Where(host => host.HostId == instanceName)
-            .FirstOrDefault();
-
-        if (foundHost == null && !isForcedRefresh)
-        {
-            topology = this.ForceRefresh(connection);
-            if (topology == null)
-            {
-                return null;
+                if (topology == null)
+                {
+                    return null;
+                }
             }
 
-            foundHost = topology
+            HostSpec? foundHost = topology
                 .Where(host => host.HostId == instanceName)
                 .FirstOrDefault();
+
+            if (foundHost == null && !isForcedRefresh)
+            {
+                topology = this.ForceRefresh(connection);
+                if (topology == null)
+                {
+                    return null;
+                }
+
+                foundHost = topology
+                    .Where(host => host.HostId == instanceName)
+                    .FirstOrDefault();
+            }
+
+            return foundHost;
+        }
+        catch (DbException ex)
+        {
+            Logger.LogError(ex, "An error occurred while obtaining the connection's host ID.");
+            throw;
         }
 
-        return foundHost;
+        throw new InvalidOperationException("An error occurred while obtaining the connection's host ID.");
     }
 
     public virtual HostRole GetHostRole(IDbConnection connection)
@@ -294,7 +307,7 @@ public class RdsHostListProvider : IDynamicHostListProvider
         this.EnsureInitialized();
         IDbConnection? currentConnection = connection ?? this.hostListProviderService.CurrentConnection;
         FetchTopologyResult result = this.GetTopology(currentConnection, false);
-
+        Logger.LogTrace(LoggerUtils.LogTopology(result.Hosts, result.IsCachedData ? "From cache" : "New Topology"));
         this.hostList = result.Hosts;
         return this.hostList.AsReadOnly();
     }
@@ -333,14 +346,7 @@ public class RdsHostListProvider : IDynamicHostListProvider
             }
         }
 
-        if (cachedHosts == null)
-        {
-            return new FetchTopologyResult(false, this.initialHostList);
-        }
-        else
-        {
-            return new FetchTopologyResult(true, cachedHosts);
-        }
+        return cachedHosts == null ? new FetchTopologyResult(false, this.initialHostList) : new FetchTopologyResult(true, cachedHosts);
     }
 
     private void SuggestPrimaryCluster(List<HostSpec> primaryClusterHosts)

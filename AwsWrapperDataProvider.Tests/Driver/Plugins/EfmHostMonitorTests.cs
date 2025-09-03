@@ -147,7 +147,7 @@ public class EfmHostMonitorTests
         Assert.False(context.NodeUnhealthy);
         Assert.False(this.monitor.CanDispose());
 
-        this.monitor.Close();
+            this.monitor.Dispose();
 
         Assert.True(context.IsActive());
         Assert.False(context.NodeUnhealthy);
