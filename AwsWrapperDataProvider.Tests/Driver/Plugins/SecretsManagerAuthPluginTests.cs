@@ -148,10 +148,7 @@ public class SecretsManagerAuthPluginTests
     [Trait("Category", "Unit")]
     public void ClearCache_ClearsSecretCache()
     {
-        // This test verifies the cache clearing functionality exists
         SecretsManagerAuthPlugin.ClearCache();
-
-        // If no exception is thrown, the method exists and works
         Assert.True(true);
     }
 }
