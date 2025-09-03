@@ -38,18 +38,20 @@ public class EfmHostMonitorServiceTests
     {
         this.connectionString = $"Host={TestHost};Username={TestUser};Password={TestPassword};Database={TestDatabase};";
 
-        this.properties = new();
-        this.properties[PropertyDefinition.Host.Name] = $"{TestHost}";
-        this.properties[PropertyDefinition.User.Name] = $"{TestUser}";
-        this.properties[PropertyDefinition.Password.Name] = $"{TestPassword}";
-        this.properties["Database"] = $"{TestDatabase}";
+        this.properties = new()
+        {
+            [PropertyDefinition.Host.Name] = $"{TestHost}",
+            [PropertyDefinition.User.Name] = $"{TestUser}",
+            [PropertyDefinition.Password.Name] = $"{TestPassword}",
+            ["Database"] = $"{TestDatabase}",
+        };
 
         this.hostSpec = new(TestHost, 5432, HostRole.Writer, HostAvailability.Available);
 
         this.mockPluginService = new Mock<IPluginService>();
 
-            this.monitorService = new HostMonitorService(this.mockPluginService.Object, this.properties);
-        }
+        this.monitorService = new HostMonitorService(this.mockPluginService.Object, this.properties);
+    }
 
     [Fact]
     [Trait("Category", "Integration")]
