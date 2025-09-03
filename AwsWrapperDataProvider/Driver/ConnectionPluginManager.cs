@@ -224,8 +224,15 @@ public class ConnectionPluginManager
 
     public HostSpec GetHostSpecByStrategy(HostRole hostRole, string strategy, Dictionary<string, string> props)
     {
+        return this.GetHostSpecByStrategy(null, hostRole, strategy, props);
+    }
+
+    public HostSpec GetHostSpecByStrategy(IList<HostSpec>? hosts, HostRole hostRole, string strategy, Dictionary<string, string> props)
+    {
+        var targeHosts = hosts ?? this.pluginService!.GetHosts();
+
         if (this.defaultConnProvider.GetHostSpecByStrategy(
-                this.pluginService!.GetHosts(),
+                targeHosts,
                 hostRole,
                 strategy,
                 props) is { } hostSpec)
@@ -233,7 +240,7 @@ public class ConnectionPluginManager
             return hostSpec;
         }
 
-        throw new InvalidOperationException($"The driver does not support the requested host selection strategy: {strategy}");
+        throw new NotSupportedException($"The driver does not support the requested host selection strategy: {strategy}");
     }
 
     public virtual bool AcceptsStrategy(string strategy)

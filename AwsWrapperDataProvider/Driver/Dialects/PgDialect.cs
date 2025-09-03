@@ -17,11 +17,15 @@ using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Exceptions;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
+using AwsWrapperDataProvider.Driver.Utils;
+using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
 public class PgDialect : IDialect
 {
+    private static readonly ILogger<PgDialect> Logger = LoggerUtils.GetLogger<PgDialect>();
+
     public int DefaultPort { get; } = 5432;
 
     public string HostAliasQuery { get; } = "SELECT CONCAT(inet_server_addr(), ':', inet_server_port())";
@@ -45,6 +49,12 @@ public class PgDialect : IDialect
     {
         try
         {
+            if (conn.State != ConnectionState.Open)
+            {
+                Logger.LogError("Connection is not open");
+                return false;
+            }
+
             using IDbCommand command = conn.CreateCommand();
             command.CommandText = "SELECT 1 FROM pg_proc LIMIT 1";
             using IDataReader reader = command.ExecuteReader();
@@ -54,9 +64,9 @@ public class PgDialect : IDialect
                 return true;
             }
         }
-        catch (DbException)
+        catch (DbException ex)
         {
-            // ignored
+            Logger.LogWarning(ex, "Error occurred when checking whether it's PG dialect");
         }
 
         return false;

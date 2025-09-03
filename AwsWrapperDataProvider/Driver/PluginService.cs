@@ -12,20 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 using System.Data.Common;
 using System.Runtime.CompilerServices;
-using System.Threading;
 using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.Dialects;
-using AwsWrapperDataProvider.Driver.Exceptions;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
@@ -33,16 +31,19 @@ namespace AwsWrapperDataProvider.Driver;
 
 public class PluginService : IPluginService, IHostListProviderService
 {
-    private static readonly DateTimeOffset DefaultHostAvailabilityCacheExpiration = DateTimeOffset.Now.AddMinutes(5);
+    private static readonly TimeSpan DefaultHostAvailabilityCacheExpiration = TimeSpan.FromMinutes(5);
     internal static readonly MemoryCache HostAvailabilityExpiringCache = new(new MemoryCacheOptions());
     private static readonly ILogger<PluginService> Logger = LoggerUtils.GetLogger<PluginService>();
 
+    private readonly object connectionSwitchLock = new();
+
     private readonly ConnectionPluginManager pluginManager;
     private readonly Dictionary<string, string> props;
-    private readonly string originalConnectionString;
     private readonly DialectProvider dialectProvider;
     private volatile IHostListProvider hostListProvider;
     private HostSpec? currentHostSpec;
+
+    private DbTransaction? transaction;
 
     // private ExceptionManager _exceptionManager;
     // private IExceptionHandler _exceptionHandler;
@@ -56,6 +57,27 @@ public class PluginService : IPluginService, IHostListProviderService
     public HostSpecBuilder HostSpecBuilder { get => new HostSpecBuilder(); }
     public DbConnection? CurrentConnection { get; private set; }
 
+    public DbTransaction? CurrentTransaction
+    {
+        get => this.transaction;
+        set
+        {
+            try
+            {
+                this.transaction?.Rollback();
+                this.transaction?.Dispose();
+            }
+            catch (Exception)
+            {
+                // Do nothing.
+            }
+            finally
+            {
+                this.transaction = value;
+            }
+        }
+    }
+
     public PluginService(
         Type connectionType,
         ConnectionPluginManager pluginManager,
@@ -66,10 +88,10 @@ public class PluginService : IPluginService, IHostListProviderService
     {
         this.pluginManager = pluginManager;
         this.props = props;
-        this.originalConnectionString = connectionString;
         this.TargetConnectionDialect = configurationProfile?.TargetConnectionDialect ?? targetConnectionDialect ?? throw new ArgumentNullException(nameof(targetConnectionDialect));
         this.dialectProvider = new(this);
         this.Dialect = configurationProfile?.Dialect ?? this.dialectProvider.GuessDialect(this.props);
+
         this.hostListProvider =
             this.Dialect.HostListProviderSupplier(this.props, this, this)
             ?? throw new InvalidOperationException(); // TODO : throw proper error
@@ -93,14 +115,28 @@ public class PluginService : IPluginService, IHostListProviderService
 
     public void SetCurrentConnection(DbConnection connection, HostSpec? hostSpec)
     {
-        // TODO use lock when switching connection
-        this.CurrentConnection = connection;
-        this.currentHostSpec = hostSpec;
-    }
+        lock (this.connectionSwitchLock)
+        {
+            DbConnection? oldConnection = this.CurrentConnection;
 
-    public void SetCurrentConnection(DbConnection connection, HostSpec hostSpec, IConnectionPlugin pluginToSkip)
-    {
-        throw new NotImplementedException();
+            this.CurrentConnection = connection;
+            this.currentHostSpec = hostSpec;
+            Logger.LogTrace("New connection {Type}@{Id} is set.", connection?.GetType().FullName, RuntimeHelpers.GetHashCode(connection));
+
+            try
+            {
+                if (!ReferenceEquals(connection, oldConnection))
+                {
+                    oldConnection?.Close();
+                    oldConnection?.Dispose();
+                    Logger.LogTrace("Old connection {Type}@{Id} is disposed.", oldConnection?.GetType().FullName, RuntimeHelpers.GetHashCode(oldConnection));
+                }
+            }
+            catch (DbException exception)
+            {
+                Logger.LogTrace(string.Format(Resources.PluginService_ErrorClosingOldConnection, exception.Message));
+            }
+        }
     }
 
     public IList<HostSpec> GetHosts()
@@ -129,7 +165,7 @@ public class PluginService : IPluginService, IHostListProviderService
 
         if (hostsToChange.Count == 0)
         {
-            // TODO: host to change list empty;
+            Logger.LogTrace("There are no changes in the hosts' availability.");
             return;
         }
 
@@ -139,11 +175,8 @@ public class PluginService : IPluginService, IHostListProviderService
         {
             var currentAvailability = host.Availability;
             host.Availability = availability;
-
-            if (!HostAvailabilityExpiringCache.TryGetValue(host.Host, out _))
-            {
-                HostAvailabilityExpiringCache.Set(host.Host, availability, DefaultHostAvailabilityCacheExpiration);
-            }
+            Logger.LogTrace("Host {host} availability changed from {old} to {new}", host, currentAvailability, availability);
+            HostAvailabilityExpiringCache.Set(host.GetHostAndPort(), availability, DefaultHostAvailabilityCacheExpiration);
 
             if (currentAvailability != availability)
             {
@@ -241,6 +274,7 @@ public class PluginService : IPluginService, IHostListProviderService
     {
         IDialect dialect = this.Dialect;
         this.Dialect = this.dialectProvider.UpdateDialect(connection, this.Dialect);
+        Logger.LogDebug("Dialect updated to: {dialect}", this.Dialect.GetType().FullName);
 
         if (dialect != this.Dialect)
         {
@@ -256,7 +290,38 @@ public class PluginService : IPluginService, IHostListProviderService
 
     public void FillAliases(DbConnection connection, HostSpec hostSpec)
     {
-        throw new NotImplementedException();
+        if (hostSpec.GetAliases().Count > 0)
+        {
+            return;
+        }
+
+        hostSpec.AddAlias(hostSpec.AsAlias());
+        try
+        {
+            using var command = connection.CreateCommand();
+            command.CommandText = this.Dialect.HostAliasQuery;
+
+            using var resultSet = command.ExecuteReader();
+            while (resultSet.Read())
+            {
+                string alias = resultSet.GetString(0);
+                hostSpec.AddAlias(alias);
+            }
+        }
+        catch
+        {
+            // ignore
+        }
+
+        HostSpec? existingHostSpec = this.IdentifyConnection(connection);
+        if (existingHostSpec != null)
+        {
+            var aliases = existingHostSpec.AsAliases();
+            foreach (string alias in aliases)
+            {
+                hostSpec.AddAlias(alias);
+            }
+        }
     }
 
     public IConnectionProvider GetConnectionProvider()
@@ -274,6 +339,11 @@ public class PluginService : IPluginService, IHostListProviderService
         return this.pluginManager.GetHostSpecByStrategy(hostRole, strategy, this.props);
     }
 
+    public HostSpec GetHostSpecByStrategy(IList<HostSpec> hosts, HostRole hostRole, string strategy)
+    {
+        return this.pluginManager.GetHostSpecByStrategy(hosts, hostRole, strategy, this.props);
+    }
+
     private HostSpec GetCurrentHostSpec()
     {
         this.currentHostSpec = this.InitialConnectionHostSpec
@@ -286,7 +356,14 @@ public class PluginService : IPluginService, IHostListProviderService
 
     private void UpdateHostAvailability(IList<HostSpec> hosts)
     {
-        // TODO: deal with availability.
+        foreach (HostSpec host in hosts)
+        {
+            HostAvailabilityExpiringCache.TryGetValue(host.GetHostAndPort(), out HostAvailability? availability);
+            if (availability.HasValue)
+            {
+                host.Availability = availability.Value;
+            }
+        }
     }
 
     private void NotifyNodeChangeList(IList<HostSpec> oldHosts, IList<HostSpec> updateHosts)

@@ -68,6 +68,7 @@ public class TestDatabaseInfo
             {
                 this.Instances.RemoveAt(i);
                 this.Instances.Insert(0, currentInstance);
+                Console.WriteLine($"Moved writer instance {instanceName} to the first position.");
                 return;
             }
         }

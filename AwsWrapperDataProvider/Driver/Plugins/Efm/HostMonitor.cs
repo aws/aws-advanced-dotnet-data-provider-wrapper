@@ -46,6 +46,10 @@ public class HostMonitor : IHostMonitor
     private volatile bool nodeUnhealthy = false;
     private DbConnection? monitoringConn = null;
 
+    internal volatile bool TestUnhealthyCluster = false;
+
+    public int FailureCount { get => this.failureCount; }
+
     /// <summary>
     /// Initializes a new instance of the <see cref="HostMonitor"/> class.
     /// </summary>
@@ -79,20 +83,24 @@ public class HostMonitor : IHostMonitor
         if (this.cancellationTokenSource.Token.IsCancellationRequested)
         {
             Logger.LogWarning(Resources.EfmHostMonitor_StartMonitoringWhenStopped);
+            return;
         }
 
-        DateTime startMonitoringTime = DateTime.Now + TimeSpan.FromMilliseconds(this.failureDetectionTimeMs);
-        int startMonitoringTimeSeconds = (int)(startMonitoringTime - DateTime.UnixEpoch).TotalSeconds;
+        DateTime startMonitoringTime = DateTime.UtcNow.AddMilliseconds(this.failureDetectionTimeMs);
 
-        ConcurrentQueue<WeakReference<HostMonitorConnectionContext>>? queue;
+        DateTime truncated = new(
+            startMonitoringTime.Year,
+            startMonitoringTime.Month,
+            startMonitoringTime.Day,
+            startMonitoringTime.Hour,
+            startMonitoringTime.Minute,
+            startMonitoringTime.Second,
+            startMonitoringTime.Kind);
 
-        if (!this.newContexts.TryGetValue(startMonitoringTimeSeconds, out queue) || queue == null)
-        {
-            queue = new();
-            this.newContexts.Set(startMonitoringTime, queue);
-        }
+        ConcurrentQueue<WeakReference<HostMonitorConnectionContext>>? queue = this.newContexts.GetOrCreate(truncated,
+            (key) => new ConcurrentQueue<WeakReference<HostMonitorConnectionContext>>());
 
-        queue.Enqueue(new WeakReference<HostMonitorConnectionContext>(context));
+        queue?.Enqueue(new WeakReference<HostMonitorConnectionContext>(context));
     }
 
     public bool CanDispose()
@@ -100,11 +108,11 @@ public class HostMonitor : IHostMonitor
         return this.activeContexts.IsEmpty && this.newContexts.Count == 0;
     }
 
-    public void Close()
+    public void Dispose()
     {
         this.cancellationTokenSource.Cancel();
 
-        Task.WaitAll([this.newContextRunTask, this.runTask], (int)TimeSpan.FromSeconds(30).TotalMilliseconds);
+        Task.WaitAll([this.newContextRunTask, this.runTask], TimeSpan.FromSeconds(30));
         this.newContextRunTask.Dispose();
         this.runTask.Dispose();
 
@@ -129,39 +137,33 @@ public class HostMonitor : IHostMonitor
         {
             while (!token.IsCancellationRequested)
             {
-                DateTime currentTime = DateTime.Now;
+                DateTime currentTime = DateTime.UtcNow;
 
-                List<int> processedKeys = [];
+                List<DateTime> processedStartTimes = [];
 
-                foreach (int key in this.newContexts.Keys)
+                foreach (DateTime startTime in this.newContexts.Keys.Cast<DateTime>().Where(startTime => startTime < currentTime))
                 {
-                    if (DateTime.UnixEpoch.AddSeconds(key) < currentTime)
+                    if (this.newContexts.TryGetValue(startTime, out ConcurrentQueue<WeakReference<HostMonitorConnectionContext>>? queue) && queue != null)
                     {
-                        if (this.newContexts.TryGetValue(key, out ConcurrentQueue<WeakReference<HostMonitorConnectionContext>>? queue) && queue != null)
-                        {
-                            processedKeys.Add(key);
+                        processedStartTimes.Add(startTime);
 
-                            while (queue.TryDequeue(out WeakReference<HostMonitorConnectionContext>? contextRef))
+                        while (queue.TryDequeue(out WeakReference<HostMonitorConnectionContext>? contextRef))
+                        {
+                            if (contextRef != null
+                                && contextRef.TryGetTarget(out HostMonitorConnectionContext? context)
+                                && context != null
+                                && context.IsActive())
                             {
-                                if (contextRef != null
-                                    && contextRef.TryGetTarget(out HostMonitorConnectionContext? context)
-                                    && context != null
-                                    && context.IsActive())
-                                {
-                                    this.activeContexts.Enqueue(contextRef);
-                                }
+                                this.activeContexts.Enqueue(contextRef);
                             }
                         }
                     }
                 }
 
-                foreach (int key in processedKeys)
-                {
-                    this.newContexts.Remove(key);
-                }
+                processedStartTimes.ForEach(key => this.newContexts.Remove(key));
 
                 // sleep for one second before polling new contexts
-                await Task.Delay(1000);
+                await Task.Delay(1000, token);
             }
         }
         catch (OperationCanceledException)
@@ -193,57 +195,55 @@ public class HostMonitor : IHostMonitor
 
                 if (this.activeContexts.IsEmpty && !isNodeUnhealthy)
                 {
-                    await Task.Delay(ThreadSleepMs);
+                    await Task.Delay(ThreadSleepMs, token);
                     continue;
                 }
 
-                DateTime statusCheckStartTime = DateTime.Now;
+                DateTime statusCheckStartTime = DateTime.UtcNow;
                 bool isValid = this.CheckConnectionStatus();
-                DateTime statusCheckEndTime = DateTime.Now;
+                DateTime statusCheckEndTime = DateTime.UtcNow;
 
                 this.UpdateNodeHealthStatus(isValid, statusCheckStartTime, statusCheckEndTime);
 
-                WeakReference<HostMonitorConnectionContext>[] tmpActiveContexts = [];
+                List<WeakReference<HostMonitorConnectionContext>> tmpActiveContexts = [];
 
-                while (this.activeContexts.TryDequeue(out WeakReference<HostMonitorConnectionContext>? monitorContextRef))
+                lock (this.monitorLock)
                 {
-                    if (token.IsCancellationRequested)
+                    while (this.activeContexts.TryDequeue(out WeakReference<HostMonitorConnectionContext>? monitorContextRef))
                     {
-                        break;
-                    }
-
-                    if (!monitorContextRef.TryGetTarget(out HostMonitorConnectionContext? monitorContext) || monitorContext == null)
-                    {
-                        continue;
-                    }
-
-                    lock (this.monitorLock)
-                    {
-                        isNodeUnhealthy = this.nodeUnhealthy;
-                    }
-
-                    if (isNodeUnhealthy)
-                    {
-                        monitorContext.NodeUnhealthy = true;
-                        DbConnection? connectionToAbort = monitorContext.GetConnection();
-                        monitorContext.SetInactive();
-
-                        if (connectionToAbort != null)
+                        if (token.IsCancellationRequested)
                         {
-                            this.AbortConnection(connectionToAbort);
+                            break;
+                        }
+
+                        if (!monitorContextRef.TryGetTarget(out HostMonitorConnectionContext? monitorContext) || monitorContext == null)
+                        {
+                            continue;
+                        }
+
+                        if (this.nodeUnhealthy)
+                        {
+                            monitorContext.NodeUnhealthy = true;
+                            DbConnection? connectionToAbort = monitorContext.GetConnection();
+                            monitorContext.SetInactive();
+
+                            if (connectionToAbort != null)
+                            {
+                                this.AbortConnection(connectionToAbort);
+                            }
+                        }
+                        else if (monitorContext.IsActive())
+                        {
+                            tmpActiveContexts.Add(monitorContextRef);
                         }
                     }
-                    else if (monitorContext.IsActive())
-                    {
-                        tmpActiveContexts.Append(monitorContextRef);
-                    }
-                }
 
-                // this.activeContexts is now empty, and tmpActiveContexts contains all still active contexts
-                // add those back into this.activeContexts
-                foreach (WeakReference<HostMonitorConnectionContext> contextRef in tmpActiveContexts)
-                {
-                    this.activeContexts.Enqueue(contextRef);
+                    // this.activeContexts is now empty, and tmpActiveContexts contains all still active contexts
+                    // add those back into this.activeContexts
+                    foreach (WeakReference<HostMonitorConnectionContext> contextRef in tmpActiveContexts)
+                    {
+                        this.activeContexts.Enqueue(contextRef);
+                    }
                 }
 
                 int delayMs = this.failureDetectionIntervalMs - (int)(statusCheckEndTime - statusCheckStartTime).TotalMilliseconds;
@@ -252,7 +252,7 @@ public class HostMonitor : IHostMonitor
                     delayMs = ThreadSleepMs;
                 }
 
-                await Task.Delay(delayMs);
+                await Task.Delay(delayMs, token);
             }
         }
         catch (OperationCanceledException)
@@ -330,14 +330,12 @@ public class HostMonitor : IHostMonitor
                 DbCommand validityCheckCommand = conn.CreateCommand();
                 validityCheckCommand.CommandText = this.pluginService.Dialect.HostAliasQuery;
 
-                // JDBC: Some drivers, like MySQL Connector/J, execute isValid() in a double of specified timeout time.
                 int validTimeoutSeconds = (this.failureDetectionIntervalMs - ThreadSleepMs) / 2000;
                 validityCheckCommand.CommandTimeout = validTimeoutSeconds;
 
                 _ = validityCheckCommand.ExecuteScalar();
 
-                // was able to execute command within the timeout - connection is still valid
-                return true;
+                return !this.TestUnhealthyCluster;
             }
             catch
             {
@@ -354,6 +352,8 @@ public class HostMonitor : IHostMonitor
     {
         if (!connectionValid)
         {
+            DateTime invalidNodeDurationStart;
+
             lock (this.monitorLock)
             {
                 this.failureCount++;
@@ -362,9 +362,11 @@ public class HostMonitor : IHostMonitor
                 {
                     this.invalidNodeStartTime = statusCheckStartTime;
                 }
+
+                invalidNodeDurationStart = this.invalidNodeStartTime ?? statusCheckStartTime;
             }
 
-            TimeSpan invalidNodeDuration = statusCheckEndTime - statusCheckStartTime;
+            TimeSpan invalidNodeDuration = statusCheckEndTime - invalidNodeDurationStart;
             int maxInvalidNodeDurationMs = this.failureDetectionIntervalMs * Math.Max(0, this.failureDetectionCount - 1);
 
             if (invalidNodeDuration >= TimeSpan.FromMilliseconds(maxInvalidNodeDurationMs))

@@ -22,6 +22,7 @@ using AwsWrapperDataProvider.Driver.Plugins.FederatedAuth;
 using AwsWrapperDataProvider.Driver.Plugins.Iam;
 using AwsWrapperDataProvider.Driver.Plugins.SecretsManager;
 using AwsWrapperDataProvider.Driver.Utils;
+using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Plugins;
 
@@ -29,6 +30,8 @@ public class ConnectionPluginChainBuilder
 {
     private const int WeightRelativeToPriorPlugin = -1;
     private const string DefaultPluginCode = "efm,failover";
+
+    private static readonly ILogger<ConnectionPluginChainBuilder> Logger = LoggerUtils.GetLogger<ConnectionPluginChainBuilder>();
 
     private static readonly Dictionary<string, Type> PluginFactoryTypesByCode = new()
     {
@@ -39,6 +42,7 @@ public class ConnectionPluginChainBuilder
             { "awsSecretsManager", typeof(SecretsManagerAuthPluginFactory) },
             { "initialConnection", typeof(AuroraInitialConnectionStrategyPluginFactory) },
             { "federatedAuth", typeof(FederatedAuthPluginFactory) },
+            { "okta", typeof(OktaAuthPluginFactory) },
     };
 
     private static readonly Dictionary<Type, int> PluginWeightByPluginFactoryType = new()
@@ -49,6 +53,7 @@ public class ConnectionPluginChainBuilder
             { typeof(IamAuthPluginFactory), 1000 },
             { typeof(SecretsManagerAuthPluginFactory), 1100 },
             { typeof(FederatedAuthPluginFactory), 1200 },
+            { typeof(OktaAuthPluginFactory), 1300 },
             { typeof(ExecutionTimePlugin), WeightRelativeToPriorPlugin },
     };
 
@@ -69,6 +74,7 @@ public class ConnectionPluginChainBuilder
         {
             string pluginsCodes = PropertyDefinition.Plugins.GetString(props) ?? DefaultPluginCode;
             string[] pluginsCodesArray = [.. pluginsCodes.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)];
+            Logger.LogDebug("Current Plugins: " + string.Join(",", pluginsCodesArray));
 
             pluginFactories = new(pluginsCodesArray.Length);
 

@@ -43,6 +43,7 @@ public class DialectProviderTests
         this.mockConnection = new Mock<IDbConnection>();
         this.mockConnection.SetupAllProperties();
         this.mockConnection.Object.ConnectionString = "anyHost";
+        this.mockConnection.Setup(conn => conn.State).Returns(ConnectionState.Open);
         this.mockCommand = new Mock<IDbCommand>();
         this.mockReader = new Mock<IDataReader>();
         this.mockConnection.Setup(c => c.CreateCommand()).Returns(this.mockCommand.Object);

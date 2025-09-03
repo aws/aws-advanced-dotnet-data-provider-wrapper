@@ -171,4 +171,17 @@ public class HostSpec
     {
         return HashCode.Combine(this.Host, this.Port, this.RawAvailability, this.Role, this.Weight, this.LastUpdateTime);
     }
+
+    public override string ToString()
+    {
+        return string.Format(
+            "HostSpec@{0} [host={1}, port={2}, {3}, {4}, weight={5}, {6}]",
+            this.GetHashCode().ToString("X"),
+            this.Host,
+            this.Port,
+            this.Role,
+            this.Availability,
+            this.Weight,
+            this.LastUpdateTime);
+    }
 }

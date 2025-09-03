@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace AwsWrapperDataProvider.Driver.Plugins.Iam;
+using Amazon.Runtime;
 
-public class IamAuthPluginFactory : IConnectionPluginFactory
+namespace AwsWrapperDataProvider.Driver.Plugins.Efm;
+
+public interface IIamTokenUtility
 {
-    public IConnectionPlugin GetInstance(IPluginService pluginService, Dictionary<string, string> props)
-    {
-        return new IamAuthPlugin(pluginService, props, new IamTokenUtility());
-    }
+    public string GetCacheKey(string user, string hostname, int port, string region);
+
+    public string GenerateAuthenticationToken(string region, string hostname, int port, string user, AWSCredentials? credentials);
 }

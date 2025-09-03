@@ -106,7 +106,7 @@ public class AuroraTestUtils
         var stopwatch = Stopwatch.StartNew();
 
         string status = (await this.GetDBClusterAsync(clusterId))!.Status;
-        Console.WriteLine($"Cluster status: {status}, waiting for: {string.Join(", ", allowedStatuses)}");
+        Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Cluster {clusterId} status: {status}, waiting for: {string.Join(", ", allowedStatuses)}");
 
         while (!allowedStatusSet.Contains(status!.ToLower()) && stopwatch.Elapsed < timeout)
         {
@@ -114,19 +114,19 @@ public class AuroraTestUtils
             var tmpStatus = (await this.GetDBClusterAsync(clusterId))?.Status!;
             if (!string.Equals(tmpStatus, status, StringComparison.OrdinalIgnoreCase))
             {
-                Console.WriteLine($"Cluster status (waiting): {tmpStatus}");
+                Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Cluster {clusterId} status (waiting): {tmpStatus}");
             }
 
             status = tmpStatus;
         }
 
-        Console.WriteLine($"Cluster status (after wait): {status}");
+        Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Cluster {clusterId} status (after wait): {status}");
     }
 
     public async Task WaitUntilInstanceHasRightStateAsync(string instanceId, params string[] allowedStatuses)
     {
         string status = (await this.GetDBInstanceAsync(instanceId))!.DBInstanceStatus;
-        Console.WriteLine($"Instance {instanceId} status: {status}, waiting for status: {string.Join(", ", allowedStatuses)}");
+        Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Instance {instanceId} status: {status}, waiting for status: {string.Join(", ", allowedStatuses)}");
 
         var allowedStatusSet = new HashSet<string>(allowedStatuses.Select(s => s.ToLower()));
         var timeout = TimeSpan.FromMinutes(15);
@@ -139,13 +139,13 @@ public class AuroraTestUtils
 
             if (!tmpStatus.Equals(status, StringComparison.OrdinalIgnoreCase))
             {
-                Console.WriteLine($"Instance {instanceId} status (waiting): {tmpStatus}");
+                Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Instance {instanceId} status (waiting): {tmpStatus}");
             }
 
             status = tmpStatus;
         }
 
-        Console.WriteLine($"Instance {instanceId} status (after wait): {status}");
+        Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Instance {instanceId} status (after wait): {status}");
     }
 
     public async Task MakeSureInstancesUpAsync(TimeSpan timeout)
@@ -196,13 +196,16 @@ public class AuroraTestUtils
                             remainingInstances.TryRemove(host, out _);
                             break;
                         }
+
+                        Console.WriteLine($"Host {host} connection state is {connection.State}.");
                     }
                     catch (DbException ex)
                     {
                         Console.WriteLine($"Exception while trying to connect to host {host}: {ex.Message}");
                     }
-                    catch (TaskCanceledException)
+                    catch (TaskCanceledException ex)
                     {
+                        Console.WriteLine($"Task is cancelled while waiting for {host} to come up: {ex.Message}");
                         break;
                     }
                     catch (Exception ex)
@@ -215,8 +218,9 @@ public class AuroraTestUtils
                     {
                         await Task.Delay(5000, cts.Token);
                     }
-                    catch (TaskCanceledException)
+                    catch (TaskCanceledException ex)
                     {
+                        Console.WriteLine($"Task is cancelled while waiting for {host} to come up: {ex.Message}");
                         break;
                     }
                 }
@@ -308,7 +312,7 @@ public class AuroraTestUtils
             throw new InvalidOperationException($"DBClusterMember.IsClusterWriter is null for instance {instanceId} in cluster {clusterId}.");
         }
 
-        return dbClusterMember.IsClusterWriter.Value;
+        return dbClusterMember.IsClusterWriter.HasValue && dbClusterMember.IsClusterWriter.Value;
     }
 
     public async Task<DBClusterMember> GetMatchedDBClusterMemberAsync(string clusterId, string instanceId)
@@ -339,16 +343,28 @@ public class AuroraTestUtils
     {
         DescribeDBClustersResponse? response = null;
         int remainingTries = 5;
+        var results = new List<DBCluster>();
+        DescribeDBClustersRequest request = new()
+        {
+            DBClusterIdentifier = clusterId,
+        };
 
         while (remainingTries-- > 0)
         {
             try
             {
-                response = await this.rdsClient.DescribeDBClustersAsync(
-                    new DescribeDBClustersRequest
+                // Get the full list if there are multiple pages.
+                do
+                {
+                    response = await this.rdsClient.DescribeDBClustersAsync(request);
+                    if (response.DBClusters != null)
                     {
-                        DBClusterIdentifier = clusterId,
-                    });
+                        results.AddRange(response.DBClusters);
+                    }
+
+                    request.Marker = response.Marker;
+                }
+                while (response.Marker is not null);
 
                 break;
             }
@@ -365,12 +381,12 @@ public class AuroraTestUtils
             }
         }
 
-        if (response == null || response.DBClusters.Count == 0)
+        if (response == null || results.Count == 0)
         {
             throw new InvalidOperationException($"Unable to get DB cluster info for cluster with ID {clusterId}");
         }
 
-        return response.DBClusters.First();
+        return results.First();
     }
 
     public List<string> GetAuroraInstanceIds()
@@ -432,11 +448,11 @@ public class AuroraTestUtils
             ? targetHostIpOrName
             : this.HostToIP(targetHostIpOrName, true);
 
-        Console.WriteLine($"Wait for {hostToCheck} (current IP address {hostIpAddress}) resolves to {targetHostIpOrName} (IP address {expectedHostIpAddress})");
+        Console.WriteLine($"Wait for {hostToCheck} (current IP address {hostIpAddress}) resolves to {(expectEqual ? string.Empty : "anything except ")}{targetHostIpOrName} (IP address {expectedHostIpAddress})");
 
         var checkStartTime = Stopwatch.StartNew();
-        var stillNotExpected = expectEqual ? expectedHostIpAddress != hostIpAddress : expectedHostIpAddress == hostIpAddress;
-        while (stillNotExpected && checkStartTime.Elapsed < timeout)
+        bool StillNotExpected() => expectEqual ? expectedHostIpAddress != hostIpAddress : expectedHostIpAddress == hostIpAddress;
+        while (StillNotExpected() && checkStartTime.Elapsed < timeout)
         {
             Thread.Sleep(TimeSpan.FromSeconds(5));
             hostIpAddress = this.HostToIP(hostToCheck, false);
@@ -513,5 +529,169 @@ public class AuroraTestUtils
             ForceDeleteWithoutRecovery = true,
         };
         this.secretsManagerClient.DeleteSecretAsync(request).GetAwaiter().GetResult();
+    }
+
+    public async Task<string> GetDBClusterWriterInstanceIdAsync(string clusterId)
+    {
+        var matchedMemberList = (await this.GetDBClusterMemberListAsync(clusterId))
+            .Where(m => m.IsClusterWriter.HasValue && m.IsClusterWriter.Value)
+            .ToList();
+
+        if (matchedMemberList.Count == 0)
+        {
+            throw new Exception($"Cannot find writer instance in cluster {clusterId}");
+        }
+
+        return matchedMemberList[0].DBInstanceIdentifier;
+    }
+
+    public async Task<string> GetRandomDBClusterReaderInstanceIdAsync(string clusterId)
+    {
+        var matchedMemberList = (await this.GetDBClusterMemberListAsync(clusterId))
+            .Where(m => !m.IsClusterWriter.HasValue || !m.IsClusterWriter.Value)
+            .ToList();
+
+        if (matchedMemberList.Count == 0)
+        {
+            throw new Exception($"Cannot find a reader instance in cluster {clusterId}");
+        }
+
+        int index = new Random().Next(matchedMemberList.Count);
+        return matchedMemberList[index].DBInstanceIdentifier;
+    }
+
+    public async Task CrashInstance(string instanceId)
+    {
+        // TODO: add support for multi az
+
+        var clusterId = TestEnvironment.Env.Info.RdsDbName!;
+        await this.FailoverClusterToATargetAndWaitUntilWriterChanged(
+            clusterId,
+            await this.GetDBClusterWriterInstanceIdAsync(clusterId),
+            await this.GetRandomDBClusterReaderInstanceIdAsync(clusterId));
+    }
+
+    public Task SimulateTemporaryFailureTask(string instanceName, TimeSpan delay, TimeSpan duration, TaskCompletionSource tcs)
+    {
+        return Task.Run(async () =>
+        {
+            try
+            {
+                Console.WriteLine($"Simulating temporary failure to {instanceName}...");
+                if (delay != TimeSpan.Zero)
+                {
+                    await Task.Delay(delay);
+                }
+
+                await ProxyHelper.DisableConnectivityAsync(instanceName);
+                tcs.TrySetResult();
+
+                await Task.Delay(duration);
+                await ProxyHelper.EnableConnectivityAsync(instanceName);
+            }
+            catch (Exception ex)
+            {
+                tcs.TrySetException(ex);
+                throw;
+            }
+        });
+    }
+
+    public async Task FailoverClusterToATargetAndWaitUntilWriterChanged(string clusterId, string initialWriterId, string targetWriterId)
+    {
+        // TODO: add support for multi az
+
+        var deployment = TestEnvironment.Env.Info.Request.Deployment;
+        var clusterEndpoint = TestEnvironment.Env.Info.DatabaseInfo.ClusterEndpoint;
+
+        await this.FailoverClusterToTargetAsync(clusterId, targetWriterId);
+
+        var clusterIp = this.HostToIP(clusterEndpoint, true);
+
+        // Failover has finished, wait for DNS to be updated so cluster endpoint resolves to the correct writer instance.
+        if (deployment == DatabaseEngineDeployment.AURORA)
+        {
+            Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Cluster endpoint resolves to: {clusterIp}");
+            var newClusterIp = this.HostToIP(clusterEndpoint, true);
+
+            var deadline = DateTime.UtcNow + TimeSpan.FromMinutes(10);
+            while (clusterIp != null
+                   && clusterIp == newClusterIp
+                   && DateTime.UtcNow < deadline)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(1));
+                newClusterIp = this.HostToIP(clusterEndpoint, true);
+            }
+
+            Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Cluster endpoint resolves to (after wait): {newClusterIp}");
+
+            // Wait for initial writer instance to be verified as not writer.
+            deadline = DateTime.UtcNow + TimeSpan.FromMinutes(10);
+            while (await this.IsDBInstanceWriterAsync(initialWriterId)
+                && DateTime.UtcNow < deadline)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(1));
+            }
+        }
+
+        Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Finished failover from {initialWriterId} to target: {targetWriterId}");
+    }
+
+    public async Task FailoverClusterToTargetAsync(string clusterId, string? targetInstanceId)
+    {
+        await this.WaitUntilClusterHasRightStateAsync(clusterId);
+
+        int remainingAttempts = 10;
+        while (--remainingAttempts > 0)
+        {
+            try
+            {
+                Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Sending FailoverDbCluster request...");
+                var response = await this.rdsClient.FailoverDBClusterAsync(new FailoverDBClusterRequest
+                {
+                    DBClusterIdentifier = clusterId,
+                    TargetDBInstanceIdentifier = targetInstanceId,
+                });
+                Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} FailoverDbCluster request is sent");
+                return;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} FailoverDBCluster request to {targetInstanceId} failed: {ex.Message}");
+                await Task.Delay(1000);
+            }
+        }
+
+        throw new Exception($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Failed to request a cluster failover.");
+    }
+
+    public string GetInstanceIdSql(DatabaseEngine engine, DatabaseEngineDeployment deployment)
+    {
+        return deployment switch
+        {
+            DatabaseEngineDeployment.AURORA => engine switch
+            {
+                DatabaseEngine.MYSQL => "SELECT @@aurora_server_id as id",
+                DatabaseEngine.PG => "SELECT aurora_db_instance_identifier()",
+                _ => throw new NotSupportedException($"Unsupported database engine: {engine}"),
+            },
+            _ => throw new NotSupportedException($"Unsupported database deployment: {deployment}"),
+        };
+    }
+
+    public string ExecuteInstanceIdQuery(IDbConnection connection, DatabaseEngine engine, DatabaseEngineDeployment deployment)
+    {
+        string query = this.GetInstanceIdSql(engine, deployment);
+        using var command = connection.CreateCommand();
+        command.CommandText = query;
+        Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Before ExecuteScalar with Instance Id Query");
+        var result = Convert.ToString(command.ExecuteScalar());
+        if (result == null)
+        {
+            throw new InvalidOperationException("Failed to retrieve instance ID.");
+        }
+
+        Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Finished ExecuteScalar with result: {result}");
+        return result;
     }
 }

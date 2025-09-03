@@ -268,13 +268,21 @@ public class AwsWrapperCommand : DbCommand
             this._targetDbCommand!,
             "DbCommand.ExecuteReader",
             () => this._targetDbCommand!.ExecuteReader(behavior));
-
-        if (reader.GetType() == typeof(Npgsql.NpgsqlDataReader))
-        {
-            return reader;
-        }
-
         return new AwsWrapperDataReader(reader, this._pluginManager!);
+    }
+
+    protected override Task<DbDataReader> ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+    {
+        return Task.Run(() =>
+        {
+            this.EnsureTargetDbCommandCreated();
+            DbDataReader reader = WrapperUtils.ExecuteWithPlugins(
+                this._pluginManager!,
+                this._targetDbCommand!,
+                "DbCommand.ExecuteReaderAsync",
+                () => this._targetDbCommand!.ExecuteReaderAsync(behavior, cancellationToken).GetAwaiter().GetResult());
+            return (DbDataReader)new AwsWrapperDataReader(reader, this._pluginManager!);
+        });
     }
 
     protected void EnsureTargetDbCommandCreated()

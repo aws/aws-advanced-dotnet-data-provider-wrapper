@@ -23,37 +23,31 @@ namespace AwsWrapperDataProvider.Driver.Plugins.Efm;
 public class HostMonitorService : IHostMonitorService
 {
     private static readonly ILogger<HostMonitorService> Logger = LoggerUtils.GetLogger<HostMonitorService>();
+    private readonly IPluginService pluginService;
+    private readonly Dictionary<string, string> props;
+    private readonly TimeSpan cacheExpiration;
 
     protected static readonly int CacheCleanupMs = (int)TimeSpan.FromMinutes(1).TotalMilliseconds;
-    protected static readonly MemoryCache Monitors = new(new MemoryCacheOptions());
-
-    private readonly IPluginService pluginService;
 
     public static readonly int DefaultMonitorDisposalTimeMs = 600000;
 
-    public HostMonitorService(IPluginService pluginService)
+    public static readonly MemoryCache Monitors = new(new MemoryCacheOptions { SizeLimit = 100 });
+
+    public static string GetMonitorKey(int failureDetectionTimeMs, int failureDetectionIntervalMs, int failureDetectionCount, string host)
+    {
+        return $"{failureDetectionTimeMs}:{failureDetectionIntervalMs}:{failureDetectionCount}:{host}";
+    }
+
+    public HostMonitorService(IPluginService pluginService, Dictionary<string, string> props)
     {
         this.pluginService = pluginService;
+        this.props = props;
+        this.cacheExpiration = TimeSpan.FromMilliseconds(PropertyDefinition.MonitorDisposalTimeMs.GetInt(this.props) ?? DefaultMonitorDisposalTimeMs);
     }
 
     public static void CloseAllMonitors()
     {
-        foreach (object key in Monitors.Keys)
-        {
-            if (Monitors.TryGetValue(key, out IHostMonitor? monitor) && monitor != null)
-            {
-                try
-                {
-                    monitor.Close();
-                }
-                catch
-                {
-                    // ignore
-                }
-            }
-
-            Monitors.Clear();
-        }
+        Monitors.Clear();
     }
 
     public HostMonitorConnectionContext StartMonitoring(
@@ -71,7 +65,7 @@ public class HostMonitorService : IHostMonitorService
             failureDetectionIntervalMs,
             failureDetectionCount);
 
-        HostMonitorConnectionContext context = new HostMonitorConnectionContext(connectionToAbort);
+        HostMonitorConnectionContext context = new(connectionToAbort);
         monitor.StartMonitoring(context);
 
         return context;
@@ -84,7 +78,7 @@ public class HostMonitorService : IHostMonitorService
             context.SetInactive();
             try
             {
-                connectionToAbort.Dispose();
+                connectionToAbort.Close();
             }
             catch
             {
@@ -109,8 +103,7 @@ public class HostMonitorService : IHostMonitorService
         int failureDetectionIntervalMs,
         int failureDetectionCount)
     {
-        string monitorKey = $"{failureDetectionTimeMs}:{failureDetectionIntervalMs}:{failureDetectionCount}:{hostSpec.Host}";
-        int cacheExpirationMs = PropertyDefinition.MonitorDisposalTimeMs.GetInt(properties) ?? DefaultMonitorDisposalTimeMs;
+        string monitorKey = GetMonitorKey(failureDetectionTimeMs, failureDetectionIntervalMs, failureDetectionCount, hostSpec.Host);
 
         if (!Monitors.TryGetValue(monitorKey, out IHostMonitor? monitor))
         {
@@ -122,9 +115,41 @@ public class HostMonitorService : IHostMonitorService
                 failureDetectionIntervalMs,
                 failureDetectionCount);
 
-            Monitors.Set(monitorKey, monitor, TimeSpan.FromMilliseconds(cacheExpirationMs));
+            Monitors.Set(monitorKey, monitor, this.CreateCacheEntryOptions());
         }
 
         return monitor ?? throw new Exception("Could not create or get monitor.");
+    }
+
+    private void OnMonitorEvicted(object key, object? value, EvictionReason reason, object? state)
+    {
+        if (value is IHostMonitor evictedMonitor)
+        {
+            try
+            {
+                Logger.LogTrace("Disposing host monitor for monitor key: {key} due to eviction reason: {reason}", key, reason);
+                evictedMonitor.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning("Error disposing host monitor: {message} ", ex.Message);
+            }
+        }
+    }
+
+    private MemoryCacheEntryOptions CreateCacheEntryOptions()
+    {
+        return new MemoryCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = this.cacheExpiration,
+            Size = 1,
+            PostEvictionCallbacks =
+            {
+                new PostEvictionCallbackRegistration
+                {
+                    EvictionCallback = this.OnMonitorEvicted,
+                },
+            },
+        };
     }
 }

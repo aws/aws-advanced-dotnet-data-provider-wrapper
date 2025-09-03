@@ -17,6 +17,7 @@ using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 
@@ -26,8 +27,7 @@ namespace AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 /// </summary>
 public class MonitoringRdsHostListProvider : RdsHostListProvider, IBlockingHostListProvider
 {
-    public static readonly AwsWrapperProperty ClusterTopologyHighRefreshRateMs =
-        new("ClusterTopologyHighRefreshRateMs", "100", "Cluster topology high refresh rate in milliseconds.");
+    private static readonly ILogger<MonitoringRdsHostListProvider> Logger = LoggerUtils.GetLogger<MonitoringRdsHostListProvider>();
 
     protected static readonly TimeSpan MonitorExpirationTime = TimeSpan.FromMinutes(15);
     protected static readonly TimeSpan TopologyCacheExpirationTime = TimeSpan.FromMinutes(5);
@@ -55,16 +55,12 @@ public class MonitoringRdsHostListProvider : RdsHostListProvider, IBlockingHostL
     {
         this.pluginService = pluginService;
         this.isWriterQuery = isWriterQuery;
-        this.highRefreshRate = TimeSpan.FromMilliseconds(
-            (double)ClusterTopologyHighRefreshRateMs.GetLong(this.properties)!);
+        this.highRefreshRate = TimeSpan.FromMilliseconds(PropertyDefinition.ClusterTopologyHighRefreshRateMs.GetLong(this.properties) ?? 100);
     }
 
     public static void CloseAllMonitors()
     {
-        // Dispose the current cache (which will trigger disposal of all cached monitors)
-        var oldCache = Monitors;
-        Monitors = new MemoryCache(new MemoryCacheOptions { SizeLimit = 100 });
-        oldCache.Dispose();
+        Monitors.Clear();
         ClearAll();
     }
 
@@ -72,13 +68,14 @@ public class MonitoringRdsHostListProvider : RdsHostListProvider, IBlockingHostL
     {
         IClusterTopologyMonitor monitor = Monitors.Get<IClusterTopologyMonitor>(this.ClusterId) ?? this.InitMonitor();
 
-        IList<HostSpec> task = monitor.ForceRefresh(shouldVerifyWriter, timeoutMs);
-        this.hostList = task.ToList();
+        IList<HostSpec> hosts = monitor.ForceRefresh(shouldVerifyWriter, timeoutMs);
+        this.hostList = hosts.ToList();
         return this.hostList.AsReadOnly();
     }
 
     protected IClusterTopologyMonitor InitMonitor()
     {
+        Logger.LogTrace("Initializing new cluster topology monitor for clusterId: {clusterId}", this.ClusterId);
         return Monitors.Set(
             this.ClusterId,
             new ClusterTopologyMonitor(
@@ -104,9 +101,8 @@ public class MonitoringRdsHostListProvider : RdsHostListProvider, IBlockingHostL
         var monitor = Monitors.Get<IClusterTopologyMonitor>(this.ClusterId) ?? this.InitMonitor();
         try
         {
-            var task = monitor.ForceRefresh((DbConnection)connection, DefaultTopologyQueryTimeoutSec * 1000);
-            task.Wait(TimeSpan.FromSeconds(DefaultTopologyQueryTimeoutSec));
-            return task.Result.ToList();
+            var topology = monitor.ForceRefreshAsync((DbConnection)connection, DefaultTopologyQueryTimeoutSec * 1000).GetAwaiter().GetResult();
+            return [.. topology];
         }
         catch (TimeoutException)
         {
@@ -116,6 +112,7 @@ public class MonitoringRdsHostListProvider : RdsHostListProvider, IBlockingHostL
 
     protected override void ClusterIdChanged(string oldClusterId)
     {
+        Logger.LogTrace("Cluster Id changed, old cluster id: {id}", oldClusterId);
         this.TransferExistingMonitor(oldClusterId);
         this.TransferCachedTopology(oldClusterId);
     }
@@ -142,24 +139,18 @@ public class MonitoringRdsHostListProvider : RdsHostListProvider, IBlockingHostL
         }
     }
 
-    private void ConfigureCacheEntry(ICacheEntry factory)
-    {
-        factory.SetAbsoluteExpiration(MonitorExpirationTime);
-        factory.SetSize(1);
-        factory.RegisterPostEvictionCallback(this.OnMonitorEvicted);
-    }
-
     private void OnMonitorEvicted(object key, object? value, EvictionReason reason, object? state)
     {
         if (value is IClusterTopologyMonitor evictedMonitor)
         {
             try
             {
+                Logger.LogTrace("Disposing cluster topology monitor for clusterId: {clusterId} due to eviction reason: {reason}", key, reason);
                 evictedMonitor.Dispose();
             }
-            catch
+            catch (Exception ex)
             {
-                // Ignore disposal errors
+                Logger.LogWarning("Error disposing clustor topology monitor: {message} ", ex.Message);
             }
         }
     }

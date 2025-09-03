@@ -22,68 +22,12 @@ public class PluginConnectivityTests : IntegrationTestBase
 {
     [Fact]
     [Trait("Category", "Integration")]
-    public void PgWrapperAdfsConnectionTest()
-    {
-        const string connectionString =
-            "Host=<insert_rds_instance_here>;Database=<database_name_here>;dbUser=<db_user_with_iam_login>;Plugins=federatedAuth;iamRegion=<iam_region>;iamRoleArn=<iam_role_arn>;iamIdpArn=<iam_idp_arn>;idpEndpoint=<idp_endpoint>;idpUsername=<idp_username>;idpPassword=<idp_password>;";
-        const string query = "select aurora_db_instance_identifier()";
-
-        using AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
-        AwsWrapperCommand<NpgsqlCommand> command = connection.CreateCommand<NpgsqlCommand>();
-        command.CommandText = query;
-
-        try
-        {
-            connection.Open();
-            IDataReader reader = command.ExecuteReader();
-            while (reader.Read())
-            {
-                Console.WriteLine(reader.GetString(0));
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex.ToString());
-        }
-    }
-
-    [Fact]
-    [Trait("Category", "Integration")]
-    public void MySqlClientWrapperAdfsConnectionTest()
-    {
-        const string connectionString = "Server=<insert_rds_instance_here>;Initial Catalog=mysql;Database=<database_name_here>;dbUser=<db_user_with_iam_login>;Plugins=federatedAuth;iamRegion=<iam_region>;iamRoleArn=<iam_role_arn>;iamIdpArn=<iam_idp_arn>;idpEndpoint=<idp_endpoint>;idpUsername=<idp_username>;idpPassword=<idp_password>;";
-        const string query = "select * from test";
-
-        using (AwsWrapperConnection<MySql.Data.MySqlClient.MySqlConnection> connection =
-               new(connectionString))
-        {
-            AwsWrapperCommand<MySql.Data.MySqlClient.MySqlCommand> command = connection.CreateCommand<MySql.Data.MySqlClient.MySqlCommand>();
-            command.CommandText = query;
-
-            try
-            {
-                connection.Open();
-                IDataReader reader = command.ExecuteReader();
-                while (reader.Read())
-                {
-                    Console.WriteLine(reader.GetInt32(0));
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.ToString());
-            }
-        }
-    }
-
-    [Fact]
-    [Trait("Category", "Integration")]
     [Trait("Database", "pg")]
     public void PgWrapperIamConnectionTest()
     {
         var iamUser = TestEnvironment.Env.Info.IamUsername;
         var iamRegion = TestEnvironment.Env.Info.Region;
-        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, iamUser, null, this.defaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, iamUser, null, DefaultDbName);
         connectionString += $";Plugins=iam;IamRegion={iamRegion}";
         const string query = "select aurora_db_instance_identifier()";
 
@@ -106,7 +50,7 @@ public class PluginConnectivityTests : IntegrationTestBase
     {
         var iamUser = TestEnvironment.Env.Info.IamUsername;
         var iamRegion = TestEnvironment.Env.Info.Region;
-        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, null, null, this.defaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, null, null, DefaultDbName);
         connectionString += $";Username={iamUser};Plugins=iam;IamRegion={iamRegion}";
         const string query = "select 1";
 
@@ -129,7 +73,7 @@ public class PluginConnectivityTests : IntegrationTestBase
     {
         var iamUser = TestEnvironment.Env.Info.IamUsername;
         var iamRegion = TestEnvironment.Env.Info.Region;
-        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, null, null, this.defaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, null, null, DefaultDbName);
         connectionString += $";Username={iamUser};Plugins=iam;IamRegion={iamRegion}";
         const string query = "select 1";
 
@@ -150,10 +94,9 @@ public class PluginConnectivityTests : IntegrationTestBase
     [Trait("Database", "pg")]
     public void PgWrapperSecretsManagerWithSecretIdConnectionTest()
     {
-        var auroraTestUtils = AuroraTestUtils.GetUtility();
         var secretId = "PGValidSecretId";
-        var secretsARN = auroraTestUtils.CreateSecrets(secretId);
-        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, null, null, this.defaultDbName);
+        var secretsARN = AuroraUtils.CreateSecrets(secretId);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, null, null, DefaultDbName);
         connectionString += $";Plugins=awsSecretsManager;SecretsManagerSecretId={secretId};SecretsManagerRegion={TestEnvironment.Env.Info.Region};";
         const string query = "select 1";
 
@@ -172,7 +115,7 @@ public class PluginConnectivityTests : IntegrationTestBase
         }
         finally
         {
-            auroraTestUtils.DeleteSecrets(secretId);
+            AuroraUtils.DeleteSecrets(secretId);
         }
     }
 
@@ -181,10 +124,9 @@ public class PluginConnectivityTests : IntegrationTestBase
     [Trait("Database", "mysql")]
     public void MySqlClientWrapperSecretsManagerWithSecretIdConnectionTest()
     {
-        var auroraTestUtils = AuroraTestUtils.GetUtility();
         var secretId = "MySQLValidSecretId";
-        auroraTestUtils.CreateSecrets(secretId);
-        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, null, null, this.defaultDbName);
+        AuroraUtils.CreateSecrets(secretId);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, null, null, DefaultDbName);
         connectionString += $";Plugins=awsSecretsManager;SecretsManagerSecretId={secretId};SecretsManagerRegion={TestEnvironment.Env.Info.Region};";
         const string query = "select 1";
 
@@ -203,7 +145,7 @@ public class PluginConnectivityTests : IntegrationTestBase
         }
         finally
         {
-            auroraTestUtils.DeleteSecrets(secretId);
+            AuroraUtils.DeleteSecrets(secretId);
         }
     }
 
@@ -212,10 +154,9 @@ public class PluginConnectivityTests : IntegrationTestBase
     [Trait("Database", "mysql")]
     public void MySqlClientWrapperSecretsManagerWithSecretARNConnectionTest()
     {
-        var auroraTestUtils = AuroraTestUtils.GetUtility();
         var secretId = "MySQLValidSecretARN";
-        var secretsARN = auroraTestUtils.CreateSecrets(secretId);
-        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, null, null, this.defaultDbName);
+        var secretsARN = AuroraUtils.CreateSecrets(secretId);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, null, null, DefaultDbName);
         connectionString += $";Plugins=awsSecretsManager;SecretsManagerSecretId={secretsARN};SecretsManagerRegion={TestEnvironment.Env.Info.Region};";
         const string query = "select 1";
 
@@ -234,7 +175,7 @@ public class PluginConnectivityTests : IntegrationTestBase
         }
         finally
         {
-            auroraTestUtils.DeleteSecrets(secretId);
+            AuroraUtils.DeleteSecrets(secretId);
         }
     }
 }

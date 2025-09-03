@@ -14,13 +14,13 @@
 
 namespace AwsWrapperDataProvider.Driver.Plugins.Efm;
 
-public interface IHostMonitor
+public interface IHostMonitor : IDisposable
 {
+    public int FailureCount { get; }
+
     public void StartMonitoring(HostMonitorConnectionContext context);
 
     public bool CanDispose();
-
-    public void Close();
 
     public void Run(CancellationToken token);
 }

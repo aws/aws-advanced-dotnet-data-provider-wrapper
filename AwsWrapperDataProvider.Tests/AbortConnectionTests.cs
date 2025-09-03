@@ -27,7 +27,7 @@ public class AbortConnectionTests : IntegrationTestBase
     [Trait("Database", "mysql")]
     public async Task MysqlWrapperCommandCancelTest()
     {
-        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, this.username, this.password, this.defaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName);
 
         using AwsWrapperConnection<MySqlConnection> connection = new(connectionString);
         connection.Open();
@@ -63,20 +63,20 @@ public class AbortConnectionTests : IntegrationTestBase
                 },
                 TestContext.Current.CancellationToken),
 
-                Task.Run(async () =>
+            Task.Run(async () =>
+            {
+                await Task.Delay(5000);
+                Console.WriteLine("Cancelling command...");
+                try
                 {
-                    await Task.Delay(5000);
-                    Console.WriteLine("Cancelling command...");
-                    try
-                    {
-                        command.Cancel();
-                        Console.WriteLine("Command cancelled");
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine("Error cancelling command: " + ex);
-                    }
-                },
+                    command.Cancel();
+                    Console.WriteLine("Command cancelled");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Error cancelling command: " + ex);
+                }
+            },
                 TestContext.Current.CancellationToken)
         ]);
     }
@@ -86,7 +86,7 @@ public class AbortConnectionTests : IntegrationTestBase
     [Trait("Database", "pg")]
     public async Task PgWrapperCommandCancelTest()
     {
-        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, this.username, this.password, this.defaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName);
         using AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
         connection.Open();
         AwsWrapperCommand<NpgsqlCommand> command = connection.CreateCommand<NpgsqlCommand>();
@@ -121,20 +121,20 @@ public class AbortConnectionTests : IntegrationTestBase
                 },
                 TestContext.Current.CancellationToken),
 
-                Task.Run(async () =>
+            Task.Run(async () =>
+            {
+                await Task.Delay(5000);
+                Console.WriteLine("Cancelling command...");
+                try
                 {
-                    await Task.Delay(5000);
-                    Console.WriteLine("Cancelling command...");
-                    try
-                    {
-                        command.Cancel();
-                        Console.WriteLine("Command cancelled");
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine("Error cancelling command: " + ex);
-                    }
-                },
+                    command.Cancel();
+                    Console.WriteLine("Command cancelled");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Error cancelling command: " + ex);
+                }
+            },
                 TestContext.Current.CancellationToken)
         ]);
     }
