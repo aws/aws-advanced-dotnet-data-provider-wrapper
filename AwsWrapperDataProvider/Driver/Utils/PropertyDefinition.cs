@@ -174,7 +174,6 @@ public static class PropertyDefinition
         "600000", // 10min
         "Interval in milliseconds for a monitor to be considered inactive and to be disposed.");
 
-
     public static readonly AwsWrapperProperty SslInsecure = new(
         "sslInsecure",
         "false",
