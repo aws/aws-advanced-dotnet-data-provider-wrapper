@@ -61,14 +61,14 @@ public class SecretsManagerAuthPluginTests
             this.mockSecretsManagerClient.Object);
 
         this.methodFunc = () => new Mock<DbConnection>().Object;
+
+        SecretsManagerAuthPlugin.ClearCache();
     }
 
     [Fact]
     [Trait("Category", "Unit")]
     public void OpenConnection_WithNoCachedSecret_FetchesSecret()
     {
-        SecretsManagerAuthPlugin.ClearCache();
-
         _ = this.secretsManagerAuthPlugin.OpenConnection(new HostSpec(Host, Port, HostRole.Writer, HostAvailability.Available), this.props, true, this.methodFunc);
 
         Assert.Equal("test-user", this.props[PropertyDefinition.User.Name]);
@@ -84,8 +84,6 @@ public class SecretsManagerAuthPluginTests
     [Trait("Category", "Unit")]
     public void OpenConnection_WithInvalidSecretJson_ThrowsException()
     {
-        SecretsManagerAuthPlugin.ClearCache();
-
         // Setup invalid secret response
         var invalidSecretResponse = new GetSecretValueResponse
         {
@@ -113,8 +111,6 @@ public class SecretsManagerAuthPluginTests
     [Trait("Category", "Unit")]
     public void OpenConnection_WithSecretsManagerException_ThrowsException()
     {
-        SecretsManagerAuthPlugin.ClearCache();
-
         var mockClient = new Mock<AmazonSecretsManagerClient>(Mock.Of<Amazon.Runtime.AWSCredentials>(), new AmazonSecretsManagerConfig { RegionEndpoint = Amazon.RegionEndpoint.USEast1 });
         mockClient.Setup(
             client => client.GetSecretValueAsync(It.IsAny<GetSecretValueRequest>(), It.IsAny<CancellationToken>()))
@@ -136,21 +132,11 @@ public class SecretsManagerAuthPluginTests
     [Trait("Category", "Unit")]
     public void OpenConnection_WithNonLoginException_ThrowsException()
     {
-        SecretsManagerAuthPlugin.ClearCache();
-
         ADONetDelegate<DbConnection> failingMethodFunc = () => throw new Exception("Non-login error");
 
         this.mockPluginService.Setup(s => s.IsLoginException(It.IsAny<Exception>())).Returns(false);
 
         Assert.Throws<Exception>(() =>
             this.secretsManagerAuthPlugin.OpenConnection(new HostSpec(Host, Port, HostRole.Writer, HostAvailability.Available), this.props, true, failingMethodFunc));
-    }
-
-    [Fact]
-    [Trait("Category", "Unit")]
-    public void ClearCache_ClearsSecretCache()
-    {
-        SecretsManagerAuthPlugin.ClearCache();
-        Assert.True(true);
     }
 }
