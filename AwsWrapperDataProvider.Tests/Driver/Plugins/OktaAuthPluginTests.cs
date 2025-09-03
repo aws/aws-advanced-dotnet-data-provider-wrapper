@@ -24,7 +24,7 @@ using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Caching.Memory;
 using Moq;
 
-namespace AwsWrapperDataProvider.Tests;
+namespace AwsWrapperDataProvider.Tests.Driver.Plugins;
 
 public class OktaAuthPluginTests
 {
@@ -43,7 +43,7 @@ public class OktaAuthPluginTests
     private static readonly int Port = 5432;
 
     private readonly Mock<IPluginService> mockPluginService;
-    private readonly Dictionary<string, string> props = new();
+    private readonly Dictionary<string, string> props = [];
     private readonly Mock<AWSCredentials> mockCredentials;
     private readonly Mock<CredentialsProviderFactory> mockCredentialsProviderFactory;
     private readonly Mock<IIamTokenUtility> mockIamTokenUtility;
@@ -54,9 +54,11 @@ public class OktaAuthPluginTests
 
     public OktaAuthPluginTests()
     {
+        OktaAuthPlugin.IamTokenCache.Clear();
+
         this.mockPluginService = new Mock<IPluginService>();
         this.props[PropertyDefinition.Plugins.Name] = "okta";
-        this.props[PropertyDefinition.IamDefaultPort.Name] = "5432";
+        this.props[PropertyDefinition.IamDefaultPort.Name] = Port.ToString();
         this.props[PropertyDefinition.IdpUsername.Name] = "idp-username";
         this.props[PropertyDefinition.IdpPassword.Name] = "idp-password";
 
@@ -83,8 +85,6 @@ public class OktaAuthPluginTests
     [Trait("Category", "Unit")]
     public void OpenConnection_WithNoCachedToken_GeneratesToken()
     {
-        OktaAuthPlugin.IamTokenCache.Clear();
-
         this.props[PropertyDefinition.DbUser.Name] = "db-user";
         this.iamTokenUtilityGeneratedToken = "generated-token";
 
@@ -97,7 +97,6 @@ public class OktaAuthPluginTests
     [Trait("Category", "Unit")]
     public void OpenConnection_WithCachedToken_UsesCachedToken()
     {
-        OktaAuthPlugin.IamTokenCache.Clear();
         OktaAuthPlugin.IamTokenCache.Set(CacheKey("db-user", Host, Port, Region), "cached-token", TimeSpan.FromDays(999)); // doesn't expire
 
         this.props[PropertyDefinition.DbUser.Name] = "db-user";
@@ -113,7 +112,6 @@ public class OktaAuthPluginTests
     [Trait("Category", "Unit")]
     public async Task OpenConnection_WithExpiredCachedToken_GeneratesToken()
     {
-        OktaAuthPlugin.IamTokenCache.Clear();
         OktaAuthPlugin.IamTokenCache.Set(CacheKey("db-user", Host, Port, Region), "expired-token", TimeSpan.FromSeconds(1)); // expires in 1 sec
 
         // wait 2 seconds for token to expire

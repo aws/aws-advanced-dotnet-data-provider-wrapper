@@ -17,14 +17,17 @@ using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins.Efm;
 using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.Iam;
 
 public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, string> props, IIamTokenUtility iamTokenUtility) : AbstractConnectionPlugin
 {
+    private static readonly ILogger<IamAuthPlugin> Logger = LoggerUtils.GetLogger<IamAuthPlugin>();
+
     public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string> { "DbConnection.Open", "DbConnection.OpenAsync", "DbConnection.ForceOpen" };
 
-    private static readonly MemoryCache IamTokenCache = new(new MemoryCacheOptions());
+    internal static readonly MemoryCache IamTokenCache = new(new MemoryCacheOptions());
 
     private readonly IPluginService pluginService = pluginService;
 
@@ -52,7 +55,8 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
 
     private DbConnection ConnectInternal(HostSpec? hostSpec, Dictionary<string, string> props, ADONetDelegate<DbConnection> methodFunc)
     {
-        string iamUser = PropertyDefinition.User.GetString(props) ?? throw new Exception(PropertyDefinition.User.Name + " is null or empty.");
+        string iamUser = PropertyDefinition.User.GetString(props) ?? PropertyDefinition.UserId.GetString(props) ??
+            throw new Exception("Could not determine user for IAM authentication.");
         string iamHost = PropertyDefinition.IamHost.GetString(props) ?? hostSpec?.Host ?? throw new Exception("Could not determine host for IAM authentication provider.");
 
         // the default value for IamDefaultPort is -1, which should default to the other port property (?)
@@ -75,11 +79,16 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
                 int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? DefaultIamExpirationSeconds;
                 IamTokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
                 isCachedToken = false;
+                Logger.LogTrace("Generated new authentication token");
             }
             catch (Exception ex)
             {
                 throw new Exception("Could not generate authentication token for IAM user " + iamUser + ".", ex);
             }
+        }
+        else
+        {
+            Logger.LogTrace("Use cached authentication token");
         }
 
         // token is non-null here, as the above try-catch block must have succeeded
@@ -102,6 +111,7 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
                 token = this.iamTokenUtility.GenerateAuthenticationToken(iamRegion, iamHost, iamPort, iamUser, null);
                 int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? DefaultIamExpirationSeconds;
                 IamTokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
+                Logger.LogTrace("Generated new authentication token");
             }
             catch (Exception ex2)
             {

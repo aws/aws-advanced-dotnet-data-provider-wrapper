@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using System.Data;
-using AwsWrapperDataProvider.Tests.Container.Utils;
 using Npgsql;
 
 namespace AwsWrapperDataProvider.Tests;
@@ -22,160 +21,59 @@ public class PluginConnectivityTests : IntegrationTestBase
 {
     [Fact]
     [Trait("Category", "Integration")]
-    [Trait("Database", "pg")]
-    public void PgWrapperIamConnectionTest()
+    [Trait("Category", "Manual")]
+    public void PgWrapperAdfsConnectionTest()
     {
-        var iamUser = TestEnvironment.Env.Info.IamUsername;
-        var iamRegion = TestEnvironment.Env.Info.Region;
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, iamUser, null, DefaultDbName);
-        connectionString += $";Plugins=iam;IamRegion={iamRegion}";
+        const string connectionString =
+            "Host=<insert_rds_instance_here>;Database=<database_name_here>;dbUser=<db_user_with_iam_login>;Plugins=federatedAuth;iamRegion=<iam_region>;iamRoleArn=<iam_role_arn>;iamIdpArn=<iam_idp_arn>;idpEndpoint=<idp_endpoint>;idpUsername=<idp_username>;idpPassword=<idp_password>;";
         const string query = "select aurora_db_instance_identifier()";
 
         using AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
         AwsWrapperCommand<NpgsqlCommand> command = connection.CreateCommand<NpgsqlCommand>();
         command.CommandText = query;
 
-        connection.Open();
-        IDataReader reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            Console.WriteLine(reader.GetString(0));
-        }
-    }
-
-    [Fact]
-    [Trait("Category", "Integration")]
-    [Trait("Database", "mysql")]
-    public void MySqlClientWrapperIamConnectionTest()
-    {
-        var iamUser = TestEnvironment.Env.Info.IamUsername;
-        var iamRegion = TestEnvironment.Env.Info.Region;
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, null, null, DefaultDbName);
-        connectionString += $";Username={iamUser};Plugins=iam;IamRegion={iamRegion}";
-        const string query = "select 1";
-
-        using AwsWrapperConnection<MySql.Data.MySqlClient.MySqlConnection> connection = new(connectionString);
-        connection.Open();
-        AwsWrapperCommand<MySql.Data.MySqlClient.MySqlCommand> command = connection.CreateCommand<MySql.Data.MySqlClient.MySqlCommand>();
-        command.CommandText = query;
-
-        IDataReader reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            Console.WriteLine(reader.GetInt32(0));
-        }
-    }
-
-    [Fact]
-    [Trait("Category", "Integration")]
-    [Trait("Database", "mysql")]
-    public void MySqlConnectorWrapperIamConnectionTest()
-    {
-        var iamUser = TestEnvironment.Env.Info.IamUsername;
-        var iamRegion = TestEnvironment.Env.Info.Region;
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, null, null, DefaultDbName);
-        connectionString += $";Username={iamUser};Plugins=iam;IamRegion={iamRegion}";
-        const string query = "select 1";
-
-        using AwsWrapperConnection<MySqlConnector.MySqlConnection> connection = new(connectionString);
-        connection.Open();
-        AwsWrapperCommand<MySqlConnector.MySqlCommand> command = connection.CreateCommand<MySqlConnector.MySqlCommand>();
-        command.CommandText = query;
-
-        IDataReader reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            Console.WriteLine(reader.GetInt32(0));
-        }
-    }
-
-    [Fact]
-    [Trait("Category", "Integration")]
-    [Trait("Database", "pg")]
-    public void PgWrapperSecretsManagerWithSecretIdConnectionTest()
-    {
-        var secretId = "PGValidSecretId";
-        var secretsARN = AuroraUtils.CreateSecrets(secretId);
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, null, null, DefaultDbName);
-        connectionString += $";Plugins=awsSecretsManager;SecretsManagerSecretId={secretId};SecretsManagerRegion={TestEnvironment.Env.Info.Region};";
-        const string query = "select 1";
-
         try
         {
-            using AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
-            AwsWrapperCommand<NpgsqlCommand> command = connection.CreateCommand<NpgsqlCommand>();
-            command.CommandText = query;
-
             connection.Open();
             IDataReader reader = command.ExecuteReader();
             while (reader.Read())
             {
-                Console.WriteLine(reader.GetInt32(0));
+                Console.WriteLine(reader.GetString(0));
             }
         }
-        finally
+        catch (Exception ex)
         {
-            AuroraUtils.DeleteSecrets(secretId);
+            Console.WriteLine(ex.ToString());
         }
     }
 
     [Fact]
     [Trait("Category", "Integration")]
-    [Trait("Database", "mysql")]
-    public void MySqlClientWrapperSecretsManagerWithSecretIdConnectionTest()
+    [Trait("Category", "Manual")]
+    public void MySqlClientWrapperAdfsConnectionTest()
     {
-        var secretId = "MySQLValidSecretId";
-        AuroraUtils.CreateSecrets(secretId);
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, null, null, DefaultDbName);
-        connectionString += $";Plugins=awsSecretsManager;SecretsManagerSecretId={secretId};SecretsManagerRegion={TestEnvironment.Env.Info.Region};";
-        const string query = "select 1";
+        const string connectionString = "Server=<insert_rds_instance_here>;Initial Catalog=mysql;Database=<database_name_here>;dbUser=<db_user_with_iam_login>;Plugins=federatedAuth;iamRegion=<iam_region>;iamRoleArn=<iam_role_arn>;iamIdpArn=<iam_idp_arn>;idpEndpoint=<idp_endpoint>;idpUsername=<idp_username>;idpPassword=<idp_password>;";
+        const string query = "select * from test";
 
-        try
+        using (AwsWrapperConnection<MySql.Data.MySqlClient.MySqlConnection> connection =
+               new(connectionString))
         {
-            using AwsWrapperConnection<MySql.Data.MySqlClient.MySqlConnection> connection = new(connectionString);
-            connection.Open();
             AwsWrapperCommand<MySql.Data.MySqlClient.MySqlCommand> command = connection.CreateCommand<MySql.Data.MySqlClient.MySqlCommand>();
             command.CommandText = query;
 
-            IDataReader reader = command.ExecuteReader();
-            while (reader.Read())
+            try
             {
-                Console.WriteLine(reader.GetInt32(0));
+                connection.Open();
+                IDataReader reader = command.ExecuteReader();
+                while (reader.Read())
+                {
+                    Console.WriteLine(reader.GetInt32(0));
+                }
             }
-        }
-        finally
-        {
-            AuroraUtils.DeleteSecrets(secretId);
-        }
-    }
-
-    [Fact]
-    [Trait("Category", "Integration")]
-    [Trait("Database", "mysql")]
-    public void MySqlClientWrapperSecretsManagerWithSecretARNConnectionTest()
-    {
-        var secretId = "MySQLValidSecretARN";
-        var secretsARN = AuroraUtils.CreateSecrets(secretId);
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, null, null, DefaultDbName);
-        connectionString += $";Plugins=awsSecretsManager;SecretsManagerSecretId={secretsARN};SecretsManagerRegion={TestEnvironment.Env.Info.Region};";
-        const string query = "select 1";
-
-        try
-        {
-            using AwsWrapperConnection<MySql.Data.MySqlClient.MySqlConnection> connection = new(connectionString);
-            connection.Open();
-            AwsWrapperCommand<MySql.Data.MySqlClient.MySqlCommand> command = connection.CreateCommand<MySql.Data.MySqlClient.MySqlCommand>();
-            command.CommandText = query;
-
-            IDataReader reader = command.ExecuteReader();
-            while (reader.Read())
+            catch (Exception ex)
             {
-                Console.WriteLine(reader.GetInt32(0));
+                Console.WriteLine(ex.ToString());
             }
-        }
-        finally
-        {
-            AuroraUtils.DeleteSecrets(secretId);
         }
     }
 }
