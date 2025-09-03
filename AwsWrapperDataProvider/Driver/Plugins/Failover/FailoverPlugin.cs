@@ -15,6 +15,7 @@
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Plugins.AuroraStaleDns;
@@ -52,8 +53,8 @@ public class FailoverPlugin : AbstractConnectionPlugin
     private RdsUrlType? rdsUrlType;
 
     private bool isClosed;
+    private bool shouldThrowTransactionError = false;
     private Exception? lastExceptionDealtWith;
-    private bool isInTransaction;
 
     public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string>()
     {
@@ -76,8 +77,8 @@ public class FailoverPlugin : AbstractConnectionPlugin
         "DbTransaction.RollbackAsync",
 
         // Connection management methods
-        "DbConnection.Close",
-        "DbConnection.Dispose",
+        MethodClose,
+        MethodDispose,
         "DbConnection.Abort",
 
         // Special methods
@@ -121,7 +122,8 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
         try
         {
-            return methodFunc();
+            var result = methodFunc();
+            return result;
         }
         catch (Exception exception)
         {
@@ -160,13 +162,12 @@ public class FailoverPlugin : AbstractConnectionPlugin
         {
             try
             {
-                var connection = methodFunc();
-                if (isInitialConnection)
-                {
-                    this.pluginService.RefreshHostList(connection);
-                }
-
-                return connection;
+                return this.auroraStaleDnsHelper.OpenVerifiedConnection(
+                    isInitialConnection,
+                    this.hostListProviderService!,
+                    hostSpec!,
+                    properties,
+                    methodFunc);
             }
             catch (Exception e)
             {
@@ -214,8 +215,8 @@ public class FailoverPlugin : AbstractConnectionPlugin
         if (!this.closedExplicitly)
         {
             this.isClosed = false;
-            this.PickNewConnection();
             Logger.LogWarning("Connection was closed but not explicitly. Attempting to pick a new connection.");
+            this.PickNewConnection();
             throw new FailoverSuccessException("The active connection has changed. Please re-configure session state if required.");
         }
 
@@ -233,7 +234,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
         if (this.ShouldExceptionTriggerConnectionSwitch(originalException))
         {
-            Logger.LogWarning("Exception triggers failover: {ExceptionMessage}", originalException.Message);
+            Logger.LogDebug("Exception triggers failover: {ExceptionMessage}", originalException.Message);
 
             if (this.lastExceptionDealtWith == originalException)
             {
@@ -294,17 +295,20 @@ public class FailoverPlugin : AbstractConnectionPlugin
             var remainingReaders = new HashSet<HostSpec>(readerCandidates);
             while (remainingReaders.Count > 0 && DateTime.UtcNow < failoverEndTime)
             {
-                HostSpec readerCandidate;
+                HostSpec? readerCandidate = null;
                 try
                 {
-                    readerCandidate = this.pluginService.GetHostSpecByStrategy(HostRole.Reader, this.failoverReaderHostSelectorStrategy);
-                    if (!remainingReaders.Contains(readerCandidate))
-                    {
-                        break;
-                    }
+                    readerCandidate = this.pluginService.GetHostSpecByStrategy([.. remainingReaders], HostRole.Reader, this.failoverReaderHostSelectorStrategy);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    Logger.LogInformation(ex, LoggerUtils.LogTopology([.. remainingReaders], $"An error occurred while attempting to select a reader host candidate {readerCandidate} from Candidates"));
+                    break;
+                }
+
+                if (readerCandidate is null)
+                {
+                    Logger.LogInformation(LoggerUtils.LogTopology([.. remainingReaders], "Unable to find reader in updated host list"));
                     break;
                 }
 
@@ -321,15 +325,20 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
                     // The role is Writer or Unknown, and we are in StrictReader mode
                     remainingReaders.Remove(readerCandidate);
-                    candidateConn.Close();
+                    candidateConn.Dispose();
 
                     if (role == HostRole.Writer)
                     {
                         readerCandidates.Remove(readerCandidate);
                     }
+                    else
+                    {
+                        Logger.LogInformation("Unable to determine host role for {readerCandidate}. Since failover mode is set to STRICT_READER and the host may be a writer, it will not be selected for reader failover.", readerCandidate.GetHostAndPort());
+                    }
                 }
-                catch (Exception)
+                catch (DbException ex)
                 {
+                    Logger.LogInformation(ex, "Exception thrown when getting a reader candidate");
                     remainingReaders.Remove(readerCandidate);
                 }
             }
@@ -344,6 +353,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
                 try
                 {
+                    Logger.LogInformation("Trying the original writer which may have been demoted to a reader");
                     DbConnection candidateConn = this.pluginService.OpenConnection(originalWriter, this.props, this);
                     var role = this.pluginService.GetHostRole(candidateConn);
 
@@ -353,16 +363,21 @@ public class FailoverPlugin : AbstractConnectionPlugin
                         return new ReaderFailoverResult(candidateConn, updatedHostSpec);
                     }
 
-                    candidateConn.Close();
+                    candidateConn.Dispose();
 
                     if (role == HostRole.Writer)
                     {
                         isOriginalWriterStillWriter = true;
                     }
+                    else
+                    {
+                        Logger.LogInformation("Unable to determine host role for {originalWriter}. Since failover mode is set to STRICT_READER and the host may be a writer, it will not be selected for reader failover.", originalWriter.GetHostAndPort());
+                    }
                 }
-                catch (Exception)
+                catch (DbException ex)
                 {
                     // Continue to next iteration
+                    Logger.LogInformation(ex, $"[Reader Failover] Failed to connect to host: {originalWriter.GetHostAndPort()}");
                 }
             }
         }
@@ -405,7 +420,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
         {
             try
             {
-                writerCandidateConn.Close();
+                writerCandidateConn.Dispose();
             }
             catch (Exception)
             {
@@ -421,9 +436,9 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
     private void ThrowFailoverSuccessException()
     {
-        if (this.isInTransaction)
+        if (this.shouldThrowTransactionError)
         {
-            this.isInTransaction = false;
+            this.shouldThrowTransactionError = false;
             throw new TransactionStateUnknownException("Transaction resolution unknown. Please re-configure session state if required and try restarting transaction.");
         }
 
@@ -432,39 +447,31 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
     private void InvalidateCurrentConnection()
     {
-        var conn = this.pluginService.CurrentConnection;
-        if (conn == null)
-        {
-            return;
-        }
-
-        // TODO : handle when transaction support is added.
-
-        // bool isInTransaction = false;
-        //
-        // if (this.pluginService.IsInTransaction())
-        // {
-        //     isInTransaction = true;
-        //     try
-        //     {
-        //         conn.Rollback(); // if conn.Rollback() exists — see note below
-        //     }
-        //     catch
-        //     {
-        //         // Swallow exception
-        //     }
-        // }
-
+        Logger.LogTrace("Invalidating current connection...");
         try
         {
-            if (conn.State != ConnectionState.Closed)
+            if (this.pluginService.CurrentTransaction != null)
             {
-                conn.Close();
+                this.shouldThrowTransactionError = true;
+                this.pluginService.CurrentTransaction = null;
             }
         }
         catch
         {
+            // Swallow exception, current transaction should be useless anyway.
+        }
+
+        try
+        {
+            this.pluginService.CurrentConnection?.Close();
+            Logger.LogTrace("Current connection {Type}@{Id} is closed.",
+                this.pluginService.CurrentConnection?.GetType().FullName,
+                RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection));
+        }
+        catch (Exception ex)
+        {
             // Swallow exception, current connection should be useless anyway.
+            Logger.LogTrace("Error occoured when disposing current connection: {message}", ex.Message);
         }
     }
 
@@ -484,11 +491,13 @@ public class FailoverPlugin : AbstractConnectionPlugin
     {
         if (!this.IsFailoverEnabled())
         {
+            Logger.LogTrace("Cluster-aware failover is disabled.");
             return false;
         }
 
         if (this.skipFailoverOnInterruptedThread && Thread.CurrentThread.ThreadState == ThreadState.AbortRequested)
         {
+            Logger.LogTrace("Do not start failover since the current thread is interrupted.");
             return false;
         }
 
@@ -502,19 +511,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
     private bool IsFailoverEnabled()
     {
-        // Check if this is an Aurora cluster URL type
-        bool isAuroraCluster = this.rdsUrlType == RdsUrlType.RdsWriterCluster ||
-                               this.rdsUrlType == RdsUrlType.RdsReaderCluster ||
-                               this.rdsUrlType == RdsUrlType.RdsCustomCluster;
-
-        if (!isAuroraCluster)
-        {
-            return false;
-        }
-
-        // For Aurora clusters, allow failover even if host list is not yet populated
-        // This can happen during initial connection or if host discovery is still in progress
-        return true;
+        return this.rdsUrlType != RdsUrlType.RdsProxy && this.pluginService.AllHosts.Count > 0;
     }
 
     private FailoverMode GetFailoverMode()

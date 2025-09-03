@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Runtime.CompilerServices;
+using AwsWrapperDataProvider.Driver.HostInfo;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 
 namespace AwsWrapperDataProvider.Driver.Utils;
 
@@ -22,11 +25,56 @@ public static class LoggerUtils
 
     static LoggerUtils()
     {
-        LoggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder => builder
-                .SetMinimumLevel(LogLevel.Trace)
-                .AddDebug()
-                .AddConsole());
+        LoggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
+        {
+            builder
+            .SetMinimumLevel(LogLevel.Trace)
+            .AddDebug()
+            .AddConsole(options => options.FormatterName = "simple");
+
+            builder.AddSimpleConsole(options =>
+            {
+                options.IncludeScopes = true;
+                options.TimestampFormat = "yyyy-MM-dd HH:mm:ss.fff ";
+                options.UseUtcTimestamp = true;
+                options.ColorBehavior = LoggerColorBehavior.Enabled;
+            });
+        });
     }
 
     public static ILogger<T> GetLogger<T>() => LoggerFactory.CreateLogger<T>();
+
+    public static string LogTopology(IList<HostSpec>? hosts, string? messagePrefix)
+    {
+        if (hosts == null)
+        {
+            return $"{messagePrefix} Topology is null";
+        }
+
+        var topology = string.Join($"{Environment.NewLine}    ", hosts.Select(h => h.ToString()));
+        return $"{messagePrefix} Topology@{RuntimeHelpers.GetHashCode(hosts)}{Environment.NewLine}    {topology}";
+    }
+
+    public static IDisposable BeginThreadScope(ILogger logger)
+    {
+        int threadId = Environment.CurrentManagedThreadId;
+        int taskId = Task.CurrentId ?? -1;
+        return logger.BeginScope("ThreadId:{ThreadId} TaskId:{TaskId}", threadId, taskId)!;
+    }
+
+    public static void LogWithThreadId(ILogger logger, LogLevel level, string message, params object?[] args)
+    {
+        using (BeginThreadScope(logger))
+        {
+            logger.Log(level, message, args);
+        }
+    }
+
+    public static void LogWithThreadId(ILogger logger, LogLevel level, Exception ex, string message, params object?[] args)
+    {
+        using (BeginThreadScope(logger))
+        {
+            logger.Log(level, ex, message, args);
+        }
+    }
 }

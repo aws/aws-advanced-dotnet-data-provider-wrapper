@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Diagnostics;
 using System.Text.Json;
 using Toxiproxy.Net;
 
@@ -36,7 +37,7 @@ public class TestEnvironment
         var testInfo = Env.Info!;
         var testRequest = testInfo.Request!;
 
-        AuroraTestUtils auroraUtil = AuroraTestUtils.GetUtility(testInfo);
+        var auroraUtil = AuroraTestUtils.GetUtility(testInfo);
         await auroraUtil.WaitUntilClusterHasRightStateAsync(testInfo.RdsDbName!);
 
         await auroraUtil.MakeSureInstancesUpAsync(TimeSpan.FromMinutes(3));
@@ -44,12 +45,13 @@ public class TestEnvironment
         if (makeSureFirstInstanceWriter)
         {
             var instanceIDs = new List<string>();
-            var startTime = DateTime.UtcNow;
+            var stopwatch = Stopwatch.StartNew();
+            var timeout = TimeSpan.FromMinutes(10);
 
             while ((instanceIDs.Count != testRequest.NumOfInstances ||
                     instanceIDs.Count == 0 ||
                     !await auroraUtil.IsDBInstanceWriterAsync(instanceIDs[0])) &&
-                   DateTime.UtcNow - startTime < TimeSpan.FromMinutes(10))
+                    stopwatch.Elapsed < timeout)
             {
                 await Task.Delay(5000);
 

@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data.Common;
 using System.Linq.Expressions;
 using System.Reflection;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Plugins;
+using AwsWrapperDataProvider.Tests.Container.Utils;
 using Moq;
 
 namespace AwsWrapperDataProvider.Tests.Driver;
@@ -104,5 +104,26 @@ public static class TestUtils
                 It.IsAny<ADONetDelegate<TReturn>>(),
                 It.IsAny<object[]>()),
             Times.Once);
+    }
+
+    public static string? GetTraitValue(MethodBase method, string traitName)
+    {
+        var traitAttributes = method.GetCustomAttributes<TraitAttribute>(inherit: true);
+
+        return traitAttributes
+            .Where(attr => attr.Name == traitName)
+            .Select(attr => attr.Value)
+            .FirstOrDefault();
+    }
+
+    public static DatabaseEngine GetEngineFromTrait(MethodBase method, string traitName)
+    {
+        var engineValue = GetTraitValue(method, traitName);
+        return engineValue switch
+        {
+            "mysql" => DatabaseEngine.MYSQL,
+            "pg" => DatabaseEngine.PG,
+            _ => throw new NotSupportedException($"Unsupported engine type: {engineValue}"),
+        };
     }
 }

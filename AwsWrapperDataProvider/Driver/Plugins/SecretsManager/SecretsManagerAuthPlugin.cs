@@ -47,6 +47,11 @@ public class SecretsManagerAuthPlugin(IPluginService pluginService, Dictionary<s
         return secretId + ":" + region;
     }
 
+    public static void ClearCache()
+    {
+        SecretValueCache.Clear();
+    }
+
     public override DbConnection OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
     {
         return this.ConnectInternal(hostSpec, props, methodFunc);

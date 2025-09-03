@@ -22,19 +22,22 @@ namespace AwsWrapperDataProvider;
 public class AwsWrapperTransaction : DbTransaction
 {
     protected ConnectionPluginManager pluginManager;
+    protected IPluginService pluginService;
     protected AwsWrapperConnection wrapperConnection;
-    protected DbTransaction targetTransaction;
 
-    internal AwsWrapperTransaction(AwsWrapperConnection wrapperConnection, DbTransaction targetTransaction, ConnectionPluginManager pluginManager)
+    protected DbTransaction TargetTransaction => this.pluginService.CurrentTransaction
+                                                 ?? throw new ArgumentNullException(nameof(this.pluginService.CurrentTransaction));
+
+    internal AwsWrapperTransaction(AwsWrapperConnection wrapperConnection, IPluginService pluginService, ConnectionPluginManager pluginManager)
     {
         this.pluginManager = pluginManager;
+        this.pluginService = pluginService;
         this.wrapperConnection = wrapperConnection;
-        this.targetTransaction = targetTransaction;
     }
 
-    public override IsolationLevel IsolationLevel => this.targetTransaction.IsolationLevel;
+    public override IsolationLevel IsolationLevel => this.TargetTransaction.IsolationLevel;
 
-    internal DbTransaction TargetDbTransaction => this.targetTransaction;
+    internal DbTransaction TargetDbTransaction => this.TargetTransaction;
 
     protected override DbConnection? DbConnection => this.wrapperConnection;
 
@@ -42,44 +45,44 @@ public class AwsWrapperTransaction : DbTransaction
     {
         WrapperUtils.RunWithPlugins(
             this.pluginManager!,
-            this.targetTransaction!,
+            this.TargetTransaction!,
             "DbTransaction.Commit",
-            () => this.targetTransaction!.Commit());
+            () => this.TargetTransaction!.Commit());
     }
 
     public override void Rollback()
     {
         WrapperUtils.RunWithPlugins(
             this.pluginManager!,
-            this.targetTransaction!,
+            this.TargetTransaction!,
             "DbTransaction.Rollback",
-            () => this.targetTransaction!.Rollback());
+            () => this.TargetTransaction!.Rollback());
     }
 
     public override void Save(string savepointName)
     {
         WrapperUtils.RunWithPlugins(
             this.pluginManager!,
-            this.targetTransaction!,
+            this.TargetTransaction!,
             "DbTransaction.Save",
-            () => this.targetTransaction!.Save(savepointName));
+            () => this.TargetTransaction!.Save(savepointName));
     }
 
     public override void Rollback(string savepointName)
     {
         WrapperUtils.RunWithPlugins(
             this.pluginManager!,
-            this.targetTransaction!,
+            this.TargetTransaction!,
             "DbTransaction.Rollback",
-            () => this.targetTransaction!.Rollback(savepointName));
+            () => this.TargetTransaction!.Rollback(savepointName));
     }
 
     public override void Release(string savepointName)
     {
         WrapperUtils.RunWithPlugins(
             this.pluginManager!,
-            this.targetTransaction!,
+            this.TargetTransaction!,
             "DbTransaction.Release",
-            () => this.targetTransaction!.Release(savepointName));
+            () => this.TargetTransaction!.Release(savepointName));
     }
 }

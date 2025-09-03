@@ -19,141 +19,140 @@ using AwsWrapperDataProvider.Driver.Utils;
 using Moq;
 using Npgsql;
 
-namespace AwsWrapperDataProvider.Tests.Driver.Plugins
+namespace AwsWrapperDataProvider.Tests.Driver.Plugins;
+
+public class EfmHostMonitorTests
 {
-    public class EfmHostMonitorTests
+    private static readonly string TestHost = "<insert_host_here>";
+    private static readonly string TestUser = "<insert_username_here>";
+    private static readonly string TestPassword = "<insert_password_here>";
+    private static readonly string TestDatabase = "<insert_database_here>";
+
+    private readonly string connectionString;
+    private readonly Mock<IPluginService> mockPluginService;
+    private readonly IHostMonitor monitor;
+
+    public EfmHostMonitorTests()
     {
-        private static readonly string TestHost = "<insert_host_here>";
-        private static readonly string TestUser = "<insert_username_here>";
-        private static readonly string TestPassword = "<insert_password_here>";
-        private static readonly string TestDatabase = "<insert_database_here>";
+        Dictionary<string, string> props = new();
+        props[PropertyDefinition.Host.Name] = $"{TestHost}";
+        props[PropertyDefinition.User.Name] = $"{TestUser}";
+        props[PropertyDefinition.Password.Name] = $"{TestPassword}";
+        props["Database"] = $"{TestDatabase}";
 
-        private readonly string connectionString;
-        private readonly Mock<IPluginService> mockPluginService;
-        private readonly IHostMonitor monitor;
+        HostSpec hostSpec = new(TestHost, 5432, HostRole.Writer, HostAvailability.Available);
 
-        public EfmHostMonitorTests()
-        {
-            Dictionary<string, string> props = new();
-            props[PropertyDefinition.Host.Name] = $"{TestHost}";
-            props[PropertyDefinition.User.Name] = $"{TestUser}";
-            props[PropertyDefinition.Password.Name] = $"{TestPassword}";
-            props["Database"] = $"{TestDatabase}";
+        this.connectionString = $"Host={TestHost};Username={TestUser};Password={TestPassword};Database={TestDatabase};";
 
-            HostSpec hostSpec = new(TestHost, 5432, HostRole.Writer, HostAvailability.Available);
+        this.mockPluginService = new Mock<IPluginService>();
 
-            this.connectionString = $"Host={TestHost};Username={TestUser};Password={TestPassword};Database={TestDatabase};";
+        this.monitor = new HostMonitor(this.mockPluginService.Object, hostSpec, props, 500, 500, 10);
+    }
 
-            this.mockPluginService = new Mock<IPluginService>();
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task StartMonitoring_MonitorsContext_WhileActive()
+    {
+        AwsWrapperConnection<NpgsqlConnection> connection = new(this.connectionString);
 
-            this.monitor = new HostMonitor(this.mockPluginService.Object, hostSpec, props, 500, 500, 10);
-        }
+        // open connection to host
+        connection.Open();
 
-        [Fact]
-        [Trait("Category", "Integration")]
-        public async Task StartMonitoring_MonitorsContext_WhileActive()
-        {
-            AwsWrapperConnection<NpgsqlConnection> connection = new(this.connectionString);
+        Assert.True(this.monitor.CanDispose());
 
-            // open connection to host
-            connection.Open();
+        // enqueue connection context in monitor
+        HostMonitorConnectionContext context = new(connection);
+        this.monitor.StartMonitoring(context);
 
-            Assert.True(this.monitor.CanDispose());
+        // monitor should not be disposable, as it is (or will) monitor the new context
+        Assert.False(this.monitor.CanDispose());
 
-            // enqueue connection context in monitor
-            HostMonitorConnectionContext context = new(connection);
-            this.monitor.StartMonitoring(context);
+        // wait for new context to enter active contexts; let the monitor go a few cycles
+        await Task.Delay(2000, TestContext.Current.CancellationToken);
 
-            // monitor should not be disposable, as it is (or will) monitor the new context
-            Assert.False(this.monitor.CanDispose());
+        Assert.True(context.IsActive());
+        Assert.False(context.NodeUnhealthy);
+        Assert.False(this.monitor.CanDispose());
 
-            // wait for new context to enter active contexts; let the monitor go a few cycles
-            await Task.Delay(2000, TestContext.Current.CancellationToken);
+        // stop monitoring this context
+        context.SetInactive();
+        connection.Close();
 
-            Assert.True(context.IsActive());
-            Assert.False(context.NodeUnhealthy);
-            Assert.False(this.monitor.CanDispose());
+        await Task.Delay(200, TestContext.Current.CancellationToken);
 
-            // stop monitoring this context
-            context.SetInactive();
-            connection.Close();
+        Assert.True(this.monitor.CanDispose());
+    }
 
-            await Task.Delay(200, TestContext.Current.CancellationToken);
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task StartMonitoring_MonitorsContext_WhileNotGarbageCollected()
+    {
+        AwsWrapperConnection<NpgsqlConnection>? connection = new(this.connectionString);
 
-            Assert.True(this.monitor.CanDispose());
-        }
+        // open connection to host
+        connection.Open();
 
-        [Fact]
-        [Trait("Category", "Integration")]
-        public async Task StartMonitoring_MonitorsContext_WhileNotGarbageCollected()
-        {
-            AwsWrapperConnection<NpgsqlConnection>? connection = new(this.connectionString);
+        Assert.True(this.monitor.CanDispose());
 
-            // open connection to host
-            connection.Open();
+        // enqueue connection context in monitor
+        HostMonitorConnectionContext? context = new(connection);
+        this.monitor.StartMonitoring(context);
 
-            Assert.True(this.monitor.CanDispose());
+        // monitor should not be disposable, as it is (or will) monitor the new context
+        Assert.False(this.monitor.CanDispose());
 
-            // enqueue connection context in monitor
-            HostMonitorConnectionContext? context = new(connection);
-            this.monitor.StartMonitoring(context);
+        // wait for new context to enter active contexts; let the monitor go a few cycles
+        await Task.Delay(2000, TestContext.Current.CancellationToken);
 
-            // monitor should not be disposable, as it is (or will) monitor the new context
-            Assert.False(this.monitor.CanDispose());
+        Assert.True(context.IsActive());
+        Assert.False(context.NodeUnhealthy);
+        Assert.False(this.monitor.CanDispose());
 
-            // wait for new context to enter active contexts; let the monitor go a few cycles
-            await Task.Delay(2000, TestContext.Current.CancellationToken);
+        connection.Close();
+        connection = null;
+        context = null;
 
-            Assert.True(context.IsActive());
-            Assert.False(context.NodeUnhealthy);
-            Assert.False(this.monitor.CanDispose());
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
 
-            connection.Close();
-            connection = null;
-            context = null;
+        await Task.Delay(2000, TestContext.Current.CancellationToken);
 
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-            GC.Collect();
+        // the internal weak reference to this context should have been set to null, and the context be disposed
+        Assert.True(this.monitor.CanDispose());
+    }
 
-            await Task.Delay(2000, TestContext.Current.CancellationToken);
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Close_DoesNotDisposeContexts()
+    {
+        AwsWrapperConnection<NpgsqlConnection> connection = new(this.connectionString);
 
-            // the internal weak reference to this context should have been set to null, and the context be disposed
-            Assert.True(this.monitor.CanDispose());
-        }
+        // open connection to host
+        connection.Open();
 
-        [Fact]
-        [Trait("Category", "Integration")]
-        public async Task Close_DoesNotDisposeContexts()
-        {
-            AwsWrapperConnection<NpgsqlConnection> connection = new(this.connectionString);
+        Assert.True(this.monitor.CanDispose());
 
-            // open connection to host
-            connection.Open();
+        // enqueue connection context in monitor
+        HostMonitorConnectionContext context = new(connection);
+        this.monitor.StartMonitoring(context);
 
-            Assert.True(this.monitor.CanDispose());
+        // monitor should not be disposable, as it is (or will) monitor the new context
+        Assert.False(this.monitor.CanDispose());
 
-            // enqueue connection context in monitor
-            HostMonitorConnectionContext context = new(connection);
-            this.monitor.StartMonitoring(context);
+        // wait for new context to enter active contexts; let the monitor go a few cycles
+        await Task.Delay(2000, TestContext.Current.CancellationToken);
 
-            // monitor should not be disposable, as it is (or will) monitor the new context
-            Assert.False(this.monitor.CanDispose());
+        Assert.True(context.IsActive());
+        Assert.False(context.NodeUnhealthy);
+        Assert.False(this.monitor.CanDispose());
 
-            // wait for new context to enter active contexts; let the monitor go a few cycles
-            await Task.Delay(2000, TestContext.Current.CancellationToken);
+        this.monitor.Dispose();
 
-            Assert.True(context.IsActive());
-            Assert.False(context.NodeUnhealthy);
-            Assert.False(this.monitor.CanDispose());
+        Assert.True(context.IsActive());
+        Assert.False(context.NodeUnhealthy);
+        Assert.True(this.monitor.CanDispose());
 
-            this.monitor.Close();
-
-            Assert.True(context.IsActive());
-            Assert.False(context.NodeUnhealthy);
-            Assert.True(this.monitor.CanDispose());
-
-            connection.Close();
-        }
+        connection.Close();
     }
 }

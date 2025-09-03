@@ -28,6 +28,9 @@ public static class PropertyDefinition
     public static readonly AwsWrapperProperty User =
         new("Username", null, "The user name that the driver will use to connect to database.");
 
+    public static readonly AwsWrapperProperty UserId =
+        new("User ID", null, "The user name and host name that the driver will use to connect to database.");
+
     public static readonly AwsWrapperProperty Password =
         new("Password", null, "The password that the driver will use to connect to database.");
 
@@ -131,7 +134,7 @@ public static class PropertyDefinition
         "DbUser", null, "The database user used to access the database");
 
     public static readonly AwsWrapperProperty HttpClientConnectTimeout = new AwsWrapperProperty(
-        "HttpClientConnectTimeout", "60000", "The connect timeout value in milliseconds for the HttpClient used by the FederatedAuthPlugin");
+        "HttpClientConnectTimeout", "10000", "The connect timeout value in milliseconds for the HttpClient used by the federated auth and OKTA plugins.");
 
     // Failover Plugin Properties
     public static readonly AwsWrapperProperty FailoverTimeoutMs = new(
@@ -148,6 +151,8 @@ public static class PropertyDefinition
 
     public static readonly AwsWrapperProperty SkipFailoverOnInterruptedThread = new(
         "SkipFailoverOnInterruptedThread", "false", "Enable to skip failover if the current thread is interrupted.");
+    public static readonly AwsWrapperProperty ClusterTopologyHighRefreshRateMs = new(
+        "ClusterTopologyHighRefreshRateMs", "100", "Cluster topology high refresh rate in milliseconds.");
 
     // Connection Timeout Properties
     public static readonly AwsWrapperProperty SocketTimeout = new(
@@ -176,6 +181,11 @@ public static class PropertyDefinition
         "MultiAzJdbcDriverVersion",
         "2.5.5",
         "Version of JDBC driver in Multi-AZ RDS environment.");
+  
+    public static readonly AwsWrapperProperty SslInsecure = new(
+        "sslInsecure",
+        "false",
+        "When set to true, disables server certificate verification. This poses significant security risks and should never be used in production environments.");
 
     public static readonly AwsWrapperProperty FailureDetectionEnabled = new(
         "FailureDetectionEnabled",
@@ -196,6 +206,11 @@ public static class PropertyDefinition
         "FailureDetectionCount",
         "3",
         "Number of failed connection checks before considering database node unhealthy.");
+
+    public static readonly AwsWrapperProperty AppId = new(
+        "AppId",
+        null,
+        "The ID of the AWS application configured on Okta");
 
     /// <summary>
     /// A set of AwsWrapperProperties that is used by the wrapper and should not be passed to the target driver.
@@ -232,6 +247,7 @@ public static class PropertyDefinition
         OpenConnectionRetryIntervalMs,
         VerifyOpenedConnectionType,
         MultiAzRdsJdbcDriverVersion,
+        AppId,
 
         // Failover Plugin Properties
         FailoverTimeoutMs,
@@ -239,6 +255,7 @@ public static class PropertyDefinition
         ReaderHostSelectorStrategy,
         EnableConnectFailover,
         SkipFailoverOnInterruptedThread,
+        ClusterTopologyHighRefreshRateMs,
 
         // Host Selector Stratagy Properties
         RoundRobinHostWeightPairs,

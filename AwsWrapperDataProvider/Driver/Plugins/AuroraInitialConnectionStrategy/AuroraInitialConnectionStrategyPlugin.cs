@@ -16,7 +16,6 @@ using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Utils;
-using Org.BouncyCastle.Crypto;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.AuroraInitialConnectionStrategy;
 
@@ -26,6 +25,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
     private readonly VerifyOpenedConnectionType? verifyOpenedConnectionType;
 
     private IHostListProviderService? hostListProviderService;
+
     public AuroraInitialConnectionStrategyPlugin(IPluginService pluginService, Dictionary<string, string> props)
     {
         this.pluginService = pluginService;
@@ -114,7 +114,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
                     if (writerCandidate == null || writerCandidate.Role != HostRole.Writer)
                     {
                         // Shouldn't be here. But let's try again.
-                        this.CloseConnection(writerConnectionCandidate);
+                        this.DisposeConnection(writerConnectionCandidate);
                         Task.Delay(retryDelay);
                         continue;
                     }
@@ -132,7 +132,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
                 if (this.pluginService.GetHostRole(writerConnectionCandidate) != HostRole.Writer)
                 {
                     this.pluginService.ForceRefreshHostList(writerConnectionCandidate);
-                    this.CloseConnection(writerConnectionCandidate);
+                    this.DisposeConnection(writerConnectionCandidate);
                     Task.Delay(retryDelay);
                 }
 
@@ -145,7 +145,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
             }
             catch (DbException dbException)
             {
-                this.CloseConnection(writerConnectionCandidate);
+                this.DisposeConnection(writerConnectionCandidate);
                 if (this.pluginService.IsLoginException(dbException))
                 {
                     throw;
@@ -158,7 +158,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
             }
             catch
             {
-                this.CloseConnection(writerConnectionCandidate);
+                this.DisposeConnection(writerConnectionCandidate);
                 throw;
             }
         }
@@ -194,7 +194,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
 
                     if (readerCandidate == null)
                     {
-                        this.CloseConnection(readerConnectionCandidate);
+                        this.DisposeConnection(readerConnectionCandidate);
                         Task.Delay(retryDelay);
                         continue;
                     }
@@ -211,7 +211,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
                             return readerConnectionCandidate;
                         }
 
-                        this.CloseConnection(readerConnectionCandidate);
+                        this.DisposeConnection(readerConnectionCandidate);
                         Task.Delay(retryDelay);
                         continue;
                     }
@@ -240,7 +240,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
                         return readerConnectionCandidate;
                     }
 
-                    this.CloseConnection(readerConnectionCandidate);
+                    this.DisposeConnection(readerConnectionCandidate);
                     Task.Delay(retryDelay);
                     continue;
                 }
@@ -254,7 +254,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
             }
             catch (DbException dbException)
             {
-                this.CloseConnection(readerConnectionCandidate);
+                this.DisposeConnection(readerConnectionCandidate);
                 if (this.pluginService.IsLoginException(dbException))
                 {
                     throw;
@@ -267,7 +267,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
             }
             catch
             {
-                this.CloseConnection(readerConnectionCandidate);
+                this.DisposeConnection(readerConnectionCandidate);
                 throw;
             }
         }
@@ -309,11 +309,11 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
             .All(host => host.Role == HostRole.Writer);
     }
 
-    private void CloseConnection(DbConnection? connection)
+    private void DisposeConnection(DbConnection? connection)
     {
         try
         {
-            connection?.Close();
+            connection?.Dispose();
         }
         catch
         {

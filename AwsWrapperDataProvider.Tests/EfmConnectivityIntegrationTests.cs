@@ -28,9 +28,8 @@ public class EfmConnectivityIntegrationTests : IntegrationTestBase
         int failureDetectionInterval = HostMonitoringPlugin.DefaultFailureDetectionInterval;
         int failureDetectionCount = HostMonitoringPlugin.DefaultFailureDetectionCount;
 
-        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, this.username, this.password, this.defaultDbName);
-        connectionString += "; Plugins=efm;";
-        await EfmConnectivityTests.PerformEfmTest(connectionString, this.clusterEndpoint, failureDetectionTime, failureDetectionInterval, failureDetectionCount);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName, plugins: "efm");
+        await EfmConnectivityTests.PerformEfmTest(connectionString, ClusterEndpoint, failureDetectionTime, failureDetectionInterval, failureDetectionCount);
     }
 
     [Fact]
@@ -42,9 +41,9 @@ public class EfmConnectivityIntegrationTests : IntegrationTestBase
         int failureDetectionInterval = HostMonitoringPlugin.DefaultFailureDetectionInterval;
         int failureDetectionCount = 1;
 
-        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, this.username, this.password, this.defaultDbName);
-        connectionString += $"; Plugins=efm;FailureDetectionTime={failureDetectionTime};FailureDetectionCount={failureDetectionCount};";
-        await EfmConnectivityTests.PerformEfmTest(connectionString, this.clusterEndpoint, failureDetectionTime, failureDetectionInterval, failureDetectionCount);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName, plugins: "efm");
+        connectionString += $";FailureDetectionTime={failureDetectionTime};FailureDetectionCount={failureDetectionCount};";
+        await EfmConnectivityTests.PerformEfmTest(connectionString, ClusterEndpoint, failureDetectionTime, failureDetectionInterval, failureDetectionCount);
     }
 
     [Fact]
@@ -56,8 +55,8 @@ public class EfmConnectivityIntegrationTests : IntegrationTestBase
         int failureDetectionInterval = 500; // check on the connection every 500 ms
         int failureDetectionCount = 5; // five failures before considered unhealthy
 
-        var connectionString = ConnectionStringHelper.GetUrl(this.engine, this.clusterEndpoint, this.port, this.username, this.password, this.defaultDbName);
-        connectionString += $"; Plugins=efm;FailureDetectionTime={failureDetectionTime};FailureDetectionInterval={failureDetectionInterval};FailureDetectionCount={failureDetectionCount};";
-        await EfmConnectivityTests.PerformEfmTest(connectionString, this.clusterEndpoint, failureDetectionTime, failureDetectionInterval, failureDetectionCount);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName, plugins: "efm");
+        connectionString += $";FailureDetectionTime={failureDetectionTime};FailureDetectionInterval={failureDetectionInterval};FailureDetectionCount={failureDetectionCount};";
+        await EfmConnectivityTests.PerformEfmTest(connectionString, ClusterEndpoint, failureDetectionTime, failureDetectionInterval, failureDetectionCount);
     }
 }

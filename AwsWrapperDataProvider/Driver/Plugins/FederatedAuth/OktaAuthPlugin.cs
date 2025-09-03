@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using System.Data.Common;
-using System.Text.RegularExpressions;
 using Amazon;
 using Amazon.Runtime;
 using AwsWrapperDataProvider.Driver.HostInfo;
@@ -21,16 +20,15 @@ using AwsWrapperDataProvider.Driver.Plugins.Efm;
 using AwsWrapperDataProvider.Driver.Plugins.Iam;
 using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.FederatedAuth;
 
-public partial class FederatedAuthPlugin(IPluginService pluginService, Dictionary<string, string> props, CredentialsProviderFactory credentialsFactory, IIamTokenUtility iamTokenUtility) : AbstractConnectionPlugin
+public partial class OktaAuthPlugin(IPluginService pluginService, Dictionary<string, string> props, CredentialsProviderFactory credentialsFactory, IIamTokenUtility iamTokenUtility) : AbstractConnectionPlugin
 {
+    private static readonly ILogger<OktaAuthPlugin> Logger = LoggerUtils.GetLogger<OktaAuthPlugin>();
+
     public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string> { "DbConnection.Open", "DbConnection.OpenAsync", "DbConnection.ForceOpen" };
-
-    public static readonly int DefaultHttpTimeoutMs = 60000;
-
-    private static readonly MemoryCache IamTokenCache = new(new MemoryCacheOptions());
 
     private readonly IPluginService pluginService = pluginService;
 
@@ -40,10 +38,7 @@ public partial class FederatedAuthPlugin(IPluginService pluginService, Dictionar
 
     private readonly IIamTokenUtility iamTokenUtility = iamTokenUtility;
 
-    public static readonly string SamlResponsePatternGroup = "saml";
-
-    [GeneratedRegex("SAMLResponse\\W+value=\"(?<saml>[^\"]+)\"", RegexOptions.IgnoreCase, "en-CA")]
-    public static partial Regex SamlResponsePattern();
+    internal static readonly MemoryCache IamTokenCache = new(new MemoryCacheOptions());
 
     public static void ClearCache()
     {
@@ -76,16 +71,18 @@ public partial class FederatedAuthPlugin(IPluginService pluginService, Dictionar
         string dbUser = PropertyDefinition.DbUser.GetString(props) ?? throw new Exception("DB user not provided.");
 
         string cacheKey = this.iamTokenUtility.GetCacheKey(dbUser, host, port, region);
-        bool isCachedToken = true;
-
+        bool isCachedToken;
         if (IamTokenCache.TryGetValue(cacheKey, out string? token) && token != null)
         {
             props[PropertyDefinition.Password.Name] = token;
+            isCachedToken = true;
+            Logger.LogTrace("Use cached authentication token");
         }
         else
         {
             this.UpdateAuthenticationToken(hostSpec, props, host, port, region, cacheKey, dbUser);
             isCachedToken = false;
+            Logger.LogTrace("Generated new authentication token");
         }
 
         props[PropertyDefinition.User.Name] = dbUser;

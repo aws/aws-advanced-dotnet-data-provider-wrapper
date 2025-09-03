@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using System.Net;
-using System.Net.Http;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.FederatedAuth;
 

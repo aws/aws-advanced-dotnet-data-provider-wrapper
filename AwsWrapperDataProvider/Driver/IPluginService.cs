@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Collections;
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.Dialects;
@@ -34,6 +33,8 @@ public interface IPluginService : IExceptionHandlerService
     ITargetConnectionDialect TargetConnectionDialect { get; }
 
     DbConnection? CurrentConnection { get; }
+
+    DbTransaction? CurrentTransaction { get; set; }
 
     HostSpec? CurrentHostSpec { get; }
 
@@ -160,4 +161,6 @@ public interface IPluginService : IExceptionHandlerService
     /// <param name="strategy">Host selection strategy.</param>
     /// <returns>Host givent role and selection strategy.</returns>
     HostSpec GetHostSpecByStrategy(HostRole hostRole, string strategy);
+
+    HostSpec GetHostSpecByStrategy(IList<HostSpec> hosts, HostRole hostRole, string strategy);
 }

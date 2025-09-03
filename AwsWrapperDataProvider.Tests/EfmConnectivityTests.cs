@@ -65,7 +65,7 @@ public class EfmConnectivityTests
     {
         try
         {
-            AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
+            using AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
 
             Console.WriteLine("1. Opening initial connection...");
             connection.Open();
@@ -82,7 +82,7 @@ public class EfmConnectivityTests
                 host);
             Console.WriteLine($"   Monitor key: {monitorKey}");
 
-            AwsWrapperCommand<NpgsqlCommand> command = connection.CreateCommand<NpgsqlCommand>();
+            using AwsWrapperCommand<NpgsqlCommand> command = connection.CreateCommand<NpgsqlCommand>();
             command.CommandText = $"SELECT pg_sleep({TestCommandTimeoutSecs}), now() as query_time, inet_server_addr()::text as server_ip";
             command.CommandTimeout = TestCommandTimeoutSecs; // command won't time out before the monitoring catches a disconnection
 

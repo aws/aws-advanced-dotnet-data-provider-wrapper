@@ -19,7 +19,14 @@ using System.Diagnostics.CodeAnalysis;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
+using AwsWrapperDataProvider.Driver.Dialects;
+using AwsWrapperDataProvider.Driver.HostInfo.HostSelectors;
 using AwsWrapperDataProvider.Driver.HostListProviders;
+using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
+using AwsWrapperDataProvider.Driver.Plugins.Efm;
+using AwsWrapperDataProvider.Driver.Plugins.FederatedAuth;
+using AwsWrapperDataProvider.Driver.Plugins.Iam;
+using AwsWrapperDataProvider.Driver.Plugins.SecretsManager;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
 
@@ -179,7 +186,8 @@ public class AwsWrapperConnection : DbConnection
             () => this.pluginService.CurrentConnection!.BeginTransaction(isolationLevel),
             isolationLevel);
 
-        return new AwsWrapperTransaction(this, targetTransaction, this.PluginManager);
+        this.pluginService.CurrentTransaction = targetTransaction;
+        return new AwsWrapperTransaction(this, this.pluginService, this.PluginManager);
     }
 
     protected override DbCommand CreateDbCommand() => this.CreateCommand<DbCommand>();
@@ -230,6 +238,20 @@ public class AwsWrapperConnection : DbConnection
         }
 
         throw new Exception(string.Format(Properties.Resources.Error_CantLoadTargetConnectionType, targetConnectionTypeString));
+    }
+
+    public static void ClearCache()
+    {
+        RdsHostListProvider.ClearAll();
+        MonitoringRdsHostListProvider.CloseAllMonitors();
+        HostMonitorService.CloseAllMonitors();
+        PluginService.ClearCache();
+        DialectProvider.ResetEndpointCache();
+        SecretsManagerAuthPlugin.ClearCache();
+        FederatedAuthPlugin.ClearCache();
+        IamAuthPlugin.ClearCache();
+        OktaAuthPlugin.ClearCache();
+        RoundRobinHostSelector.ClearCache();
     }
 }
 

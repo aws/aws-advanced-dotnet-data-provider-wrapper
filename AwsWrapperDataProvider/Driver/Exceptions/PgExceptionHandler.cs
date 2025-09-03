@@ -14,16 +14,18 @@
 
 using System.Data.Common;
 using System.Net.Sockets;
-using System.Runtime.InteropServices.Marshalling;
-using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
-using Npgsql;
+using System.Text;
+using AwsWrapperDataProvider.Driver.Utils;
+using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Exceptions;
 
 public class PgExceptionHandler : GenericExceptionHandler
 {
-    private readonly HashSet<string> _networkErrorStates = new HashSet<string>
-    {
+    private static readonly ILogger<PgExceptionHandler> Logger = LoggerUtils.GetLogger<PgExceptionHandler>();
+
+    private readonly HashSet<string> networkErrorStates =
+    [
         "53", // insufficient resources
         "57P01", // admin shutdown
         "57P02", // crash shutdown
@@ -32,18 +34,17 @@ public class PgExceptionHandler : GenericExceptionHandler
         "08", // connection error
         "99", // unexpected error
         "F0", // configuration file error (backend)
-        "XX", // internal error (backend)
-    };
+    ];
 
-    private readonly HashSet<string> _loginErrorStates = new HashSet<string>
-    {
+    private readonly HashSet<string> loginErrorStates =
+    [
         "28000", // Invalid authorization specification
         "28P01", // Wrong password
-    };
+    ];
 
-    protected override HashSet<string> NetworkErrorStates => this._networkErrorStates;
+    protected override HashSet<string> NetworkErrorStates => this.networkErrorStates;
 
-    protected override HashSet<string> LoginErrorStates => this._loginErrorStates;
+    protected override HashSet<string> LoginErrorStates => this.loginErrorStates;
 
     public override bool IsNetworkException(Exception exception)
     {
@@ -51,24 +52,39 @@ public class PgExceptionHandler : GenericExceptionHandler
 
         while (currException is not null)
         {
-            if (currException is SocketException or TimeoutException or System.IO.EndOfStreamException)
+            Logger.LogDebug("Current exception {type}: {message}", currException.GetType().FullName, currException.Message);
+
+            if (currException is SocketException or TimeoutException or EndOfStreamException)
             {
+                Logger.LogDebug("Current exception is a network exception: {type}", currException.GetType().FullName);
                 return true;
             }
 
             if (currException is DbException dbException)
             {
-                string sqlState = dbException.SqlState ??
-                                  string.Empty;
-                if (this.NetworkErrorStates.Contains(sqlState))
+                string sqlState = dbException.SqlState ?? string.Empty;
+
+                var log = new StringBuilder();
+                log.AppendLine("=== DbException Details ===");
+                log.AppendLine($"Type: {dbException.GetType().FullName}");
+                log.AppendLine($"Message: {dbException.Message}");
+                log.AppendLine($"Sql State: {dbException.SqlState}");
+                log.AppendLine($"Error Code: {dbException.ErrorCode}");
+                log.AppendLine($"Source: {dbException.Source}");
+                Logger.LogDebug(log.ToString());
+
+                if (this.NetworkErrorStates.Any(prefix => sqlState.StartsWith(prefix)))
                 {
+                    Logger.LogDebug("Current exception is a network exception: {type}", currException.GetType().FullName);
                     return true;
                 }
             }
 
             currException = currException.InnerException;
+            Logger.LogDebug("Checking innner exception");
         }
 
+        Logger.LogDebug("Current exception is not a network exception");
         return false;
     }
 }
