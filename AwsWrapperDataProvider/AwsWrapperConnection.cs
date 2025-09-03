@@ -245,11 +245,12 @@ public class AwsWrapperConnection : DbConnection
         RdsHostListProvider.ClearAll();
         MonitoringRdsHostListProvider.CloseAllMonitors();
         HostMonitorService.CloseAllMonitors();
-        PluginService.HostAvailabilityExpiringCache.Clear();
+        PluginService.ClearCache();
         DialectProvider.ResetEndpointCache();
         SecretsManagerAuthPlugin.ClearCache();
         FederatedAuthPlugin.ClearCache();
         IamAuthPlugin.ClearCache();
+        OktaAuthPlugin.ClearCache();
         RoundRobinHostSelector.ClearCache();
     }
 }

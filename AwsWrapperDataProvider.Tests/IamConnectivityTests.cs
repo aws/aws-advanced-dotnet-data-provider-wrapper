@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data.Common;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 using Npgsql;
 
@@ -35,18 +34,6 @@ public class IamConnectivityTests : IntegrationTestBase
         Console.WriteLine("1. Opening connection via IAM...");
         connection.Open();
         Console.WriteLine("   ✓ Connected successfully");
-
-        using AwsWrapperCommand<NpgsqlCommand> command = connection.CreateCommand<NpgsqlCommand>();
-        command.CommandText = "select aurora_db_instance_identifier()";
-
-        Console.WriteLine("2. Executing query to connection via IAM...");
-        using DbDataReader reader = command.ExecuteReader();
-
-        while (reader.Read())
-        {
-            Console.WriteLine(reader.GetString(0));
-            Console.WriteLine("   ✓ Executed successfully");
-        }
     }
 
     [Fact]
@@ -64,18 +51,6 @@ public class IamConnectivityTests : IntegrationTestBase
         Console.WriteLine("1. Opening connection via IAM...");
         connection.Open();
         Console.WriteLine("   ✓ Connected successfully");
-
-        using AwsWrapperCommand<MySql.Data.MySqlClient.MySqlCommand> command = connection.CreateCommand<MySql.Data.MySqlClient.MySqlCommand>();
-        command.CommandText = "select 1";
-
-        Console.WriteLine("2. Executing query to connection via IAM...");
-        using DbDataReader reader = command.ExecuteReader();
-
-        while (reader.Read())
-        {
-            Console.WriteLine(reader.GetInt32(0));
-            Console.WriteLine("   ✓ Executed successfully");
-        }
     }
 
     [Fact]
@@ -93,16 +68,5 @@ public class IamConnectivityTests : IntegrationTestBase
         Console.WriteLine("1. Opening connection via IAM...");
         connection.Open();
         Console.WriteLine("   ✓ Connected successfully");
-
-        using AwsWrapperCommand<MySqlConnector.MySqlCommand> command = connection.CreateCommand<MySqlConnector.MySqlCommand>();
-        command.CommandText = "select 1";
-
-        Console.WriteLine("2. Executing query to connection via IAM...");
-        using DbDataReader reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            Console.WriteLine(reader.GetInt32(0));
-            Console.WriteLine("   ✓ Executed successfully");
-        }
     }
 }

@@ -43,7 +43,7 @@ public class IamAuthPluginTests
 
     public IamAuthPluginTests()
     {
-        IamAuthPlugin.IamTokenCache.Clear();
+        IamAuthPlugin.ClearCache();
 
         this.mockPluginService = new Mock<IPluginService>();
         this.mockIamTokenUtility = new Mock<IIamTokenUtility>();

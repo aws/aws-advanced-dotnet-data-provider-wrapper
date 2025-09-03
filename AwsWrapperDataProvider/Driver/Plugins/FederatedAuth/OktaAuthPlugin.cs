@@ -40,6 +40,11 @@ public partial class OktaAuthPlugin(IPluginService pluginService, Dictionary<str
 
     internal static readonly MemoryCache IamTokenCache = new(new MemoryCacheOptions());
 
+    public static void ClearCache()
+    {
+        IamTokenCache.Clear();
+    }
+
     public override DbConnection OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
     {
         return this.ConnectInternal(hostSpec, props, methodFunc);
