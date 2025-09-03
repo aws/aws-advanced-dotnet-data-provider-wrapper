@@ -221,6 +221,7 @@
     </data>
     <data name="AwsWrapperProperty_SslValidationIsDisabled" xml:space="preserve">
       <value>SSL validation is disabled (sslInsecure=true). This configuration can pose a significant security risks and should not be used in production environments.</value>
+    </data>
     <data name="PluginService.ErrorClosingOldConnection" xml:space="preserve">
       <value>Error closing old connection: {0}</value>
     </data>

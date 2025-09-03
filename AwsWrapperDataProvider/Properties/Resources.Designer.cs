@@ -93,9 +93,6 @@ namespace AwsWrapperDataProvider.Properties {
             }
         }
         
-        /// <summary>
-        ///   Looks up a localized string similar to New cluster topology monitoring connection@{0} opened for node {1}..
-        /// </summary>
         internal static string Error_UnableToCreateConnection {
             get {
                 return ResourceManager.GetString("Error_UnableToCreateConnection", resourceCulture);
@@ -150,39 +147,9 @@ namespace AwsWrapperDataProvider.Properties {
             }
         }
         
-        /// <summary>
-        ///   Looks up a localized string similar to Activated monitoring..
-        /// </summary>
-        internal static string EfmHostMonitor_ActivatedMonitoring {
-            get {
-                return ResourceManager.GetString("EfmHostMonitor_ActivatedMonitoring", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Encountered exception while monitoring active contexts for host {0}: {1}, stack trace: {2}..
-        /// </summary>
         internal static string Error_UnableToFindValidDialectType {
             get {
                 return ResourceManager.GetString("Error_UnableToFindValidDialectType", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Deactivated monitoring..
-        /// </summary>
-        internal static string EfmHostMonitor_DeactivatedMonitoring {
-            get {
-                return ResourceManager.GetString("EfmHostMonitor_DeactivatedMonitoring", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Encountered exception when identifying connection: {0}..
-        /// </summary>
-        internal static string EfmHostMonitor_ErrorIdentifyingConnection {
-            get {
-                return ResourceManager.GetString("EfmHostMonitor_ErrorIdentifyingConnection", resourceCulture);
             }
         }
         
@@ -402,12 +369,27 @@ namespace AwsWrapperDataProvider.Properties {
             }
         }
         
-        /// <summary>
-        ///   Looks up a localized string similar to Error closing old connection: {0}.
-        /// </summary>
         internal static string PluginService_ErrorClosingOldConnection {
             get {
                 return ResourceManager.GetString("PluginService.ErrorClosingOldConnection", resourceCulture);
+            }
+        }
+        
+        internal static string EfmHostMonitor_ActivatedMonitoring {
+            get {
+                return ResourceManager.GetString("EfmHostMonitor_ActivatedMonitoring", resourceCulture);
+            }
+        }
+        
+        internal static string EfmHostMonitor_DeactivatedMonitoring {
+            get {
+                return ResourceManager.GetString("EfmHostMonitor_DeactivatedMonitoring", resourceCulture);
+            }
+        }
+        
+        internal static string EfmHostMonitor_ErrorIdentifyingConnection {
+            get {
+                return ResourceManager.GetString("EfmHostMonitor_ErrorIdentifyingConnection", resourceCulture);
             }
         }
     }
