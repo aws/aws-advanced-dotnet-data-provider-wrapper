@@ -189,7 +189,7 @@ public class DialectProviderTests
         var updatedDialect = this.dialectProvider.UpdateDialect(this.mockConnection.Object, mysqlDialect);
 
         Assert.IsType<AuroraMySqlDialect>(updatedDialect);
-        this.mockConnection.Verify(c => c.CreateCommand(), Times.Exactly(2)); // Updated to account for RdsMultiAzHostListProvider check
+        this.mockConnection.Verify(c => c.CreateCommand(), Times.Exactly(2)); // Updated to account for RdsMultiAzDbClusterListProvider check
     }
 
     [Fact]

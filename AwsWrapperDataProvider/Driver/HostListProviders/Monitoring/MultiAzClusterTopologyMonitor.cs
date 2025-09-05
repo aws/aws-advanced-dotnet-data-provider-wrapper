@@ -68,7 +68,7 @@ public class MultiAzClusterTopologyMonitor : ClusterTopologyMonitor
         {
             using var command = connection.CreateCommand();
             command.CommandText = this.fetchWriterNodeQuery;
-            await using var reader = await command.ExecuteReaderAsync();
+            await using var reader = await command.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
 
             if (await reader.ReadAsync())
             {
@@ -98,7 +98,7 @@ public class MultiAzClusterTopologyMonitor : ClusterTopologyMonitor
         {
             using var command = connection.CreateCommand();
             command.CommandText = this.fetchWriterNodeQuery;
-            await using var reader = await command.ExecuteReaderAsync();
+            await using var reader = await command.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
 
             if (await reader.ReadAsync())
             {
@@ -151,7 +151,7 @@ public class MultiAzClusterTopologyMonitor : ClusterTopologyMonitor
             using var command = connection.CreateCommand();
             command.CommandTimeout = DefaultTopologyQueryTimeoutSec;
             command.CommandText = this.topologyQuery;
-            await using var reader = await command.ExecuteReaderAsync();
+            await using var reader = await command.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
 
             var hosts = new List<HostSpec>();
             var writers = new List<HostSpec>();

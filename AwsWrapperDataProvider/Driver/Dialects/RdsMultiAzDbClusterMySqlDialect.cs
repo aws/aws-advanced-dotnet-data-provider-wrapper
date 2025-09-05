@@ -81,7 +81,7 @@ public class RdsMultiAzDbClusterMySqlDialect : MySqlDialect
                     pluginService,
                     FetchWriterNodeQuery,
                     FetchWriterNodeQueryColumnName) :
-                new RdsMultiAzHostListProvider(
+                new RdsMultiAzDbClusterListProvider(
                     props,
                     hostListProviderService,
                     TopologyQuery,

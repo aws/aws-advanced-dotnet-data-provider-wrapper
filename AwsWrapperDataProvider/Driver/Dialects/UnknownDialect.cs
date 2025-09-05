@@ -33,6 +33,8 @@ public class UnknownDialect : IDialect
     [
         typeof(AuroraPgDialect),
         typeof(AuroraMySqlDialect),
+        typeof(RdsMultiAzDbClusterPgDialect),
+        typeof(RdsMultiAzDbClusterMySqlDialect),
         typeof(RdsPgDialect),
         typeof(RdsMySqlDialect),
         typeof(PgDialect),

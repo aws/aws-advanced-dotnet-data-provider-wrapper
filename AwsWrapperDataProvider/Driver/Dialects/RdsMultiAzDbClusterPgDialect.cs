@@ -81,7 +81,7 @@ public class RdsMultiAzDbClusterPgDialect : PgDialect
                     pluginService,
                     FetchWriterNodeQuery,
                     FetchWriterNodeQueryColumnName) :
-                new RdsMultiAzHostListProvider(
+                new RdsMultiAzDbClusterListProvider(
                     props,
                     hostListProviderService,
                     TopologyQuery,

@@ -19,14 +19,14 @@ using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.HostListProviders;
 
-public class RdsMultiAzHostListProvider : RdsHostListProvider
+public class RdsMultiAzDbClusterListProvider : RdsHostListProvider
 {
-    private static readonly ILogger<RdsMultiAzHostListProvider> Logger = LoggerUtils.GetLogger<RdsMultiAzHostListProvider>();
+    private static readonly ILogger<RdsMultiAzDbClusterListProvider> Logger = LoggerUtils.GetLogger<RdsMultiAzDbClusterListProvider>();
 
     private readonly string fetchWriterNodeQuery;
     private readonly string fetchWriterNodeQueryHeader;
 
-    public RdsMultiAzHostListProvider(
+    public RdsMultiAzDbClusterListProvider(
         Dictionary<string, string> properties,
         IHostListProviderService hostListProviderService,
         string topologyQuery,
@@ -39,18 +39,19 @@ public class RdsMultiAzHostListProvider : RdsHostListProvider
         this.fetchWriterNodeQueryHeader = fetchWriterNodeQueryHeader;
     }
 
-    internal override List<HostSpec>? QueryForTopology(IDbConnection conn)
+    internal override List<HostSpec> QueryForTopology(IDbConnection conn)
     {
         using IDbCommand fetchWriterNodeCommand = conn.CreateCommand();
         fetchWriterNodeCommand.CommandTimeout = DefaultTopologyQueryTimeoutSec;
         fetchWriterNodeCommand.CommandText = this.fetchWriterNodeQuery;
         using IDataReader writerNodeReader = fetchWriterNodeCommand.ExecuteReader();
 
-        string writerNodeId = this.ProcessWriterNodeId(writerNodeReader);
+        string? writerNodeId = this.ProcessWriterNodeId(writerNodeReader);
 
         if (writerNodeId == null)
         {
             using IDbCommand nodeIdCommand = conn.CreateCommand();
+            nodeIdCommand.CommandTimeout = DefaultTopologyQueryTimeoutSec;
             nodeIdCommand.CommandText = this.nodeIdQuery;
             using var nodeIdReader = nodeIdCommand.ExecuteReader();
             while (nodeIdReader.Read())
@@ -60,12 +61,13 @@ public class RdsMultiAzHostListProvider : RdsHostListProvider
         }
 
         using IDbCommand topologyCommand = conn.CreateCommand();
+        topologyCommand.CommandTimeout = DefaultTopologyQueryTimeoutSec;
         topologyCommand.CommandText = this.topologyQuery;
         using var topologyReader = topologyCommand.ExecuteReader();
         return this.ProcessTopologyQueryResults(topologyReader, writerNodeId);
     }
 
-    private string ProcessWriterNodeId(IDataReader fetchWriterNodeReader)
+    private string? ProcessWriterNodeId(IDataReader fetchWriterNodeReader)
     {
         if (fetchWriterNodeReader.Read())
         {
@@ -76,9 +78,9 @@ public class RdsMultiAzHostListProvider : RdsHostListProvider
             }
         }
 
-        throw new InvalidOperationException(
-                "No writer node found in the result of the fetchWriterNodeQuery. " +
-                "Ensure that the query is correct and that the database is configured properly.");
+        Logger.LogWarning("No writer node found in the result of the fetchWriterNodeQuery. " +
+                          "Ensure that the query is correct and that the database is configured properly.");
+        return null;
     }
 
     private List<HostSpec> ProcessTopologyQueryResults(IDataReader topologyReader, string? writerNodeId)
@@ -130,7 +132,7 @@ public class RdsMultiAzHostListProvider : RdsHostListProvider
             throw new DataException("Topology query result is missing 'endpoint'.");
         }
 
-        string hostName = reader.GetString(endpointOrdinal); // "instance-name.XYZ.us-west-2.rds.amazonaws.com"
+        string hostName = reader.GetString(endpointOrdinal);
         int firstDot = hostName.IndexOf('.', StringComparison.Ordinal);
         string instanceName = firstDot > 0 ? hostName.Substring(0, firstDot) : hostName;
 
@@ -140,7 +142,7 @@ public class RdsMultiAzHostListProvider : RdsHostListProvider
         string hostId = reader.IsDBNull(idOrdinal) ? string.Empty : reader.GetString(idOrdinal);
 
         int queryPort = reader.IsDBNull(portOrdinal) ? 0 : reader.GetInt32(portOrdinal);
-        int port = this.clusterInstanceTemplate.IsPortSpecified
+        int port = this.clusterInstanceTemplate!.IsPortSpecified
             ? this.clusterInstanceTemplate.Port
             : queryPort;
 
@@ -163,7 +165,7 @@ public class RdsMultiAzHostListProvider : RdsHostListProvider
 
     protected string GetHostEndpoint(string nodeName)
     {
-        string host = this.clusterInstanceTemplate.Host;
+        string host = this.clusterInstanceTemplate!.Host;
         return host.Replace("?", nodeName, StringComparison.Ordinal);
     }
 }
