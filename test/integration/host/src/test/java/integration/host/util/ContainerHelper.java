@@ -105,6 +105,10 @@ public class ContainerHelper {
 
     if (task.contains("ef")) {
         exitCode = execInContainer(container, consumer,
+                "dotnet", "tool", "install", "--global", "dotnet-ef");
+        assertEquals(0, exitCode, "Failed to install dotnet-ef tool.");
+
+        exitCode = execInContainer(container, consumer,
                 "dotnet", "ef", "migrations", "add", "InitialCreate", "--project", "AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests");
         assertEquals(0, exitCode, "Failed to generate Entity framework migration.");
 
