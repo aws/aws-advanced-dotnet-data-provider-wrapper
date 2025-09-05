@@ -31,6 +31,15 @@ public class TestRunner {
   }
 
   @TestTemplate
+  public void runMySQLEFTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
+
+    try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
+      env.runTests("mysql-ef");
+    }
+  }
+
+
+  @TestTemplate
   public void runPGTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
     try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
       env.runTests("pg");

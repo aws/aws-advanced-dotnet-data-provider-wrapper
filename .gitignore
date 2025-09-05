@@ -365,3 +365,6 @@ FodyWeavers.xsd
 **/.idea
 **/.gradle
 test/integration/host/build/
+
+# Entity Framework Migrations
+AwsWrapperDataProvider.EntityFrameworkCore.*/Migrations/

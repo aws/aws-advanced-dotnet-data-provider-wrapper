@@ -101,7 +101,16 @@ public class ContainerHelper {
     execInContainer(container, consumer, "printenv", "TEST_ENV_INFO_JSON");
 
     Long exitCode = execInContainer(container, consumer, "dotnet", "build");
-    assertEquals(0, exitCode, "Build failed.");
+    assertEquals(0, exitCode, "Dotnet build failed.");
+
+    if (task.contains("ef")) {
+        exitCode = execInContainer(container, consumer,
+                "dotnet", "ef", "migrations", "add", "InitialCreate", "--project", "AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests");
+        assertEquals(0, exitCode, "Failed to generate Entity framework migration.");
+
+        exitCode = execInContainer(container, consumer, "dotnet", "ef", "database", "update", "--project", "AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests");
+        assertEquals(0, exitCode, "Failed to update database with migration");
+    }
 
     exitCode = execInContainer(container, consumer, "dotnet", "test", "--filter",
             "Category=Integration&Database=" + task, "--no-build", "--logger:\"console;verbosity=detailed\"");

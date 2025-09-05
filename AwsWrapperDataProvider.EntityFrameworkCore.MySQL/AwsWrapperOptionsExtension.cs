@@ -24,12 +24,17 @@ public class AwsWrapperOptionsExtension : IDbContextOptionsExtension
 {
     private AwsWrapperDbContextOptionsExtensionInfo? info;
 
-    public AwsWrapperOptionsExtension()
+    public IDbContextOptionsExtension WrappedExtension { get; set; }
+
+    public AwsWrapperOptionsExtension(IDbContextOptionsExtension wrappedExtension)
     {
+        this.WrappedExtension = wrappedExtension;
     }
 
     public void ApplyServices(IServiceCollection services)
     {
+        this.WrappedExtension.ApplyServices(services);
+
         var builder = new EntityFrameworkRelationalServicesBuilder(services);
 
         var targetRelationalConnectionServiceDescriptor = services.FirstOrDefault(x => x.ServiceType == typeof(IRelationalConnection));

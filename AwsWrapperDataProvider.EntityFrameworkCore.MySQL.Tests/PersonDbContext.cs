@@ -20,14 +20,25 @@ public class PersonDbContext : DbContext
 {
     public DbSet<Person> Persons { get; set; }
 
+    public PersonDbContext(DbContextOptions<PersonDbContext> options)
+        : base(options)
+    {
+    }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        var connectionString = "Server=<insert_rds_instance_here>;User ID=admin;Password=my_password_2020;Initial Catalog=test;Plugins=;";
+        if (optionsBuilder.IsConfigured)
+        {
+            return;
+        }
+
+        var connectionString = EFUtils.GetConnectionString();
         var version = new MySqlServerVersion("8.0.32");
 
         optionsBuilder
-            .UseMySql(connectionString, version)
-            .UseAwsWrapper(connectionString);
+            .UseAwsWrapper(
+            connectionString,
+            wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, version));
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

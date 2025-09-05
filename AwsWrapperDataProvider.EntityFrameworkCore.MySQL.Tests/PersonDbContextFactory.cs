@@ -12,17 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using AwsWrapperDataProvider.Tests;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Design;
 
 namespace AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests;
 
-public class EntityFrameowrkConnectivityTests : IntegrationTestBase
+public class PersonDbContextFactory : IDesignTimeDbContextFactory<PersonDbContext>
 {
-    [Fact]
-    [Trait("Category", "Integration")]
-    [Trait("Database", "mysql-ef")]
-    public void MysqlEFAddTest()
+    public PersonDbContext CreateDbContext(string[] args)
     {
         var connectionString = EFUtils.GetConnectionString();
         var version = new MySqlServerVersion("8.0.32");
@@ -33,19 +31,6 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
             wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, version))
             .Options;
 
-        using (var db = new PersonDbContext(options))
-        {
-            Person person = new() { FirstName = "Jane", LastName = "Smith" };
-            db.Add(person);
-            db.SaveChanges();
-        }
-
-        using (var db = new PersonDbContext(options))
-        {
-            foreach (Person p in db.Persons.Where(x => x.FirstName != null && x.FirstName.StartsWith("J")))
-            {
-                Console.WriteLine($"{p.Id}: {p.FirstName} {p.LastName}");
-            }
-        }
+        return new PersonDbContext(options);
     }
 }
