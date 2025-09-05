@@ -181,7 +181,7 @@ public static class PropertyDefinition
         "MultiAzJdbcDriverVersion",
         "2.5.5",
         "Version of JDBC driver in Multi-AZ RDS environment.");
-  
+
     public static readonly AwsWrapperProperty SslInsecure = new(
         "sslInsecure",
         "false",
