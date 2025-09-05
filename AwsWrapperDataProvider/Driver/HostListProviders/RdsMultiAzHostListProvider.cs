@@ -19,14 +19,14 @@ using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.HostListProviders;
 
-public class MultiAzRdsHostListProvider : RdsHostListProvider
+public class RdsMultiAzHostListProvider : RdsHostListProvider
 {
-    private static readonly ILogger<MultiAzRdsHostListProvider> Logger = LoggerUtils.GetLogger<MultiAzRdsHostListProvider>();
+    private static readonly ILogger<RdsMultiAzHostListProvider> Logger = LoggerUtils.GetLogger<RdsMultiAzHostListProvider>();
 
     private readonly string fetchWriterNodeQuery;
     private readonly string fetchWriterNodeQueryHeader;
 
-    public MultiAzRdsHostListProvider(
+    public RdsMultiAzHostListProvider(
         Dictionary<string, string> properties,
         IHostListProviderService hostListProviderService,
         string topologyQuery,

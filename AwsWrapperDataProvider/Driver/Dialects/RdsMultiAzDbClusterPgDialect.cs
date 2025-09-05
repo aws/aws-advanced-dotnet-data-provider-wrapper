@@ -21,30 +21,24 @@ using AwsWrapperDataProvider.Driver.Utils;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
-public class RdsMultiAzPgDialect : PgDialect
+public class RdsMultiAzDbClusterPgDialect : PgDialect
 {
     private static readonly string TopologyQuery =
         $"SELECT id, endpoint, port FROM rds_tools.show_topology('aws_jdbc_driver-{PropertyDefinition.MultiAzRdsJdbcDriverVersion.DefaultValue}')";
-
-    private static readonly string WriterNodeFuncExistsQuery =
-        "SELECT 1 AS tmp FROM information_schema.routines"
-        + " WHERE routine_schema='rds_tools' AND routine_name='multi_az_db_cluster_source_dbi_resource_id'";
 
     private static readonly string FetchWriterNodeQuery =
         "SELECT multi_az_db_cluster_source_dbi_resource_id FROM rds_tools.multi_az_db_cluster_source_dbi_resource_id()"
         + " WHERE multi_az_db_cluster_source_dbi_resource_id !="
         + " (SELECT dbi_resource_id FROM rds_tools.dbi_resource_id())";
 
+    private static readonly string IsRdsClusterQuery =
+        "SELECT multi_az_db_cluster_source_dbi_resource_id FROM rds_tools.multi_az_db_cluster_source_dbi_resource_id()";
+
     private static readonly string FetchWriterNodeQueryColumnName =
         "multi_az_db_cluster_source_dbi_resource_id";
 
     private static readonly string NodeIdQuery =
         "SELECT dbi_resource_id FROM rds_tools.dbi_resource_id()";
-
-    private static readonly string NodeIdFuncExistsQuery =
-        "SELECT 1 AS tmp "
-        + "FROM information_schema.routines "
-        + "WHERE routine_schema='rds_tools' AND routine_name='dbi_resource_id'";
 
     private static readonly string IsReaderQuery =
         "SELECT pg_is_in_recovery()";
@@ -54,9 +48,12 @@ public class RdsMultiAzPgDialect : PgDialect
         try
         {
             using IDbCommand topologyCommand = connection.CreateCommand();
-            topologyCommand.CommandText = TopologyQuery;
+            topologyCommand.CommandText = IsRdsClusterQuery;
             using IDataReader topologyReader = topologyCommand.ExecuteReader();
-            return topologyReader.Read();
+            if (!topologyReader.Read())
+            {
+                return false;
+            }
         }
         catch (DbException)
         {
@@ -66,7 +63,6 @@ public class RdsMultiAzPgDialect : PgDialect
         return false;
     }
 
-    // Java returned `null` here; provide an empty list in C#.
     public override IList<Type> DialectUpdateCandidates { get; } = new List<Type>();
 
     public override HostListProviderSupplier HostListProviderSupplier => this.GetHostListProviderSupplier();
@@ -85,7 +81,7 @@ public class RdsMultiAzPgDialect : PgDialect
                     pluginService,
                     FetchWriterNodeQuery,
                     FetchWriterNodeQueryColumnName) :
-                new MultiAzRdsHostListProvider(
+                new RdsMultiAzHostListProvider(
                     props,
                     hostListProviderService,
                     TopologyQuery,

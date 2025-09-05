@@ -26,7 +26,7 @@ public class RdsPgDialect : PgDialect
 
     public override IList<Type> DialectUpdateCandidates { get; } =
     [
-        typeof(RdsMultiAzPgDialect),
+        typeof(RdsMultiAzDbClusterPgDialect),
         typeof(AuroraPgDialect),
     ];
 

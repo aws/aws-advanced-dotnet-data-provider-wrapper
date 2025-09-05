@@ -21,9 +21,13 @@ using AwsWrapperDataProvider.Driver.Utils;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
-public class RdsMultiAzMySqlDialect : MySqlDialect
+public class RdsMultiAzDbClusterMySqlDialect : MySqlDialect
 {
     private const string TopologyQuery = "SELECT id, endpoint, port FROM mysql.rds_topology";
+
+    private const string TopologyTableExistQuery =
+        "SELECT 1 AS tmp FROM information_schema.tables WHERE"
+        + " table_schema = 'mysql' AND table_name = 'rds_topology'";
 
     private const string FetchWriterNodeQuery = "SHOW REPLICA STATUS";
     private const string FetchWriterNodeQueryColumnName = "Source_Server_Id";
@@ -35,10 +39,21 @@ public class RdsMultiAzMySqlDialect : MySqlDialect
     {
         try
         {
+            using IDbCommand topologyTableExistCommand = connection.CreateCommand();
+            topologyTableExistCommand.CommandText = TopologyTableExistQuery;
+            using IDataReader topologyTableExistReader = topologyTableExistCommand.ExecuteReader();
+            if (!topologyTableExistReader.Read())
+            {
+                return false;
+            }
+
             using IDbCommand topologyCommand = connection.CreateCommand();
             topologyCommand.CommandText = TopologyQuery;
             using IDataReader topologyReader = topologyCommand.ExecuteReader();
-            return topologyReader.Read();
+            if (!topologyReader.Read())
+            {
+                return false;
+            }
         }
         catch (DbException)
         {
@@ -48,7 +63,6 @@ public class RdsMultiAzMySqlDialect : MySqlDialect
         return false;
     }
 
-    // Java returned `null` here; provide an empty list in C#.
     public override IList<Type> DialectUpdateCandidates { get; } = new List<Type>();
 
     public override HostListProviderSupplier HostListProviderSupplier => this.GetHostListProviderSupplier();
@@ -67,7 +81,7 @@ public class RdsMultiAzMySqlDialect : MySqlDialect
                     pluginService,
                     FetchWriterNodeQuery,
                     FetchWriterNodeQueryColumnName) :
-                new MultiAzRdsHostListProvider(
+                new RdsMultiAzHostListProvider(
                     props,
                     hostListProviderService,
                     TopologyQuery,

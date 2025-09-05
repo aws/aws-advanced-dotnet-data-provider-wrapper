@@ -21,7 +21,7 @@ public class RdsMySqlDialect : MySqlDialect
 {
     public override IList<Type> DialectUpdateCandidates { get; } =
     [
-        typeof(RdsMultiAzMySqlDialect),
+        typeof(RdsMultiAzDbClusterMySqlDialect),
         typeof(AuroraMySqlDialect),
     ];
 

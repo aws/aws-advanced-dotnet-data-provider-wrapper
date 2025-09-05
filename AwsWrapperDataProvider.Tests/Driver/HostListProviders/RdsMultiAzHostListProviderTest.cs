@@ -23,7 +23,7 @@ using Moq;
 
 namespace AwsWrapperDataProvider.Tests.Driver.HostListProviders;
 
-public class MultiAzRdsHostListProviderTest : IDisposable
+public class RdsMultiAzHostListProviderTest : IDisposable
 {
     private const string TestHost = "test-cluster.cluster-xyz.us-east-2.rds.amazonaws.com";
     private const string WriterNodeId = "writer-node-id";
@@ -46,7 +46,7 @@ public class MultiAzRdsHostListProviderTest : IDisposable
 
     private readonly TimeSpan topologyRefreshRate = TimeSpan.FromSeconds(5);
 
-    public MultiAzRdsHostListProviderTest()
+    public RdsMultiAzHostListProviderTest()
     {
         this.properties = new Dictionary<string, string>
         {
@@ -70,19 +70,19 @@ public class MultiAzRdsHostListProviderTest : IDisposable
         RdsHostListProvider.ClearAll();
     }
 
-    private Mock<MultiAzRdsHostListProvider> GetMultiAzRdsHostListProviderSpy()
+    private Mock<RdsMultiAzHostListProvider> GetMultiAzRdsHostListProviderSpy()
     {
         return this.GetMultiAzRdsHostListProviderSpy(null);
     }
 
-    private Mock<MultiAzRdsHostListProvider> GetMultiAzRdsHostListProviderSpy(string? host)
+    private Mock<RdsMultiAzHostListProvider> GetMultiAzRdsHostListProviderSpy(string? host)
     {
         if (host != null)
         {
             this.properties[PropertyDefinition.Host.Name] = host;
         }
 
-        var multiAzRdsHostListProviderSpy = new Mock<MultiAzRdsHostListProvider>(
+        var multiAzRdsHostListProviderSpy = new Mock<RdsMultiAzHostListProvider>(
             this.properties,
             this.mockHostListProviderService.Object,
             TopologyQuery,

@@ -45,7 +45,7 @@ public class AuroraPgDialect : PgDialect
         + "WHERE SESSION_ID = 'MASTER_SESSION_ID' AND SERVER_ID = aurora_db_instance_identifier()";
 
     public override IList<Type> DialectUpdateCandidates { get; } = [
-        typeof(RdsMultiAzPgDialect),
+        typeof(RdsMultiAzDbClusterPgDialect),
     ];
 
     public override bool IsDialect(IDbConnection connection)
