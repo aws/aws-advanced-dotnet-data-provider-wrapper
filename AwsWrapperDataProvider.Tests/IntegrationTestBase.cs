@@ -62,6 +62,9 @@ public abstract class IntegrationTestBase : IAsyncLifetime
                         case DatabaseEngineDeployment.AURORA:
                             await TestEnvironment.RebootAllClusterInstancesAsync();
                             break;
+                        case DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER:
+                            await TestEnvironment.RebootClusterAsync();
+                            break;
                         default:
                             throw new InvalidOperationException($"Unsupported deployment {deployment}");
                     }

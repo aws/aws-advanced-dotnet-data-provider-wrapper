@@ -469,6 +469,35 @@ public class AuroraTestUtils
         return result;
     }
 
+    public async Task RebootClusterAsync(string clusterName)
+    {
+        int remainingAttempts = 5;
+        while (--remainingAttempts > 0)
+        {
+            try
+            {
+                var request = new RebootDBClusterRequest { DBClusterIdentifier = clusterName, };
+
+                var response = await this.rdsClient.RebootDBClusterAsync(request);
+
+                if (!response.HttpStatusCode.ToString().StartsWith("2"))
+                {
+                    Console.WriteLine($"rebootDBCluster response: {response.HttpStatusCode}");
+                }
+                else
+                {
+                    Console.WriteLine("rebootDBCluster request is sent successfully");
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"rebootDBCluster '{clusterName}' cluster request failed: {ex.Message}");
+                await Task.Delay(1000);
+            }
+        }
+    }
+
     public async Task RebootInstanceAsync(string instanceId)
     {
         int remainingAttempts = 5;
