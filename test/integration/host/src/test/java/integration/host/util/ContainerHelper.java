@@ -105,10 +105,6 @@ public class ContainerHelper {
 
     if (task.contains("ef")) {
         exitCode = execInContainer(container, consumer,
-                "dotnet", "tool", "install", "--global", "dotnet-ef");
-        assertEquals(0, exitCode, "Failed to install dotnet-ef tool.");
-
-        exitCode = execInContainer(container, consumer,
                 "dotnet", "ef", "migrations", "add", "InitialCreate", "--project", "AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests");
         assertEquals(0, exitCode, "Failed to generate Entity framework migration.");
 
@@ -213,6 +209,8 @@ public class ContainerHelper {
                 builder -> appendExtraCommandsToBuilder.apply(
                     builder
                         .from(testContainerImageName)
+                        .run("dotnet tool install --global dotnet-ef")
+                        .env("PATH", "$PATH:/root/.dotnet/tools")
                         .run("mkdir", "app")
                         .workDir("/app")
                         .entryPoint("/bin/sh -c \"while true; do sleep 30; done;\"")
@@ -238,7 +236,8 @@ public class ContainerHelper {
             MountableFile.forHostPath("./src/test/build.gradle.kts"), "app/build.gradle.kts")
         .withCopyFileToContainer(
             MountableFile.forHostPath("./src/test/resources/rds-ca-2019-root.pem"),
-            "app/test/resources/rds-ca-2019-root.pem");
+            "app/test/resources/rds-ca-2019-root.pem")
+        .withEnv("PATH", "/root/.dotnet/tools:$PATH");
   }
 
   protected Long execInContainer(
