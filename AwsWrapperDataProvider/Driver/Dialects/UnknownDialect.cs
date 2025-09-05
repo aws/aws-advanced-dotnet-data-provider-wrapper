@@ -32,11 +32,13 @@ public class UnknownDialect : IDialect
     public IList<Type> DialectUpdateCandidates { get; } =
     [
         typeof(AuroraPgDialect),
-        typeof(AuroraMysqlDialect),
+        typeof(AuroraMySqlDialect),
+        typeof(RdsMultiAzDbClusterPgDialect),
+        typeof(RdsMultiAzDbClusterMySqlDialect),
         typeof(RdsPgDialect),
-        typeof(RdsMysqlDialect),
+        typeof(RdsMySqlDialect),
         typeof(PgDialect),
-        typeof(MysqlDialect),
+        typeof(MySqlDialect),
     ];
 
     public HostListProviderSupplier HostListProviderSupplier { get; } = (

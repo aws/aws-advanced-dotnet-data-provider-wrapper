@@ -20,7 +20,7 @@ using AwsWrapperDataProvider.Driver.Utils;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
-public class AuroraMysqlDialect : MysqlDialect
+public class AuroraMySqlDialect : MySqlDialect
 {
     private static readonly string TopologyQuery = "SELECT SERVER_ID, CASE WHEN SESSION_ID = 'MASTER_SESSION_ID' THEN TRUE ELSE FALSE END, "
           + "CPU, REPLICA_LAG_IN_MILLISECONDS, LAST_UPDATE_TIMESTAMP "
@@ -36,7 +36,9 @@ public class AuroraMysqlDialect : MysqlDialect
     private static readonly string IsWriterQuery = "SELECT SERVER_ID FROM information_schema.replica_host_status "
         + "WHERE SESSION_ID = 'MASTER_SESSION_ID' AND SERVER_ID = @@aurora_server_id";
 
-    public override IList<Type> DialectUpdateCandidates { get; } = [];
+    public override IList<Type> DialectUpdateCandidates { get; } = [
+        typeof(RdsMultiAzDbClusterMySqlDialect),
+    ];
 
     public override bool IsDialect(IDbConnection connection)
     {

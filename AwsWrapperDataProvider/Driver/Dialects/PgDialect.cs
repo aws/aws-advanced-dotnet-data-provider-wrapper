@@ -37,6 +37,7 @@ public class PgDialect : IDialect
     public virtual IList<Type> DialectUpdateCandidates { get; } =
     [
         typeof(AuroraPgDialect),
+        typeof(RdsMultiAzDbClusterPgDialect),
         typeof(RdsPgDialect),
     ];
 
@@ -72,7 +73,7 @@ public class PgDialect : IDialect
         return false;
     }
 
-    public void PrepareConnectionProperties(Dictionary<string, string> connectionpProps, HostSpec hostSpec)
+    public virtual void PrepareConnectionProperties(Dictionary<string, string> connectionpProps, HostSpec hostSpec)
     {
         // Do nothing.
     }

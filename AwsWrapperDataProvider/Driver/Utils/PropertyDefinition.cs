@@ -177,6 +177,11 @@ public static class PropertyDefinition
         "600000", // 10min
         "Interval in milliseconds for a monitor to be considered inactive and to be disposed.");
 
+    public static readonly AwsWrapperProperty MultiAzRdsJdbcDriverVersion = new(
+        "MultiAzJdbcDriverVersion",
+        "2.5.5",
+        "Version of JDBC driver in Multi-AZ RDS environment.");
+
     public static readonly AwsWrapperProperty SslInsecure = new(
         "sslInsecure",
         "false",
@@ -241,6 +246,7 @@ public static class PropertyDefinition
         OpenConnectionRetryTimeoutMs,
         OpenConnectionRetryIntervalMs,
         VerifyOpenedConnectionType,
+        MultiAzRdsJdbcDriverVersion,
         AppId,
 
         // Failover Plugin Properties

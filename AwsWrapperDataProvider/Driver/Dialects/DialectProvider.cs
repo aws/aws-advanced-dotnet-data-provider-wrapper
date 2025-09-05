@@ -40,12 +40,14 @@ public class DialectProvider
 
     private static readonly Dictionary<Type, IDialect> KnownDialectsByType = new()
     {
-        { typeof(MysqlDialect), new MysqlDialect() },
+        { typeof(MySqlDialect), new MySqlDialect() },
         { typeof(PgDialect), new PgDialect() },
-        { typeof(RdsMysqlDialect), new RdsMysqlDialect() },
+        { typeof(RdsMySqlDialect), new RdsMySqlDialect() },
         { typeof(RdsPgDialect), new RdsPgDialect() },
-        { typeof(AuroraMysqlDialect), new AuroraMysqlDialect() },
+        { typeof(AuroraMySqlDialect), new AuroraMySqlDialect() },
         { typeof(AuroraPgDialect), new AuroraPgDialect() },
+        { typeof(RdsMultiAzDbClusterMySqlDialect), new RdsMultiAzDbClusterMySqlDialect() },
+        { typeof(RdsMultiAzDbClusterPgDialect), new RdsMultiAzDbClusterPgDialect() },
         { typeof(UnknownDialect), new UnknownDialect() },
     };
 
@@ -68,13 +70,13 @@ public class DialectProvider
 
         // TODO : Uncomment when Aurora Limitless DB Shard Group is supported
         // { (RdsUrlType.RdsAuroraLimitlessDbShardGroup, PgDataSource), typeof() },
-        { (RdsUrlType.IpAddress, MySqlDataSource), typeof(MysqlDialect) },
-        { (RdsUrlType.RdsWriterCluster, MySqlDataSource), typeof(AuroraMysqlDialect) },
-        { (RdsUrlType.RdsReaderCluster, MySqlDataSource), typeof(AuroraMysqlDialect) },
-        { (RdsUrlType.RdsCustomCluster, MySqlDataSource), typeof(AuroraMysqlDialect) },
-        { (RdsUrlType.RdsProxy, MySqlDataSource), typeof(RdsMysqlDialect) },
-        { (RdsUrlType.RdsInstance, MySqlDataSource), typeof(RdsMysqlDialect) },
-        { (RdsUrlType.Other, MySqlDataSource), typeof(MysqlDialect) },
+        { (RdsUrlType.IpAddress, MySqlDataSource), typeof(MySqlDialect) },
+        { (RdsUrlType.RdsWriterCluster, MySqlDataSource), typeof(AuroraMySqlDialect) },
+        { (RdsUrlType.RdsReaderCluster, MySqlDataSource), typeof(AuroraMySqlDialect) },
+        { (RdsUrlType.RdsCustomCluster, MySqlDataSource), typeof(AuroraMySqlDialect) },
+        { (RdsUrlType.RdsProxy, MySqlDataSource), typeof(RdsMySqlDialect) },
+        { (RdsUrlType.RdsInstance, MySqlDataSource), typeof(RdsMySqlDialect) },
+        { (RdsUrlType.Other, MySqlDataSource), typeof(MySqlDialect) },
 
         // TODO : Uncomment when Aurora Limitless DB Shard Group is supported
         // { (RdsUrlType.RdsAuroraLimitlessDbShardGroup, MySqlDataSource), typeof() },
