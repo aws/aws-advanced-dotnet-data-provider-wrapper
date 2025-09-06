@@ -26,7 +26,6 @@ import com.github.dockerjava.api.exception.DockerException;
 import eu.rekawek.toxiproxy.ToxiproxyClient;
 import integration.host.TestInstanceInfo;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import org.testcontainers.DockerClientFactory;
@@ -103,12 +102,14 @@ public class ContainerHelper {
     Long exitCode = execInContainer(container, consumer, "dotnet", "build");
     assertEquals(0, exitCode, "Dotnet build failed.");
 
+    // For Entity Framework tests
     if (task.contains("ef")) {
         exitCode = execInContainer(container, consumer,
-                "dotnet", "ef", "migrations", "add", "InitialCreate", "--project", "AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests");
+                "dotnet", "ef", "migrations", "add", "InitialCreate_" + System.currentTimeMillis(), "--project", "AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests");
         assertEquals(0, exitCode, "Failed to generate Entity framework migration.");
 
-        exitCode = execInContainer(container, consumer, "dotnet", "ef", "database", "update", "--project", "AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests");
+        exitCode = execInContainer(container, consumer,
+                "dotnet", "ef", "database", "update", "--project", "AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests");
         assertEquals(0, exitCode, "Failed to update database with migration");
     }
 
