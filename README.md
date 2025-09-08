@@ -49,3 +49,8 @@ See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more inform
 
 This project is licensed under the Apache-2.0 License.
 
+### Third Party License Acknowledgement
+
+Although this repository is released under the Apache-2.0 License, it supports the use of the third party MySql.Data package. The MySql.Data package's licensing includes the GPL-2.0-only License with Universal-FOSS-exception-1.0.
+
+Although this repository is released under the Apache-2.0 License, it supports the use of the third party NHibernate package. The NHibernate package's licensing includes the LGPL-2.1-only License.

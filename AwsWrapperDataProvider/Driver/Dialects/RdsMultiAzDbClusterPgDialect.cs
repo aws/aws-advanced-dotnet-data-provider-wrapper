@@ -47,13 +47,10 @@ public class RdsMultiAzDbClusterPgDialect : PgDialect
     {
         try
         {
-            using IDbCommand topologyCommand = connection.CreateCommand();
-            topologyCommand.CommandText = IsRdsClusterQuery;
-            using IDataReader topologyReader = topologyCommand.ExecuteReader();
-            if (!topologyReader.Read())
-            {
-                return false;
-            }
+            using IDbCommand isDialectCommand = connection.CreateCommand();
+            isDialectCommand.CommandText = IsRdsClusterQuery;
+            using IDataReader isDialectReader = isDialectCommand.ExecuteReader();
+            return isDialectReader.Read() && !isDialectReader.IsDBNull(0);
         }
         catch (DbException)
         {
