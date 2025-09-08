@@ -38,7 +38,8 @@ public class PersonDbContext : DbContext
         optionsBuilder
             .UseAwsWrapper(
             connectionString,
-            wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, version));
+            wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, version))
+            .LogTo(Console.WriteLine);
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

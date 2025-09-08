@@ -31,6 +31,7 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
             .UseAwsWrapper(
             connectionString,
             wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, version))
+            .LogTo(Console.WriteLine)
             .Options;
 
         using (var db = new PersonDbContext(options))

@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
@@ -29,6 +28,7 @@ public class PersonDbContextFactory : IDesignTimeDbContextFactory<PersonDbContex
             .UseAwsWrapper(
             connectionString,
             wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, version))
+            .LogTo(Console.WriteLine)
             .Options;
 
         return new PersonDbContext(options);
