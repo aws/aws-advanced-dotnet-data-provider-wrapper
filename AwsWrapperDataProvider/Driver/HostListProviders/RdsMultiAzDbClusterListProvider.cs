@@ -53,13 +53,15 @@ public class RdsMultiAzDbClusterListProvider : RdsHostListProvider
 
         if (writerNodeId == null)
         {
-            using IDbCommand nodeIdCommand = conn.CreateCommand();
-            nodeIdCommand.CommandTimeout = DefaultTopologyQueryTimeoutSec;
-            nodeIdCommand.CommandText = this.nodeIdQuery;
-            using var nodeIdReader = nodeIdCommand.ExecuteReader();
-            while (nodeIdReader.Read())
+            using (IDbCommand nodeIdCommand = conn.CreateCommand())
             {
-                writerNodeId = nodeIdReader.GetString(0);
+                nodeIdCommand.CommandTimeout = DefaultTopologyQueryTimeoutSec;
+                nodeIdCommand.CommandText = this.nodeIdQuery;
+                using var nodeIdReader = nodeIdCommand.ExecuteReader();
+                while (nodeIdReader.Read())
+                {
+                    writerNodeId = nodeIdReader.GetString(0);
+                }
             }
         }
 

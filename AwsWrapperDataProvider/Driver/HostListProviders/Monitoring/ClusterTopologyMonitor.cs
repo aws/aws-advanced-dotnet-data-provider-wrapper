@@ -458,7 +458,26 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         return hosts;
     }
 
-    protected HostSpec CreateHost(string nodeId, bool isWriter, long weight, DateTime? lastUpdateTime)
+    protected virtual HostSpec CreateHost(DbDataReader reader, string? suggestedWriterNodeId)
+    {
+        string hostName = reader.GetString(0);
+        bool isWriter = reader.GetBoolean(1);
+        double cpuUtilization = reader.GetDouble(2);
+        double nodeLag = reader.GetDouble(3);
+        DateTime lastUpdateTime = reader.IsDBNull(4)
+            ? DateTime.UtcNow
+            : reader.GetDateTime(4);
+
+        long weight = (long)((Math.Round(nodeLag) * 100L) + Math.Round(cpuUtilization));
+
+        return this.CreateHost(hostName, isWriter, weight, lastUpdateTime);
+    }
+
+    protected HostSpec CreateHost(
+        string nodeId,
+        bool isWriter,
+        long weight,
+        DateTime? lastUpdateTime)
     {
         string endpoint = this.clusterInstanceTemplate.Host.Replace("?", nodeId);
         int port = this.clusterInstanceTemplate.IsPortSpecified
@@ -521,6 +540,8 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
         return null;
     }
+
+    protected virtual Task<string?> GetSuggestedWriterNodeIdAsync(DbConnection connection) => Task.FromResult<string?>(null);
 
     protected async Task DisposeConnectionAsync(DbConnection? connection)
     {
@@ -589,18 +610,20 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         }
     }
 
-    protected virtual async Task<IList<HostSpec>?> QueryForTopologyAsync(DbConnection connection)
+    protected async Task<IList<HostSpec>?> QueryForTopologyAsync(DbConnection connection)
     {
         try
         {
-            using var command = connection.CreateCommand();
+            string? suggestedWriterNodeId = await this.GetSuggestedWriterNodeIdAsync(connection);
+
+            using DbCommand command = connection.CreateCommand();
             if (command.CommandTimeout == 0)
             {
                 command.CommandTimeout = DefaultTopologyQueryTimeoutSec;
             }
 
             command.CommandText = this.topologyQuery;
-            await using var reader = await command.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
+            await using DbDataReader reader = await command.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
 
             var hosts = new List<HostSpec>();
             var writers = new List<HostSpec>();
@@ -609,19 +632,8 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             {
                 try
                 {
-                    string hostName = reader.GetString(0);
-                    bool isWriter = reader.GetBoolean(1);
-                    double cpuUtilization = reader.GetDouble(2);
-                    double nodeLag = reader.GetDouble(3);
-                    DateTime lastUpdateTime = reader.IsDBNull(4)
-                        ? DateTime.UtcNow
-                        : reader.GetDateTime(4);
-
-                    long weight = (long)((Math.Round(nodeLag) * 100L) + Math.Round(cpuUtilization));
-
-                    var hostSpec = this.CreateHost(hostName, isWriter, weight, lastUpdateTime);
-
-                    (isWriter ? writers : hosts).Add(hostSpec);
+                    HostSpec hostSpec = this.CreateHost(reader, suggestedWriterNodeId);
+                    (hostSpec.Role == HostRole.Writer ? writers : hosts).Add(hostSpec);
                 }
                 catch (Exception ex)
                 {

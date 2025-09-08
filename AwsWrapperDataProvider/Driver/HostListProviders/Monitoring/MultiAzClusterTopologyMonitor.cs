@@ -92,7 +92,7 @@ public class MultiAzClusterTopologyMonitor : ClusterTopologyMonitor
         }
     }
 
-    protected async Task<string?> GetSuggestedWriterNodeIdAsync(DbConnection connection)
+    protected override async Task<string?> GetSuggestedWriterNodeIdAsync(DbConnection connection)
     {
         try
         {
@@ -122,77 +122,15 @@ public class MultiAzClusterTopologyMonitor : ClusterTopologyMonitor
         }
     }
 
-    protected virtual HostSpec? CreateHostFromResultSet(DbDataReader reader, string? suggestedWriterNodeId)
+    protected override HostSpec CreateHost(DbDataReader reader, string? suggestedWriterNodeId)
     {
-        try
-        {
-            int endpointOrdinal = reader.GetOrdinal("endpoint");
-            int idOrdinal = reader.GetOrdinal("id");
-            string endpoint = reader.GetString(endpointOrdinal); // "instance-name.XYZ.us-west-2.rds.amazonaws.com"
-            string instanceName = endpoint.Substring(0, endpoint.IndexOf(".", StringComparison.Ordinal)); // "instance-name"
-            string hostId = reader.GetString(idOrdinal); // "1034958454"
-            bool isWriter = hostId.Equals(suggestedWriterNodeId, StringComparison.OrdinalIgnoreCase);
+        int endpointOrdinal = reader.GetOrdinal("endpoint");
+        int idOrdinal = reader.GetOrdinal("id");
+        string endpoint = reader.GetString(endpointOrdinal);
+        string instanceName = endpoint.Substring(0, endpoint.IndexOf(".", StringComparison.Ordinal));
+        string hostId = reader.GetString(idOrdinal);
+        bool isWriter = hostId.Equals(suggestedWriterNodeId, StringComparison.OrdinalIgnoreCase);
 
-            return this.CreateHost(instanceName, isWriter, 0, DateTime.UtcNow);
-        }
-        catch (Exception ex)
-        {
-            Logger.LogTrace("Error creating host from result set: {Error}", ex.Message);
-            return null;
-        }
-    }
-
-    protected override async Task<IList<HostSpec>?> QueryForTopologyAsync(DbConnection connection)
-    {
-        try
-        {
-            string? suggestedWriterNodeId = await this.GetSuggestedWriterNodeIdAsync(connection);
-
-            using var command = connection.CreateCommand();
-            command.CommandTimeout = DefaultTopologyQueryTimeoutSec;
-            command.CommandText = this.topologyQuery;
-            await using var reader = await command.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
-
-            var hosts = new List<HostSpec>();
-            var writers = new List<HostSpec>();
-
-            while (await reader.ReadAsync())
-            {
-                try
-                {
-                    var hostSpec = this.CreateHostFromResultSet(reader, suggestedWriterNodeId);
-                    if (hostSpec != null)
-                    {
-                        (hostSpec.Role == HostRole.Writer ? writers : hosts).Add(hostSpec);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogTrace("Error processing query results: {Error}", ex.Message);
-                    return null;
-                }
-            }
-
-            if (writers.Count == 0)
-            {
-                Logger.LogWarning("Invalid topology: no writer nodes found");
-                hosts.Clear();
-            }
-            else if (writers.Count == 1)
-            {
-                hosts.Add(writers[0]);
-            }
-            else
-            {
-                hosts.Add(writers.OrderByDescending(x => x.LastUpdateTime).First());
-            }
-
-            return hosts;
-        }
-        catch (Exception ex)
-        {
-            Logger.LogTrace("Error querying for topology: {Error}", ex.Message);
-            return null;
-        }
+        return this.CreateHost(instanceName, isWriter, 0, DateTime.UtcNow);
     }
 }
