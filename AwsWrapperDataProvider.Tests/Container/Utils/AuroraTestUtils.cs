@@ -17,6 +17,7 @@ using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
 using System.Net;
+using System.Net.NetworkInformation;
 using Amazon;
 using Amazon.RDS;
 using Amazon.RDS.Model;
@@ -591,13 +592,21 @@ public class AuroraTestUtils
 
     public async Task CrashInstance(string instanceId)
     {
-        // TODO: add support for multi az
+        var deployment = TestEnvironment.Env.Info.Request.Deployment;
 
-        var clusterId = TestEnvironment.Env.Info.RdsDbName!;
-        await this.FailoverClusterToATargetAndWaitUntilWriterChanged(
-            clusterId,
-            await this.GetDBClusterWriterInstanceIdAsync(clusterId),
-            await this.GetRandomDBClusterReaderInstanceIdAsync(clusterId));
+        if (deployment == DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER)
+        {
+            var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            await this.SimulateTemporaryFailureTask(instanceId, TimeSpan.Zero, TimeSpan.FromSeconds(12), tcs);
+        }
+        else
+        {
+            var clusterId = TestEnvironment.Env.Info.RdsDbName!;
+            await this.FailoverClusterToATargetAndWaitUntilWriterChanged(
+                clusterId,
+                await this.GetDBClusterWriterInstanceIdAsync(clusterId),
+                await this.GetRandomDBClusterReaderInstanceIdAsync(clusterId));
+        }
     }
 
     public Task SimulateTemporaryFailureTask(string instanceName, TimeSpan delay, TimeSpan duration, TaskCompletionSource tcs)
@@ -628,10 +637,13 @@ public class AuroraTestUtils
 
     public async Task FailoverClusterToATargetAndWaitUntilWriterChanged(string clusterId, string initialWriterId, string targetWriterId)
     {
-        // TODO: add support for multi az
-
         var deployment = TestEnvironment.Env.Info.Request.Deployment;
         var clusterEndpoint = TestEnvironment.Env.Info.DatabaseInfo.ClusterEndpoint;
+
+        if (deployment == DatabaseEngineDeployment.RDS_MULTI_AZ_INSTANCE)
+        {
+            throw new NotSupportedException("Failover is not supported for " + deployment);
+        }
 
         await this.FailoverClusterToTargetAsync(clusterId, targetWriterId);
 
