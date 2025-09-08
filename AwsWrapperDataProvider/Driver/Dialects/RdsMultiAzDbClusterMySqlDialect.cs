@@ -34,7 +34,7 @@ public class RdsMultiAzDbClusterMySqlDialect : MySqlDialect
 
     private const string NodeIdQuery = "SELECT @@server_id";
     private const string IsReaderQuery = "SELECT @@read_only";
-    
+
     private const string IsDialectQuery = "SHOW VARIABLES LIKE 'report_host'";
 
     public override bool IsDialect(IDbConnection connection)
