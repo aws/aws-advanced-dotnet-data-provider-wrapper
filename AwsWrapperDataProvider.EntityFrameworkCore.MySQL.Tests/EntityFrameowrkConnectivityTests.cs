@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using AwsWrapperDataProvider.Driver.Plugins.Failover;
 using AwsWrapperDataProvider.Tests;
+using AwsWrapperDataProvider.Tests.Container.Utils;
 using Microsoft.EntityFrameworkCore;
 
 namespace AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests;
@@ -43,10 +45,68 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
 
         using (var db = new PersonDbContext(options))
         {
-            foreach (Person p in db.Persons.Where(x => x.FirstName != null && x.FirstName.StartsWith("J")))
+            foreach (Person p in db.Persons.Where(x => x.FirstName != null && x.FirstName.StartsWith('J')))
             {
                 Console.WriteLine($"{p.Id}: {p.FirstName} {p.LastName}");
             }
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    [Trait("Database", "mysql-ef")]
+    public async Task EFFailoverTest()
+    {
+        Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
+        string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
+        var initialWriterInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.GetInstance(currentWriter);
+
+        var connectionString = ConnectionStringHelper.GetUrl(
+            Engine,
+            initialWriterInstanceInfo.Host,
+            initialWriterInstanceInfo.Port,
+            Username,
+            Password,
+            ProxyDatabaseInfo.DefaultDbName,
+            2,
+            10,
+            "failover");
+        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}";
+
+        var version = new MySqlServerVersion("8.0.32");
+
+        var options = new DbContextOptionsBuilder<PersonDbContext>()
+            .UseAwsWrapper(
+            connectionString,
+            wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, version))
+            .LogTo(Console.WriteLine)
+            .Options;
+
+        using (var db = new PersonDbContext(options))
+        {
+            await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
+            {
+                Person jane = new() { FirstName = "Jane", LastName = "Smith" };
+                db.Add(jane);
+                db.SaveChanges();
+
+                await AuroraUtils.CrashInstance(currentWriter);
+
+                Person john = new() { FirstName = "John", LastName = "Smith" };
+                db.Add(john);
+                db.SaveChanges();
+            });
+
+            Person joe = new() { FirstName = "Joe", LastName = "Smith" };
+            db.Add(joe);
+            db.SaveChanges();
+        }
+
+        using (var db = new PersonDbContext(options))
+        {
+            Assert.True(db.Persons.Any(p => p.FirstName == "Jane"));
+            Assert.True(db.Persons.Any(p => p.FirstName == "Joe"));
+            Assert.False(db.Persons.Any(p => p.FirstName == "John"));
         }
     }
 }
