@@ -34,6 +34,8 @@ public class RdsMultiAzDbClusterMySqlDialect : MySqlDialect
 
     private const string NodeIdQuery = "SELECT @@server_id";
     private const string IsReaderQuery = "SELECT @@read_only";
+    
+    private const string IsDialectQuery = "SHOW VARIABLES LIKE 'report_host'";
 
     public override bool IsDialect(IDbConnection connection)
     {
@@ -54,6 +56,18 @@ public class RdsMultiAzDbClusterMySqlDialect : MySqlDialect
             {
                 return false;
             }
+
+            using IDbCommand isDialectCommand = connection.CreateCommand();
+            isDialectCommand.CommandText = IsDialectQuery;
+
+            using var reader = isDialectCommand.ExecuteReader(CommandBehavior.SingleRow);
+            if (!reader.Read())
+            {
+                return false;
+            }
+
+            string? reportHost = reader.IsDBNull(1) ? null : reader.GetString(1);
+            return !string.IsNullOrEmpty(reportHost);
         }
         catch (DbException)
         {
