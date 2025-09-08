@@ -41,20 +41,24 @@ public class RdsMultiAzDbClusterMySqlDialect : MySqlDialect
     {
         try
         {
-            using IDbCommand topologyTableExistCommand = connection.CreateCommand();
-            topologyTableExistCommand.CommandText = TopologyTableExistQuery;
-            using IDataReader topologyTableExistReader = topologyTableExistCommand.ExecuteReader();
-            if (!topologyTableExistReader.Read())
+            using (IDbCommand topologyTableExistCommand = connection.CreateCommand())
             {
-                return false;
+                topologyTableExistCommand.CommandText = TopologyTableExistQuery;
+                using IDataReader topologyTableExistReader = topologyTableExistCommand.ExecuteReader();
+                if (!topologyTableExistReader.Read())
+                {
+                    return false;
+                }
             }
 
-            using IDbCommand topologyCommand = connection.CreateCommand();
-            topologyCommand.CommandText = TopologyQuery;
-            using IDataReader topologyReader = topologyCommand.ExecuteReader();
-            if (!topologyReader.Read())
+            using (IDbCommand topologyCommand = connection.CreateCommand())
             {
-                return false;
+                topologyCommand.CommandText = TopologyQuery;
+                using IDataReader topologyReader = topologyCommand.ExecuteReader();
+                if (!topologyReader.Read())
+                {
+                    return false;
+                }
             }
 
             using IDbCommand isDialectCommand = connection.CreateCommand();

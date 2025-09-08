@@ -41,12 +41,15 @@ public class RdsMultiAzDbClusterListProvider : RdsHostListProvider
 
     internal override List<HostSpec> QueryForTopology(IDbConnection conn)
     {
-        using IDbCommand fetchWriterNodeCommand = conn.CreateCommand();
-        fetchWriterNodeCommand.CommandTimeout = DefaultTopologyQueryTimeoutSec;
-        fetchWriterNodeCommand.CommandText = this.fetchWriterNodeQuery;
-        using IDataReader writerNodeReader = fetchWriterNodeCommand.ExecuteReader();
+        string? writerNodeId;
 
-        string? writerNodeId = this.ProcessWriterNodeId(writerNodeReader);
+        using (IDbCommand fetchWriterNodeCommand = conn.CreateCommand())
+        {
+            fetchWriterNodeCommand.CommandTimeout = DefaultTopologyQueryTimeoutSec;
+            fetchWriterNodeCommand.CommandText = this.fetchWriterNodeQuery;
+            using IDataReader writerNodeReader = fetchWriterNodeCommand.ExecuteReader();
+            writerNodeId = this.ProcessWriterNodeId(writerNodeReader);
+        }
 
         if (writerNodeId == null)
         {
