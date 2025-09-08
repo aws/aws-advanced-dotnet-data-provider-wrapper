@@ -133,7 +133,7 @@ tasks.register<Test>("test-all-pg-multi-az") {
     }
 }
 
-tasks.register<Test>("test-all-mysql-aurora") {
+tasks.register<Test>("test-all-mysql-multi-az") {
     group = "verification"
     filter.includeTestsMatching("integration.host.TestRunner.runTests")
     doFirst {
