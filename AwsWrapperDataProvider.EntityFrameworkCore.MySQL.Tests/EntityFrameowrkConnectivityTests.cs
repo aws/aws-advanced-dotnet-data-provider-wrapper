@@ -28,11 +28,12 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
     public void MysqlEFAddTest()
     {
         var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName);
+        var wrapperConnectionString = connectionString + $";Plugins=failover;";
         var version = new MySqlServerVersion("8.0.32");
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
             .UseAwsWrapper(
-            connectionString,
+            wrapperConnectionString,
             wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, version))
             .LogTo(Console.WriteLine)
             .Options;
@@ -72,7 +73,7 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
             2,
             10);
 
-        var wrapperConnectionString = connectionString + $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}";
+        var wrapperConnectionString = connectionString + $";Plugins=failover;ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}";
 
         var version = new MySqlServerVersion("8.0.32");
 
