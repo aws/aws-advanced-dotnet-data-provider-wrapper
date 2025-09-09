@@ -22,6 +22,8 @@ namespace AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests;
 
 public class EntityFrameowrkConnectivityTests : IntegrationTestBase
 {
+    protected override bool MakeSureFirstInstanceWriter => true;
+
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql-ef")]
