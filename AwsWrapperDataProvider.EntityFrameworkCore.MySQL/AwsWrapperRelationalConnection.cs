@@ -19,16 +19,24 @@ namespace AwsWrapperDataProvider.EntityFrameworkCore.MySQL;
 
 public class AwsWrapperRelationalConnection : RelationalConnection, IAwsWrapperRelationalConnection
 {
+    private readonly string wrapperConnectionString;
+
     public AwsWrapperRelationalConnection(
         RelationalConnectionDependencies dependencies, IRelationalConnection targetRelationalConnection) : base(dependencies)
     {
         this.TargetRelationalConnection = targetRelationalConnection;
+
+        var extension = dependencies.ContextOptions.Extensions
+            .OfType<AwsWrapperOptionsExtension>()
+            .FirstOrDefault();
+
+        this.wrapperConnectionString = extension?.WrapperConnectionString ?? throw new InvalidOperationException("AwsWrapperOptionsExtension not found.");
     }
 
     public IRelationalConnection? TargetRelationalConnection { get; set; }
 
     protected override DbConnection CreateDbConnection()
     {
-        return new AwsWrapperConnection(typeof(MySqlConnector.MySqlConnection), this.ConnectionString!);
+        return new AwsWrapperConnection(typeof(MySqlConnector.MySqlConnection), this.wrapperConnectionString!);
     }
 }

@@ -26,9 +26,12 @@ public class AwsWrapperOptionsExtension : IDbContextOptionsExtension
 
     public IDbContextOptionsExtension WrappedExtension { get; set; }
 
-    public AwsWrapperOptionsExtension(IDbContextOptionsExtension wrappedExtension)
+    public string WrapperConnectionString { get; }
+
+    public AwsWrapperOptionsExtension(IDbContextOptionsExtension wrappedExtension, string wrapperConnectionString)
     {
         this.WrappedExtension = wrappedExtension;
+        this.WrapperConnectionString = wrapperConnectionString;
     }
 
     public void ApplyServices(IServiceCollection services)
@@ -55,7 +58,7 @@ public class AwsWrapperOptionsExtension : IDbContextOptionsExtension
         }
         else
         {
-            throw new Exception("not implemented");
+            throw new InvalidOperationException("Could not determine the target relational connection type or factory.");
         }
 
         services.Replace(new ServiceDescriptor(typeof(IRelationalConnection), p => p.GetRequiredService<IAwsWrapperRelationalConnection>(), ServiceLifetime.Scoped));

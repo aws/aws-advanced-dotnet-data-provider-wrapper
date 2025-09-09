@@ -45,7 +45,7 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
 
         using (var db = new PersonDbContext(options))
         {
-            foreach (Person p in db.Persons.Where(x => x.FirstName != null && x.FirstName.StartsWith('J')))
+            foreach (Person p in db.Persons.Where(x => x.FirstName != null && x.FirstName.StartsWith("J")))
             {
                 Console.WriteLine($"{p.Id}: {p.FirstName} {p.LastName}");
             }
@@ -77,8 +77,8 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
             .UseAwsWrapper(
-            connectionString,
-            wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, version))
+             connectionString,
+             wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(version))
             .LogTo(Console.WriteLine)
             .Options;
 

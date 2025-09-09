@@ -22,11 +22,11 @@ public static class AwsWrapperDbContextOptionsBuilderExtensions
 {
     public static DbContextOptionsBuilder UseAwsWrapper(
         this DbContextOptionsBuilder optionsBuilder,
-        string connectionString,
+        string wrapperConnectionString,
         Action<DbContextOptionsBuilder> wrappedOptionsBuilderAction)
     {
         ArgumentNullException.ThrowIfNull(optionsBuilder);
-        ArgumentException.ThrowIfNullOrEmpty(connectionString);
+        ArgumentException.ThrowIfNullOrEmpty(wrapperConnectionString);
 
         var wrappedOptionBuilder = new DbContextOptionsBuilder();
         wrappedOptionsBuilderAction(wrappedOptionBuilder);
@@ -35,7 +35,7 @@ public static class AwsWrapperDbContextOptionsBuilderExtensions
 
         ((IDbContextOptionsBuilderInfrastructure)optionsBuilder).AddOrUpdateExtension(targetOptionExtension!);
 
-        var extension = new AwsWrapperOptionsExtension(targetOptionExtension!);
+        var extension = new AwsWrapperOptionsExtension(targetOptionExtension!, wrapperConnectionString);
         ((IDbContextOptionsBuilderInfrastructure)optionsBuilder).AddOrUpdateExtension(extension);
 
         ConfigureWarnings(optionsBuilder);
