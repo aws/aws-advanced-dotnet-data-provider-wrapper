@@ -65,11 +65,10 @@ public class PluginService : IPluginService, IHostListProviderService
             try
             {
                 this.transaction?.Rollback();
-                this.transaction?.Dispose();
             }
             catch (Exception)
             {
-                // Do nothing.
+                this.transaction?.Dispose();
             }
             finally
             {
@@ -132,7 +131,7 @@ public class PluginService : IPluginService, IHostListProviderService
             {
                 if (!ReferenceEquals(connection, oldConnection))
                 {
-                    oldConnection?.Close();
+                    //oldConnection?.Close();
                     oldConnection?.Dispose();
                     Logger.LogTrace("Old connection {Type}@{Id} is disposed.", oldConnection?.GetType().FullName, RuntimeHelpers.GetHashCode(oldConnection));
                 }

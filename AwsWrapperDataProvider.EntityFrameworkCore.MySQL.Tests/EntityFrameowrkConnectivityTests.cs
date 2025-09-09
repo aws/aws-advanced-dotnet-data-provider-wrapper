@@ -88,7 +88,7 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
 
         using (var db = new PersonDbContext(options))
         {
-            await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
+            await Assert.ThrowsAsync<TransactionStateUnknownException>(async () =>
             {
                 Person jane = new() { FirstName = "Jane", LastName = "Smith" };
                 db.Add(jane);
