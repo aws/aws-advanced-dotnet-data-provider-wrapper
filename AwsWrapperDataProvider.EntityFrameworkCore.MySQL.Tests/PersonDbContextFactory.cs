@@ -21,14 +21,14 @@ public class PersonDbContextFactory : IDesignTimeDbContextFactory<PersonDbContex
 {
     public PersonDbContext CreateDbContext(string[] args)
     {
-        var connectionString = EFUtils.GetConnectionString();
+        var connectionString = EFUtils.GetMySqlConnectionString();
         var version = new MySqlServerVersion("8.0.32");
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
             .UseAwsWrapper(
             connectionString,
-            wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(version))
-            .LogTo(Console.WriteLine)
+            wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, version))
+            .LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Trace)
             .Options;
 
         return new PersonDbContext(options);

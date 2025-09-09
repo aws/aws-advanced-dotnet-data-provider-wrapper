@@ -33,7 +33,7 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
         var options = new DbContextOptionsBuilder<PersonDbContext>()
             .UseAwsWrapper(
             connectionString,
-            wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(version))
+            wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, version))
             .LogTo(Console.WriteLine)
             .Options;
 
@@ -70,16 +70,16 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
             Password,
             ProxyDatabaseInfo.DefaultDbName,
             2,
-            10,
-            "failover");
-        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}";
+            10);
+
+        var wrapperConnectionString = connectionString + $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}";
 
         var version = new MySqlServerVersion("8.0.32");
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
             .UseAwsWrapper(
-             connectionString,
-             wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(version))
+             wrapperConnectionString,
+             wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, version))
             .LogTo(Console.WriteLine, LogLevel.Trace)
             .Options;
 

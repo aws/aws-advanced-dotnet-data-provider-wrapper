@@ -13,11 +13,12 @@
 // limitations under the License.
 
 using System.Text.Json;
+using MySqlConnector;
 
 namespace AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests;
 public class EFUtils
 {
-    public static string GetConnectionString()
+    public static string GetMySqlConnectionString()
     {
         string infoJson = Environment.GetEnvironmentVariable("TEST_ENV_INFO_JSON") ?? throw new Exception("Environment variable TEST_ENV_INFO_JSON is required.");
         using var doc = JsonDocument.Parse(infoJson);
@@ -27,7 +28,17 @@ public class EFUtils
         var user = root.GetProperty("databaseInfo").GetProperty("username").GetString() ?? throw new Exception("Could not get user from TEST_ENV_INFO_JSON");
         var password = root.GetProperty("databaseInfo").GetProperty("password").GetString() ?? throw new Exception("Could not get password from TEST_ENV_INFO_JSON");
         var dbName = root.GetProperty("databaseInfo").GetProperty("defaultDbName").GetString() ?? throw new Exception("Could not get defaultDbName from TEST_ENV_INFO_JSON");
+        MySqlConnectionStringBuilder mySqlConnectionStringBuilder = new()
+        {
+            Server = cluster,
+            Port = (uint)port,
+            UserID = user,
+            Password = password,
+            Database = dbName,
+            DefaultCommandTimeout = 30,
+            ConnectionTimeout = 30,
+        };
 
-        return $"Server={cluster};Port={port};User ID={user};Password={password};Initial Catalog={dbName};Plugins=;";
+        return mySqlConnectionStringBuilder.ConnectionString;
     }
 }

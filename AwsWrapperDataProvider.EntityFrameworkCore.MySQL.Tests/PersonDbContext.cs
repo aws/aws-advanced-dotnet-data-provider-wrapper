@@ -32,14 +32,14 @@ public class PersonDbContext : DbContext
             return;
         }
 
-        var connectionString = EFUtils.GetConnectionString();
+        var connectionString = EFUtils.GetMySqlConnectionString();
         var version = new MySqlServerVersion("8.0.32");
 
         optionsBuilder
             .UseAwsWrapper(
             connectionString,
-            wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(version))
-            .LogTo(Console.WriteLine);
+            wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, version))
+            .LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Trace);
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
