@@ -17,6 +17,7 @@ using AwsWrapperDataProvider.Tests;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using MySqlConnector;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests;
@@ -90,7 +91,7 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
                 db.Add(jane);
                 db.SaveChanges();
 
-                using (AwsWrapperConnection connection = new(wrapperConnectionString))
+                using (AwsWrapperConnection<MySqlConnection> connection = new(wrapperConnectionString))
                 {
                     connection.Open();
                     using (var command = connection.CreateCommand())
@@ -105,7 +106,7 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
 
                 await AuroraUtils.CrashInstance(currentWriter);
 
-                using (AwsWrapperConnection connection = new(wrapperConnectionString))
+                using (AwsWrapperConnection<MySqlConnection> connection = new(wrapperConnectionString))
                 {
                     connection.Open();
                     using (var command = connection.CreateCommand())
