@@ -27,7 +27,7 @@ public class PersonDbContextFactory : IDesignTimeDbContextFactory<PersonDbContex
         var options = new DbContextOptionsBuilder<PersonDbContext>()
             .UseAwsWrapper(
             connectionString,
-            wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, version))
+            wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(version))
             .LogTo(Console.WriteLine)
             .Options;
 

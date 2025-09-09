@@ -16,6 +16,7 @@ using AwsWrapperDataProvider.Driver.Plugins.Failover;
 using AwsWrapperDataProvider.Tests;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests;
 
@@ -26,13 +27,13 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
     [Trait("Database", "mysql-ef")]
     public void MysqlEFAddTest()
     {
-        var connectionString = EFUtils.GetConnectionString();
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName);
         var version = new MySqlServerVersion("8.0.32");
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
             .UseAwsWrapper(
             connectionString,
-            wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, version))
+            wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(version))
             .LogTo(Console.WriteLine)
             .Options;
 
@@ -79,7 +80,7 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
             .UseAwsWrapper(
              connectionString,
              wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(version))
-            .LogTo(Console.WriteLine)
+            .LogTo(Console.WriteLine, LogLevel.Trace)
             .Options;
 
         using (var db = new PersonDbContext(options))
