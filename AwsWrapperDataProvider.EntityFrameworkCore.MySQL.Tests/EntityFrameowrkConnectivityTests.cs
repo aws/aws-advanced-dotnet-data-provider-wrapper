@@ -22,8 +22,6 @@ namespace AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests;
 
 public class EntityFrameowrkConnectivityTests : IntegrationTestBase
 {
-    protected override bool MakeSureFirstInstanceWriter => true;
-
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql-ef")]
@@ -63,17 +61,8 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
         string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
-        var initialWriterInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.GetInstance(currentWriter);
 
-        var connectionString = ConnectionStringHelper.GetUrl(
-            Engine,
-            initialWriterInstanceInfo.Host,
-            initialWriterInstanceInfo.Port,
-            Username,
-            Password,
-            ProxyDatabaseInfo.DefaultDbName,
-            2,
-            10);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName, 2, 10);
 
         var wrapperConnectionString = connectionString + $";Plugins=failover;ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}";
 

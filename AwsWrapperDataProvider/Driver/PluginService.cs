@@ -131,7 +131,6 @@ public class PluginService : IPluginService, IHostListProviderService
             {
                 if (!ReferenceEquals(connection, oldConnection))
                 {
-                    //oldConnection?.Close();
                     oldConnection?.Dispose();
                     Logger.LogTrace("Old connection {Type}@{Id} is disposed.", oldConnection?.GetType().FullName, RuntimeHelpers.GetHashCode(oldConnection));
                 }
