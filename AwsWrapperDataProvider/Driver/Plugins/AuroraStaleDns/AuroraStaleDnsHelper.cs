@@ -69,6 +69,7 @@ public class AuroraStaleDnsHelper
 
         // Check the role of the connection we actually got
         HostRole connectionRole = this.pluginService.GetHostRole(connection);
+        Logger.LogTrace("Current connection role: {role}", connectionRole);
 
         if (connectionRole == HostRole.Reader)
         {

@@ -37,7 +37,7 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
 
     [Fact]
     [Trait("Category", "Integration")]
-    [Trait("Database", "mysql-ef")]
+    // [Trait("Database", "mysql-ef")]
     public void MysqlEFAddTest()
     {
         var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName);
@@ -118,23 +118,7 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
                 db.Add(jane);
                 db.SaveChanges();
 
-                using (AwsWrapperConnection<MySqlConnection> connection = new(wrapperConnectionString))
-                {
-                    connection.Open();
-                    this.logger.WriteLine("New Connection current node: " + AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment));
-                    this.logger.WriteLine("New Connection Writer node: " + AuroraUtils.ExecuteQuery(connection, Engine, Deployment, AuroraMysqlDialect.IsWriterQuery));
-                    this.logger.WriteLine("New Connection Is current node reader: " + AuroraUtils.ExecuteQuery(connection, Engine, Deployment, AuroraMysqlDialect.IsReaderQuery));
-                }
-
                 await AuroraUtils.CrashInstance(currentWriter);
-
-                using (AwsWrapperConnection<MySqlConnection> connection = new(wrapperConnectionString))
-                {
-                    connection.Open();
-                    this.logger.WriteLine("New Connection Current node: " + AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment));
-                    this.logger.WriteLine("New Connection Writer node: " + AuroraUtils.ExecuteQuery(connection, Engine, Deployment, AuroraMysqlDialect.IsWriterQuery));
-                    this.logger.WriteLine("New Connection Is current node reader: " + AuroraUtils.ExecuteQuery(connection, Engine, Deployment, AuroraMysqlDialect.IsReaderQuery));
-                }
 
                 Person john = new() { FirstName = "John", LastName = "Smith" };
                 db.Add(john);
