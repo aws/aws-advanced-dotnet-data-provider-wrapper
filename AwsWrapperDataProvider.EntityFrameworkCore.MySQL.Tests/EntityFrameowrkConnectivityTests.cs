@@ -117,7 +117,13 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
 
                 using (var connection = db.Database.GetDbConnection())
                 {
-                    connection.Open();
+                    this.logger.WriteLine("Current Connection state: " + connection.State);
+
+                    if (connection.State == System.Data.ConnectionState.Closed)
+                    {
+                        connection.Open();
+                    }
+
                     this.logger.WriteLine("Current Connection current node: " + AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment));
                     this.logger.WriteLine("Current Connection Writer node: " + AuroraUtils.ExecuteQuery(connection, Engine, Deployment, AuroraMysqlDialect.IsWriterQuery));
                     this.logger.WriteLine("Current Connection Is current node reader: " + AuroraUtils.ExecuteQuery(connection, Engine, Deployment, AuroraMysqlDialect.IsReaderQuery));
@@ -135,7 +141,12 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
 
                 using (var connection = db.Database.GetDbConnection())
                 {
-                    connection.Open();
+                    this.logger.WriteLine("Current Connection state: " + connection.State);
+                    if (connection.State == System.Data.ConnectionState.Closed)
+                    {
+                        connection.Open();
+                    }
+
                     this.logger.WriteLine("Current Connection Current node: " + AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment));
                     this.logger.WriteLine("Current Connection Writer node: " + AuroraUtils.ExecuteQuery(connection, Engine, Deployment, AuroraMysqlDialect.IsWriterQuery));
                     this.logger.WriteLine("Current Connection Is current node reader: " + AuroraUtils.ExecuteQuery(connection, Engine, Deployment, AuroraMysqlDialect.IsReaderQuery));
