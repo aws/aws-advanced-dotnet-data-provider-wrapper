@@ -115,20 +115,38 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
                 db.Add(jane);
                 db.SaveChanges();
 
+                using (var connection = db.Database.GetDbConnection())
+                {
+                    connection.Open();
+                    this.logger.WriteLine("Current Connection current node: " + AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment));
+                    this.logger.WriteLine("Current Connection Writer node: " + AuroraUtils.ExecuteQuery(connection, Engine, Deployment, AuroraMysqlDialect.IsWriterQuery));
+                    this.logger.WriteLine("Current Connection Is current node reader: " + AuroraUtils.ExecuteQuery(connection, Engine, Deployment, AuroraMysqlDialect.IsReaderQuery));
+                }
+
                 using (AwsWrapperConnection<MySqlConnection> connection = new(wrapperConnectionString))
                 {
                     connection.Open();
-                    this.logger.WriteLine("Current node:" + AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment));
-                    this.logger.WriteLine("Writer node:" + AuroraUtils.ExecuteQuery(connection, Engine, Deployment, AuroraMysqlDialect.IsWriterQuery));
+                    this.logger.WriteLine("New Connection current node: " + AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment));
+                    this.logger.WriteLine("New Connection Writer node: " + AuroraUtils.ExecuteQuery(connection, Engine, Deployment, AuroraMysqlDialect.IsWriterQuery));
+                    this.logger.WriteLine("New Connection Is current node reader: " + AuroraUtils.ExecuteQuery(connection, Engine, Deployment, AuroraMysqlDialect.IsReaderQuery));
                 }
 
                 await AuroraUtils.CrashInstance(currentWriter);
 
+                using (var connection = db.Database.GetDbConnection())
+                {
+                    connection.Open();
+                    this.logger.WriteLine("Current Connection Current node: " + AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment));
+                    this.logger.WriteLine("Current Connection Writer node: " + AuroraUtils.ExecuteQuery(connection, Engine, Deployment, AuroraMysqlDialect.IsWriterQuery));
+                    this.logger.WriteLine("Current Connection Is current node reader: " + AuroraUtils.ExecuteQuery(connection, Engine, Deployment, AuroraMysqlDialect.IsReaderQuery));
+                }
+
                 using (AwsWrapperConnection<MySqlConnection> connection = new(wrapperConnectionString))
                 {
                     connection.Open();
-                    this.logger.WriteLine("Current node:" + AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment));
-                    this.logger.WriteLine("Writer node:" + AuroraUtils.ExecuteQuery(connection, Engine, Deployment, AuroraMysqlDialect.IsWriterQuery));
+                    this.logger.WriteLine("New Connection Current node: " + AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment));
+                    this.logger.WriteLine("New Connection Writer node: " + AuroraUtils.ExecuteQuery(connection, Engine, Deployment, AuroraMysqlDialect.IsWriterQuery));
+                    this.logger.WriteLine("New Connection Is current node reader: " + AuroraUtils.ExecuteQuery(connection, Engine, Deployment, AuroraMysqlDialect.IsReaderQuery));
                 }
 
                 Person john = new() { FirstName = "John", LastName = "Smith" };

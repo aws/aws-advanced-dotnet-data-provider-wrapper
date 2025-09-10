@@ -27,7 +27,7 @@ public class AuroraMysqlDialect : MysqlDialect
           + "FROM information_schema.replica_host_status "
           + "WHERE time_to_sec(timediff(now(), LAST_UPDATE_TIMESTAMP)) <= 300 OR SESSION_ID = 'MASTER_SESSION_ID' ";
 
-    private static readonly string IsReaderQuery = "SELECT @@innodb_read_only";
+    public static readonly string IsReaderQuery = "SELECT @@innodb_read_only";
 
     private static readonly string NodeIdQuery = "SELECT @@aurora_server_id";
 
