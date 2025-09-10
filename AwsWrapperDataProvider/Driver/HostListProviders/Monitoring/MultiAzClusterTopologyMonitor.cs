@@ -66,10 +66,10 @@ public class MultiAzClusterTopologyMonitor : ClusterTopologyMonitor
     {
         try
         {
-            using (DbCommand command = connection.CreateCommand())
+            using (var command = connection.CreateCommand())
             {
                 command.CommandText = this.fetchWriterNodeQuery;
-                await using DbDataReader reader = await command.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
+                await using var reader = await command.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
 
                 if (await reader.ReadAsync())
                 {
@@ -85,10 +85,10 @@ public class MultiAzClusterTopologyMonitor : ClusterTopologyMonitor
                 }
             }
 
-            using (DbCommand nodeIdCommand = connection.CreateCommand())
+            using (var nodeIdCommand = connection.CreateCommand())
             {
                 nodeIdCommand.CommandText = this.nodeIdQuery;
-                using DbDataReader reader = await nodeIdCommand.ExecuteReaderAsync();
+                using var reader = await nodeIdCommand.ExecuteReaderAsync();
                 if (reader.Read())
                 {
                     return reader.IsDBNull(0) ? null : reader.GetString(0);
@@ -108,10 +108,10 @@ public class MultiAzClusterTopologyMonitor : ClusterTopologyMonitor
     {
         try
         {
-            using (DbCommand command = connection.CreateCommand())
+            using (var command = connection.CreateCommand())
             {
                 command.CommandText = this.fetchWriterNodeQuery;
-                await using DbDataReader reader = await command.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
+                await using var reader = await command.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
 
                 if (await reader.ReadAsync())
                 {
@@ -128,10 +128,10 @@ public class MultiAzClusterTopologyMonitor : ClusterTopologyMonitor
             }
 
 
-            using (DbCommand nodeIdCommand = connection.CreateCommand())
+            using (var nodeIdCommand = connection.CreateCommand())
             {
                 nodeIdCommand.CommandText = this.nodeIdQuery;
-                using DbDataReader reader = await nodeIdCommand.ExecuteReaderAsync();
+                using var reader = await nodeIdCommand.ExecuteReaderAsync();
                 if (reader.Read())
                 {
                     return reader.IsDBNull(0) ? null : reader.GetString(0);

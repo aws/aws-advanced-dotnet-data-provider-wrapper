@@ -616,14 +616,14 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         {
             string? suggestedWriterNodeId = await this.GetSuggestedWriterNodeIdAsync(connection);
 
-            using DbCommand command = connection.CreateCommand();
+            using var command = connection.CreateCommand();
             if (command.CommandTimeout == 0)
             {
                 command.CommandTimeout = DefaultTopologyQueryTimeoutSec;
             }
 
             command.CommandText = this.topologyQuery;
-            await using DbDataReader reader = await command.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
+            await using var reader = await command.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
 
             var hosts = new List<HostSpec>();
             var writers = new List<HostSpec>();

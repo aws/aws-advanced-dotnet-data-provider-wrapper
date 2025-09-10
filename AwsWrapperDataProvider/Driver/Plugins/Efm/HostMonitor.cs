@@ -327,7 +327,7 @@ public class HostMonitor : IHostMonitor
 
             try
             {
-                DbCommand validityCheckCommand = conn.CreateCommand();
+                var validityCheckCommand = conn.CreateCommand();
                 validityCheckCommand.CommandText = this.pluginService.Dialect.HostAliasQuery;
 
                 int validTimeoutSeconds = (this.failureDetectionIntervalMs - ThreadSleepMs) / 2000;
