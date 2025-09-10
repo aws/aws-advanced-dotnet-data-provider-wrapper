@@ -170,7 +170,7 @@ public class EfmConnectivityTests
         }
     }
 
-    private static string GetConnectedHost(AwsWrapperConnection<NpgsqlConnection> connection, string initialHost)
+    private static string GetConnectedHost(IDbConnection connection, string initialHost)
     {
         string hostName = AuroraUtils.QueryInstanceId(connection);
         string clusterInstanceTemplate = RdsUtils.GetRdsInstanceHostPattern(initialHost);
