@@ -400,6 +400,10 @@ public class AuroraTestUtils
         var host = TestEnvironment.Env.Info.DatabaseInfo.Instances[0].Host;
         var port = TestEnvironment.Env.Info.DatabaseInfo.Instances[0].Port;
         var connectionUrl = ConnectionStringHelper.GetUrl(databaseEngine, host, port, username, password, dbName);
+
+        using var connection = DriverHelper.CreateUnopenedConnection(databaseEngine, connectionUrl);
+        connection.Open();
+
         string retrieveTopologySql = deployment switch
         {
             DatabaseEngineDeployment.AURORA => databaseEngine switch
@@ -410,12 +414,31 @@ public class AuroraTestUtils
                                             "ORDER BY CASE WHEN SESSION_ID = 'MASTER_SESSION_ID' THEN 0 ELSE 1 END",
                 _ => throw new NotSupportedException(databaseEngine.ToString()),
             },
+            DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER => databaseEngine switch
+            {
+                DatabaseEngine.MYSQL => "SELECT SUBSTRING_INDEX(endpoint, '.', 1) as SERVER_ID FROM mysql.rds_topology"
+                                        + " ORDER BY CASE WHEN id = "
+                                        + this.GetMultiAzMysqlReplicaWriterInstanceId(connection) is { } id ? $"'{id}'" : "@@server_id"
+                                        + " THEN 0 ELSE 1 END, SUBSTRING_INDEX(endpoint, '.', 1)",
+                DatabaseEngine.PG => "SELECT SUBSTRING(endpoint FROM 0 FOR POSITION('.' IN endpoint)) as SERVER_ID"
+                                     + " FROM rds_tools.show_topology()"
+                                     + " ORDER BY CASE WHEN id ="
+                                     + " (SELECT MAX(multi_az_db_cluster_source_dbi_resource_id) FROM"
+                                     + " rds_tools.multi_az_db_cluster_source_dbi_resource_id())"
+                                     + " THEN 0 ELSE 1 END, endpoint",
+                _ => throw new NotSupportedException(databaseEngine.ToString()),
+            },
+            DatabaseEngineDeployment.RDS_MULTI_AZ_INSTANCE => databaseEngine switch
+            {
+                DatabaseEngine.MYSQL => "SELECT SUBSTRING_INDEX(endpoint, '.', 1) as SERVER_ID FROM mysql.rds_topology",
+                DatabaseEngine.PG => "SELECT SUBSTRING(endpoint FROM 0 FOR POSITION('.' IN endpoint)) as SERVER_ID"
+                                     + " FROM rds_tools.show_topology()",
+                _ => throw new NotSupportedException(databaseEngine.ToString()),
+            },
             _ => throw new NotSupportedException(deployment.ToString()),
         };
         var auroraInstances = new List<string>();
 
-        using var connection = DriverHelper.CreateUnopenedConnection(databaseEngine, connectionUrl);
-        connection.Open();
         using var command = connection.CreateCommand();
         command.CommandText = retrieveTopologySql;
         using var reader = command.ExecuteReader();
@@ -425,6 +448,29 @@ public class AuroraTestUtils
         }
 
         return auroraInstances;
+    }
+
+    private string? GetMultiAzMysqlReplicaWriterInstanceId(DbConnection connection)
+    {
+        using (var command = connection.CreateCommand()) {
+            command.CommandText = "SHOW REPLICA STATUS";
+            using var reader = command.ExecuteReader(CommandBehavior.SingleRow);
+
+            if (!reader.Read())
+            {
+                return null;
+            }
+
+            try
+            {
+                int i = reader.GetOrdinal("Source_Server_id");
+                return reader.IsDBNull(i) ? null : reader.GetString(i);
+            }
+            catch (IndexOutOfRangeException)
+            {
+                return null;
+            }
+        }
     }
 
     public bool WaitForDnsCondition(string hostToCheck, string targetHostIpOrName, TimeSpan timeout, bool expectEqual, bool fail)
@@ -714,6 +760,14 @@ public class AuroraTestUtils
             {
                 DatabaseEngine.MYSQL => "SELECT @@aurora_server_id as id",
                 DatabaseEngine.PG => "SELECT aurora_db_instance_identifier()",
+                _ => throw new NotSupportedException($"Unsupported database engine: {engine}"),
+            },
+            DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER => engine switch
+            {
+                DatabaseEngine.MYSQL => "SELECT SUBSTRING_INDEX(endpoint, '.', 1) as id FROM mysql.rds_topology WHERE id=@@server_id",
+                DatabaseEngine.PG => "SELECT SUBSTRING(endpoint FROM 0 FOR POSITION('.' IN endpoint)) as id "
+                                     + "FROM rds_tools.show_topology() " 
+                                     + "WHERE id IN (SELECT dbi_resource_id FROM rds_tools.dbi_resource_id())",
                 _ => throw new NotSupportedException($"Unsupported database engine: {engine}"),
             },
             _ => throw new NotSupportedException($"Unsupported database deployment: {deployment}"),
