@@ -12,14 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
 using AwsWrapperDataProvider.Tests;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
-using MySqlConnector;
 
 [assembly: CaptureConsole]
 [assembly: CaptureTrace]
@@ -40,7 +38,7 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
     // [Trait("Database", "mysql-ef")]
     public void MysqlEFAddTest()
     {
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, ProxyClusterEndpoint, ProxyPort, Username, Password, DefaultDbName);
         var wrapperConnectionString = connectionString + $";Plugins=failover;";
         var version = new MySqlServerVersion("8.0.32");
 
@@ -92,7 +90,7 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
 
         string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
 
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName, 2, 10);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, ProxyClusterEndpoint, ProxyPort, Username, Password, DefaultDbName, 2, 10);
 
         var wrapperConnectionString = connectionString
             + $";Plugins=failover;" +

@@ -28,10 +28,10 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     protected static readonly string Password = TestEnvironment.Env.Info.DatabaseInfo.Password;
     protected static readonly DatabaseEngine Engine = TestEnvironment.Env.Info.Request.Engine;
     protected static readonly DatabaseEngineDeployment Deployment = TestEnvironment.Env.Info.Request.Deployment;
-    protected static readonly string ClusterEndpoint = TestEnvironment.Env.Info.DatabaseInfo.ClusterEndpoint;
-    protected static readonly int Port = TestEnvironment.Env.Info.DatabaseInfo.ClusterEndpointPort;
-    protected static readonly int NumberOfInstances = TestEnvironment.Env.Info.DatabaseInfo.Instances.Count;
     protected static readonly TestProxyDatabaseInfo ProxyDatabaseInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!;
+    protected static readonly string ProxyClusterEndpoint = ProxyDatabaseInfo.ClusterEndpoint;
+    protected static readonly int ProxyPort = ProxyDatabaseInfo.ClusterEndpointPort;
+    protected static readonly int NumberOfInstances = TestEnvironment.Env.Info.DatabaseInfo.Instances.Count;
 
     protected virtual bool MakeSureFirstInstanceWriter => false;
 

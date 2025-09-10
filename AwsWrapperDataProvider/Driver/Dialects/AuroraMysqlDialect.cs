@@ -27,13 +27,13 @@ public class AuroraMysqlDialect : MysqlDialect
           + "FROM information_schema.replica_host_status "
           + "WHERE time_to_sec(timediff(now(), LAST_UPDATE_TIMESTAMP)) <= 300 OR SESSION_ID = 'MASTER_SESSION_ID' ";
 
-    public static readonly string IsReaderQuery = "SELECT @@innodb_read_only";
+    private static readonly string IsReaderQuery = "SELECT @@innodb_read_only";
 
     private static readonly string NodeIdQuery = "SELECT @@aurora_server_id";
 
     private static readonly string IsDialectQuery = "SHOW VARIABLES LIKE 'aurora_version'";
 
-    public static readonly string IsWriterQuery = "SELECT SERVER_ID FROM information_schema.replica_host_status "
+    private static readonly string IsWriterQuery = "SELECT SERVER_ID FROM information_schema.replica_host_status "
         + "WHERE SESSION_ID = 'MASTER_SESSION_ID' AND SERVER_ID = @@aurora_server_id";
 
     public override IList<Type> DialectUpdateCandidates { get; } = [];

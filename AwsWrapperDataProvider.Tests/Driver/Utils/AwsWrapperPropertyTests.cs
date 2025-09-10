@@ -21,7 +21,7 @@ public class AwsWrapperPropertyTests
     [Theory]
     [Trait("Category", "Unit")]
     [InlineData("TestProperty", "DefaultValue", "Test description", true, new[] { "Option1", "Option2" })]
-    [InlineData("Port", "3306", "Port number", false, null)]
+    [InlineData("ProxyPort", "3306", "ProxyPort number", false, null)]
     [InlineData("Host", "localhost", "Database host", true, null)]
     public void Constructor_SetsPropertiesCorrectly(
         string name,
@@ -77,10 +77,10 @@ public class AwsWrapperPropertyTests
 
     [Theory]
     [Trait("Category", "Unit")]
-    [InlineData("Port", "5432", "3306", 3306)]
-    [InlineData("Port", "5432", null, 5432)]
-    [InlineData("Port", null, null, null)]
-    [InlineData("Port", null, "invalid", null)]
+    [InlineData("ProxyPort", "5432", "3306", 3306)]
+    [InlineData("ProxyPort", "5432", null, 5432)]
+    [InlineData("ProxyPort", null, null, null)]
+    [InlineData("ProxyPort", null, "invalid", null)]
     public void GetInt_ReturnsExpectedValue(
         string propertyName,
         string? defaultValue,
