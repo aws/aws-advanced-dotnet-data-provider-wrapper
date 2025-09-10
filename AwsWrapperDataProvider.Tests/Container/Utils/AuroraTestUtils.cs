@@ -789,4 +789,12 @@ public class AuroraTestUtils
         Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Finished ExecuteScalar with result: {result}");
         return result;
     }
+
+    public string QueryInstanceId(IDbConnection connection)
+    {
+        return this.ExecuteInstanceIdQuery(
+            connection,
+            TestEnvironment.Env.Info.Request.Engine,
+            TestEnvironment.Env.Info.Request.Deployment);
+    }
 }

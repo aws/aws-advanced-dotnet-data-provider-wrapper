@@ -15,6 +15,7 @@
 using System.Data;
 using AwsWrapperDataProvider.Driver.Plugins.Efm;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Tests.Container.Utils;
 using Microsoft.Extensions.Caching.Memory;
 using Npgsql;
 
@@ -22,6 +23,7 @@ namespace AwsWrapperDataProvider.Tests;
 
 public class EfmConnectivityTests
 {
+    private static readonly AuroraTestUtils AuroraUtils = AuroraTestUtils.GetUtility();
     private static readonly int TestCommandTimeoutSecs = 500;
 
     [Fact]
@@ -170,17 +172,8 @@ public class EfmConnectivityTests
 
     private static string GetConnectedHost(AwsWrapperConnection<NpgsqlConnection> connection, string initialHost)
     {
-        using var command = connection.CreateCommand<NpgsqlCommand>();
-        command.CommandText = "SELECT aurora_db_instance_identifier()::text as server_name;";
-
-        using var reader = command.ExecuteReader();
-        if (reader.Read() && !reader.IsDBNull("server_name"))
-        {
-            var hostName = reader.GetString("server_name");
-            string clusterInstanceTemplate = RdsUtils.GetRdsInstanceHostPattern(initialHost);
-            return clusterInstanceTemplate.Replace("?", hostName);
-        }
-
-        return initialHost;
+        string hostName = AuroraUtils.QueryInstanceId(connection);
+        string clusterInstanceTemplate = RdsUtils.GetRdsInstanceHostPattern(initialHost);
+        return clusterInstanceTemplate.Replace("?", hostName);
     }
 }
