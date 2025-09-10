@@ -93,7 +93,7 @@ public class AuroraStaleDnsHelper
             return connection;
         }
 
-        this.writerHostAddress ??= GetHostIpAddress(this.writerHostSpec.Host);
+        this.writerHostAddress = GetHostIpAddress(this.writerHostSpec.Host);
         Logger.LogTrace("Writer host address: {address}", this.writerHostAddress);
 
         if (this.writerHostAddress == null)
