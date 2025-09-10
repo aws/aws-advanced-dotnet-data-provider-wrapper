@@ -21,6 +21,9 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 using MySqlConnector;
 
+[assembly: CaptureConsole]
+[assembly: CaptureTrace]
+
 namespace AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests;
 
 public class EntityFrameowrkConnectivityTests : IntegrationTestBase
