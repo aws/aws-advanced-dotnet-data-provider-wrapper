@@ -127,7 +127,6 @@ public class MultiAzClusterTopologyMonitor : ClusterTopologyMonitor
                 }
             }
 
-
             using (var nodeIdCommand = connection.CreateCommand())
             {
                 nodeIdCommand.CommandText = this.nodeIdQuery;

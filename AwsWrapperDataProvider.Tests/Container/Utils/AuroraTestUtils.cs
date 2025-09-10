@@ -452,7 +452,8 @@ public class AuroraTestUtils
 
     private string? GetMultiAzMysqlReplicaWriterInstanceId(DbConnection connection)
     {
-        using (var command = connection.CreateCommand()) {
+        using (var command = connection.CreateCommand())
+        {
             command.CommandText = "SHOW REPLICA STATUS";
             using var reader = command.ExecuteReader(CommandBehavior.SingleRow);
 
@@ -766,7 +767,7 @@ public class AuroraTestUtils
             {
                 DatabaseEngine.MYSQL => "SELECT SUBSTRING_INDEX(endpoint, '.', 1) as id FROM mysql.rds_topology WHERE id=@@server_id",
                 DatabaseEngine.PG => "SELECT SUBSTRING(endpoint FROM 0 FOR POSITION('.' IN endpoint)) as id "
-                                     + "FROM rds_tools.show_topology() " 
+                                     + "FROM rds_tools.show_topology() "
                                      + "WHERE id IN (SELECT dbi_resource_id FROM rds_tools.dbi_resource_id())",
                 _ => throw new NotSupportedException($"Unsupported database engine: {engine}"),
             },
