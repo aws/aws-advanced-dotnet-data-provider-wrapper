@@ -17,6 +17,7 @@ using AwsWrapperDataProvider.Tests;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using MySqlConnector;
 
 namespace AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests;
 
@@ -92,11 +93,29 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
                 db.Add(jane);
                 db.SaveChanges();
 
+                using (AwsWrapperConnection<MySqlConnection> connection = new(wrapperConnectionString))
+                {
+                    connection.Open();
+                    this.logger.WriteLine(AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment));
+                }
+
                 await AuroraUtils.CrashInstance(currentWriter);
+
+                using (AwsWrapperConnection<MySqlConnection> connection = new(wrapperConnectionString))
+                {
+                    connection.Open();
+                    this.logger.WriteLine(AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment));
+                }
 
                 Person john = new() { FirstName = "John", LastName = "Smith" };
                 db.Add(john);
                 db.SaveChanges();
+
+                using (AwsWrapperConnection<MySqlConnection> connection = new(wrapperConnectionString))
+                {
+                    connection.Open();
+                    this.logger.WriteLine(AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment));
+                }
             });
 
             Person joe = new() { FirstName = "Joe", LastName = "Smith" };
