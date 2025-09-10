@@ -70,7 +70,10 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
 
         var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName, 2, 10);
 
-        var wrapperConnectionString = connectionString + $";Plugins=failover;ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}";
+        var wrapperConnectionString = connectionString
+            + $";Plugins=failover;" +
+            $"EnableConnectFailover=true;" +
+            $"ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}";
 
         var version = new MySqlServerVersion("8.0.32");
 
