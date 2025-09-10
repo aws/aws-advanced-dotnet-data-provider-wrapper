@@ -66,24 +66,36 @@ public class MultiAzClusterTopologyMonitor : ClusterTopologyMonitor
     {
         try
         {
-            using var command = connection.CreateCommand();
-            command.CommandText = this.fetchWriterNodeQuery;
-            await using var reader = await command.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
-
-            if (await reader.ReadAsync())
+            using (DbCommand command = connection.CreateCommand())
             {
-                int columnIndex = reader.GetOrdinal(this.fetchWriterNodeColumnName);
-                string? nodeId = reader.IsDBNull(columnIndex)
-                    ? null
-                    : reader.GetString(columnIndex);
+                command.CommandText = this.fetchWriterNodeQuery;
+                await using DbDataReader reader = await command.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
 
-                if (!string.IsNullOrEmpty(nodeId))
+                if (await reader.ReadAsync())
                 {
-                    return null;
+                    int columnIndex = reader.GetOrdinal(this.fetchWriterNodeColumnName);
+                    string? nodeId = reader.IsDBNull(columnIndex)
+                        ? null
+                        : reader.GetString(columnIndex);
+
+                    if (!string.IsNullOrEmpty(nodeId))
+                    {
+                        return null;
+                    }
                 }
             }
 
-            return await this.GetNodeIdAsync(connection);
+            using (DbCommand nodeIdCommand = connection.CreateCommand())
+            {
+                nodeIdCommand.CommandText = this.nodeIdQuery;
+                using DbDataReader reader = await nodeIdCommand.ExecuteReaderAsync();
+                if (reader.Read())
+                {
+                    return reader.IsDBNull(0) ? null : reader.GetString(0);
+                }
+            }
+
+            return null;
         }
         catch (Exception ex)
         {
@@ -96,24 +108,37 @@ public class MultiAzClusterTopologyMonitor : ClusterTopologyMonitor
     {
         try
         {
-            using var command = connection.CreateCommand();
-            command.CommandText = this.fetchWriterNodeQuery;
-            await using var reader = await command.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
-
-            if (await reader.ReadAsync())
+            using (DbCommand command = connection.CreateCommand())
             {
-                int columnIndex = reader.GetOrdinal(this.fetchWriterNodeColumnName);
-                string? nodeId = reader.IsDBNull(columnIndex)
-                    ? null
-                    : reader.GetString(columnIndex);
+                command.CommandText = this.fetchWriterNodeQuery;
+                await using DbDataReader reader = await command.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
 
-                if (!string.IsNullOrEmpty(nodeId))
+                if (await reader.ReadAsync())
                 {
-                    return nodeId;
+                    int columnIndex = reader.GetOrdinal(this.fetchWriterNodeColumnName);
+                    string? nodeId = reader.IsDBNull(columnIndex)
+                        ? null
+                        : reader.GetString(columnIndex);
+
+                    if (!string.IsNullOrEmpty(nodeId))
+                    {
+                        return nodeId;
+                    }
                 }
             }
 
-            return await this.GetNodeIdAsync(connection);
+
+            using (DbCommand nodeIdCommand = connection.CreateCommand())
+            {
+                nodeIdCommand.CommandText = this.nodeIdQuery;
+                using DbDataReader reader = await nodeIdCommand.ExecuteReaderAsync();
+                if (reader.Read())
+                {
+                    return reader.IsDBNull(0) ? null : reader.GetString(0);
+                }
+            }
+
+            return null;
         }
         catch (Exception ex)
         {
