@@ -17,8 +17,6 @@ using AwsWrapperDataProvider.Tests;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using MySqlConnector;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests;
 
@@ -91,33 +89,7 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
                 db.Add(jane);
                 db.SaveChanges();
 
-                using (AwsWrapperConnection<MySqlConnection> connection = new(wrapperConnectionString))
-                {
-                    connection.Open();
-                    using (var command = connection.CreateCommand())
-                    {
-                        command.CommandText = "select @@read_only";
-                        var result = Convert.ToString(command.ExecuteScalar());
-                        this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Finished ExecuteScalar with result: {result}");
-                    }
-
-                    this.logger.WriteLine(AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment));
-                }
-
                 await AuroraUtils.CrashInstance(currentWriter);
-
-                using (AwsWrapperConnection<MySqlConnection> connection = new(wrapperConnectionString))
-                {
-                    connection.Open();
-                    using (var command = connection.CreateCommand())
-                    {
-                        command.CommandText = "select @@read_only";
-                        var result = Convert.ToString(command.ExecuteScalar());
-                        this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Finished ExecuteScalar with result: {result}");
-                    }
-
-                    this.logger.WriteLine(AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment));
-                }
 
                 Person john = new() { FirstName = "John", LastName = "Smith" };
                 db.Add(john);

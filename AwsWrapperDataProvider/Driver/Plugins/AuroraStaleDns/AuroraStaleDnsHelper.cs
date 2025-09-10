@@ -84,7 +84,7 @@ public class AuroraStaleDnsHelper
 
         Logger.LogTrace(LoggerUtils.LogTopology(this.pluginService.AllHosts, null));
 
-        this.writerHostSpec ??= this.GetWriter();
+        this.writerHostSpec = this.GetWriter();
         Logger.LogTrace("Writer host spec: {hostSpec}", this.writerHostSpec);
 
         if (this.writerHostSpec == null)
