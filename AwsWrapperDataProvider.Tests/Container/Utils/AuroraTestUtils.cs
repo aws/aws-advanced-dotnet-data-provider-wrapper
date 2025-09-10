@@ -679,9 +679,8 @@ public class AuroraTestUtils
         };
     }
 
-    public string ExecuteInstanceIdQuery(IDbConnection connection, DatabaseEngine engine, DatabaseEngineDeployment deployment)
+    public string ExecuteQuery(IDbConnection connection, DatabaseEngine engine, DatabaseEngineDeployment deployment, string query)
     {
-        string query = this.GetInstanceIdSql(engine, deployment);
         using var command = connection.CreateCommand();
         command.CommandText = query;
         Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Before ExecuteScalar with Instance Id Query");
@@ -693,5 +692,10 @@ public class AuroraTestUtils
 
         Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Finished ExecuteScalar with result: {result}");
         return result;
+    }
+
+    public string ExecuteInstanceIdQuery(IDbConnection connection, DatabaseEngine engine, DatabaseEngineDeployment deployment)
+    {
+        return this.ExecuteQuery(connection, engine, deployment, this.GetInstanceIdSql(engine, deployment));
     }
 }

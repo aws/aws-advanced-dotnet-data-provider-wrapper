@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
 using AwsWrapperDataProvider.Tests;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 using MySqlConnector;
 
 namespace AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests;
@@ -24,6 +26,7 @@ namespace AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests;
 public class EntityFrameowrkConnectivityTests : IntegrationTestBase
 {
     private readonly ITestOutputHelper logger;
+
     public EntityFrameowrkConnectivityTests(ITestOutputHelper output)
     {
         this.logger = output;
@@ -67,6 +70,23 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
     public async Task EFFailoverTest()
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
+
+        var loggerFactory = LoggerFactory.Create(builder =>
+        {
+            builder
+            .SetMinimumLevel(LogLevel.Trace)
+            .AddDebug()
+            .AddConsole(options => options.FormatterName = "simple");
+
+            builder.AddSimpleConsole(options =>
+            {
+                options.IncludeScopes = true;
+                options.TimestampFormat = "yyyy-MM-dd HH:mm:ss.fff ";
+                options.UseUtcTimestamp = true;
+                options.ColorBehavior = LoggerColorBehavior.Enabled;
+            });
+        });
+
         string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
 
         var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName, 2, 10);
@@ -79,10 +99,12 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
         var version = new MySqlServerVersion("8.0.32");
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
+            .UseLoggerFactory(loggerFactory)
             .UseAwsWrapper(
-             wrapperConnectionString,
-             wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, version))
-            .LogTo(Console.WriteLine, LogLevel.Trace)
+                wrapperConnectionString,
+                wrappedOptionBuilder => wrappedOptionBuilder
+                    .UseLoggerFactory(loggerFactory)
+                    .UseMySql(connectionString, version))
             .Options;
 
         using (var db = new PersonDbContext(options))
@@ -96,7 +118,8 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
                 using (AwsWrapperConnection<MySqlConnection> connection = new(wrapperConnectionString))
                 {
                     connection.Open();
-                    this.logger.WriteLine(AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment));
+                    this.logger.WriteLine("Current node:" + AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment));
+                    this.logger.WriteLine("Writer node:" + AuroraUtils.ExecuteQuery(connection, Engine, Deployment, AuroraMysqlDialect.IsWriterQuery));
                 }
 
                 await AuroraUtils.CrashInstance(currentWriter);
@@ -104,7 +127,8 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
                 using (AwsWrapperConnection<MySqlConnection> connection = new(wrapperConnectionString))
                 {
                     connection.Open();
-                    this.logger.WriteLine(AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment));
+                    this.logger.WriteLine("Current node:" + AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment));
+                    this.logger.WriteLine("Writer node:" + AuroraUtils.ExecuteQuery(connection, Engine, Deployment, AuroraMysqlDialect.IsWriterQuery));
                 }
 
                 Person john = new() { FirstName = "John", LastName = "Smith" };
