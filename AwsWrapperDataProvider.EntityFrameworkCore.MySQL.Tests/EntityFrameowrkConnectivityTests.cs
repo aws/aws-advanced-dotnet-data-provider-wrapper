@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using AwsWrapperDataProvider.Driver.Plugins.Failover;
 using AwsWrapperDataProvider.Tests;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 using Microsoft.EntityFrameworkCore;
@@ -68,7 +67,7 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql-ef")]
-    public async Task EFFailoverTest()
+    public async Task EFCrashWithFailoverPluginTest()
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
 
@@ -110,20 +109,15 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
 
         using (var db = new PersonDbContext(options))
         {
-            await Assert.ThrowsAsync<TransactionStateUnknownException>(async () =>
-            {
-                Person jane = new() { FirstName = "Jane", LastName = "Smith" };
-                db.Add(jane);
-                db.SaveChanges();
+            Person jane = new() { FirstName = "Jane", LastName = "Smith" };
+            db.Add(jane);
+            db.SaveChanges();
 
-                await AuroraUtils.CrashInstance(currentWriter);
+            await AuroraUtils.CrashInstance(currentWriter);
 
-                Person john = new() { FirstName = "John", LastName = "Smith" };
-                db.Add(john);
-                this.logger.WriteLine("Before Save changes");
-                db.SaveChanges();
-                this.logger.WriteLine("After Save changes");
-            });
+            Person john = new() { FirstName = "John", LastName = "Smith" };
+            db.Add(john);
+            db.SaveChanges();
 
             Person joe = new() { FirstName = "Joe", LastName = "Smith" };
             db.Add(joe);
@@ -134,7 +128,74 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
         {
             Assert.True(db.Persons.Any(p => p.FirstName == "Jane"));
             Assert.True(db.Persons.Any(p => p.FirstName == "Joe"));
-            Assert.False(db.Persons.Any(p => p.FirstName == "John"));
+            Assert.True(db.Persons.Any(p => p.FirstName == "John"));
+            Assert.Equal(3, db.Persons.Count());
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    [Trait("Database", "mysql-ef")]
+    public async Task EFCrashWithoutFailoverPluginTest()
+    {
+        Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
+
+        var loggerFactory = LoggerFactory.Create(builder =>
+        {
+            builder
+            .SetMinimumLevel(LogLevel.Trace)
+            .AddDebug()
+            .AddConsole(options => options.FormatterName = "simple");
+
+            builder.AddSimpleConsole(options =>
+            {
+                options.IncludeScopes = true;
+                options.TimestampFormat = "yyyy-MM-dd HH:mm:ss.fff ";
+                options.UseUtcTimestamp = true;
+                options.ColorBehavior = LoggerColorBehavior.Enabled;
+            });
+        });
+
+        string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
+
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName, 2, 10);
+
+        var wrapperConnectionString = connectionString + $";Plugins=;";
+
+        var version = new MySqlServerVersion("8.0.32");
+
+        var options = new DbContextOptionsBuilder<PersonDbContext>()
+            .UseLoggerFactory(loggerFactory)
+            .UseAwsWrapper(
+                wrapperConnectionString,
+                wrappedOptionBuilder => wrappedOptionBuilder
+                    .UseLoggerFactory(loggerFactory)
+                    .UseMySql(connectionString, version))
+            .Options;
+
+        using (var db = new PersonDbContext(options))
+        {
+            Person jane = new() { FirstName = "Jane", LastName = "Smith" };
+            db.Add(jane);
+            db.SaveChanges();
+
+            await AuroraUtils.CrashInstance(currentWriter);
+
+            Person john = new() { FirstName = "John", LastName = "Smith" };
+            db.Add(john);
+            db.SaveChanges();
+
+            Person joe = new() { FirstName = "Joe", LastName = "Smith" };
+            db.Add(joe);
+            db.SaveChanges();
+        }
+
+        using (var db = new PersonDbContext(options))
+        {
+            Assert.True(db.Persons.Any(p => p.FirstName == "Jane"));
+            Assert.True(db.Persons.Any(p => p.FirstName == "Joe"));
+            Assert.True(db.Persons.Any(p => p.FirstName == "John"));
+            Assert.Equal(3, db.Persons.Count());
         }
     }
 }
