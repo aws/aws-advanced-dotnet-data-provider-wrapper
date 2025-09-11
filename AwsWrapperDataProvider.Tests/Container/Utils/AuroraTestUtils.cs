@@ -577,7 +577,7 @@ public class AuroraTestUtils
         {
             try
             {
-                Console.WriteLine($"Simulating temporary failure to {instanceName}...");
+                Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Simulating temporary failure to {instanceName}...");
                 if (delay != TimeSpan.Zero)
                 {
                     await Task.Delay(delay);

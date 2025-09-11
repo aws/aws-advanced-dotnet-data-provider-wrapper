@@ -26,10 +26,25 @@ namespace AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests;
 public class EntityFrameowrkConnectivityTests : IntegrationTestBase
 {
     private readonly ITestOutputHelper logger;
+    private readonly MySqlServerVersion version = new("8.0.32");
 
     public EntityFrameowrkConnectivityTests(ITestOutputHelper output)
     {
         this.logger = output;
+
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, ProxyClusterEndpoint, ProxyPort, Username, Password, DefaultDbName);
+
+        var options = new DbContextOptionsBuilder<PersonDbContext>()
+            .UseAwsWrapper(
+            connectionString,
+            wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, this.version))
+            .LogTo(Console.WriteLine)
+            .Options;
+
+        using (var db = new PersonDbContext(options))
+        {
+            db.Database.ExecuteSqlRaw($"Truncate table persons;");
+        }
     }
 
     [Fact]
@@ -39,12 +54,11 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
     {
         var connectionString = ConnectionStringHelper.GetUrl(Engine, ProxyClusterEndpoint, ProxyPort, Username, Password, DefaultDbName);
         var wrapperConnectionString = connectionString + $";Plugins=failover;";
-        var version = new MySqlServerVersion("8.0.32");
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
             .UseAwsWrapper(
             wrapperConnectionString,
-            wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, version))
+            wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, this.version))
             .LogTo(Console.WriteLine)
             .Options;
 
@@ -96,15 +110,13 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
             $"EnableConnectFailover=true;" +
             $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
 
-        var version = new MySqlServerVersion("8.0.32");
-
         var options = new DbContextOptionsBuilder<PersonDbContext>()
             .UseLoggerFactory(loggerFactory)
             .UseAwsWrapper(
                 wrapperConnectionString,
                 wrappedOptionBuilder => wrappedOptionBuilder
                     .UseLoggerFactory(loggerFactory)
-                    .UseMySql(connectionString, version))
+                    .UseMySql(connectionString, this.version))
             .Options;
 
         using (var db = new PersonDbContext(options))
@@ -162,15 +174,13 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
 
         var wrapperConnectionString = connectionString + $";Plugins=;";
 
-        var version = new MySqlServerVersion("8.0.32");
-
         var options = new DbContextOptionsBuilder<PersonDbContext>()
             .UseLoggerFactory(loggerFactory)
             .UseAwsWrapper(
                 wrapperConnectionString,
                 wrappedOptionBuilder => wrappedOptionBuilder
                     .UseLoggerFactory(loggerFactory)
-                    .UseMySql(connectionString, version))
+                    .UseMySql(connectionString, this.version))
             .Options;
 
         using (var db = new PersonDbContext(options))
@@ -184,6 +194,76 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
             Person john = new() { FirstName = "John", LastName = "Smith" };
             db.Add(john);
             db.SaveChanges();
+
+            Person joe = new() { FirstName = "Joe", LastName = "Smith" };
+            db.Add(joe);
+            db.SaveChanges();
+        }
+
+        using (var db = new PersonDbContext(options))
+        {
+            Assert.True(db.Persons.Any(p => p.FirstName == "Jane"));
+            Assert.True(db.Persons.Any(p => p.FirstName == "Joe"));
+            Assert.True(db.Persons.Any(p => p.FirstName == "John"));
+            Assert.Equal(3, db.Persons.Count());
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    [Trait("Database", "mysql-ef")]
+    public async Task EFTempFailureWithFailoverPluginTest()
+    {
+        Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
+
+        var loggerFactory = LoggerFactory.Create(builder =>
+        {
+            builder
+            .SetMinimumLevel(LogLevel.Trace)
+            .AddDebug()
+            .AddConsole(options => options.FormatterName = "simple");
+
+            builder.AddSimpleConsole(options =>
+            {
+                options.IncludeScopes = true;
+                options.TimestampFormat = "yyyy-MM-dd HH:mm:ss.fff ";
+                options.UseUtcTimestamp = true;
+                options.ColorBehavior = LoggerColorBehavior.Enabled;
+            });
+        });
+
+        string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
+
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName, 2, 10);
+
+        var wrapperConnectionString = connectionString
+            + $";Plugins=failover;" +
+            $"EnableConnectFailover=true;" +
+            $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
+
+        var options = new DbContextOptionsBuilder<PersonDbContext>()
+            .UseLoggerFactory(loggerFactory)
+            .UseAwsWrapper(
+                wrapperConnectionString,
+                wrappedOptionBuilder => wrappedOptionBuilder
+                    .UseLoggerFactory(loggerFactory)
+                    .UseMySql(connectionString, this.version))
+            .Options;
+
+        using (var db = new PersonDbContext(options))
+        {
+            Person jane = new() { FirstName = "Jane", LastName = "Smith" };
+            db.Add(jane);
+            db.SaveChanges();
+
+            var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var simulationTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(12), tcs);
+
+            Person john = new() { FirstName = "John", LastName = "Smith" };
+            db.Add(john);
+            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Before saving changes");
+            db.SaveChanges();
+            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff}After saving changes");
 
             Person joe = new() { FirstName = "Joe", LastName = "Smith" };
             db.Add(joe);
