@@ -166,7 +166,13 @@ public class DialectProvider
             Logger.LogError(ex, ex.Message);
         }
 
-        throw new ArgumentException(Properties.Resources.Error_UnableToFindValidDialectType);
+        if (currDialect is UnknownDialect)
+        {
+            throw new ArgumentException(Properties.Resources.Error_UnableToFindValidDialectType);
+        }
+
+        Logger.LogWarning("Unable to update current dialect: {type}", currDialect.GetType().FullName);
+        return currDialect;
     }
 
     private static IDialect? GetDialectFromType(Type? dialectType)
