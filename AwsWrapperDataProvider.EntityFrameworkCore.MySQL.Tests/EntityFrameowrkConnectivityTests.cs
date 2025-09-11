@@ -241,7 +241,7 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
         var wrapperConnectionString = connectionString
             + $";Plugins=failover;" +
             $"EnableConnectFailover=true;" +
-            $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
+            $"ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}";
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
             .UseLoggerFactory(loggerFactory)
