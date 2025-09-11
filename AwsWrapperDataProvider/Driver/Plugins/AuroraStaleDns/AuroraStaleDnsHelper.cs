@@ -80,7 +80,7 @@ public class AuroraStaleDnsHelper
         else
         {
             // Normal refresh for writer connections
-            this.pluginService.RefreshHostList(connection);
+            this.pluginService.ForceRefreshHostList(connection);
         }
 
         Logger.LogTrace(LoggerUtils.LogTopology(this.pluginService.AllHosts, null));
