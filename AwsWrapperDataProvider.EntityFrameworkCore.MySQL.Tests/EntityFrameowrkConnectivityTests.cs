@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Threading.Tasks;
 using AwsWrapperDataProvider.Tests;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 using Microsoft.EntityFrameworkCore;
@@ -214,9 +215,11 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql-ef")]
-    public void EFTempFailureWithFailoverPluginTest()
+    public async Task EFTempFailureWithFailoverPluginTest()
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
+
+        string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
 
         var loggerFactory = LoggerFactory.Create(builder =>
         {
@@ -257,17 +260,21 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
             db.SaveChanges();
 
             var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            var simulationTask = AuroraUtils.SimulateTemporaryFailureTask(ProxyClusterEndpoint, TimeSpan.Zero, TimeSpan.FromSeconds(12), tcs);
+            var clusterFailureTask = AuroraUtils.SimulateTemporaryFailureTask(ProxyClusterEndpoint, TimeSpan.Zero, TimeSpan.FromSeconds(12), tcs);
+            var writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(12), tcs);
 
             Person john = new() { FirstName = "John", LastName = "Smith" };
             db.Add(john);
             this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Before saving changes");
+
             db.SaveChanges();
             this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} After saving changes");
 
             Person joe = new() { FirstName = "Joe", LastName = "Smith" };
             db.Add(joe);
             db.SaveChanges();
+
+            await Task.WhenAll(clusterFailureTask, writerNodeFailureTask);
         }
 
         using (var db = new PersonDbContext(options))
