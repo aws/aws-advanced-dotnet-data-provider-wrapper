@@ -18,13 +18,15 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 
+[assembly: CollectionBehavior(DisableTestParallelization = true)]
 [assembly: CaptureConsole]
-[assembly: CaptureTrace]
 
 namespace AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests;
 
 public class EntityFrameowrkConnectivityTests : IntegrationTestBase
 {
+    protected override bool MakeSureFirstInstanceWriter => true;
+
     private readonly ITestOutputHelper logger;
     private readonly MySqlServerVersion version = new("8.0.32");
 
@@ -32,7 +34,7 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
     {
         this.logger = output;
 
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ProxyClusterEndpoint, ProxyPort, Username, Password, DefaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, ProxyClusterEndpoint, ProxyPort, Username, Password, DefaultDbName, plugins: string.Empty);
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
             .UseAwsWrapper(
@@ -212,7 +214,7 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql-ef")]
-    public async Task EFTempFailureWithFailoverPluginTest()
+    public void EFTempFailureWithFailoverPluginTest()
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
 
@@ -234,7 +236,7 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
 
         string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
 
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName, 2, 10);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, ProxyClusterEndpoint, ProxyPort, Username, Password, DefaultDbName, 2, 10);
 
         var wrapperConnectionString = connectionString
             + $";Plugins=failover;" +
@@ -263,7 +265,7 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
             db.Add(john);
             this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Before saving changes");
             db.SaveChanges();
-            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff}After saving changes");
+            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} After saving changes");
 
             Person joe = new() { FirstName = "Joe", LastName = "Smith" };
             db.Add(joe);
