@@ -234,8 +234,6 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
             });
         });
 
-        string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
-
         var connectionString = ConnectionStringHelper.GetUrl(Engine, ProxyClusterEndpoint, ProxyPort, Username, Password, DefaultDbName, 2, 10);
 
         var wrapperConnectionString = connectionString
@@ -259,7 +257,7 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
             db.SaveChanges();
 
             var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            var simulationTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(12), tcs);
+            var simulationTask = AuroraUtils.SimulateTemporaryFailureTask(ProxyClusterEndpoint, TimeSpan.Zero, TimeSpan.FromSeconds(12), tcs);
 
             Person john = new() { FirstName = "John", LastName = "Smith" };
             db.Add(john);
