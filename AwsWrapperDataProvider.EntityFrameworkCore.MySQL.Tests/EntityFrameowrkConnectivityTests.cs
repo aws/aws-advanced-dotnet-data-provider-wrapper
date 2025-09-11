@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Threading.Tasks;
 using AwsWrapperDataProvider.Tests;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 using Microsoft.EntityFrameworkCore;
@@ -30,6 +29,7 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
 
     private readonly ITestOutputHelper logger;
     private readonly MySqlServerVersion version = new("8.0.32");
+    private readonly ILoggerFactory loggerFactory;
 
     public EntityFrameowrkConnectivityTests(ITestOutputHelper output)
     {
@@ -48,6 +48,22 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
         {
             db.Database.ExecuteSqlRaw($"Truncate table persons;");
         }
+
+        this.loggerFactory = LoggerFactory.Create(builder =>
+        {
+            builder
+            .SetMinimumLevel(LogLevel.Trace)
+            .AddDebug()
+            .AddConsole(options => options.FormatterName = "simple");
+
+            builder.AddSimpleConsole(options =>
+            {
+                options.IncludeScopes = true;
+                options.TimestampFormat = "yyyy-MM-dd HH:mm:ss.fff ";
+                options.UseUtcTimestamp = true;
+                options.ColorBehavior = LoggerColorBehavior.Enabled;
+            });
+        });
     }
 
     [Fact]
@@ -88,22 +104,6 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
 
-        var loggerFactory = LoggerFactory.Create(builder =>
-        {
-            builder
-            .SetMinimumLevel(LogLevel.Trace)
-            .AddDebug()
-            .AddConsole(options => options.FormatterName = "simple");
-
-            builder.AddSimpleConsole(options =>
-            {
-                options.IncludeScopes = true;
-                options.TimestampFormat = "yyyy-MM-dd HH:mm:ss.fff ";
-                options.UseUtcTimestamp = true;
-                options.ColorBehavior = LoggerColorBehavior.Enabled;
-            });
-        });
-
         string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
 
         var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName, 2, 10);
@@ -114,11 +114,11 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
             $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
-            .UseLoggerFactory(loggerFactory)
+            .UseLoggerFactory(this.loggerFactory)
             .UseAwsWrapper(
                 wrapperConnectionString,
                 wrappedOptionBuilder => wrappedOptionBuilder
-                    .UseLoggerFactory(loggerFactory)
+                    .UseLoggerFactory(this.loggerFactory)
                     .UseMySql(connectionString, this.version))
             .Options;
 
@@ -155,22 +155,6 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
 
-        var loggerFactory = LoggerFactory.Create(builder =>
-        {
-            builder
-            .SetMinimumLevel(LogLevel.Trace)
-            .AddDebug()
-            .AddConsole(options => options.FormatterName = "simple");
-
-            builder.AddSimpleConsole(options =>
-            {
-                options.IncludeScopes = true;
-                options.TimestampFormat = "yyyy-MM-dd HH:mm:ss.fff ";
-                options.UseUtcTimestamp = true;
-                options.ColorBehavior = LoggerColorBehavior.Enabled;
-            });
-        });
-
         string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
 
         var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName, 2, 10);
@@ -178,11 +162,11 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
         var wrapperConnectionString = connectionString + $";Plugins=;";
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
-            .UseLoggerFactory(loggerFactory)
+            .UseLoggerFactory(this.loggerFactory)
             .UseAwsWrapper(
                 wrapperConnectionString,
                 wrappedOptionBuilder => wrappedOptionBuilder
-                    .UseLoggerFactory(loggerFactory)
+                    .UseLoggerFactory(this.loggerFactory)
                     .UseMySql(connectionString, this.version))
             .Options;
 
@@ -221,22 +205,6 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
 
         string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
 
-        var loggerFactory = LoggerFactory.Create(builder =>
-        {
-            builder
-            .SetMinimumLevel(LogLevel.Trace)
-            .AddDebug()
-            .AddConsole(options => options.FormatterName = "simple");
-
-            builder.AddSimpleConsole(options =>
-            {
-                options.IncludeScopes = true;
-                options.TimestampFormat = "yyyy-MM-dd HH:mm:ss.fff ";
-                options.UseUtcTimestamp = true;
-                options.ColorBehavior = LoggerColorBehavior.Enabled;
-            });
-        });
-
         var connectionString = ConnectionStringHelper.GetUrl(Engine, ProxyClusterEndpoint, ProxyPort, Username, Password, DefaultDbName, 2, 10);
 
         var wrapperConnectionString = connectionString
@@ -245,11 +213,11 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
             $"ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}";
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
-            .UseLoggerFactory(loggerFactory)
+            .UseLoggerFactory(this.loggerFactory)
             .UseAwsWrapper(
                 wrapperConnectionString,
                 wrappedOptionBuilder => wrappedOptionBuilder
-                    .UseLoggerFactory(loggerFactory)
+                    .UseLoggerFactory(this.loggerFactory)
                     .UseMySql(connectionString, this.version))
             .Options;
 

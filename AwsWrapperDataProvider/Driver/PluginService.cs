@@ -284,6 +284,8 @@ public class PluginService : IPluginService, IHostListProviderService
             this.hostListProvider = this.Dialect.HostListProviderSupplier(this.props, this, this)
                                      ?? this.hostListProvider;
         }
+
+        this.RefreshHostList(connection);
     }
 
     public HostSpec? IdentifyConnection(DbConnection connection)
