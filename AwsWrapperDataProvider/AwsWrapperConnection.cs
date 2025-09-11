@@ -15,7 +15,7 @@
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics.CodeAnalysis;
-
+using System.Runtime.CompilerServices;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
@@ -29,17 +29,19 @@ using AwsWrapperDataProvider.Driver.Plugins.Iam;
 using AwsWrapperDataProvider.Driver.Plugins.SecretsManager;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
+using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider;
 
 public class AwsWrapperConnection : DbConnection
 {
+    private static readonly ILogger<AwsWrapperConnection> Logger = LoggerUtils.GetLogger<AwsWrapperConnection>();
+
     protected readonly IPluginService pluginService;
     private readonly IHostListProviderService hostListProviderService;
     private Type targetType;
     private string connectionString;
     private string? database;
-    private bool isInitialConnection;
 
     internal ConnectionPluginManager PluginManager { get; }
 
@@ -92,7 +94,6 @@ public class AwsWrapperConnection : DbConnection
 
     public AwsWrapperConnection(Type? targetType, string connectionString, ConfigurationProfile? profile) : base()
     {
-        this.isInitialConnection = true;
         this.connectionString = connectionString;
         this.ConnectionProperties = profile?.Properties ?? ConnectionPropertiesUtils.ParseConnectionStringParameters(this.connectionString);
         this.targetType = targetType ?? this.GetTargetType(this.ConnectionProperties);
@@ -170,10 +171,9 @@ public class AwsWrapperConnection : DbConnection
             this.PluginManager,
             this.pluginService.InitialConnectionHostSpec,
             this.ConnectionProperties,
-            this.isInitialConnection);
+            true);
         this.pluginService.SetCurrentConnection(connection, this.pluginService.InitialConnectionHostSpec);
         this.pluginService.RefreshHostList();
-        this.isInitialConnection = false;
     }
 
     protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel)
@@ -206,6 +206,7 @@ public class AwsWrapperConnection : DbConnection
             this.pluginService.CurrentConnection,
             "DbConnection.CreateCommand",
             () => (TCommand)this.pluginService.CurrentConnection.CreateCommand());
+        Logger.LogDebug("DbCommand created for DbConnection@{Id}", RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection));
 
         this.ConnectionProperties[PropertyDefinition.TargetCommandType.Name] = typeof(TCommand).AssemblyQualifiedName!;
         return new AwsWrapperCommand<TCommand>(command, this, this.PluginManager);
