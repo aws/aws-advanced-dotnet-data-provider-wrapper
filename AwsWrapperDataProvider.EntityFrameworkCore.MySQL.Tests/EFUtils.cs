@@ -39,6 +39,6 @@ public class EFUtils
             ConnectionTimeout = 30,
         };
 
-        return mySqlConnectionStringBuilder.ConnectionString;
+        return mySqlConnectionStringBuilder.ConnectionString + ";Plugins=;";
     }
 }
