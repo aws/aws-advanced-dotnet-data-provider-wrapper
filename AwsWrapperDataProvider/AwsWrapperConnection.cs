@@ -39,6 +39,7 @@ public class AwsWrapperConnection : DbConnection
     private Type targetType;
     private string connectionString;
     private string? database;
+    private bool isInitialConnection;
 
     internal ConnectionPluginManager PluginManager { get; }
 
@@ -91,6 +92,7 @@ public class AwsWrapperConnection : DbConnection
 
     public AwsWrapperConnection(Type? targetType, string connectionString, ConfigurationProfile? profile) : base()
     {
+        this.isInitialConnection = true;
         this.connectionString = connectionString;
         this.ConnectionProperties = profile?.Properties ?? ConnectionPropertiesUtils.ParseConnectionStringParameters(this.connectionString);
         this.targetType = targetType ?? this.GetTargetType(this.ConnectionProperties);
@@ -168,9 +170,10 @@ public class AwsWrapperConnection : DbConnection
             this.PluginManager,
             this.pluginService.InitialConnectionHostSpec,
             this.ConnectionProperties,
-            true);
+            this.isInitialConnection);
         this.pluginService.SetCurrentConnection(connection, this.pluginService.InitialConnectionHostSpec);
         this.pluginService.RefreshHostList();
+        this.isInitialConnection = false;
     }
 
     protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel)
