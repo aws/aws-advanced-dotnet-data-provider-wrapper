@@ -229,12 +229,8 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
             db.Add(jane);
             db.SaveChanges();
 
-            var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            var clusterFailureTask = AuroraUtils.SimulateTemporaryFailureTask(ProxyClusterEndpoint, TimeSpan.Zero, TimeSpan.FromSeconds(12), tcs);
-            var writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(12), tcs);
-
             Person john = new() { FirstName = "John", LastName = "Smith" };
-            Assert.Throws<FailoverSuccessException>(() =>
+            await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
             {
                 var connection = db.Database.GetDbConnection();
                 try
@@ -245,16 +241,20 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
                         connection.Open();
                     }
 
+                    var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                    var clusterFailureTask = AuroraUtils.SimulateTemporaryFailureTask(ProxyClusterEndpoint, TimeSpan.Zero, TimeSpan.FromSeconds(12), tcs);
+                    var writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(12), tcs);
+
+                    await tcs.Task;
                     db.Add(john);
                     db.SaveChanges();
+                    await Task.WhenAll(clusterFailureTask, writerNodeFailureTask);
                 }
                 finally
                 {
                     connection.Close();
                 }
             });
-
-            await Task.WhenAll(clusterFailureTask, writerNodeFailureTask);
 
             Assert.Equal(EntityState.Added, db.Entry(john).State);
 
