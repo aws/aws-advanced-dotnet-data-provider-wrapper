@@ -117,7 +117,7 @@ public class TargetConnectionDialectTests
         var connectionString = connectionDialect.PrepareConnectionString(dialect, HostWithPort, PropsWithInternalProperties);
 
         Assert.Contains("Host=test-host", connectionString);
-        Assert.Contains("ProxyPort=5432", connectionString);
+        Assert.Contains("Port=5432", connectionString);
         Assert.Contains("Database=testdb", connectionString);
         Assert.DoesNotContain(PropertyDefinition.TargetConnectionType.Name, connectionString);
         Assert.DoesNotContain(PropertyDefinition.CustomTargetConnectionDialect.Name, connectionString);
@@ -132,7 +132,7 @@ public class TargetConnectionDialectTests
         var connectionString = connectionDialect.PrepareConnectionString(dialect, HostWithPort, ConnectionProps);
 
         Assert.Contains("Server=test-host", connectionString);
-        Assert.Contains("ProxyPort=5432", connectionString);
+        Assert.Contains("Port=5432", connectionString);
         Assert.Contains("Database=testdb", connectionString);
         Assert.Contains("Username=testuser", connectionString);
         Assert.Contains("Password=testpass", connectionString);
@@ -147,7 +147,7 @@ public class TargetConnectionDialectTests
         var connectionString = connectionDialect.PrepareConnectionString(dialect, null, PropertiesWithServer);
 
         Assert.Contains("Server=original-host", connectionString);
-        Assert.Contains("ProxyPort=5432", connectionString);
+        Assert.Contains("Port=5432", connectionString);
         Assert.Contains("Database=testdb", connectionString);
     }
 
@@ -160,7 +160,7 @@ public class TargetConnectionDialectTests
         var connectionString = connectionDialect.PrepareConnectionString(dialect, HostWithPort, PropsWithInternalProperties);
 
         Assert.Contains("Server=test-host", connectionString);
-        Assert.Contains("ProxyPort=5432", connectionString);
+        Assert.Contains("Port=5432", connectionString);
         Assert.Contains("Database=testdb", connectionString);
         Assert.DoesNotContain(PropertyDefinition.TargetConnectionType.Name, connectionString);
         Assert.DoesNotContain(PropertyDefinition.CustomTargetConnectionDialect.Name, connectionString);
@@ -175,7 +175,7 @@ public class TargetConnectionDialectTests
         var connectionString = connectionDialect.PrepareConnectionString(dialect, HostWithPort, ConnectionProps);
 
         Assert.Contains("Server=test-host", connectionString);
-        Assert.Contains("ProxyPort=5432", connectionString);
+        Assert.Contains("Port=5432", connectionString);
         Assert.Contains("Database=testdb", connectionString);
         Assert.Contains("Username=testuser", connectionString);
         Assert.Contains("Password=testpass", connectionString);
@@ -190,7 +190,7 @@ public class TargetConnectionDialectTests
         var connectionString = connectionDialect.PrepareConnectionString(dialect, null, PropertiesWithServer);
 
         Assert.Contains("Server=original-host", connectionString);
-        Assert.Contains("ProxyPort=5432", connectionString);
+        Assert.Contains("Port=5432", connectionString);
         Assert.Contains("Database=testdb", connectionString);
     }
 
@@ -203,7 +203,7 @@ public class TargetConnectionDialectTests
         var connectionString = connectionDialect.PrepareConnectionString(dialect, HostWithPort, PropsWithInternalProperties);
 
         Assert.Contains("Server=test-host", connectionString);
-        Assert.Contains("ProxyPort=5432", connectionString);
+        Assert.Contains("Port=5432", connectionString);
         Assert.Contains("Database=testdb", connectionString);
         Assert.DoesNotContain(PropertyDefinition.TargetConnectionType.Name, connectionString);
         Assert.DoesNotContain(PropertyDefinition.CustomTargetConnectionDialect.Name, connectionString);

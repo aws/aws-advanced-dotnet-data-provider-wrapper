@@ -349,7 +349,7 @@ public class ManualFailoverConnectivityTests
         const string database = "database"; // Replace with your database name
 
         var connectionString =
-            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};ProxyPort=5432;" +
+            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
             $"Plugins=failover;FailoverMode=StrictReader;EnableConnectFailover=true;";
         PerformFailoverTest(connectionString);
     }
@@ -365,7 +365,7 @@ public class ManualFailoverConnectivityTests
         const string database = "database"; // Replace with your database name
 
         var connectionString =
-            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};ProxyPort=5432;" +
+            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
             $"Plugins=failover;FailoverMode=StrictReader;EnableConnectFailover=true;";
         PerformFailoverTest(connectionString);
     }
@@ -381,7 +381,7 @@ public class ManualFailoverConnectivityTests
         const string database = "database"; // Replace with your database name
 
         var connectionString =
-            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};ProxyPort=5432;" +
+            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
             $"Plugins=failover;FailoverMode=ReaderOrWriter;EnableConnectFailover=true;";
         PerformFailoverTest(connectionString);
     }
@@ -397,7 +397,7 @@ public class ManualFailoverConnectivityTests
         const string database = "database"; // Replace with your database name
 
         var connectionString =
-            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};ProxyPort=5432;" +
+            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
             $"Plugins=failover;FailoverMode=ReaderOrWriter;EnableConnectFailover=true;" +
             $"FailoverReaderHostSelectorStrategy=RoundRobin;";
         PerformFailoverTest(connectionString);
@@ -414,7 +414,7 @@ public class ManualFailoverConnectivityTests
         const string database = "database"; // Replace with your database name
 
         var connectionString =
-            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};ProxyPort=5432;" +
+            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
             $"Plugins=failover;FailoverMode=ReaderOrWriter;EnableConnectFailover=true;" +
             $"FailoverReaderHostSelectorStrategy=HighestWeight;";
         PerformFailoverTest(connectionString);
@@ -431,7 +431,7 @@ public class ManualFailoverConnectivityTests
         const string database = "database"; // Replace with your database name
 
         var connectionString =
-            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};ProxyPort=5432;" +
+            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
             $"Plugins=failover,initialConnection;FailoverMode=StrictReader;EnableConnectFailover=true;";
         PerformFailoverTest(connectionString);
     }
@@ -446,7 +446,7 @@ public class ManualFailoverConnectivityTests
         const string database = "database"; // Replace with your database name
 
         var connectionString =
-            $"Host={clusterEndpoint};Username={username};Database={database};ProxyPort=5432;" +
+            $"Host={clusterEndpoint};Username={username};Database={database};Port=5432;" +
             $"Plugins=failover,iam;FailoverMode=ReaderOrWriter;EnableConnectFailover=true;";
         PerformFailoverTest(connectionString);
     }
@@ -461,7 +461,7 @@ public class ManualFailoverConnectivityTests
         const string password = "password"; // Replace with your password
         const string database = "database"; // Replace with your database name
 
-        var connectionString = $"Host={clusterEndpoint};Username={username};Password={password};Database={database};ProxyPort=5432;" +
+        var connectionString = $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
                               $"Plugins=failover;FailoverMode=StrictWriter;EnableConnectFailover=true;";
         PerformTransactionFailoverTest(connectionString);
     }
@@ -477,7 +477,7 @@ public class ManualFailoverConnectivityTests
         const string database = "database"; // Replace with your database name
 
         var connectionString =
-            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};ProxyPort=5432;" +
+            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
             $"Plugins=failover;FailoverMode=StrictReader;EnableConnectFailover=true;";
         PerformTransactionFailoverTest(connectionString);
     }
@@ -493,7 +493,7 @@ public class ManualFailoverConnectivityTests
         const string database = "database"; // Replace with your database name
 
         var connectionString =
-            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};ProxyPort=5432;" +
+            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
             $"Plugins=failover;FailoverMode=ReaderOrWriter;EnableConnectFailover=true;";
         PerformTransactionFailoverTest(connectionString);
     }
