@@ -61,6 +61,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
         // Network-bound methods that might fail and trigger failover
         "DbConnection.Open",
         "DbConnection.OpenAsync",
+        "DbConnection.BeginDbTransaction",
         "DbCommand.ExecuteNonQuery",
         "DbCommand.ExecuteNonQueryAsync",
         "DbCommand.ExecuteReader",

@@ -35,20 +35,6 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
     {
         this.logger = output;
 
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ProxyClusterEndpoint, ProxyPort, Username, Password, DefaultDbName, plugins: string.Empty);
-
-        var options = new DbContextOptionsBuilder<PersonDbContext>()
-            .UseAwsWrapper(
-            connectionString,
-            wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, this.version))
-            .LogTo(Console.WriteLine)
-            .Options;
-
-        using (var db = new PersonDbContext(options))
-        {
-            db.Database.ExecuteSqlRaw($"Truncate table persons;");
-        }
-
         this.loggerFactory = LoggerFactory.Create(builder =>
         {
             builder
@@ -80,6 +66,11 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
             wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, this.version))
             .LogTo(Console.WriteLine)
             .Options;
+
+        using (var db = new PersonDbContext(options))
+        {
+            db.Database.ExecuteSqlRaw($"Truncate table persons;");
+        }
 
         using (var db = new PersonDbContext(options))
         {
@@ -121,6 +112,11 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
                     .UseLoggerFactory(this.loggerFactory)
                     .UseMySql(connectionString, this.version))
             .Options;
+
+        using (var db = new PersonDbContext(options))
+        {
+            db.Database.ExecuteSqlRaw($"Truncate table persons;");
+        }
 
         using (var db = new PersonDbContext(options))
         {
@@ -169,6 +165,11 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
                     .UseLoggerFactory(this.loggerFactory)
                     .UseMySql(connectionString, this.version))
             .Options;
+
+        using (var db = new PersonDbContext(options))
+        {
+            db.Database.ExecuteSqlRaw($"Truncate table persons;");
+        }
 
         using (var db = new PersonDbContext(options))
         {
