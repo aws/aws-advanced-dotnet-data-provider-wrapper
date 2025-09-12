@@ -50,14 +50,14 @@ public class TargetConnectionDialectTests
     private static readonly Dictionary<string, string> PropertiesWithHost = new()
     {
         { "Host", "original-host" },
-        { "ProxyPort", "5432" },
+        { "Port", "5432" },
         { "Database", "testdb" },
     };
 
     private static readonly Dictionary<string, string> PropertiesWithServer = new()
     {
         { "Server", "original-host" },
-        { "ProxyPort", "5432" },
+        { "Port", "5432" },
         { "Database", "testdb" },
     };
 
@@ -77,7 +77,7 @@ public class TargetConnectionDialectTests
         var connectionString = connectionDialect.PrepareConnectionString(dialect, HostWithPort, ConnectionProps);
 
         Assert.Contains("Host=test-host", connectionString);
-        Assert.Contains("ProxyPort=5432", connectionString);
+        Assert.Contains("Port=5432", connectionString);
         Assert.Contains("Database=testdb", connectionString);
         Assert.Contains("Username=testuser", connectionString);
         Assert.Contains("Password=testpass", connectionString);
@@ -92,7 +92,7 @@ public class TargetConnectionDialectTests
         var connectionString = connectionDialect.PrepareConnectionString(dialect, HostWithoutPort, BasicDatabaseProps);
 
         Assert.Contains("Host=test-host", connectionString);
-        Assert.DoesNotContain("ProxyPort=", connectionString);
+        Assert.DoesNotContain("Port=", connectionString);
     }
 
     [Fact]
@@ -104,7 +104,7 @@ public class TargetConnectionDialectTests
         var connectionString = connectionDialect.PrepareConnectionString(dialect, null, PropertiesWithHost);
 
         Assert.Contains("Host=original-host", connectionString);
-        Assert.Contains("ProxyPort=5432", connectionString);
+        Assert.Contains("Port=5432", connectionString);
         Assert.Contains("Database=testdb", connectionString);
     }
 

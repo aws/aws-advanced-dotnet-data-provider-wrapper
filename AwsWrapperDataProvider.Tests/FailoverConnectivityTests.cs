@@ -320,14 +320,22 @@ public class ManualFailoverConnectivityTests
     [Trait("Category", "Manual")]
     public void FailoverPluginTest_WithStrictWriterMode()
     {
-        const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
-        const string username = "username"; // Replace with your username
+        const string clusterEndpoint = "database-yan.cluster-cxmsoia46djo.us-west-2.rds.amazonaws.com"; // Replace with your cluster endpoint
+        const string username = "admin"; // Replace with your username
         const string password = "password"; // Replace with your password
-        const string database = "database"; // Replace with your database name
+        const string database = "test"; // Replace with your database name
 
-        var connectionString = $"Host={clusterEndpoint};Username={username};Password={password};Database={database};ProxyPort=5432;" +
-                              $"Plugins=failover;FailoverMode=StrictWriter;EnableConnectFailover=true;";
-        PerformFailoverTest(connectionString);
+        var connectionString = $"Host={clusterEndpoint};Username={username};Password={password};Database={database};" +
+                              $"Plugins=failover;FailoverMode=StrictWriter;EnableConnectFailover=true;Command Timeout=2;Connect Timeout=2;";
+
+        var connection = new AwsWrapperConnection<MySqlConnection>(connectionString);
+        connection.Open();
+        var transaciton = connection.BeginTransaction();
+        var command = connection.CreateCommand<MySqlCommand>();
+        command.Transaction = transaciton;
+        command.CommandText = "SELECT 1";
+        var reader = command.ExecuteReader();
+        reader.Read();
     }
 
     [Fact]

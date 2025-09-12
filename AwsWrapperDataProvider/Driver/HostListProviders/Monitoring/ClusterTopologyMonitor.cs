@@ -645,7 +645,6 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                 hosts.Add(writers.MaxBy(x => x.LastUpdateTime)!);
             }
 
-            LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, LoggerUtils.LogTopology(hosts, null));
             return hosts;
         }
         catch (Exception ex)

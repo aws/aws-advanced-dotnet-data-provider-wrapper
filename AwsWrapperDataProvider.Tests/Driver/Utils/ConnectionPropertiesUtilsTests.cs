@@ -22,7 +22,7 @@ public class ConnectionPropertiesUtilsTests
     [Theory]
     [Trait("Category", "Unit")]
     [InlineData("host=myhost.example.com;port=5432;database=mydb;username=myuser;password=mypassword", 5)]
-    [InlineData("Host=myhost.example.com;ProxyPort=5432", 2)]
+    [InlineData("Host=myhost.example.com;Port=5432", 2)]
     [InlineData("Host=myhost.example.com", 1)]
     public void ParseConnectionStringParameters_WithValidConnectionString_ReturnsDictionary(string connectionString, int expectedCount)
     {
@@ -44,7 +44,7 @@ public class ConnectionPropertiesUtilsTests
 
     [Theory]
     [Trait("Category", "Unit")]
-    [InlineData("Host=myhost.example.com;InvalidPair;=;ProxyPort=5432;=NoKey;NoValue=", 3)]
+    [InlineData("Host=myhost.example.com;InvalidPair;=;Port=5432;=NoKey;NoValue=", 3)]
     [InlineData("Host=myhost.example.com;=NoKey;NoValue=", 2)]
     public void ParseConnectionStringParameters_WithMalformedPairs_SkipsInvalidPairs(string connectionString, int expectedCount)
     {
@@ -62,14 +62,14 @@ public class ConnectionPropertiesUtilsTests
     [Trait("Category", "Unit")]
     public void ParseConnectionStringParameters_WithExtraWhitespace_TrimsValues()
     {
-        string connectionString = " Host = myhost.example.com ; ProxyPort = 5432 ";
+        string connectionString = " Host = myhost.example.com ; Port = 5432 ";
 
         var result = ConnectionPropertiesUtils.ParseConnectionStringParameters(connectionString);
 
         Assert.NotNull(result);
         Assert.Equal(2, result.Count);
         Assert.Equal("myhost.example.com", result["Host"]);
-        Assert.Equal("5432", result["ProxyPort"]);
+        Assert.Equal("5432", result["Port"]);
     }
 
     [Fact]
@@ -79,7 +79,7 @@ public class ConnectionPropertiesUtilsTests
         var props = new Dictionary<string, string>
         {
             { "Host", "mydb.123456789012.us-east-1.rds.amazonaws.com" },
-            { "ProxyPort", "3306" },
+            { "Port", "3306" },
         };
 
         var expectedHost = new HostSpec(
@@ -99,7 +99,7 @@ public class ConnectionPropertiesUtilsTests
         var props = new Dictionary<string, string>
         {
             { "Host", "mydb.cluster-123456789012.us-east-1.rds.amazonaws.com" },
-            { "ProxyPort", "3306" },
+            { "Port", "3306" },
         };
 
         var expectedHost = new HostSpec(
@@ -119,7 +119,7 @@ public class ConnectionPropertiesUtilsTests
         var props = new Dictionary<string, string>
         {
             { "Host", "mydb.cluster-ro-123456789012.us-east-1.rds.amazonaws.com" },
-            { "ProxyPort", "3306" },
+            { "Port", "3306" },
         };
 
         var expectedHost = new HostSpec(
@@ -139,7 +139,7 @@ public class ConnectionPropertiesUtilsTests
         var props = new Dictionary<string, string>
         {
             { "Host", "mydb.cluster-custom-123456789012.us-east-1.rds.amazonaws.com" },
-            { "ProxyPort", "3306" },
+            { "Port", "3306" },
         };
 
         var expectedHost = new HostSpec(
@@ -159,7 +159,7 @@ public class ConnectionPropertiesUtilsTests
         var props = new Dictionary<string, string>
         {
             { "Host", "mydb.proxy-123456789012.us-east-1.rds.amazonaws.com" },
-            { "ProxyPort", "3306" },
+            { "Port", "3306" },
         };
 
         var expectedHost = new HostSpec(
@@ -179,7 +179,7 @@ public class ConnectionPropertiesUtilsTests
         var props = new Dictionary<string, string>
         {
             { "Server", "mydb.123456789012.us-east-1.rds.amazonaws.com" },
-            { "ProxyPort", "3306" },
+            { "Port", "3306" },
         };
 
         var expectedHost = new HostSpec(
@@ -199,7 +199,7 @@ public class ConnectionPropertiesUtilsTests
         var props = new Dictionary<string, string>
         {
             { "Host", "mydb1.123456789012.us-east-1.rds.amazonaws.com,mydb2.123456789012.us-east-1.rds.amazonaws.com" },
-            { "ProxyPort", "3306" },
+            { "Port", "3306" },
         };
 
         var expectedHost1 = new HostSpec(
@@ -226,7 +226,7 @@ public class ConnectionPropertiesUtilsTests
         var props = new Dictionary<string, string>
         {
             { "Host", "mydb1.123456789012.us-east-1.rds.amazonaws.com,mydb2.123456789012.us-east-1.rds.amazonaws.com" },
-            { "ProxyPort", "3306" },
+            { "Port", "3306" },
         };
 
         var expectedHost1 = new HostSpec(
@@ -253,7 +253,7 @@ public class ConnectionPropertiesUtilsTests
         var props = new Dictionary<string, string>
         {
             { "Host", "mydb.123456789012.us-east-1.rds.amazonaws.com:3307" },
-            { "ProxyPort", "3306" }, // This should be overridden by the port in the host string
+            { "Port", "3306" }, // This should be overridden by the port in the host string
         };
 
         var expectedHost = new HostSpec(
@@ -273,7 +273,7 @@ public class ConnectionPropertiesUtilsTests
         var props = new Dictionary<string, string>
         {
             { "Host", "mydb.123456789012.cn-north-1.rds.amazonaws.com.cn" },
-            { "ProxyPort", "3306" },
+            { "Port", "3306" },
         };
 
         var expectedHost = new HostSpec(
@@ -293,7 +293,7 @@ public class ConnectionPropertiesUtilsTests
         var props = new Dictionary<string, string>
         {
             { "Host", "mydb.123456789012.rds.us-gov-west-1.amazonaws.com" },
-            { "ProxyPort", "3306" },
+            { "Port", "3306" },
         };
 
         var expectedHost = new HostSpec(
@@ -312,7 +312,7 @@ public class ConnectionPropertiesUtilsTests
     {
         var props = new Dictionary<string, string>
         {
-            { "ProxyPort", "3306" },
+            { "Port", "3306" },
             { "Database", "mydb" },
         };
 

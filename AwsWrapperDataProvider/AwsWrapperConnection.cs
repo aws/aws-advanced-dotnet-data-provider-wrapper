@@ -66,6 +66,8 @@ public class AwsWrapperConnection : DbConnection
         }
     }
 
+    public override int ConnectionTimeout => this.TargetDbConnection?.ConnectionTimeout ?? base.ConnectionTimeout;
+
     public AwsWrapperConnection(DbConnection connection, ConfigurationProfile? profile) : this(
         connection.GetType(),
         connection.ConnectionString,
