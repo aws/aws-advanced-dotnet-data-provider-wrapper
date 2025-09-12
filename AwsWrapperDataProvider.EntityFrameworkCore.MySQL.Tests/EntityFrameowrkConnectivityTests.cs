@@ -233,26 +233,42 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
             var clusterFailureTask = AuroraUtils.SimulateTemporaryFailureTask(ProxyClusterEndpoint, TimeSpan.Zero, TimeSpan.FromSeconds(12), tcs);
             var writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(12), tcs);
 
+            Person john = new() { FirstName = "John", LastName = "Smith" };
             Assert.Throws<FailoverSuccessException>(() =>
             {
-                Person john = new() { FirstName = "John", LastName = "Smith" };
-                db.Add(john);
-                db.SaveChanges();
+                var connection = db.Database.GetDbConnection();
+                try
+                {
+                    if (connection.State == System.Data.ConnectionState.Closed)
+                    {
+                        // Open explicly to trigger failover on execute pipeline
+                        connection.Open();
+                    }
+
+                    db.Add(john);
+                    db.SaveChanges();
+                }
+                finally
+                {
+                    connection.Close();
+                }
             });
 
             await Task.WhenAll(clusterFailureTask, writerNodeFailureTask);
 
+            Assert.Equal(EntityState.Added, db.Entry(john).State);
+
             Person joe = new() { FirstName = "Joe", LastName = "Smith" };
             db.Add(joe);
-            db.SaveChanges();
+            db.SaveChanges(); // Will save changes for joe and john
         }
 
         using (var db = new PersonDbContext(options))
         {
             Assert.True(db.Persons.Any(p => p.FirstName == "Jane"));
             Assert.True(db.Persons.Any(p => p.FirstName == "Joe"));
-            Assert.False(db.Persons.Any(p => p.FirstName == "John"));
-            Assert.Equal(2, db.Persons.Count());
+            Assert.True(db.Persons.Any(p => p.FirstName == "John"));
+            Assert.Equal(3, db.Persons.Count());
         }
     }
 }
