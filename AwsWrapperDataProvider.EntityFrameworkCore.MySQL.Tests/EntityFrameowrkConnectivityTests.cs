@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using AwsWrapperDataProvider.Driver.Plugins.Failover;
 using AwsWrapperDataProvider.Tests;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 using Microsoft.EntityFrameworkCore;
@@ -54,7 +55,7 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
 
     [Fact]
     [Trait("Category", "Integration")]
-    // [Trait("Database", "mysql-ef")]
+    [Trait("Database", "mysql-ef")]
     public void MysqlEFAddTest()
     {
         var connectionString = ConnectionStringHelper.GetUrl(Engine, ProxyClusterEndpoint, ProxyPort, Username, Password, DefaultDbName);
@@ -232,26 +233,26 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
             var clusterFailureTask = AuroraUtils.SimulateTemporaryFailureTask(ProxyClusterEndpoint, TimeSpan.Zero, TimeSpan.FromSeconds(12), tcs);
             var writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(12), tcs);
 
-            Person john = new() { FirstName = "John", LastName = "Smith" };
-            db.Add(john);
-            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Before saving changes");
+            Assert.Throws<FailoverSuccessException>(() =>
+            {
+                Person john = new() { FirstName = "John", LastName = "Smith" };
+                db.Add(john);
+                db.SaveChanges();
+            });
 
-            db.SaveChanges();
-            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} After saving changes");
+            await Task.WhenAll(clusterFailureTask, writerNodeFailureTask);
 
             Person joe = new() { FirstName = "Joe", LastName = "Smith" };
             db.Add(joe);
             db.SaveChanges();
-
-            await Task.WhenAll(clusterFailureTask, writerNodeFailureTask);
         }
 
         using (var db = new PersonDbContext(options))
         {
             Assert.True(db.Persons.Any(p => p.FirstName == "Jane"));
             Assert.True(db.Persons.Any(p => p.FirstName == "Joe"));
-            Assert.True(db.Persons.Any(p => p.FirstName == "John"));
-            Assert.Equal(3, db.Persons.Count());
+            Assert.False(db.Persons.Any(p => p.FirstName == "John"));
+            Assert.Equal(2, db.Persons.Count());
         }
     }
 }
