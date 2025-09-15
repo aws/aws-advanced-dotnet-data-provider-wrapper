@@ -801,7 +801,7 @@ public class AuroraTestUtils
         }
     }
 
-    public string QueryInstanceId(IDbConnection connection)
+    public string? QueryInstanceId(IDbConnection connection)
     {
         return this.ExecuteInstanceIdQuery(
             connection,

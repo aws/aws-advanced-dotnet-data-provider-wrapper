@@ -29,7 +29,7 @@ public class ConnectionStringHelper
                 mySqlConnectionStringBuilder.Server = host;
                 if (port != null & port > 0)
                 {
-                    mySqlConnectionStringBuilder.Port = (uint)port;
+                    mySqlConnectionStringBuilder.Port = (uint)port!;
                 }
 
                 if (username != null)
@@ -57,7 +57,7 @@ public class ConnectionStringHelper
                 npgsqlConnectionStringBuilder.Host = host;
                 if (port != null & port > 0)
                 {
-                    npgsqlConnectionStringBuilder.Port = (int)port;
+                    npgsqlConnectionStringBuilder.Port = (int)port!;
                 }
 
                 if (username != null)
