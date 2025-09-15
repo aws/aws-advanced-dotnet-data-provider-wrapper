@@ -59,7 +59,7 @@ public class TestRunner {
   }
 
   @TestTemplate
-  public void runPGMultiAzClusterTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
+  public void runPGMultiAzInstanceTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
     try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
       env.runTests("pg", "multi-az-instance");
     }
