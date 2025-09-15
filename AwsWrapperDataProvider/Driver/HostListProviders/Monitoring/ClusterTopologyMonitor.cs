@@ -402,7 +402,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                             string? nodeId = await this.GetNodeIdAsync(this.monitoringConnection);
                             if (!string.IsNullOrEmpty(nodeId))
                             {
-                                this.writerHostSpec = this.CreateHost(nodeId, true, 0, null);
+                                this.writerHostSpec = this.CreateHost(nodeId, nodeId, true, 0, null);
                                 LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, string.Format(Resources.ClusterTopologyMonitor_WriterMonitoringConnection, this.writerHostSpec.Host));
                             }
                         }
@@ -470,16 +470,17 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
         long weight = (long)((Math.Round(nodeLag) * 100L) + Math.Round(cpuUtilization));
 
-        return this.CreateHost(hostName, isWriter, weight, lastUpdateTime);
+        return this.CreateHost(hostName, hostName, isWriter, weight, lastUpdateTime);
     }
 
     protected HostSpec CreateHost(
+        string nodeName,
         string nodeId,
         bool isWriter,
         long weight,
         DateTime? lastUpdateTime)
     {
-        string endpoint = this.clusterInstanceTemplate.Host.Replace("?", nodeId);
+        string endpoint = this.clusterInstanceTemplate.Host.Replace("?", nodeName);
         int port = this.clusterInstanceTemplate.IsPortSpecified
             ? this.clusterInstanceTemplate.Port
             : this.initialHostSpec.Port;
