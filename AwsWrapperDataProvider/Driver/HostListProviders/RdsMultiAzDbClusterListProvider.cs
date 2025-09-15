@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data;
+using System.Globalization;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Logging;
@@ -79,7 +80,7 @@ public class RdsMultiAzDbClusterListProvider : RdsHostListProvider
             int ordinal = fetchWriterNodeReader.GetOrdinal(this.fetchWriterNodeQueryHeader);
             if (!fetchWriterNodeReader.IsDBNull(ordinal))
             {
-                return fetchWriterNodeReader.GetString(ordinal);
+                return Convert.ToString(fetchWriterNodeReader.GetValue(ordinal), CultureInfo.InvariantCulture);
             }
         }
 
