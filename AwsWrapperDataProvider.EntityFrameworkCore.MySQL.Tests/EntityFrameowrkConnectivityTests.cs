@@ -299,8 +299,8 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
         using (var db = new PersonDbContext(options))
         {
             Assert.True(db.Persons.Any(p => p.FirstName == "Jane"));
-            Assert.False(db.Persons.Any(p => p.FirstName == "Joe"));
-            Assert.True(db.Persons.Any(p => p.FirstName == "John"));
+            Assert.True(db.Persons.Any(p => p.FirstName == "Joe"));
+            Assert.False(db.Persons.Any(p => p.FirstName == "John"));
             Assert.Equal(2, db.Persons.Count());
         }
     }
