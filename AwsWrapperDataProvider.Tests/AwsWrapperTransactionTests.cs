@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using System.Data.Common;
-using System.Linq.Expressions;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.Plugins;

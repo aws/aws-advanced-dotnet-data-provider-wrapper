@@ -25,8 +25,7 @@ public class AwsWrapperTransaction : DbTransaction
     protected IPluginService pluginService;
     protected AwsWrapperConnection wrapperConnection;
 
-    protected DbTransaction TargetTransaction => this.pluginService.CurrentTransaction
-                                                 ?? throw new ArgumentNullException(nameof(this.pluginService.CurrentTransaction));
+    protected DbTransaction? TargetTransaction => this.pluginService.CurrentTransaction;
 
     internal AwsWrapperTransaction(AwsWrapperConnection wrapperConnection, IPluginService pluginService, ConnectionPluginManager pluginManager)
     {
@@ -35,9 +34,9 @@ public class AwsWrapperTransaction : DbTransaction
         this.wrapperConnection = wrapperConnection;
     }
 
-    public override IsolationLevel IsolationLevel => this.TargetTransaction.IsolationLevel;
+    public override IsolationLevel IsolationLevel => this.TargetTransaction?.IsolationLevel ?? IsolationLevel.Unspecified;
 
-    internal DbTransaction TargetDbTransaction => this.TargetTransaction;
+    internal DbTransaction? TargetDbTransaction => this.TargetTransaction;
 
     protected override DbConnection? DbConnection => this.wrapperConnection;
 
