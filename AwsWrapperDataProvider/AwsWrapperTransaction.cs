@@ -89,11 +89,16 @@ public class AwsWrapperTransaction : DbTransaction
 
     protected override void Dispose(bool disposing)
     {
+        if (this.TargetTransaction == null)
+        {
+            return;
+        }
+
         if (disposing)
         {
             WrapperUtils.RunWithPlugins(
                 this.pluginManager!,
-                this.TargetTransaction!,
+                this.TargetTransaction,
                 "DbTransaction.Dispose",
                 () => this.TargetTransaction!.Dispose());
         }
