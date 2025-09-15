@@ -30,6 +30,7 @@ public class SecretsManagerConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg")]
+    [Trait("Engine", "aurora")]
     public void PgWrapper_WithSecretId()
     {
         var secretId = "PGValidSecretId";
@@ -68,6 +69,7 @@ public class SecretsManagerConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg")]
+    [Trait("Engine", "aurora")]
     public void PgWrapper_WithSecretArn()
     {
         var secretId = "PgValidSecretArn";
@@ -106,6 +108,7 @@ public class SecretsManagerConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
+    [Trait("Engine", "aurora")]
     public void MySqlClientWrapper_WithSecretId()
     {
         var secretId = "MySqlClientValidSecretId";
@@ -144,6 +147,7 @@ public class SecretsManagerConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
+    [Trait("Engine", "aurora")]
     public void MySqlClientWrapper_WithSecretArn()
     {
         var secretId = "MySqlClientValidSecretArn";
@@ -182,6 +186,7 @@ public class SecretsManagerConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
+    [Trait("Engine", "aurora")]
     public void MySqlConnectorWrapper_WithSecretId()
     {
         var secretId = "MySqlConnectorValidSecretId";
@@ -220,6 +225,7 @@ public class SecretsManagerConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
+    [Trait("Engine", "aurora")]
     public void MySqlConnectorWrapper_WithSecretArn()
     {
         var secretId = "MySqlConnectorValidSecretArn";

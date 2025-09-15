@@ -1234,7 +1234,7 @@ public class TestEnvironmentConfig implements AutoCloseable {
     }
   }
 
-  public void runTests(String taskName) throws IOException, InterruptedException {
+  public void runTests(String taskName, String engineDeployment) throws IOException, InterruptedException {
     final ContainerHelper containerHelper = new ContainerHelper();
 
     if (this.info.getRequest().getFeatures().contains(TestEnvironmentFeatures.RUN_HIBERNATE_TESTS_ONLY)) {
@@ -1246,7 +1246,7 @@ public class TestEnvironmentConfig implements AutoCloseable {
       assertEquals(0, exitCode, "Hibernate ORM tests failed");
     } else {
       TestEnvironmentConfiguration config = new TestEnvironmentConfiguration();
-      containerHelper.runTest(this.testContainer, taskName, config.includeTags, config.excludeTags);
+      containerHelper.runTest(this.testContainer, taskName, engineDeployment, config.includeTags, config.excludeTags);
     }
   }
 

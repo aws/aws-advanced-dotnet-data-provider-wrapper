@@ -22,6 +22,7 @@ public class IamConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg")]
+    [Trait("Engine", "aurora")]
     public void PgWrapper_WithIamPlugin()
     {
         var iamUser = TestEnvironment.Env.Info.IamUsername;
@@ -39,6 +40,7 @@ public class IamConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
+    [Trait("Engine", "aurora")]
     public void MySqlClientWrapper_WithIamPlugin()
     {
         var iamUser = TestEnvironment.Env.Info.IamUsername;
@@ -56,6 +58,7 @@ public class IamConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
+    [Trait("Engine", "aurora")]
     public void MySqlConnectorWrapper_WithIamPlugin()
     {
         var iamUser = TestEnvironment.Env.Info.IamUsername;

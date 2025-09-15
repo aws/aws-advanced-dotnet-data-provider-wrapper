@@ -39,6 +39,8 @@ public class FailoverConnectivityTests : IntegrationTestBase
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
     [Trait("Database", "pg")]
+    [Trait("Engine", "aurora")]
+    [Trait("Engine", "multi-az-cluster")]
     public async Task WriterFailover_FailOnConnectionInvocation()
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
@@ -83,6 +85,8 @@ public class FailoverConnectivityTests : IntegrationTestBase
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
     [Trait("Database", "pg")]
+    [Trait("Engine", "aurora")]
+    [Trait("Engine", "multi-az-cluster")]
     public async Task FailFromReaderToWriter()
     {
         Assert.SkipWhen(NumberOfInstances != 2, "Skipped due to test requiring number of database instances = 2.");
@@ -130,6 +134,8 @@ public class FailoverConnectivityTests : IntegrationTestBase
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
     [Trait("Database", "pg")]
+    [Trait("Engine", "aurora")]
+    [Trait("Engine", "multi-az-cluster")]
     public async Task WriterFailover_WriterReelected()
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
@@ -181,6 +187,8 @@ public class FailoverConnectivityTests : IntegrationTestBase
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
     [Trait("Database", "pg")]
+    [Trait("Engine", "aurora")]
+    [Trait("Engine", "multi-az-cluster")]
     public async Task ReaderFailover_ReaderOrWriter()
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
@@ -223,6 +231,8 @@ public class FailoverConnectivityTests : IntegrationTestBase
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
     [Trait("Database", "pg")]
+    [Trait("Engine", "aurora")]
+    [Trait("Engine", "multi-az-cluster")]
     public async Task ReaderFailover_StrictReader()
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
@@ -269,6 +279,8 @@ public class FailoverConnectivityTests : IntegrationTestBase
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
     [Trait("Database", "pg")]
+    [Trait("Engine", "aurora")]
+    [Trait("Engine", "multi-az-cluster")]
     public async Task ReaderFailover_WriterReelected()
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");

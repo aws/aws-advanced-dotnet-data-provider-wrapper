@@ -27,7 +27,7 @@ public class ConnectionStringHelper
             case DatabaseEngine.MYSQL:
                 MySqlConnectionStringBuilder mySqlConnectionStringBuilder = new();
                 mySqlConnectionStringBuilder.Server = host;
-                if (port != null)
+                if (port != null & port > 0)
                 {
                     mySqlConnectionStringBuilder.Port = (uint)port;
                 }
@@ -55,7 +55,7 @@ public class ConnectionStringHelper
             case DatabaseEngine.PG:
                 NpgsqlConnectionStringBuilder npgsqlConnectionStringBuilder = new();
                 npgsqlConnectionStringBuilder.Host = host;
-                if (port != null)
+                if (port != null & port > 0)
                 {
                     npgsqlConnectionStringBuilder.Port = (int)port;
                 }

@@ -25,6 +25,9 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
+    [Trait("Engine", "aurora")]
+    [Trait("Engine", "multi-az-cluster")]
+    [Trait("Engine", "multi-az-instance")]
     public void MySqlClientWrapperConnectionTest()
     {
         var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName);
@@ -45,6 +48,9 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
+    [Trait("Engine", "aurora")]
+    [Trait("Engine", "multi-az-cluster")]
+    [Trait("Engine", "multi-az-instance")]
     public void MySqlConnectorWrapperConnectionTest()
     {
         var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName);
@@ -65,6 +71,9 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
+    [Trait("Engine", "aurora")]
+    [Trait("Engine", "multi-az-cluster")]
+    [Trait("Engine", "multi-az-instance")]
     public void MysqlWrapperConnectionDynamicTest()
     {
         var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName);
@@ -90,6 +99,9 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
+    [Trait("Engine", "aurora")]
+    [Trait("Engine", "multi-az-cluster")]
+    [Trait("Engine", "multi-az-instance")]
     public void MysqlWrapperConnectionWithParametersTest()
     {
         var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName);
@@ -117,6 +129,9 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg")]
+    [Trait("Engine", "aurora")]
+    [Trait("Engine", "multi-az-cluster")]
+    [Trait("Engine", "multi-az-instance")]
     public void PgWrapperConnectionTest()
     {
         var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName);
@@ -138,6 +153,9 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg")]
+    [Trait("Engine", "aurora")]
+    [Trait("Engine", "multi-az-cluster")]
+    [Trait("Engine", "multi-az-instance")]
     public void PgWrapperConnectionDynamicTest()
     {
         var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName);
@@ -163,6 +181,9 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
+    [Trait("Engine", "aurora")]
+    [Trait("Engine", "multi-az-cluster")]
+    [Trait("Engine", "multi-az-instance")]
     public async Task MySqlConnectorWrapperProxiedConnectionTest()
     {
         var instanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First();
@@ -195,6 +216,9 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg")]
+    [Trait("Engine", "aurora")]
+    [Trait("Engine", "multi-az-cluster")]
+    [Trait("Engine", "multi-az-instance")]
     public async Task PgWrapperProxiedConnectionTest()
     {
         var instanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First();
