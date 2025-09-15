@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data.Common;
+using System.Globalization;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Caching.Memory;
@@ -76,7 +77,7 @@ public class MultiAzClusterTopologyMonitor : ClusterTopologyMonitor
                     int columnIndex = reader.GetOrdinal(this.fetchWriterNodeColumnName);
                     string? nodeId = reader.IsDBNull(columnIndex)
                         ? null
-                        : reader.GetString(columnIndex);
+                        : Convert.ToString(reader.GetValue(columnIndex), CultureInfo.InvariantCulture);
 
                     if (!string.IsNullOrEmpty(nodeId))
                     {
@@ -91,7 +92,9 @@ public class MultiAzClusterTopologyMonitor : ClusterTopologyMonitor
                 using var reader = await nodeIdCommand.ExecuteReaderAsync();
                 if (reader.Read())
                 {
-                    return reader.IsDBNull(0) ? null : reader.GetString(0);
+                    return reader.IsDBNull(0)
+                        ? null
+                        : Convert.ToString(reader.GetValue(0), CultureInfo.InvariantCulture);
                 }
             }
 
@@ -118,7 +121,7 @@ public class MultiAzClusterTopologyMonitor : ClusterTopologyMonitor
                     int columnIndex = reader.GetOrdinal(this.fetchWriterNodeColumnName);
                     string? nodeId = reader.IsDBNull(columnIndex)
                         ? null
-                        : reader.GetString(columnIndex);
+                        : Convert.ToString(reader.GetValue(columnIndex), CultureInfo.InvariantCulture);
 
                     if (!string.IsNullOrEmpty(nodeId))
                     {
@@ -133,7 +136,9 @@ public class MultiAzClusterTopologyMonitor : ClusterTopologyMonitor
                 using var reader = await nodeIdCommand.ExecuteReaderAsync();
                 if (reader.Read())
                 {
-                    return reader.IsDBNull(0) ? null : reader.GetString(0);
+                    return reader.IsDBNull(0)
+                        ? null
+                        : Convert.ToString(reader.GetValue(0), CultureInfo.InvariantCulture);
                 }
             }
 

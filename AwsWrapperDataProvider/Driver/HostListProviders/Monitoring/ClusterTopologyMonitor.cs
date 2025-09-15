@@ -14,6 +14,7 @@
 
 using System.Collections.Concurrent;
 using System.Data.Common;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -508,7 +509,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             await using var reader = await command.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
             if (await reader.ReadAsync(this.ctsTopologyMonitoring.Token))
             {
-                return reader.GetString(0);
+                return Convert.ToString(reader.GetValue(0), CultureInfo.InvariantCulture);
             }
         }
         catch (Exception ex)

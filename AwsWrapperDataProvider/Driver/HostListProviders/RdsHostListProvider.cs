@@ -14,6 +14,7 @@
 
 using System.Data;
 using System.Data.Common;
+using System.Globalization;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Caching.Memory;
@@ -235,7 +236,7 @@ public class RdsHostListProvider : IDynamicHostListProvider
                     return null;
                 }
 
-                instanceName = resultSet.GetString(0);
+                instanceName = Convert.ToString(resultSet.GetValue(0), CultureInfo.InvariantCulture)!;
             }
 
             IList<HostSpec> topology = this.Refresh(connection);
