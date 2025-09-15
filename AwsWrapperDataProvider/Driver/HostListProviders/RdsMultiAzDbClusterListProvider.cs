@@ -61,7 +61,7 @@ public class RdsMultiAzDbClusterListProvider : RdsHostListProvider
                 using var nodeIdReader = nodeIdCommand.ExecuteReader();
                 while (nodeIdReader.Read())
                 {
-                    writerNodeId = nodeIdReader.GetString(0);
+                    writerNodeId = Convert.ToString(nodeIdReader.GetValue(0), CultureInfo.InvariantCulture);
                 }
             }
         }
@@ -133,24 +133,17 @@ public class RdsMultiAzDbClusterListProvider : RdsHostListProvider
         var idOrdinal = reader.GetOrdinal("id");
         var portOrdinal = reader.GetOrdinal("port");
 
-        if (reader.IsDBNull(endpointOrdinal))
-        {
-            throw new DataException("Topology query result is missing 'endpoint'.");
-        }
-
         string hostName = reader.GetString(endpointOrdinal);
         int firstDot = hostName.IndexOf('.', StringComparison.Ordinal);
         string instanceName = firstDot > 0 ? hostName.Substring(0, firstDot) : hostName;
 
-        // Build DNS from template: replace '?' with node/instance name
         string endpoint = this.GetHostEndpoint(instanceName);
 
-        string hostId = reader.IsDBNull(idOrdinal) ? string.Empty : reader.GetString(idOrdinal);
+        string? hostId = Convert.ToString(reader.GetValue(idOrdinal), CultureInfo.InvariantCulture);
 
-        int queryPort = reader.IsDBNull(portOrdinal) ? 0 : reader.GetInt32(portOrdinal);
         int port = this.clusterInstanceTemplate!.IsPortSpecified
             ? this.clusterInstanceTemplate.Port
-            : queryPort;
+            : reader.IsDBNull(portOrdinal) ? 0 : reader.GetInt32(portOrdinal);
 
         bool isWriter = !string.IsNullOrEmpty(hostId) &&
                         string.Equals(hostId, writerNodeId, StringComparison.Ordinal);

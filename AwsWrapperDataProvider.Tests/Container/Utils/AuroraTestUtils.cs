@@ -637,22 +637,31 @@ public class AuroraTestUtils
         return matchedMemberList[index].DBInstanceIdentifier;
     }
 
-    public async Task CrashInstance(string instanceId, TaskCompletionSource? connectivityDisabledTcs = null)
+    public async Task CrashInstance(string instanceId, TaskCompletionSource tcs)
     {
         var deployment = TestEnvironment.Env.Info.Request.Deployment;
 
         if (deployment == DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER)
         {
-            var tcs = connectivityDisabledTcs ?? new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             var simulationTask = this.SimulateTemporaryFailureTask(instanceId, TimeSpan.Zero, TimeSpan.FromSeconds(12), tcs);
         }
         else
         {
-            var clusterId = TestEnvironment.Env.Info.RdsDbName!;
-            await this.FailoverClusterToATargetAndWaitUntilWriterChanged(
-                clusterId,
-                await this.GetDBClusterWriterInstanceIdAsync(clusterId),
-                await this.GetRandomDBClusterReaderInstanceIdAsync(clusterId));
+            try
+            {
+                var clusterId = TestEnvironment.Env.Info.RdsDbName!;
+                await this.FailoverClusterToATargetAndWaitUntilWriterChanged(
+                    clusterId,
+                    await this.GetDBClusterWriterInstanceIdAsync(clusterId),
+                    await this.GetRandomDBClusterReaderInstanceIdAsync(clusterId));
+            }
+            catch (Exception ex)
+            {
+                tcs.TrySetException(ex);
+                throw;
+            }
+
+            tcs.TrySetResult();
         }
     }
 
