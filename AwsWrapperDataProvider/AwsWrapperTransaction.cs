@@ -48,6 +48,7 @@ public class AwsWrapperTransaction : DbTransaction
             this.TargetTransaction!,
             "DbTransaction.Commit",
             () => this.TargetTransaction!.Commit());
+        this.pluginService.CurrentTransaction = null;
     }
 
     public override void Rollback()
@@ -57,6 +58,7 @@ public class AwsWrapperTransaction : DbTransaction
             this.TargetTransaction!,
             "DbTransaction.Rollback",
             () => this.TargetTransaction!.Rollback());
+        this.pluginService.CurrentTransaction = null;
     }
 
     public override void Save(string savepointName)
@@ -84,5 +86,19 @@ public class AwsWrapperTransaction : DbTransaction
             this.TargetTransaction!,
             "DbTransaction.Release",
             () => this.TargetTransaction!.Release(savepointName));
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            WrapperUtils.RunWithPlugins(
+                this.pluginManager!,
+                this.TargetTransaction!,
+                "DbTransaction.Dispose",
+                () => this.TargetTransaction!.Dispose());
+        }
+
+        this.pluginService.CurrentTransaction = null;
     }
 }

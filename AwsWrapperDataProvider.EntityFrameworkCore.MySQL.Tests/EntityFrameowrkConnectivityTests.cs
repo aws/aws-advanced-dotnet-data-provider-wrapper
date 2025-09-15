@@ -250,6 +250,8 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
 
         using (var db = new PersonDbContext(options))
         {
+            this.logger.WriteLine(db.Database.CurrentTransaction == null ? "No active transaction" : "Transaction is active");
+
             Person jane = new() { FirstName = "Jane", LastName = "Smith" };
             db.Add(jane);
             db.SaveChanges();
@@ -275,6 +277,7 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
                     await tcs.Task;
 
                     var anyUser = await db.Persons.AnyAsync(cancellationToken: TestContext.Current.CancellationToken);
+                    this.logger.WriteLine(db.Database.CurrentTransaction == null ? "No active transaction" : "Transaction is active");
 
                     db.Add(john);
                     db.SaveChanges();
@@ -285,6 +288,7 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
                     connection.Close();
                 }
             });
+            this.logger.WriteLine(db.Database.CurrentTransaction == null ? "No active transaction" : "Transaction is active");
 
             Assert.Equal(EntityState.Added, db.Entry(john).State);
 
