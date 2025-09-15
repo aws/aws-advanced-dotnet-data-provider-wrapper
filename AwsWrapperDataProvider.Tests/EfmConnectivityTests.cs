@@ -84,7 +84,7 @@ public class EfmConnectivityTests
                 host);
             Console.WriteLine($"   Monitor key: {monitorKey}");
 
-            using AwsWrapperCommand<NpgsqlCommand> command = connection.CreateCommand<NpgsqlCommand>();
+            using var command = connection.CreateCommand<NpgsqlCommand>();
             command.CommandText = $"SELECT pg_sleep({TestCommandTimeoutSecs}), now() as query_time, inet_server_addr()::text as server_ip";
             command.CommandTimeout = TestCommandTimeoutSecs; // command won't time out before the monitoring catches a disconnection
 
