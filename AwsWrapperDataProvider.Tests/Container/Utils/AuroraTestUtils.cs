@@ -605,6 +605,7 @@ public class AuroraTestUtils
         var clusterEndpoint = TestEnvironment.Env.Info.DatabaseInfo.ClusterEndpoint;
 
         await this.FailoverClusterToTargetAsync(clusterId, targetWriterId);
+        await this.WaitUntilClusterHasRightStateAsync(clusterId, "failover-over");
 
         var clusterIp = this.HostToIP(clusterEndpoint, true);
 
@@ -632,6 +633,11 @@ public class AuroraTestUtils
             {
                 await Task.Delay(TimeSpan.FromSeconds(1));
             }
+
+            var instancesWithoutInitialWriter = TestEnvironment.Env.Info.DatabaseInfo.Instances.Where(i => i.InstanceId != initialWriterId).ToList();
+
+            await this.WaitUntilClusterHasRightStateAsync(clusterId);
+            await this.MakeSureInstancesUpAsync(instancesWithoutInitialWriter, TimeSpan.FromMinutes(5));
         }
 
         Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Finished failover from {initialWriterId} to target: {targetWriterId}");

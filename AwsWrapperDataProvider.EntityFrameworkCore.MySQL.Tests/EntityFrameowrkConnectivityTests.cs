@@ -158,6 +158,15 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
 
         var wrapperConnectionString = connectionString + $";Plugins=;";
 
+        var failoverPluginOptions = new DbContextOptionsBuilder<PersonDbContext>()
+            .UseLoggerFactory(this.loggerFactory)
+            .UseAwsWrapper(
+                connectionString + ";Plugins=failover;",
+                wrappedOptionBuilder => wrappedOptionBuilder
+                    .UseLoggerFactory(this.loggerFactory)
+                    .UseMySql(connectionString, this.version))
+            .Options;
+
         var options = new DbContextOptionsBuilder<PersonDbContext>()
             .UseLoggerFactory(this.loggerFactory)
             .UseAwsWrapper(
@@ -167,7 +176,8 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
                     .UseMySql(connectionString, this.version))
             .Options;
 
-        using (var db = new PersonDbContext(options))
+        // Use failover plugin to make sure we connect to the writer and perform truncate
+        using (var db = new PersonDbContext(failoverPluginOptions))
         {
             db.Database.ExecuteSqlRaw($"Truncate table persons;");
         }
@@ -179,6 +189,21 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
             db.SaveChanges();
 
             await AuroraUtils.CrashInstance(currentWriter);
+
+            var connection = db.Database.GetDbConnection();
+            try
+            {
+                if (connection.State == System.Data.ConnectionState.Closed)
+                {
+                    connection.Open();
+                }
+
+                this.logger.WriteLine("Current instance id: {id}", AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment));
+            }
+            finally
+            {
+                connection.Close();
+            }
 
             Person john = new() { FirstName = "John", LastName = "Smith" };
             db.Add(john);
@@ -244,8 +269,8 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
                     var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
                     // BeginDbTransaction has a timeout that is not bound by command timeout or connect timeout.
-                    var clusterFailureTask = AuroraUtils.SimulateTemporaryFailureTask(ProxyClusterEndpoint, TimeSpan.Zero, TimeSpan.FromSeconds(30), tcs);
-                    var writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(30), tcs);
+                    var clusterFailureTask = AuroraUtils.SimulateTemporaryFailureTask(ProxyClusterEndpoint, TimeSpan.Zero, TimeSpan.FromSeconds(40), tcs);
+                    var writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(40), tcs);
 
                     await tcs.Task;
                     db.Add(john);
@@ -262,7 +287,7 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
 
             Person joe = new() { FirstName = "Joe", LastName = "Smith" };
             db.Add(joe);
-            db.SaveChanges(); // Will save changes for joe and john
+            db.SaveChanges(); // Will save changes for Joe and John
         }
 
         using (var db = new PersonDbContext(options))
