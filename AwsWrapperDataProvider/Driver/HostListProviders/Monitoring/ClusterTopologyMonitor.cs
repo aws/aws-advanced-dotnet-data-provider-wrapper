@@ -496,7 +496,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             .WithLastUpdateTime(lastUpdateTime)
             .Build();
 
-        host.AddAlias(nodeId);
+        host.AddAlias(nodeName);
         return host;
     }
 
