@@ -509,7 +509,9 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             await using var reader = await command.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
             if (await reader.ReadAsync(this.ctsTopologyMonitoring.Token))
             {
-                return Convert.ToString(reader.GetValue(0), CultureInfo.InvariantCulture);
+                return reader.IsDBNull(0)
+                    ? null
+                    : Convert.ToString(reader.GetValue(0), CultureInfo.InvariantCulture);
             }
         }
         catch (Exception ex)

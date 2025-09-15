@@ -61,7 +61,9 @@ public class RdsMultiAzDbClusterListProvider : RdsHostListProvider
                 using var nodeIdReader = nodeIdCommand.ExecuteReader();
                 while (nodeIdReader.Read())
                 {
-                    writerNodeId = Convert.ToString(nodeIdReader.GetValue(0), CultureInfo.InvariantCulture);
+                    writerNodeId = nodeIdReader.IsDBNull(0)
+                        ? null
+                        : Convert.ToString(nodeIdReader.GetValue(0), CultureInfo.InvariantCulture);
                 }
             }
         }
@@ -139,7 +141,7 @@ public class RdsMultiAzDbClusterListProvider : RdsHostListProvider
 
         string endpoint = this.GetHostEndpoint(instanceName);
 
-        string? hostId = Convert.ToString(reader.GetValue(idOrdinal), CultureInfo.InvariantCulture);
+        string? hostId = Convert.ToString(reader.GetValue(idOrdinal));
 
         int port = this.clusterInstanceTemplate!.IsPortSpecified
             ? this.clusterInstanceTemplate.Port

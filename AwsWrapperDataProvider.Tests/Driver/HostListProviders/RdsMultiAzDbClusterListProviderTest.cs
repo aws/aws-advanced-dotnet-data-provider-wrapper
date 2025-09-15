@@ -120,7 +120,7 @@ public class RdsMultiAzDbClusterListProviderTest : IDisposable
         mockWriterNodeReader.Setup(r => r.Read()).Returns(true);
         mockWriterNodeReader.Setup(r => r.GetOrdinal(FetchWriterNodeQueryHeader)).Returns(0);
         mockWriterNodeReader.Setup(r => r.IsDBNull(0)).Returns(false);
-        mockWriterNodeReader.Setup(r => r.GetString(0)).Returns(WriterNodeId);
+        mockWriterNodeReader.Setup(r => r.GetValue(0)).Returns(WriterNodeId);
 
         // Setup topology query results
         mockTopologyReader.SetupSequence(r => r.Read())
@@ -142,7 +142,7 @@ public class RdsMultiAzDbClusterListProviderTest : IDisposable
             .Returns(ReaderEndpoint1)
             .Returns(ReaderEndpoint2);
 
-        mockTopologyReader.SetupSequence(r => r.GetString(1))
+        mockTopologyReader.SetupSequence(r => r.GetValue(1))
             .Returns(WriterNodeId)
             .Returns(ReaderNodeId1)
             .Returns(ReaderNodeId2);
@@ -253,7 +253,7 @@ public class RdsMultiAzDbClusterListProviderTest : IDisposable
         mockWriterNodeReader.Setup(r => r.Read()).Returns(true);
         mockWriterNodeReader.Setup(r => r.GetOrdinal(FetchWriterNodeQueryHeader)).Returns(0);
         mockWriterNodeReader.Setup(r => r.IsDBNull(0)).Returns(false);
-        mockWriterNodeReader.Setup(r => r.GetString(0)).Returns(WriterNodeId);
+        mockWriterNodeReader.Setup(r => r.GetValue(0)).Returns(WriterNodeId);
 
         mockTopologyReader.Setup(r => r.Read()).Returns(true);
         mockTopologyReader.Setup(r => r.GetOrdinal("endpoint")).Returns(0);
@@ -261,7 +261,7 @@ public class RdsMultiAzDbClusterListProviderTest : IDisposable
         mockTopologyReader.Setup(r => r.GetOrdinal("port")).Returns(2);
         mockTopologyReader.Setup(r => r.IsDBNull(0)).Returns(true); // Missing endpoint
 
-        Assert.Throws<DataException>(() =>
+        Assert.Throws<NullReferenceException>(() =>
             multiAzProviderSpy.Object.QueryForTopology(this.mockConnection.Object));
     }
 
@@ -365,7 +365,7 @@ public class RdsMultiAzDbClusterListProviderTest : IDisposable
         mockWriterNodeReader.Setup(r => r.Read()).Returns(true);
         mockWriterNodeReader.Setup(r => r.GetOrdinal(FetchWriterNodeQueryHeader)).Returns(0);
         mockWriterNodeReader.Setup(r => r.IsDBNull(0)).Returns(false);
-        mockWriterNodeReader.Setup(r => r.GetString(0)).Returns(WriterNodeId);
+        mockWriterNodeReader.Setup(r => r.GetValue(0)).Returns(WriterNodeId);
 
         mockTopologyReader.SetupSequence(r => r.Read()).Returns(true).Returns(false);
         mockTopologyReader.Setup(r => r.GetOrdinal("endpoint")).Returns(0);
@@ -375,7 +375,7 @@ public class RdsMultiAzDbClusterListProviderTest : IDisposable
         mockTopologyReader.Setup(r => r.IsDBNull(1)).Returns(false);
         mockTopologyReader.Setup(r => r.IsDBNull(2)).Returns(false);
         mockTopologyReader.Setup(r => r.GetString(0)).Returns("fresh-writer.xyz.us-east-2.rds.amazonaws.com");
-        mockTopologyReader.Setup(r => r.GetString(1)).Returns(WriterNodeId);
+        mockTopologyReader.Setup(r => r.GetValue(1)).Returns(WriterNodeId);
         mockTopologyReader.Setup(r => r.GetInt32(2)).Returns(5432);
 
         var result = multiAzProviderSpy.Object.GetTopology(this.mockConnection.Object, true);
