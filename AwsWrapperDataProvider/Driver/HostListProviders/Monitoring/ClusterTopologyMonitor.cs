@@ -330,7 +330,6 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         }
 
         DateTime endTime = DateTime.UtcNow.AddMilliseconds(timeoutMs);
-        LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, $"Timeout is {endTime:yyyy-MM-dd HH:mm:ss.fff}");
         IList<HostSpec>? latestHosts = [];
         lock (this.topologyUpdatedLock)
         {

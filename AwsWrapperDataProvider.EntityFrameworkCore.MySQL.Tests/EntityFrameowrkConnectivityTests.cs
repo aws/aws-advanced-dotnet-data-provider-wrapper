@@ -244,8 +244,8 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
                     var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
                     // BeginDbTransaction has a timeout that is not bound by command timeout or connect timeout.
-                    var clusterFailureTask = AuroraUtils.SimulateTemporaryFailureTask(ProxyClusterEndpoint, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
-                    var writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
+                    var clusterFailureTask = AuroraUtils.SimulateTemporaryFailureTask(ProxyClusterEndpoint, TimeSpan.Zero, TimeSpan.FromSeconds(30), tcs);
+                    var writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(30), tcs);
 
                     await tcs.Task;
                     db.Add(john);
