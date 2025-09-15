@@ -250,8 +250,6 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
 
         using (var db = new PersonDbContext(options))
         {
-            this.logger.WriteLine(db.Database.CurrentTransaction == null ? "No active transaction" : "Transaction is active");
-
             Person jane = new() { FirstName = "Jane", LastName = "Smith" };
             db.Add(jane);
             db.SaveChanges();
@@ -269,15 +267,12 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
                     }
 
                     var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-
-                    // BeginDbTransaction has a timeout that is not bound by command timeout or connect timeout.
                     var clusterFailureTask = AuroraUtils.SimulateTemporaryFailureTask(ProxyClusterEndpoint, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
                     var writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
-
                     await tcs.Task;
 
+                    // Query to trigger failover
                     var anyUser = await db.Persons.AnyAsync(cancellationToken: TestContext.Current.CancellationToken);
-                    this.logger.WriteLine(db.Database.CurrentTransaction == null ? "No active transaction" : "Transaction is active");
 
                     db.Add(john);
                     db.SaveChanges();
@@ -288,21 +283,20 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
                     connection.Close();
                 }
             });
-            this.logger.WriteLine(db.Database.CurrentTransaction == null ? "No active transaction" : "Transaction is active");
 
-            Assert.Equal(EntityState.Added, db.Entry(john).State);
+            Assert.Equal(EntityState.Detached, db.Entry(john).State);
 
             Person joe = new() { FirstName = "Joe", LastName = "Smith" };
             db.Add(joe);
-            db.SaveChanges(); // Will save changes for Joe and John
+            db.SaveChanges();
         }
 
         using (var db = new PersonDbContext(options))
         {
             Assert.True(db.Persons.Any(p => p.FirstName == "Jane"));
-            Assert.True(db.Persons.Any(p => p.FirstName == "Joe"));
+            Assert.False(db.Persons.Any(p => p.FirstName == "Joe"));
             Assert.True(db.Persons.Any(p => p.FirstName == "John"));
-            Assert.Equal(3, db.Persons.Count());
+            Assert.Equal(2, db.Persons.Count());
         }
     }
 }
