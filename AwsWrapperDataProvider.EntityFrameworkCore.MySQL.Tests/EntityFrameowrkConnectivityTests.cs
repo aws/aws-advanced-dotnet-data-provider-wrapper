@@ -198,7 +198,7 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
                     connection.Open();
                 }
 
-                this.logger.WriteLine("Current instance id: {id}", AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment));
+                this.logger.WriteLine("Current instance id: {0}", AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment));
             }
             finally
             {
@@ -269,10 +269,13 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
                     var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
                     // BeginDbTransaction has a timeout that is not bound by command timeout or connect timeout.
-                    var clusterFailureTask = AuroraUtils.SimulateTemporaryFailureTask(ProxyClusterEndpoint, TimeSpan.Zero, TimeSpan.FromSeconds(40), tcs);
-                    var writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(40), tcs);
+                    var clusterFailureTask = AuroraUtils.SimulateTemporaryFailureTask(ProxyClusterEndpoint, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
+                    var writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
 
                     await tcs.Task;
+
+                    var anyUser = await db.Persons.AnyAsync(cancellationToken: TestContext.Current.CancellationToken);
+
                     db.Add(john);
                     db.SaveChanges();
                     await Task.WhenAll(clusterFailureTask, writerNodeFailureTask);
