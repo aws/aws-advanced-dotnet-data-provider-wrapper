@@ -250,6 +250,11 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
 
         using (var db = new PersonDbContext(options))
         {
+            db.Database.ExecuteSqlRaw($"Truncate table persons;");
+        }
+
+        using (var db = new PersonDbContext(options))
+        {
             Person jane = new() { FirstName = "Jane", LastName = "Smith" };
             db.Add(jane);
             db.SaveChanges();
