@@ -68,13 +68,19 @@ public class FailoverConnectivityTests : IntegrationTestBase
         connection.Open();
         Assert.Equal(ConnectionState.Open, connection.State);
 
-        await AuroraUtils.CrashInstance(currentWriter);
+        var cts = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var crashTask = AuroraUtils.CrashInstance(currentWriter, cts);
+
+        // Wait for simulation to start
+        await cts.Task;
 
         Assert.Throws<FailoverSuccessException>(() =>
         {
             this.logger.WriteLine("Executing instance ID query to trigger failover...");
             AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
         });
+
+        await crashTask;
     }
 
     /// <summary>
@@ -126,6 +132,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
 
         // Assert that we are currently connected to the writer instance.
         var currentConnectionId = AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
+        Assert.NotNull(currentConnectionId);
         Assert.Equal(currentWriter, currentConnectionId);
         Assert.True(await AuroraUtils.IsDBInstanceWriterAsync(currentConnectionId));
     }
@@ -178,6 +185,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
 
         // Assert that we are currently connected to the writer instance.
         var currentConnectionId = AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
+        Assert.NotNull(currentConnectionId);
         Assert.Equal(currentWriter, currentConnectionId);
         Assert.True(await AuroraUtils.IsDBInstanceWriterAsync(currentConnectionId));
         await simulationTask;
@@ -262,7 +270,11 @@ public class FailoverConnectivityTests : IntegrationTestBase
         connection.Open();
         Assert.Equal(ConnectionState.Open, connection.State);
 
-        await AuroraUtils.CrashInstance(currentWriter);
+        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var crashTask = AuroraUtils.CrashInstance(currentWriter, tcs);
+
+        // Wait for simulation to start
+        await tcs.Task;
 
         Assert.Throws<FailoverSuccessException>(() =>
         {
@@ -272,7 +284,10 @@ public class FailoverConnectivityTests : IntegrationTestBase
 
         // Assert that we are currently connected to the reader instance.
         var currentConnectionId = AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
+        Assert.NotNull(currentConnectionId);
         Assert.False(await AuroraUtils.IsDBInstanceWriterAsync(currentConnectionId));
+
+        await crashTask;
     }
 
     [Fact]

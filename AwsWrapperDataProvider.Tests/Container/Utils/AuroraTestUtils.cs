@@ -637,15 +637,14 @@ public class AuroraTestUtils
         return matchedMemberList[index].DBInstanceIdentifier;
     }
 
-    public async Task CrashInstance(string instanceId)
+    public async Task CrashInstance(string instanceId, TaskCompletionSource? connectivityDisabledTcs = null)
     {
         var deployment = TestEnvironment.Env.Info.Request.Deployment;
 
         if (deployment == DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER)
         {
-            var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var tcs = connectivityDisabledTcs ?? new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             var simulationTask = this.SimulateTemporaryFailureTask(instanceId, TimeSpan.Zero, TimeSpan.FromSeconds(12), tcs);
-            await tcs.Task;
         }
         else
         {
