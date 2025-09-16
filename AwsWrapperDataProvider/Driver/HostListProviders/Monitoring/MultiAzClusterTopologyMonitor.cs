@@ -157,7 +157,7 @@ public class MultiAzClusterTopologyMonitor : ClusterTopologyMonitor
         int idOrdinal = reader.GetOrdinal("id");
         string endpoint = reader.GetString(endpointOrdinal);
         string instanceName = endpoint.Substring(0, endpoint.IndexOf(".", StringComparison.Ordinal));
-        string hostId = reader.GetString(idOrdinal);
+        string hostId = Convert.ToString(reader.GetValue(idOrdinal), CultureInfo.InvariantCulture)!;
         bool isWriter = hostId.Equals(suggestedWriterNodeId, StringComparison.OrdinalIgnoreCase);
 
         return this.CreateHost(instanceName, hostId, isWriter, 0, DateTime.UtcNow);
