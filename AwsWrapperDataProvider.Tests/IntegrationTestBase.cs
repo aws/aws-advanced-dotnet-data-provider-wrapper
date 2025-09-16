@@ -55,8 +55,10 @@ public abstract class IntegrationTestBase : IAsyncLifetime
                     await TestEnvironment.CheckClusterHealthAsync(this.MakeSureFirstInstanceWriter);
                     success = true;
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    Console.WriteLine($"Cluster {TestEnvironment.Env.Info.RdsDbName} is not healthy: {ex.Message}. Rebooting all instances and retrying...");
+
                     switch (deployment)
                     {
                         case DatabaseEngineDeployment.AURORA:
