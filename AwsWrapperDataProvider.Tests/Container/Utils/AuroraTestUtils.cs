@@ -16,6 +16,7 @@ using System.Collections.Concurrent;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
+using System.Globalization;
 using System.Net;
 using System.Net.NetworkInformation;
 using Amazon;
@@ -418,7 +419,7 @@ public class AuroraTestUtils
             {
                 DatabaseEngine.MYSQL => "SELECT SUBSTRING_INDEX(endpoint, '.', 1) as SERVER_ID FROM mysql.rds_topology"
                                         + " ORDER BY CASE WHEN id = "
-                                        + this.GetMultiAzMysqlReplicaWriterInstanceId(connection) is { } id ? $"'{id}'" : "@@server_id"
+                                        + this.GetMultiAzMysqlReplicaWriterInstanceId(connection) is { } id ? $"'{id.Replace("'", "''")}'" : "@@server_id"
                                         + " THEN 0 ELSE 1 END, SUBSTRING_INDEX(endpoint, '.', 1)",
                 DatabaseEngine.PG => "SELECT SUBSTRING(endpoint FROM 0 FOR POSITION('.' IN endpoint)) as SERVER_ID"
                                      + " FROM rds_tools.show_topology()"
@@ -438,6 +439,8 @@ public class AuroraTestUtils
             _ => throw new NotSupportedException(deployment.ToString()),
         };
         var auroraInstances = new List<string>();
+
+        Console.WriteLine($"Retrieving Aurora instances using SQL: {retrieveTopologySql}");
 
         using var command = connection.CreateCommand();
         command.CommandText = retrieveTopologySql;
@@ -465,7 +468,11 @@ public class AuroraTestUtils
             try
             {
                 int i = reader.GetOrdinal("Source_Server_id");
-                return reader.IsDBNull(i) ? null : reader.GetString(i);
+                string? value = reader.IsDBNull(i)
+                    ? null
+                    : Convert.ToString(reader.GetValue(i), CultureInfo.InvariantCulture);
+                Console.WriteLine($"Source_Server_id: {value}");
+                return value;
             }
             catch (IndexOutOfRangeException)
             {
