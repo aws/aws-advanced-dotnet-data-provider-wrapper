@@ -16,11 +16,13 @@ using System.Data;
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
+using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.HostListProviders;
 
 public class ConnectionStringHostListProvider : IStaticHostListProvider
 {
+    private static readonly ILogger<ConnectionStringHostListProvider> Logger = LoggerUtils.GetLogger<ConnectionStringHostListProvider>();
     private readonly List<HostSpec> hostList = [];
     private readonly Dictionary<string, string> properties;
     private readonly IHostListProviderService hostListProviderService;
@@ -96,6 +98,7 @@ public class ConnectionStringHostListProvider : IStaticHostListProvider
         }
 
         this.hostListProviderService.InitialConnectionHostSpec = this.hostList.First();
+        Logger.LogTrace("Initial host spec: {hostSpec}", this.hostListProviderService.InitialConnectionHostSpec);
         this.isInitialized = true;
     }
 }

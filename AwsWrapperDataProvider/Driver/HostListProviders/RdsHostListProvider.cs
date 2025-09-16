@@ -96,6 +96,7 @@ public class RdsHostListProvider : IDynamicHostListProvider
 
         this.initialHostSpec = this.initialHostList[0];
         this.hostListProviderService.InitialConnectionHostSpec = this.initialHostSpec;
+        Logger.LogTrace("Initial host spec: {hostSpec}", this.hostListProviderService.InitialConnectionHostSpec);
         this.ClusterId = Guid.NewGuid().ToString();
         this.IsPrimaryClusterId = false;
         this.topologyRefreshRate = TimeSpan.FromMilliseconds(PropertyDefinition.ClusterTopologyRefreshRateMs.GetLong(this.properties) ?? 30000);

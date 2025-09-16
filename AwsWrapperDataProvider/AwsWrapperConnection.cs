@@ -169,6 +169,7 @@ public class AwsWrapperConnection : DbConnection
 
         this.PluginManager.InitHostProvider(this.connectionString, this.ConnectionProperties, this.hostListProviderService);
 
+        Logger.LogTrace("Trying to open connection to host {host}", this.pluginService.InitialConnectionHostSpec);
         DbConnection connection = WrapperUtils.OpenWithPlugins(
             this.PluginManager,
             this.pluginService.InitialConnectionHostSpec,
