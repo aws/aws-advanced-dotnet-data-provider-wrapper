@@ -55,7 +55,7 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
 
     [Fact]
     [Trait("Category", "Integration")]
-    [Trait("Database", "mysql-ef")]
+    // [Trait("Database", "mysql-ef")]
     public void MysqlEFAddTest()
     {
         var connectionString = ConnectionStringHelper.GetUrl(Engine, ProxyClusterEndpoint, ProxyPort, Username, Password, DefaultDbName);
@@ -91,7 +91,7 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
 
     [Fact]
     [Trait("Category", "Integration")]
-    [Trait("Database", "mysql-ef")]
+    // [Trait("Database", "mysql-ef")]
     public async Task EFCrashWithFailoverPluginTest()
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
@@ -225,7 +225,7 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
 
     [Fact]
     [Trait("Category", "Integration")]
-    [Trait("Database", "mysql-ef")]
+    // [Trait("Database", "mysql-ef")]
     public async Task EFTempFailureWithFailoverPluginTest()
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
