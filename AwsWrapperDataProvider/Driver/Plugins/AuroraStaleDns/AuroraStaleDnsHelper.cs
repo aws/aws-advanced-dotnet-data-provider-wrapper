@@ -71,18 +71,7 @@ public class AuroraStaleDnsHelper
         HostRole connectionRole = this.pluginService.GetHostRole(connection);
         Logger.LogTrace("Current connection role: {role}", connectionRole);
 
-        if (connectionRole == HostRole.Reader)
-        {
-            // If the connection URL is a writer cluster endpoint but we got a reader,
-            // this indicates the topology is outdated. Force refresh to update it.
-            this.pluginService.ForceRefreshHostList(connection);
-        }
-        else
-        {
-            // Normal refresh for writer connections
-            this.pluginService.ForceRefreshHostList(connection);
-        }
-
+        this.pluginService.ForceRefreshHostList(connection);
         Logger.LogTrace(LoggerUtils.LogTopology(this.pluginService.AllHosts, null));
 
         this.writerHostSpec = this.GetWriter();

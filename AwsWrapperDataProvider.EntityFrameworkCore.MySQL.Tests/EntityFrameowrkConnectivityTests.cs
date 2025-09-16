@@ -92,7 +92,7 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql-ef")]
-    public async Task EFCrashWithFailoverPluginTest()
+    public async Task EFCrashBeforeOpenWithFailoverPluginTest()
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
 
@@ -148,7 +148,7 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql-ef")]
-    public async Task EFCrashWithoutFailoverPluginTest()
+    public async Task EFCrashAfterOpenWithFailoverPluginTest()
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
 
@@ -156,16 +156,10 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
 
         var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName, 2, 10);
 
-        var wrapperConnectionString = connectionString + $";Plugins=;";
-
-        var failoverPluginOptions = new DbContextOptionsBuilder<PersonDbContext>()
-            .UseLoggerFactory(this.loggerFactory)
-            .UseAwsWrapper(
-                connectionString + ";Plugins=failover;",
-                wrappedOptionBuilder => wrappedOptionBuilder
-                    .UseLoggerFactory(this.loggerFactory)
-                    .UseMySql(connectionString, this.version))
-            .Options;
+        var wrapperConnectionString = connectionString
+            + $";Plugins=failover;" +
+            $"EnableConnectFailover=true;" +
+            $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
             .UseLoggerFactory(this.loggerFactory)
@@ -176,8 +170,7 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
                     .UseMySql(connectionString, this.version))
             .Options;
 
-        // Use failover plugin to make sure we connect to the writer and perform truncate
-        using (var db = new PersonDbContext(failoverPluginOptions))
+        using (var db = new PersonDbContext(options))
         {
             db.Database.ExecuteSqlRaw($"Truncate table persons;");
         }
@@ -188,26 +181,33 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
             db.Add(jane);
             db.SaveChanges();
 
-            await AuroraUtils.CrashInstance(currentWriter);
-
-            var connection = db.Database.GetDbConnection();
-            try
-            {
-                if (connection.State == System.Data.ConnectionState.Closed)
-                {
-                    connection.Open();
-                }
-
-                this.logger.WriteLine("Current instance id: {0}", AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment));
-            }
-            finally
-            {
-                connection.Close();
-            }
-
             Person john = new() { FirstName = "John", LastName = "Smith" };
-            db.Add(john);
-            db.SaveChanges();
+            await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
+            {
+                var connection = db.Database.GetDbConnection();
+                try
+                {
+                    if (connection.State == System.Data.ConnectionState.Closed)
+                    {
+                        // Open explicly to trigger failover on execute pipeline
+                        connection.Open();
+                    }
+
+                    await AuroraUtils.CrashInstance(currentWriter);
+
+                    // Query to trigger failover
+                    var anyUser = await db.Persons.AnyAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+                    db.Add(john);
+                    db.SaveChanges();
+                }
+                finally
+                {
+                    connection.Close();
+                }
+            });
+
+            Assert.Equal(EntityState.Detached, db.Entry(john).State);
 
             Person joe = new() { FirstName = "Joe", LastName = "Smith" };
             db.Add(joe);
@@ -218,8 +218,8 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
         {
             Assert.True(db.Persons.Any(p => p.FirstName == "Jane"));
             Assert.True(db.Persons.Any(p => p.FirstName == "Joe"));
-            Assert.True(db.Persons.Any(p => p.FirstName == "John"));
-            Assert.Equal(3, db.Persons.Count());
+            Assert.False(db.Persons.Any(p => p.FirstName == "John"));
+            Assert.Equal(2, db.Persons.Count());
         }
     }
 
