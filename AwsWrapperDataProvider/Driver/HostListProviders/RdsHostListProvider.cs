@@ -220,7 +220,7 @@ public class RdsHostListProvider : IDynamicHostListProvider
         return this.ClusterId;
     }
 
-    public virtual HostSpec? IdentifyConnection(DbConnection connection)
+    public virtual HostSpec? IdentifyConnection(DbConnection connection, DbTransaction? transaction = null)
     {
         try
         {
@@ -228,6 +228,7 @@ public class RdsHostListProvider : IDynamicHostListProvider
             using (var command = connection.CreateCommand())
             {
                 command.CommandText = this.nodeIdQuery;
+                command.Transaction = transaction;
                 using var resultSet = command.ExecuteReader();
 
                 if (!resultSet.Read())
