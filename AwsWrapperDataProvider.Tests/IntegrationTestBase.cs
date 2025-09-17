@@ -49,7 +49,7 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     };
 
     protected virtual bool MakeSureFirstInstanceWriter => false;
-    
+
     public async ValueTask InitializeAsync()
     {
         if (TestEnvironment.Env.Info.Request.Features.Contains(TestEnvironmentFeatures.NETWORK_OUTAGES_ENABLED))
