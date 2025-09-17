@@ -24,7 +24,6 @@ public class EfmConnectivityIntegrationTests : IntegrationTestBase
     [Trait("Database", "pg")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
-    [Trait("Engine", "multi-az-instance")]
     public async Task EfmPluginTest_WithDefaultConfiguration()
     {
         int failureDetectionTime = HostMonitoringPlugin.DefaultFailureDetectionTime;
@@ -40,7 +39,6 @@ public class EfmConnectivityIntegrationTests : IntegrationTestBase
     [Trait("Database", "pg")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
-    [Trait("Engine", "multi-az-instance")]
     public async Task EfmPluginTest_WithFailureFailureCount1()
     {
         int failureDetectionTime = 5000; // start monitoring after 5 seconds
@@ -57,7 +55,6 @@ public class EfmConnectivityIntegrationTests : IntegrationTestBase
     [Trait("Database", "pg")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
-    [Trait("Engine", "multi-az-instance")]
     public async Task EfmPluginTest_WithSpecialConfiguration()
     {
         int failureDetectionTime = 1000; // start monitoring after one second

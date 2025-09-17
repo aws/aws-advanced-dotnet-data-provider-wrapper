@@ -183,7 +183,6 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Trait("Database", "mysql")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
-    [Trait("Engine", "multi-az-instance")]
     public async Task MySqlConnectorWrapperProxiedConnectionTest()
     {
         var instanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First();
@@ -218,7 +217,6 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Trait("Database", "pg")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
-    [Trait("Engine", "multi-az-instance")]
     public async Task PgWrapperProxiedConnectionTest()
     {
         var instanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First();
