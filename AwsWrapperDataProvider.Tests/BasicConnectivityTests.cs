@@ -186,7 +186,7 @@ public class BasicConnectivityTests : IntegrationTestBase
     public async Task MySqlConnectorWrapperProxiedConnectionTest()
     {
         var instanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First();
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, instanceInfo.Host, instanceInfo.Port, Username, Password, DefaultDbName, 5, 5, plugins: string.Empty);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, instanceInfo.Host, instanceInfo.Port, Username, Password, DefaultDbName, 30, 30, plugins: string.Empty);
         string query = AuroraUtils.GetInstanceIdSql(Engine, Deployment);
 
         using AwsWrapperConnection<MySqlConnection> connection = new(connectionString);
@@ -220,7 +220,7 @@ public class BasicConnectivityTests : IntegrationTestBase
     public async Task PgWrapperProxiedConnectionTest()
     {
         var instanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First();
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, instanceInfo.Host, instanceInfo.Port, Username, Password, DefaultDbName, 5, 5, plugins: string.Empty);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, instanceInfo.Host, instanceInfo.Port, Username, Password, DefaultDbName, 30, 30, plugins: string.Empty);
         string query = AuroraUtils.GetInstanceIdSql(Engine, Deployment);
 
         using AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
