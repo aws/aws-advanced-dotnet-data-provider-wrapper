@@ -54,8 +54,8 @@ public class FailoverConnectivityTests : IntegrationTestBase
             Username,
             Password,
             ProxyDatabaseInfo.DefaultDbName,
-            30,
-            30,
+            2,
+            10,
             "failover");
         connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}";
 
@@ -108,8 +108,8 @@ public class FailoverConnectivityTests : IntegrationTestBase
             Username,
             Password,
             ProxyDatabaseInfo.DefaultDbName,
-            30,
-            30,
+            2,
+            10,
             "failover");
         connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}";
 
@@ -157,8 +157,8 @@ public class FailoverConnectivityTests : IntegrationTestBase
             Username,
             Password,
             ProxyDatabaseInfo.DefaultDbName,
-            30,
-            30,
+            2,
+            10,
             "failover");
         connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}";
 
@@ -211,8 +211,8 @@ public class FailoverConnectivityTests : IntegrationTestBase
             Username,
             Password,
             ProxyDatabaseInfo.DefaultDbName,
-            30,
-            30,
+            2,
+            10,
             "failover");
         connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}" +
             $"; FailoverMode=ReaderOrWriter";
@@ -255,8 +255,8 @@ public class FailoverConnectivityTests : IntegrationTestBase
             Username,
             Password,
             ProxyDatabaseInfo.DefaultDbName,
-            30,
-            30,
+            2,
+            10,
             "failover");
         connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}" +
             $"; FailoverMode=StrictReader";
@@ -310,8 +310,8 @@ public class FailoverConnectivityTests : IntegrationTestBase
             Username,
             Password,
             ProxyDatabaseInfo.DefaultDbName,
-            30,
-            30,
+            2,
+            10,
             "failover");
         connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}" +
             $"; FailoverMode=ReaderOrWriter";
