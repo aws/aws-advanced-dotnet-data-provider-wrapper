@@ -30,7 +30,7 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Trait("Engine", "multi-az-instance")]
     public void MySqlClientWrapperConnectionTest()
     {
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName, 30, 30, string.Empty);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName, 30, 30, string.Empty);
         const string query = "select 1";
 
         using AwsWrapperConnection<MySql.Data.MySqlClient.MySqlConnection> connection = new(connectionString);
@@ -53,7 +53,7 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Trait("Engine", "multi-az-instance")]
     public void MySqlConnectorWrapperConnectionTest()
     {
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName, 30, 30, string.Empty);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName, 30, 30, string.Empty);
         const string query = "select 1";
 
         using AwsWrapperConnection<MySqlConnection> connection = new(connectionString);
@@ -76,7 +76,7 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Trait("Engine", "multi-az-instance")]
     public void MysqlWrapperConnectionDynamicTest()
     {
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName, 30, 30, string.Empty);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName, 30, 30, string.Empty);
         connectionString +=
             ";TargetConnectionType=MySqlConnector.MySqlConnection,MySqlConnector;" +
             "TargetCommandType=MySqlConnector.MySqlCommand,MySqlConnector";
@@ -104,7 +104,7 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Trait("Engine", "multi-az-instance")]
     public void MysqlWrapperConnectionWithParametersTest()
     {
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName, 30, 30, string.Empty);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName, 30, 30, string.Empty);
         const string query = "select @var1";
 
         using AwsWrapperConnection<MySqlConnection> connection = new(connectionString);
@@ -134,7 +134,7 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Trait("Engine", "multi-az-instance")]
     public void PgWrapperConnectionTest()
     {
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName, 30, 30, string.Empty);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName, 30, 30, string.Empty);
         const string query = "select 1";
 
         using AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
@@ -158,7 +158,7 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Trait("Engine", "multi-az-instance")]
     public void PgWrapperConnectionDynamicTest()
     {
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName, 30, 30, string.Empty);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName, 30, 30, string.Empty);
         connectionString +=
             ";TargetConnectionType=Npgsql.NpgsqlConnection,Npgsql;" +
             "TargetCommandType=Npgsql.NpgsqlCommand,Npgsql";
@@ -183,6 +183,7 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Trait("Database", "mysql")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
+    [Trait("Engine", "multi-az-instance")]
     public async Task MySqlConnectorWrapperProxiedConnectionTest()
     {
         var instanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First();
@@ -217,6 +218,7 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Trait("Database", "pg")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
+    [Trait("Engine", "multi-az-instance")]
     public async Task PgWrapperProxiedConnectionTest()
     {
         var instanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First();

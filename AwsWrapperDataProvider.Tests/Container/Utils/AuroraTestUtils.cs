@@ -419,7 +419,7 @@ public class AuroraTestUtils
             {
                 DatabaseEngine.MYSQL => "SELECT SUBSTRING_INDEX(endpoint, '.', 1) as SERVER_ID FROM mysql.rds_topology"
                                         + " ORDER BY CASE WHEN id = "
-                                        + this.GetMultiAzMysqlReplicaWriterInstanceId(connection) is { } id ? $"'{id.Replace("'", "''")}'" : "@@server_id"
+                                        + (this.GetMultiAzMysqlReplicaWriterInstanceId(connection) is { } id ? $"'{id}'" : "@@server_id")
                                         + " THEN 0 ELSE 1 END, SUBSTRING_INDEX(endpoint, '.', 1)",
                 DatabaseEngine.PG => "SELECT SUBSTRING(endpoint FROM 0 FOR POSITION('.' IN endpoint)) as SERVER_ID"
                                      + " FROM rds_tools.show_topology()"
@@ -455,29 +455,28 @@ public class AuroraTestUtils
 
     private string? GetMultiAzMysqlReplicaWriterInstanceId(DbConnection connection)
     {
-        using (var command = connection.CreateCommand())
+        try
         {
-            command.CommandText = "SHOW REPLICA STATUS";
-            using var reader = command.ExecuteReader(CommandBehavior.SingleRow);
-
-            if (!reader.Read())
+            using (var command = connection.CreateCommand())
             {
-                return null;
-            }
+                command.CommandText = "SHOW REPLICA STATUS";
+                using var reader = command.ExecuteReader();
 
-            try
-            {
+                if (!reader.Read())
+                {
+                    return null;
+                }
+
                 int i = reader.GetOrdinal("Source_Server_id");
-                string? value = reader.IsDBNull(i)
+                return reader.IsDBNull(i)
                     ? null
                     : Convert.ToString(reader.GetValue(i), CultureInfo.InvariantCulture);
-                Console.WriteLine($"Source_Server_id: {value}");
-                return value;
             }
-            catch (IndexOutOfRangeException)
-            {
-                return null;
-            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error occurred when getting Source_Server_id: {ex.Message}");
+            return null;
         }
     }
 

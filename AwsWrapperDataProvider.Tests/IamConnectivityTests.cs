@@ -27,7 +27,7 @@ public class IamConnectivityTests : IntegrationTestBase
     {
         var iamUser = TestEnvironment.Env.Info.IamUsername;
         var iamRegion = TestEnvironment.Env.Info.Region;
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, iamUser, null, DefaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, iamUser, null, DefaultDbName);
         connectionString += $";Plugins=iam;IamRegion={iamRegion}";
 
         using AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
@@ -45,7 +45,7 @@ public class IamConnectivityTests : IntegrationTestBase
     {
         var iamUser = TestEnvironment.Env.Info.IamUsername;
         var iamRegion = TestEnvironment.Env.Info.Region;
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, iamUser, null, DefaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, iamUser, null, DefaultDbName);
         connectionString += $";Plugins=iam;IamRegion={iamRegion}";
 
         using AwsWrapperConnection<MySql.Data.MySqlClient.MySqlConnection> connection = new(connectionString);
@@ -63,7 +63,7 @@ public class IamConnectivityTests : IntegrationTestBase
     {
         var iamUser = TestEnvironment.Env.Info.IamUsername;
         var iamRegion = TestEnvironment.Env.Info.Region;
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, iamUser, null, DefaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, iamUser, null, DefaultDbName);
         connectionString += $";Plugins=iam;IamRegion={iamRegion}";
 
         using AwsWrapperConnection<MySqlConnector.MySqlConnection> connection = new(connectionString);

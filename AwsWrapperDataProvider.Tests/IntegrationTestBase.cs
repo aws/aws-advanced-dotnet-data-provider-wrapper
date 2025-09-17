@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using Amazon.RDS.Model.Internal.MarshallTransformations;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 
 [assembly: CollectionBehavior(DisableTestParallelization = true)]
@@ -28,13 +29,27 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     protected static readonly string Password = TestEnvironment.Env.Info.DatabaseInfo.Password;
     protected static readonly DatabaseEngine Engine = TestEnvironment.Env.Info.Request.Engine;
     protected static readonly DatabaseEngineDeployment Deployment = TestEnvironment.Env.Info.Request.Deployment;
-    protected static readonly string ClusterEndpoint = TestEnvironment.Env.Info.DatabaseInfo.ClusterEndpoint;
-    protected static readonly int Port = TestEnvironment.Env.Info.DatabaseInfo.ClusterEndpointPort;
     protected static readonly int NumberOfInstances = TestEnvironment.Env.Info.DatabaseInfo.Instances.Count;
     protected static readonly TestProxyDatabaseInfo ProxyDatabaseInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!;
 
-    protected virtual bool MakeSureFirstInstanceWriter => false;
+    protected static readonly string Endpoint = Deployment switch
+    {
+        DatabaseEngineDeployment.AURORA => TestEnvironment.Env.Info.DatabaseInfo.ClusterEndpoint,
+        DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER => TestEnvironment.Env.Info.DatabaseInfo.ClusterEndpoint,
+        DatabaseEngineDeployment.RDS_MULTI_AZ_INSTANCE => TestEnvironment.Env.Info.DatabaseInfo.Instances[0].Host,
+        _ => throw new InvalidOperationException($"Unsupported deployment {Deployment}"),
+    };
 
+    protected static readonly int Port = Deployment switch
+    {
+        DatabaseEngineDeployment.AURORA => TestEnvironment.Env.Info.DatabaseInfo.ClusterEndpointPort,
+        DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER => TestEnvironment.Env.Info.DatabaseInfo.ClusterEndpointPort,
+        DatabaseEngineDeployment.RDS_MULTI_AZ_INSTANCE => TestEnvironment.Env.Info.DatabaseInfo.Instances[0].Port,
+        _ => throw new InvalidOperationException($"Unsupported deployment {Deployment}"),
+    };
+
+    protected virtual bool MakeSureFirstInstanceWriter => false;
+    
     public async ValueTask InitializeAsync()
     {
         if (TestEnvironment.Env.Info.Request.Features.Contains(TestEnvironmentFeatures.NETWORK_OUTAGES_ENABLED))

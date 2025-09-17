@@ -36,7 +36,7 @@ public class SecretsManagerConnectivityTests : IntegrationTestBase
         var secretId = "PGValidSecretId";
         _ = this.auroraTestUtils.CreateSecrets(secretId);
 
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, null, null, DefaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, null, null, DefaultDbName);
         connectionString += $";Plugins=awsSecretsManager;SecretsManagerSecretId={secretId};SecretsManagerRegion={TestEnvironment.Env.Info.Region};";
         const string query = "select 1";
 
@@ -75,7 +75,7 @@ public class SecretsManagerConnectivityTests : IntegrationTestBase
         var secretId = "PgValidSecretArn";
         var secretsArn = this.auroraTestUtils.CreateSecrets(secretId);
 
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, null, null, DefaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, null, null, DefaultDbName);
         connectionString += $";Plugins=awsSecretsManager;SecretsManagerSecretId={secretsArn};SecretsManagerRegion={TestEnvironment.Env.Info.Region};";
         const string query = "select 1";
 
@@ -114,7 +114,7 @@ public class SecretsManagerConnectivityTests : IntegrationTestBase
         var secretId = "MySqlClientValidSecretId";
         _ = this.auroraTestUtils.CreateSecrets(secretId);
 
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, null, null, DefaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, null, null, DefaultDbName);
         connectionString += $";Plugins=awsSecretsManager;SecretsManagerSecretId={secretId};SecretsManagerRegion={TestEnvironment.Env.Info.Region};";
         const string query = "select 1";
 
@@ -153,7 +153,7 @@ public class SecretsManagerConnectivityTests : IntegrationTestBase
         var secretId = "MySqlClientValidSecretArn";
         var secretsArn = this.auroraTestUtils.CreateSecrets(secretId);
 
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, null, null, DefaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, null, null, DefaultDbName);
         connectionString += $";Plugins=awsSecretsManager;SecretsManagerSecretId={secretsArn};SecretsManagerRegion={TestEnvironment.Env.Info.Region};";
         const string query = "select 1";
 
@@ -192,7 +192,7 @@ public class SecretsManagerConnectivityTests : IntegrationTestBase
         var secretId = "MySqlConnectorValidSecretId";
         _ = this.auroraTestUtils.CreateSecrets(secretId);
 
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, null, null, DefaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, null, null, DefaultDbName);
         connectionString += $";Plugins=awsSecretsManager;SecretsManagerSecretId={secretId};SecretsManagerRegion={TestEnvironment.Env.Info.Region};";
         const string query = "select 1";
 
@@ -231,7 +231,7 @@ public class SecretsManagerConnectivityTests : IntegrationTestBase
         var secretId = "MySqlConnectorValidSecretArn";
         var secretsArn = this.auroraTestUtils.CreateSecrets(secretId);
 
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, null, null, DefaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, null, null, DefaultDbName);
         connectionString += $";Plugins=awsSecretsManager;SecretsManagerSecretId={secretsArn};SecretsManagerRegion={TestEnvironment.Env.Info.Region};";
         const string query = "select 1";
 
