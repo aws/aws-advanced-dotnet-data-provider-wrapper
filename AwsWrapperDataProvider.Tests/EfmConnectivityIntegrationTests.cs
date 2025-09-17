@@ -71,6 +71,12 @@ public class EfmConnectivityIntegrationTests : IntegrationTestBase
     [Trait("Database", "mysql")]
     public async Task EfmPluginTest_NetworkFailureDetection()
     {
+        ThreadPool.GetMinThreads(out var minWorker, out var minIOCP);
+        ThreadPool.GetMaxThreads(out var maxWorker, out var maxIOCP);
+
+        Console.WriteLine($"Min worker threads: {minWorker}, Max worker threads: {maxWorker}");
+        Console.WriteLine($"Min IOCP threads: {minIOCP}, Max IOCP threads: {maxIOCP}");
+
         int failureDelaySec = 10;
         int maxDurationsSec = 30;
         var instance1 = ProxyDatabaseInfo.Instances[0].Host;
