@@ -161,13 +161,14 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
             {
                 if (rdsUrlType.IsRdsCluster)
                 {
-                    this.monitoringHostSpec = this.pluginService.IdentifyConnection(this.pluginService.CurrentConnection!);
+                    Logger.LogTrace("Monitoring HostSpec is associated with a cluster endpoint, plugin needs to identify the cluster connection.");
+                    this.monitoringHostSpec = this.pluginService.IdentifyConnection(this.pluginService.CurrentConnection!, this.pluginService.CurrentTransaction);
                     if (this.monitoringHostSpec == null)
                     {
                         throw new Exception("Unable to identify connection and gather monitoring host spec");
                     }
 
-                    this.pluginService.FillAliases(this.pluginService.CurrentConnection!, this.monitoringHostSpec);
+                    this.pluginService.FillAliases(this.pluginService.CurrentConnection!, this.monitoringHostSpec, this.pluginService.CurrentTransaction);
                 }
             }
             catch (Exception ex)
