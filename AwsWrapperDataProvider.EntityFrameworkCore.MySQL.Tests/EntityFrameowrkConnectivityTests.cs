@@ -59,7 +59,7 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
     public void MysqlEFAddTest()
     {
         var connectionString = ConnectionStringHelper.GetUrl(Engine, ProxyClusterEndpoint, ProxyPort, Username, Password, DefaultDbName);
-        var wrapperConnectionString = connectionString + $";Plugins=failover;";
+        var wrapperConnectionString = connectionString + $";Plugins=efm,failover;";
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
             .UseAwsWrapper(
@@ -101,7 +101,7 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
         var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName, 2, 10);
 
         var wrapperConnectionString = connectionString
-            + $";Plugins=failover;" +
+            + $";Plugins=efm,failover;" +
             $"EnableConnectFailover=true;" +
             $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
 
@@ -157,7 +157,7 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
         var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName, 2, 10);
 
         var wrapperConnectionString = connectionString
-            + $";Plugins=failover;" +
+            + $";Plugins=efm,failover;" +
             $"EnableConnectFailover=true;" +
             $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
 
@@ -235,7 +235,7 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
         var connectionString = ConnectionStringHelper.GetUrl(Engine, ProxyClusterEndpoint, ProxyPort, Username, Password, DefaultDbName, 2, 5);
 
         var wrapperConnectionString = connectionString
-            + $";Plugins=failover;" +
+            + $";Plugins=efm,failover;" +
             $"EnableConnectFailover=true;" +
             $"ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}";
 
