@@ -262,7 +262,7 @@ public class HostMonitor : IHostMonitor
         }
         catch (Exception ex)
         {
-            Logger.LogWarning(string.Format(Resources.EfmHostMonitor_ActiveContextsException, this.hostSpec.Host, ex.Message, ex.StackTrace));
+            Logger.LogWarning(ex, string.Format(Resources.EfmHostMonitor_ActiveContextsException, this.hostSpec.Host, ex.Message, ex.StackTrace));
         }
         finally
         {
@@ -328,14 +328,16 @@ public class HostMonitor : IHostMonitor
                 return true;
             }
 
-            using var validityCheckCommand = this.monitoringConn!.CreateCommand();
-            validityCheckCommand.CommandText = "SELECT 1";
+            using (var validityCheckCommand = this.monitoringConn!.CreateCommand())
+            {
+                validityCheckCommand.CommandText = "SELECT 1";
+                int validTimeoutSeconds = (this.failureDetectionIntervalMs - ThreadSleepMs) / 2000;
+                Logger.LogTrace($"Command timeout for ping is {validTimeoutSeconds} seconds");
+                validityCheckCommand.CommandTimeout = validTimeoutSeconds;
 
-            int validTimeoutSeconds = (this.failureDetectionIntervalMs - ThreadSleepMs) / 2000;
-            Logger.LogTrace($"Command timeout for ping is {validTimeoutSeconds} seconds");
-            validityCheckCommand.CommandTimeout = validTimeoutSeconds;
-
-            _ = validityCheckCommand.ExecuteScalar();
+                using var reader = validityCheckCommand.ExecuteReader();
+                reader.Read();
+            }
 
             return !this.TestUnhealthyCluster;
         }
