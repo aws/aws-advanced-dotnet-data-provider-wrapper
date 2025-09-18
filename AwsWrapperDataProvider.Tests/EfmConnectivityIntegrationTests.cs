@@ -107,21 +107,26 @@ public class EfmConnectivityIntegrationTests : IntegrationTestBase
         var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var simulationTask = AuroraUtils.SimulateTemporaryFailureTask(instance1, TimeSpan.FromSeconds(failureDelaySec), TimeSpan.FromSeconds(maxDurationsSec), tcs);
 
-        var stopwatch = Stopwatch.StartNew();
-        try
-        {
-            command.ExecuteScalar();
-            Assert.Fail("Sleep query should have failed");
-        }
-        catch (DbException)
-        {
-            var durationMs = stopwatch.Elapsed.TotalMilliseconds;
-            Assert.True(
-                durationMs > failureDelaySec * 1000 && durationMs < maxDurationsSec * 1000,
-                $"Time before failure was not between {failureDelaySec} and {maxDurationsSec} seconds, actual duration was {durationMs / 1000} seconds.");
-        }
+        await Task.WhenAll([
+            AuroraUtils.SimulateTemporaryFailureTask(instance1, TimeSpan.FromSeconds(failureDelaySec), TimeSpan.FromSeconds(maxDurationsSec), tcs),
 
-        await tcs.Task;
-        await simulationTask;
+            Task.Run(() =>
+            {
+                var stopwatch = Stopwatch.StartNew();
+                try
+                {
+                    command.ExecuteScalar();
+                    Assert.Fail("Sleep query should have failed");
+                }
+                catch (DbException)
+                {
+                    var durationMs = stopwatch.Elapsed.TotalMilliseconds;
+                    Assert.True(
+                        durationMs > failureDelaySec * 1000 && durationMs < maxDurationsSec * 1000,
+                        $"Time before failure was not between {failureDelaySec} and {maxDurationsSec} seconds, actual duration was {durationMs / 1000} seconds.");
+                }
+            },
+            TestContext.Current.CancellationToken)
+            ]);
     }
 }
