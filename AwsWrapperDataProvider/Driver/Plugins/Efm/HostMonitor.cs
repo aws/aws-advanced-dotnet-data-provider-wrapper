@@ -341,7 +341,7 @@ public class HostMonitor : IHostMonitor
         }
         catch (DbException ex)
         {
-            Logger.LogWarning(ex, "Current monitoring connection is not valid.")
+            Logger.LogWarning(ex, "Current monitoring connection is not valid.");
             return false;
         }
     }
