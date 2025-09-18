@@ -334,9 +334,7 @@ public class HostMonitor : IHostMonitor
                 int validTimeoutSeconds = (this.failureDetectionIntervalMs - ThreadSleepMs) / 2000;
                 Logger.LogTrace($"Command timeout for ping is {validTimeoutSeconds} seconds");
                 validityCheckCommand.CommandTimeout = validTimeoutSeconds;
-
-                using var reader = validityCheckCommand.ExecuteReader();
-                reader.Read();
+                validityCheckCommand.ExecuteScalar();
             }
 
             return !this.TestUnhealthyCluster;
