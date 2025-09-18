@@ -99,7 +99,6 @@ public class EfmConnectivityIntegrationTests : IntegrationTestBase
         command.CommandText = AuroraUtils.GetSleepSql(Engine, maxDurationsSec);
 
         var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var simulationTask = AuroraUtils.SimulateTemporaryFailureTask(instance1, TimeSpan.FromSeconds(failureDelaySec), TimeSpan.FromSeconds(maxDurationsSec), tcs);
 
         await Task.WhenAll([
             AuroraUtils.SimulateTemporaryFailureTask(instance1, TimeSpan.FromSeconds(failureDelaySec), TimeSpan.FromSeconds(maxDurationsSec), tcs),
