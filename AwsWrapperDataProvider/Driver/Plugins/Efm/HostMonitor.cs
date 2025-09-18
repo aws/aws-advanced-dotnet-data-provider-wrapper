@@ -100,7 +100,7 @@ public class HostMonitor : IHostMonitor
         ConcurrentQueue<WeakReference<HostMonitorConnectionContext>>? queue = this.newContexts.GetOrCreate(truncated,
             (key) => new ConcurrentQueue<WeakReference<HostMonitorConnectionContext>>());
 
-        queue?.Enqueue(new WeakReference<HostMonitorConnectionContext>(context));
+        queue!.Enqueue(new WeakReference<HostMonitorConnectionContext>(context));
     }
 
     public bool CanDispose()
@@ -154,6 +154,7 @@ public class HostMonitor : IHostMonitor
                                 && context != null
                                 && context.IsActive())
                             {
+                                Logger.LogTrace("Polling active monitoring context");
                                 this.activeContexts.Enqueue(contextRef);
                             }
                         }
@@ -319,31 +320,28 @@ public class HostMonitor : IHostMonitor
 
                 lock (this.monitorLock)
                 {
+                    this.monitoringConn?.Dispose();
                     this.monitoringConn = conn;
+                    conn = null;
                 }
 
                 return true;
             }
 
-            try
-            {
-                DbCommand validityCheckCommand = conn.CreateCommand();
-                validityCheckCommand.CommandText = this.pluginService.Dialect.HostAliasQuery;
+            using var validityCheckCommand = this.monitoringConn!.CreateCommand();
+            validityCheckCommand.CommandText = "SELECT 1";
 
-                int validTimeoutSeconds = (this.failureDetectionIntervalMs - ThreadSleepMs) / 2000;
-                validityCheckCommand.CommandTimeout = validTimeoutSeconds;
+            int validTimeoutSeconds = (this.failureDetectionIntervalMs - ThreadSleepMs) / 2000;
+            Logger.LogTrace($"Command timeout for ping is {validTimeoutSeconds} seconds");
+            validityCheckCommand.CommandTimeout = validTimeoutSeconds;
 
-                _ = validityCheckCommand.ExecuteScalar();
+            _ = validityCheckCommand.ExecuteScalar();
 
-                return !this.TestUnhealthyCluster;
-            }
-            catch
-            {
-                return false;
-            }
+            return !this.TestUnhealthyCluster;
         }
-        catch (DbException)
+        catch (DbException ex)
         {
+            Logger.LogWarning(ex, "Current monitoring connection is not valid.")
             return false;
         }
     }
@@ -403,6 +401,7 @@ public class HostMonitor : IHostMonitor
 
     private void AbortConnection(DbConnection connection)
     {
+        Logger.LogTrace("Aborting unhealthy connection.");
         try
         {
             connection.Dispose();

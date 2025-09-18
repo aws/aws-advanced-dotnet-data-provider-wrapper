@@ -39,14 +39,6 @@ public abstract class IntegrationTestBase : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
-        ThreadPool.GetMinThreads(out var minWorker, out var minIOCP);
-        ThreadPool.GetMaxThreads(out var maxWorker, out var maxIOCP);
-
-        Console.WriteLine($"Min worker threads: {minWorker}, Max worker threads: {maxWorker}");
-        Console.WriteLine($"Min IOCP threads: {minIOCP}, Max IOCP threads: {maxIOCP}");
-
-        ThreadPool.SetMinThreads(100, 100);
-
         if (TestEnvironment.Env.Info.Request.Features.Contains(TestEnvironmentFeatures.NETWORK_OUTAGES_ENABLED))
         {
             await ProxyHelper.EnableAllConnectivityAsync();
