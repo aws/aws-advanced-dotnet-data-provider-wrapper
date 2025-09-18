@@ -15,6 +15,7 @@
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
@@ -78,11 +79,12 @@ public class HostMonitorService : IHostMonitorService
             context.SetInactive();
             try
             {
+                Logger.LogTrace("Aborting unhealthy connection.");
                 connectionToAbort.Close();
             }
-            catch
+            catch (DbException ex)
             {
-                // ignore
+                Logger.LogTrace(ex, string.Format(Resources.EfmHostMonitor_ExceptionAbortingConnection, ex.Message));
             }
         }
         else

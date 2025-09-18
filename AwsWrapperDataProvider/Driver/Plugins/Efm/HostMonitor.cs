@@ -154,7 +154,7 @@ public class HostMonitor : IHostMonitor
                                 && context != null
                                 && context.IsActive())
                             {
-                                Logger.LogTrace("Polling active monitoring context");
+                                Logger.LogTrace("Adding active monitoring context to poll");
                                 this.activeContexts.Enqueue(contextRef);
                             }
                         }
@@ -406,11 +406,11 @@ public class HostMonitor : IHostMonitor
         Logger.LogTrace("Aborting unhealthy connection.");
         try
         {
-            connection.Dispose();
+            connection.Close();
         }
         catch (Exception ex)
         {
-            Logger.LogTrace(string.Format(Resources.EfmHostMonitor_ExceptionAbortingConnection, ex.Message));
+            Logger.LogTrace(ex, string.Format(Resources.EfmHostMonitor_ExceptionAbortingConnection, ex.Message));
         }
     }
 }
