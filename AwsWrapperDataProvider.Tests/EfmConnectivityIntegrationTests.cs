@@ -107,7 +107,7 @@ public class EfmConnectivityIntegrationTests : IntegrationTestBase
         var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
         await Task.WhenAll([
-            AuroraUtils.SimulateTemporaryFailureTask(instance1, TimeSpan.FromSeconds(failureDelaySec), TimeSpan.FromSeconds(maxDurationsSec), tcs),
+            AuroraUtils.SimulateTemporaryFailureTask(instanceId, TimeSpan.FromSeconds(failureDelaySec), TimeSpan.FromSeconds(maxDurationsSec), tcs),
 
             Task.Run(() =>
             {
