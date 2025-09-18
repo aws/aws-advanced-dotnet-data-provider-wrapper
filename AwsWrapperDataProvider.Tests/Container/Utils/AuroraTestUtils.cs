@@ -534,7 +534,7 @@ public class AuroraTestUtils
 
                 var response = await this.rdsClient.RebootDBClusterAsync(request);
 
-                if (!response.HttpStatusCode.ToString().StartsWith("2"))
+                if (!IsSuccessfulResponse(response))
                 {
                     Console.WriteLine($"rebootDBCluster response: {response.HttpStatusCode}");
                 }
@@ -550,6 +550,8 @@ public class AuroraTestUtils
                 await Task.Delay(1000);
             }
         }
+
+        throw new InvalidOperationException($"Failed to request an cluster {clusterName} reboot.");
     }
 
     public async Task RebootInstanceAsync(string instanceId)

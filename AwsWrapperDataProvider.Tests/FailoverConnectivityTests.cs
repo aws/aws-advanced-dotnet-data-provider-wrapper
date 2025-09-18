@@ -68,11 +68,11 @@ public class FailoverConnectivityTests : IntegrationTestBase
         connection.Open();
         Assert.Equal(ConnectionState.Open, connection.State);
 
-        var cts = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var crashTask = AuroraUtils.CrashInstance(currentWriter, cts);
+        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var crashTask = AuroraUtils.CrashInstance(currentWriter, tcs);
 
         // Wait for simulation to start
-        await cts.Task;
+        await tcs.Task;
 
         Assert.Throws<FailoverSuccessException>(() =>
         {
