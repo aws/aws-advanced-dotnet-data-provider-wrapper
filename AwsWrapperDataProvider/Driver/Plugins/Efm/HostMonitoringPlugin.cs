@@ -102,14 +102,13 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
                 failureDetectionIntervalMillis,
                 failureDetectionCount);
 
+            Logger.LogTrace("CurrentConnection state before execute: {CurrentCstateonnection}", this.pluginService.CurrentConnection?.State);
             result = methodFunc();
+            Logger.LogTrace("CurrentConnection state after execute: {CurrentCstateonnection}", this.pluginService.CurrentConnection?.State);
+            Logger.LogTrace("Result of execute: {result}", result);
         }
         finally
         {
-            Logger.LogTrace("monitorContext: {context}", monitorContext);
-            Logger.LogTrace("monitorService: {monitorService}", this.monitorService);
-            Logger.LogTrace("CurrentConnection: {CurrentConnection}", this.pluginService.CurrentConnection);
-
             if (monitorContext != null && this.monitorService != null && this.pluginService.CurrentConnection != null)
             {
                 Logger.LogTrace("Deactivating monitoring for current context");
@@ -118,6 +117,10 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
 
             Logger.LogTrace(Resources.EfmHostMonitor_DeactivatedMonitoring);
         }
+
+        Logger.LogTrace("CurrentConnection state after stop monitoring: {CurrentCstateonnection}", this.pluginService.CurrentConnection?.State);
+        Logger.LogTrace("methodInvokedOn: {methodInvokedOn}", methodInvokedOn);
+        Logger.LogTrace("Result of execute: {result}", result);
 
         return result;
     }
