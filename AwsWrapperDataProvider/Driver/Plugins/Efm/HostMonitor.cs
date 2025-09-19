@@ -212,6 +212,7 @@ public class HostMonitor : IHostMonitor
                 {
                     while (this.activeContexts.TryDequeue(out WeakReference<HostMonitorConnectionContext>? monitorContextRef))
                     {
+                        Logger.LogTrace("Dequeued a context from activeContexts");
                         if (token.IsCancellationRequested)
                         {
                             break;
@@ -235,6 +236,7 @@ public class HostMonitor : IHostMonitor
                         }
                         else if (monitorContext.IsActive())
                         {
+                            Logger.LogTrace("Adding context to tmpActiveContexts");
                             tmpActiveContexts.Add(monitorContextRef);
                         }
                     }
@@ -243,6 +245,7 @@ public class HostMonitor : IHostMonitor
                     // add those back into this.activeContexts
                     foreach (WeakReference<HostMonitorConnectionContext> contextRef in tmpActiveContexts)
                     {
+                        Logger.LogTrace("Adding context back to activeContexts");
                         this.activeContexts.Enqueue(contextRef);
                     }
                 }
