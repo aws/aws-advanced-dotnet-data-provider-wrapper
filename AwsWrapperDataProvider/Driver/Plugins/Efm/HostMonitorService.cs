@@ -67,6 +67,7 @@ public class HostMonitorService : IHostMonitorService
             failureDetectionCount);
 
         HostMonitorConnectionContext context = new(connectionToAbort);
+        Logger.LogTrace("New monitoring context created for host: {host}", hostSpec.Host);
         monitor.StartMonitoring(context);
 
         return context;
