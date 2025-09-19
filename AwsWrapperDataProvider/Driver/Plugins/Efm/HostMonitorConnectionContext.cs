@@ -13,11 +13,14 @@
 // limitations under the License.
 
 using System.Data.Common;
+using AwsWrapperDataProvider.Driver.Utils;
+using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.Efm;
 
 public class HostMonitorConnectionContext
 {
+    private static readonly ILogger<HostMonitorConnectionContext> Logger = LoggerUtils.GetLogger<HostMonitorConnectionContext>();
     private readonly WeakReference<DbConnection?> connectionToAbort = new(null);
     private readonly object contextLock = new();
     private volatile bool nodeUnhealthy = false;
@@ -43,6 +46,7 @@ public class HostMonitorConnectionContext
 
     public void SetInactive()
     {
+        Logger.LogTrace("Setting context inactive");
         lock (this.contextLock)
         {
             this.connectionToAbort.SetTarget(null);
