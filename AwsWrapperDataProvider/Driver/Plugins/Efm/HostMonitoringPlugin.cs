@@ -106,8 +106,13 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
         }
         finally
         {
+            Logger.LogTrace("monitorContext: {context}", monitorContext);
+            Logger.LogTrace("monitorService: {monitorService}", this.monitorService);
+            Logger.LogTrace("CurrentConnection: {CurrentConnection}", this.pluginService.CurrentConnection);
+
             if (monitorContext != null && this.monitorService != null && this.pluginService.CurrentConnection != null)
             {
+                Logger.LogTrace("Deactivating monitoring for current context");
                 this.monitorService.StopMonitoring(monitorContext, this.pluginService.CurrentConnection);
             }
 

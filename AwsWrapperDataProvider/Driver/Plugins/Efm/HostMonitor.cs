@@ -197,9 +197,11 @@ public class HostMonitor : IHostMonitor
                 if (this.activeContexts.IsEmpty && !isNodeUnhealthy)
                 {
                     await Task.Delay(ThreadSleepMs, token);
+                    Logger.LogTrace("No active contexts and node is healthy, skipping status check");
                     continue;
                 }
 
+                Logger.LogTrace("Current active contexts count: {count}", this.activeContexts.Count);
                 DateTime statusCheckStartTime = DateTime.UtcNow;
                 bool isValid = this.CheckConnectionStatus();
                 DateTime statusCheckEndTime = DateTime.UtcNow;
