@@ -18,11 +18,14 @@ using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 using AwsWrapperDataProvider.Driver.Utils;
+using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
 public class RdsMultiAzDbClusterMySqlDialect : MySqlDialect
 {
+    private static readonly ILogger<RdsMultiAzDbClusterMySqlDialect> Logger = LoggerUtils.GetLogger<RdsMultiAzDbClusterMySqlDialect>();
+
     private const string TopologyQuery = "SELECT id, endpoint, port FROM mysql.rds_topology";
 
     private const string TopologyTableExistQuery =
@@ -73,9 +76,9 @@ public class RdsMultiAzDbClusterMySqlDialect : MySqlDialect
             string? reportHost = reader.IsDBNull(1) ? null : reader.GetString(1);
             return !string.IsNullOrEmpty(reportHost);
         }
-        catch (DbException)
+        catch (Exception ex)
         {
-            // ignore
+            Logger.LogWarning(ex, "Error occurred when checking whether it's dialect");
         }
 
         return false;

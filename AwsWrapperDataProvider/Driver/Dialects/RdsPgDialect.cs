@@ -14,11 +14,15 @@
 
 using System.Data;
 using System.Data.Common;
+using AwsWrapperDataProvider.Driver.Utils;
+using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
 public class RdsPgDialect : PgDialect
 {
+    private static readonly ILogger<RdsPgDialect> Logger = LoggerUtils.GetLogger<RdsPgDialect>();
+
     private const string ExtensionsSql = "SELECT (setting LIKE '%rds_tools%') AS rds_tools, "
       + "(setting LIKE '%aurora_stat_utils%') AS aurora_stat_utils "
       + "FROM pg_settings "
@@ -52,9 +56,9 @@ public class RdsPgDialect : PgDialect
                 }
             }
         }
-        catch (DbException)
+        catch (Exception ex)
         {
-            // ignored
+            Logger.LogWarning(ex, "Error occurred when checking whether it's dialect");
         }
 
         return false;

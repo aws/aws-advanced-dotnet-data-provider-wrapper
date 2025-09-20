@@ -18,11 +18,14 @@ using AwsWrapperDataProvider.Driver.Exceptions;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Utils;
+using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
 public class MySqlDialect : IDialect
 {
+    private static readonly ILogger<MySqlDialect> Logger = LoggerUtils.GetLogger<MySqlDialect>();
+
     public int DefaultPort { get; } = 3306;
 
     public string HostAliasQuery { get; } = "SELECT CONCAT(@@hostname, ':', @@port)";
@@ -63,9 +66,9 @@ public class MySqlDialect : IDialect
                 }
             }
         }
-        catch (DbException)
+        catch (Exception ex)
         {
-            // ignored
+            Logger.LogWarning(ex, "Error occurred when checking whether it's MySQL dialect");
         }
 
         return false;

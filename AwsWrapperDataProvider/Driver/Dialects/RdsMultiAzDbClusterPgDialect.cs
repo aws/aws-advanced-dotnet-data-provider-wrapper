@@ -18,11 +18,14 @@ using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 using AwsWrapperDataProvider.Driver.Utils;
+using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
 public class RdsMultiAzDbClusterPgDialect : PgDialect
 {
+    private static readonly ILogger<RdsMultiAzDbClusterPgDialect> Logger = LoggerUtils.GetLogger<RdsMultiAzDbClusterPgDialect>();
+
     private static readonly string TopologyQuery =
         $"SELECT id, endpoint, port FROM rds_tools.show_topology('aws_jdbc_driver-{PropertyDefinition.MultiAzRdsJdbcDriverVersion.DefaultValue}')";
 
@@ -52,9 +55,9 @@ public class RdsMultiAzDbClusterPgDialect : PgDialect
             using IDataReader isDialectReader = isDialectCommand.ExecuteReader();
             return isDialectReader.Read() && !isDialectReader.IsDBNull(0);
         }
-        catch (DbException)
+        catch (Exception ex)
         {
-            // ignore
+            Logger.LogWarning(ex, "Error occurred when checking whether it's dialect");
         }
 
         return false;

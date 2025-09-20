@@ -65,7 +65,7 @@ public class PgDialect : IDialect
                 return true;
             }
         }
-        catch (DbException ex)
+        catch (Exception ex)
         {
             Logger.LogWarning(ex, "Error occurred when checking whether it's PG dialect");
         }

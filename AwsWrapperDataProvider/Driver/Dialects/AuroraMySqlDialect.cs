@@ -13,15 +13,17 @@
 // limitations under the License.
 
 using System.Data;
-using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 using AwsWrapperDataProvider.Driver.Utils;
+using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
 public class AuroraMySqlDialect : MySqlDialect
 {
+    private static readonly ILogger<AuroraMySqlDialect> Logger = LoggerUtils.GetLogger<AuroraMySqlDialect>();
+
     private static readonly string TopologyQuery = "SELECT SERVER_ID, CASE WHEN SESSION_ID = 'MASTER_SESSION_ID' THEN TRUE ELSE FALSE END, "
           + "CPU, REPLICA_LAG_IN_MILLISECONDS, LAST_UPDATE_TIMESTAMP "
           + "FROM information_schema.replica_host_status "
@@ -49,9 +51,9 @@ public class AuroraMySqlDialect : MySqlDialect
             using IDataReader reader = command.ExecuteReader();
             return reader.Read();
         }
-        catch (DbException)
+        catch (Exception ex)
         {
-            // ignored
+            Logger.LogWarning(ex, "Error occurred when checking whether it's Aurora MySql dialect");
         }
 
         return false;
