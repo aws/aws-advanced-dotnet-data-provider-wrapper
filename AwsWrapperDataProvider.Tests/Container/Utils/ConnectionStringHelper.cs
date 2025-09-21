@@ -89,17 +89,6 @@ public class ConnectionStringHelper
             url += $"; Plugins={plugins}";
         }
 
-        // Add explicit target connection type for debugging
-        switch (engine)
-        {
-            case DatabaseEngine.PG:
-                url += $"; TargetConnectionType={typeof(NpgsqlConnection).AssemblyQualifiedName}";
-                break;
-            case DatabaseEngine.MYSQL:
-                url += $"; TargetConnectionType={typeof(MySqlConnection).AssemblyQualifiedName}";
-                break;
-        }
-
         Console.WriteLine($"[DEBUG] Generated connection string: {url}");
         return url;
     }
