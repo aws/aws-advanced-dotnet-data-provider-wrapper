@@ -237,9 +237,6 @@ public class BasicConnectivityTests : IntegrationTestBase
             connection.Open();
             Console.WriteLine("[DEBUG] Connection opened successfully");
 
-            // Add dialect debugging
-            DialectDebugHelper.DebugDialectDetection(connectionString, connection.TargetDbConnection);
-
             Assert.Equal(ConnectionState.Open, connection.State);
 
             using (var command = connection.CreateCommand())
