@@ -223,12 +223,6 @@ public class BasicConnectivityTests : IntegrationTestBase
         var connectionString = ConnectionStringHelper.GetUrl(Engine, instanceInfo.Host, instanceInfo.Port, Username, Password, DefaultDbName, 30, 30, plugins: string.Empty);
         string query = AuroraUtils.GetInstanceIdSql(Engine, Deployment);
 
-        // Debug logging
-        Console.WriteLine($"[DEBUG] Host: {instanceInfo.Host}");
-        Console.WriteLine($"[DEBUG] Port: {instanceInfo.Port}");
-        Console.WriteLine($"[DEBUG] Connection String: {connectionString}");
-        Console.WriteLine($"[DEBUG] Target Connection Type: {typeof(NpgsqlConnection).AssemblyQualifiedName}");
-
         using AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
 
         try
@@ -255,6 +249,7 @@ public class BasicConnectivityTests : IntegrationTestBase
             {
                 Console.WriteLine($"[ERROR] Inner exception: {ex.InnerException.Message}");
             }
+
             throw;
         }
 
