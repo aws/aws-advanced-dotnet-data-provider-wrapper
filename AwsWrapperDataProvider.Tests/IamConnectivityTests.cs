@@ -21,7 +21,7 @@ public class IamConnectivityTests : IntegrationTestBase
 {
     [Fact]
     [Trait("Category", "Integration")]
-    // [Trait("Database", "pg")]
+    [Trait("Database", "pg")]
     [Trait("Engine", "aurora")]
     public void PgWrapper_WithIamPlugin()
     {

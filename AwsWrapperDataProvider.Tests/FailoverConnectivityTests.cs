@@ -38,7 +38,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
-    // [Trait("Database", "pg")]
+    [Trait("Database", "pg")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
     public async Task WriterFailover_FailOnConnectionInvocation()
@@ -90,7 +90,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
-    // [Trait("Database", "pg")]
+    [Trait("Database", "pg")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
     public async Task FailFromReaderToWriter()
@@ -140,7 +140,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
-    // [Trait("Database", "pg")]
+    [Trait("Database", "pg")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
     public async Task WriterFailover_WriterReelected()
@@ -194,7 +194,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
-    // [Trait("Database", "pg")]
+    [Trait("Database", "pg")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
     public async Task ReaderFailover_ReaderOrWriter()
@@ -238,7 +238,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
-    // [Trait("Database", "pg")]
+    [Trait("Database", "pg")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
     public async Task ReaderFailover_StrictReader()
@@ -293,7 +293,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
-    // [Trait("Database", "pg")]
+    [Trait("Database", "pg")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
     public async Task ReaderFailover_WriterReelected()

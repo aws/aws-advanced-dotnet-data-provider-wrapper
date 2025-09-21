@@ -128,7 +128,7 @@ public class BasicConnectivityTests : IntegrationTestBase
 
     [Fact]
     [Trait("Category", "Integration")]
-    // [Trait("Database", "pg")]
+    [Trait("Database", "pg")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
     [Trait("Engine", "multi-az-instance")]
@@ -152,7 +152,7 @@ public class BasicConnectivityTests : IntegrationTestBase
 
     [Fact]
     [Trait("Category", "Integration")]
-    // [Trait("Database", "pg")]
+    [Trait("Database", "pg")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
     [Trait("Engine", "multi-az-instance")]
