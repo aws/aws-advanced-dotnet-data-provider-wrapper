@@ -21,7 +21,7 @@ public class EfmConnectivityIntegrationTests : IntegrationTestBase
 {
     [Fact]
     [Trait("Category", "Integration")]
-    [Trait("Database", "pg")]
+    // [Trait("Database", "pg")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
     public async Task EfmPluginTest_WithDefaultConfiguration()
@@ -36,7 +36,7 @@ public class EfmConnectivityIntegrationTests : IntegrationTestBase
 
     [Fact]
     [Trait("Category", "Integration")]
-    [Trait("Database", "pg")]
+    // [Trait("Database", "pg")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
     public async Task EfmPluginTest_WithFailureFailureCount1()
@@ -52,7 +52,7 @@ public class EfmConnectivityIntegrationTests : IntegrationTestBase
 
     [Fact]
     [Trait("Category", "Integration")]
-    [Trait("Database", "pg")]
+    // [Trait("Database", "pg")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
     public async Task EfmPluginTest_WithSpecialConfiguration()

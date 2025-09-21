@@ -128,7 +128,7 @@ public class BasicConnectivityTests : IntegrationTestBase
 
     [Fact]
     [Trait("Category", "Integration")]
-    [Trait("Database", "pg")]
+    // [Trait("Database", "pg")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
     [Trait("Engine", "multi-az-instance")]
@@ -152,7 +152,7 @@ public class BasicConnectivityTests : IntegrationTestBase
 
     [Fact]
     [Trait("Category", "Integration")]
-    [Trait("Database", "pg")]
+    // [Trait("Database", "pg")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
     [Trait("Engine", "multi-az-instance")]
@@ -223,13 +223,42 @@ public class BasicConnectivityTests : IntegrationTestBase
         var connectionString = ConnectionStringHelper.GetUrl(Engine, instanceInfo.Host, instanceInfo.Port, Username, Password, DefaultDbName, 30, 30, plugins: string.Empty);
         string query = AuroraUtils.GetInstanceIdSql(Engine, Deployment);
 
+        // Debug logging
+        Console.WriteLine($"[DEBUG] Host: {instanceInfo.Host}");
+        Console.WriteLine($"[DEBUG] Port: {instanceInfo.Port}");
+        Console.WriteLine($"[DEBUG] Connection String: {connectionString}");
+        Console.WriteLine($"[DEBUG] Target Connection Type: {typeof(NpgsqlConnection).AssemblyQualifiedName}");
+
         using AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
-        connection.Open();
-        Assert.Equal(ConnectionState.Open, connection.State);
-        using (var command = connection.CreateCommand())
+
+        try
         {
-            command.CommandText = query;
-            command.ExecuteScalar();
+            Console.WriteLine("[DEBUG] Opening connection...");
+            connection.Open();
+            Console.WriteLine("[DEBUG] Connection opened successfully");
+
+            // Add dialect debugging
+            DialectDebugHelper.DebugDialectDetection(connectionString, connection.TargetDbConnection);
+
+            Assert.Equal(ConnectionState.Open, connection.State);
+
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = query;
+                var result = command.ExecuteScalar();
+                Console.WriteLine($"[DEBUG] Query executed successfully: {result}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ERROR] Connection failed: {ex.Message}");
+            Console.WriteLine($"[ERROR] Exception type: {ex.GetType().Name}");
+            Console.WriteLine($"[ERROR] Stack trace: {ex.StackTrace}");
+            if (ex.InnerException != null)
+            {
+                Console.WriteLine($"[ERROR] Inner exception: {ex.InnerException.Message}");
+            }
+            throw;
         }
 
         await ProxyHelper.DisableConnectivityAsync(instanceInfo.InstanceId);

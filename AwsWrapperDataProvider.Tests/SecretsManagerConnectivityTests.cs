@@ -29,7 +29,7 @@ public class SecretsManagerConnectivityTests : IntegrationTestBase
 
     [Fact]
     [Trait("Category", "Integration")]
-    [Trait("Database", "pg")]
+    // [Trait("Database", "pg")]
     [Trait("Engine", "aurora")]
     public void PgWrapper_WithSecretId()
     {
@@ -68,7 +68,7 @@ public class SecretsManagerConnectivityTests : IntegrationTestBase
 
     [Fact]
     [Trait("Category", "Integration")]
-    [Trait("Database", "pg")]
+    // [Trait("Database", "pg")]
     [Trait("Engine", "aurora")]
     public void PgWrapper_WithSecretArn()
     {

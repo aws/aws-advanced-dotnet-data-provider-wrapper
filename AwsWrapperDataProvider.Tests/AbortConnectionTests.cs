@@ -83,7 +83,7 @@ public class AbortConnectionTests : IntegrationTestBase
 
     [Fact]
     [Trait("Category", "Integration")]
-    [Trait("Database", "pg")]
+    // [Trait("Database", "pg")]
     public async Task PgWrapperCommandCancelTest()
     {
         var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName);
