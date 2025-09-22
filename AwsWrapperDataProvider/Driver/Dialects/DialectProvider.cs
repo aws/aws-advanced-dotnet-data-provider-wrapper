@@ -141,7 +141,7 @@ public class DialectProvider
         Logger.LogDebug("UpdateDialect called with current dialect: {currentDialect}", currDialect.GetType().FullName);
         Logger.LogDebug("Connection type: {connectionType}", connection.GetType().FullName);
         Logger.LogDebug("Connection string: {connectionString}", connection.ConnectionString);
-        
+
         IList<Type> dialectCandidates = currDialect.DialectUpdateCandidates;
         Logger.LogDebug("Testing {count} dialect candidates", dialectCandidates.Count);
 
@@ -149,7 +149,7 @@ public class DialectProvider
         {
             Logger.LogDebug("Testing dialect candidate: {dialectCandidate}", dialectCandidate.FullName);
             IDialect dialect = KnownDialectsByType[dialectCandidate];
-            
+
             try
             {
                 if (dialect.IsDialect(connection))
@@ -185,11 +185,11 @@ public class DialectProvider
             Logger.LogError(ex, "Error testing current dialect {currentDialect}: {message}", currDialect.GetType().FullName, ex.Message);
         }
 
-        Logger.LogError("Unable to find valid dialect type for connection. Connection type: {connectionType}, Current dialect: {currentDialect}, Candidates tested: {candidates}", 
-            connection.GetType().FullName, 
-            currDialect.GetType().FullName, 
+        Logger.LogError("Unable to find valid dialect type for connection. Connection type: {connectionType}, Current dialect: {currentDialect}, Candidates tested: {candidates}",
+            connection.GetType().FullName,
+            currDialect.GetType().FullName,
             string.Join(", ", dialectCandidates.Select(d => d.FullName)));
-        
+
         throw new ArgumentException(Properties.Resources.Error_UnableToFindValidDialectType);
     }
 

@@ -89,7 +89,6 @@ public class ConnectionStringHelper
             url += $"; Plugins={plugins}";
         }
 
-        Console.WriteLine($"[DEBUG] Generated connection string: {url}");
         return url;
     }
 }

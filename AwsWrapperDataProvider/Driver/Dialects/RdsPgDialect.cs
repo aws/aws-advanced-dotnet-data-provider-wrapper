@@ -21,12 +21,12 @@ namespace AwsWrapperDataProvider.Driver.Dialects;
 
 public class RdsPgDialect : PgDialect
 {
-    private static readonly ILogger<RdsPgDialect> Logger = LoggerUtils.GetLogger<RdsPgDialect>();
-
     private const string ExtensionsSql = "SELECT (setting LIKE '%rds_tools%') AS rds_tools, "
-      + "(setting LIKE '%aurora_stat_utils%') AS aurora_stat_utils "
-      + "FROM pg_settings "
-      + "WHERE name='rds.extensions'";
+                                         + "(setting LIKE '%aurora_stat_utils%') AS aurora_stat_utils "
+                                         + "FROM pg_settings "
+                                         + "WHERE name='rds.extensions'";
+
+    private static readonly ILogger<RdsPgDialect> Logger = LoggerUtils.GetLogger<RdsPgDialect>();
 
     public override IList<Type> DialectUpdateCandidates { get; } =
     [

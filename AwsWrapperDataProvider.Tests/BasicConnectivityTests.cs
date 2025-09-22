@@ -232,9 +232,7 @@ public class BasicConnectivityTests : IntegrationTestBase
 
         try
         {
-            Console.WriteLine("[DEBUG] Opening connection...");
             connection.Open();
-            Console.WriteLine("[DEBUG] Connection opened successfully");
 
             Assert.Equal(ConnectionState.Open, connection.State);
 
@@ -247,14 +245,7 @@ public class BasicConnectivityTests : IntegrationTestBase
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[ERROR] Connection failed: {ex.Message}");
-            Console.WriteLine($"[ERROR] Exception type: {ex.GetType().Name}");
-            Console.WriteLine($"[ERROR] Stack trace: {ex.StackTrace}");
-            if (ex.InnerException != null)
-            {
-                Console.WriteLine($"[ERROR] Inner exception: {ex.InnerException.Message}");
-            }
-
+            Console.WriteLine($"[ERROR] Connection failed: {ex}");
             throw;
         }
 

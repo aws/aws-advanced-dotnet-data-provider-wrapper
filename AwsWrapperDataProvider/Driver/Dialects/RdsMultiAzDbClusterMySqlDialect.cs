@@ -24,8 +24,6 @@ namespace AwsWrapperDataProvider.Driver.Dialects;
 
 public class RdsMultiAzDbClusterMySqlDialect : MySqlDialect
 {
-    private static readonly ILogger<RdsMultiAzDbClusterMySqlDialect> Logger = LoggerUtils.GetLogger<RdsMultiAzDbClusterMySqlDialect>();
-
     private const string TopologyQuery = "SELECT id, endpoint, port FROM mysql.rds_topology";
 
     private const string TopologyTableExistQuery =
@@ -39,6 +37,8 @@ public class RdsMultiAzDbClusterMySqlDialect : MySqlDialect
     private const string IsReaderQuery = "SELECT @@read_only";
 
     private const string IsDialectQuery = "SHOW VARIABLES LIKE 'report_host'";
+
+    private static readonly ILogger<RdsMultiAzDbClusterMySqlDialect> Logger = LoggerUtils.GetLogger<RdsMultiAzDbClusterMySqlDialect>();
 
     public override bool IsDialect(IDbConnection connection)
     {
