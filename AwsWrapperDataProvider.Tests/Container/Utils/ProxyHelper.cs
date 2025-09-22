@@ -40,6 +40,34 @@ public class ProxyHelper
         await EnableConnectivityAsync(proxy);
     }
 
+    public static async Task ClearAllLatencyAsync()
+    {
+        foreach (Proxy proxy in TestEnvironment.Env.Proxies)
+        {
+            try
+            {
+                var toxics = await proxy.GetAllToxicsAsync();
+                foreach (ToxicBase toxic in toxics.Where(t => t.Name.Contains("LATENCY")))
+                {
+                    try
+                    {
+                        await proxy.RemoveToxicAsync(toxic.Name);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[Error] Error removing toxic: {ex}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Error] Error clearing latency: {ex}");
+            }
+
+            Console.WriteLine($"Cleared latency to {proxy.Name}");
+        }
+    }
+
     private static async Task EnableConnectivityAsync(Proxy proxy)
     {
         try

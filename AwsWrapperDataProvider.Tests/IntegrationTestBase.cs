@@ -55,6 +55,7 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         if (TestEnvironment.Env.Info.Request.Features.Contains(TestEnvironmentFeatures.NETWORK_OUTAGES_ENABLED))
         {
             await ProxyHelper.EnableAllConnectivityAsync();
+            await ProxyHelper.ClearAllLatencyAsync();
         }
 
         var deployment = TestEnvironment.Env.Info.Request.Deployment;

@@ -187,6 +187,11 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Trait("Engine", "multi-az-cluster")]
     public async Task MySqlConnectorWrapperProxiedConnectionTest()
     {
+        if (!TestEnvironment.Env.Info.Request.Features.Contains(TestEnvironmentFeatures.NETWORK_OUTAGES_ENABLED))
+        {
+            Assert.Skip("Skipping test because NETWORK_OUTAGES_ENABLED feature is not enabled in the test environment.");
+        }
+
         var instanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First();
         var connectionString = ConnectionStringHelper.GetUrl(Engine, instanceInfo.Host, instanceInfo.Port, Username, Password, DefaultDbName, 30, 30, plugins: string.Empty);
         string query = AuroraUtils.GetInstanceIdSql(Engine, Deployment);
@@ -221,8 +226,10 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Trait("Engine", "multi-az-cluster")]
     public async Task PgWrapperProxiedConnectionTest()
     {
-        DialectProvider.ResetEndpointCache();
-        PluginService.ClearCache();
+        if (!TestEnvironment.Env.Info.Request.Features.Contains(TestEnvironmentFeatures.NETWORK_OUTAGES_ENABLED))
+        {
+            Assert.Skip("Skipping test because NETWORK_OUTAGES_ENABLED feature is not enabled in the test environment.");
+        }
 
         var instanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First();
         var connectionString = ConnectionStringHelper.GetUrl(Engine, instanceInfo.Host, instanceInfo.Port, Username, Password, DefaultDbName, 30, 30, plugins: string.Empty);
