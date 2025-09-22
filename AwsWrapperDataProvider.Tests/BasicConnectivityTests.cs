@@ -14,6 +14,8 @@
 
 using System.Data;
 using System.Data.Common;
+using AwsWrapperDataProvider.Driver;
+using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 using MySqlConnector;
 using Npgsql;
@@ -219,6 +221,9 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Trait("Engine", "multi-az-cluster")]
     public async Task PgWrapperProxiedConnectionTest()
     {
+        DialectProvider.ResetEndpointCache();
+        PluginService.ClearCache();
+
         var instanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First();
         var connectionString = ConnectionStringHelper.GetUrl(Engine, instanceInfo.Host, instanceInfo.Port, Username, Password, DefaultDbName, 30, 30, plugins: string.Empty);
         string query = AuroraUtils.GetInstanceIdSql(Engine, Deployment);
