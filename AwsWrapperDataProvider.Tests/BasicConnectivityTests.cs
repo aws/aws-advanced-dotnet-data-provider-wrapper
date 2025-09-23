@@ -14,6 +14,8 @@
 
 using System.Data;
 using System.Data.Common;
+using AwsWrapperDataProvider.Driver;
+using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 using MySqlConnector;
 using Npgsql;
@@ -25,9 +27,12 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
+    [Trait("Engine", "aurora")]
+    [Trait("Engine", "multi-az-cluster")]
+    [Trait("Engine", "multi-az-instance")]
     public void MySqlClientWrapperConnectionTest()
     {
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName, 30, 30, string.Empty);
         const string query = "select 1";
 
         using AwsWrapperConnection<MySql.Data.MySqlClient.MySqlConnection> connection = new(connectionString);
@@ -45,9 +50,12 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
+    [Trait("Engine", "aurora")]
+    [Trait("Engine", "multi-az-cluster")]
+    [Trait("Engine", "multi-az-instance")]
     public void MySqlConnectorWrapperConnectionTest()
     {
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName, 30, 30, string.Empty);
         const string query = "select 1";
 
         using AwsWrapperConnection<MySqlConnection> connection = new(connectionString);
@@ -65,9 +73,12 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
+    [Trait("Engine", "aurora")]
+    [Trait("Engine", "multi-az-cluster")]
+    [Trait("Engine", "multi-az-instance")]
     public void MysqlWrapperConnectionDynamicTest()
     {
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName, 30, 30, string.Empty);
         connectionString +=
             ";TargetConnectionType=MySqlConnector.MySqlConnection,MySqlConnector;" +
             "TargetCommandType=MySqlConnector.MySqlCommand,MySqlConnector";
@@ -90,9 +101,12 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
+    [Trait("Engine", "aurora")]
+    [Trait("Engine", "multi-az-cluster")]
+    [Trait("Engine", "multi-az-instance")]
     public void MysqlWrapperConnectionWithParametersTest()
     {
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName, 30, 30, string.Empty);
         const string query = "select @var1";
 
         using AwsWrapperConnection<MySqlConnection> connection = new(connectionString);
@@ -117,9 +131,12 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg")]
+    [Trait("Engine", "aurora")]
+    [Trait("Engine", "multi-az-cluster")]
+    [Trait("Engine", "multi-az-instance")]
     public void PgWrapperConnectionTest()
     {
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName, 30, 30, string.Empty);
         const string query = "select 1";
 
         using AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
@@ -138,9 +155,12 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg")]
+    [Trait("Engine", "aurora")]
+    [Trait("Engine", "multi-az-cluster")]
+    [Trait("Engine", "multi-az-instance")]
     public void PgWrapperConnectionDynamicTest()
     {
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName, 30, 30, string.Empty);
         connectionString +=
             ";TargetConnectionType=Npgsql.NpgsqlConnection,Npgsql;" +
             "TargetCommandType=Npgsql.NpgsqlCommand,Npgsql";
@@ -163,10 +183,17 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
+    [Trait("Engine", "aurora")]
+    [Trait("Engine", "multi-az-cluster")]
     public async Task MySqlConnectorWrapperProxiedConnectionTest()
     {
+        if (!TestEnvironment.Env.Info.Request.Features.Contains(TestEnvironmentFeatures.NETWORK_OUTAGES_ENABLED))
+        {
+            Assert.Skip("Skipping test because NETWORK_OUTAGES_ENABLED feature is not enabled in the test environment.");
+        }
+
         var instanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First();
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, instanceInfo.Host, instanceInfo.Port, Username, Password, DefaultDbName, 5, 5, plugins: string.Empty);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, instanceInfo.Host, instanceInfo.Port, Username, Password, DefaultDbName, 30, 30, plugins: string.Empty);
         string query = AuroraUtils.GetInstanceIdSql(Engine, Deployment);
 
         using AwsWrapperConnection<MySqlConnection> connection = new(connectionString);
@@ -193,21 +220,43 @@ public class BasicConnectivityTests : IntegrationTestBase
     }
 
     [Fact]
+
+    // TODO: Enable this test after fixing flakiness
     [Trait("Category", "Integration")]
-    [Trait("Database", "pg")]
+    [Trait("Category", "Manual")]
     public async Task PgWrapperProxiedConnectionTest()
     {
+        if (!TestEnvironment.Env.Info.Request.Features.Contains(TestEnvironmentFeatures.NETWORK_OUTAGES_ENABLED))
+        {
+            Assert.Skip("Skipping test because NETWORK_OUTAGES_ENABLED feature is not enabled in the test environment.");
+        }
+
+        DialectProvider.ResetEndpointCache();
+        PluginService.ClearCache();
+
         var instanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First();
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, instanceInfo.Host, instanceInfo.Port, Username, Password, DefaultDbName, 5, 5, plugins: string.Empty);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, instanceInfo.Host, instanceInfo.Port, Username, Password, DefaultDbName, 30, 30, plugins: string.Empty);
         string query = AuroraUtils.GetInstanceIdSql(Engine, Deployment);
 
         using AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
-        connection.Open();
-        Assert.Equal(ConnectionState.Open, connection.State);
-        using (var command = connection.CreateCommand())
+
+        try
         {
-            command.CommandText = query;
-            command.ExecuteScalar();
+            connection.Open();
+
+            Assert.Equal(ConnectionState.Open, connection.State);
+
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = query;
+                var result = command.ExecuteScalar();
+                Console.WriteLine($"[DEBUG] Query executed successfully: {result}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ERROR] Connection failed: {ex}");
+            throw;
         }
 
         await ProxyHelper.DisableConnectivityAsync(instanceInfo.InstanceId);

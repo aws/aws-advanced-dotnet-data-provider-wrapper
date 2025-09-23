@@ -30,12 +30,13 @@ public class SecretsManagerConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg")]
+    [Trait("Engine", "aurora")]
     public void PgWrapper_WithSecretId()
     {
         var secretId = "PGValidSecretId";
         _ = this.auroraTestUtils.CreateSecrets(secretId);
 
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, null, null, DefaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, null, null, DefaultDbName);
         connectionString += $";Plugins=awsSecretsManager;SecretsManagerSecretId={secretId};SecretsManagerRegion={TestEnvironment.Env.Info.Region};";
         const string query = "select 1";
 
@@ -68,12 +69,13 @@ public class SecretsManagerConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg")]
+    [Trait("Engine", "aurora")]
     public void PgWrapper_WithSecretArn()
     {
         var secretId = "PgValidSecretArn";
         var secretsArn = this.auroraTestUtils.CreateSecrets(secretId);
 
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, null, null, DefaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, null, null, DefaultDbName);
         connectionString += $";Plugins=awsSecretsManager;SecretsManagerSecretId={secretsArn};SecretsManagerRegion={TestEnvironment.Env.Info.Region};";
         const string query = "select 1";
 
@@ -106,12 +108,13 @@ public class SecretsManagerConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
+    [Trait("Engine", "aurora")]
     public void MySqlClientWrapper_WithSecretId()
     {
         var secretId = "MySqlClientValidSecretId";
         _ = this.auroraTestUtils.CreateSecrets(secretId);
 
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, null, null, DefaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, null, null, DefaultDbName);
         connectionString += $";Plugins=awsSecretsManager;SecretsManagerSecretId={secretId};SecretsManagerRegion={TestEnvironment.Env.Info.Region};";
         const string query = "select 1";
 
@@ -144,12 +147,13 @@ public class SecretsManagerConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
+    [Trait("Engine", "aurora")]
     public void MySqlClientWrapper_WithSecretArn()
     {
         var secretId = "MySqlClientValidSecretArn";
         var secretsArn = this.auroraTestUtils.CreateSecrets(secretId);
 
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, null, null, DefaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, null, null, DefaultDbName);
         connectionString += $";Plugins=awsSecretsManager;SecretsManagerSecretId={secretsArn};SecretsManagerRegion={TestEnvironment.Env.Info.Region};";
         const string query = "select 1";
 
@@ -182,12 +186,13 @@ public class SecretsManagerConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
+    [Trait("Engine", "aurora")]
     public void MySqlConnectorWrapper_WithSecretId()
     {
         var secretId = "MySqlConnectorValidSecretId";
         _ = this.auroraTestUtils.CreateSecrets(secretId);
 
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, null, null, DefaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, null, null, DefaultDbName);
         connectionString += $";Plugins=awsSecretsManager;SecretsManagerSecretId={secretId};SecretsManagerRegion={TestEnvironment.Env.Info.Region};";
         const string query = "select 1";
 
@@ -220,12 +225,13 @@ public class SecretsManagerConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
+    [Trait("Engine", "aurora")]
     public void MySqlConnectorWrapper_WithSecretArn()
     {
         var secretId = "MySqlConnectorValidSecretArn";
         var secretsArn = this.auroraTestUtils.CreateSecrets(secretId);
 
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, null, null, DefaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, null, null, DefaultDbName);
         connectionString += $";Plugins=awsSecretsManager;SecretsManagerSecretId={secretsArn};SecretsManagerRegion={TestEnvironment.Env.Info.Region};";
         const string query = "select 1";
 

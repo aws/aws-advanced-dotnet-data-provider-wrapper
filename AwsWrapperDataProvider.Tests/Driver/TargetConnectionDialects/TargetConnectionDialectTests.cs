@@ -128,7 +128,7 @@ public class TargetConnectionDialectTests
     public void MySqlTargetDriverDialect_PrepareConnectionString_WithHostSpec_IncludesServerAndPort()
     {
         var connectionDialect = new MySqlConnectorDialect();
-        var dialect = new MysqlDialect();
+        var dialect = new MySqlDialect();
         var connectionString = connectionDialect.PrepareConnectionString(dialect, HostWithPort, ConnectionProps);
 
         Assert.Contains("Server=test-host", connectionString);
@@ -143,7 +143,7 @@ public class TargetConnectionDialectTests
     public void MySqlTargetDriverDialect_PrepareConnectionString_WithoutHostSpec_UsesPropertiesOnly()
     {
         var connectionDialect = new MySqlConnectorDialect();
-        var dialect = new MysqlDialect();
+        var dialect = new MySqlDialect();
         var connectionString = connectionDialect.PrepareConnectionString(dialect, null, PropertiesWithServer);
 
         Assert.Contains("Server=original-host", connectionString);
@@ -156,7 +156,7 @@ public class TargetConnectionDialectTests
     public void MySqlTargetDriverDialect_PrepareConnectionString_FiltersInternalProperties()
     {
         var connectionDialect = new MySqlConnectorDialect();
-        var dialect = new MysqlDialect();
+        var dialect = new MySqlDialect();
         var connectionString = connectionDialect.PrepareConnectionString(dialect, HostWithPort, PropsWithInternalProperties);
 
         Assert.Contains("Server=test-host", connectionString);
@@ -171,7 +171,7 @@ public class TargetConnectionDialectTests
     public void MySqlClientDialect_PrepareConnectionString_WithHostSpec_IncludesServerAndPort()
     {
         var connectionDialect = new MySqlClientDialect();
-        var dialect = new MysqlDialect();
+        var dialect = new MySqlDialect();
         var connectionString = connectionDialect.PrepareConnectionString(dialect, HostWithPort, ConnectionProps);
 
         Assert.Contains("Server=test-host", connectionString);
@@ -186,7 +186,7 @@ public class TargetConnectionDialectTests
     public void MySqlClientDialect_PrepareConnectionString_WithoutHostSpec_UsesPropertiesOnly()
     {
         var connectionDialect = new MySqlClientDialect();
-        var dialect = new MysqlDialect();
+        var dialect = new MySqlDialect();
         var connectionString = connectionDialect.PrepareConnectionString(dialect, null, PropertiesWithServer);
 
         Assert.Contains("Server=original-host", connectionString);
@@ -199,7 +199,7 @@ public class TargetConnectionDialectTests
     public void MySqlClientDialect_PrepareConnectionString_FiltersInternalProperties()
     {
         var connectionDialect = new MySqlClientDialect();
-        var dialect = new MysqlDialect();
+        var dialect = new MySqlDialect();
         var connectionString = connectionDialect.PrepareConnectionString(dialect, HostWithPort, PropsWithInternalProperties);
 
         Assert.Contains("Server=test-host", connectionString);

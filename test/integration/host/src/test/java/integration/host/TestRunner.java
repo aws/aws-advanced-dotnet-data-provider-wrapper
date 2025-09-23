@@ -23,17 +23,45 @@ import org.junit.jupiter.api.extension.ExtendWith;
 public class TestRunner {
 
   @TestTemplate
-  public void runMySQLTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
+  public void runMySQLAuroraTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
 
     try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
-      env.runTests("mysql");
+      env.runTests("mysql", "aurora");
     }
   }
 
   @TestTemplate
-  public void runPGTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
+  public void runPGAuroraTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
     try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
-      env.runTests("pg");
+      env.runTests("pg", "aurora");
+    }
+  }
+
+  @TestTemplate
+  public void runMySQLMultiAzClusterTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
+    try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
+      env.runTests("mysql", "multi-az-cluster");
+    }
+  }
+
+  @TestTemplate
+  public void runPGMultiAzClusterTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
+    try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
+      env.runTests("pg", "multi-az-cluster");
+    }
+  }
+
+  @TestTemplate
+  public void runMySQLMultiAzInstanceTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
+    try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
+      env.runTests("mysql", "multi-az-instance");
+    }
+  }
+
+  @TestTemplate
+  public void runPGMultiAzInstanceTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
+    try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
+      env.runTests("pg", "multi-az-instance");
     }
   }
 

@@ -39,6 +39,8 @@ public class FailoverConnectivityTests : IntegrationTestBase
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
     [Trait("Database", "pg")]
+    [Trait("Engine", "aurora")]
+    [Trait("Engine", "multi-az-cluster")]
     public async Task WriterFailover_FailOnConnectionInvocation()
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
@@ -66,13 +68,19 @@ public class FailoverConnectivityTests : IntegrationTestBase
         connection.Open();
         Assert.Equal(ConnectionState.Open, connection.State);
 
-        await AuroraUtils.CrashInstance(currentWriter);
+        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var crashTask = AuroraUtils.CrashInstance(currentWriter, tcs);
+
+        // Wait for simulation to start
+        await tcs.Task;
 
         Assert.Throws<FailoverSuccessException>(() =>
         {
             this.logger.WriteLine("Executing instance ID query to trigger failover...");
             AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
         });
+
+        await crashTask;
     }
 
     /// <summary>
@@ -83,6 +91,8 @@ public class FailoverConnectivityTests : IntegrationTestBase
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
     [Trait("Database", "pg")]
+    [Trait("Engine", "aurora")]
+    [Trait("Engine", "multi-az-cluster")]
     public async Task FailFromReaderToWriter()
     {
         Assert.SkipWhen(NumberOfInstances != 2, "Skipped due to test requiring number of database instances = 2.");
@@ -122,6 +132,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
 
         // Assert that we are currently connected to the writer instance.
         var currentConnectionId = AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
+        Assert.NotNull(currentConnectionId);
         Assert.Equal(currentWriter, currentConnectionId);
         Assert.True(await AuroraUtils.IsDBInstanceWriterAsync(currentConnectionId));
     }
@@ -130,6 +141,8 @@ public class FailoverConnectivityTests : IntegrationTestBase
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
     [Trait("Database", "pg")]
+    [Trait("Engine", "aurora")]
+    [Trait("Engine", "multi-az-cluster")]
     public async Task WriterFailover_WriterReelected()
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
@@ -166,12 +179,13 @@ public class FailoverConnectivityTests : IntegrationTestBase
         Assert.Throws<FailoverSuccessException>(() =>
         {
             this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Executing instance ID query to trigger failover...");
-            this.logger.WriteLine(AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment));
+            this.logger.WriteLine(AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment) ?? "No instance ID returned");
             this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Finished executing without exception thrown");
         });
 
         // Assert that we are currently connected to the writer instance.
         var currentConnectionId = AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
+        Assert.NotNull(currentConnectionId);
         Assert.Equal(currentWriter, currentConnectionId);
         Assert.True(await AuroraUtils.IsDBInstanceWriterAsync(currentConnectionId));
         await simulationTask;
@@ -181,6 +195,8 @@ public class FailoverConnectivityTests : IntegrationTestBase
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
     [Trait("Database", "pg")]
+    [Trait("Engine", "aurora")]
+    [Trait("Engine", "multi-az-cluster")]
     public async Task ReaderFailover_ReaderOrWriter()
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
@@ -223,6 +239,8 @@ public class FailoverConnectivityTests : IntegrationTestBase
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
     [Trait("Database", "pg")]
+    [Trait("Engine", "aurora")]
+    [Trait("Engine", "multi-az-cluster")]
     public async Task ReaderFailover_StrictReader()
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
@@ -252,7 +270,11 @@ public class FailoverConnectivityTests : IntegrationTestBase
         connection.Open();
         Assert.Equal(ConnectionState.Open, connection.State);
 
-        await AuroraUtils.CrashInstance(currentWriter);
+        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var crashTask = AuroraUtils.CrashInstance(currentWriter, tcs);
+
+        // Wait for simulation to start
+        await tcs.Task;
 
         Assert.Throws<FailoverSuccessException>(() =>
         {
@@ -262,13 +284,18 @@ public class FailoverConnectivityTests : IntegrationTestBase
 
         // Assert that we are currently connected to the reader instance.
         var currentConnectionId = AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
+        Assert.NotNull(currentConnectionId);
         Assert.False(await AuroraUtils.IsDBInstanceWriterAsync(currentConnectionId));
+
+        await crashTask;
     }
 
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
     [Trait("Database", "pg")]
+    [Trait("Engine", "aurora")]
+    [Trait("Engine", "multi-az-cluster")]
     public async Task ReaderFailover_WriterReelected()
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");

@@ -122,6 +122,31 @@ public class TestEnvironment
         await auroraUtil.MakeSureInstancesUpAsync(TimeSpan.FromMinutes(10));
     }
 
+    public static async Task RebootClusterAsync()
+    {
+        var testInfo = Env.Info!;
+        var auroraUtil = AuroraTestUtils.GetUtility(testInfo);
+        var instancesIDs = testInfo.DatabaseInfo!.Instances.Select(i => i.InstanceId);
+
+        await auroraUtil.WaitUntilClusterHasRightStateAsync(testInfo.RdsDbName!);
+
+        foreach (var instanceId in instancesIDs)
+        {
+            await auroraUtil.WaitUntilInstanceHasRightStateAsync(
+                instanceId,
+                "available",
+                "storage-optimization",
+                "incompatible-credentials",
+                "incompatible-parameters",
+                "unavailable");
+        }
+
+        await auroraUtil.RebootClusterAsync(testInfo.RdsDbName!);
+        await auroraUtil.WaitUntilClusterHasRightStateAsync(testInfo.RdsDbName!, "rebooting");
+        await auroraUtil.WaitUntilClusterHasRightStateAsync(testInfo.RdsDbName!);
+        await auroraUtil.MakeSureInstancesUpAsync(TimeSpan.FromMinutes(10));
+    }
+
     private static TestEnvironment Create()
     {
         TestEnvironment env = new();

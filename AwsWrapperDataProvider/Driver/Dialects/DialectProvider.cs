@@ -40,12 +40,14 @@ public class DialectProvider
 
     private static readonly Dictionary<Type, IDialect> KnownDialectsByType = new()
     {
-        { typeof(MysqlDialect), new MysqlDialect() },
+        { typeof(MySqlDialect), new MySqlDialect() },
         { typeof(PgDialect), new PgDialect() },
-        { typeof(RdsMysqlDialect), new RdsMysqlDialect() },
+        { typeof(RdsMySqlDialect), new RdsMySqlDialect() },
         { typeof(RdsPgDialect), new RdsPgDialect() },
-        { typeof(AuroraMysqlDialect), new AuroraMysqlDialect() },
+        { typeof(AuroraMySqlDialect), new AuroraMySqlDialect() },
         { typeof(AuroraPgDialect), new AuroraPgDialect() },
+        { typeof(RdsMultiAzDbClusterMySqlDialect), new RdsMultiAzDbClusterMySqlDialect() },
+        { typeof(RdsMultiAzDbClusterPgDialect), new RdsMultiAzDbClusterPgDialect() },
         { typeof(UnknownDialect), new UnknownDialect() },
     };
 
@@ -68,13 +70,13 @@ public class DialectProvider
 
         // TODO : Uncomment when Aurora Limitless DB Shard Group is supported
         // { (RdsUrlType.RdsAuroraLimitlessDbShardGroup, PgDataSource), typeof() },
-        { (RdsUrlType.IpAddress, MySqlDataSource), typeof(MysqlDialect) },
-        { (RdsUrlType.RdsWriterCluster, MySqlDataSource), typeof(AuroraMysqlDialect) },
-        { (RdsUrlType.RdsReaderCluster, MySqlDataSource), typeof(AuroraMysqlDialect) },
-        { (RdsUrlType.RdsCustomCluster, MySqlDataSource), typeof(AuroraMysqlDialect) },
-        { (RdsUrlType.RdsProxy, MySqlDataSource), typeof(RdsMysqlDialect) },
-        { (RdsUrlType.RdsInstance, MySqlDataSource), typeof(RdsMysqlDialect) },
-        { (RdsUrlType.Other, MySqlDataSource), typeof(MysqlDialect) },
+        { (RdsUrlType.IpAddress, MySqlDataSource), typeof(MySqlDialect) },
+        { (RdsUrlType.RdsWriterCluster, MySqlDataSource), typeof(AuroraMySqlDialect) },
+        { (RdsUrlType.RdsReaderCluster, MySqlDataSource), typeof(AuroraMySqlDialect) },
+        { (RdsUrlType.RdsCustomCluster, MySqlDataSource), typeof(AuroraMySqlDialect) },
+        { (RdsUrlType.RdsProxy, MySqlDataSource), typeof(RdsMySqlDialect) },
+        { (RdsUrlType.RdsInstance, MySqlDataSource), typeof(RdsMySqlDialect) },
+        { (RdsUrlType.Other, MySqlDataSource), typeof(MySqlDialect) },
 
         // TODO : Uncomment when Aurora Limitless DB Shard Group is supported
         // { (RdsUrlType.RdsAuroraLimitlessDbShardGroup, MySqlDataSource), typeof() },
@@ -136,35 +138,57 @@ public class DialectProvider
 
     public IDialect UpdateDialect(IDbConnection connection, IDialect currDialect)
     {
+        Logger.LogDebug("UpdateDialect called with current dialect: {currentDialect}", currDialect.GetType().FullName);
+        Logger.LogDebug("Connection type: {connectionType}", connection.GetType().FullName);
+        Logger.LogDebug("Connection string: {connectionString}", connection.ConnectionString);
+
         IList<Type> dialectCandidates = currDialect.DialectUpdateCandidates;
+        Logger.LogDebug("Testing {count} dialect candidates", dialectCandidates.Count);
 
         foreach (Type dialectCandidate in dialectCandidates)
         {
+            Logger.LogDebug("Testing dialect candidate: {dialectCandidate}", dialectCandidate.FullName);
             IDialect dialect = KnownDialectsByType[dialectCandidate];
-            if (dialect.IsDialect(connection))
+
+            try
             {
-                this.dialect = dialect;
-                KnownEndpointDialects.Set(this.pluginService.InitialConnectionHostSpec!.Host, dialect, EndpointCacheExpiration);
-                KnownEndpointDialects.Set(connection.ConnectionString, dialect, EndpointCacheExpiration);
-                return this.dialect;
+                if (dialect.IsDialect(connection))
+                {
+                    Logger.LogDebug("Dialect match found: {dialect}", dialect.GetType().FullName);
+                    this.dialect = dialect;
+                    KnownEndpointDialects.Set(this.pluginService.InitialConnectionHostSpec!.Host, dialect, EndpointCacheExpiration);
+                    KnownEndpointDialects.Set(connection.ConnectionString, dialect, EndpointCacheExpiration);
+                    return this.dialect;
+                }
+                else
+                {
+                    Logger.LogDebug("Not dialect: {dialect}", dialect.GetType().FullName);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                Logger.LogDebug("Not dialect: {dialect}", dialect.GetType().FullName);
+                Logger.LogError(ex, "Error testing dialect candidate {dialectCandidate}: {message}", dialectCandidate.FullName, ex.Message);
             }
         }
 
+        Logger.LogDebug("Testing current dialect: {currentDialect}", currDialect.GetType().FullName);
         try
         {
             if (currDialect.IsDialect(connection))
             {
+                Logger.LogDebug("Current dialect is valid: {currentDialect}", currDialect.GetType().FullName);
                 return currDialect;
             }
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, ex.Message);
+            Logger.LogError(ex, "Error testing current dialect {currentDialect}: {message}", currDialect.GetType().FullName, ex.Message);
         }
+
+        Logger.LogError("Unable to find valid dialect type for connection. Connection type: {connectionType}, Current dialect: {currentDialect}, Candidates tested: {candidates}",
+            connection.GetType().FullName,
+            currDialect.GetType().FullName,
+            string.Join(", ", dialectCandidates.Select(d => d.FullName)));
 
         throw new ArgumentException(Properties.Resources.Error_UnableToFindValidDialectType);
     }
