@@ -222,9 +222,8 @@ public class BasicConnectivityTests : IntegrationTestBase
     [Fact]
 
     // TODO: Enable this test after fixing flakiness
-    [Trait("Category", "Disabled")]
-    [Trait("Engine", "aurora")]
-    [Trait("Engine", "multi-az-cluster")]
+    [Trait("Category", "Integration")]
+    [Trait("Category", "Manual")]
     public async Task PgWrapperProxiedConnectionTest()
     {
         if (!TestEnvironment.Env.Info.Request.Features.Contains(TestEnvironmentFeatures.NETWORK_OUTAGES_ENABLED))
