@@ -14,14 +14,19 @@
 
 using System.Data;
 using System.Data.Common;
+using AwsWrapperDataProvider.Driver.Utils;
+using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
-public class RdsMysqlDialect : MysqlDialect
+public class RdsMySqlDialect : MySqlDialect
 {
+    private static readonly ILogger<RdsMySqlDialect> Logger = LoggerUtils.GetLogger<RdsMySqlDialect>();
+
     public override IList<Type> DialectUpdateCandidates { get; } =
     [
-        typeof(AuroraMysqlDialect),
+        typeof(AuroraMySqlDialect),
+        typeof(RdsMultiAzDbClusterMySqlDialect),
     ];
 
     public override bool IsDialect(IDbConnection conn)
@@ -49,9 +54,9 @@ public class RdsMysqlDialect : MysqlDialect
                 }
             }
         }
-        catch (DbException)
+        catch (Exception ex)
         {
-            // ignored
+            Logger.LogWarning(ex, "Error occurred when checking whether it's dialect");
         }
 
         return false;

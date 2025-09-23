@@ -13,8 +13,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy: 
       fail-fast: false
-      matrix: 
+      matrix:
         dbEngine: ["mysql", "pg"]
+        deployment: ["aurora", "multi-az-cluster", "multi-az-instance"]
     steps:
       - name: 'Clone repository'
         uses: actions/checkout@v4
@@ -38,7 +39,7 @@ jobs:
           output-credentials: true
       - name: Run Integration Tests
         run: |
-          cd test/integration/host && ./gradlew --no-parallel --no-daemon test-all-${{ matrix.dbEngine }}-aurora --info
+          cd test/integration/host && ./gradlew --no-parallel --no-daemon test-all-${{ matrix.dbEngine }}-${{ matrix.deployment }} --info
         env:
           RDS_DB_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
           AWS_ACCESS_KEY_ID: ${{ steps.creds.outputs.aws-access-key-id }}
@@ -51,5 +52,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: integration-report-default-${{ matrix.dbEngine }}
-          path: ./test/integration/container/reports
+          path: ./test/integration/reports
           retention-days: 5

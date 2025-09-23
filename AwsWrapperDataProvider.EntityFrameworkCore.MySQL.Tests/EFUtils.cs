@@ -23,8 +23,20 @@ public class EFUtils
         string infoJson = Environment.GetEnvironmentVariable("TEST_ENV_INFO_JSON") ?? throw new Exception("Environment variable TEST_ENV_INFO_JSON is required.");
         using var doc = JsonDocument.Parse(infoJson);
         var root = doc.RootElement;
-        var cluster = root.GetProperty("databaseInfo").GetProperty("clusterEndpoint").GetString() ?? throw new Exception("Could not get cluster endpoint from TEST_ENV_INFO_JSON");
-        var port = root.GetProperty("databaseInfo").GetProperty("clusterEndpointPort").GetInt32();
+        var deployment = root.GetProperty("request").GetProperty("deployment").GetString();
+        string? cluster;
+        int? port;
+        if (deployment == "RDS_MULTI_AZ_INSTANCE")
+        {
+            cluster = root.GetProperty("databaseInfo").GetProperty("instances")[0].GetProperty("host").GetString();
+            port = root.GetProperty("databaseInfo").GetProperty("instances")[0].GetProperty("port").GetInt32();
+        }
+        else
+        {
+            cluster = root.GetProperty("databaseInfo").GetProperty("clusterEndpoint").GetString() ?? throw new Exception("Could not get cluster endpoint from TEST_ENV_INFO_JSON");
+            port = root.GetProperty("databaseInfo").GetProperty("clusterEndpointPort").GetInt32();
+        }
+
         var user = root.GetProperty("databaseInfo").GetProperty("username").GetString() ?? throw new Exception("Could not get user from TEST_ENV_INFO_JSON");
         var password = root.GetProperty("databaseInfo").GetProperty("password").GetString() ?? throw new Exception("Could not get password from TEST_ENV_INFO_JSON");
         var dbName = root.GetProperty("databaseInfo").GetProperty("defaultDbName").GetString() ?? throw new Exception("Could not get defaultDbName from TEST_ENV_INFO_JSON");

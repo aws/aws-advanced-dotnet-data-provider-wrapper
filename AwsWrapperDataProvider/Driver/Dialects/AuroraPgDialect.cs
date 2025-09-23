@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using System.Data;
-using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -44,7 +43,9 @@ public class AuroraPgDialect : PgDialect
     private static readonly string IsWriterQuery = "SELECT SERVER_ID FROM aurora_replica_status() "
         + "WHERE SESSION_ID = 'MASTER_SESSION_ID' AND SERVER_ID = aurora_db_instance_identifier()";
 
-    public override IList<Type> DialectUpdateCandidates { get; } = [];
+    public override IList<Type> DialectUpdateCandidates { get; } = [
+        typeof(RdsMultiAzDbClusterPgDialect),
+    ];
 
     public override bool IsDialect(IDbConnection connection)
     {
@@ -75,7 +76,7 @@ public class AuroraPgDialect : PgDialect
                 hasTopology = true;
             }
         }
-        catch (DbException ex)
+        catch (Exception ex)
         {
             Logger.LogWarning(ex, "Error occurred when checking whether it's Aurora PG dialect");
         }

@@ -16,7 +16,9 @@ using System.Collections.Concurrent;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
+using System.Globalization;
 using System.Net;
+using System.Net.NetworkInformation;
 using Amazon;
 using Amazon.RDS;
 using Amazon.RDS.Model;
@@ -399,6 +401,10 @@ public class AuroraTestUtils
         var host = TestEnvironment.Env.Info.DatabaseInfo.Instances[0].Host;
         var port = TestEnvironment.Env.Info.DatabaseInfo.Instances[0].Port;
         var connectionUrl = ConnectionStringHelper.GetUrl(databaseEngine, host, port, username, password, dbName);
+
+        using var connection = DriverHelper.CreateUnopenedConnection(databaseEngine, connectionUrl);
+        connection.Open();
+
         string retrieveTopologySql = deployment switch
         {
             DatabaseEngineDeployment.AURORA => databaseEngine switch
@@ -409,12 +415,33 @@ public class AuroraTestUtils
                                             "ORDER BY CASE WHEN SESSION_ID = 'MASTER_SESSION_ID' THEN 0 ELSE 1 END",
                 _ => throw new NotSupportedException(databaseEngine.ToString()),
             },
+            DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER => databaseEngine switch
+            {
+                DatabaseEngine.MYSQL => "SELECT SUBSTRING_INDEX(endpoint, '.', 1) as SERVER_ID FROM mysql.rds_topology"
+                                        + " ORDER BY CASE WHEN id = "
+                                        + (this.GetMultiAzMysqlReplicaWriterInstanceId(connection) is { } id ? $"'{id}'" : "@@server_id")
+                                        + " THEN 0 ELSE 1 END, SUBSTRING_INDEX(endpoint, '.', 1)",
+                DatabaseEngine.PG => "SELECT SUBSTRING(endpoint FROM 0 FOR POSITION('.' IN endpoint)) as SERVER_ID"
+                                     + " FROM rds_tools.show_topology()"
+                                     + " ORDER BY CASE WHEN id ="
+                                     + " (SELECT MAX(multi_az_db_cluster_source_dbi_resource_id) FROM"
+                                     + " rds_tools.multi_az_db_cluster_source_dbi_resource_id())"
+                                     + " THEN 0 ELSE 1 END, endpoint",
+                _ => throw new NotSupportedException(databaseEngine.ToString()),
+            },
+            DatabaseEngineDeployment.RDS_MULTI_AZ_INSTANCE => databaseEngine switch
+            {
+                DatabaseEngine.MYSQL => "SELECT SUBSTRING_INDEX(endpoint, '.', 1) as SERVER_ID FROM mysql.rds_topology",
+                DatabaseEngine.PG => "SELECT SUBSTRING(endpoint FROM 0 FOR POSITION('.' IN endpoint)) as SERVER_ID"
+                                     + " FROM rds_tools.show_topology()",
+                _ => throw new NotSupportedException(databaseEngine.ToString()),
+            },
             _ => throw new NotSupportedException(deployment.ToString()),
         };
         var auroraInstances = new List<string>();
 
-        using var connection = DriverHelper.CreateUnopenedConnection(databaseEngine, connectionUrl);
-        connection.Open();
+        Console.WriteLine($"Retrieving Aurora instances using SQL: {retrieveTopologySql}");
+
         using var command = connection.CreateCommand();
         command.CommandText = retrieveTopologySql;
         using var reader = command.ExecuteReader();
@@ -424,6 +451,33 @@ public class AuroraTestUtils
         }
 
         return auroraInstances;
+    }
+
+    private string? GetMultiAzMysqlReplicaWriterInstanceId(DbConnection connection)
+    {
+        try
+        {
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "SHOW REPLICA STATUS";
+                using var reader = command.ExecuteReader();
+
+                if (!reader.Read())
+                {
+                    return null;
+                }
+
+                int i = reader.GetOrdinal("Source_Server_id");
+                return reader.IsDBNull(i)
+                    ? null
+                    : Convert.ToString(reader.GetValue(i), CultureInfo.InvariantCulture);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error occurred when getting Source_Server_id: {ex.Message}");
+            return null;
+        }
     }
 
     public bool WaitForDnsCondition(string hostToCheck, string targetHostIpOrName, TimeSpan timeout, bool expectEqual, bool fail)
@@ -467,6 +521,37 @@ public class AuroraTestUtils
 
         Console.WriteLine("Completed.");
         return result;
+    }
+
+    public async Task RebootClusterAsync(string clusterName)
+    {
+        int remainingAttempts = 5;
+        while (--remainingAttempts > 0)
+        {
+            try
+            {
+                var request = new RebootDBClusterRequest { DBClusterIdentifier = clusterName, };
+
+                var response = await this.rdsClient.RebootDBClusterAsync(request);
+
+                if (!IsSuccessfulResponse(response))
+                {
+                    Console.WriteLine($"rebootDBCluster response: {response.HttpStatusCode}");
+                }
+                else
+                {
+                    Console.WriteLine("rebootDBCluster request is sent successfully");
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"rebootDBCluster '{clusterName}' cluster request failed: {ex.Message}");
+                await Task.Delay(1000);
+            }
+        }
+
+        throw new InvalidOperationException($"Failed to request an cluster {clusterName} reboot.");
     }
 
     public async Task RebootInstanceAsync(string instanceId)
@@ -560,15 +645,32 @@ public class AuroraTestUtils
         return matchedMemberList[index].DBInstanceIdentifier;
     }
 
-    public async Task CrashInstance(string instanceId)
+    public async Task CrashInstance(string instanceId, TaskCompletionSource tcs)
     {
-        // TODO: add support for multi az
+        var deployment = TestEnvironment.Env.Info.Request.Deployment;
 
-        var clusterId = TestEnvironment.Env.Info.RdsDbName!;
-        await this.FailoverClusterToATargetAndWaitUntilWriterChanged(
-            clusterId,
-            await this.GetDBClusterWriterInstanceIdAsync(clusterId),
-            await this.GetRandomDBClusterReaderInstanceIdAsync(clusterId));
+        if (deployment == DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER)
+        {
+            var simulationTask = this.SimulateTemporaryFailureTask(instanceId, TimeSpan.Zero, TimeSpan.FromSeconds(12), tcs);
+        }
+        else
+        {
+            try
+            {
+                var clusterId = TestEnvironment.Env.Info.RdsDbName!;
+                await this.FailoverClusterToATargetAndWaitUntilWriterChanged(
+                    clusterId,
+                    await this.GetDBClusterWriterInstanceIdAsync(clusterId),
+                    await this.GetRandomDBClusterReaderInstanceIdAsync(clusterId));
+            }
+            catch (Exception ex)
+            {
+                tcs.TrySetException(ex);
+                throw;
+            }
+
+            tcs.TrySetResult();
+        }
     }
 
     public Task SimulateTemporaryFailureTask(string instanceName, TimeSpan delay, TimeSpan duration, TaskCompletionSource tcs)
@@ -599,10 +701,13 @@ public class AuroraTestUtils
 
     public async Task FailoverClusterToATargetAndWaitUntilWriterChanged(string clusterId, string initialWriterId, string targetWriterId)
     {
-        // TODO: add support for multi az
-
         var deployment = TestEnvironment.Env.Info.Request.Deployment;
         var clusterEndpoint = TestEnvironment.Env.Info.DatabaseInfo.ClusterEndpoint;
+
+        if (deployment == DatabaseEngineDeployment.RDS_MULTI_AZ_INSTANCE)
+        {
+            throw new NotSupportedException("Failover is not supported for " + deployment);
+        }
 
         await this.FailoverClusterToTargetAsync(clusterId, targetWriterId);
 
@@ -679,6 +784,14 @@ public class AuroraTestUtils
                 DatabaseEngine.PG => "SELECT aurora_db_instance_identifier()",
                 _ => throw new NotSupportedException($"Unsupported database engine: {engine}"),
             },
+            DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER => engine switch
+            {
+                DatabaseEngine.MYSQL => "SELECT SUBSTRING_INDEX(endpoint, '.', 1) as id FROM mysql.rds_topology WHERE id=@@server_id",
+                DatabaseEngine.PG => "SELECT SUBSTRING(endpoint FROM 0 FOR POSITION('.' IN endpoint)) as id "
+                                     + "FROM rds_tools.show_topology() "
+                                     + "WHERE id IN (SELECT dbi_resource_id FROM rds_tools.dbi_resource_id())",
+                _ => throw new NotSupportedException($"Unsupported database engine: {engine}"),
+            },
             _ => throw new NotSupportedException($"Unsupported database deployment: {deployment}"),
         };
     }
@@ -687,7 +800,6 @@ public class AuroraTestUtils
     {
         using var command = connection.CreateCommand();
         command.CommandText = query;
-        Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Before ExecuteScalar with Instance Id Query");
         var result = Convert.ToString(command.ExecuteScalar());
         if (result == null)
         {
@@ -700,6 +812,25 @@ public class AuroraTestUtils
 
     public string ExecuteInstanceIdQuery(IDbConnection connection, DatabaseEngine engine, DatabaseEngineDeployment deployment)
     {
-        return this.ExecuteQuery(connection, engine, deployment, this.GetInstanceIdSql(engine, deployment));
+        string instanceId;
+        try
+        {
+            instanceId = this.ExecuteQuery(connection, engine, deployment, this.GetInstanceIdSql(engine, deployment));
+        }
+        catch (NotSupportedException ex)
+        {
+            Console.WriteLine("[Warning] error thrown when executing instance id query: ", ex);
+            return null;
+        }
+
+        return instanceId;
+    }
+
+    public string? QueryInstanceId(IDbConnection connection)
+    {
+        return this.ExecuteInstanceIdQuery(
+            connection,
+            TestEnvironment.Env.Info.Request.Engine,
+            TestEnvironment.Env.Info.Request.Deployment);
     }
 }

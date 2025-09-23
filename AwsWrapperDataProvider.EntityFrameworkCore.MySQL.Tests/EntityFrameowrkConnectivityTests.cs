@@ -56,9 +56,12 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql-ef")]
+    [Trait("Engine", "aurora")]
+    [Trait("Engine", "multi-az-cluster")]
+    [Trait("Engine", "multi-az-instance")]
     public void MysqlEFAddTest()
     {
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ProxyClusterEndpoint, ProxyPort, Username, Password, DefaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName);
         var wrapperConnectionString = connectionString + $";Plugins=failover;";
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
@@ -92,13 +95,15 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql-ef")]
+    [Trait("Engine", "aurora")]
+    [Trait("Engine", "multi-az-cluster")]
     public async Task EFCrashBeforeOpenWithFailoverPluginTest()
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
 
         string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
 
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName, 2, 10);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName, 2, 10);
 
         var wrapperConnectionString = connectionString
             + $";Plugins=failover;" +
@@ -125,7 +130,8 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
             db.Add(jane);
             db.SaveChanges();
 
-            await AuroraUtils.CrashInstance(currentWriter);
+            var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            await AuroraUtils.CrashInstance(currentWriter, tcs);
 
             Person john = new() { FirstName = "John", LastName = "Smith" };
             db.Add(john);
@@ -148,13 +154,15 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql-ef")]
+    [Trait("Engine", "aurora")]
+    [Trait("Engine", "multi-az-cluster")]
     public async Task EFCrashAfterOpenWithFailoverPluginTest()
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
 
         string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
 
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName, 2, 10);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName, 2, 10);
 
         var wrapperConnectionString = connectionString
             + $";Plugins=failover;" +
@@ -193,7 +201,8 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
                         connection.Open();
                     }
 
-                    await AuroraUtils.CrashInstance(currentWriter);
+                    var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                    await AuroraUtils.CrashInstance(currentWriter, tcs);
 
                     // Query to trigger failover
                     var anyUser = await db.Persons.AnyAsync(cancellationToken: TestContext.Current.CancellationToken);
@@ -226,6 +235,8 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql-ef")]
+    [Trait("Engine", "aurora")]
+    [Trait("Engine", "multi-az-cluster")]
     public async Task EFTempFailureWithFailoverPluginTest()
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");

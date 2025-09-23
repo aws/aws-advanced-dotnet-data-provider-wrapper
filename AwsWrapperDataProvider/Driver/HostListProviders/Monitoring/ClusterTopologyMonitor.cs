@@ -14,6 +14,7 @@
 
 using System.Collections.Concurrent;
 using System.Data.Common;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -401,7 +402,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                             string? nodeId = await this.GetNodeIdAsync(this.monitoringConnection);
                             if (!string.IsNullOrEmpty(nodeId))
                             {
-                                this.writerHostSpec = this.CreateHost(nodeId, true, 0, null);
+                                this.writerHostSpec = this.CreateHost(nodeId, nodeId, true, 0, null);
                                 LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, string.Format(Resources.ClusterTopologyMonitor_WriterMonitoringConnection, this.writerHostSpec.Host));
                             }
                         }
@@ -457,9 +458,29 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         return hosts;
     }
 
-    protected HostSpec CreateHost(string nodeId, bool isWriter, long weight, DateTime? lastUpdateTime)
+    protected virtual HostSpec CreateHost(DbDataReader reader, string? suggestedWriterNodeId)
     {
-        string endpoint = this.clusterInstanceTemplate.Host.Replace("?", nodeId);
+        string hostName = reader.GetString(0);
+        bool isWriter = reader.GetBoolean(1);
+        double cpuUtilization = reader.GetDouble(2);
+        double nodeLag = reader.GetDouble(3);
+        DateTime lastUpdateTime = reader.IsDBNull(4)
+            ? DateTime.UtcNow
+            : reader.GetDateTime(4);
+
+        long weight = (long)((Math.Round(nodeLag) * 100L) + Math.Round(cpuUtilization));
+
+        return this.CreateHost(hostName, hostName, isWriter, weight, lastUpdateTime);
+    }
+
+    protected HostSpec CreateHost(
+        string nodeName,
+        string nodeId,
+        bool isWriter,
+        long weight,
+        DateTime? lastUpdateTime)
+    {
+        string endpoint = this.clusterInstanceTemplate.Host.Replace("?", nodeName);
         int port = this.clusterInstanceTemplate.IsPortSpecified
             ? this.clusterInstanceTemplate.Port
             : this.initialHostSpec.Port;
@@ -474,7 +495,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             .WithLastUpdateTime(lastUpdateTime)
             .Build();
 
-        host.AddAlias(nodeId);
+        host.AddAlias(nodeName);
         return host;
     }
 
@@ -487,7 +508,9 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             await using var reader = await command.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
             if (await reader.ReadAsync(this.ctsTopologyMonitoring.Token))
             {
-                return reader.GetString(0);
+                return reader.IsDBNull(0)
+                    ? null
+                    : Convert.ToString(reader.GetValue(0), CultureInfo.InvariantCulture);
             }
         }
         catch (Exception ex)
@@ -500,7 +523,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         return null;
     }
 
-    protected async Task<string?> GetWriterNodeIdAsync(DbConnection connection)
+    protected virtual async Task<string?> GetWriterNodeIdAsync(DbConnection connection)
     {
         try
         {
@@ -520,6 +543,8 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
         return null;
     }
+
+    protected virtual Task<string?> GetSuggestedWriterNodeIdAsync(DbConnection connection) => Task.FromResult<string?>(null);
 
     protected async Task DisposeConnectionAsync(DbConnection? connection)
     {
@@ -592,6 +617,8 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
     {
         try
         {
+            string? suggestedWriterNodeId = await this.GetSuggestedWriterNodeIdAsync(connection);
+
             using var command = connection.CreateCommand();
             if (command.CommandTimeout == 0)
             {
@@ -608,19 +635,8 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             {
                 try
                 {
-                    string hostName = reader.GetString(0);
-                    bool isWriter = reader.GetBoolean(1);
-                    double cpuUtilization = reader.GetDouble(2);
-                    double nodeLag = reader.GetDouble(3);
-                    DateTime lastUpdateTime = reader.IsDBNull(4)
-                        ? DateTime.UtcNow
-                        : reader.GetDateTime(4);
-
-                    long weight = (long)((Math.Round(nodeLag) * 100L) + Math.Round(cpuUtilization));
-
-                    var hostSpec = this.CreateHost(hostName, isWriter, weight, lastUpdateTime);
-
-                    (isWriter ? writers : hosts).Add(hostSpec);
+                    HostSpec hostSpec = this.CreateHost(reader, suggestedWriterNodeId);
+                    (hostSpec.Role == HostRole.Writer ? writers : hosts).Add(hostSpec);
                 }
                 catch (Exception ex)
                 {

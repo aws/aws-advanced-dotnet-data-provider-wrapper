@@ -83,7 +83,7 @@ tasks.withType<Test> {
 
 tasks.register<Test>("test-all-mysql-aurora") {
     group = "verification"
-    filter.includeTestsMatching("integration.host.TestRunner.runMySQLTests")
+    filter.includeTestsMatching("integration.host.TestRunner.runMySQLAuroraTests")
     doFirst {
         systemProperty("test-no-docker", "true")
         systemProperty("test-no-performance", "true")
@@ -100,7 +100,7 @@ tasks.register<Test>("test-all-mysql-aurora") {
 
 tasks.register<Test>("test-all-mysql-aurora-ef") {
     group = "verification"
-    filter.includeTestsMatching("integration.host.TestRunner.runMySQLEFTests")
+    filter.includeTestsMatching("integration.host.TestRunner.runMySQLEFAuroraTests")
     doFirst {
         systemProperty("test-no-docker", "true")
         systemProperty("test-no-performance", "true")
@@ -115,9 +115,43 @@ tasks.register<Test>("test-all-mysql-aurora-ef") {
     }
 }
 
+tasks.register<Test>("test-all-mysql-multi-az-cluster-ef") {
+    group = "verification"
+    filter.includeTestsMatching("integration.host.TestRunner.runMySQLEFMultiAzClusterTests")
+    doFirst {
+        systemProperty("test-no-docker", "true")
+        systemProperty("test-no-performance", "true")
+        systemProperty("test-no-pg-driver", "true")
+        systemProperty("test-no-pg-engine", "true")
+        systemProperty("test-no-mariadb-engine", "true")
+        systemProperty("test-no-aurora", "true")
+        systemProperty("test-no-multi-az-instance", "true")
+        systemProperty("test-no-bg", "true")
+        systemProperty("test-no-traces-telemetry", "true")
+        systemProperty("test-no-metrics-telemetry", "true")
+    }
+}
+
+tasks.register<Test>("test-all-mysql-multi-az-instance-ef") {
+    group = "verification"
+    filter.includeTestsMatching("integration.host.TestRunner.runMySQLEFMultiAzClusterTests")
+    doFirst {
+        systemProperty("test-no-docker", "true")
+        systemProperty("test-no-performance", "true")
+        systemProperty("test-no-pg-driver", "true")
+        systemProperty("test-no-pg-engine", "true")
+        systemProperty("test-no-mariadb-engine", "true")
+        systemProperty("test-no-aurora", "true")
+        systemProperty("test-no-multi-az-cluster", "true")
+        systemProperty("test-no-bg", "true")
+        systemProperty("test-no-traces-telemetry", "true")
+        systemProperty("test-no-metrics-telemetry", "true")
+    }
+}
+
 tasks.register<Test>("test-all-pg-aurora") {
     group = "verification"
-    filter.includeTestsMatching("integration.host.TestRunner.runPGTests")
+    filter.includeTestsMatching("integration.host.TestRunner.runPGAuroraTests")
     doFirst {
         systemProperty("test-no-docker", "true")
         systemProperty("test-no-performance", "true")
@@ -127,6 +161,76 @@ tasks.register<Test>("test-all-pg-aurora") {
         systemProperty("test-no-mariadb-engine", "true")
         systemProperty("test-no-multi-az-cluster", "true")
         systemProperty("test-no-multi-az-instance", "true")
+        systemProperty("test-no-bg", "true")
+        systemProperty("test-no-traces-telemetry", "true")
+        systemProperty("test-no-metrics-telemetry", "true")
+    }
+}
+
+tasks.register<Test>("test-all-pg-multi-az-cluster") {
+    group = "verification"
+    filter.includeTestsMatching("integration.host.TestRunner.runPGMultiAzClusterTests")
+    doFirst {
+        systemProperty("test-no-docker", "true")
+        systemProperty("test-no-performance", "true")
+        systemProperty("test-no-mysql-driver", "true")
+        systemProperty("test-no-mysql-engine", "true")
+        systemProperty("test-no-mariadb-driver", "true")
+        systemProperty("test-no-mariadb-engine", "true")
+        systemProperty("test-no-aurora", "true")
+        systemProperty("test-no-multi-az-instance", "true")
+        systemProperty("test-no-bg", "true")
+        systemProperty("test-no-traces-telemetry", "true")
+        systemProperty("test-no-metrics-telemetry", "true")
+    }
+}
+
+tasks.register<Test>("test-all-mysql-multi-az-cluster") {
+    group = "verification"
+    filter.includeTestsMatching("integration.host.TestRunner.runMySQLMultiAzClusterTests")
+    doFirst {
+        systemProperty("test-no-docker", "true")
+        systemProperty("test-no-performance", "true")
+        systemProperty("test-no-pg-driver", "true")
+        systemProperty("test-no-pg-engine", "true")
+        systemProperty("test-no-mariadb-engine", "true")
+        systemProperty("test-no-aurora", "true")
+        systemProperty("test-no-multi-az-instance", "true")
+        systemProperty("test-no-bg", "true")
+        systemProperty("test-no-traces-telemetry", "true")
+        systemProperty("test-no-metrics-telemetry", "true")
+    }
+}
+
+tasks.register<Test>("test-all-pg-multi-az-instance") {
+    group = "verification"
+    filter.includeTestsMatching("integration.host.TestRunner.runPGMultiAzInstanceTests")
+    doFirst {
+        systemProperty("test-no-docker", "true")
+        systemProperty("test-no-performance", "true")
+        systemProperty("test-no-mysql-driver", "true")
+        systemProperty("test-no-mysql-engine", "true")
+        systemProperty("test-no-mariadb-driver", "true")
+        systemProperty("test-no-mariadb-engine", "true")
+        systemProperty("test-no-aurora", "true")
+        systemProperty("test-no-multi-az-cluster", "true")
+        systemProperty("test-no-bg", "true")
+        systemProperty("test-no-traces-telemetry", "true")
+        systemProperty("test-no-metrics-telemetry", "true")
+    }
+}
+
+tasks.register<Test>("test-all-mysql-multi-az-instance") {
+    group = "verification"
+    filter.includeTestsMatching("integration.host.TestRunner.runMySQLMultiAzInstanceTests")
+    doFirst {
+        systemProperty("test-no-docker", "true")
+        systemProperty("test-no-performance", "true")
+        systemProperty("test-no-pg-driver", "true")
+        systemProperty("test-no-pg-engine", "true")
+        systemProperty("test-no-mariadb-engine", "true")
+        systemProperty("test-no-aurora", "true")
+        systemProperty("test-no-multi-az-cluster", "true")
         systemProperty("test-no-bg", "true")
         systemProperty("test-no-traces-telemetry", "true")
         systemProperty("test-no-metrics-telemetry", "true")

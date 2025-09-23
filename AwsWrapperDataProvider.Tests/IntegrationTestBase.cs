@@ -29,11 +29,25 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     protected static readonly DatabaseEngine Engine = TestEnvironment.Env.Info.Request.Engine;
     protected static readonly DatabaseEngineDeployment Deployment = TestEnvironment.Env.Info.Request.Deployment;
     protected static readonly TestProxyDatabaseInfo ProxyDatabaseInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!;
-    protected static readonly string ClusterEndpoint = TestEnvironment.Env.Info.DatabaseInfo.ClusterEndpoint;
     protected static readonly string ProxyClusterEndpoint = ProxyDatabaseInfo.ClusterEndpoint;
-    protected static readonly int Port = TestEnvironment.Env.Info.DatabaseInfo.ClusterEndpointPort;
     protected static readonly int ProxyPort = ProxyDatabaseInfo.ClusterEndpointPort;
     protected static readonly int NumberOfInstances = TestEnvironment.Env.Info.DatabaseInfo.Instances.Count;
+
+    protected static readonly string Endpoint = Deployment switch
+    {
+        DatabaseEngineDeployment.AURORA => TestEnvironment.Env.Info.DatabaseInfo.ClusterEndpoint,
+        DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER => TestEnvironment.Env.Info.DatabaseInfo.ClusterEndpoint,
+        DatabaseEngineDeployment.RDS_MULTI_AZ_INSTANCE => TestEnvironment.Env.Info.DatabaseInfo.Instances[0].Host,
+        _ => throw new InvalidOperationException($"Unsupported deployment {Deployment}"),
+    };
+
+    protected static readonly int Port = Deployment switch
+    {
+        DatabaseEngineDeployment.AURORA => TestEnvironment.Env.Info.DatabaseInfo.ClusterEndpointPort,
+        DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER => TestEnvironment.Env.Info.DatabaseInfo.ClusterEndpointPort,
+        DatabaseEngineDeployment.RDS_MULTI_AZ_INSTANCE => TestEnvironment.Env.Info.DatabaseInfo.Instances[0].Port,
+        _ => throw new InvalidOperationException($"Unsupported deployment {Deployment}"),
+    };
 
     protected virtual bool MakeSureFirstInstanceWriter => false;
 
@@ -42,6 +56,7 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         if (TestEnvironment.Env.Info.Request.Features.Contains(TestEnvironmentFeatures.NETWORK_OUTAGES_ENABLED))
         {
             await ProxyHelper.EnableAllConnectivityAsync();
+            await ProxyHelper.ClearAllLatencyAsync();
         }
 
         var deployment = TestEnvironment.Env.Info.Request.Deployment;
@@ -57,12 +72,17 @@ public abstract class IntegrationTestBase : IAsyncLifetime
                     await TestEnvironment.CheckClusterHealthAsync(this.MakeSureFirstInstanceWriter);
                     success = true;
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    Console.WriteLine($"Cluster {TestEnvironment.Env.Info.RdsDbName} is not healthy: {ex.Message}. Rebooting all instances and retrying...");
+
                     switch (deployment)
                     {
                         case DatabaseEngineDeployment.AURORA:
                             await TestEnvironment.RebootAllClusterInstancesAsync();
+                            break;
+                        case DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER:
+                            await TestEnvironment.RebootClusterAsync();
                             break;
                         default:
                             throw new InvalidOperationException($"Unsupported deployment {deployment}");

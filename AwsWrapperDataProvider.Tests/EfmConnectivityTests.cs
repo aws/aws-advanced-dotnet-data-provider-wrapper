@@ -15,6 +15,7 @@
 using System.Data;
 using AwsWrapperDataProvider.Driver.Plugins.Efm;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Tests.Container.Utils;
 using Microsoft.Extensions.Caching.Memory;
 using Npgsql;
 
@@ -22,6 +23,7 @@ namespace AwsWrapperDataProvider.Tests;
 
 public class EfmConnectivityTests
 {
+    private static readonly AuroraTestUtils AuroraUtils = AuroraTestUtils.GetUtility();
     private static readonly int TestCommandTimeoutSecs = 500;
 
     [Fact]
@@ -65,7 +67,7 @@ public class EfmConnectivityTests
     {
         try
         {
-            using AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
+            using var connection = new AwsWrapperConnection<NpgsqlConnection>(connectionString);
 
             Console.WriteLine("1. Opening initial connection...");
             connection.Open();
@@ -82,7 +84,7 @@ public class EfmConnectivityTests
                 host);
             Console.WriteLine($"   Monitor key: {monitorKey}");
 
-            using AwsWrapperCommand<NpgsqlCommand> command = connection.CreateCommand<NpgsqlCommand>();
+            using var command = connection.CreateCommand();
             command.CommandText = $"SELECT pg_sleep({TestCommandTimeoutSecs}), now() as query_time, inet_server_addr()::text as server_ip";
             command.CommandTimeout = TestCommandTimeoutSecs; // command won't time out before the monitoring catches a disconnection
 
@@ -168,19 +170,10 @@ public class EfmConnectivityTests
         }
     }
 
-    private static string GetConnectedHost(AwsWrapperConnection<NpgsqlConnection> connection, string initialHost)
+    private static string GetConnectedHost(IDbConnection connection, string initialHost)
     {
-        using var command = connection.CreateCommand<NpgsqlCommand>();
-        command.CommandText = "SELECT aurora_db_instance_identifier()::text as server_name;";
-
-        using var reader = command.ExecuteReader();
-        if (reader.Read() && !reader.IsDBNull("server_name"))
-        {
-            var hostName = reader.GetString("server_name");
-            string clusterInstanceTemplate = RdsUtils.GetRdsInstanceHostPattern(initialHost);
-            return clusterInstanceTemplate.Replace("?", hostName);
-        }
-
-        return initialHost;
+        string? hostName = AuroraUtils.QueryInstanceId(connection);
+        string clusterInstanceTemplate = RdsUtils.GetRdsInstanceHostPattern(initialHost);
+        return clusterInstanceTemplate.Replace("?", hostName);
     }
 }

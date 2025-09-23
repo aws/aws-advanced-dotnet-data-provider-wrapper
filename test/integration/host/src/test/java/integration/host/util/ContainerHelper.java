@@ -87,12 +87,12 @@ public class ContainerHelper {
     return exitCode;
   }
 
-  public void runTest(GenericContainer<?> container, String task)
+  public void runTest(GenericContainer<?> container, String task, String engineDeployment)
       throws IOException, InterruptedException {
-    runTest(container, task, null, null);
+    runTest(container, task, engineDeployment, null, null);
   }
 
-  public void runTest(GenericContainer<?> container, String task, String includeTags, String excludeTags)
+  public void runTest(GenericContainer<?> container, String task, String engineDeployment, String includeTags, String excludeTags)
       throws IOException, InterruptedException {
     System.out.println("==== Container console feed ==== >>>>");
     Consumer<OutputFrame> consumer = new ConsoleConsumer(true);
@@ -102,7 +102,7 @@ public class ContainerHelper {
     assertEquals(0, exitCode, "Dotnet build failed.");
 
     // For Entity Framework tests
-    if (task.contains("ef")) {
+    if (task.endsWith("ef")) {
         exitCode = execInContainer(container, consumer,
                 "dotnet", "ef", "migrations", "add", "InitialCreate_" + System.currentTimeMillis(), "--project", "AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests");
         assertEquals(0, exitCode, "Failed to generate Entity framework migration.");
@@ -113,7 +113,7 @@ public class ContainerHelper {
     }
 
     exitCode = execInContainer(container, consumer, "dotnet", "test", "--filter",
-            "Category=Integration&Database=" + task, "--no-build", "--logger:\"console;verbosity=detailed\"");
+            "Category=Integration&Database=" + task + "&Engine=" + engineDeployment, "--no-build", "--logger:\"console;verbosity=detailed\"");
 
     System.out.println("==== Container console feed ==== <<<<");
     assertEquals(0, exitCode, "Some tests failed.");
