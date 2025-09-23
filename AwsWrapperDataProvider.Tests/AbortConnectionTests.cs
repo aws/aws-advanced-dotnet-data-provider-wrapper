@@ -27,7 +27,7 @@ public class AbortConnectionTests : IntegrationTestBase
     [Trait("Database", "mysql")]
     public async Task MysqlWrapperCommandCancelTest()
     {
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ProxyClusterEndpoint, ProxyPort, Username, Password, DefaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName);
 
         using AwsWrapperConnection<MySqlConnection> connection = new(connectionString);
         connection.Open();
@@ -86,7 +86,7 @@ public class AbortConnectionTests : IntegrationTestBase
     [Trait("Database", "pg")]
     public async Task PgWrapperCommandCancelTest()
     {
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ProxyClusterEndpoint, ProxyPort, Username, Password, DefaultDbName);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, ClusterEndpoint, Port, Username, Password, DefaultDbName);
         using AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
         connection.Open();
         AwsWrapperCommand<NpgsqlCommand> command = connection.CreateCommand<NpgsqlCommand>();
