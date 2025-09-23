@@ -71,6 +71,13 @@ public class AuroraStaleDnsHelper
         HostRole connectionRole = this.pluginService.GetHostRole(connection);
         Logger.LogTrace("Current connection role: {role}", connectionRole);
 
+        foreach (var reader in this.GetReaders() ?? [])
+        {
+            using var readerConn = this.pluginService.OpenConnection(reader, props, null);
+            HostRole role = this.pluginService.GetHostRole(readerConn);
+            Logger.LogTrace("Current connection role: {role} for {host}", connectionRole, reader);
+        }
+
         this.pluginService.ForceRefreshHostList(connection);
         Logger.LogTrace(LoggerUtils.LogTopology(this.pluginService.AllHosts, null));
 
@@ -156,5 +163,10 @@ public class AuroraStaleDnsHelper
     private HostSpec? GetWriter()
     {
         return this.pluginService.AllHosts.FirstOrDefault(host => host.Role == HostRole.Writer);
+    }
+
+    private IList<HostSpec>? GetReaders()
+    {
+        return [.. this.pluginService.AllHosts.Where(host => host.Role != HostRole.Writer)];
     }
 }

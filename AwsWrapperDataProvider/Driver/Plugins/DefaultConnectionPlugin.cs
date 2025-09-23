@@ -74,13 +74,20 @@ public class DefaultConnectionPlugin(
         bool isInitialConnection)
     {
         // Create a new connection if it's not the initial connection or CurrentConnection is not null
-        DbConnection? conn = isInitialConnection && this.pluginService.CurrentConnection != null
-            ? this.pluginService.CurrentConnection
-            : connProvider.CreateDbConnection(
+        DbConnection? conn;
+        if (isInitialConnection && this.pluginService.CurrentConnection != null)
+        {
+            conn = this.pluginService.CurrentConnection;
+            Logger.LogTrace("Reusing existing connection {Type}@{Id}.", conn.GetType().FullName, RuntimeHelpers.GetHashCode(conn));
+        }
+        else
+        {
+            conn = connProvider.CreateDbConnection(
                 this.pluginService.Dialect,
                 this.pluginService.TargetConnectionDialect,
                 hostSpec,
                 props);
+        }
 
         // Update connection string that may have been modified by other plugins
         conn.ConnectionString = this.pluginService.TargetConnectionDialect.PrepareConnectionString(this.pluginService.Dialect, hostSpec, props);
