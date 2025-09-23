@@ -66,12 +66,9 @@ public class PluginService : IPluginService, IHostListProviderService
             {
                 this.transaction?.Rollback();
             }
-            catch (Exception)
-            {
-                this.transaction?.Dispose();
-            }
             finally
             {
+                this.transaction?.Dispose();
                 this.transaction = value;
             }
         }
