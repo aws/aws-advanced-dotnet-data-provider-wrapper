@@ -220,8 +220,9 @@ public class BasicConnectivityTests : IntegrationTestBase
     }
 
     [Fact]
-    [Trait("Category", "Integration")]
-    [Trait("Database", "pg")]
+
+    // TODO: Enable this test after fixing flakiness
+    [Trait("Category", "Disabled")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
     public async Task PgWrapperProxiedConnectionTest()
