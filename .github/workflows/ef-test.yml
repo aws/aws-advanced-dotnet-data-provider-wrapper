@@ -39,7 +39,7 @@ jobs:
           output-credentials: true
       - name: Run Integration Tests
         run: |
-          cd test/integration/host && ./gradlew --no-parallel --no-daemon test-all-${{ matrix.dbEngine }}-aurora-ef --info
+          cd test/integration/host && ./gradlew --no-parallel --no-daemon test-all-${{ matrix.dbEngine }}-${{ matrix.deployment }}-ef --info
         env:
           RDS_DB_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
           AWS_ACCESS_KEY_ID: ${{ steps.creds.outputs.aws-access-key-id }}
