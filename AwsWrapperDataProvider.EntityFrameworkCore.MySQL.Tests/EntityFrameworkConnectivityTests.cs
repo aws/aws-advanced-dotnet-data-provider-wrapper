@@ -237,7 +237,6 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql-ef")]
     [Trait("Engine", "aurora")]
-    [Trait("Engine", "multi-az-cluster")]
     public async Task EFTempFailureWithFailoverPluginTest()
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");

@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using System.Data;
-using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Logging;
 
