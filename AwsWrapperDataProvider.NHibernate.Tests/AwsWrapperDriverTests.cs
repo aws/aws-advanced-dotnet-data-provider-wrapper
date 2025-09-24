@@ -29,6 +29,32 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
     {
         protected override bool MakeSureFirstInstanceWriter => true;
 
+        private void CreateAndClearPersonsTable(ISession session, bool isPostgreSQL = false)
+        {
+            if (isPostgreSQL)
+            {
+                // PostgreSQL syntax
+                session.CreateSQLQuery(@"
+                    CREATE TABLE IF NOT EXISTS persons (
+                        Id SERIAL PRIMARY KEY,
+                        FirstName VARCHAR(255),
+                        LastName VARCHAR(255)
+                    )").ExecuteUpdate();
+            }
+            else
+            {
+                // MySQL syntax
+                session.CreateSQLQuery(@"
+                    CREATE TABLE IF NOT EXISTS persons (
+                        Id INT AUTO_INCREMENT PRIMARY KEY,
+                        FirstName VARCHAR(255),
+                        LastName VARCHAR(255)
+                    )").ExecuteUpdate();
+            }
+            
+            session.CreateSQLQuery("TRUNCATE TABLE persons").ExecuteUpdate();
+        }
+
         [Fact]
         [Trait("Category", "Integration")]
         [Trait("Database", "mysql-nh")]
@@ -53,7 +79,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
 
             using (var session = sessionFactory.OpenSession())
             {
-                session.CreateSQLQuery("TRUNCATE TABLE persons").ExecuteUpdate();
+                CreateAndClearPersonsTable(session);
             }
 
             using (var session = sessionFactory.OpenSession())
@@ -99,7 +125,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
 
             using (var session = sessionFactory.OpenSession())
             {
-                session.CreateSQLQuery("TRUNCATE TABLE persons").ExecuteUpdate();
+                CreateAndClearPersonsTable(session, isPostgreSQL: true);
             }
 
             using (var session = sessionFactory.OpenSession())
@@ -151,7 +177,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
 
             using (var session = sessionFactory.OpenSession())
             {
-                session.CreateSQLQuery("TRUNCATE TABLE persons").ExecuteUpdate();
+                CreateAndClearPersonsTable(session);
             }
 
             using (var session = sessionFactory.OpenSession())
@@ -221,7 +247,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
 
             using (var session = sessionFactory.OpenSession())
             {
-                session.CreateSQLQuery("TRUNCATE TABLE persons").ExecuteUpdate();
+                CreateAndClearPersonsTable(session);
             }
 
             using (var session = sessionFactory.OpenSession())
@@ -313,7 +339,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
 
             using (var session = sessionFactory.OpenSession())
             {
-                session.CreateSQLQuery("TRUNCATE TABLE persons").ExecuteUpdate();
+                CreateAndClearPersonsTable(session);
             }
 
             // Add initial data
