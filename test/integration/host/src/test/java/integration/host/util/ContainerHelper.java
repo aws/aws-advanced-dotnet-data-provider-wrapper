@@ -227,6 +227,7 @@ public class ContainerHelper {
         .withFileSystemBind("../../../AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL.Tests", "/app/AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL.Tests", BindMode.READ_WRITE)
         .withFileSystemBind("../../../AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL", "/app/AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL", BindMode.READ_WRITE)
         .withFileSystemBind("../../../AwsWrapperDataProvider", "/app/AwsWrapperDataProvider", BindMode.READ_WRITE)
+        .withFileSystemBind("../../../AwsWrapperDataProvider.AwsAuthenticationPluginProvider", "/app/AwsWrapperDataProvider.AwsAuthenticationPluginProvider", BindMode.READ_WRITE)
         .withFileSystemBind("../../../AwsWrapperDataProvider.Tests", "/app/AwsWrapperDataProvider.Tests", BindMode.READ_WRITE)
         .withFileSystemBind("../gradle", "/app/gradle", BindMode.READ_WRITE)
         .withFileSystemBind("../../../test/integration/container", "/app/test/integration/container", BindMode.READ_WRITE)

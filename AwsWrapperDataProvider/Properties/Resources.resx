@@ -1,129 +1,135 @@
 <?xml version="1.0" encoding="utf-8"?>
 <root>
-  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
-    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
-    <xsd:element name="root" msdata:IsDataSet="true">
-      <xsd:complexType>
-        <xsd:choice maxOccurs="unbounded">
-          <xsd:element name="metadata">
+    <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+        <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+        <xsd:element name="root" msdata:IsDataSet="true">
             <xsd:complexType>
-              <xsd:sequence>
-                <xsd:element name="value" type="xsd:string" minOccurs="0" />
-              </xsd:sequence>
-              <xsd:attribute name="name" use="required" type="xsd:string" />
-              <xsd:attribute name="type" type="xsd:string" />
-              <xsd:attribute name="mimetype" type="xsd:string" />
-              <xsd:attribute ref="xml:space" />
+                <xsd:choice maxOccurs="unbounded">
+                    <xsd:element name="metadata">
+                        <xsd:complexType>
+                            <xsd:sequence>
+                                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+                            </xsd:sequence>
+                            <xsd:attribute name="name" use="required" type="xsd:string" />
+                            <xsd:attribute name="type" type="xsd:string" />
+                            <xsd:attribute name="mimetype" type="xsd:string" />
+                            <xsd:attribute ref="xml:space" />
+                        </xsd:complexType>
+                    </xsd:element>
+                    <xsd:element name="assembly">
+                        <xsd:complexType>
+                            <xsd:attribute name="alias" type="xsd:string" />
+                            <xsd:attribute name="name" type="xsd:string" />
+                        </xsd:complexType>
+                    </xsd:element>
+                    <xsd:element name="data">
+                        <xsd:complexType>
+                            <xsd:sequence>
+                                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+                            </xsd:sequence>
+                            <xsd:attribute name="name" use="required" type="xsd:string" />
+                            <xsd:attribute name="type" type="xsd:string" />
+                            <xsd:attribute name="mimetype" type="xsd:string" />
+                            <xsd:attribute ref="xml:space" />
+                        </xsd:complexType>
+                    </xsd:element>
+                    <xsd:element name="resheader">
+                        <xsd:complexType>
+                            <xsd:sequence>
+                                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                            </xsd:sequence>
+                            <xsd:attribute name="name" use="required" type="xsd:string" />
+                        </xsd:complexType>
+                    </xsd:element>
+                </xsd:choice>
             </xsd:complexType>
-          </xsd:element>
-          <xsd:element name="assembly">
-            <xsd:complexType>
-              <xsd:attribute name="alias" type="xsd:string" />
-              <xsd:attribute name="name" type="xsd:string" />
-            </xsd:complexType>
-          </xsd:element>
-          <xsd:element name="data">
-            <xsd:complexType>
-              <xsd:sequence>
-                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
-                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
-              </xsd:sequence>
-              <xsd:attribute name="name" use="required" type="xsd:string" />
-              <xsd:attribute name="type" type="xsd:string" />
-              <xsd:attribute name="mimetype" type="xsd:string" />
-              <xsd:attribute ref="xml:space" />
-            </xsd:complexType>
-          </xsd:element>
-          <xsd:element name="resheader">
-            <xsd:complexType>
-              <xsd:sequence>
-                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
-              </xsd:sequence>
-              <xsd:attribute name="name" use="required" type="xsd:string" />
-            </xsd:complexType>
-          </xsd:element>
-        </xsd:choice>
-      </xsd:complexType>
-    </xsd:element>
-  </xsd:schema>
-  <resheader name="resmimetype">
-    <value>text/microsoft-resx</value>
-  </resheader>
-  <resheader name="version">
-    <value>2.0</value>
-  </resheader>
-  <resheader name="reader">
-    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </resheader>
-  <resheader name="writer">
-    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </resheader>
-  
-  <!-- Error messages -->
-  <data name="Error_InvalidOperation" xml:space="preserve">
+        </xsd:element>
+    </xsd:schema>
+    <resheader name="resmimetype">
+        <value>text/microsoft-resx</value>
+    </resheader>
+    <resheader name="version">
+        <value>2.0</value>
+    </resheader>
+    <resheader name="reader">
+        <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+    <resheader name="writer">
+        <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+
+    <!-- Error messages -->
+    <data name="Error_InvalidOperation" xml:space="preserve">
     <value>Invalid operation.</value>
   </data>
-  <data name="Error_ConnectionAlreadyOpen" xml:space="preserve">
+    <data name="Error_ConnectionAlreadyOpen" xml:space="preserve">
     <value>Connection is already open.</value>
   </data>
-  <data name="Error_NotAwsWrapperConnection" xml:space="preserve">
+    <data name="Error_NotAwsWrapperConnection" xml:space="preserve">
     <value>Provided connection is not of type AwsWrapperConnection.</value>
   </data>
-  <data name="Error_NotImplementedDbCommand" xml:space="preserve">
+    <data name="Error_NotImplementedDbCommand" xml:space="preserve">
     <value>Provided type doesn't implement IDbCommand.</value>
   </data>
-  <data name="Error_CantLoadTargetConnectionType" xml:space="preserve">
+    <data name="Error_CantLoadTargetConnectionType" xml:space="preserve">
     <value>Can't load target connection type {0}</value>
   </data>
-  <data name="Error_ProcessingAdoNetCall" xml:space="preserve">
+    <data name="Error_ProcessingAdoNetCall" xml:space="preserve">
     <value>Error processing this ADO.NET call.</value>
   </data>
-  <data name="Error_UnknownPluginCode" xml:space="preserve">
+    <data name="Error_UnknownPluginCode" xml:space="preserve">
     <value>Unknown plugin code: {0}</value>
   </data>
-  <data name="Error_UnableToLoadPlugin" xml:space="preserve">
+    <data name="Error_UnableToLoadPlugin" xml:space="preserve">
     <value>Unable to load plugin: {0}</value>
   </data>
-  <data name="Error_UnableToCreateConnection" xml:space="preserve">
+    <data name="Error_UnableToCreateConnection" xml:space="preserve">
     <value>Unable to create connection.</value>
   </data>
-  <data name="Error_ConnectionStringInvalid" xml:space="preserve">
+    <data name="Error_UnableToRetrieveAwsPluginType" xml:space="preserve">
+    <value>Unable to retrieve Aws plugin type: {0}</value>
+    </data>
+    <data name="Error_UnableToLoadAwsPluginFromAssembly" xml:space="preserve">
+    <value>Unable to load Aws plugin from assembly: {0}</value>
+    </data>
+    <data name="Error_ConnectionStringInvalid" xml:space="preserve">
     <value>Connection string is invalid.</value>
   </data>
-  <data name="Error_ConnectionStringHostListProviderNoSupport" xml:space="preserve">
+    <data name="Error_ConnectionStringHostListProviderNoSupport" xml:space="preserve">
     <value>ConnectionStringHostListProvider does not support {0}.</value>
   </data>
-  <data name="Error_ConnectionUrlMissing" xml:space="preserve">
+    <data name="Error_ConnectionUrlMissing" xml:space="preserve">
     <value>Connection url is missing.</value>
   </data>
-  <data name="Error_HostCannotBeNullOrEmpty" xml:space="preserve">
+    <data name="Error_HostCannotBeNullOrEmpty" xml:space="preserve">
     <value>Host cannot be null or empty</value>
   </data>
-  <data name="Error_FailedToInstantiateCustomDialectType" xml:space="preserve">
+    <data name="Error_FailedToInstantiateCustomDialectType" xml:space="preserve">
     <value>Failed to instantiate custom dialect type '{0}'</value>
   </data>
-  <data name="Error_NoDialectFoundForConnectionType" xml:space="preserve">
+    <data name="Error_NoDialectFoundForConnectionType" xml:space="preserve">
     <value>No dialect found for connection type {0}</value>
   </data>
-  <data name="Error_FailedToInstantiateDialectType" xml:space="preserve">
+    <data name="Error_FailedToInstantiateDialectType" xml:space="preserve">
     <value>Failed to instantiate dialect type {0}</value>
   </data>
-  <data name="Error_InvalidDialectType" xml:space="preserve">
+    <data name="Error_InvalidDialectType" xml:space="preserve">
     <value>Invalid dialect type provided.</value>
   </data>
-  <data name="Error_UnableToFindValidDialectType" xml:space="preserve">
+    <data name="Error_UnableToFindValidDialectType" xml:space="preserve">
     <value>Unable to find valid dialect type for connection.</value>
   </data>
-  <data name="Error_TargetConnectionTypeNotFound" xml:space="preserve">
+    <data name="Error_TargetConnectionTypeNotFound" xml:space="preserve">
     <value>Target connection type not found.</value>
   </data>
-  <data name="ClusterTopologyMonitor.StartMonitoringThread" xml:space="preserve">
+    <data name="ClusterTopologyMonitor.StartMonitoringThread" xml:space="preserve">
       <value>Start cluster topology monitoring thread for {0}.</value>
   </data>
-  <data name="ClusterTopologyMonitor.StopMonitoringThread" xml:space="preserve">
+    <data name="ClusterTopologyMonitor.StopMonitoringThread" xml:space="preserve">
       <value>Stop cluster topology monitoring thread for {0}.</value>
   </data>
-  <data name="ClusterTopologyMonitor.ExceptionDuringMonitoringStop" xml:space="preserve">
+    <data name="ClusterTopologyMonitor.ExceptionDuringMonitoringStop" xml:space="preserve">
       <value>Stopping cluster topology monitoring after unhandled exception was thrown in monitoring thread for node {0}.</value>
     </data>
     <data name="ClusterTopologyMonitor.InvalidQuery" xml:space="preserve">
