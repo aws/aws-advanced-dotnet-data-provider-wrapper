@@ -61,21 +61,6 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             session.CreateSQLQuery("TRUNCATE TABLE persons").ExecuteUpdate();
         }
 
-        private string GetConnectionString(int connectTimeout = 30, int commandTimeout = 30)
-        {
-            var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName, connectTimeout, commandTimeout);
-
-            // NHibernate PostgreSQL doesn't support 'timeout' parameter, filter it out
-            if (Engine == DatabaseEngine.PG && connectionString.Contains("timeout="))
-            {
-                var parts = connectionString.Split(';');
-                var filteredParts = parts.Where(part => !part.Trim().StartsWith("timeout=", StringComparison.OrdinalIgnoreCase));
-                connectionString = string.Join(";", filteredParts);
-            }
-
-            return connectionString;
-        }
-
         private Configuration GetNHibernateConfiguration(string connectionString)
         {
             var properties = new Dictionary<string, string>
@@ -109,7 +94,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
         [Trait("Engine", "aurora")]
         public void NHibernateAddTest()
         {
-            var connectionString = GetConnectionString();
+            var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName);
             var wrapperConnectionString = connectionString + ";Plugins=failover;FailoverMode=StrictWriter;";
 
             var cfg = this.GetNHibernateConfiguration(wrapperConnectionString);
@@ -149,7 +134,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
 
             string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
-            var connectionString = GetConnectionString(connectTimeout: 2, commandTimeout: 10);
+            var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName);
             var wrapperConnectionString = connectionString
                 + ";Plugins=failover;"
                 + "EnableConnectFailover=true;"
@@ -221,7 +206,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
 
             string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
-            var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName, 2, 10);
+            var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName);
             var wrapperConnectionString = connectionString
                 + ";Plugins=failover;"
                 + "EnableConnectFailover=true;"
