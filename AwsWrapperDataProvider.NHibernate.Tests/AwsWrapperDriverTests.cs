@@ -65,7 +65,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
         {
             var properties = new Dictionary<string, string>
             {
-                { "connection.connection_string", connectionString }
+                { "connection.connection_string", connectionString },
             };
 
             var cfg = new Configuration().AddAssembly(Assembly.GetExecutingAssembly());
@@ -97,12 +97,12 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName);
             var wrapperConnectionString = connectionString + ";Plugins=failover;FailoverMode=StrictWriter;";
 
-            var cfg = GetNHibernateConfiguration(wrapperConnectionString);
+            var cfg = this.GetNHibernateConfiguration(wrapperConnectionString);
             var sessionFactory = cfg.BuildSessionFactory();
 
             using (var session = sessionFactory.OpenSession())
             {
-                CreateAndClearPersonsTable(session);
+                this.CreateAndClearPersonsTable(session);
             }
 
             using (var session = sessionFactory.OpenSession())
@@ -156,7 +156,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
 
             using (var session = sessionFactory.OpenSession())
             {
-                CreateAndClearPersonsTable(session);
+                this.CreateAndClearPersonsTable(session);
             }
 
             using (var session = sessionFactory.OpenSession())
@@ -228,7 +228,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
 
             using (var session = sessionFactory.OpenSession())
             {
-                CreateAndClearPersonsTable(session);
+                this.CreateAndClearPersonsTable(session);
             }
 
             using (var session = sessionFactory.OpenSession())
@@ -325,7 +325,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
 
             using (var session = sessionFactory.OpenSession())
             {
-                CreateAndClearPersonsTable(session);
+                this.CreateAndClearPersonsTable(session);
             }
 
             // Add initial data
