@@ -40,8 +40,14 @@ namespace AwsWrapperDataProvider.NHibernate
             ? provider.BatcherFactoryClass
             : typeof(GenericBatchingBatcherFactory);
 
-        public override DbConnection CreateConnection() =>
-            new AwsWrapperConnection(this._targetDriver?.CreateConnection() ?? throw new InvalidOperationException("Target driver not set"));
+        public override DbConnection CreateConnection()
+        {
+            var targetConnection = this._targetDriver?.CreateConnection() ?? throw new InvalidOperationException("Target driver not set");
+
+            // Create AwsWrapperConnection with the target connection type and empty connection string
+            // NHibernate will set the connection string later via the ConnectionString property
+            return new AwsWrapperConnection(targetConnection.GetType(), string.Empty, null);
+        }
 
         public override DbCommand CreateCommand() =>
             new AwsWrapperCommand(this._targetDriver?.CreateCommand() ?? throw new InvalidOperationException("Target driver not set"), null);
