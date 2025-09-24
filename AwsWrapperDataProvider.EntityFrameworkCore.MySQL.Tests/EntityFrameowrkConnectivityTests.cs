@@ -202,13 +202,15 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
                     }
 
                     var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-                    await AuroraUtils.CrashInstance(currentWriter, tcs);
+                    var crashInstanceTask = AuroraUtils.CrashInstance(currentWriter, tcs);
+                    await tcs.Task;
 
                     // Query to trigger failover
                     var anyUser = await db.Persons.AnyAsync(cancellationToken: TestContext.Current.CancellationToken);
 
                     db.Add(john);
                     db.SaveChanges();
+                    await crashInstanceTask;
                 }
                 finally
                 {
