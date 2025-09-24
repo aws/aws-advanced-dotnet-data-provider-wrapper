@@ -228,6 +228,8 @@ public class ContainerHelper {
         .withFileSystemBind("../../../AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL", "/app/AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL", BindMode.READ_WRITE)
         .withFileSystemBind("../../../AwsWrapperDataProvider", "/app/AwsWrapperDataProvider", BindMode.READ_WRITE)
         .withFileSystemBind("../../../AwsWrapperDataProvider.Tests", "/app/AwsWrapperDataProvider.Tests", BindMode.READ_WRITE)
+        .withFileSystemBind("../../../AwsWrapperDataProvider.NHibernate", "/app/AwsWrapperDataProvider.NHibernate", BindMode.READ_WRITE)
+        .withFileSystemBind("../../../AwsWrapperDataProvider.NHibernate.Tests", "/app/AwsWrapperDataProvider.NHibernate.Tests", BindMode.READ_WRITE)
         .withFileSystemBind("../gradle", "/app/gradle", BindMode.READ_WRITE)
         .withFileSystemBind("../../../test/integration/container", "/app/test/integration/container", BindMode.READ_WRITE)
         .withPrivilegedMode(true) // it's needed to control Linux core settings like TcpKeepAlive
