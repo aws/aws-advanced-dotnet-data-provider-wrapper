@@ -140,17 +140,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                 + "EnableConnectFailover=true;"
                 + "FailoverMode=StrictWriter;";
 
-            var properties = new Dictionary<string, string>
-            {
-                { "connection.connection_string", wrapperConnectionString },
-                { "dialect", "NHibernate.Dialect.MySQLDialect" },
-            };
-
-            var cfg = new Configuration()
-                .AddAssembly(Assembly.GetExecutingAssembly())
-                .DataBaseIntegration(c => c.UseAwsWrapperDriver<MySqlConnectorDriver>())
-                .AddProperties(properties);
-
+            var cfg = this.GetNHibernateConfiguration(wrapperConnectionString);
             var sessionFactory = cfg.BuildSessionFactory();
 
             using (var session = sessionFactory.OpenSession())
@@ -211,17 +201,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                 + "EnableConnectFailover=true;"
                 + "FailoverMode=StrictWriter;";
 
-            var properties = new Dictionary<string, string>
-            {
-                { "connection.connection_string", wrapperConnectionString },
-                { "dialect", "NHibernate.Dialect.MySQLDialect" },
-            };
-
-            var cfg = new Configuration()
-                .AddAssembly(Assembly.GetExecutingAssembly())
-                .DataBaseIntegration(c => c.UseAwsWrapperDriver<MySqlConnectorDriver>())
-                .AddProperties(properties);
-
+            var cfg = this.GetNHibernateConfiguration(wrapperConnectionString);
             var sessionFactory = cfg.BuildSessionFactory();
 
             using (var session = sessionFactory.OpenSession())
@@ -307,16 +287,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                 + "EnableConnectFailover=true;"
                 + "FailoverMode=StrictWriter;";
 
-            var properties = new Dictionary<string, string>
-            {
-                { "connection.connection_string", wrapperConnectionString },
-                { "dialect", "NHibernate.Dialect.MySQLDialect" },
-            };
-
-            var cfg = new Configuration()
-                .AddAssembly(Assembly.GetExecutingAssembly())
-                .DataBaseIntegration(c => c.UseAwsWrapperDriver<MySqlConnectorDriver>())
-                .AddProperties(properties);
+            var cfg = this.GetNHibernateConfiguration(wrapperConnectionString);
 
             var sessionFactory = cfg.BuildSessionFactory();
 
