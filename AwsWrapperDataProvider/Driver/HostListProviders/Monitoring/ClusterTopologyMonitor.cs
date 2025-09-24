@@ -405,7 +405,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                             if (!string.IsNullOrEmpty(nodeId))
                             {
                                 this.writerHostSpec = this.CreateHost(nodeId, nodeId, true, 0, null);
-                                LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, string.Format(Resources.ClusterTopologyMonitor_WriterMonitoringConnection, this.writerHostSpec.Host));
+                                LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, string.Format(Resources.ClusterTopologyMonitor_WriterMonitoringConnection, this.writerHostSpec));
                             }
                         }
                     }
@@ -437,6 +437,12 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         }
 
         IList<HostSpec>? hosts = await this.FetchTopologyAndUpdateCacheAsync(this.monitoringConnection);
+
+        // Update the real host for multiaz cluster
+        Logger.LogTrace("Writer host before update: {writerHostSpec}", this.writerHostSpec);
+        this.writerHostSpec = hosts?.FirstOrDefault(h => h.HostId == this.writerHostSpec!.HostId) ?? this.writerHostSpec;
+        Logger.LogTrace("Writer host after update: {writerHostSpec}", this.writerHostSpec);
+
         if (writerVerifiedByThisThread)
         {
             // We verify the writer on initial connection and on failover, but we only want to ignore new topology
