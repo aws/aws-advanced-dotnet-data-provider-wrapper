@@ -21,6 +21,7 @@ using NHibernate.Cfg;
 using NHibernate.Criterion;
 using NHibernate.Driver;
 using NHibernate.Driver.MySqlConnector;
+using NHibernate.Exceptions;
 
 [assembly: CollectionBehavior(DisableTestParallelization = true)]
 
