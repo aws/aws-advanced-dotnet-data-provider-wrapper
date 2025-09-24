@@ -34,7 +34,9 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
         {
             if (isPostgreSQL)
             {
-                // PostgreSQL syntax
+                // PostgreSQL syntax - create sequence first
+                session.CreateSQLQuery("CREATE SEQUENCE IF NOT EXISTS hibernate_sequence START 1").ExecuteUpdate();
+                
                 session.CreateSQLQuery(@"
                     CREATE TABLE IF NOT EXISTS persons (
                         Id SERIAL PRIMARY KEY,
@@ -63,7 +65,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
         public void NHibernateMySqlAddTest()
         {
             var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName);
-            var wrapperConnectionString = connectionString + ";Plugins=failover;";
+            var wrapperConnectionString = connectionString + ";Plugins=failover;FailoverMode=StrictWriter;";
 
             var properties = new Dictionary<string, string>
             {
@@ -109,7 +111,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
         public void NHibernatePostgreSqlAddTest()
         {
             var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName);
-            var wrapperConnectionString = connectionString + ";Plugins=failover;";
+            var wrapperConnectionString = connectionString + ";Plugins=failover;FailoverMode=StrictWriter;";
 
             var properties = new Dictionary<string, string>
             {
@@ -161,6 +163,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             var wrapperConnectionString = connectionString
                 + ";Plugins=failover;"
                 + "EnableConnectFailover=true;"
+                + "FailoverMode=StrictWriter;"
                 + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
 
             var properties = new Dictionary<string, string>
@@ -231,6 +234,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             var wrapperConnectionString = connectionString
                 + ";Plugins=failover;"
                 + "EnableConnectFailover=true;"
+                + "FailoverMode=StrictWriter;"
                 + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
 
             var properties = new Dictionary<string, string>
@@ -323,6 +327,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             var wrapperConnectionString = connectionString
                 + ";Plugins=failover;"
                 + "EnableConnectFailover=true;"
+                + "FailoverMode=StrictWriter;"
                 + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
 
             var properties = new Dictionary<string, string>
