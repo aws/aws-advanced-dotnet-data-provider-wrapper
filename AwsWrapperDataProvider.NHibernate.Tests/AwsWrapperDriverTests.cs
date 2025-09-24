@@ -140,8 +140,6 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                 + "EnableConnectFailover=true;"
                 + "FailoverMode=StrictWriter;"
                 + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
-
-
             var cfg = this.GetNHibernateConfiguration(wrapperConnectionString);
             var sessionFactory = cfg.BuildSessionFactory();
 
@@ -203,8 +201,6 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                 + "EnableConnectFailover=true;"
                 + "FailoverMode=StrictWriter;"
                 + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
-
-
             var cfg = this.GetNHibernateConfiguration(wrapperConnectionString);
             var sessionFactory = cfg.BuildSessionFactory();
 
@@ -292,8 +288,6 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                 + "EnableConnectFailover=true;"
                 + "FailoverMode=StrictWriter;"
                 + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
-
-
             var cfg = this.GetNHibernateConfiguration(wrapperConnectionString);
 
             var sessionFactory = cfg.BuildSessionFactory();

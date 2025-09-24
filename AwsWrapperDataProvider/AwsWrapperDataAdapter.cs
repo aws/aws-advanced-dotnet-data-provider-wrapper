@@ -120,7 +120,7 @@ public class AwsWrapperDataAdapter : DbDataAdapter
     public override int Update(DataSet dataSet)
     {
         return WrapperUtils.ExecuteWithPlugins<int>(
-            this.connectionPluginManager,
+            this.connectionPluginManager!,
             this.targetDataAdapter,
             "DbDataAdapter.Update",
             () => this.targetDataAdapter.Update(dataSet));
@@ -129,7 +129,7 @@ public class AwsWrapperDataAdapter : DbDataAdapter
     public new int Update(DataRow[] dataRows)
     {
         return WrapperUtils.ExecuteWithPlugins<int>(
-            this.connectionPluginManager,
+            this.connectionPluginManager!,
             this.targetDataAdapter,
             "DbDataAdapter.Update",
             () => this.targetDataAdapter.Update(dataRows));
@@ -138,7 +138,7 @@ public class AwsWrapperDataAdapter : DbDataAdapter
     public new int Update(DataTable dataTable)
     {
         return WrapperUtils.ExecuteWithPlugins<int>(
-            this.connectionPluginManager,
+            this.connectionPluginManager!,
             this.targetDataAdapter,
             "DbDataAdapter.Update",
             () => this.targetDataAdapter.Update(dataTable));
@@ -147,7 +147,7 @@ public class AwsWrapperDataAdapter : DbDataAdapter
     public new int Update(DataSet dataSet, string srcTable)
     {
         return WrapperUtils.ExecuteWithPlugins<int>(
-            this.connectionPluginManager,
+            this.connectionPluginManager!,
             this.targetDataAdapter,
             "DbDataAdapter.Update",
             () => this.targetDataAdapter.Update(dataSet, srcTable));
@@ -156,7 +156,7 @@ public class AwsWrapperDataAdapter : DbDataAdapter
     protected override int Fill(DataSet dataSet, int startRecord, int maxRecords, string srcTable, IDbCommand command, CommandBehavior behavior)
     {
         return WrapperUtils.ExecuteWithPlugins(
-            this.connectionPluginManager,
+            this.connectionPluginManager!,
             this.targetDataAdapter,
             "DbDataAdapter.Fill",
             () => this.targetDataAdapter.Fill(dataSet, startRecord, maxRecords, srcTable));
@@ -165,7 +165,7 @@ public class AwsWrapperDataAdapter : DbDataAdapter
     protected override int Fill(DataTable[] dataTables, int startRecord, int maxRecords, IDbCommand command, CommandBehavior behavior)
     {
         return WrapperUtils.ExecuteWithPlugins(
-            this.connectionPluginManager,
+            this.connectionPluginManager!,
             this.targetDataAdapter,
             "DbDataAdapter.Fill",
             () => this.targetDataAdapter.Fill(startRecord, maxRecords, dataTables));
@@ -174,7 +174,7 @@ public class AwsWrapperDataAdapter : DbDataAdapter
     protected override int Fill(DataTable dataTable, IDbCommand command, CommandBehavior behavior)
     {
         return WrapperUtils.ExecuteWithPlugins(
-            this.connectionPluginManager,
+            this.connectionPluginManager!,
             this.targetDataAdapter,
             "DbDataAdapter.Fill",
             () => this.targetDataAdapter.Fill(dataTable));
@@ -183,7 +183,7 @@ public class AwsWrapperDataAdapter : DbDataAdapter
     protected override DataTable[] FillSchema(DataSet dataSet, SchemaType schemaType, IDbCommand command, string srcTable, CommandBehavior behavior)
     {
         return WrapperUtils.ExecuteWithPlugins<DataTable[]>(
-            this.connectionPluginManager,
+            this.connectionPluginManager!,
             this.targetDataAdapter,
             "DbDataAdapter.FillSchema",
             () => this.targetDataAdapter.FillSchema(dataSet, schemaType, srcTable));
@@ -192,7 +192,7 @@ public class AwsWrapperDataAdapter : DbDataAdapter
     protected override DataTable? FillSchema(DataTable dataTable, SchemaType schemaType, IDbCommand command, CommandBehavior behavior)
     {
         return WrapperUtils.ExecuteWithPlugins<DataTable?>(
-            this.connectionPluginManager,
+            this.connectionPluginManager!,
             this.targetDataAdapter,
             "DbDataAdapter.FillSchema",
             () => this.targetDataAdapter.FillSchema(dataTable, schemaType));
@@ -201,7 +201,7 @@ public class AwsWrapperDataAdapter : DbDataAdapter
     protected override int Update(DataRow[] dataRows, DataTableMapping tableMapping)
     {
         return WrapperUtils.ExecuteWithPlugins<int>(
-            this.connectionPluginManager,
+            this.connectionPluginManager!,
             this.targetDataAdapter,
             "DbDataAdapter.Update",
             () => this.targetDataAdapter.Update(dataRows));
