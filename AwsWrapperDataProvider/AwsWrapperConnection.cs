@@ -37,31 +37,44 @@ public class AwsWrapperConnection : DbConnection
 {
     private static readonly ILogger<AwsWrapperConnection> Logger = LoggerUtils.GetLogger<AwsWrapperConnection>();
 
-    protected readonly IPluginService pluginService;
-    private readonly IHostListProviderService hostListProviderService;
-    private Type targetType;
-    private string connectionString;
+    protected IPluginService? pluginService;
+    private IHostListProviderService? hostListProviderService;
+    private Type? targetType;
+    private string? connectionString;
     private string? database;
 
-    internal ConnectionPluginManager PluginManager { get; }
+    private bool deferredInitialization = false;
 
-    internal Dictionary<string, string> ConnectionProperties { get; private set; }
+    internal ConnectionPluginManager? PluginManager { get; private set; }
+
+    internal Dictionary<string, string>? ConnectionProperties { get; private set; }
 
     internal DbConnection? TargetDbConnection => this.pluginService.CurrentConnection;
 
     [AllowNull]
     public override string ConnectionString
     {
-        get => this.pluginService.CurrentConnection?.ConnectionString ?? this.connectionString ?? string.Empty;
+        get => this.pluginService?.CurrentConnection?.ConnectionString ?? this.connectionString ?? string.Empty;
         set
         {
             this.connectionString = value ?? string.Empty;
-            this.ConnectionProperties = ConnectionPropertiesUtils.ParseConnectionStringParameters(this.connectionString);
-            this.targetType = this.GetTargetType(this.ConnectionProperties);
 
-            if (this.pluginService.CurrentConnection != null)
+            if (this.deferredInitialization && !string.IsNullOrEmpty(this.connectionString))
             {
-                this.pluginService.CurrentConnection.ConnectionString = value;
+                // Perform deferred initialization
+                this.InitializeConnection(this.targetType, null);
+                this.deferredInitialization = false;
+            }
+            else if (!this.deferredInitialization)
+            {
+                // Normal connection string update
+                this.ConnectionProperties = ConnectionPropertiesUtils.ParseConnectionStringParameters(this.connectionString);
+                this.targetType = this.GetTargetType(this.ConnectionProperties);
+
+                if (this.pluginService?.CurrentConnection != null)
+                {
+                    this.pluginService.CurrentConnection.ConnectionString = value;
+                }
             }
         }
     }
@@ -94,9 +107,20 @@ public class AwsWrapperConnection : DbConnection
         null)
     { }
 
+    public AwsWrapperConnection(Type? targetType) : base()
+    {
+        this.deferredInitialization = true;
+        this.targetType = targetType;
+    }
+
     public AwsWrapperConnection(Type? targetType, string connectionString, ConfigurationProfile? profile) : base()
     {
         this.connectionString = connectionString;
+        this.InitializeConnection(targetType, profile);
+    }
+
+    private void InitializeConnection(Type? targetType, ConfigurationProfile? profile)
+    {
         this.ConnectionProperties = profile?.Properties ?? ConnectionPropertiesUtils.ParseConnectionStringParameters(this.connectionString);
         this.targetType = targetType ?? this.GetTargetType(this.ConnectionProperties);
         this.ConnectionProperties[PropertyDefinition.TargetConnectionType.Name] = this.targetType.AssemblyQualifiedName!;

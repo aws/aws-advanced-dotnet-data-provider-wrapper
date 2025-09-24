@@ -77,7 +77,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
 
         [Fact]
         [Trait("Category", "Integration")]
-        [Trait("Database", "postgres-nh")]
+        [Trait("Database", "pg-nh")]
         [Trait("Engine", "aurora")]
         public void NHibernatePostgreSqlAddTest()
         {
@@ -195,7 +195,6 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
         [Trait("Category", "Integration")]
         [Trait("Database", "mysql-nh")]
         [Trait("Engine", "aurora")]
-        [Trait("Engine", "multi-az-cluster")]
         public async Task NHibernateCrashAfterOpenWithFailoverTest()
         {
             Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
