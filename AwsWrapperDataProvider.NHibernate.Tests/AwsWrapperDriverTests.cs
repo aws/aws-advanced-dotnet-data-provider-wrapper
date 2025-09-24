@@ -138,8 +138,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             var wrapperConnectionString = connectionString
                 + ";Plugins=failover;"
                 + "EnableConnectFailover=true;"
-                + "FailoverMode=StrictWriter;"
-                + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
+                + "FailoverMode=StrictWriter;";
 
             var properties = new Dictionary<string, string>
             {
@@ -210,8 +209,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             var wrapperConnectionString = connectionString
                 + ";Plugins=failover;"
                 + "EnableConnectFailover=true;"
-                + "FailoverMode=StrictWriter;"
-                + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
+                + "FailoverMode=StrictWriter;";
 
             var properties = new Dictionary<string, string>
             {
@@ -307,8 +305,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             var wrapperConnectionString = connectionString
                 + ";Plugins=failover;"
                 + "EnableConnectFailover=true;"
-                + "FailoverMode=StrictWriter;"
-                + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
+                + "FailoverMode=StrictWriter;";
 
             var properties = new Dictionary<string, string>
             {
