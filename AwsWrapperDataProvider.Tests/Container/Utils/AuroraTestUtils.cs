@@ -820,7 +820,7 @@ public class AuroraTestUtils
         catch (NotSupportedException ex)
         {
             Console.WriteLine("[Warning] error thrown when executing instance id query: ", ex);
-            return null;
+            return null!;
         }
 
         return instanceId;

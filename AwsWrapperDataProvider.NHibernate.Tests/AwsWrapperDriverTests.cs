@@ -95,7 +95,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
         public void NHibernateAddTest()
         {
             var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName);
-            var wrapperConnectionString = connectionString + ";Plugins=failover;FailoverMode=StrictWriter;";
+            var wrapperConnectionString = connectionString + ";Plugins=failover;";
 
             var cfg = this.GetNHibernateConfiguration(wrapperConnectionString);
             var sessionFactory = cfg.BuildSessionFactory();
@@ -138,7 +138,9 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             var wrapperConnectionString = connectionString
                 + ";Plugins=failover;"
                 + "EnableConnectFailover=true;"
-                + "FailoverMode=StrictWriter;";
+                + "FailoverMode=StrictWriter;"
+                + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
+
 
             var cfg = this.GetNHibernateConfiguration(wrapperConnectionString);
             var sessionFactory = cfg.BuildSessionFactory();
@@ -199,7 +201,9 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             var wrapperConnectionString = connectionString
                 + ";Plugins=failover;"
                 + "EnableConnectFailover=true;"
-                + "FailoverMode=StrictWriter;";
+                + "FailoverMode=StrictWriter;"
+                + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
+
 
             var cfg = this.GetNHibernateConfiguration(wrapperConnectionString);
             var sessionFactory = cfg.BuildSessionFactory();
@@ -281,11 +285,14 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
 
             string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
+
             var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName, 2, 10);
             var wrapperConnectionString = connectionString
                 + ";Plugins=failover;"
                 + "EnableConnectFailover=true;"
-                + "FailoverMode=StrictWriter;";
+                + "FailoverMode=StrictWriter;"
+                + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
+
 
             var cfg = this.GetNHibernateConfiguration(wrapperConnectionString);
 

@@ -26,7 +26,7 @@ public class AwsWrapperConnectionTest
         AwsWrapperConnection<MySqlConnection> connection =
             new("Server=<insert_rds_instance_here>;User ID=admin;Password=my_password_2020;Initial Catalog=test;");
 
-        string typeString = PropertyDefinition.TargetConnectionType.GetString(connection.ConnectionProperties)!;
+        string typeString = PropertyDefinition.TargetConnectionType.GetString(connection.ConnectionProperties!)!;
         Type? targetConnectionType = Type.GetType(typeString);
 
         Assert.Equal(typeof(MySqlConnection), targetConnectionType);
@@ -40,7 +40,7 @@ public class AwsWrapperConnectionTest
             new("Server=<insert_rds_instance_here>;User ID=admin;Password=my_password_2020;Initial Catalog=test;" +
                 "TargetConnectionType=MySqlConnector.MySqlConnection,MySqlConnector;");
 
-        string typeString = PropertyDefinition.TargetConnectionType.GetString(connection.ConnectionProperties)!;
+        string typeString = PropertyDefinition.TargetConnectionType.GetString(connection.ConnectionProperties!)!;
         Type? targetConnectionType = Type.GetType(typeString)!;
 
         Assert.Equal(typeof(MySqlConnection), targetConnectionType);

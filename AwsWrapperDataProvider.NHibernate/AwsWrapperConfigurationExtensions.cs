@@ -19,7 +19,7 @@ namespace AwsWrapperDataProvider.NHibernate
 {
     public static class AwsWrapperConfigurationExtensions
     {
-        public static void UseAwsWrapperDriver<TDriver>(this IDbIntegrationConfigurationProperties cfg)
+        public static void UseAwsWrapperDriver<TDriver>(this DbIntegrationConfigurationProperties cfg)
             where TDriver : IDriver => cfg.Driver<AwsWrapperDriver<TDriver>>();
     }
 }

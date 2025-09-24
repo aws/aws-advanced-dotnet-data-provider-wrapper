@@ -23,7 +23,7 @@ public class AwsWrapperDataAdapter : DbDataAdapter
 {
     protected DbDataAdapter targetDataAdapter;
 
-    private readonly ConnectionPluginManager connectionPluginManager;
+    private readonly ConnectionPluginManager? connectionPluginManager;
 
     internal AwsWrapperDataAdapter(DbDataAdapter targetDataAdapter, ConnectionPluginManager connectionPluginManager)
     {
@@ -34,7 +34,7 @@ public class AwsWrapperDataAdapter : DbDataAdapter
     public AwsWrapperDataAdapter(DbDataAdapter targetDataAdapter, AwsWrapperConnection connection)
     {
         this.targetDataAdapter = targetDataAdapter;
-        this.connectionPluginManager = connection.PluginManager;
+        this.connectionPluginManager = connection.PluginManager!;
     }
 
     internal DbDataAdapter TargetDbDataAdapter => this.targetDataAdapter;

@@ -239,7 +239,7 @@ public class AwsWrapperConnection : DbConnection
             () => (TCommand)this.pluginService.CurrentConnection.CreateCommand());
         Logger.LogDebug("DbCommand created for DbConnection@{Id}", RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection));
 
-        this.ConnectionProperties[PropertyDefinition.TargetCommandType.Name] = typeof(TCommand).AssemblyQualifiedName!;
+        this.ConnectionProperties![PropertyDefinition.TargetCommandType.Name] = typeof(TCommand).AssemblyQualifiedName!;
         return new AwsWrapperCommand<TCommand>(command, this, this.PluginManager);
     }
 
