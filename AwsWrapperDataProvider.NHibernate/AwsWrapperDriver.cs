@@ -44,7 +44,7 @@ namespace AwsWrapperDataProvider.NHibernate
         public override DbConnection CreateConnection()
         {
             var targetConnection = this._targetDriver?.CreateConnection() ?? throw new InvalidOperationException("Target driver not set");
-            this._lastCreatedConnection = new AwsWrapperConnection(targetConnection.GetType(), null);
+            this._lastCreatedConnection = new AwsWrapperConnection(targetConnection.GetType());
             return this._lastCreatedConnection;
         }
 
