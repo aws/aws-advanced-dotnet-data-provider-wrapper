@@ -12,15 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Linq;
 using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.Plugins.AuroraInitialConnectionStrategy;
 using AwsWrapperDataProvider.Driver.Plugins.Efm;
 using AwsWrapperDataProvider.Driver.Plugins.ExecutionTime;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
-using AwsWrapperDataProvider.Driver.Plugins.FederatedAuth;
-using AwsWrapperDataProvider.Driver.Plugins.Iam;
-using AwsWrapperDataProvider.Driver.Plugins.SecretsManager;
 using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Logging;
 
@@ -33,28 +31,28 @@ public class ConnectionPluginChainBuilder
 
     private static readonly ILogger<ConnectionPluginChainBuilder> Logger = LoggerUtils.GetLogger<ConnectionPluginChainBuilder>();
 
-    private static readonly Dictionary<string, Type> PluginFactoryTypesByCode = new()
+    private static readonly Dictionary<string, Lazy<IConnectionPluginFactory>?> PluginFactoryTypesByCode = new()
     {
-            { "executionTime", typeof(ExecutionTimePlugin) },
-            { "failover", typeof(FailoverPluginFactory) },
-            { "efm", typeof(HostMonitoringPluginFactory) },
-            { "iam", typeof(IamAuthPluginFactory) },
-            { "awsSecretsManager", typeof(SecretsManagerAuthPluginFactory) },
-            { "initialConnection", typeof(AuroraInitialConnectionStrategyPluginFactory) },
-            { "federatedAuth", typeof(FederatedAuthPluginFactory) },
-            { "okta", typeof(OktaAuthPluginFactory) },
+            { PluginCodes.ExecutionTime, new Lazy<IConnectionPluginFactory>(() => new ExecutionTimePluginFactory()) },
+            { PluginCodes.Failover, new Lazy<IConnectionPluginFactory>(() => new FailoverPluginFactory()) },
+            { PluginCodes.HostMonitoring, new Lazy<IConnectionPluginFactory>(() => new HostMonitoringPluginFactory()) },
+            { PluginCodes.InitialConnection, new Lazy<IConnectionPluginFactory>(() => new AuroraInitialConnectionStrategyPluginFactory()) },
+            { PluginCodes.Iam, null },
+            { PluginCodes.SecretsManager, null },
+            { PluginCodes.FederatedAuth, null },
+            { PluginCodes.Okta, null },
     };
 
-    private static readonly Dictionary<Type, int> PluginWeightByPluginFactoryType = new()
+    private static readonly Dictionary<string, int> PluginWeightByPluginFactoryType = new()
     {
-            { typeof(AuroraInitialConnectionStrategyPluginFactory), 390 },
-            { typeof(FailoverPluginFactory), 700 },
-            { typeof(HostMonitoringPluginFactory), 800 },
-            { typeof(IamAuthPluginFactory), 1000 },
-            { typeof(SecretsManagerAuthPluginFactory), 1100 },
-            { typeof(FederatedAuthPluginFactory), 1200 },
-            { typeof(OktaAuthPluginFactory), 1300 },
-            { typeof(ExecutionTimePlugin), WeightRelativeToPriorPlugin },
+            { PluginCodes.InitialConnection, 390 },
+            { PluginCodes.Failover, 700 },
+            { PluginCodes.HostMonitoring, 800 },
+            { PluginCodes.Iam, 1000 },
+            { PluginCodes.SecretsManager, 1100 },
+            { PluginCodes.FederatedAuth, 1200 },
+            { PluginCodes.Okta, 1300 },
+            { PluginCodes.ExecutionTime, WeightRelativeToPriorPlugin },
     };
 
     public IList<IConnectionPlugin> GetPlugins(
@@ -76,53 +74,49 @@ public class ConnectionPluginChainBuilder
             string[] pluginsCodesArray = [.. pluginsCodes.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)];
             Logger.LogDebug("Current Plugins: " + string.Join(",", pluginsCodesArray));
 
-            pluginFactories = new(pluginsCodesArray.Length);
+            Dictionary<int, IConnectionPluginFactory> pluginFactoriesByWeight = [];
 
             foreach (string pluginCode in pluginsCodesArray)
             {
-                if (!PluginFactoryTypesByCode.TryGetValue(pluginCode, out Type? pluginFactoryType))
+                if (!PluginFactoryTypesByCode.TryGetValue(pluginCode, out Lazy<IConnectionPluginFactory>? factory))
                 {
                     throw new Exception(string.Format(Properties.Resources.Error_UnknownPluginCode, pluginCode));
                 }
 
-                IConnectionPluginFactory? factoryInstance = (IConnectionPluginFactory?)Activator.CreateInstance(pluginFactoryType);
-                if (factoryInstance == null)
+                if (factory == null)
                 {
                     throw new Exception(string.Format(Properties.Resources.Error_UnableToLoadPlugin, pluginCode));
                 }
 
-                pluginFactories.Add(factoryInstance);
+                int factoryWeight = PluginWeightByPluginFactoryType.GetValueOrDefault(pluginCode, WeightRelativeToPriorPlugin);
+                pluginFactoriesByWeight.Add(factoryWeight, factory.Value);
             }
 
-            if (pluginFactories.Count > 1 && PropertyDefinition.AutoSortPluginOrder.GetBoolean(props))
+            if (pluginFactoriesByWeight.Count > 1 && PropertyDefinition.AutoSortPluginOrder.GetBoolean(props))
             {
-                pluginFactories = this.SortPluginFactories(pluginFactories);
+                pluginFactories = this.SortPluginFactories(pluginFactoriesByWeight);
+            }
+            else
+            {
+                pluginFactories = pluginFactoriesByWeight.Values.ToList();
             }
         }
 
-        List<IConnectionPlugin> plugins = new(pluginFactories.Count + 1);
-        foreach (IConnectionPluginFactory pluginFactory in pluginFactories)
-        {
-            IConnectionPlugin pluginInstance = pluginFactory.GetInstance(pluginService, props);
-            plugins.Add(pluginInstance);
-        }
-
-        IConnectionPlugin defaultConnectionPlugin = new DefaultConnectionPlugin(
-            pluginService,
-            defaultConnectionProvider,
-            effectiveConnectionProvider);
-
-        plugins.Add(defaultConnectionPlugin);
+        List<IConnectionPlugin> plugins = [
+            ..pluginFactories.Select(factory => factory.GetInstance(pluginService, props)),
+            new DefaultConnectionPlugin(pluginService, defaultConnectionProvider, effectiveConnectionProvider)
+        ];
 
         return plugins;
     }
 
-    private List<IConnectionPluginFactory> SortPluginFactories(List<IConnectionPluginFactory> pluginFactories)
+    private List<IConnectionPluginFactory> SortPluginFactories(Dictionary<int, IConnectionPluginFactory> pluginFactoriesByWeight)
     {
         int lastWeight = 0;
-        return [.. pluginFactories.OrderBy(pluginFactory =>
+        return pluginFactoriesByWeight.OrderBy(pluginWeightFactoryPair =>
             {
-                int pluginWeight = PluginWeightByPluginFactoryType[pluginFactory.GetType()];
+                int pluginWeight = pluginWeightFactoryPair.Key;
+
                 if (pluginWeight == WeightRelativeToPriorPlugin)
                 {
                     lastWeight++;
@@ -131,6 +125,13 @@ public class ConnectionPluginChainBuilder
 
                 lastWeight = pluginWeight;
                 return pluginWeight;
-            })];
+            })
+            .Select(pluginWeightFactoryPair => pluginWeightFactoryPair.Value)
+            .ToList();
+    }
+
+    public static void RegisterPluginFactory(string pluginCode, Lazy<IConnectionPluginFactory> factory)
+    {
+        PluginFactoryTypesByCode[pluginCode] = factory;
     }
 }

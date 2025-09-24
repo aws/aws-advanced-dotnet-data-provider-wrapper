@@ -1,45 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
 <root>
-  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
-    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+              xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace"/>
     <xsd:element name="root" msdata:IsDataSet="true">
       <xsd:complexType>
         <xsd:choice maxOccurs="unbounded">
           <xsd:element name="metadata">
             <xsd:complexType>
               <xsd:sequence>
-                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+                <xsd:element name="value" type="xsd:string" minOccurs="0"/>
               </xsd:sequence>
-              <xsd:attribute name="name" use="required" type="xsd:string" />
-              <xsd:attribute name="type" type="xsd:string" />
-              <xsd:attribute name="mimetype" type="xsd:string" />
-              <xsd:attribute ref="xml:space" />
+              <xsd:attribute name="name" use="required" type="xsd:string"/>
+              <xsd:attribute name="type" type="xsd:string"/>
+              <xsd:attribute name="mimetype" type="xsd:string"/>
+              <xsd:attribute ref="xml:space"/>
             </xsd:complexType>
           </xsd:element>
           <xsd:element name="assembly">
             <xsd:complexType>
-              <xsd:attribute name="alias" type="xsd:string" />
-              <xsd:attribute name="name" type="xsd:string" />
+              <xsd:attribute name="alias" type="xsd:string"/>
+              <xsd:attribute name="name" type="xsd:string"/>
             </xsd:complexType>
           </xsd:element>
           <xsd:element name="data">
             <xsd:complexType>
               <xsd:sequence>
-                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
-                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1"/>
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2"/>
               </xsd:sequence>
-              <xsd:attribute name="name" use="required" type="xsd:string" />
-              <xsd:attribute name="type" type="xsd:string" />
-              <xsd:attribute name="mimetype" type="xsd:string" />
-              <xsd:attribute ref="xml:space" />
+              <xsd:attribute name="name" use="required" type="xsd:string"/>
+              <xsd:attribute name="type" type="xsd:string"/>
+              <xsd:attribute name="mimetype" type="xsd:string"/>
+              <xsd:attribute ref="xml:space"/>
             </xsd:complexType>
           </xsd:element>
           <xsd:element name="resheader">
             <xsd:complexType>
               <xsd:sequence>
-                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1"/>
               </xsd:sequence>
-              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="name" use="required" type="xsd:string"/>
             </xsd:complexType>
           </xsd:element>
         </xsd:choice>
@@ -53,12 +54,16 @@
     <value>2.0</value>
   </resheader>
   <resheader name="reader">
-    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral,
+      PublicKeyToken=b77a5c561934e089
+    </value>
   </resheader>
   <resheader name="writer">
-    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral,
+      PublicKeyToken=b77a5c561934e089
+    </value>
   </resheader>
-  
+
   <!-- Error messages -->
   <data name="Error_InvalidOperation" xml:space="preserve">
     <value>Invalid operation.</value>
@@ -87,6 +92,12 @@
   <data name="Error_UnableToCreateConnection" xml:space="preserve">
     <value>Unable to create connection.</value>
   </data>
+  <data name="Error_UnknownAwsPluginCode" xml:space="preserve">
+    <value>Unknown Aws plugin code: {0}</value>
+  </data>
+  <data name="Error_UnableToLoadAwsPluginFromAssembly" xml:space="preserve">
+    <value>Unable to load Aws plugin from assembly</value>
+    </data>
   <data name="Error_ConnectionStringInvalid" xml:space="preserve">
     <value>Connection string is invalid.</value>
   </data>
@@ -126,112 +137,112 @@
   <data name="ClusterTopologyMonitor.ExceptionDuringMonitoringStop" xml:space="preserve">
       <value>Stopping cluster topology monitoring after unhandled exception was thrown in monitoring thread for node {0}.</value>
     </data>
-    <data name="ClusterTopologyMonitor.InvalidQuery" xml:space="preserve">
+  <data name="ClusterTopologyMonitor.InvalidQuery" xml:space="preserve">
       <value>An error occurred while attempting to obtain the topology because the topology query was invalid. Please ensure you are connecting to an Aurora or RDS Db cluster.</value>
     </data>
-    <data name="ClusterTopologyMonitor.ErrorGettingNetworkTimeout" xml:space="preserve">
+  <data name="ClusterTopologyMonitor.ErrorGettingNetworkTimeout" xml:space="preserve">
       <value>An error occurred while getting the connection network timeout: {0}</value>
     </data>
-    <data name="ClusterTopologyMonitor.InvalidTopology" xml:space="preserve">
+  <data name="ClusterTopologyMonitor.InvalidTopology" xml:space="preserve">
       <value>The topology query returned an invalid topology - no writer instance detected.</value>
     </data>
-    <data name="ClusterTopologyMonitor.TopologyNotUpdated" xml:space="preserve">
+  <data name="ClusterTopologyMonitor.TopologyNotUpdated" xml:space="preserve">
       <value>Topology hasn't been updated after {0} ms.</value>
     </data>
-    <data name="ClusterTopologyMonitor.OpenedMonitoringConnection" xml:space="preserve">
+  <data name="ClusterTopologyMonitor.OpenedMonitoringConnection" xml:space="preserve">
       <value>New cluster topology monitoring connection@{0} opened for node {1}.</value>
     </data>
-    <data name="ClusterTopologyMonitor.IgnoringTopologyRequest" xml:space="preserve">
+  <data name="ClusterTopologyMonitor.IgnoringTopologyRequest" xml:space="preserve">
       <value>A topology refresh was requested, but the topology was already updated recently. Returning cached hosts:</value>
     </data>
-    <data name="ClusterTopologyMonitor.TimeoutSetToZero" xml:space="preserve">
+  <data name="ClusterTopologyMonitor.TimeoutSetToZero" xml:space="preserve">
       <value>A topology refresh was requested, but the given timeout for the request was 0ms. Returning cached hosts:</value>
     </data>
-    <data name="ClusterTopologyMonitor.Interrupted" xml:space="preserve">
+  <data name="ClusterTopologyMonitor.Interrupted" xml:space="preserve">
       <value>The thread was interrupted while waiting for updated topology.</value>
     </data>
-    <data name="ClusterTopologyMonitor.StartingNodeMonitoringThreads" xml:space="preserve">
+  <data name="ClusterTopologyMonitor.StartingNodeMonitoringThreads" xml:space="preserve">
       <value>Starting node monitoring threads.</value>
     </data>
-    <data name="ClusterTopologyMonitor.WriterPickedUpFromNodeMonitors" xml:space="preserve">
+  <data name="ClusterTopologyMonitor.WriterPickedUpFromNodeMonitors" xml:space="preserve">
       <value>The writer host detected by the node monitors was picked up by the topology monitor: {0}.</value>
     </data>
-    <data name="ClusterTopologyMonitor.WriterMonitoringConnection" xml:space="preserve">
+  <data name="ClusterTopologyMonitor.WriterMonitoringConnection" xml:space="preserve">
       <value>The monitoring connection is connected to a writer: {0}.</value>
     </data>
-    <data name="ClusterTopologyMonitor.ErrorFetchingTopology" xml:space="preserve">
+  <data name="ClusterTopologyMonitor.ErrorFetchingTopology" xml:space="preserve">
       <value>An error occurred while querying for topology: {0}</value>
     </data>
-    <data name="ClusterTopologyMonitor.ErrorProcessingQueryResults" xml:space="preserve">
+  <data name="ClusterTopologyMonitor.ErrorProcessingQueryResults" xml:space="preserve">
       <value>An error occurred while processing the results from the topology query: {0}</value>
     </data>
-    <data name="ClusterTopologyMonitor.UnexpectedTopologyQueryColumnCount" xml:space="preserve">
+  <data name="ClusterTopologyMonitor.UnexpectedTopologyQueryColumnCount" xml:space="preserve">
       <value>The topology query returned a result with 0 columns. This may occur if the topology query is executed when the server is failing over.</value>
     </data>
-    <data name="NodeMonitoringTask_DetectedWriter" xml:space="preserve">
+  <data name="NodeMonitoringTask_DetectedWriter" xml:space="preserve">
       <value>Writer detected by node monitoring thread: {0}.</value>
     </data>
-    <data name="NodeMonitoringTask_ThreadCompleted" xml:space="preserve">
+  <data name="NodeMonitoringTask_ThreadCompleted" xml:space="preserve">
       <value>Node monitoring task@{0} completed in {1} ms.</value>
     </data>
-    <data name="NodeMonitoringTask_WriterNodeChanged" xml:space="preserve">
+  <data name="NodeMonitoringTask_WriterNodeChanged" xml:space="preserve">
       <value>Writer node changed from {0} to node {1}.</value>
     </data>
-    <data name="EfmHostMonitor_StartMonitoringWhenStopped" xml:space="preserve">
+  <data name="EfmHostMonitor_StartMonitoringWhenStopped" xml:space="preserve">
       <value>Starting monitoring for a monitor that has stopped.</value>
     </data>
-    <data name="EfmHostMonitor_StoppedMonitoring" xml:space="preserve">
+  <data name="EfmHostMonitor_StoppedMonitoring" xml:space="preserve">
       <value>Stopped monitoring threads for host {0}.</value>
     </data>
-    <data name="EfmHostMonitor_StartedPollingNewContexts" xml:space="preserve">
+  <data name="EfmHostMonitor_StartedPollingNewContexts" xml:space="preserve">
       <value>Started thread to poll new contexts for host {0}.</value>
     </data>
-    <data name="EfmHostMonitor_NewContextsException" xml:space="preserve">
+  <data name="EfmHostMonitor_NewContextsException" xml:space="preserve">
       <value>Encountered exception while polling new contexts for host {0}: {1}, stack trace: {2}.</value>
     </data>
-    <data name="EfmHostMonitor_StoppedPollingNewContexts" xml:space="preserve">
+  <data name="EfmHostMonitor_StoppedPollingNewContexts" xml:space="preserve">
       <value>Stopped thread to poll new contexts for host {0}.</value>
     </data>
-    <data name="EfmHostMonitor_StartedMonitoringActiveContexts" xml:space="preserve">
+  <data name="EfmHostMonitor_StartedMonitoringActiveContexts" xml:space="preserve">
       <value>Started thread to monitor active contexts for host {0}.</value>
     </data>
-    <data name="EfmHostMonitor_ActiveContextsException" xml:space="preserve">
+  <data name="EfmHostMonitor_ActiveContextsException" xml:space="preserve">
       <value>Encountered exception while monitoring active contexts for host {0}: {1}, stack trace: {2}.</value>
     </data>
-    <data name="EfmHostMonitor_StoppedMonitoringActiveContexts" xml:space="preserve">
+  <data name="EfmHostMonitor_StoppedMonitoringActiveContexts" xml:space="preserve">
       <value>Stopped thread to monitor active contexts for host {0}.</value>
     </data>
-    <data name="EfmHostMonitor_OpeningMonitoringConnection" xml:space="preserve">
+  <data name="EfmHostMonitor_OpeningMonitoringConnection" xml:space="preserve">
       <value>Opening a new host monitoring connection for host {0}.</value>
     </data>
-    <data name="EfmHostMonitor_OpenedMonitoringConnection" xml:space="preserve">
+  <data name="EfmHostMonitor_OpenedMonitoringConnection" xml:space="preserve">
       <value>Opened a new host monitoring connection for host {0}.</value>
     </data>
-    <data name="EfmHostMonitor_HostDead" xml:space="preserve">
+  <data name="EfmHostMonitor_HostDead" xml:space="preserve">
       <value>Host is dead: {0}.</value>
     </data>
-    <data name="EfmHostMonitor_HostNotResponding" xml:space="preserve">
+  <data name="EfmHostMonitor_HostNotResponding" xml:space="preserve">
       <value>Host is not responding: {0}, failure count: {1}.</value>
     </data>
-    <data name="EfmHostMonitor_HostAlive" xml:space="preserve">
+  <data name="EfmHostMonitor_HostAlive" xml:space="preserve">
       <value>Host is alive: {0}.</value>
     </data>
-    <data name="EfmHostMonitor_ExceptionAbortingConnection" xml:space="preserve">
+  <data name="EfmHostMonitor_ExceptionAbortingConnection" xml:space="preserve">
       <value>Encountered exception while aborting connection: {0}.</value>
     </data>
-    <data name="AwsWrapperProperty_SslValidationIsDisabled" xml:space="preserve">
+  <data name="AwsWrapperProperty_SslValidationIsDisabled" xml:space="preserve">
       <value>SSL validation is disabled (sslInsecure=true). This configuration can pose a significant security risks and should not be used in production environments.</value>
     </data>
-    <data name="PluginService.ErrorClosingOldConnection" xml:space="preserve">
+  <data name="PluginService.ErrorClosingOldConnection" xml:space="preserve">
       <value>Error closing old connection: {0}</value>
     </data>
-    <data name="EfmHostMonitor_ActivatedMonitoring" xml:space="preserve">
+  <data name="EfmHostMonitor_ActivatedMonitoring" xml:space="preserve">
       <value>Activated monitoring.</value>
     </data>
-    <data name="EfmHostMonitor_DeactivatedMonitoring" xml:space="preserve">
+  <data name="EfmHostMonitor_DeactivatedMonitoring" xml:space="preserve">
       <value>Deactivated monitoring.</value>
     </data>
-    <data name="EfmHostMonitor_ErrorIdentifyingConnection" xml:space="preserve">
+  <data name="EfmHostMonitor_ErrorIdentifyingConnection" xml:space="preserve">
       <value>Encountered exception when identifying connection: {0}.</value>
     </data>
 </root>

@@ -12,6 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using AwsWrapperDataProvider.Driver;
+using AwsWrapperDataProvider.Driver.Dialects;
+using AwsWrapperDataProvider.Driver.HostInfo.HostSelectors;
+using AwsWrapperDataProvider.Driver.HostListProviders;
+using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
+using AwsWrapperDataProvider.Driver.Plugins.Efm;
+using AwsWrapperDataProvider.Driver.Plugins.FederatedAuth;
+using AwsWrapperDataProvider.Driver.Plugins.Iam;
+using AwsWrapperDataProvider.Driver.Plugins.SecretsManager;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 
 [assembly: CollectionBehavior(DisableTestParallelization = true)]
@@ -53,6 +62,9 @@ public abstract class IntegrationTestBase : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
+        // Loading Aws Authentication Plugins to Plugin Chain.
+        AwsAuthenticationPluginProvider.AwsAuthenticationPluginLoader.Load();
+
         if (TestEnvironment.Env.Info.Request.Features.Contains(TestEnvironmentFeatures.NETWORK_OUTAGES_ENABLED))
         {
             await ProxyHelper.EnableAllConnectivityAsync();
@@ -104,7 +116,16 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     public ValueTask DisposeAsync()
     {
         Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Clearing all cache for each integration test.");
-        AwsWrapperConnection.ClearCache();
+        RdsHostListProvider.ClearAll();
+        MonitoringRdsHostListProvider.CloseAllMonitors();
+        HostMonitorService.CloseAllMonitors();
+        PluginService.ClearCache();
+        DialectProvider.ResetEndpointCache();
+        SecretsManagerAuthPlugin.ClearCache();
+        FederatedAuthPlugin.ClearCache();
+        IamAuthPlugin.ClearCache();
+        OktaAuthPlugin.ClearCache();
+        RoundRobinHostSelector.ClearCache();
         Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Done Clearing all cache for each integration test.");
         return ValueTask.CompletedTask;
     }
