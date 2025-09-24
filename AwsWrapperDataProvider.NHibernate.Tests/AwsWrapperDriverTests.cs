@@ -31,54 +31,73 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
     {
         protected override bool MakeSureFirstInstanceWriter => true;
 
-        private void CreateAndClearPersonsTable(ISession session, bool isPostgreSQL = false)
+        private void CreateAndClearPersonsTable(ISession session)
         {
-            if (isPostgreSQL)
+            switch (Engine)
             {
-                // PostgreSQL syntax - create sequence first
-                session.CreateSQLQuery("CREATE SEQUENCE IF NOT EXISTS hibernate_sequence START 1").ExecuteUpdate();
-                
-                session.CreateSQLQuery(@"
-                    CREATE TABLE IF NOT EXISTS persons (
-                        Id SERIAL PRIMARY KEY,
-                        FirstName VARCHAR(255),
-                        LastName VARCHAR(255)
-                    )").ExecuteUpdate();
+                case DatabaseEngine.PG:
+                    // PostgreSQL syntax - create sequence first
+                    session.CreateSQLQuery("CREATE SEQUENCE IF NOT EXISTS hibernate_sequence START 1").ExecuteUpdate();
+
+                    session.CreateSQLQuery(@"
+                        CREATE TABLE IF NOT EXISTS persons (
+                            Id SERIAL PRIMARY KEY,
+                            FirstName VARCHAR(255),
+                            LastName VARCHAR(255)
+                        )").ExecuteUpdate();
+                    break;
+                case DatabaseEngine.MYSQL:
+                default:
+                    // MySQL syntax
+                    session.CreateSQLQuery(@"
+                        CREATE TABLE IF NOT EXISTS persons (
+                            Id INT AUTO_INCREMENT PRIMARY KEY,
+                            FirstName VARCHAR(255),
+                            LastName VARCHAR(255)
+                        )").ExecuteUpdate();
+                    break;
             }
-            else
-            {
-                // MySQL syntax
-                session.CreateSQLQuery(@"
-                    CREATE TABLE IF NOT EXISTS persons (
-                        Id INT AUTO_INCREMENT PRIMARY KEY,
-                        FirstName VARCHAR(255),
-                        LastName VARCHAR(255)
-                    )").ExecuteUpdate();
-            }
-            
+
             session.CreateSQLQuery("TRUNCATE TABLE persons").ExecuteUpdate();
+        }
+
+        private Configuration GetNHibernateConfiguration(string connectionString)
+        {
+            var properties = new Dictionary<string, string>
+            {
+                { "connection.connection_string", connectionString }
+            };
+
+            var cfg = new Configuration().AddAssembly(Assembly.GetExecutingAssembly());
+
+            switch (Engine)
+            {
+                case DatabaseEngine.PG:
+                    properties.Add("dialect", "NHibernate.Dialect.PostgreSQLDialect");
+                    cfg.DataBaseIntegration(c => c.UseAwsWrapperDriver<NpgsqlDriver>());
+                    break;
+
+                case DatabaseEngine.MYSQL:
+                default:
+                    properties.Add("dialect", "NHibernate.Dialect.MySQLDialect");
+                    cfg.DataBaseIntegration(c => c.UseAwsWrapperDriver<MySqlConnectorDriver>());
+                    break;
+            }
+
+            return cfg.AddProperties(properties);
         }
 
         [Fact]
         [Trait("Category", "Integration")]
         [Trait("Database", "mysql-nh")]
+        [Trait("Database", "pg-nh")]
         [Trait("Engine", "aurora")]
-        public void NHibernateMySqlAddTest()
+        public void NHibernateAddTest()
         {
             var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName);
             var wrapperConnectionString = connectionString + ";Plugins=failover;FailoverMode=StrictWriter;";
 
-            var properties = new Dictionary<string, string>
-            {
-                { "connection.connection_string", wrapperConnectionString },
-                { "dialect", "NHibernate.Dialect.MySQLDialect" },
-            };
-
-            var cfg = new Configuration()
-                .AddAssembly(Assembly.GetExecutingAssembly())
-                .DataBaseIntegration(c => c.UseAwsWrapperDriver<MySqlConnectorDriver>())
-                .AddProperties(properties);
-
+            var cfg = GetNHibernateConfiguration(wrapperConnectionString);
             var sessionFactory = cfg.BuildSessionFactory();
 
             using (var session = sessionFactory.OpenSession())
@@ -107,53 +126,8 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
 
         [Fact]
         [Trait("Category", "Integration")]
-        [Trait("Database", "pg-nh")]
-        [Trait("Engine", "aurora")]
-        public void NHibernatePostgreSqlAddTest()
-        {
-            var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName);
-            var wrapperConnectionString = connectionString + ";Plugins=failover;FailoverMode=StrictWriter;";
-
-            var properties = new Dictionary<string, string>
-            {
-                { "connection.connection_string", wrapperConnectionString },
-                { "dialect", "NHibernate.Dialect.PostgreSQLDialect" },
-            };
-
-            var cfg = new Configuration()
-                .AddAssembly(Assembly.GetExecutingAssembly())
-                .DataBaseIntegration(c => c.UseAwsWrapperDriver<NpgsqlDriver>())
-                .AddProperties(properties);
-
-            var sessionFactory = cfg.BuildSessionFactory();
-
-            using (var session = sessionFactory.OpenSession())
-            {
-                CreateAndClearPersonsTable(session, isPostgreSQL: true);
-            }
-
-            using (var session = sessionFactory.OpenSession())
-            using (var transaction = session.BeginTransaction())
-            {
-                var person = new Person { FirstName = "Jane", LastName = "Smith" };
-                session.Save(person);
-                transaction.Commit();
-            }
-
-            using (var session = sessionFactory.OpenSession())
-            {
-                var persons = session.CreateCriteria(typeof(Person))
-                    .Add(Restrictions.Like("FirstName", "J%"))
-                    .List<Person>();
-
-                Assert.NotEmpty(persons);
-                Assert.Contains(persons, p => p.FirstName == "Jane");
-            }
-        }
-
-        [Fact]
-        [Trait("Category", "Integration")]
         [Trait("Database", "mysql-nh")]
+        [Trait("Database", "pg-nh")]
         [Trait("Engine", "aurora")]
         public async Task NHibernateCrashBeforeOpenWithFailoverTest()
         {
@@ -225,6 +199,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
         [Fact]
         [Trait("Category", "Integration")]
         [Trait("Database", "mysql-nh")]
+        [Trait("Database", "pg-nh")]
         [Trait("Engine", "aurora")]
         public async Task NHibernateCrashAfterOpenWithFailoverTest()
         {
@@ -321,6 +296,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
         [Fact]
         [Trait("Category", "Integration")]
         [Trait("Database", "mysql-nh")]
+        [Trait("Database", "pg-nh")]
         [Trait("Engine", "aurora")]
         public async Task NHibernateFailoverTest()
         {
