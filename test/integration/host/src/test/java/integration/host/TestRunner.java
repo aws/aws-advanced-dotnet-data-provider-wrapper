@@ -90,6 +90,54 @@ public class TestRunner {
   }
 
   @TestTemplate
+  public void runMySQLNHAuroraTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
+
+    try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
+      env.runTests("mysql-nh", "aurora");
+    }
+  }
+
+  @TestTemplate
+  public void runMySQLNHMultiAzClusterTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
+
+    try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
+      env.runTests("mysql-nh", "multi-az-cluster");
+    }
+  }
+
+  @TestTemplate
+  public void runMySQLNHMultiAzInstanceTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
+
+    try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
+      env.runTests("mysql-nh", "multi-az-instance");
+    }
+  }
+
+  @TestTemplate
+  public void runPGNHAuroraTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
+
+    try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
+      env.runTests("pg-nh", "aurora");
+    }
+  }
+
+  @TestTemplate
+  public void runPGNHMultiAzClusterTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
+
+    try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
+      env.runTests("pg-nh", "multi-az-cluster");
+    }
+  }
+
+  @TestTemplate
+  public void runPGNHMultiAzInstanceTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
+
+    try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
+      env.runTests("pg-nh", "multi-az-instance");
+    }
+  }
+
+  @TestTemplate
   public void debugTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
 
     try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
