@@ -24,7 +24,7 @@ using Microsoft.Extensions.Logging.Console;
 
 namespace AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests;
 
-public class EntityFrameowrkConnectivityTests : IntegrationTestBase
+public class EntityFrameworkConnectivityTests : IntegrationTestBase
 {
     protected override bool MakeSureFirstInstanceWriter => true;
 
@@ -32,7 +32,7 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
     private readonly MySqlServerVersion version = new("8.0.32");
     private readonly ILoggerFactory loggerFactory;
 
-    public EntityFrameowrkConnectivityTests(ITestOutputHelper output)
+    public EntityFrameworkConnectivityTests(ITestOutputHelper output)
     {
         this.logger = output;
 
@@ -155,7 +155,6 @@ public class EntityFrameowrkConnectivityTests : IntegrationTestBase
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql-ef")]
     [Trait("Engine", "aurora")]
-    [Trait("Engine", "multi-az-cluster")]
     public async Task EFCrashAfterOpenWithFailoverPluginTest()
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");

@@ -14,7 +14,7 @@
 
 namespace AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL.Tests;
 
-public class EntityFrameowrkConnectivityTests
+public class EntityFrameworkConnectivityTests
 {
     [Fact]
     [Trait("Category", "Integration")]
