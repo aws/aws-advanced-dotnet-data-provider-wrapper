@@ -136,7 +136,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
             var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName);
             var wrapperConnectionString = connectionString
-                + ";Plugins=initialConnection,failover;"
+                + ";Plugins=failover;"
                 + "EnableConnectFailover=true;"
                 + "FailoverMode=StrictWriter;"
                 + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
@@ -197,7 +197,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
             var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName);
             var wrapperConnectionString = connectionString
-                + ";Plugins=initialConnection,failover;"
+                + ";Plugins=failover;"
                 + "EnableConnectFailover=true;"
                 + "FailoverMode=StrictWriter;"
                 + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
@@ -284,7 +284,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
 
             var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName, 2, 10);
             var wrapperConnectionString = connectionString
-                + ";Plugins=initialConnection,failover;"
+                + ";Plugins=failover;"
                 + "EnableConnectFailover=true;"
                 + "FailoverMode=StrictWriter;"
                 + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
