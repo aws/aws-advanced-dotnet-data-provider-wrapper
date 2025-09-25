@@ -61,16 +61,20 @@ public class FailoverPlugin : AbstractConnectionPlugin
         // Network-bound methods that might fail and trigger failover
         "DbConnection.Open",
         "DbConnection.OpenAsync",
+        "DbConnection.BeginDbTransaction",
+
         "DbCommand.ExecuteNonQuery",
         "DbCommand.ExecuteNonQueryAsync",
         "DbCommand.ExecuteReader",
         "DbCommand.ExecuteReaderAsync",
         "DbCommand.ExecuteScalar",
         "DbCommand.ExecuteScalarAsync",
+
         "DbDataReader.Read",
         "DbDataReader.ReadAsync",
         "DbDataReader.NextResult",
         "DbDataReader.NextResultAsync",
+
         "DbTransaction.Commit",
         "DbTransaction.CommitAsync",
         "DbTransaction.Rollback",
@@ -145,6 +149,8 @@ public class FailoverPlugin : AbstractConnectionPlugin
     {
         this.InitFailoverMode();
 
+        DbConnection? connection = null;
+
         if (!this.enableConnectFailover || hostSpec == null)
         {
             return this.auroraStaleDnsHelper.OpenVerifiedConnection(
@@ -158,11 +164,11 @@ public class FailoverPlugin : AbstractConnectionPlugin
         var hostSpecWithAvailability = this.pluginService.GetHosts()
             .FirstOrDefault(x => x.Host == hostSpec.Host && x.Port == hostSpec.Port);
 
-        if (hostSpecWithAvailability is not { Availability: HostAvailability.Unavailable })
+        if (hostSpecWithAvailability == null || hostSpecWithAvailability is not { Availability: HostAvailability.Unavailable })
         {
             try
             {
-                return this.auroraStaleDnsHelper.OpenVerifiedConnection(
+                connection = this.auroraStaleDnsHelper.OpenVerifiedConnection(
                     isInitialConnection,
                     this.hostListProviderService!,
                     hostSpec!,
@@ -184,7 +190,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
                 }
                 catch (FailoverSuccessException)
                 {
-                    return this.pluginService.CurrentConnection!;
+                    connection = this.pluginService.CurrentConnection!;
                 }
             }
         }
@@ -197,11 +203,21 @@ public class FailoverPlugin : AbstractConnectionPlugin
             }
             catch (FailoverSuccessException)
             {
-                return this.pluginService.CurrentConnection!;
+                connection = this.pluginService.CurrentConnection!;
             }
         }
 
-        throw new InvalidOperationException("Unable to establish connection");
+        if (connection == null)
+        {
+            throw new InvalidOperationException("Unable to establish connection");
+        }
+
+        if (isInitialConnection)
+        {
+            this.pluginService.RefreshHostList(connection);
+        }
+
+        return connection;
     }
 
     public override void InitHostProvider(string initialUrl, Dictionary<string, string> properties, IHostListProviderService initHostListProviderService, ADONetDelegate initHostProviderFunc)
@@ -436,6 +452,8 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
     private void ThrowFailoverSuccessException()
     {
+        Logger.LogTrace("Failover succeeded");
+
         if (this.shouldThrowTransactionError)
         {
             this.shouldThrowTransactionError = false;

@@ -22,18 +22,33 @@ public static class AwsWrapperDbContextOptionsBuilderExtensions
 {
     public static DbContextOptionsBuilder UseAwsWrapper(
         this DbContextOptionsBuilder optionsBuilder,
-        string connectionString)
+        string wrapperConnectionString,
+        Action<DbContextOptionsBuilder> wrappedOptionsBuilderAction)
     {
         ArgumentNullException.ThrowIfNull(optionsBuilder);
-        ArgumentException.ThrowIfNullOrEmpty(connectionString);
+        ArgumentException.ThrowIfNullOrEmpty(wrapperConnectionString);
 
-        var extension = new AwsWrapperOptionsExtension();
+        var wrappedOptionBuilder = new DbContextOptionsBuilder();
+        wrappedOptionsBuilderAction(wrappedOptionBuilder);
+
+        IDbContextOptionsExtension? targetOptionExtension = wrappedOptionBuilder.Options.Extensions.Where(x => x is not CoreOptionsExtension).FirstOrDefault();
+
+        ((IDbContextOptionsBuilderInfrastructure)optionsBuilder).AddOrUpdateExtension(targetOptionExtension!);
+
+        var extension = new AwsWrapperOptionsExtension(targetOptionExtension!, wrapperConnectionString);
         ((IDbContextOptionsBuilderInfrastructure)optionsBuilder).AddOrUpdateExtension(extension);
 
         ConfigureWarnings(optionsBuilder);
 
         return optionsBuilder;
     }
+
+    public static DbContextOptionsBuilder<TContext> UseAwsWrapper<TContext>(
+    this DbContextOptionsBuilder<TContext> optionsBuilder,
+    string connectionString,
+    Action<DbContextOptionsBuilder> wrappedOptionsBuilderAction)
+    where TContext : DbContext
+    => (DbContextOptionsBuilder<TContext>)UseAwsWrapper((DbContextOptionsBuilder)optionsBuilder, connectionString, wrappedOptionsBuilderAction);
 
     private static void ConfigureWarnings(DbContextOptionsBuilder optionsBuilder)
     {

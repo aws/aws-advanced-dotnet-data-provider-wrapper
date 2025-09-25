@@ -66,6 +66,30 @@ public class TestRunner {
   }
 
   @TestTemplate
+  public void runMySQLEFAuroraTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
+
+    try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
+      env.runTests("mysql-ef", "aurora");
+    }
+  }
+
+  @TestTemplate
+  public void runMySQLEFMultiAzClusterTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
+
+    try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
+      env.runTests("mysql-ef", "multi-az-cluster");
+    }
+  }
+
+  @TestTemplate
+  public void runMySQLEFMultiAzInstanceTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
+
+    try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
+      env.runTests("mysql-ef", "multi-az-instance");
+    }
+  }
+
+  @TestTemplate
   public void debugTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
 
     try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {

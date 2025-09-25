@@ -15,7 +15,7 @@
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics.CodeAnalysis;
-
+using System.Runtime.CompilerServices;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
@@ -29,11 +29,14 @@ using AwsWrapperDataProvider.Driver.Plugins.Iam;
 using AwsWrapperDataProvider.Driver.Plugins.SecretsManager;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
+using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider;
 
 public class AwsWrapperConnection : DbConnection
 {
+    private static readonly ILogger<AwsWrapperConnection> Logger = LoggerUtils.GetLogger<AwsWrapperConnection>();
+
     protected readonly IPluginService pluginService;
     private readonly IHostListProviderService hostListProviderService;
     private Type targetType;
@@ -62,6 +65,8 @@ public class AwsWrapperConnection : DbConnection
             }
         }
     }
+
+    public override int ConnectionTimeout => this.TargetDbConnection?.ConnectionTimeout ?? base.ConnectionTimeout;
 
     public AwsWrapperConnection(DbConnection connection, ConfigurationProfile? profile) : this(
         connection.GetType(),
@@ -203,6 +208,7 @@ public class AwsWrapperConnection : DbConnection
             this.pluginService.CurrentConnection,
             "DbConnection.CreateCommand",
             () => (TCommand)this.pluginService.CurrentConnection.CreateCommand());
+        Logger.LogDebug("DbCommand created for DbConnection@{Id}", RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection));
 
         this.ConnectionProperties[PropertyDefinition.TargetCommandType.Name] = typeof(TCommand).AssemblyQualifiedName!;
         return new AwsWrapperCommand<TCommand>(command, this, this.PluginManager);

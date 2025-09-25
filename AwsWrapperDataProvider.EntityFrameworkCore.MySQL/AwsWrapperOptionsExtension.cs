@@ -17,6 +17,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Pomelo.EntityFrameworkCore.MySql.Storage.Internal;
 
 namespace AwsWrapperDataProvider.EntityFrameworkCore.MySQL;
 
@@ -24,12 +25,20 @@ public class AwsWrapperOptionsExtension : IDbContextOptionsExtension
 {
     private AwsWrapperDbContextOptionsExtensionInfo? info;
 
-    public AwsWrapperOptionsExtension()
+    public IDbContextOptionsExtension WrappedExtension { get; set; }
+
+    public string WrapperConnectionString { get; }
+
+    public AwsWrapperOptionsExtension(IDbContextOptionsExtension wrappedExtension, string wrapperConnectionString)
     {
+        this.WrappedExtension = wrappedExtension;
+        this.WrapperConnectionString = wrapperConnectionString;
     }
 
     public void ApplyServices(IServiceCollection services)
     {
+        this.WrappedExtension.ApplyServices(services);
+
         var builder = new EntityFrameworkRelationalServicesBuilder(services);
 
         var targetRelationalConnectionServiceDescriptor = services.FirstOrDefault(x => x.ServiceType == typeof(IRelationalConnection));
@@ -50,7 +59,7 @@ public class AwsWrapperOptionsExtension : IDbContextOptionsExtension
         }
         else
         {
-            throw new Exception("not implemented");
+            throw new InvalidOperationException("Could not determine the target relational connection type or factory.");
         }
 
         services.Replace(new ServiceDescriptor(typeof(IRelationalConnection), p => p.GetRequiredService<IAwsWrapperRelationalConnection>(), ServiceLifetime.Scoped));

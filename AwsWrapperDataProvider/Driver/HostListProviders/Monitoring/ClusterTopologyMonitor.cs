@@ -331,7 +331,6 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         }
 
         DateTime endTime = DateTime.UtcNow.AddMilliseconds(timeoutMs);
-        LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, $"Timeout is {endTime:yyyy-MM-dd HH:mm:ss.fff}");
         IList<HostSpec>? latestHosts = [];
         lock (this.topologyUpdatedLock)
         {
@@ -395,11 +394,13 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                         writerVerifiedByThisThread = true;
                         if (RdsUtils.IsRdsInstance(this.initialHostSpec.Host))
                         {
+                            Logger.LogTrace("{host} IS a rds instance", this.initialHostSpec.Host);
                             this.writerHostSpec = this.initialHostSpec;
                             LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, string.Format(Resources.ClusterTopologyMonitor_WriterMonitoringConnection, this.writerHostSpec));
                         }
                         else
                         {
+                            Logger.LogTrace("{host} IS NOT a rds instance", this.initialHostSpec.Host);
                             string? nodeId = await this.GetNodeIdAsync(this.monitoringConnection);
                             if (!string.IsNullOrEmpty(nodeId))
                             {
@@ -661,7 +662,6 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                 hosts.Add(writers.MaxBy(x => x.LastUpdateTime)!);
             }
 
-            LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, LoggerUtils.LogTopology(hosts, null));
             return hosts;
         }
         catch (Exception ex)

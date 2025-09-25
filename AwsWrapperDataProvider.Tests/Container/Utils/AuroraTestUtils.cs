@@ -679,7 +679,7 @@ public class AuroraTestUtils
         {
             try
             {
-                Console.WriteLine($"Simulating temporary failure to {instanceName}...");
+                Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Simulating temporary failure to {instanceName}...");
                 if (delay != TimeSpan.Zero)
                 {
                     await Task.Delay(delay);
@@ -737,6 +737,10 @@ public class AuroraTestUtils
             {
                 await Task.Delay(TimeSpan.FromSeconds(1));
             }
+
+            var instancesWithoutInitialWriter = TestEnvironment.Env.Info.DatabaseInfo.Instances.Where(i => i.InstanceId != initialWriterId).ToList();
+
+            await this.MakeSureInstancesUpAsync(instancesWithoutInitialWriter, TimeSpan.FromMinutes(5));
         }
 
         Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Finished failover from {initialWriterId} to target: {targetWriterId}");
@@ -792,30 +796,34 @@ public class AuroraTestUtils
         };
     }
 
-    public string? ExecuteInstanceIdQuery(IDbConnection connection, DatabaseEngine engine, DatabaseEngineDeployment deployment)
+    public string ExecuteQuery(IDbConnection connection, DatabaseEngine engine, DatabaseEngineDeployment deployment, string query)
     {
+        using var command = connection.CreateCommand();
+        command.CommandText = query;
+        var result = Convert.ToString(command.ExecuteScalar());
+        if (result == null)
+        {
+            throw new InvalidOperationException("Failed to retrieve instance ID.");
+        }
+
+        Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Finished ExecuteScalar with result: {result}");
+        return result;
+    }
+
+    public string ExecuteInstanceIdQuery(IDbConnection connection, DatabaseEngine engine, DatabaseEngineDeployment deployment)
+    {
+        string instanceId;
         try
         {
-            string query = this.GetInstanceIdSql(engine, deployment);
-
-            using var command = connection.CreateCommand();
-            command.CommandText = query;
-            Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Before ExecuteScalar with Instance Id Query");
-            var result = Convert.ToString(command.ExecuteScalar());
-            if (result == null)
-            {
-                throw new InvalidOperationException("Failed to retrieve instance ID.");
-            }
-
-            Console.WriteLine(
-                $"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Finished ExecuteScalar with result: {result}");
-            return result;
+            instanceId = this.ExecuteQuery(connection, engine, deployment, this.GetInstanceIdSql(engine, deployment));
         }
         catch (NotSupportedException ex)
         {
             Console.WriteLine("[Warning] error thrown when executing instance id query: ", ex);
             return null;
         }
+
+        return instanceId;
     }
 
     public string? QueryInstanceId(IDbConnection connection)

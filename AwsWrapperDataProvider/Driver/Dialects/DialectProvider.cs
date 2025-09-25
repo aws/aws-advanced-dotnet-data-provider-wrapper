@@ -185,12 +185,17 @@ public class DialectProvider
             Logger.LogError(ex, "Error testing current dialect {currentDialect}: {message}", currDialect.GetType().FullName, ex.Message);
         }
 
-        Logger.LogError("Unable to find valid dialect type for connection. Connection type: {connectionType}, Current dialect: {currentDialect}, Candidates tested: {candidates}",
+        Logger.LogWarning("Unable to find valid dialect type for connection. Connection type: {connectionType}, Current dialect: {currentDialect}, Candidates tested: {candidates}",
             connection.GetType().FullName,
             currDialect.GetType().FullName,
             string.Join(", ", dialectCandidates.Select(d => d.FullName)));
 
-        throw new ArgumentException(Properties.Resources.Error_UnableToFindValidDialectType);
+        if (currDialect is UnknownDialect)
+        {
+            throw new ArgumentException(Properties.Resources.Error_UnableToFindValidDialectType);
+        }
+
+        return currDialect;
     }
 
     private static IDialect? GetDialectFromType(Type? dialectType)

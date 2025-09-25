@@ -69,22 +69,19 @@ public class AuroraStaleDnsHelper
 
         // Check the role of the connection we actually got
         HostRole connectionRole = this.pluginService.GetHostRole(connection);
+        Logger.LogTrace("Current connection role: {role}", connectionRole);
 
-        if (connectionRole == HostRole.Reader)
+        foreach (var reader in this.GetReaders() ?? [])
         {
-            // If the connection URL is a writer cluster endpoint but we got a reader,
-            // this indicates the topology is outdated. Force refresh to update it.
-            this.pluginService.ForceRefreshHostList(connection);
-        }
-        else
-        {
-            // Normal refresh for writer connections
-            this.pluginService.RefreshHostList(connection);
+            using var readerConn = this.pluginService.OpenConnection(reader, props, null);
+            HostRole role = this.pluginService.GetHostRole(readerConn);
+            Logger.LogTrace("Current connection role: {role} for {host}", connectionRole, reader);
         }
 
+        this.pluginService.ForceRefreshHostList(connection);
         Logger.LogTrace(LoggerUtils.LogTopology(this.pluginService.AllHosts, null));
 
-        this.writerHostSpec ??= this.GetWriter();
+        this.writerHostSpec = this.GetWriter();
         Logger.LogTrace("Writer host spec: {hostSpec}", this.writerHostSpec);
 
         if (this.writerHostSpec == null)
@@ -93,7 +90,7 @@ public class AuroraStaleDnsHelper
             return connection;
         }
 
-        this.writerHostAddress ??= GetHostIpAddress(this.writerHostSpec.Host);
+        this.writerHostAddress = GetHostIpAddress(this.writerHostSpec.Host);
         Logger.LogTrace("Writer host address: {address}", this.writerHostAddress);
 
         if (this.writerHostAddress == null)
@@ -166,5 +163,10 @@ public class AuroraStaleDnsHelper
     private HostSpec? GetWriter()
     {
         return this.pluginService.AllHosts.FirstOrDefault(host => host.Role == HostRole.Writer);
+    }
+
+    private IList<HostSpec>? GetReaders()
+    {
+        return [.. this.pluginService.AllHosts.Where(host => host.Role != HostRole.Writer)];
     }
 }

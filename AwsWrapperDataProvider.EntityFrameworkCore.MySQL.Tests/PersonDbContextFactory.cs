@@ -13,43 +13,24 @@
 // limitations under the License.
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Design;
 
 namespace AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests;
 
-public class PersonDbContext : DbContext
+public class PersonDbContextFactory : IDesignTimeDbContextFactory<PersonDbContext>
 {
-    public DbSet<Person> Persons { get; set; }
-
-    public PersonDbContext(DbContextOptions<PersonDbContext> options)
-        : base(options)
+    public PersonDbContext CreateDbContext(string[] args)
     {
-    }
-
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        if (optionsBuilder.IsConfigured)
-        {
-            return;
-        }
-
         var connectionString = EFUtils.GetMySqlConnectionString();
         var version = new MySqlServerVersion("8.0.32");
 
-        optionsBuilder
+        var options = new DbContextOptionsBuilder<PersonDbContext>()
             .UseAwsWrapper(
             connectionString,
             wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, version))
-            .LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Trace);
-    }
+            .LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Trace)
+            .Options;
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
-        modelBuilder.Entity<Person>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.HasIndex(e => e.Id).IsUnique();
-            entity.Property(e => e.FirstName).IsRequired().HasMaxLength(50);
-            entity.Property(e => e.LastName).IsRequired().HasMaxLength(100);
-        });
+        return new PersonDbContext(options);
     }
 }

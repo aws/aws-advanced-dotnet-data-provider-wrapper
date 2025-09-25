@@ -65,14 +65,14 @@ public class PluginService : IPluginService, IHostListProviderService
             try
             {
                 this.transaction?.Rollback();
-                this.transaction?.Dispose();
             }
-            catch (Exception)
+            catch
             {
-                // Do nothing.
+                // ignore
             }
             finally
             {
+                this.transaction?.Dispose();
                 this.transaction = value;
             }
         }
@@ -132,7 +132,6 @@ public class PluginService : IPluginService, IHostListProviderService
             {
                 if (!ReferenceEquals(connection, oldConnection))
                 {
-                    oldConnection?.Close();
                     oldConnection?.Dispose();
                     Logger.LogTrace("Old connection {Type}@{Id} is disposed.", oldConnection?.GetType().FullName, RuntimeHelpers.GetHashCode(oldConnection));
                 }
@@ -286,6 +285,8 @@ public class PluginService : IPluginService, IHostListProviderService
             this.hostListProvider = this.Dialect.HostListProviderSupplier(this.props, this, this)
                                      ?? this.hostListProvider;
         }
+
+        this.RefreshHostList(connection);
     }
 
     public HostSpec? IdentifyConnection(DbConnection connection)

@@ -31,7 +31,7 @@ public class HostMonitorService : IHostMonitorService
 
     public static readonly int DefaultMonitorDisposalTimeMs = 600000;
 
-    public static readonly MemoryCache Monitors = new(new MemoryCacheOptions { SizeLimit = 100 });
+    internal static readonly MemoryCache Monitors = new(new MemoryCacheOptions { SizeLimit = 100 });
 
     public static string GetMonitorKey(int failureDetectionTimeMs, int failureDetectionIntervalMs, int failureDetectionCount, string host)
     {

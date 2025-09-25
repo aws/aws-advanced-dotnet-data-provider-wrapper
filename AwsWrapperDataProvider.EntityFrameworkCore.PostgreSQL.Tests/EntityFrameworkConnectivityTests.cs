@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests;
+namespace AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL.Tests;
 
-public class EntityFrameowrkConnectivityTests
+public class EntityFrameworkConnectivityTests
 {
     [Fact]
     [Trait("Category", "Integration")]
-    public void MysqlConnectivityTest()
+    public void PgConnectivityTest()
     {
         using (var db = new PersonDbContext())
         {

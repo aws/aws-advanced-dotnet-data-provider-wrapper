@@ -228,12 +228,13 @@ public class DialectProviderTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void UpdateDialect_WithInvalidMysqlDialect_ThrowsArgumentError()
+    public void UpdateDialect_CannotUpdate_ReturnsSameDialect()
     {
         this.mockCommand.Setup(c => c.ExecuteReader()).Throws(new MockDbException());
 
         var mysqlDialect = new MySqlDialect();
-        Assert.Throws<ArgumentException>(() => this.dialectProvider.UpdateDialect(this.mockConnection.Object, mysqlDialect));
+        var updatedDialect = this.dialectProvider.UpdateDialect(this.mockConnection.Object, mysqlDialect);
+        Assert.IsType<MySqlDialect>(updatedDialect);
         this.mockConnection.Verify(c => c.CreateCommand(), Times.AtLeastOnce);
     }
 

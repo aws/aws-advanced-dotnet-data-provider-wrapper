@@ -25,8 +25,7 @@ public class AwsWrapperTransaction : DbTransaction
     protected IPluginService pluginService;
     protected AwsWrapperConnection wrapperConnection;
 
-    protected DbTransaction TargetTransaction => this.pluginService.CurrentTransaction
-                                                 ?? throw new ArgumentNullException(nameof(this.pluginService.CurrentTransaction));
+    protected DbTransaction? TargetTransaction => this.pluginService.CurrentTransaction;
 
     internal AwsWrapperTransaction(AwsWrapperConnection wrapperConnection, IPluginService pluginService, ConnectionPluginManager pluginManager)
     {
@@ -35,9 +34,9 @@ public class AwsWrapperTransaction : DbTransaction
         this.wrapperConnection = wrapperConnection;
     }
 
-    public override IsolationLevel IsolationLevel => this.TargetTransaction.IsolationLevel;
+    public override IsolationLevel IsolationLevel => this.TargetTransaction?.IsolationLevel ?? IsolationLevel.Unspecified;
 
-    internal DbTransaction TargetDbTransaction => this.TargetTransaction;
+    internal DbTransaction? TargetDbTransaction => this.TargetTransaction;
 
     protected override DbConnection? DbConnection => this.wrapperConnection;
 
@@ -48,6 +47,7 @@ public class AwsWrapperTransaction : DbTransaction
             this.TargetTransaction!,
             "DbTransaction.Commit",
             () => this.TargetTransaction!.Commit());
+        this.pluginService.CurrentTransaction = null;
     }
 
     public override void Rollback()
@@ -57,6 +57,7 @@ public class AwsWrapperTransaction : DbTransaction
             this.TargetTransaction!,
             "DbTransaction.Rollback",
             () => this.TargetTransaction!.Rollback());
+        this.pluginService.CurrentTransaction = null;
     }
 
     public override void Save(string savepointName)
@@ -84,5 +85,24 @@ public class AwsWrapperTransaction : DbTransaction
             this.TargetTransaction!,
             "DbTransaction.Release",
             () => this.TargetTransaction!.Release(savepointName));
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (this.TargetTransaction == null)
+        {
+            return;
+        }
+
+        if (disposing)
+        {
+            WrapperUtils.RunWithPlugins(
+                this.pluginManager!,
+                this.TargetTransaction,
+                "DbTransaction.Dispose",
+                () => this.TargetTransaction!.Dispose());
+        }
+
+        this.pluginService.CurrentTransaction = null;
     }
 }

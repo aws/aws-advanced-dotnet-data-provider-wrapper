@@ -26,7 +26,6 @@ import com.github.dockerjava.api.exception.DockerException;
 import eu.rekawek.toxiproxy.ToxiproxyClient;
 import integration.host.TestInstanceInfo;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import org.testcontainers.DockerClientFactory;
@@ -98,10 +97,20 @@ public class ContainerHelper {
     System.out.println("==== Container console feed ==== >>>>");
     Consumer<OutputFrame> consumer = new ConsoleConsumer(true);
     execInContainer(container, consumer, "printenv", "TEST_ENV_DESCRIPTION");
-    execInContainer(container, consumer, "printenv", "TEST_ENV_INFO_JSON");
 
     Long exitCode = execInContainer(container, consumer, "dotnet", "build");
-    assertEquals(0, exitCode, "Build failed.");
+    assertEquals(0, exitCode, "Dotnet build failed.");
+
+    // For Entity Framework tests
+    if (task.endsWith("ef")) {
+        exitCode = execInContainer(container, consumer,
+                "dotnet", "ef", "migrations", "add", "InitialCreate_" + System.currentTimeMillis(), "--project", "AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests");
+        assertEquals(0, exitCode, "Failed to generate Entity framework migration.");
+
+        exitCode = execInContainer(container, consumer,
+                "dotnet", "ef", "database", "update", "--project", "AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests");
+        assertEquals(0, exitCode, "Failed to update database with migration");
+    }
 
     exitCode = execInContainer(container, consumer, "dotnet", "test", "--filter",
             "Category=Integration&Database=" + task + "&Engine=" + engineDeployment, "--no-build", "--logger:\"console;verbosity=detailed\"");
@@ -200,6 +209,8 @@ public class ContainerHelper {
                 builder -> appendExtraCommandsToBuilder.apply(
                     builder
                         .from(testContainerImageName)
+                        .run("dotnet tool install --global dotnet-ef")
+                        .env("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/.dotnet/tools")
                         .run("mkdir", "app")
                         .workDir("/app")
                         .entryPoint("/bin/sh -c \"while true; do sleep 30; done;\"")
