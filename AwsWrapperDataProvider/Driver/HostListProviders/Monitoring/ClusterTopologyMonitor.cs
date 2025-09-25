@@ -394,11 +394,13 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                         writerVerifiedByThisThread = true;
                         if (RdsUtils.IsRdsInstance(this.initialHostSpec.Host))
                         {
+                            Logger.LogTrace("{host} IS a rds instance", this.initialHostSpec.Host);
                             this.writerHostSpec = this.initialHostSpec;
                             LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, string.Format(Resources.ClusterTopologyMonitor_WriterMonitoringConnection, this.writerHostSpec));
                         }
                         else
                         {
+                            Logger.LogTrace("{host} IS NOT a rds instance", this.initialHostSpec.Host);
                             string? nodeId = await this.GetNodeIdAsync(this.monitoringConnection);
                             if (!string.IsNullOrEmpty(nodeId))
                             {
