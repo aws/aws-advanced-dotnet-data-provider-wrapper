@@ -151,6 +151,7 @@ public static class PropertyDefinition
 
     public static readonly AwsWrapperProperty SkipFailoverOnInterruptedThread = new(
         "SkipFailoverOnInterruptedThread", "false", "Enable to skip failover if the current thread is interrupted.");
+
     public static readonly AwsWrapperProperty ClusterTopologyHighRefreshRateMs = new(
         "ClusterTopologyHighRefreshRateMs", "100", "Cluster topology high refresh rate in milliseconds.");
 
