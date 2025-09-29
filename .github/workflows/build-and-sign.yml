@@ -38,7 +38,7 @@ jobs:
         with:
           role-skip-session-tagging: true
           aws-region: ${{ secrets.AWS_OIDC_REGION }}
-          role-to-assume: ${{ secrets.AWS_OIDC_ROLE }}
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_OCID_ACCOUNT_ID }}:${{ secrets.AWS_OIDC_ROLE }}
           role-session-name: aws-dotnet-wrapper-signer
 
       - name: Configure Signer AWS credentials
