@@ -74,6 +74,9 @@ public class EfmConnectivityIntegrationTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg")]
+    [Trait("Engine", "aurora")]
+    [Trait("Engine", "multi-az-cluster")]
+    [Trait("Engine", "multi-az-instance")]
     public async Task EfmPluginTest_NetworkFailureDetection()
     {
         int failureDelaySec = 10;

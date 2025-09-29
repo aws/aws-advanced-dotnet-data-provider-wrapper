@@ -8,8 +8,8 @@ permissions:
   contents: read    # This is required for actions/checkout
 
 jobs:
-  run-integration-tests:
-    name: Run Integration Tests with Default
+  run-ef-integration-tests:
+    name: Run Entity Framework Integration Tests
     runs-on: ubuntu-latest
     strategy: 
       fail-fast: false
