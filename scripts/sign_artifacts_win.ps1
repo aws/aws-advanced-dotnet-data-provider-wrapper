@@ -54,15 +54,17 @@ function Invoke-SignFile {
 
     # Get job ID from S3 object tagging
     Write-Host "Getting job ID from S3 tagging"
-    $retryCount = 0
-    do {
-        $jobId = aws s3api get-object-tagging --bucket $AwsUnsignedBucket --key $key --version-id $versionId --query 'TagSet[?Key==`signer-job-id`].Value | [0]' --output text
-        $jobId = $jobId.Trim('"')
-        $retryCount++
-        if ($jobId -eq "null" -and $retryCount -le $maxRetries) {
-            Start-Sleep -Seconds 5
+    for ( $i = 0; $i -lt 3; $i++ ) {
+        # Get job ID
+        $id=$( aws s3api get-object-tagging --bucket $AwsUnsignedBucket --key $key --version-id $versionId | jq -r '.TagSet[0].Value' )
+        if ( $id -ne "null" ) {
+            $jobId = $id
+            break
         }
-    } while ($jobId -eq "null" -and $retryCount -le $maxRetries)
+
+        Write-Host "Will sleep for 5 seconds between retries."
+        Start-Sleep -Seconds 5
+    }
 
     if ($jobId -eq "null") {
         Write-Host "Failed to get job ID for: $FilePath"
