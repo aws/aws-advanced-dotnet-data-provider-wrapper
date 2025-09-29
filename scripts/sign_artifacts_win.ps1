@@ -39,17 +39,13 @@ function Invoke-SignFile {
     }
 
     $fileName = Split-Path $FilePath -Leaf
-    $key = "DotNetWrapperProfile/AuthenticodeSigner-SHA256-RSA/$fileName"
+    $key = "SignerAwsAdvancedDotnetWrapper_Windows/AuthenticodeSigner-SHA256-RSA/$fileName"
     $maxRetries = 10
 
     # Upload unsigned file to S3
     Write-Host "Uploading unsigned file to S3"
-    $retryCount = 0
-    do {
-        $versionId = aws s3api put-object --bucket $AwsUnsignedBucket --key $key --body $FilePath --acl bucket-owner-full-control --query VersionId --output text
-        $versionId = $versionId.Trim('"')
-        $retryCount++
-    } while ($LASTEXITCODE -ne 0 -and $retryCount -le $maxRetries)
+    $versionId = aws s3api put-object --bucket $AwsUnsignedBucket --key $key --body $FilePath --acl bucket-owner-full-control --query VersionId --output text
+    $versionId = $versionId.Trim('"')
 
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Failed to upload unsigned file: $FilePath"

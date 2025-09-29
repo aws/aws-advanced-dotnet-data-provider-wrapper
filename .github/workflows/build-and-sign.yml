@@ -1,11 +1,10 @@
 name: Build, Sign and Publish .NET Wrapper
 
 on:
+  push:
+    branches:
+      - build/signing-action
   workflow_dispatch:
-    inputs:
-      version:
-        description: The version to tag the release with, e.g., 1.2.0
-        required: true
 
 permissions:
   id-token: write   # This is required for requesting the JWT
@@ -66,20 +65,20 @@ jobs:
           dotnet pack src/AwsWrapperDataProvider/AwsWrapperDataProvider.csproj --configuration Release --no-build -p:PackageVersion=${{ github.event.inputs.version }} --output ./packages
           dotnet pack src/AwsWrapperDataProvider.EntityFrameworkCore.MySQL/AwsWrapperDataProvider.EntityFrameworkCore.MySQL.csproj --configuration Release --no-build -p:PackageVersion=${{ github.event.inputs.version }} --output ./packages
 
-      - name: Upload packages as artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: nuget-packages
-          path: ./packages/*.nupkg
-
-      - name: Configure NuGet credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.NUGET_ACCESS_ROLE_ARN }}
-          aws-region: ${{ secrets.AWS_SIGNER_REGION }}
-
-      - name: Publish to NuGet
-        shell: pwsh
-        run: |
-          $nugetKey = aws secretsmanager get-secret-value --secret-id ${{ secrets.NUGET_SECRETS_ID }} --region ${{ secrets.AWS_SIGNER_REGION }} --output text --query SecretString | ConvertFrom-Json
-          dotnet nuget push ./packages/*.nupkg --source https://api.nuget.org/v3/index.json --api-key $nugetKey.Key
+#      - name: Upload packages as artifacts
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: nuget-packages
+#          path: ./packages/*.nupkg
+#
+#      - name: Configure NuGet credential
+#        uses: aws-actions/configure-aws-credentials@v4
+#        with:
+#          role-to-assume: ${{ secrets.NUGET_ACCESS_ROLE_ARN }}
+#          aws-region: ${{ secrets.AWS_SIGNER_REGION }}
+#
+#      - name: Publish to NuGet
+#        shell: pwsh
+#        run: |
+#          $nugetKey = aws secretsmanager get-secret-value --secret-id ${{ secrets.NUGET_SECRETS_ID }} --region ${{ secrets.AWS_SIGNER_REGION }} --output text --query SecretString | ConvertFrom-Json
+#          dotnet nuget push ./packages/*.nupkg --source https://api.nuget.org/v3/index.json --api-key $nugetKey.Key
