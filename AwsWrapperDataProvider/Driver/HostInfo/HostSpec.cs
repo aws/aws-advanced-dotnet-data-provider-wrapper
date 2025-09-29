@@ -175,7 +175,7 @@ public class HostSpec
     public override string ToString()
     {
         return string.Format(
-            "HostSpec@{0} [host={1}, port={2}, {3}, {4}, weight={5}, {6}, host id ={7}]",
+            "HostSpec@{0} [host={1}, port={2}, {3}, {4}, weight={5}, {6}, host id={7}]",
             this.GetHashCode().ToString("X"),
             this.Host,
             this.Port,

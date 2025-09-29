@@ -74,7 +74,6 @@ public class EfmConnectivityIntegrationTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg")]
-    [Trait("Database", "mysql")]
     public async Task EfmPluginTest_NetworkFailureDetection()
     {
         int failureDelaySec = 10;
