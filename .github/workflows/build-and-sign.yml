@@ -25,13 +25,13 @@ jobs:
 
       - name: Restore dependencies
         run: |
-          dotnet restore src/AwsWrapperDataProvider/AwsWrapperDataProvider.csproj
-          dotnet restore src/AwsWrapperDataProvider.EntityFrameworkCore.MySQL/AwsWrapperDataProvider.EntityFrameworkCore.MySQL.csproj
+          dotnet restore AwsWrapperDataProvider/AwsWrapperDataProvider.csproj
+          dotnet restore AwsWrapperDataProvider.EntityFrameworkCore.MySQL/AwsWrapperDataProvider.EntityFrameworkCore.MySQL.csproj
 
       - name: Build projects
         run: |
-          dotnet build src/AwsWrapperDataProvider/AwsWrapperDataProvider.csproj --configuration Release --no-restore
-          dotnet build src/AwsWrapperDataProvider.EntityFrameworkCore.MySQL/AwsWrapperDataProvider.EntityFrameworkCore.MySQL.csproj --configuration Release --no-restore
+          dotnet build AwsWrapperDataProvider/AwsWrapperDataProvider.csproj --configuration Release --no-restore
+          dotnet build AwsWrapperDataProvider.EntityFrameworkCore.MySQL/AwsWrapperDataProvider.EntityFrameworkCore.MySQL.csproj --configuration Release --no-restore
 
       - name: Configure OIDC AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -56,14 +56,14 @@ jobs:
         run: |
           . ".\sign_artifacts_win.ps1"
           Invoke-SignDlls `
-            -BuildPath "../src" `
+            -BuildPath ".." `
             -AwsUnsignedBucket "${{ secrets.AWS_UNSIGNED_BUCKET }}" `
             -AwsSignedBucket "${{ secrets.AWS_SIGNED_BUCKET }}"
 
       - name: Pack NuGet packages
         run: |
-          dotnet pack src/AwsWrapperDataProvider/AwsWrapperDataProvider.csproj --configuration Release --no-build -p:PackageVersion=${{ github.event.inputs.version }} --output ./packages
-          dotnet pack src/AwsWrapperDataProvider.EntityFrameworkCore.MySQL/AwsWrapperDataProvider.EntityFrameworkCore.MySQL.csproj --configuration Release --no-build -p:PackageVersion=${{ github.event.inputs.version }} --output ./packages
+          dotnet pack AwsWrapperDataProvider/AwsWrapperDataProvider.csproj --configuration Release --no-build -p:PackageVersion=${{ github.event.inputs.version }} --output ./packages
+          dotnet pack AwsWrapperDataProvider.EntityFrameworkCore.MySQL/AwsWrapperDataProvider.EntityFrameworkCore.MySQL.csproj --configuration Release --no-build -p:PackageVersion=${{ github.event.inputs.version }} --output ./packages
 
 #      - name: Upload packages as artifacts
 #        uses: actions/upload-artifact@v4
