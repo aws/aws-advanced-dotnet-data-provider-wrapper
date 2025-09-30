@@ -312,7 +312,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             using (var session = sessionFactory.OpenSession())
             {
                 var john = new Person { FirstName = "John", LastName = "Smith" };
-                await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
+                var exception = await Assert.ThrowsAsync<GenericADOException>(async () =>
                 {
                     var connection = session.Connection;
                     try
@@ -343,6 +343,9 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                         connection.Close();
                     }
                 });
+
+                // Verify the inner exception is FailoverSuccessException
+                Assert.IsType<FailoverSuccessException>(exception.InnerException);
 
                 var joe = new Person { FirstName = "Joe", LastName = "Smith" };
                 using (var transaction = session.BeginTransaction())
