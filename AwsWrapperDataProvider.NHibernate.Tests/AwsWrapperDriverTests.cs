@@ -284,7 +284,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
 
             string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
 
-            var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName, 2, 10);
+            var connectionString = ConnectionStringHelper.GetUrl(Engine, ProxyClusterEndpoint, ProxyPort, Username, Password, DefaultDbName, 2, 10);
             var wrapperConnectionString = connectionString
                 + ";Plugins=failover;"
                 + "EnableConnectFailover=true;"
@@ -323,7 +323,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                         }
 
                         var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-                        var clusterFailureTask = AuroraUtils.SimulateTemporaryFailureTask(TestEnvironment.Env.Info.ProxyDatabaseInfo!.ClusterEndpoint, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
+                        var clusterFailureTask = AuroraUtils.SimulateTemporaryFailureTask(ProxyClusterEndpoint, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
                         var writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
                         await tcs.Task;
 
