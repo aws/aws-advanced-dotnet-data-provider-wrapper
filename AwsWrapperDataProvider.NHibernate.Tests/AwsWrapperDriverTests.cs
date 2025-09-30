@@ -149,11 +149,13 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             }
 
             using (var session = sessionFactory.OpenSession())
-            using (var transaction = session.BeginTransaction())
             {
-                var jane = new Person { FirstName = "Jane", LastName = "Smith" };
-                session.Save(jane);
-                transaction.Commit();
+                using (var transaction = session.BeginTransaction())
+                {
+                    var jane = new Person { FirstName = "Jane", LastName = "Smith" };
+                    session.Save(jane);
+                    transaction.Commit();
+                }
 
                 // Crash instance before opening new connection
                 var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -276,7 +278,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
         [Trait("Database", "mysql-nh")]
         [Trait("Database", "pg-nh")]
         [Trait("Engine", "aurora")]
-        public async Task NHibernateFailoverTest()
+        public async Task NHibernateTempFailureWithFailoverTest()
         {
             Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
 
@@ -307,24 +309,56 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             }
 
             // Crash instance and let driver handle failover
-            var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            await AuroraUtils.CrashInstance(currentWriter, tcs);
-
-            // Driver should handle failover transparently
             using (var session = sessionFactory.OpenSession())
-            using (var transaction = session.BeginTransaction())
             {
                 var john = new Person { FirstName = "John", LastName = "Smith" };
-                session.Save(john);
-                transaction.Commit();
+                await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
+                {
+                    var connection = session.Connection;
+                    try
+                    {
+                        if (connection.State == System.Data.ConnectionState.Closed)
+                        {
+                            connection.Open();
+                        }
+
+                        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                        var clusterFailureTask = AuroraUtils.SimulateTemporaryFailureTask(TestEnvironment.Env.Info.ProxyDatabaseInfo!.ClusterEndpoint, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
+                        var writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
+                        await tcs.Task;
+
+                        // Query to trigger failover
+                        var anyUser = session.CreateCriteria(typeof(Person)).SetMaxResults(1).List<Person>().Any();
+
+                        using (var transaction = session.BeginTransaction())
+                        {
+                            session.Save(john);
+                            transaction.Commit();
+                        }
+
+                        await Task.WhenAll(clusterFailureTask, writerNodeFailureTask);
+                    }
+                    finally
+                    {
+                        connection.Close();
+                    }
+                });
+
+                var joe = new Person { FirstName = "Joe", LastName = "Smith" };
+                using (var transaction = session.BeginTransaction())
+                {
+                    session.Save(joe);
+                    transaction.Commit();
+                }
             }
 
-            // Verify both records exist
+            // Verify records - John should not exist (failed during failover), Jane and Joe should exist
             using (var session = sessionFactory.OpenSession())
             {
                 var persons = session.CreateCriteria(typeof(Person)).List<Person>();
                 Assert.Contains(persons, p => p.FirstName == "Jane");
-                Assert.Contains(persons, p => p.FirstName == "John");
+                Assert.Contains(persons, p => p.FirstName == "Joe");
+                Assert.DoesNotContain(persons, p => p.FirstName == "John");
                 Assert.Equal(2, persons.Count);
             }
         }
