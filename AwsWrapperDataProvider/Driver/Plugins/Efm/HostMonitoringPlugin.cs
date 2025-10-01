@@ -55,11 +55,6 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
         "DbTransaction.Rollback",
         "DbTransaction.RollbackAsync",
 
-        // Connection management methods
-        "DbConnection.Close",
-        "DbConnection.Dispose",
-        "DbConnection.Abort",
-
         // Special methods
         "DbConnection.ClearWarnings",
         "initHostProvider",
@@ -74,7 +69,7 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
 
     public override T Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, params object[] methodArgs)
     {
-        if (!this.isEnabled)
+        if (!this.isEnabled || !this.SubscribedMethods.Contains(methodName))
         {
             return methodFunc();
         }
@@ -85,7 +80,7 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
 
         this.InitMonitorService();
 
-        T result;
+        T result = default!;
         HostMonitorConnectionContext? monitorContext = null;
 
         try
@@ -102,10 +97,11 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
                 failureDetectionIntervalMillis,
                 failureDetectionCount);
 
-            Logger.LogTrace("CurrentConnection state before execute: {CurrentCstateonnection}", this.pluginService.CurrentConnection?.State);
             result = methodFunc();
-            Logger.LogTrace("CurrentConnection state after execute: {CurrentCstateonnection}", this.pluginService.CurrentConnection?.State);
-            Logger.LogTrace("Result of execute: {result}", result);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Exception caught during method execution: {methodName}", methodName);
         }
         finally
         {
@@ -117,10 +113,6 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
 
             Logger.LogTrace(Resources.EfmHostMonitor_DeactivatedMonitoring);
         }
-
-        Logger.LogTrace("CurrentConnection state after stop monitoring: {CurrentCstateonnection}", this.pluginService.CurrentConnection?.State);
-        Logger.LogTrace("methodInvokedOn: {methodInvokedOn}", methodInvokedOn);
-        Logger.LogTrace("Result of execute: {result}", result);
 
         return result;
     }

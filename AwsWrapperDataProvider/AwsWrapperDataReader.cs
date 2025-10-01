@@ -106,7 +106,7 @@ namespace AwsWrapperDataProvider
             return WrapperUtils.ExecuteWithPlugins(
                 this._connectionPluginManager,
                 this._targetDataReader,
-                "DbDataReader.Read()",
+                "DbDataReader.Read",
                 () => this._targetDataReader.Read());
         }
 
