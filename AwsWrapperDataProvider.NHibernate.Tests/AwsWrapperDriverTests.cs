@@ -149,32 +149,32 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             }
 
             using (var session = sessionFactory.OpenSession())
+            using (var transaction = session.BeginTransaction())
             {
-                using (var transaction = session.BeginTransaction())
-                {
-                    var jane = new Person { FirstName = "Jane", LastName = "Smith" };
-                    session.Save(jane);
-                    transaction.Commit();
-                }
+                var jane = new Person { FirstName = "Jane", LastName = "Smith" };
+                session.Save(jane);
+                transaction.Commit();
+            }
 
-                // Crash instance before opening new connection
-                var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-                await AuroraUtils.CrashInstance(currentWriter, tcs);
+            // Crash instance before opening new connection
+            var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            await AuroraUtils.CrashInstance(currentWriter, tcs);
 
-                // These operations should work transparently - driver handles failover during connection
-                using (var newTransaction = session.BeginTransaction())
-                {
-                    var john = new Person { FirstName = "John", LastName = "Smith" };
-                    session.Save(john);
-                    newTransaction.Commit();
-                }
+            // These operations should work transparently - driver handles failover during connection
+            using (var newSession = sessionFactory.OpenSession())
+            using (var newTransaction = newSession.BeginTransaction())
+            {
+                var john = new Person { FirstName = "John", LastName = "Smith" };
+                newSession.Save(john);
+                newTransaction.Commit();
+            }
 
-                using (var anotherTransaction = session.BeginTransaction())
-                {
-                    var joe = new Person { FirstName = "Joe", LastName = "Smith" };
-                    session.Save(joe);
-                    anotherTransaction.Commit();
-                }
+            using (var anotherSession = sessionFactory.OpenSession())
+            using (var anotherTransaction = anotherSession.BeginTransaction())
+            {
+                var joe = new Person { FirstName = "Joe", LastName = "Smith" };
+                anotherSession.Save(joe);
+                anotherTransaction.Commit();
             }
 
             using (var session = sessionFactory.OpenSession())
