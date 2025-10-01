@@ -276,7 +276,6 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
         [Fact]
         [Trait("Category", "Integration")]
         [Trait("Database", "mysql-nh")]
-        [Trait("Database", "pg-nh")]
         [Trait("Engine", "aurora")]
         public async Task NHibernateTempFailureWithFailoverTest()
         {
