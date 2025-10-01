@@ -161,20 +161,20 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             await AuroraUtils.CrashInstance(currentWriter, tcs);
 
             // These operations should work transparently - driver handles failover during connection
-            using (var newSession = sessionFactory.OpenSession())
-            using (var newTransaction = newSession.BeginTransaction())
+            using (var session = sessionFactory.OpenSession())
+            using (var transaction = session.BeginTransaction())
             {
                 var john = new Person { FirstName = "John", LastName = "Smith" };
-                newSession.Save(john);
-                newTransaction.Commit();
+                session.Save(john);
+                transaction.Commit();
             }
 
-            using (var anotherSession = sessionFactory.OpenSession())
-            using (var anotherTransaction = anotherSession.BeginTransaction())
+            using (var session = sessionFactory.OpenSession())
+            using (var transaction = session.BeginTransaction())
             {
                 var joe = new Person { FirstName = "Joe", LastName = "Smith" };
-                anotherSession.Save(joe);
-                anotherTransaction.Commit();
+                session.Save(joe);
+                transaction.Commit();
             }
 
             using (var session = sessionFactory.OpenSession())
