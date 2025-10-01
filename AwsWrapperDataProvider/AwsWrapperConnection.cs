@@ -197,6 +197,7 @@ public class AwsWrapperConnection : DbConnection
         ArgumentNullException.ThrowIfNull(this.hostListProviderService);
 
         this.PluginManager!.InitHostProvider(this.connectionString!, this.ConnectionProperties!, this.hostListProviderService!);
+        this.pluginService.ForceRefreshHostList();
 
         DbConnection connection = WrapperUtils.OpenWithPlugins(
             this.PluginManager!,
