@@ -102,6 +102,7 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
         catch (Exception ex)
         {
             Logger.LogError(ex, "Exception caught during method execution: {methodName}", methodName);
+            throw;
         }
         finally
         {

@@ -412,6 +412,7 @@ public class HostMonitor : IHostMonitor
         try
         {
             connection.Close();
+            Logger.LogTrace("Finished aborting unhealthy connection.");
         }
         catch (Exception ex)
         {

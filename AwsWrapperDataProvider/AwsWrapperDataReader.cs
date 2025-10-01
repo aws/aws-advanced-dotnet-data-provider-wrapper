@@ -112,7 +112,7 @@ namespace AwsWrapperDataProvider
 
         protected override void Dispose(bool disposing)
         {
-            if (disposing)
+            if (disposing && this._targetDataReader is not null)
             {
                 WrapperUtils.RunWithPlugins(
                     this._connectionPluginManager,
