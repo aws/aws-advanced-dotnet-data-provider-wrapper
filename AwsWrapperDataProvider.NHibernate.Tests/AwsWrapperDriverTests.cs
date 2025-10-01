@@ -24,6 +24,7 @@ using NHibernate.Driver.MySqlConnector;
 using NHibernate.Exceptions;
 
 [assembly: CollectionBehavior(DisableTestParallelization = true)]
+[assembly: CaptureConsole]
 
 namespace AwsWrapperDataProvider.NHibernate.Tests
 {
