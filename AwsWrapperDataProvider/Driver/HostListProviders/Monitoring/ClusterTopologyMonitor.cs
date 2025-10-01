@@ -438,7 +438,8 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
         IList<HostSpec>? hosts = await this.FetchTopologyAndUpdateCacheAsync(this.monitoringConnection);
 
-        // Update the real host for multiaz cluster
+        // TODO: Generate correct writer host spec with node name query
+        // Workaround: Update the real host for multiaz cluster
         Logger.LogTrace("Writer host before update: {writerHostSpec}", this.writerHostSpec);
         this.writerHostSpec = hosts?.FirstOrDefault(h => h.HostId == this.writerHostSpec!.HostId) ?? this.writerHostSpec;
         Logger.LogTrace("Writer host after update: {writerHostSpec}", this.writerHostSpec);
