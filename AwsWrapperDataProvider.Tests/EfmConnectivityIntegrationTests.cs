@@ -81,11 +81,11 @@ public class EfmConnectivityIntegrationTests : IntegrationTestBase
     {
         int failureDelaySec = 10;
         int maxDurationsSec = 30;
-        var instance1 = ProxyDatabaseInfo.Instances[0].Host;
+        var instance = ProxyDatabaseInfo.Instances[0].Host;
         var port = ProxyDatabaseInfo.Instances[0].Port;
         var instanceId = ProxyDatabaseInfo.Instances[0].InstanceId;
 
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, instance1, port, Username, Password, DefaultDbName, commandTimeout: maxDurationsSec, connectionTimeout: 10, plugins: "efm");
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, instance, port, Username, Password, DefaultDbName, commandTimeout: maxDurationsSec, connectionTimeout: 10, plugins: "efm");
         connectionString += $";FailureDetectionTime={5000};FailureDetectionCount=1;";
 
         using AwsWrapperConnection connection = Engine switch
