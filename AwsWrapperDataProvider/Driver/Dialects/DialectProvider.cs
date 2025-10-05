@@ -171,7 +171,7 @@ public class DialectProvider
                     {
                         var newConnection = this.pluginService.OpenConnection(this.pluginService.CurrentHostSpec!, this.properties, null);
                         this.pluginService.SetCurrentConnection(newConnection, this.pluginService.CurrentHostSpec);
-                        Logger.LogDebug("Reopened connection through plugin pipeline after dialect detection closed connection");
+                        Logger.LogDebug("Reopened connection through plugin pipeline after dialect detection failed");
                     }
                     catch (Exception reopenEx)
                     {

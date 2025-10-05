@@ -18,6 +18,7 @@ using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.Exceptions;
 using AwsWrapperDataProvider.Driver.HostInfo;
+using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Utils;
 using Moq;
 using MySqlConnector;
@@ -36,10 +37,6 @@ public class DialectProviderTests
 
     public DialectProviderTests()
     {
-        this.mockPluginService = new Mock<PluginService>();
-        this.mockPluginService.Object.InitialConnectionHostSpec = new HostSpecBuilder().WithHost("anyHost").Build();
-        this.dialectProvider = new DialectProvider(this.mockPluginService.Object);
-
         this.mockConnection = new Mock<IDbConnection>();
         this.mockConnection.SetupAllProperties();
         this.mockConnection.Object.ConnectionString = "anyHost";
@@ -48,6 +45,12 @@ public class DialectProviderTests
         this.mockReader = new Mock<IDataReader>();
         this.mockConnection.Setup(c => c.CreateCommand()).Returns(this.mockCommand.Object);
         this.mockCommand.Setup(c => c.ExecuteReader()).Returns(this.mockReader.Object);
+
+        this.mockPluginService = new Mock<PluginService>();
+        this.mockPluginService.Object.InitialConnectionHostSpec = new HostSpecBuilder().WithHost("anyHost").Build();
+
+        var props = new Dictionary<string, string>();
+        this.dialectProvider = new DialectProvider(this.mockPluginService.Object, props);
     }
 
     public static TheoryData<Dictionary<string, string>, Type> GuessDialectTestData =>
@@ -87,7 +90,8 @@ public class DialectProviderTests
     [MemberData(nameof(GuessDialectTestData))]
     public void GuessDialectTest<T>(Dictionary<string, string> props, Type dialectType)
     {
-        var dialect = this.dialectProvider.GuessDialect(props);
+        var dialectProvider = new DialectProvider(this.mockPluginService.Object, props);
+        var dialect = dialectProvider.GuessDialect();
         Assert.IsType(dialectType, dialect);
     }
 
@@ -96,7 +100,8 @@ public class DialectProviderTests
     public void GuessDialect_WithInvalidCustomDialect_ThrowsInvalidOperationException()
     {
         var props = new Dictionary<string, string> { { PropertyDefinition.TargetDialect.Name, "NonExistentType" }, };
-        Assert.Throws<InvalidOperationException>(() => this.dialectProvider.GuessDialect(props));
+        var dialectProvider = new DialectProvider(this.mockPluginService.Object, props);
+        Assert.Throws<InvalidOperationException>(() => dialectProvider.GuessDialect());
     }
 
     [Fact]
