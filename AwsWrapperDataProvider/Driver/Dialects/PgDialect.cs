@@ -51,7 +51,7 @@ public class PgDialect : IDialect
         {
             if (conn.State != ConnectionState.Open)
             {
-                Logger.LogError("Connection is not open");
+                Logger.LogWarning("Connection is not open while checking weather it's PG dialect");
                 return false;
             }
 

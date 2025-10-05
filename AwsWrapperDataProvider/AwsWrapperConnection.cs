@@ -197,7 +197,6 @@ public class AwsWrapperConnection : DbConnection
         ArgumentNullException.ThrowIfNull(this.hostListProviderService);
 
         this.PluginManager!.InitHostProvider(this.connectionString!, this.ConnectionProperties!, this.hostListProviderService!);
-        this.pluginService.RefreshHostList();
 
         DbConnection connection = WrapperUtils.OpenWithPlugins(
             this.PluginManager!,
@@ -206,6 +205,9 @@ public class AwsWrapperConnection : DbConnection
             true);
         this.pluginService!.SetCurrentConnection(connection, this.pluginService.InitialConnectionHostSpec);
         this.pluginService.RefreshHostList();
+        
+        Logger.LogDebug("AwsWrapperConnection.Open() completed with connection state = {State}, type = {Type}@{Id}", 
+            connection.State, connection.GetType().FullName, RuntimeHelpers.GetHashCode(connection));
     }
 
     protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel)
@@ -213,6 +215,9 @@ public class AwsWrapperConnection : DbConnection
         ArgumentNullException.ThrowIfNull(this.pluginService);
         ArgumentNullException.ThrowIfNull(this.pluginService.CurrentConnection);
         ArgumentNullException.ThrowIfNull(this.PluginManager);
+
+        Logger.LogDebug("AwsWrapperConnection.BeginDbTransaction() called with wrapper state = {WrapperState}, current connection state = {CurrentState}, type = {Type}@{Id}", 
+            this.State, this.pluginService.CurrentConnection.State, this.pluginService.CurrentConnection.GetType().FullName, RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection));
 
         DbTransaction targetTransaction = WrapperUtils.ExecuteWithPlugins(
             this.PluginManager,

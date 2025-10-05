@@ -217,6 +217,9 @@ public class FailoverPlugin : AbstractConnectionPlugin
             this.pluginService.RefreshHostList(connection);
         }
 
+        Logger.LogDebug("FailoverPlugin.OpenConnection returning connection state = {State}, type = {Type}@{Id}", 
+            connection.State, connection.GetType().FullName, RuntimeHelpers.GetHashCode(connection));
+
         return connection;
     }
 
