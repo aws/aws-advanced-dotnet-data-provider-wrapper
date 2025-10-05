@@ -89,8 +89,8 @@ public class PluginService : IPluginService, IHostListProviderService
         this.pluginManager = pluginManager;
         this.props = props;
         this.TargetConnectionDialect = configurationProfile?.TargetConnectionDialect ?? targetConnectionDialect ?? throw new ArgumentNullException(nameof(targetConnectionDialect));
-        this.dialectProvider = new(this);
-        this.Dialect = configurationProfile?.Dialect ?? this.dialectProvider.GuessDialect(this.props);
+        this.dialectProvider = new(this, this.props);
+        this.Dialect = configurationProfile?.Dialect ?? this.dialectProvider.GuessDialect();
 
         this.hostListProvider =
             this.Dialect.HostListProviderSupplier(this.props, this, this)
@@ -221,12 +221,12 @@ public class PluginService : IPluginService, IHostListProviderService
     {
         Logger.LogDebug("PluginService.RefreshHostList() called with connection state = {State}, type = {Type}@{Id}", 
             connection.State, connection.GetType().FullName, RuntimeHelpers.GetHashCode(connection));
-            
+
         IList<HostSpec> updateHostList = this.hostListProvider.Refresh(connection);
         this.UpdateHostAvailability(updateHostList);
         this.NotifyNodeChangeList(this.AllHosts, updateHostList);
         this.AllHosts = updateHostList;
-        
+
         Logger.LogDebug("PluginService.RefreshHostList() completed with connection state = {State}", connection.State);
     }
 

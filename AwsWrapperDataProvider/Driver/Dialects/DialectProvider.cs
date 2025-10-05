@@ -13,7 +13,7 @@
 // limitations under the License.
 
 using System.Data;
-
+using System.Runtime.CompilerServices;
 using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -52,10 +52,9 @@ public class DialectProvider
     };
 
     public IDialect GuessDialect(
-        Dictionary<string, string> props,
         ConfigurationProfile? configurationProfile)
     {
-        return configurationProfile?.Dialect ?? this.GuessDialect(props);
+        return configurationProfile?.Dialect ?? this.GuessDialect();
     }
 
     private static readonly Dictionary<(RdsUrlType UrlType, string DatasourceType), Type> DialectTypeMap = new()
@@ -83,11 +82,13 @@ public class DialectProvider
     };
 
     private readonly PluginService pluginService;
+    private readonly Dictionary<string, string> properties;
     private IDialect? dialect = null;
 
-    public DialectProvider(PluginService pluginService)
+    public DialectProvider(PluginService pluginService, Dictionary<string, string> props)
     {
         this.pluginService = pluginService;
+        this.properties = props;
     }
 
     public static void ResetEndpointCache()
@@ -95,12 +96,12 @@ public class DialectProvider
         KnownEndpointDialects.Clear();
     }
 
-    public IDialect GuessDialect(Dictionary<string, string> props)
+    public IDialect GuessDialect()
     {
         this.dialect = null;
 
         // Check for custom dialect in properties
-        if (PropertyDefinition.TargetDialect.GetString(props) is { } customDialectTypeName &&
+        if (PropertyDefinition.TargetDialect.GetString(this.properties) is { } customDialectTypeName &&
             !string.IsNullOrEmpty(customDialectTypeName))
         {
             // Try to find and instantiate the custom dialect type
@@ -110,9 +111,9 @@ public class DialectProvider
                    throw new InvalidOperationException($"Failed to instantiate custom dialect type '{customDialectTypeName}'");
         }
 
-        string host = PropertyDefinition.GetConnectionUrl(props);
+        string host = PropertyDefinition.GetConnectionUrl(this.properties);
         IList<HostSpec> hosts = ConnectionPropertiesUtils.GetHostsFromProperties(
-            props,
+            this.properties,
             this.pluginService.HostSpecBuilder,
             true);
         if (hosts.Count != 0)
@@ -127,7 +128,7 @@ public class DialectProvider
         }
 
         RdsUrlType rdsUrlType = RdsUtils.IdentifyRdsType(host);
-        Type targetConnectionType = Type.GetType(PropertyDefinition.TargetConnectionType.GetString(props)!) ?? throw new InvalidCastException("Target connection type not found.");
+        Type targetConnectionType = Type.GetType(PropertyDefinition.TargetConnectionType.GetString(this.properties)!) ?? throw new InvalidCastException("Target connection type not found.");
         string targetDatasourceType = ConnectionToDatasourceMap.GetValueOrDefault(targetConnectionType) ?? "unknown";
         Type dialectType = DialectTypeMap.GetValueOrDefault((rdsUrlType, targetDatasourceType), typeof(UnknownDialect));
         this.dialect = KnownDialectsByType[dialectType];
@@ -160,9 +161,22 @@ public class DialectProvider
                     KnownEndpointDialects.Set(connection.ConnectionString, dialect, EndpointCacheExpiration);
                     return this.dialect;
                 }
-                else
+
+                Logger.LogDebug("Not dialect: {dialect}", dialect.GetType().FullName);
+
+                // If connection was closed during dialect detection, reopen it using plugin pipeline
+                if (connection.State == ConnectionState.Closed)
                 {
-                    Logger.LogDebug("Not dialect: {dialect}", dialect.GetType().FullName);
+                    try
+                    {
+                        var newConnection = this.pluginService.OpenConnection(this.pluginService.CurrentHostSpec!, this.properties, null);
+                        this.pluginService.SetCurrentConnection(newConnection, this.pluginService.CurrentHostSpec);
+                        Logger.LogDebug("Reopened connection through plugin pipeline after dialect detection closed connection");
+                    }
+                    catch (Exception reopenEx)
+                    {
+                        Logger.LogWarning(reopenEx, "Failed to reopen connection through plugin pipeline");
+                    }
                 }
             }
             catch (Exception ex)
