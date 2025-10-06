@@ -170,6 +170,7 @@ public class DialectProvider
                 {
                     try
                     {
+                        connection.Dispose();
                         connection = this.pluginService.OpenConnection(this.pluginService.CurrentHostSpec!, this.properties, null);
                         Logger.LogDebug("Reopened connection through plugin pipeline after dialect detection failed");
                     }
