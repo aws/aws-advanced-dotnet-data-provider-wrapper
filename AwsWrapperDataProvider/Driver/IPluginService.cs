@@ -112,14 +112,15 @@ public interface IPluginService : IExceptionHandlerService
     DbConnection OpenConnection(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin? pluginToSkip);
 
     /// <summary>
-    /// Connects to a host, skipping a specific plugin.
+    /// Forces a connection to a host, bypassing certain plugins like failover to prevent cyclic dependencies.
+    /// Used primarily for monitoring and internal connections.
     /// </summary>
     /// <param name="hostSpec">The host specification.</param>
     /// <param name="props">Connection properties.</param>
     /// <param name="pluginToSkip">Plugin to skip.</param>
     /// <param name="isInitialConnection">Is initial connection.</param>
     /// <returns>The created database connection.</returns>
-    DbConnection OpenConnection(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin? pluginToSkip, bool isInitialConnection);
+    DbConnection ForceOpenConnection(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin? pluginToSkip, bool isInitialConnection);
 
     /// <summary>
     /// Forces a connection to a host, bypassing certain plugins like failover to prevent cyclic dependencies.
