@@ -252,15 +252,17 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
 
                 // Verify the inner exception is FailoverSuccessException
                 Assert.IsType<FailoverSuccessException>(exception.InnerException);
-
-                // Session state may be invalid after failover exception, continue with new operations
-                using (var finalTransaction = session.BeginTransaction())
-                {
-                    var joe = new Person { FirstName = "Joe", LastName = "Smith" };
-                    session.Save(joe);
-                    finalTransaction.Commit();
-                }
             }
+
+            // Session state may be invalid after failover exception, continue with new operations/
+            using (var session = sessionFactory.OpenSession())
+            using (var finalTransaction = session.BeginTransaction())
+            {
+                var joe = new Person { FirstName = "Joe", LastName = "Smith" };
+                session.Save(joe);
+                finalTransaction.Commit();
+            }
+
 
             using (var session = sessionFactory.OpenSession())
             {
