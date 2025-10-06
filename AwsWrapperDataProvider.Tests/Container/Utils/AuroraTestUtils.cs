@@ -810,7 +810,7 @@ public class AuroraTestUtils
         return result;
     }
 
-    public string ExecuteInstanceIdQuery(IDbConnection connection, DatabaseEngine engine, DatabaseEngineDeployment deployment)
+    public string? ExecuteInstanceIdQuery(IDbConnection connection, DatabaseEngine engine, DatabaseEngineDeployment deployment)
     {
         string instanceId;
         try
