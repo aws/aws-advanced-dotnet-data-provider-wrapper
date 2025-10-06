@@ -1,9 +1,6 @@
 name: NHibernate Integration Tests
 
 on:
-  push:
-    branches:
-      - feat/nhibernate
   workflow_dispatch:
 
 permissions:
