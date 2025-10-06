@@ -266,6 +266,15 @@ public class PluginService : IPluginService, IHostListProviderService
     public DbConnection OpenConnection(
         HostSpec hostSpec,
         Dictionary<string, string> props,
+        IConnectionPlugin? pluginToSkip,
+        bool isInitialConnection)
+    {
+        return this.pluginManager.Open(hostSpec, props, isInitialConnection, pluginToSkip);
+    }
+
+    public DbConnection OpenConnection(
+        HostSpec hostSpec,
+        Dictionary<string, string> props,
         IConnectionPlugin? pluginToSkip)
     {
         return this.pluginManager.Open(hostSpec, props, this.CurrentConnection == null, pluginToSkip);
