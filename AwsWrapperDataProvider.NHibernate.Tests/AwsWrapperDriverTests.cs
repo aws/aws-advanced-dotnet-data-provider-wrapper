@@ -21,7 +21,6 @@ using NHibernate.Cfg;
 using NHibernate.Criterion;
 using NHibernate.Driver;
 using NHibernate.Driver.MySqlConnector;
-using NHibernate.Exceptions;
 
 [assembly: CollectionBehavior(DisableTestParallelization = true)]
 [assembly: CaptureConsole]
@@ -220,7 +219,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                 transaction.Commit();
 
                 var john = new Person { FirstName = "John", LastName = "Smith" };
-                var exception = await Assert.ThrowsAsync<GenericADOException>(async () =>
+                var exception = await Assert.ThrowsAsync<HibernateException>(async () =>
                 {
                     var connection = session.Connection;
                     try
@@ -312,7 +311,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             using (var session = sessionFactory.OpenSession())
             {
                 var john = new Person { FirstName = "John", LastName = "Smith" };
-                var exception = await Assert.ThrowsAsync<GenericADOException>(async () =>
+                var exception = await Assert.ThrowsAsync<HibernateException>(async () =>
                 {
                     var connection = session.Connection;
                     try

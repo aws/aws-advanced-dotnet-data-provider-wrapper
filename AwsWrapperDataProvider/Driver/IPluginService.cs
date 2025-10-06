@@ -120,7 +120,7 @@ public interface IPluginService : IExceptionHandlerService
     /// <param name="pluginToSkip">Plugin to skip.</param>
     /// <param name="isInitialConnection">Is initial connection.</param>
     /// <returns>The created database connection.</returns>
-    DbConnection ForceOpenConnection(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin? pluginToSkip, bool isInitialConnection);
+    DbConnection OpenConnection(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin? pluginToSkip, bool isInitialConnection);
 
     /// <summary>
     /// Forces a connection to a host, bypassing certain plugins like failover to prevent cyclic dependencies.
