@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using AwsWrapperDataProvider.Dialect.MySqlClient;
+using AwsWrapperDataProvider.Dialect.MySqlConnector;
+using AwsWrapperDataProvider.Dialect.Npgsql;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
-using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
 
 namespace AwsWrapperDataProvider.Tests.Driver.TargetConnectionDialects;
