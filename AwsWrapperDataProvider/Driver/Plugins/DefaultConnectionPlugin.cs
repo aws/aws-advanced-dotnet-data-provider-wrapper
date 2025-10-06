@@ -98,7 +98,7 @@ public class DefaultConnectionPlugin(
         this.pluginService.SetAvailability(hostSpec!.AsAliases(), HostAvailability.Available);
         if (isInitialConnection)
         {
-            this.pluginService.UpdateDialect(conn);
+            this.pluginService.UpdateDialect(ref conn);
         }
 
         return conn;

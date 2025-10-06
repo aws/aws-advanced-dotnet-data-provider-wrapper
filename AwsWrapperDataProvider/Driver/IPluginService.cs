@@ -125,7 +125,7 @@ public interface IPluginService : IExceptionHandlerService
     /// Updates the dialect based on the given connection.
     /// </summary>
     /// <param name="connection">The database connection.</param>
-    void UpdateDialect(DbConnection connection);
+    void UpdateDialect(ref DbConnection connection);
 
     /// <summary>
     /// Identifies the host associated with the given connection.

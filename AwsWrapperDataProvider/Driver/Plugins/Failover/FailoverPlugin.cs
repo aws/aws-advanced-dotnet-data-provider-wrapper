@@ -217,8 +217,10 @@ public class FailoverPlugin : AbstractConnectionPlugin
             this.pluginService.RefreshHostList(connection);
         }
 
-        Logger.LogDebug("FailoverPlugin.OpenConnection returning connection state = {State}, type = {Type}@{Id}", 
-            connection.State, connection.GetType().FullName, RuntimeHelpers.GetHashCode(connection));
+        Logger.LogDebug("FailoverPlugin.OpenConnection returning connection state = {State}, type = {Type}@{Id}",
+            connection.State,
+            connection.GetType().FullName,
+            RuntimeHelpers.GetHashCode(connection));
 
         return connection;
     }
@@ -322,12 +324,6 @@ public class FailoverPlugin : AbstractConnectionPlugin
                 catch (Exception ex)
                 {
                     Logger.LogInformation(ex, LoggerUtils.LogTopology([.. remainingReaders], $"An error occurred while attempting to select a reader host candidate {readerCandidate} from Candidates"));
-                    break;
-                }
-
-                if (readerCandidate is null)
-                {
-                    Logger.LogInformation(LoggerUtils.LogTopology([.. remainingReaders], "Unable to find reader in updated host list"));
                     break;
                 }
 

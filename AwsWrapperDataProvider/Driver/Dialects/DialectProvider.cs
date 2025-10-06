@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data;
+using System.Data.Common;
 using System.Runtime.CompilerServices;
 using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.HostInfo;
@@ -137,7 +138,7 @@ public class DialectProvider
         return this.dialect;
     }
 
-    public IDialect UpdateDialect(IDbConnection connection, IDialect currDialect)
+    public IDialect UpdateDialect(ref DbConnection connection, IDialect currDialect)
     {
         Logger.LogDebug("UpdateDialect called with current dialect: {currentDialect}", currDialect.GetType().FullName);
         Logger.LogDebug("Connection type: {connectionType}", connection.GetType().FullName);
@@ -169,13 +170,13 @@ public class DialectProvider
                 {
                     try
                     {
-                        var newConnection = this.pluginService.OpenConnection(this.pluginService.CurrentHostSpec!, this.properties, null);
-                        this.pluginService.SetCurrentConnection(newConnection, this.pluginService.CurrentHostSpec);
+                        connection = this.pluginService.OpenConnection(this.pluginService.CurrentHostSpec!, this.properties, null);
                         Logger.LogDebug("Reopened connection through plugin pipeline after dialect detection failed");
                     }
                     catch (Exception reopenEx)
                     {
                         Logger.LogWarning(reopenEx, "Failed to reopen connection through plugin pipeline");
+                        throw;
                     }
                 }
             }

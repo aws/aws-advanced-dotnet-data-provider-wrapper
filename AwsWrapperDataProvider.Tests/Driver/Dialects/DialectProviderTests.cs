@@ -31,18 +31,18 @@ public class DialectProviderTests
     private readonly Mock<PluginService> mockPluginService;
     private readonly DialectProvider dialectProvider;
 
-    private readonly Mock<IDbConnection> mockConnection;
-    private readonly Mock<IDbCommand> mockCommand;
-    private readonly Mock<IDataReader> mockReader;
+    private readonly Mock<DbConnection> mockConnection;
+    private readonly Mock<DbCommand> mockCommand;
+    private readonly Mock<DbDataReader> mockReader;
 
     public DialectProviderTests()
     {
-        this.mockConnection = new Mock<IDbConnection>();
+        this.mockConnection = new Mock<DbConnection>();
         this.mockConnection.SetupAllProperties();
         this.mockConnection.Object.ConnectionString = "anyHost";
         this.mockConnection.Setup(conn => conn.State).Returns(ConnectionState.Open);
-        this.mockCommand = new Mock<IDbCommand>();
-        this.mockReader = new Mock<IDataReader>();
+        this.mockCommand = new Mock<DbCommand>();
+        this.mockReader = new Mock<DbDataReader>();
         this.mockConnection.Setup(c => c.CreateCommand()).Returns(this.mockCommand.Object);
         this.mockCommand.Setup(c => c.ExecuteReader()).Returns(this.mockReader.Object);
 
@@ -122,7 +122,8 @@ public class DialectProviderTests
         this.mockReader.Setup(reader => reader.GetBoolean(1)).Returns(false);
 
         var initialDialect = new PgDialect();
-        var updatedDialect = this.dialectProvider.UpdateDialect(this.mockConnection.Object, initialDialect);
+        var connection = this.mockConnection.Object;
+        var updatedDialect = this.dialectProvider.UpdateDialect(ref connection, initialDialect);
         Assert.IsType<RdsPgDialect>(updatedDialect);
         this.mockConnection.Verify(c => c.CreateCommand(), Times.Exactly(5));
     }
@@ -140,7 +141,8 @@ public class DialectProviderTests
             typeof(PgDialect),
         ]);
         initialDialectMock.Setup(d => d.IsDialect(this.mockConnection.Object)).Returns(true);
-        var updatedDialect = this.dialectProvider.UpdateDialect(this.mockConnection.Object, initialDialectMock.Object);
+        var connection = this.mockConnection.Object;
+        var updatedDialect = this.dialectProvider.UpdateDialect(ref connection, initialDialectMock.Object);
 
         Assert.Same(initialDialectMock.Object, updatedDialect);
         this.mockConnection.Verify(c => c.CreateCommand(), Times.AtLeastOnce);
@@ -152,8 +154,9 @@ public class DialectProviderTests
     {
         var unknownDialect = new UnknownDialect();
 
+        var connection = this.mockConnection.Object;
         Assert.Throws<ArgumentException>(() =>
-            this.dialectProvider.UpdateDialect(this.mockConnection.Object, unknownDialect));
+            this.dialectProvider.UpdateDialect(ref connection, unknownDialect));
     }
 
     [Fact]
@@ -171,7 +174,8 @@ public class DialectProviderTests
         this.mockReader.Setup(r => r.GetString(0)).Returns("MySQL Community Server (GPL)");
         var unknownDialect = new UnknownDialect();
 
-        var updatedDialect = this.dialectProvider.UpdateDialect(this.mockConnection.Object, unknownDialect);
+        var connection = this.mockConnection.Object;
+        var updatedDialect = this.dialectProvider.UpdateDialect(ref connection, unknownDialect);
         Assert.IsType<MySqlDialect>(updatedDialect);
     }
 
@@ -191,7 +195,8 @@ public class DialectProviderTests
 
         var mysqlDialect = new MySqlDialect();
 
-        var updatedDialect = this.dialectProvider.UpdateDialect(this.mockConnection.Object, mysqlDialect);
+        var connection = this.mockConnection.Object;
+        var updatedDialect = this.dialectProvider.UpdateDialect(ref connection, mysqlDialect);
 
         Assert.IsType<AuroraMySqlDialect>(updatedDialect);
         this.mockConnection.Verify(c => c.CreateCommand(), Times.Exactly(2)); // Updated to account for RdsMultiAzDbClusterListProvider check
@@ -225,7 +230,8 @@ public class DialectProviderTests
 
         var mysqlDialect = new MySqlDialect();
 
-        var updatedDialect = this.dialectProvider.UpdateDialect(this.mockConnection.Object, mysqlDialect);
+        var connection = this.mockConnection.Object;
+        var updatedDialect = this.dialectProvider.UpdateDialect(ref connection, mysqlDialect);
 
         Assert.IsType<RdsMySqlDialect>(updatedDialect);
         this.mockConnection.Verify(c => c.CreateCommand(), Times.Exactly(4));
@@ -238,7 +244,8 @@ public class DialectProviderTests
         this.mockCommand.Setup(c => c.ExecuteReader()).Throws(new MockDbException());
 
         var mysqlDialect = new MySqlDialect();
-        var updatedDialect = this.dialectProvider.UpdateDialect(this.mockConnection.Object, mysqlDialect);
+        var connection = this.mockConnection.Object;
+        var updatedDialect = this.dialectProvider.UpdateDialect(ref connection, mysqlDialect);
         Assert.IsType<MySqlDialect>(updatedDialect);
         this.mockConnection.Verify(c => c.CreateCommand(), Times.AtLeastOnce);
     }

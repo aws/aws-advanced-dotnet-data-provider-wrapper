@@ -219,8 +219,10 @@ public class PluginService : IPluginService, IHostListProviderService
 
     public void RefreshHostList(DbConnection connection)
     {
-        Logger.LogDebug("PluginService.RefreshHostList() called with connection state = {State}, type = {Type}@{Id}", 
-            connection.State, connection.GetType().FullName, RuntimeHelpers.GetHashCode(connection));
+        Logger.LogDebug("PluginService.RefreshHostList() called with connection state = {State}, type = {Type}@{Id}",
+            connection.State,
+            connection.GetType().FullName,
+            RuntimeHelpers.GetHashCode(connection));
 
         IList<HostSpec> updateHostList = this.hostListProvider.Refresh(connection);
         this.UpdateHostAvailability(updateHostList);
@@ -279,10 +281,10 @@ public class PluginService : IPluginService, IHostListProviderService
         throw new NotImplementedException();
     }
 
-    public void UpdateDialect(DbConnection connection)
+    public void UpdateDialect(ref DbConnection connection)
     {
         IDialect dialect = this.Dialect;
-        this.Dialect = this.dialectProvider.UpdateDialect(connection, this.Dialect);
+        this.Dialect = this.dialectProvider.UpdateDialect(ref connection, this.Dialect);
         Logger.LogDebug("Dialect updated to: {dialect}", this.Dialect.GetType().FullName);
 
         if (dialect != this.Dialect)

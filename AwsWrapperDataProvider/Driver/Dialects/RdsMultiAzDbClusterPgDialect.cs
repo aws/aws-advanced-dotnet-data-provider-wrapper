@@ -52,7 +52,9 @@ public class RdsMultiAzDbClusterPgDialect : PgDialect
     public override bool IsDialect(IDbConnection connection)
     {
         Logger.LogDebug("RdsMultiAzDbClusterPgDialect.IsDialect() called with connection state = {State}, type = {Type}@{Id}",
-            connection.State, connection.GetType().FullName, RuntimeHelpers.GetHashCode(connection));
+            connection.State,
+            connection.GetType().FullName,
+            RuntimeHelpers.GetHashCode(connection));
 
         try
         {
@@ -61,8 +63,9 @@ public class RdsMultiAzDbClusterPgDialect : PgDialect
             using IDataReader isDialectReader = isDialectCommand.ExecuteReader();
             bool result = isDialectReader.Read() && !isDialectReader.IsDBNull(0);
 
-            Logger.LogDebug("RdsMultiAzDbClusterPgDialect.IsDialect() completed successfully, result = {Result}, connection state = {State}", 
-                result, connection.State);
+            Logger.LogDebug("RdsMultiAzDbClusterPgDialect.IsDialect() completed successfully, result = {Result}, connection state = {State}",
+                result,
+                connection.State);
             return result;
         }
         catch (Exception ex)
