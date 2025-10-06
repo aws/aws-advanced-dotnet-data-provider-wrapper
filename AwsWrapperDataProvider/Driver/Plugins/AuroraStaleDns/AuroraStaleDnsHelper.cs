@@ -71,13 +71,6 @@ public class AuroraStaleDnsHelper
         HostRole connectionRole = this.pluginService.GetHostRole(connection);
         Logger.LogTrace("Current connection role: {role}", connectionRole);
 
-        foreach (var reader in this.GetReaders() ?? [])
-        {
-            using var readerConn = this.pluginService.OpenConnection(reader, props, null);
-            HostRole readerRole = this.pluginService.GetHostRole(readerConn);
-            Logger.LogTrace("Current connection role: {role} for {host}", readerRole, reader);
-        }
-
         this.pluginService.ForceRefreshHostList(connection);
         Logger.LogTrace(LoggerUtils.LogTopology(this.pluginService.AllHosts, null));
 

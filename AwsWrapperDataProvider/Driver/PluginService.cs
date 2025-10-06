@@ -36,7 +36,7 @@ public class PluginService : IPluginService, IHostListProviderService
     private static readonly ILogger<PluginService> Logger = LoggerUtils.GetLogger<PluginService>();
 
     private readonly object connectionSwitchLock = new();
-
+    private readonly AwsWrapperConnection wrapperConnection;
     private readonly ConnectionPluginManager pluginManager;
     private readonly Dictionary<string, string> props;
     private readonly DialectProvider dialectProvider;
@@ -79,13 +79,14 @@ public class PluginService : IPluginService, IHostListProviderService
     }
 
     public PluginService(
-        Type connectionType,
+        AwsWrapperConnection wrapperConnection,
         ConnectionPluginManager pluginManager,
         Dictionary<string, string> props,
         string connectionString,
         ITargetConnectionDialect? targetConnectionDialect,
         ConfigurationProfile? configurationProfile)
     {
+        this.wrapperConnection = wrapperConnection;
         this.pluginManager = pluginManager;
         this.props = props;
         this.TargetConnectionDialect = configurationProfile?.TargetConnectionDialect ?? targetConnectionDialect ?? throw new ArgumentNullException(nameof(targetConnectionDialect));
@@ -132,6 +133,11 @@ public class PluginService : IPluginService, IHostListProviderService
             {
                 if (!ReferenceEquals(connection, oldConnection))
                 {
+                    foreach (var cmd in this.wrapperConnection.ActiveWrapperCommands)
+                    {
+                        cmd.SetCurrentConnection(connection);
+                    }
+
                     oldConnection?.Dispose();
                     Logger.LogTrace("Old connection {Type}@{Id} is disposed.", oldConnection?.GetType().FullName, RuntimeHelpers.GetHashCode(oldConnection));
                 }

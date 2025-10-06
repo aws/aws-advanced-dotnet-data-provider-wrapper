@@ -15,13 +15,16 @@
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Utils;
+using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider;
 
 public class AwsWrapperCommand : DbCommand
 {
+    private static readonly ILogger<AwsWrapperCommand> Logger = LoggerUtils.GetLogger<AwsWrapperCommand>();
     protected Type? _targetDbCommandType;
     protected DbConnection? _targetDbConnection;
     protected AwsWrapperConnection? _wrapperConnection;
@@ -326,6 +329,29 @@ public class AwsWrapperCommand : DbCommand
                 this._targetDbCommand!.Transaction = this.wrapperTransaction.TargetDbTransaction;
             }
         }
+    }
+
+    internal void SetCurrentConnection(DbConnection? connection)
+    {
+        Logger.LogTrace("Target connection is updating to {Type}@{Id} from {Id2} for AwsWrapperCommand@{Id3}",
+            connection?.GetType().FullName,
+            RuntimeHelpers.GetHashCode(connection),
+            RuntimeHelpers.GetHashCode(this._targetDbConnection),
+            RuntimeHelpers.GetHashCode(this));
+        this.EnsureTargetDbCommandCreated();
+        this._targetDbConnection = connection;
+        this._targetDbCommand!.Connection = connection;
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            this._wrapperConnection?.UnregisterWrapperCommand(this);
+            this._targetDbCommand?.Dispose();
+        }
+
+        base.Dispose(disposing);
     }
 }
 
