@@ -219,7 +219,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                 transaction.Commit();
 
                 var john = new Person { FirstName = "John", LastName = "Smith" };
-                var exception = await Assert.ThrowsAsync<HibernateException>(async () =>
+                var exception = await Assert.ThrowsAnyAsync<HibernateException>(async () =>
                 {
                     var connection = session.Connection;
                     try
@@ -311,7 +311,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             using (var session = sessionFactory.OpenSession())
             {
                 var john = new Person { FirstName = "John", LastName = "Smith" };
-                var exception = await Assert.ThrowsAsync<HibernateException>(async () =>
+                var exception = await Assert.ThrowsAnyAsync<HibernateException>(async () =>
                 {
                     var connection = session.Connection;
                     try
