@@ -263,7 +263,6 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                 finalTransaction.Commit();
             }
 
-
             using (var session = sessionFactory.OpenSession())
             {
                 var persons = session.CreateCriteria(typeof(Person)).List<Person>();
@@ -347,13 +346,14 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
 
                 // Verify the inner exception is FailoverSuccessException
                 Assert.IsType<FailoverSuccessException>(exception.InnerException);
+            }
 
-                var joe = new Person { FirstName = "Joe", LastName = "Smith" };
-                using (var transaction = session.BeginTransaction())
-                {
-                    session.Save(joe);
-                    transaction.Commit();
-                }
+            var joe = new Person { FirstName = "Joe", LastName = "Smith" };
+            using (var session = sessionFactory.OpenSession())
+            using (var transaction = session.BeginTransaction())
+            {
+                session.Save(joe);
+                transaction.Commit();
             }
 
             // Verify records - John should not exist (failed during failover), Jane and Joe should exist
