@@ -286,10 +286,10 @@ public class PluginService : IPluginService, IHostListProviderService
         throw new NotImplementedException();
     }
 
-    public void UpdateDialect(ref DbConnection connection)
+    public void UpdateDialect(DbConnection connection)
     {
         IDialect dialect = this.Dialect;
-        this.Dialect = this.dialectProvider.UpdateDialect(ref connection, this.Dialect);
+        this.Dialect = this.dialectProvider.UpdateDialect(connection, this.Dialect);
         Logger.LogDebug("Dialect updated to: {dialect}", this.Dialect.GetType().FullName);
 
         if (dialect != this.Dialect)

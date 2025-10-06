@@ -138,7 +138,7 @@ public class DialectProvider
         return this.dialect;
     }
 
-    public IDialect UpdateDialect(ref DbConnection connection, IDialect currDialect)
+    public IDialect UpdateDialect(DbConnection connection, IDialect currDialect)
     {
         Logger.LogDebug("UpdateDialect called with current dialect: {currentDialect}", currDialect.GetType().FullName);
         Logger.LogDebug("Connection type: {connectionType}", connection.GetType().FullName);
@@ -170,8 +170,7 @@ public class DialectProvider
                 {
                     try
                     {
-                        connection.Dispose();
-                        connection = this.pluginService.ForceOpenConnection(this.pluginService.CurrentHostSpec!, this.properties, null, false);
+                        connection.Open();
                         Logger.LogDebug("Reopened connection through plugin pipeline after dialect detection failed");
                     }
                     catch (Exception reopenEx)
