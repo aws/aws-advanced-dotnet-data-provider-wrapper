@@ -278,7 +278,7 @@ public class PluginService : IPluginService, IHostListProviderService
 
     public DbConnection ForceOpenConnection(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin? pluginToSkip)
     {
-        return this.pluginManager.Open(hostSpec, props, this.CurrentConnection == null, pluginToSkip);
+        return this.pluginManager.ForceOpen(hostSpec, props, this.CurrentConnection == null, pluginToSkip);
     }
 
     public Task OpenConnectionAsync(HostSpec hostSpec, Dictionary<string, string> props)
