@@ -85,7 +85,7 @@ public class DialectProviderTests
     {
         var initialDialect = new PgDialect();
         DbConnection connection = this.mockConnection.Object;
-        var updatedDialect = this.dialectProvider.UpdateDialect(ref connection, initialDialect);
+        var updatedDialect = this.dialectProvider.UpdateDialect(connection, initialDialect);
         Assert.IsType<PgDialect>(updatedDialect);
     }
 
@@ -97,7 +97,7 @@ public class DialectProviderTests
         initialDialectMock.Setup(d => d.DialectUpdateCandidates).Returns(new List<Type> { typeof(PgDialect) });
         initialDialectMock.Setup(d => d.IsDialect(It.IsAny<IDbConnection>())).Returns(true);
         DbConnection connection = this.mockConnection.Object;
-        var updatedDialect = this.dialectProvider.UpdateDialect(ref connection, initialDialectMock.Object);
+        var updatedDialect = this.dialectProvider.UpdateDialect(connection, initialDialectMock.Object);
         Assert.Same(initialDialectMock.Object, updatedDialect);
     }
 
@@ -107,7 +107,7 @@ public class DialectProviderTests
     {
         var unknownDialect = new UnknownDialect();
         DbConnection connection = this.mockConnection.Object;
-        Assert.Throws<ArgumentException>(() => this.dialectProvider.UpdateDialect(ref connection, unknownDialect));
+        Assert.Throws<ArgumentException>(() => this.dialectProvider.UpdateDialect(connection, unknownDialect));
     }
 
     [Fact]
@@ -116,7 +116,7 @@ public class DialectProviderTests
     {
         var mysqlDialect = new MySqlDialect();
         DbConnection connection = this.mockConnection.Object;
-        var result = this.dialectProvider.UpdateDialect(ref connection, mysqlDialect);
+        var result = this.dialectProvider.UpdateDialect(connection, mysqlDialect);
         Assert.Equal(mysqlDialect, result);
     }
 
@@ -126,7 +126,7 @@ public class DialectProviderTests
     {
         var mysqlDialect = new MySqlDialect();
         DbConnection connection = this.mockConnection.Object;
-        var result = this.dialectProvider.UpdateDialect(ref connection, mysqlDialect);
+        var result = this.dialectProvider.UpdateDialect(connection, mysqlDialect);
         Assert.Equal(mysqlDialect, result);
     }
 
@@ -136,7 +136,7 @@ public class DialectProviderTests
     {
         var mysqlDialect = new MySqlDialect();
         DbConnection connection = this.mockConnection.Object;
-        var result = this.dialectProvider.UpdateDialect(ref connection, mysqlDialect);
+        var result = this.dialectProvider.UpdateDialect(connection, mysqlDialect);
         Assert.Equal(mysqlDialect, result);
     }
 
