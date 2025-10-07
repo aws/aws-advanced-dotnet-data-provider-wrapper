@@ -197,12 +197,13 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
 
             string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
-            var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName);
+            var connectionString =
+                ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName);
             var wrapperConnectionString = connectionString
-                + ";Plugins=failover;"
-                + "EnableConnectFailover=true;"
-                + "FailoverMode=StrictWriter;"
-                + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
+                                          + ";Plugins=failover;"
+                                          + "EnableConnectFailover=true;"
+                                          + "FailoverMode=StrictWriter;"
+                                          + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
             var cfg = this.GetNHibernateConfiguration(wrapperConnectionString);
             var sessionFactory = cfg.BuildSessionFactory();
 
@@ -217,37 +218,27 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                 var jane = new Person { FirstName = "Jane", LastName = "Smith" };
                 session.Save(jane);
                 transaction.Commit();
+            }
 
+            using (var session = sessionFactory.OpenSession())
+            {
                 var john = new Person { FirstName = "John", LastName = "Smith" };
                 var exception = await Assert.ThrowsAnyAsync<HibernateException>(async () =>
                 {
-                    var connection = session.Connection;
-                    try
+                    var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                    var crashInstanceTask = AuroraUtils.CrashInstance(currentWriter, tcs);
+                    await tcs.Task;
+
+                    // Query to trigger failover on active connection
+                    var anyUser = session.CreateCriteria(typeof(Person)).SetMaxResults(1).List<Person>().Any();
+
+                    using (var newTransaction = session.BeginTransaction())
                     {
-                        if (connection.State == System.Data.ConnectionState.Closed)
-                        {
-                            connection.Open();
-                        }
-
-                        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-                        var crashInstanceTask = AuroraUtils.CrashInstance(currentWriter, tcs);
-                        await tcs.Task;
-
-                        // Query to trigger failover on active connection
-                        var anyUser = session.CreateCriteria(typeof(Person)).SetMaxResults(1).List<Person>().Any();
-
-                        using (var newTransaction = session.BeginTransaction())
-                        {
-                            session.Save(john);
-                            newTransaction.Commit();
-                        }
-
-                        await crashInstanceTask;
+                        session.Save(john);
+                        newTransaction.Commit();
                     }
-                    finally
-                    {
-                        connection.Close();
-                    }
+
+                    await crashInstanceTask;
                 });
 
                 // Verify the inner exception is FailoverSuccessException
@@ -314,34 +305,21 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                 var john = new Person { FirstName = "John", LastName = "Smith" };
                 var exception = await Assert.ThrowsAnyAsync<HibernateException>(async () =>
                 {
-                    var connection = session.Connection;
-                    try
+                    var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                    var clusterFailureTask = AuroraUtils.SimulateTemporaryFailureTask(ProxyClusterEndpoint, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
+                    var writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
+                    await tcs.Task;
+
+                    // Query to trigger failover
+                    var anyUser = session.CreateCriteria(typeof(Person)).SetMaxResults(1).List<Person>().Any();
+
+                    using (var transaction = session.BeginTransaction())
                     {
-                        if (connection.State == System.Data.ConnectionState.Closed)
-                        {
-                            connection.Open();
-                        }
-
-                        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-                        var clusterFailureTask = AuroraUtils.SimulateTemporaryFailureTask(ProxyClusterEndpoint, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
-                        var writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
-                        await tcs.Task;
-
-                        // Query to trigger failover
-                        var anyUser = session.CreateCriteria(typeof(Person)).SetMaxResults(1).List<Person>().Any();
-
-                        using (var transaction = session.BeginTransaction())
-                        {
-                            session.Save(john);
-                            transaction.Commit();
-                        }
-
-                        await Task.WhenAll(clusterFailureTask, writerNodeFailureTask);
+                        session.Save(john);
+                        transaction.Commit();
                     }
-                    finally
-                    {
-                        connection.Close();
-                    }
+
+                    await Task.WhenAll(clusterFailureTask, writerNodeFailureTask);
                 });
 
                 // Verify the inner exception is FailoverSuccessException
