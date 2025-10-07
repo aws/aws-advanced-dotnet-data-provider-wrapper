@@ -237,7 +237,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                 });
 
                 // Verify the inner exception is FailoverSuccessException
-                Assert.IsType<FailoverSuccessException>(exception.InnerException);
+                Assert.IsType<TransactionStateUnknownException>(exception.InnerException);
             }
 
             // Session state may be invalid after failover exception, continue with new operations/
@@ -313,7 +313,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                 });
 
                 // Verify the inner exception is FailoverSuccessException
-                Assert.IsType<FailoverSuccessException>(exception.InnerException);
+                Assert.IsType<TransactionStateUnknownException>(exception.InnerException);
             }
 
             var joe = new Person { FirstName = "Joe", LastName = "Smith" };
