@@ -44,9 +44,8 @@ public class RdsMultiAzDbClusterPgDialect : PgDialect
     private static readonly string FetchWriterNodeQueryColumnName =
         "multi_az_db_cluster_source_dbi_resource_id";
 
-    private static readonly string RdsToolsExistQuery = "SELECT (setting LIKE '%rds_tools%')"
-                                                   + "FROM pg_settings "
-                                                   + "WHERE name='rds.extensions'";
+    private static readonly string RdsToolsExistQuery =
+        "SELECT extname FROM pg_extension WHERE extname = 'rds_tools'";
 
     private static readonly string NodeIdQuery =
         "SELECT dbi_resource_id FROM rds_tools.dbi_resource_id()";
@@ -67,7 +66,8 @@ public class RdsMultiAzDbClusterPgDialect : PgDialect
             {
                 rdsToolsExistsCommand.CommandText = RdsToolsExistQuery;
                 var obj = rdsToolsExistsCommand.ExecuteScalar();
-                bool hasRdsTools = obj != null && obj != DBNull.Value && Convert.ToBoolean(obj, CultureInfo.InvariantCulture);
+                bool hasRdsTools = obj != null && obj != DBNull.Value &&
+                                   Convert.ToBoolean(obj, CultureInfo.InvariantCulture);
                 if (!hasRdsTools)
                 {
                     return false;
@@ -78,7 +78,7 @@ public class RdsMultiAzDbClusterPgDialect : PgDialect
             {
                 isDialectCommand.CommandText = IsRdsClusterQuery;
                 using IDataReader isDialectReader = isDialectCommand.ExecuteReader();
-                bool result = isDialectReader.Read() && !isDialectReader.IsDBNull(0);
+                bool result = !isDialectReader.IsDBNull(0) && isDialectReader.Read();
 
                 Logger.LogDebug(
                     "RdsMultiAzDbClusterPgDialect.IsDialect() completed successfully, result = {Result}, connection state = {State}",
