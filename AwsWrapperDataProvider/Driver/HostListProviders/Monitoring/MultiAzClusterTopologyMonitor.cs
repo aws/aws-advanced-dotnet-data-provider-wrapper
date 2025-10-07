@@ -160,6 +160,6 @@ public class MultiAzClusterTopologyMonitor : ClusterTopologyMonitor
         string hostId = Convert.ToString(reader.GetValue(idOrdinal), CultureInfo.InvariantCulture)!;
         bool isWriter = hostId.Equals(suggestedWriterNodeId, StringComparison.OrdinalIgnoreCase);
 
-        return this.CreateHost(instanceName, isWriter, 0, DateTime.UtcNow);
+        return this.CreateHost(instanceName, hostId, isWriter, 0, DateTime.UtcNow);
     }
 }

@@ -75,7 +75,7 @@ public class ConnectionStringHelper
                     npgsqlConnectionStringBuilder.Database = dbName;
                 }
 
-                // npgsqlConnectionStringBuilder.Timeout = connectionTimeout;
+                npgsqlConnectionStringBuilder.Timeout = connectionTimeout;
                 npgsqlConnectionStringBuilder.CommandTimeout = commandTimeout;
 
                 url = npgsqlConnectionStringBuilder.ConnectionString;
