@@ -66,12 +66,12 @@ public class RdsMultiAzDbClusterPgDialect : PgDialect
             {
                 rdsToolsExistsCommand.CommandText = RdsToolsExistQuery;
                 var obj = rdsToolsExistsCommand.ExecuteScalar();
-                bool hasRdsTools = obj != null && obj != DBNull.Value &&
-                                   Convert.ToBoolean(obj, CultureInfo.InvariantCulture);
-                if (!hasRdsTools)
-                {
+                if (obj == null || obj == DBNull.Value)
                     return false;
-                }
+
+                var ext = Convert.ToString(obj, CultureInfo.InvariantCulture);
+                if (!string.Equals(ext, "rds_tools", StringComparison.OrdinalIgnoreCase))
+                    return false;
             }
 
             using (IDbCommand isDialectCommand = connection.CreateCommand())
