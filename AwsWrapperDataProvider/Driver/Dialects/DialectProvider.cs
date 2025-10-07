@@ -164,21 +164,6 @@ public class DialectProvider
                 }
 
                 Logger.LogDebug("Not dialect: {dialect}", dialect.GetType().FullName);
-
-                // If connection was closed during dialect detection, reopen it using plugin pipeline
-                if (connection.State == ConnectionState.Closed)
-                {
-                    try
-                    {
-                        connection.Open();
-                        Logger.LogDebug("Reopened connection through plugin pipeline after dialect detection failed");
-                    }
-                    catch (Exception reopenEx)
-                    {
-                        Logger.LogWarning(reopenEx, "Failed to reopen connection through plugin pipeline");
-                        throw;
-                    }
-                }
             }
             catch (Exception ex)
             {

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
@@ -43,6 +44,10 @@ public class RdsMultiAzDbClusterPgDialect : PgDialect
     private static readonly string FetchWriterNodeQueryColumnName =
         "multi_az_db_cluster_source_dbi_resource_id";
 
+    private static readonly string RdsToolsExistQuery = "SELECT (setting LIKE '%rds_tools%')"
+                                                   + "FROM pg_settings "
+                                                   + "WHERE name='rds.extensions'";
+
     private static readonly string NodeIdQuery =
         "SELECT dbi_resource_id FROM rds_tools.dbi_resource_id()";
 
@@ -58,15 +63,29 @@ public class RdsMultiAzDbClusterPgDialect : PgDialect
 
         try
         {
-            using IDbCommand isDialectCommand = connection.CreateCommand();
-            isDialectCommand.CommandText = IsRdsClusterQuery;
-            using IDataReader isDialectReader = isDialectCommand.ExecuteReader();
-            bool result = isDialectReader.Read() && !isDialectReader.IsDBNull(0);
+            using (IDbCommand rdsToolsExistsCommand = connection.CreateCommand())
+            {
+                rdsToolsExistsCommand.CommandText = RdsToolsExistQuery;
+                var obj = rdsToolsExistsCommand.ExecuteScalar();
+                bool hasRdsTools = obj != null && obj != DBNull.Value && Convert.ToBoolean(obj, CultureInfo.InvariantCulture);
+                if (!hasRdsTools)
+                {
+                    return false;
+                }
+            }
 
-            Logger.LogDebug("RdsMultiAzDbClusterPgDialect.IsDialect() completed successfully, result = {Result}, connection state = {State}",
-                result,
-                connection.State);
-            return result;
+            using (IDbCommand isDialectCommand = connection.CreateCommand())
+            {
+                isDialectCommand.CommandText = IsRdsClusterQuery;
+                using IDataReader isDialectReader = isDialectCommand.ExecuteReader();
+                bool result = isDialectReader.Read() && !isDialectReader.IsDBNull(0);
+
+                Logger.LogDebug(
+                    "RdsMultiAzDbClusterPgDialect.IsDialect() completed successfully, result = {Result}, connection state = {State}",
+                    result,
+                    connection.State);
+                return result;
+            }
         }
         catch (Exception ex)
         {
