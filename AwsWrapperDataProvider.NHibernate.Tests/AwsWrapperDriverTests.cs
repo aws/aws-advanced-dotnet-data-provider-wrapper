@@ -221,6 +221,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             }
 
             using (var session = sessionFactory.OpenSession())
+            using (var newTransaction = session.BeginTransaction())
             {
                 var john = new Person { FirstName = "John", LastName = "Smith" };
                 var exception = await Assert.ThrowsAnyAsync<HibernateException>(async () =>
@@ -229,14 +230,8 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                     var crashInstanceTask = AuroraUtils.CrashInstance(currentWriter, tcs);
                     await tcs.Task;
 
-                    // Query to trigger failover on active connection
-                    var anyUser = session.CreateCriteria(typeof(Person)).SetMaxResults(1).List<Person>().Any();
-
-                    using (var newTransaction = session.BeginTransaction())
-                    {
-                        session.Save(john);
-                        newTransaction.Commit();
-                    }
+                    session.Save(john);
+                    newTransaction.Commit();
 
                     await crashInstanceTask;
                 });
@@ -301,6 +296,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
 
             // Crash instance and let driver handle failover
             using (var session = sessionFactory.OpenSession())
+            using (var transaction = session.BeginTransaction())
             {
                 var john = new Person { FirstName = "John", LastName = "Smith" };
                 var exception = await Assert.ThrowsAnyAsync<HibernateException>(async () =>
@@ -310,14 +306,8 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                     var writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
                     await tcs.Task;
 
-                    // Query to trigger failover
-                    var anyUser = session.CreateCriteria(typeof(Person)).SetMaxResults(1).List<Person>().Any();
-
-                    using (var transaction = session.BeginTransaction())
-                    {
-                        session.Save(john);
-                        transaction.Commit();
-                    }
+                    session.Save(john);
+                    transaction.Commit();
 
                     await Task.WhenAll(clusterFailureTask, writerNodeFailureTask);
                 });
