@@ -107,7 +107,7 @@ public class AwsWrapperConnection : DbConnection
 
         DbConnectionProvider connectionProvider = new();
 
-        this.PluginManager = new(connectionProvider, null, this);
+        this.PluginManager = new(connectionProvider, null, this, profile);
 
         PluginService pluginService = new(this, this.PluginManager, this.ConnectionProperties, this.connectionString, connectionDialect, profile);
 
@@ -280,5 +280,5 @@ public class AwsWrapperConnection<TConn> : AwsWrapperConnection where TConn : Db
         profile)
     { }
 
-    public new TConn? TargetDbConnection => this.pluginService?.CurrentConnection as TConn;
+    internal new TConn? TargetDbConnection => this.pluginService?.CurrentConnection as TConn;
 }

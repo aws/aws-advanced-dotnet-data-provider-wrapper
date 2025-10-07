@@ -12,10 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data.Common;
-using AwsWrapperDataProvider.Driver.HostInfo;
-using AwsWrapperDataProvider.Driver.Plugins;
-
 namespace AwsWrapperDataProvider.Tests.Driver.Plugins;
 
 public class TestPluginThree : TestPluginOne
