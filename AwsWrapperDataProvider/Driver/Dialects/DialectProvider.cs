@@ -84,7 +84,7 @@ public class DialectProvider
 
     private readonly PluginService pluginService;
     private readonly Dictionary<string, string> properties;
-    private IDialect? dialect = null;
+    private IDialect? dialect;
 
     public DialectProvider(PluginService pluginService, Dictionary<string, string> props)
     {
@@ -138,7 +138,7 @@ public class DialectProvider
         return this.dialect;
     }
 
-    public IDialect UpdateDialect(DbConnection connection, IDialect currDialect)
+    public IDialect UpdateDialect(IDbConnection connection, IDialect currDialect)
     {
         Logger.LogDebug("UpdateDialect called with current dialect: {currentDialect}", currDialect.GetType().FullName);
         Logger.LogDebug("Connection type: {connectionType}", connection.GetType().FullName);
