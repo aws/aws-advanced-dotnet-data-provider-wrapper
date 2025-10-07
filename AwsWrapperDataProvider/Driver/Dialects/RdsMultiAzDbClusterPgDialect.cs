@@ -45,7 +45,7 @@ public class RdsMultiAzDbClusterPgDialect : PgDialect
         "multi_az_db_cluster_source_dbi_resource_id";
 
     private static readonly string RdsToolsExistQuery =
-        "SELECT extname FROM pg_extension WHERE extname = 'rds_tools'";
+        "SELECT 'test';";
 
     private static readonly string NodeIdQuery =
         "SELECT dbi_resource_id FROM rds_tools.dbi_resource_id()";
