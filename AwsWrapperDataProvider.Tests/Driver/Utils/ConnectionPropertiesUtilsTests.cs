@@ -24,6 +24,7 @@ public class ConnectionPropertiesUtilsTests
     [InlineData("host=myhost.example.com;port=5432;database=mydb;username=myuser;password=mypassword", 5)]
     [InlineData("Host=myhost.example.com;Port=5432", 2)]
     [InlineData("Host=myhost.example.com", 1)]
+    [InlineData("Host=NOT-myhost.example.com;Host=myhost.example.com", 1)]
     public void ParseConnectionStringParameters_WithValidConnectionString_ReturnsDictionary(string connectionString, int expectedCount)
     {
         var result = ConnectionPropertiesUtils.ParseConnectionStringParameters(connectionString);

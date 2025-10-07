@@ -36,7 +36,8 @@ public static class ConnectionPropertiesUtils
             .Split(";", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
             .Select(x => x.Split("=", StringSplitOptions.TrimEntries))
             .Where(pairs => pairs.Length == 2 && !string.IsNullOrEmpty(pairs[0]))
-            .ToDictionary(pairs => pairs[0], pairs => pairs[1], StringComparer.OrdinalIgnoreCase);
+            .GroupBy(pairs => pairs[0], StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.Last()[1], StringComparer.OrdinalIgnoreCase);
 
         // Check and warn about SSL insecure configuration
         if (PropertyDefinition.SslInsecure.GetBoolean(props))
