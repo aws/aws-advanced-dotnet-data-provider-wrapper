@@ -1,6 +1,9 @@
 name: NHibernate Integration Tests
 
 on:
+  pull_request:
+    branches:
+      - '*'
   workflow_dispatch:
 
 permissions:
