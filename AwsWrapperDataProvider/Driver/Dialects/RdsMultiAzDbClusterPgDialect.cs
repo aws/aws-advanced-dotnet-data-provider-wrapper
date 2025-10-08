@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using System.Data;
-using System.Globalization;
 using System.Runtime.CompilerServices;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
@@ -44,9 +43,6 @@ public class RdsMultiAzDbClusterPgDialect : PgDialect
     private static readonly string FetchWriterNodeQueryColumnName =
         "multi_az_db_cluster_source_dbi_resource_id";
 
-    private static readonly string RdsToolsExistQuery =
-        "SELECT 'test';";
-
     private static readonly string NodeIdQuery =
         "SELECT dbi_resource_id FROM rds_tools.dbi_resource_id()";
 
@@ -62,18 +58,6 @@ public class RdsMultiAzDbClusterPgDialect : PgDialect
 
         try
         {
-            // using (IDbCommand rdsToolsExistsCommand = connection.CreateCommand())
-            // {
-            //     rdsToolsExistsCommand.CommandText = RdsToolsExistQuery;
-            //     var obj = rdsToolsExistsCommand.ExecuteScalar();
-            //     if (obj == null || obj == DBNull.Value)
-            //         return false;
-            //
-            //     var ext = Convert.ToString(obj, CultureInfo.InvariantCulture);
-            //     if (!string.Equals(ext, "rds_tools", StringComparison.OrdinalIgnoreCase))
-            //         return false;
-            // }
-
             using (IDbCommand isDialectCommand = connection.CreateCommand())
             {
                 isDialectCommand.CommandText = IsRdsClusterQuery;

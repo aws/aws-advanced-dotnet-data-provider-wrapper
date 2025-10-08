@@ -27,6 +27,8 @@ public class DefaultConnectionPlugin(
     IConnectionProvider defaultConnProvider,
     IConnectionProvider? effectiveConnProvider) : IConnectionPlugin
 {
+    private const int UpdateDialectMaxRetries = 3;
+
     private static readonly ILogger<DefaultConnectionPlugin> Logger = LoggerUtils.GetLogger<DefaultConnectionPlugin>();
 
     public IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string> { "*" };
@@ -91,17 +93,31 @@ public class DefaultConnectionPlugin(
 
         // Update connection string that may have been modified by other plugins
         conn.ConnectionString = this.pluginService.TargetConnectionDialect.PrepareConnectionString(this.pluginService.Dialect, hostSpec, props);
-        conn.Open();
-        Logger.LogTrace("Connection {Type}@{Id} is opened.", conn.GetType().FullName, RuntimeHelpers.GetHashCode(conn));
 
-        // Set availability and update dialect
-        this.pluginService.SetAvailability(hostSpec!.AsAliases(), HostAvailability.Available);
-        if (isInitialConnection)
+        int updateDialectRetries = 0;
+
+        // TODO: Fix bug where first command execution after open sometime results in a EndOfStreamException and closes connection, and remove retry logic.
+        while (updateDialectRetries < UpdateDialectMaxRetries)
         {
-            this.pluginService.UpdateDialect(conn);
-        }
+            conn.Open();
+            Logger.LogTrace("Connection {Type}@{Id} is opened.", conn.GetType().FullName, RuntimeHelpers.GetHashCode(conn));
 
-        return conn;
+            // Set availability and update dialect
+            this.pluginService.SetAvailability(hostSpec!.AsAliases(), HostAvailability.Available);
+            if (isInitialConnection)
+            {
+                this.pluginService.UpdateDialect(conn);
+            }
+
+            if (conn.State == System.Data.ConnectionState.Open)
+            {
+                return conn;
+            }
+
+            updateDialectRetries++;
+        }
+ 
+        throw new InvalidOperationException("Failed to open connection after multiple attempts.");
     }
 
     public void InitHostProvider(
