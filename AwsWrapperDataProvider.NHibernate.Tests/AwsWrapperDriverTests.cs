@@ -363,27 +363,25 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             }
 
             using (var session = sessionFactory.OpenSession())
-            using (var transaction = session.BeginTransaction())
-            {
-                var jane = new Person { FirstName = "Jane", LastName = "Smith" };
-                session.Save(jane);
-                transaction.Commit();
-            }
-
-            using (var session = sessionFactory.OpenSession())
             {
                 var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
                 var crashTask = AuroraUtils.CrashInstance(currentWriter, tcs);
                 await tcs.Task;
 
-                Assert.Throws<FailoverSuccessException>(() =>
+                var exception = Assert.ThrowsAny<HibernateException>(() =>
                 {
-                    session.CreateCriteria(typeof(Person))
-                        .Add(Restrictions.Like("FirstName", "J%"))
-                        .List<Person>();
+                    session.CreateSQLQuery("SELECT 1").UniqueResult();
                 });
 
                 await crashTask;
+
+                Assert.IsType<FailoverSuccessException>(exception.InnerException);
+            }
+
+            using (var session = sessionFactory.OpenSession())
+            {
+                var result = session.CreateSQLQuery("SELECT 1").UniqueResult();
+                Assert.NotNull(result);
             }
         }
     }
