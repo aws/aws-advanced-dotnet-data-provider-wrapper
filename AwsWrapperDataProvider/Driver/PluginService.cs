@@ -124,7 +124,7 @@ public class PluginService : IPluginService, IHostListProviderService
         {
             DbConnection? oldConnection = this.CurrentConnection;
 
-            Logger.LogInformation("SetCurrentConnection: Old connection Hash={OldHash} State={OldState}, New connection Hash={NewHash} State={NewState}, Host={Host}", 
+            Logger.LogInformation("SetCurrentConnection: Old connection Hash={OldHash} State={OldState}, New connection Hash={NewHash} State={NewState}, Host={Host}",
                 oldConnection != null ? RuntimeHelpers.GetHashCode(oldConnection) : 0,
                 oldConnection?.State.ToString() ?? "null",
                 RuntimeHelpers.GetHashCode(connection),
@@ -141,9 +141,11 @@ public class PluginService : IPluginService, IHostListProviderService
                 {
                     if (oldConnection != null)
                     {
-                        Logger.LogDebug("Disposing old connection Hash={Hash} State={State}", 
-                            RuntimeHelpers.GetHashCode(oldConnection), oldConnection.State);
+                        Logger.LogDebug("Disposing old connection Hash={Hash} State={State}",
+                            RuntimeHelpers.GetHashCode(oldConnection),
+                            oldConnection.State);
                     }
+
                     oldConnection?.Dispose();
                     Logger.LogTrace("Old connection is disposed: {ConnectionString}", connection?.ConnectionString);
                 }
@@ -157,8 +159,9 @@ public class PluginService : IPluginService, IHostListProviderService
                 Logger.LogTrace(string.Format(Resources.PluginService_ErrorClosingOldConnection, exception.Message));
             }
 
-            Logger.LogDebug("SetCurrentConnection completed: Current connection Hash={Hash} State={State}", 
-                RuntimeHelpers.GetHashCode(this.CurrentConnection), this.CurrentConnection?.State);
+            Logger.LogDebug("SetCurrentConnection completed: Current connection Hash={Hash} State={State}",
+                RuntimeHelpers.GetHashCode(this.CurrentConnection),
+                this.CurrentConnection?.State);
         }
     }
 

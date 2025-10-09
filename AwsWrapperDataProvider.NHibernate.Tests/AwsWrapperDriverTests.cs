@@ -229,10 +229,11 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                 var crashInstanceTask = AuroraUtils.CrashInstance(currentWriter, tcs);
                 await tcs.Task;
 
-                var exception = await Assert.ThrowsAnyAsync<HibernateException>(async () =>
+                var exception = await Assert.ThrowsAnyAsync<HibernateException>(() =>
                 {
                     session.Save(john);
                     newTransaction.Commit();
+                    return Task.CompletedTask;
                 });
 
                 await crashInstanceTask;
@@ -306,10 +307,11 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                 var writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
                 await tcs.Task;
 
-                var exception = await Assert.ThrowsAnyAsync<HibernateException>(async () =>
+                var exception = await Assert.ThrowsAnyAsync<HibernateException>(() =>
                 {
                     session.Save(john);
                     transaction.Commit();
+                    return Task.CompletedTask;
                 });
 
                 await Task.WhenAll(clusterFailureTask, writerNodeFailureTask);
