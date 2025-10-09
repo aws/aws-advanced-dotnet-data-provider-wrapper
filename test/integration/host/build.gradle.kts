@@ -168,7 +168,7 @@ tasks.register<Test>("test-all-mysql-multi-az-cluster-nh") {
 
 tasks.register<Test>("test-all-mysql-multi-az-instance-ef") {
     group = "verification"
-    filter.includeTestsMatching("integration.host.TestRunner.runMySQLEFMultiAzClusterTests")
+    filter.includeTestsMatching("integration.host.TestRunner.runMySQLEFMultiAzInstanceTests")
     doFirst {
         systemProperty("test-no-docker", "true")
         systemProperty("test-no-performance", "true")
