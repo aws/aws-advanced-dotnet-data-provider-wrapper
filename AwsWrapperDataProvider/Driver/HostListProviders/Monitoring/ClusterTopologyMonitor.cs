@@ -415,7 +415,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                 // Don't close this connection - it's now the monitoring connection
                 newConnection = null;
             }
-            catch (DbException ex)
+            catch (Exception ex) when (ex is DbException or SocketException or EndOfStreamException)
             {
                 // Suppress connection errors and continue
                 LoggerUtils.LogWithThreadId(Logger, LogLevel.Warning, ex, "DbException thrown during finding a monitoring connection, and ignored.");
