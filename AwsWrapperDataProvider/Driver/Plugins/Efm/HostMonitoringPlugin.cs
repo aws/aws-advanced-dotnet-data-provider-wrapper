@@ -55,11 +55,6 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
         "DbTransaction.Rollback",
         "DbTransaction.RollbackAsync",
 
-        // Connection management methods
-        "DbConnection.Close",
-        "DbConnection.Dispose",
-        "DbConnection.Abort",
-
         // Special methods
         "DbConnection.ClearWarnings",
         "initHostProvider",
@@ -74,7 +69,7 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
 
     public override T Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, params object[] methodArgs)
     {
-        if (!this.isEnabled)
+        if (!this.isEnabled || !this.SubscribedMethods.Contains(methodName))
         {
             return methodFunc();
         }
@@ -85,7 +80,7 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
 
         this.InitMonitorService();
 
-        T result;
+        T result = default!;
         HostMonitorConnectionContext? monitorContext = null;
 
         try
@@ -104,10 +99,16 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
 
             result = methodFunc();
         }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Exception caught during method execution: {methodName}", methodName);
+            throw;
+        }
         finally
         {
             if (monitorContext != null && this.monitorService != null && this.pluginService.CurrentConnection != null)
             {
+                Logger.LogTrace("Deactivating monitoring for current context");
                 this.monitorService.StopMonitoring(monitorContext, this.pluginService.CurrentConnection);
             }
 
@@ -161,13 +162,14 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
             {
                 if (rdsUrlType.IsRdsCluster)
                 {
-                    this.monitoringHostSpec = this.pluginService.IdentifyConnection(this.pluginService.CurrentConnection!);
+                    Logger.LogTrace("Monitoring HostSpec is associated with a cluster endpoint, plugin needs to identify the cluster connection.");
+                    this.monitoringHostSpec = this.pluginService.IdentifyConnection(this.pluginService.CurrentConnection!, this.pluginService.CurrentTransaction);
                     if (this.monitoringHostSpec == null)
                     {
                         throw new Exception("Unable to identify connection and gather monitoring host spec");
                     }
 
-                    this.pluginService.FillAliases(this.pluginService.CurrentConnection!, this.monitoringHostSpec);
+                    this.pluginService.FillAliases(this.pluginService.CurrentConnection!, this.monitoringHostSpec, this.pluginService.CurrentTransaction);
                 }
             }
             catch (Exception ex)

@@ -106,13 +106,13 @@ namespace AwsWrapperDataProvider
             return WrapperUtils.ExecuteWithPlugins(
                 this._connectionPluginManager,
                 this._targetDataReader,
-                "DbDataReader.Read()",
+                "DbDataReader.Read",
                 () => this._targetDataReader.Read());
         }
 
         protected override void Dispose(bool disposing)
         {
-            if (disposing)
+            if (disposing && this._targetDataReader is not null)
             {
                 WrapperUtils.RunWithPlugins(
                     this._connectionPluginManager,

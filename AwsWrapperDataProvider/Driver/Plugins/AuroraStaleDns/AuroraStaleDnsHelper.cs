@@ -74,8 +74,8 @@ public class AuroraStaleDnsHelper
         foreach (var reader in this.GetReaders() ?? [])
         {
             using var readerConn = this.pluginService.OpenConnection(reader, props, null);
-            HostRole role = this.pluginService.GetHostRole(readerConn);
-            Logger.LogTrace("Current connection role: {role} for {host}", connectionRole, reader);
+            HostRole readerRole = this.pluginService.GetHostRole(readerConn);
+            Logger.LogTrace("Current connection role: {role} for {host}", readerRole, reader);
         }
 
         this.pluginService.ForceRefreshHostList(connection);
