@@ -810,20 +810,9 @@ public class AuroraTestUtils
         return result;
     }
 
-    public string? ExecuteInstanceIdQuery(IDbConnection connection, DatabaseEngine engine, DatabaseEngineDeployment deployment)
+    public string ExecuteInstanceIdQuery(IDbConnection connection, DatabaseEngine engine, DatabaseEngineDeployment deployment)
     {
-        string instanceId;
-        try
-        {
-            instanceId = this.ExecuteQuery(connection, engine, deployment, this.GetInstanceIdSql(engine, deployment));
-        }
-        catch (NotSupportedException ex)
-        {
-            Console.WriteLine("[Warning] error thrown when executing instance id query: ", ex);
-            return null!;
-        }
-
-        return instanceId;
+        return this.ExecuteQuery(connection, engine, deployment, this.GetInstanceIdSql(engine, deployment));
     }
 
     public string? QueryInstanceId(IDbConnection connection)

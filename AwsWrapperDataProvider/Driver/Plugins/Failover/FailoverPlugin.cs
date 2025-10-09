@@ -109,7 +109,8 @@ public class FailoverPlugin : AbstractConnectionPlugin
         if (this.pluginService.CurrentConnection != null
             && !this.CanDirectExecute(methodName)
             && !this.closedExplicitly
-            && this.pluginService.CurrentConnection.State == ConnectionState.Closed)
+            && (this.pluginService.CurrentConnection.State == ConnectionState.Closed
+            || this.pluginService.CurrentConnection.State == ConnectionState.Broken))
         {
             this.PickNewConnection();
         }

@@ -126,14 +126,14 @@ public class PluginService : IPluginService, IHostListProviderService
 
             this.CurrentConnection = connection;
             this.currentHostSpec = hostSpec;
-            Logger.LogTrace("New connection {Type}@{Id} is set.", connection?.GetType().FullName, RuntimeHelpers.GetHashCode(connection));
+            Logger.LogTrace("New connection is set: {ConnectionString}", connection?.ConnectionString);
 
             try
             {
                 if (!ReferenceEquals(connection, oldConnection))
                 {
                     oldConnection?.Dispose();
-                    Logger.LogTrace("Old connection {Type}@{Id} is disposed.", oldConnection?.GetType().FullName, RuntimeHelpers.GetHashCode(oldConnection));
+                    Logger.LogTrace("Old connection is disposed: {ConnectionString}", connection?.ConnectionString);
                 }
             }
             catch (DbException exception)
