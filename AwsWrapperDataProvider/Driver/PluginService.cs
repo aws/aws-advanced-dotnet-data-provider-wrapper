@@ -289,12 +289,12 @@ public class PluginService : IPluginService, IHostListProviderService
         this.RefreshHostList(connection);
     }
 
-    public HostSpec? IdentifyConnection(DbConnection connection)
+    public HostSpec? IdentifyConnection(DbConnection connection, DbTransaction? transaction = null)
     {
-        return this.hostListProvider.IdentifyConnection(connection);
+        return this.hostListProvider.IdentifyConnection(connection, transaction);
     }
 
-    public void FillAliases(DbConnection connection, HostSpec hostSpec)
+    public void FillAliases(DbConnection connection, HostSpec hostSpec, DbTransaction? transaction = null)
     {
         if (hostSpec.GetAliases().Count > 0)
         {
@@ -306,6 +306,7 @@ public class PluginService : IPluginService, IHostListProviderService
         {
             using var command = connection.CreateCommand();
             command.CommandText = this.Dialect.HostAliasQuery;
+            command.Transaction = transaction;
 
             using var resultSet = command.ExecuteReader();
             while (resultSet.Read())
@@ -319,7 +320,7 @@ public class PluginService : IPluginService, IHostListProviderService
             // ignore
         }
 
-        HostSpec? existingHostSpec = this.IdentifyConnection(connection);
+        HostSpec? existingHostSpec = this.IdentifyConnection(connection, transaction);
         if (existingHostSpec != null)
         {
             var aliases = existingHostSpec.AsAliases();
