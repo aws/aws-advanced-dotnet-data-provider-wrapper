@@ -334,5 +334,54 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                 Assert.Equal(2, persons.Count);
             }
         }
+
+        [Fact]
+        [Trait("Category", "Integration")]
+        [Trait("Database", "mysql-nh")]
+        [Trait("Database", "pg-nh")]
+        [Trait("Engine", "aurora")]
+        public async Task NHibernateSessionQueryWithFailoverTest()
+        {
+            Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
+
+            string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
+            var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName);
+            var wrapperConnectionString = connectionString
+                + ";Plugins=failover;"
+                + "EnableConnectFailover=true;"
+                + "FailoverMode=StrictWriter;"
+                + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
+            var cfg = this.GetNHibernateConfiguration(wrapperConnectionString);
+            var sessionFactory = cfg.BuildSessionFactory();
+
+            using (var session = sessionFactory.OpenSession())
+            {
+                this.CreateAndClearPersonsTable(session);
+            }
+
+            using (var session = sessionFactory.OpenSession())
+            using (var transaction = session.BeginTransaction())
+            {
+                var jane = new Person { FirstName = "Jane", LastName = "Smith" };
+                session.Save(jane);
+                transaction.Commit();
+            }
+
+            using (var session = sessionFactory.OpenSession())
+            {
+                var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                var crashTask = AuroraUtils.CrashInstance(currentWriter, tcs);
+                await tcs.Task;
+
+                Assert.Throws<FailoverSuccessException>(() =>
+                {
+                    session.CreateCriteria(typeof(Person))
+                        .Add(Restrictions.Like("FirstName", "J%"))
+                        .List<Person>();
+                });
+
+                await crashTask;
+            }
+        }
     }
 }
