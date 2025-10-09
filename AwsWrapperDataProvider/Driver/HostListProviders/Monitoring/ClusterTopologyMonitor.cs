@@ -15,6 +15,7 @@
 using System.Collections.Concurrent;
 using System.Data.Common;
 using System.Globalization;
+using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -604,7 +605,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
             return hosts;
         }
-        catch (DbException ex)
+        catch (Exception ex)
         {
             LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, string.Format(Resources.ClusterTopologyMonitor_ErrorFetchingTopology, ex));
             return null;
@@ -742,7 +743,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                             connection = monitor.pluginService.ForceOpenConnection(hostSpec, monitor.properties, null);
                             monitor.pluginService.SetAvailability(hostSpec.AsAliases(), HostAvailability.Available);
                         }
-                        catch (DbException)
+                        catch (Exception ex) when (ex is DbException or EndOfStreamException or SocketException)
                         {
                             monitor.pluginService.SetAvailability(hostSpec.AsAliases(), HostAvailability.Unavailable);
                             await monitor.DisposeConnectionAsync(connection);
@@ -757,7 +758,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                         {
                             writerId = await monitor.GetWriterNodeIdAsync(connection);
                         }
-                        catch (DbException)
+                        catch (Exception ex) when (ex is DbException or EndOfStreamException or SocketException)
                         {
                             await monitor.DisposeConnectionAsync(connection);
                             connection = null;
