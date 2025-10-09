@@ -214,7 +214,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
         if (isInitialConnection)
         {
-            this.pluginService.RefreshHostList(connection);
+            this.pluginService.ForceRefreshHostList(connection);
         }
 
         Logger.LogDebug("FailoverPlugin.OpenConnection returning connection state = {State}, type = {Type}@{Id}",
