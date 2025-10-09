@@ -124,6 +124,13 @@ public class PluginService : IPluginService, IHostListProviderService
         {
             DbConnection? oldConnection = this.CurrentConnection;
 
+            Logger.LogInformation("SetCurrentConnection: Old connection Hash={OldHash} State={OldState}, New connection Hash={NewHash} State={NewState}, Host={Host}", 
+                oldConnection != null ? RuntimeHelpers.GetHashCode(oldConnection) : 0,
+                oldConnection?.State.ToString() ?? "null",
+                RuntimeHelpers.GetHashCode(connection),
+                connection.State,
+                hostSpec?.Host ?? "null");
+
             this.CurrentConnection = connection;
             this.currentHostSpec = hostSpec;
             Logger.LogTrace("New connection is set: {ConnectionString}", connection?.ConnectionString);
@@ -132,14 +139,26 @@ public class PluginService : IPluginService, IHostListProviderService
             {
                 if (!ReferenceEquals(connection, oldConnection))
                 {
+                    if (oldConnection != null)
+                    {
+                        Logger.LogDebug("Disposing old connection Hash={Hash} State={State}", 
+                            RuntimeHelpers.GetHashCode(oldConnection), oldConnection.State);
+                    }
                     oldConnection?.Dispose();
                     Logger.LogTrace("Old connection is disposed: {ConnectionString}", connection?.ConnectionString);
+                }
+                else
+                {
+                    Logger.LogDebug("New connection is same reference as old connection - not disposing");
                 }
             }
             catch (DbException exception)
             {
                 Logger.LogTrace(string.Format(Resources.PluginService_ErrorClosingOldConnection, exception.Message));
             }
+
+            Logger.LogDebug("SetCurrentConnection completed: Current connection Hash={Hash} State={State}", 
+                RuntimeHelpers.GetHashCode(this.CurrentConnection), this.CurrentConnection?.State);
         }
     }
 

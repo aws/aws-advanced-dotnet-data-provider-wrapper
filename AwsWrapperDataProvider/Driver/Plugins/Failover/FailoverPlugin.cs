@@ -105,12 +105,24 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
     public override T Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, params object[] methodArgs)
     {
+        Logger.LogDebug("Execute called: method={MethodName}, isClosed={IsClosed}, closedExplicitly={ClosedExplicitly}", 
+            methodName, this.isClosed, this.closedExplicitly);
+
+        if (this.pluginService.CurrentConnection != null)
+        {
+            Logger.LogDebug("Current connection state: {State}, Hash={Hash}", 
+                this.pluginService.CurrentConnection.State, 
+                RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection));
+        }
+
         if (this.pluginService.CurrentConnection != null
             && !this.CanDirectExecute(methodName)
             && !this.closedExplicitly
             && (this.pluginService.CurrentConnection.State == ConnectionState.Closed
             || this.pluginService.CurrentConnection.State == ConnectionState.Broken))
         {
+            Logger.LogWarning("Connection state is {State}, triggering PickNewConnection for method {MethodName}", 
+                this.pluginService.CurrentConnection.State, methodName);
             this.PickNewConnection();
         }
 
@@ -121,6 +133,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
         if (this.isClosed && !this.AllowedOnClosedConnection(methodName))
         {
+            Logger.LogWarning("Plugin isClosed=true, calling InvalidInvocationOnClosedConnection for method {MethodName}", methodName);
             this.InvalidInvocationOnClosedConnection();
         }
 
@@ -233,6 +246,16 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
     private void InvalidInvocationOnClosedConnection()
     {
+        Logger.LogWarning("InvalidInvocationOnClosedConnection called: closedExplicitly={ClosedExplicitly}, isClosed={IsClosed}", 
+            this.closedExplicitly, this.isClosed);
+
+        if (this.pluginService.CurrentConnection != null)
+        {
+            Logger.LogWarning("Current connection when invalid invocation: Hash={Hash}, State={State}", 
+                RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection), 
+                this.pluginService.CurrentConnection.State);
+        }
+
         if (!this.closedExplicitly)
         {
             this.isClosed = false;
@@ -300,6 +323,8 @@ public class FailoverPlugin : AbstractConnectionPlugin
         Logger.LogInformation("Reader failover successful. Switching to host: {Host}.", result.HostSpec.Host);
 
         this.pluginService.SetCurrentConnection(result.Connection, result.HostSpec);
+        Logger.LogInformation("Reader failover: Set new connection {Hash} with state {State} to host {Host}", 
+            RuntimeHelpers.GetHashCode(result.Connection), result.Connection.State, result.HostSpec.Host);
         this.ThrowFailoverSuccessException();
     }
 
@@ -446,6 +471,8 @@ public class FailoverPlugin : AbstractConnectionPlugin
         }
 
         this.pluginService.SetCurrentConnection(writerCandidateConn, writerCandidate);
+        Logger.LogInformation("Writer failover: Set new connection {Hash} with state {State} to host {Host}", 
+            RuntimeHelpers.GetHashCode(writerCandidateConn), writerCandidateConn.State, writerCandidate.Host);
         this.ThrowFailoverSuccessException();
     }
 
@@ -454,7 +481,15 @@ public class FailoverPlugin : AbstractConnectionPlugin
         Logger.LogTrace("Failover succeeded");
 
         // Reset the closed state since we now have a working connection
+        Logger.LogDebug("Resetting isClosed from {OldValue} to false after successful failover", this.isClosed);
         this.isClosed = false;
+
+        if (this.pluginService.CurrentConnection != null)
+        {
+            Logger.LogDebug("Current connection after failover: Hash={Hash}, State={State}", 
+                RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection), 
+                this.pluginService.CurrentConnection.State);
+        }
 
         if (this.shouldThrowTransactionError)
         {
