@@ -116,7 +116,7 @@ public class DefaultConnectionPlugin(
 
             updateDialectRetries++;
         }
- 
+
         throw new InvalidOperationException("Failed to open connection after multiple attempts.");
     }
 
