@@ -224,17 +224,18 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             using (var newTransaction = session.BeginTransaction())
             {
                 var john = new Person { FirstName = "John", LastName = "Smith" };
+
+                var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                var crashInstanceTask = AuroraUtils.CrashInstance(currentWriter, tcs);
+                await tcs.Task;
+
                 var exception = await Assert.ThrowsAnyAsync<HibernateException>(async () =>
                 {
-                    var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-                    var crashInstanceTask = AuroraUtils.CrashInstance(currentWriter, tcs);
-                    await tcs.Task;
-
                     session.Save(john);
                     newTransaction.Commit();
-
-                    await crashInstanceTask;
                 });
+
+                await crashInstanceTask;
 
                 // Verify the inner exception is FailoverSuccessException
                 Assert.IsType<TransactionStateUnknownException>(exception.InnerException);
@@ -299,18 +300,20 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             using (var transaction = session.BeginTransaction())
             {
                 var john = new Person { FirstName = "John", LastName = "Smith" };
+
+                var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                var clusterFailureTask = AuroraUtils.SimulateTemporaryFailureTask(ProxyClusterEndpoint, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
+                var writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
+                await tcs.Task;
+
                 var exception = await Assert.ThrowsAnyAsync<HibernateException>(async () =>
                 {
-                    var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-                    var clusterFailureTask = AuroraUtils.SimulateTemporaryFailureTask(ProxyClusterEndpoint, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
-                    var writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
-                    await tcs.Task;
-
                     session.Save(john);
                     transaction.Commit();
-
-                    await Task.WhenAll(clusterFailureTask, writerNodeFailureTask);
                 });
+
+                await Task.WhenAll(clusterFailureTask, writerNodeFailureTask);
+
 
                 // Verify the inner exception is FailoverSuccessException
                 Assert.IsType<TransactionStateUnknownException>(exception.InnerException);
