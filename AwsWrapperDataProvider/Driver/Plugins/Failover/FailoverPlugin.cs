@@ -453,6 +453,9 @@ public class FailoverPlugin : AbstractConnectionPlugin
     {
         Logger.LogTrace("Failover succeeded");
 
+        // Reset the closed state since we now have a working connection
+        this.isClosed = false;
+
         if (this.shouldThrowTransactionError)
         {
             this.shouldThrowTransactionError = false;
