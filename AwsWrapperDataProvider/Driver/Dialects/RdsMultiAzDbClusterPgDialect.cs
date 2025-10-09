@@ -58,18 +58,10 @@ public class RdsMultiAzDbClusterPgDialect : PgDialect
 
         try
         {
-            using (IDbCommand isDialectCommand = connection.CreateCommand())
-            {
-                isDialectCommand.CommandText = IsRdsClusterQuery;
-                using IDataReader isDialectReader = isDialectCommand.ExecuteReader();
-                bool result = !isDialectReader.IsDBNull(0) && isDialectReader.Read();
-
-                Logger.LogDebug(
-                    "RdsMultiAzDbClusterPgDialect.IsDialect() completed successfully, result = {Result}, connection state = {State}",
-                    result,
-                    connection.State);
-                return result;
-            }
+            using IDbCommand isDialectCommand = connection.CreateCommand();
+            isDialectCommand.CommandText = IsRdsClusterQuery;
+            using IDataReader isDialectReader = isDialectCommand.ExecuteReader();
+            return !isDialectReader.IsDBNull(0) && isDialectReader.Read();
         }
         catch (Exception ex)
         {

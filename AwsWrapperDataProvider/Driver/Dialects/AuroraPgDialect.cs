@@ -43,6 +43,10 @@ public class AuroraPgDialect : PgDialect
     private static readonly string IsWriterQuery = "SELECT SERVER_ID FROM aurora_replica_status() "
         + "WHERE SESSION_ID = 'MASTER_SESSION_ID' AND SERVER_ID = aurora_db_instance_identifier()";
 
+    public override IList<Type> DialectUpdateCandidates { get; } = [
+        typeof(RdsMultiAzDbClusterPgDialect),
+    ];
+
     public override bool IsDialect(IDbConnection connection)
     {
         if (!base.IsDialect(connection))
