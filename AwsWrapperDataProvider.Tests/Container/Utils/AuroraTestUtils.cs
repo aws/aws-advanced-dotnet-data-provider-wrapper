@@ -822,4 +822,14 @@ public class AuroraTestUtils
             TestEnvironment.Env.Info.Request.Engine,
             TestEnvironment.Env.Info.Request.Deployment);
     }
+
+    public string GetSleepSql(DatabaseEngine engine, int seconds)
+    {
+        return engine switch
+        {
+            DatabaseEngine.MYSQL => $"SELECT sleep({seconds})",
+            DatabaseEngine.PG => $"SELECT pg_sleep({seconds})",
+            _ => throw new NotSupportedException($"Unsupported database engine: {engine}"),
+        };
+    }
 }

@@ -100,7 +100,7 @@ public class HostMonitor : IHostMonitor
         ConcurrentQueue<WeakReference<HostMonitorConnectionContext>>? queue = this.newContexts.GetOrCreate(truncated,
             (key) => new ConcurrentQueue<WeakReference<HostMonitorConnectionContext>>());
 
-        queue?.Enqueue(new WeakReference<HostMonitorConnectionContext>(context));
+        queue!.Enqueue(new WeakReference<HostMonitorConnectionContext>(context));
     }
 
     public bool CanDispose()
@@ -154,6 +154,7 @@ public class HostMonitor : IHostMonitor
                                 && context != null
                                 && context.IsActive())
                             {
+                                Logger.LogTrace("Adding active monitoring context to poll");
                                 this.activeContexts.Enqueue(contextRef);
                             }
                         }
@@ -196,9 +197,11 @@ public class HostMonitor : IHostMonitor
                 if (this.activeContexts.IsEmpty && !isNodeUnhealthy)
                 {
                     await Task.Delay(ThreadSleepMs, token);
+                    Logger.LogTrace("No active contexts and node is healthy, skipping status check");
                     continue;
                 }
 
+                Logger.LogTrace("Current active contexts count: {count}", this.activeContexts.Count);
                 DateTime statusCheckStartTime = DateTime.UtcNow;
                 bool isValid = this.CheckConnectionStatus();
                 DateTime statusCheckEndTime = DateTime.UtcNow;
@@ -211,6 +214,7 @@ public class HostMonitor : IHostMonitor
                 {
                     while (this.activeContexts.TryDequeue(out WeakReference<HostMonitorConnectionContext>? monitorContextRef))
                     {
+                        Logger.LogTrace("Dequeued a context from activeContexts");
                         if (token.IsCancellationRequested)
                         {
                             break;
@@ -234,6 +238,7 @@ public class HostMonitor : IHostMonitor
                         }
                         else if (monitorContext.IsActive())
                         {
+                            Logger.LogTrace("Adding context to tmpActiveContexts");
                             tmpActiveContexts.Add(monitorContextRef);
                         }
                     }
@@ -242,6 +247,7 @@ public class HostMonitor : IHostMonitor
                     // add those back into this.activeContexts
                     foreach (WeakReference<HostMonitorConnectionContext> contextRef in tmpActiveContexts)
                     {
+                        Logger.LogTrace("Adding context back to activeContexts");
                         this.activeContexts.Enqueue(contextRef);
                     }
                 }
@@ -261,7 +267,7 @@ public class HostMonitor : IHostMonitor
         }
         catch (Exception ex)
         {
-            Logger.LogWarning(string.Format(Resources.EfmHostMonitor_ActiveContextsException, this.hostSpec.Host, ex.Message, ex.StackTrace));
+            Logger.LogWarning(ex, string.Format(Resources.EfmHostMonitor_ActiveContextsException, this.hostSpec.Host, ex.Message, ex.StackTrace));
         }
         finally
         {
@@ -319,31 +325,30 @@ public class HostMonitor : IHostMonitor
 
                 lock (this.monitorLock)
                 {
+                    this.monitoringConn?.Dispose();
                     this.monitoringConn = conn;
+                    conn = null;
                 }
 
                 return true;
             }
 
-            try
+            using (var validityCheckCommand = this.monitoringConn!.CreateCommand())
             {
-                var validityCheckCommand = conn.CreateCommand();
-                validityCheckCommand.CommandText = this.pluginService.Dialect.HostAliasQuery;
-
+                validityCheckCommand.CommandText = "SELECT 1";
                 int validTimeoutSeconds = (this.failureDetectionIntervalMs - ThreadSleepMs) / 2000;
+                Logger.LogTrace($"Command timeout for ping is {validTimeoutSeconds} seconds");
                 validityCheckCommand.CommandTimeout = validTimeoutSeconds;
-
-                _ = validityCheckCommand.ExecuteScalar();
-
-                return !this.TestUnhealthyCluster;
+                validityCheckCommand.ExecuteScalar();
             }
-            catch
-            {
-                return false;
-            }
+
+            return !this.TestUnhealthyCluster;
         }
-        catch (DbException)
+        catch (DbException ex)
         {
+            Logger.LogWarning(ex, "Disposing invalid monitoring connection");
+            this.monitoringConn?.Dispose();
+            this.monitoringConn = null;
             return false;
         }
     }
@@ -403,13 +408,15 @@ public class HostMonitor : IHostMonitor
 
     private void AbortConnection(DbConnection connection)
     {
+        Logger.LogTrace("Aborting unhealthy connection.");
         try
         {
-            connection.Dispose();
+            connection.Close();
+            Logger.LogTrace("Finished aborting unhealthy connection.");
         }
         catch (Exception ex)
         {
-            Logger.LogTrace(string.Format(Resources.EfmHostMonitor_ExceptionAbortingConnection, ex.Message));
+            Logger.LogTrace(ex, string.Format(Resources.EfmHostMonitor_ExceptionAbortingConnection, ex.Message));
         }
     }
 }

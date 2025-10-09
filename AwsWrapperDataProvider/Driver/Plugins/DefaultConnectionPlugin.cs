@@ -43,7 +43,7 @@ public class DefaultConnectionPlugin(
         ADONetDelegate<T> methodFunc,
         params object[] methodArgs)
     {
-        Logger.LogTrace("Executing method {MethodName} on {MethodInvokedOn} with args: {MethodArgs}", methodName, methodInvokedOn.GetType().FullName, methodArgs);
+        Logger.LogTrace("Executing method {MethodName} on {MethodInvokedOn} with args: {MethodArgs}", methodName, methodInvokedOn?.GetType().FullName, methodArgs);
         return methodFunc();
     }
 

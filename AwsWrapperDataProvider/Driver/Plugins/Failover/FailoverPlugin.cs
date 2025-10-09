@@ -83,7 +83,6 @@ public class FailoverPlugin : AbstractConnectionPlugin
         // Connection management methods
         MethodClose,
         MethodDispose,
-        "DbConnection.Abort",
 
         // Special methods
         "DbConnection.ClearWarnings",
