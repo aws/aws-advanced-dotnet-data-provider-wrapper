@@ -143,9 +143,9 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             {
                 this.CreateAndClearPersonsTable(session);
 
+                var jane = new Person { FirstName = "Jane", LastName = "Smith" };
                 using (var transaction = session.BeginTransaction())
                 {
-                    var jane = new Person { FirstName = "Jane", LastName = "Smith" };
                     session.Save(jane);
                     transaction.Commit();
                 }
@@ -154,17 +154,18 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                 var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
                 await AuroraUtils.CrashInstance(currentWriter, tcs);
 
+                var john = new Person { FirstName = "John", LastName = "Smith" };
+
                 // These operations should work transparently - driver handles failover during connection
                 using (var transaction = session.BeginTransaction())
                 {
-                    var john = new Person { FirstName = "John", LastName = "Smith" };
                     session.Save(john);
                     transaction.Commit();
                 }
 
+                var joe = new Person { FirstName = "Joe", LastName = "Smith" };
                 using (var transaction = session.BeginTransaction())
                 {
-                    var joe = new Person { FirstName = "Joe", LastName = "Smith" };
                     session.Save(joe);
                     transaction.Commit();
                 }
@@ -208,10 +209,10 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                     transaction.Commit();
                 }
 
+                var john = new Person { FirstName = "John", LastName = "Smith" };
+
                 using (var newTransaction = session.BeginTransaction())
                 {
-                    var john = new Person { FirstName = "John", LastName = "Smith" };
-
                     var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
                     var crashInstanceTask = AuroraUtils.CrashInstance(currentWriter, tcs);
                     await tcs.Task;
@@ -229,9 +230,11 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                     Assert.IsType<TransactionStateUnknownException>(exception.InnerException);
                 }
 
+                var joe = new Person { FirstName = "Joe", LastName = "Smith" };
+
+
                 using (var finalTransaction = session.BeginTransaction())
                 {
-                    var joe = new Person { FirstName = "Joe", LastName = "Smith" };
                     session.Save(joe);
                     finalTransaction.Commit();
                 }
@@ -276,16 +279,20 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                     transaction.Commit();
                 }
 
+                var john = new Person { FirstName = "John", LastName = "Smith" };
+
                 // Crash instance and let driver handle failover
                 using (var transaction = session.BeginTransaction())
                 {
-                    var john = new Person { FirstName = "John", LastName = "Smith" };
-
                     var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
                     var clusterFailureTask = AuroraUtils.SimulateTemporaryFailureTask(ProxyClusterEndpoint,
-                        TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
-                    var writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero,
-                        TimeSpan.FromSeconds(20), tcs);
+                        TimeSpan.Zero,
+                        TimeSpan.FromSeconds(20),
+                        tcs);
+                    var writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter,
+                        TimeSpan.Zero,
+                        TimeSpan.FromSeconds(20),
+                        tcs);
                     await tcs.Task;
 
                     var exception = await Assert.ThrowsAnyAsync<HibernateException>(() =>
