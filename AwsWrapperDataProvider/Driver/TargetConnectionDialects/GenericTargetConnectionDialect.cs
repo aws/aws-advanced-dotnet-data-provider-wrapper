@@ -40,7 +40,9 @@ public abstract class GenericTargetConnectionDialect : ITargetConnectionDialect
         Dictionary<string, string> targetConnectionParameters = props.Where(x =>
             !PropertyDefinition.InternalWrapperProperties
                 .Select(prop => prop.Name)
-                .Contains(x.Key)).ToDictionary();
+                .Contains(x.Key) &&
+                !x.Key.StartsWith(PropertyDefinition.MonitoringPropertyPrefix, StringComparison.OrdinalIgnoreCase))
+                .ToDictionary();
 
         if (hostSpec != null)
         {

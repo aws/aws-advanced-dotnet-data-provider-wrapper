@@ -263,6 +263,9 @@ public static class PropertyDefinition
         FailureDetectionCount,
     ];
 
+    // EFM specific monitoring property, not related to cluster monitoring
+    public static readonly string MonitoringPropertyPrefix = "monitoring-";
+
     public static string GetConnectionUrl(Dictionary<string, string> props)
     {
         return Server.GetString(props) ?? Host.GetString(props) ?? throw new ArgumentException("Connection url is missing.");
