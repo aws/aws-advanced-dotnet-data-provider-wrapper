@@ -143,7 +143,22 @@ public class AwsWrapperConnection : DbConnection
             this.PluginManager,
             this.pluginService.CurrentConnection!,
             "DbConnection.ChangeDatabase",
-            () => this.pluginService.CurrentConnection!.ChangeDatabase(databaseName),
+            () =>
+            {
+                this.pluginService.CurrentConnection!.ChangeDatabase(databaseName);
+                return Task.CompletedTask;
+            },
+            databaseName).GetAwaiter().GetResult();
+    }
+
+    public override async Task ChangeDatabaseAsync(string databaseName, CancellationToken cancellationToken = default)
+    {
+        this.database = databaseName;
+        await WrapperUtils.RunWithPlugins(
+            this.PluginManager,
+            this.pluginService.CurrentConnection!,
+            "DbConnection.ChangeDatabaseAsync",
+            () => this.pluginService.CurrentConnection!.ChangeDatabaseAsync(databaseName),
             databaseName);
     }
 
@@ -153,10 +168,33 @@ public class AwsWrapperConnection : DbConnection
             this.PluginManager,
             this.pluginService.CurrentConnection!,
             "DbConnection.Close",
-            () => this.pluginService.CurrentConnection!.Close());
+            () =>
+            {
+                this.pluginService.CurrentConnection!.Close();
+                return Task.CompletedTask;
+            }).GetAwaiter().GetResult();
+    }
+
+    public override async Task CloseAsync()
+    {
+        await WrapperUtils.RunWithPlugins(
+            this.PluginManager,
+            this.pluginService.CurrentConnection!,
+            "DbConnection.CloseAsync",
+            () => this.pluginService.CurrentConnection!.CloseAsync());
     }
 
     public override void Open()
+    {
+        this.OpenInternal(CancellationToken.None, false).GetAwaiter().GetResult();
+    }
+
+    public override async Task OpenAsync(CancellationToken cancellationToken)
+    {
+        await this.OpenInternal(cancellationToken, true);
+    }
+
+    private async Task OpenInternal(CancellationToken cancellationToken, bool async)
     {
         if (this.State != ConnectionState.Closed)
         {
@@ -167,13 +205,14 @@ public class AwsWrapperConnection : DbConnection
         ArgumentNullException.ThrowIfNull(this.PluginManager);
         ArgumentNullException.ThrowIfNull(this.hostListProviderService);
 
-        this.PluginManager.InitHostProvider(this.connectionString, this.ConnectionProperties, this.hostListProviderService);
+        await this.PluginManager.InitHostProvider(this.connectionString, this.ConnectionProperties, this.hostListProviderService);
 
-        DbConnection connection = WrapperUtils.OpenWithPlugins(
+        DbConnection connection = await WrapperUtils.OpenWithPlugins(
             this.PluginManager,
             this.pluginService.InitialConnectionHostSpec,
             this.ConnectionProperties,
-            true);
+            true,
+            async);
         this.pluginService.SetCurrentConnection(connection, this.pluginService.InitialConnectionHostSpec);
         this.pluginService.RefreshHostList();
     }
@@ -188,8 +227,27 @@ public class AwsWrapperConnection : DbConnection
             this.PluginManager,
             this.pluginService.CurrentConnection,
             "DbConnection.BeginDbTransaction",
-            () => this.pluginService.CurrentConnection!.BeginTransaction(isolationLevel),
-            isolationLevel);
+            () => Task.FromResult(this.pluginService.CurrentConnection!.BeginTransaction(isolationLevel)),
+            isolationLevel)
+            .GetAwaiter().GetResult();
+
+        this.pluginService.CurrentTransaction = targetTransaction;
+        return new AwsWrapperTransaction(this, this.pluginService, this.PluginManager);
+    }
+
+    protected override async ValueTask<DbTransaction> BeginDbTransactionAsync(IsolationLevel isolationLevel, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(this.pluginService);
+        ArgumentNullException.ThrowIfNull(this.pluginService.CurrentConnection);
+        ArgumentNullException.ThrowIfNull(this.PluginManager);
+
+        DbTransaction targetTransaction = await WrapperUtils.ExecuteWithPlugins(
+            this.PluginManager,
+            this.pluginService.CurrentConnection,
+            "DbConnection.BeginDbTransactionAsync",
+            async () => await this.pluginService.CurrentConnection!.BeginTransactionAsync(isolationLevel, cancellationToken),
+            isolationLevel,
+            cancellationToken);
 
         this.pluginService.CurrentTransaction = targetTransaction;
         return new AwsWrapperTransaction(this, this.pluginService, this.PluginManager);
@@ -207,19 +265,36 @@ public class AwsWrapperConnection : DbConnection
             this.PluginManager,
             this.pluginService.CurrentConnection,
             "DbConnection.CreateCommand",
-            () => (TCommand)this.pluginService.CurrentConnection.CreateCommand());
+            () => Task.FromResult((TCommand)this.pluginService.CurrentConnection.CreateCommand()))
+            .GetAwaiter().GetResult();
         Logger.LogDebug("DbCommand created for DbConnection@{Id}", RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection));
 
         this.ConnectionProperties[PropertyDefinition.TargetCommandType.Name] = typeof(TCommand).AssemblyQualifiedName!;
         return new AwsWrapperCommand<TCommand>(command, this, this.PluginManager);
     }
 
-    protected override DbBatch CreateDbBatch() => this.CreateBatch();
+    //protected override DbBatch CreateDbBatch() => this.CreateBatch();
 
-    public new AwsWrapperBatch CreateBatch()
+    //public new AwsWrapperBatch CreateBatch()
+    //{
+    //    DbBatch batch = this.TargetDbConnection!.CreateBatch();
+    //    return new AwsWrapperBatch(batch, this, this.PluginManager);
+    //}
+
+    protected override void Dispose(bool disposing)
     {
-        DbBatch batch = this.TargetDbConnection!.CreateBatch();
-        return new AwsWrapperBatch(batch, this, this.PluginManager);
+        if (disposing)
+        {
+            this.pluginService.CurrentConnection?.Dispose();
+        }
+    }
+
+    public override async ValueTask DisposeAsync()
+    {
+        if (this.pluginService.CurrentConnection is not null)
+        {
+            await this.pluginService.CurrentConnection.DisposeAsync();
+        }
     }
 
     private Type GetTargetType(Dictionary<string, string> props)

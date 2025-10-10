@@ -256,17 +256,18 @@ public class PluginService : IPluginService, IHostListProviderService
         }
     }
 
-    public DbConnection OpenConnection(
+    public async Task<DbConnection> OpenConnection(
         HostSpec hostSpec,
         Dictionary<string, string> props,
-        IConnectionPlugin? pluginToSkip)
+        IConnectionPlugin? pluginToSkip,
+        bool async)
     {
-        return this.pluginManager.Open(hostSpec, props, this.CurrentConnection == null, pluginToSkip);
+        return await this.pluginManager.Open(hostSpec, props, this.CurrentConnection == null, pluginToSkip, async);
     }
 
-    public DbConnection ForceOpenConnection(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin? pluginToSkip)
+    public async Task<DbConnection> ForceOpenConnection(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin? pluginToSkip, bool async)
     {
-        return this.pluginManager.ForceOpen(hostSpec, props, this.CurrentConnection == null, pluginToSkip);
+        return await this.pluginManager.ForceOpen(hostSpec, props, this.CurrentConnection == null, pluginToSkip, async);
     }
 
     public Task OpenConnectionAsync(HostSpec hostSpec, Dictionary<string, string> props)

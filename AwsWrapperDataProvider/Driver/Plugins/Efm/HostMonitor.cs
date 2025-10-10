@@ -203,7 +203,7 @@ public class HostMonitor : IHostMonitor
 
                 Logger.LogTrace("Current active contexts count: {count}", this.activeContexts.Count);
                 DateTime statusCheckStartTime = DateTime.UtcNow;
-                bool isValid = this.CheckConnectionStatus();
+                bool isValid = await this.CheckConnectionStatus();
                 DateTime statusCheckEndTime = DateTime.UtcNow;
 
                 this.UpdateNodeHealthStatus(isValid, statusCheckStartTime, statusCheckEndTime);
@@ -295,7 +295,7 @@ public class HostMonitor : IHostMonitor
         Logger.LogTrace(string.Format(Resources.EfmHostMonitor_StoppedMonitoringActiveContexts, this.hostSpec.Host));
     }
 
-    private bool CheckConnectionStatus()
+    private async Task<bool> CheckConnectionStatus()
     {
         try
         {
@@ -320,7 +320,7 @@ public class HostMonitor : IHostMonitor
                 }
 
                 Logger.LogTrace(string.Format(Resources.EfmHostMonitor_OpeningMonitoringConnection, this.hostSpec.Host));
-                conn = this.pluginService.ForceOpenConnection(this.hostSpec, monitoringConnProperties, null);
+                conn = await this.pluginService.ForceOpenConnection(this.hostSpec, monitoringConnProperties, null, true);
                 Logger.LogTrace(string.Format(Resources.EfmHostMonitor_OpenedMonitoringConnection, this.hostSpec.Host));
 
                 lock (this.monitorLock)

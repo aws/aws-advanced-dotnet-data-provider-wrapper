@@ -67,11 +67,11 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
         this.isEnabled = PropertyDefinition.FailureDetectionEnabled.GetBoolean(props);
     }
 
-    public override T Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, params object[] methodArgs)
+    public override async Task<T> Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, params object[] methodArgs)
     {
         if (!this.isEnabled || !this.SubscribedMethods.Contains(methodName))
         {
-            return methodFunc();
+            return await methodFunc();
         }
 
         int failureDetectionTimeMillis = PropertyDefinition.FailureDetectionTime.GetInt(this.props) ?? DefaultFailureDetectionTime;
@@ -97,7 +97,7 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
                 failureDetectionIntervalMillis,
                 failureDetectionCount);
 
-            result = methodFunc();
+            result = await methodFunc();
         }
         catch (Exception ex)
         {
@@ -118,19 +118,19 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
         return result;
     }
 
-    public override DbConnection OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
+    public override async Task<DbConnection> OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc, bool async)
     {
-        return this.ConnectInternal(hostSpec, methodFunc);
+        return await this.ConnectInternal(hostSpec, methodFunc);
     }
 
-    public override DbConnection ForceOpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
+    public override async Task<DbConnection> ForceOpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc, bool async)
     {
-        return this.ConnectInternal(hostSpec, methodFunc);
+        return await this.ConnectInternal(hostSpec, methodFunc);
     }
 
-    private DbConnection ConnectInternal(HostSpec? hostSpec, ADONetDelegate<DbConnection> methodFunc)
+    private async Task<DbConnection> ConnectInternal(HostSpec? hostSpec, ADONetDelegate<DbConnection> methodFunc)
     {
-        DbConnection conn = methodFunc();
+        DbConnection conn = await methodFunc();
 
         if (hostSpec != null)
         {

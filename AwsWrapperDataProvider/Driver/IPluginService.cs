@@ -108,8 +108,9 @@ public interface IPluginService : IExceptionHandlerService
     /// <param name="hostSpec">The host specification.</param>
     /// <param name="props">Connection properties.</param>
     /// <param name="pluginToSkip">Plugin to skip.</param>
+    /// <param name="async">True if async open, failse otherwise.</param>
     /// <returns>The created database connection.</returns>
-    DbConnection OpenConnection(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin? pluginToSkip);
+    Task<DbConnection> OpenConnection(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin? pluginToSkip, bool async);
 
     /// <summary>
     /// Forces a connection to a host, bypassing certain plugins like failover to prevent cyclic dependencies.
@@ -118,8 +119,9 @@ public interface IPluginService : IExceptionHandlerService
     /// <param name="hostSpec">The host specification.</param>
     /// <param name="props">Connection properties.</param>
     /// <param name="pluginToSkip">Plugin to skip.</param>
+    /// <param name="async">True if async open, failse otherwise.</param>
     /// <returns>The created database connection.</returns>
-    DbConnection ForceOpenConnection(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin? pluginToSkip);
+    Task<DbConnection> ForceOpenConnection(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin? pluginToSkip, bool async);
 
     /// <summary>
     /// Updates the dialect based on the given connection.

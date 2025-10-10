@@ -20,21 +20,21 @@ namespace AwsWrapperDataProvider.Driver.Utils;
 
 public class WrapperUtils
 {
-    public static T ExecuteWithPlugins<T>(
+    public static async Task<T> ExecuteWithPlugins<T>(
         ConnectionPluginManager connectionPluginManager,
         object methodInvokeOn,
         string methodName,
         ADONetDelegate<T> methodFunc,
         params object[] methodArgs)
     {
-        return connectionPluginManager.Execute(
+        return await connectionPluginManager.Execute(
             methodInvokeOn,
             methodName,
             methodFunc,
             methodArgs);
     }
 
-    public static void RunWithPlugins(
+    public static async Task RunWithPlugins(
         ConnectionPluginManager connectionPluginManager,
         object methodInvokeOn,
         string methodName,
@@ -42,34 +42,36 @@ public class WrapperUtils
         params object[] methodArgs)
     {
         // Type object does not mean anything since it's void return type
-        ExecuteWithPlugins<object>(
+        await ExecuteWithPlugins<object>(
             connectionPluginManager,
             methodInvokeOn,
             methodName,
-            () =>
+            async () =>
             {
-                methodFunc();
+                await methodFunc();
                 return default!;
             },
             methodArgs);
     }
 
-    public static DbConnection OpenWithPlugins(
-        ConnectionPluginManager connectionPluginManager,
-        HostSpec? hostSpec,
-        Dictionary<string, string> props,
-        bool isInitialConnection)
-    {
-        return connectionPluginManager.Open(hostSpec, props, isInitialConnection, null);
-    }
-
-    public static DbConnection ForceOpenWithPlugins(
+    public static async Task<DbConnection> OpenWithPlugins(
         ConnectionPluginManager connectionPluginManager,
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
-        ADONetDelegate openFunc)
+        bool async)
     {
-        return connectionPluginManager.ForceOpen(hostSpec, props, isInitialConnection, null);
+        return await connectionPluginManager.Open(hostSpec, props, isInitialConnection, null, async);
+    }
+
+    public static async Task<DbConnection> ForceOpenWithPlugins(
+        ConnectionPluginManager connectionPluginManager,
+        HostSpec? hostSpec,
+        Dictionary<string, string> props,
+        bool isInitialConnection,
+        ADONetDelegate openFunc,
+        bool async)
+    {
+        return await connectionPluginManager.ForceOpen(hostSpec, props, isInitialConnection, null, async);
     }
 }

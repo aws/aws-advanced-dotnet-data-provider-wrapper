@@ -46,7 +46,22 @@ public class AwsWrapperTransaction : DbTransaction
             this.pluginManager!,
             this.TargetTransaction!,
             "DbTransaction.Commit",
-            () => this.TargetTransaction!.Commit());
+            () =>
+            {
+                this.TargetTransaction!.Commit();
+                return Task.CompletedTask;
+            }).GetAwaiter().GetResult();
+        this.pluginService.CurrentTransaction = null;
+    }
+
+    public override async Task CommitAsync(CancellationToken cancellationToken = default)
+    {
+        await WrapperUtils.RunWithPlugins(
+            this.pluginManager!,
+            this.TargetTransaction!,
+            "DbTransaction.CommitAsync",
+            () => this.TargetTransaction!.CommitAsync(cancellationToken),
+            cancellationToken);
         this.pluginService.CurrentTransaction = null;
     }
 
@@ -56,7 +71,22 @@ public class AwsWrapperTransaction : DbTransaction
             this.pluginManager!,
             this.TargetTransaction!,
             "DbTransaction.Rollback",
-            () => this.TargetTransaction!.Rollback());
+            () =>
+            {
+                this.TargetTransaction!.Rollback();
+                return Task.CompletedTask;
+            }).GetAwaiter().GetResult();
+        this.pluginService.CurrentTransaction = null;
+    }
+
+    public override async Task RollbackAsync(CancellationToken cancellationToken = default)
+    {
+        await WrapperUtils.RunWithPlugins(
+            this.pluginManager!,
+            this.TargetTransaction!,
+            "DbTransaction.RollbackAsync",
+            () => this.TargetTransaction!.RollbackAsync(cancellationToken),
+            cancellationToken);
         this.pluginService.CurrentTransaction = null;
     }
 
@@ -66,7 +96,23 @@ public class AwsWrapperTransaction : DbTransaction
             this.pluginManager!,
             this.TargetTransaction!,
             "DbTransaction.Save",
-            () => this.TargetTransaction!.Save(savepointName));
+            () =>
+            {
+                this.TargetTransaction!.Save(savepointName);
+                return Task.CompletedTask;
+            },
+            savepointName).GetAwaiter().GetResult();
+    }
+
+    public override async Task SaveAsync(string savepointName, CancellationToken cancellationToken = default)
+    {
+        await WrapperUtils.RunWithPlugins(
+            this.pluginManager!,
+            this.TargetTransaction!,
+            "DbTransaction.SaveAsync",
+            () => this.TargetTransaction!.SaveAsync(savepointName, cancellationToken),
+            savepointName,
+            cancellationToken);
     }
 
     public override void Rollback(string savepointName)
@@ -75,7 +121,23 @@ public class AwsWrapperTransaction : DbTransaction
             this.pluginManager!,
             this.TargetTransaction!,
             "DbTransaction.Rollback",
-            () => this.TargetTransaction!.Rollback(savepointName));
+            () =>
+            {
+                this.TargetTransaction!.Rollback(savepointName);
+                return Task.CompletedTask;
+            },
+            savepointName).GetAwaiter().GetResult();
+    }
+
+    public override async Task RollbackAsync(string savepointName, CancellationToken cancellationToken = default)
+    {
+        await WrapperUtils.RunWithPlugins(
+            this.pluginManager!,
+            this.TargetTransaction!,
+            "DbTransaction.RollbackAsync",
+            () => this.TargetTransaction!.RollbackAsync(savepointName, cancellationToken),
+            savepointName,
+            cancellationToken);
     }
 
     public override void Release(string savepointName)
@@ -84,7 +146,23 @@ public class AwsWrapperTransaction : DbTransaction
             this.pluginManager!,
             this.TargetTransaction!,
             "DbTransaction.Release",
-            () => this.TargetTransaction!.Release(savepointName));
+            () =>
+            {
+                this.TargetTransaction!.Release(savepointName);
+                return Task.CompletedTask;
+            },
+            savepointName).GetAwaiter().GetResult();
+    }
+
+    public override async Task ReleaseAsync(string savepointName, CancellationToken cancellationToken = default)
+    {
+        await WrapperUtils.RunWithPlugins(
+            this.pluginManager!,
+            this.TargetTransaction!,
+            "DbTransaction.ReleaseAsync",
+            () => this.TargetTransaction!.ReleaseAsync(savepointName, cancellationToken),
+            savepointName,
+            cancellationToken);
     }
 
     protected override void Dispose(bool disposing)
@@ -96,13 +174,16 @@ public class AwsWrapperTransaction : DbTransaction
 
         if (disposing)
         {
-            WrapperUtils.RunWithPlugins(
-                this.pluginManager!,
-                this.TargetTransaction,
-                "DbTransaction.Dispose",
-                () => this.TargetTransaction!.Dispose());
+            this.TargetTransaction.Dispose();
+            this.pluginService.CurrentTransaction = null;
         }
+    }
 
-        this.pluginService.CurrentTransaction = null;
+    public override async ValueTask DisposeAsync()
+    {
+        if (this.TargetTransaction is not null)
+        {
+            await this.TargetTransaction.DisposeAsync();
+        }
     }
 }

@@ -217,7 +217,11 @@ public class AwsWrapperCommand : DbCommand
             this._pluginManager!,
             this._targetDbCommand!,
             "DbCommand.Cancel",
-            () => this._targetDbCommand!.Cancel());
+            () =>
+            {
+                this._targetDbCommand!.Cancel();
+                return Task.CompletedTask;
+            }).GetAwaiter().GetResult();
     }
 
     public override int ExecuteNonQuery()
@@ -227,7 +231,17 @@ public class AwsWrapperCommand : DbCommand
             this._pluginManager!,
             this._targetDbCommand!,
             "DbCommand.ExecuteNonQuery",
-            () => this._targetDbCommand!.ExecuteNonQuery());
+            () => Task.FromResult(this._targetDbCommand!.ExecuteNonQuery())).GetAwaiter().GetResult();
+    }
+
+    public override async Task<int> ExecuteNonQueryAsync(CancellationToken cancellationToken)
+    {
+        this.EnsureTargetDbCommandCreated();
+        return await WrapperUtils.ExecuteWithPlugins(
+            this._pluginManager!,
+            this._targetDbCommand!,
+            "DbCommand.ExecuteNonQueryAsync",
+            () => this._targetDbCommand!.ExecuteNonQueryAsync(cancellationToken));
     }
 
     public override object? ExecuteScalar()
@@ -237,7 +251,17 @@ public class AwsWrapperCommand : DbCommand
             this._pluginManager!,
             this._targetDbCommand!,
             "DbCommand.ExecuteScalar",
-            () => this._targetDbCommand!.ExecuteScalar());
+            () => Task.FromResult(this._targetDbCommand!.ExecuteScalar())).GetAwaiter().GetResult();
+    }
+
+    public override async Task<object?> ExecuteScalarAsync(CancellationToken cancellationToken)
+    {
+        this.EnsureTargetDbCommandCreated();
+        return await WrapperUtils.ExecuteWithPlugins(
+            this._pluginManager!,
+            this._targetDbCommand!,
+            "DbCommand.ExecuteScalarAsync",
+            () => this._targetDbCommand!.ExecuteScalarAsync(cancellationToken));
     }
 
     public override void Prepare()
@@ -247,7 +271,21 @@ public class AwsWrapperCommand : DbCommand
             this._pluginManager!,
             this._targetDbCommand!,
             "DbCommand.Prepare",
-            () => this._targetDbCommand!.Prepare());
+            () =>
+            {
+                this._targetDbCommand!.Prepare();
+                return Task.CompletedTask;
+            }).GetAwaiter().GetResult();
+    }
+
+    public override async Task PrepareAsync(CancellationToken cancellationToken = default)
+    {
+        this.EnsureTargetDbCommandCreated();
+        await WrapperUtils.RunWithPlugins(
+            this._pluginManager!,
+            this._targetDbCommand!,
+            "DbCommand.PrepareAsync",
+            () => this._targetDbCommand!.PrepareAsync(cancellationToken));
     }
 
     protected override DbParameter CreateDbParameter()
@@ -257,7 +295,8 @@ public class AwsWrapperCommand : DbCommand
             this._pluginManager!,
             this._targetDbCommand!,
             "DbCommand.CreateParameter",
-            () => this._targetDbCommand!.CreateParameter());
+            () => Task.FromResult(this._targetDbCommand!.CreateParameter()))
+            .GetAwaiter().GetResult();
     }
 
     protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior)
@@ -267,22 +306,40 @@ public class AwsWrapperCommand : DbCommand
             this._pluginManager!,
             this._targetDbCommand!,
             "DbCommand.ExecuteReader",
-            () => this._targetDbCommand!.ExecuteReader(behavior));
+            () => Task.FromResult(this._targetDbCommand!.ExecuteReader(behavior)))
+            .GetAwaiter().GetResult();
         return new AwsWrapperDataReader(reader, this._pluginManager!);
     }
 
-    protected override Task<DbDataReader> ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+    protected override async Task<DbDataReader> ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
     {
-        return Task.Run(() =>
+        this.EnsureTargetDbCommandCreated();
+        DbDataReader reader = await WrapperUtils.ExecuteWithPlugins(
+            this._pluginManager!,
+            this._targetDbCommand!,
+            "DbCommand.ExecuteReaderAsync",
+            () => this._targetDbCommand!.ExecuteReaderAsync(behavior, cancellationToken));
+        return new AwsWrapperDataReader(reader, this._pluginManager!);
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
         {
-            this.EnsureTargetDbCommandCreated();
-            DbDataReader reader = WrapperUtils.ExecuteWithPlugins(
-                this._pluginManager!,
-                this._targetDbCommand!,
-                "DbCommand.ExecuteReaderAsync",
-                () => this._targetDbCommand!.ExecuteReaderAsync(behavior, cancellationToken).GetAwaiter().GetResult());
-            return (DbDataReader)new AwsWrapperDataReader(reader, this._pluginManager!);
-        });
+            if (this._targetDbCommand != null)
+            {
+                this._targetDbCommand.Dispose();
+                this._targetDbCommand = null;
+            }
+        }
+    }
+
+    public override async ValueTask DisposeAsync()
+    {
+        if (this._targetDbCommand is not null)
+        {
+            await this._targetDbCommand.DisposeAsync();
+        }
     }
 
     protected void EnsureTargetDbCommandCreated()

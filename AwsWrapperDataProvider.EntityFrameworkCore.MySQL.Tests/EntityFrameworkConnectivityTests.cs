@@ -97,6 +97,45 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
     [Trait("Database", "mysql-ef")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
+    [Trait("Engine", "multi-az-instance")]
+    public async Task MysqlEFAddAsyncTest()
+    {
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName);
+        var wrapperConnectionString = connectionString + $";Plugins=failover;";
+
+        var options = new DbContextOptionsBuilder<PersonDbContext>()
+            .UseAwsWrapper(
+            wrapperConnectionString,
+            wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, this.version))
+            .LogTo(Console.WriteLine)
+            .Options;
+
+        using (var db = new PersonDbContext(options))
+        {
+            await db.Database.ExecuteSqlRawAsync($"Truncate table persons;", TestContext.Current.CancellationToken);
+        }
+
+        using (var db = new PersonDbContext(options))
+        {
+            Person person = new() { FirstName = "Jane", LastName = "Smith" };
+            await db.AddAsync(person, TestContext.Current.CancellationToken);
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        using (var db = new PersonDbContext(options))
+        {
+            await foreach (Person p in db.Persons.Where(x => x.FirstName != null && x.FirstName.StartsWith('J')).AsAsyncEnumerable())
+            {
+                Console.WriteLine($"{p.Id}: {p.FirstName} {p.LastName}");
+            }
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    [Trait("Database", "mysql-ef")]
+    [Trait("Engine", "aurora")]
+    [Trait("Engine", "multi-az-cluster")]
     public async Task EFCrashBeforeOpenWithFailoverPluginTest()
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
@@ -222,6 +261,88 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
             Person joe = new() { FirstName = "Joe", LastName = "Smith" };
             db.Add(joe);
             db.SaveChanges();
+        }
+
+        using (var db = new PersonDbContext(options))
+        {
+            Assert.True(db.Persons.Any(p => p.FirstName == "Jane"));
+            Assert.True(db.Persons.Any(p => p.FirstName == "Joe"));
+            Assert.False(db.Persons.Any(p => p.FirstName == "John"));
+            Assert.Equal(2, db.Persons.Count());
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    [Trait("Database", "mysql-ef")]
+    [Trait("Engine", "aurora")]
+    public async Task EFCrashAfterOpenWithFailoverPluginTestAsync()
+    {
+        Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
+
+        string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
+
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName, 2, 10);
+
+        var wrapperConnectionString = connectionString
+            + $";Plugins=failover;" +
+            $"EnableConnectFailover=true;" +
+            $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
+
+        var options = new DbContextOptionsBuilder<PersonDbContext>()
+            .UseLoggerFactory(this.loggerFactory)
+            .UseAwsWrapper(
+                wrapperConnectionString,
+                wrappedOptionBuilder => wrappedOptionBuilder
+                    .UseLoggerFactory(this.loggerFactory)
+                    .UseMySql(connectionString, this.version))
+            .Options;
+
+        using (var db = new PersonDbContext(options))
+        {
+            await db.Database.ExecuteSqlRawAsync($"Truncate table persons;", TestContext.Current.CancellationToken);
+        }
+
+        using (var db = new PersonDbContext(options))
+        {
+            Person jane = new() { FirstName = "Jane", LastName = "Smith" };
+            await db.AddAsync(jane, TestContext.Current.CancellationToken);
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+            Person john = new() { FirstName = "John", LastName = "Smith" };
+            await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
+            {
+                var connection = db.Database.GetDbConnection();
+                try
+                {
+                    if (connection.State == System.Data.ConnectionState.Closed)
+                    {
+                        // Open explicly to trigger failover on execute pipeline
+                        await connection.OpenAsync(TestContext.Current.CancellationToken);
+                    }
+
+                    var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                    var crashInstanceTask = AuroraUtils.CrashInstance(currentWriter, tcs);
+                    await tcs.Task;
+
+                    // Query to trigger failover
+                    var anyUser = await db.Persons.AnyAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+                    await db.AddAsync(john, TestContext.Current.CancellationToken);
+                    await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+                    await crashInstanceTask;
+                }
+                finally
+                {
+                    await connection.CloseAsync();
+                }
+            });
+
+            Assert.Equal(EntityState.Detached, db.Entry(john).State);
+
+            Person joe = new() { FirstName = "Joe", LastName = "Smith" };
+            await db.AddAsync(joe, TestContext.Current.CancellationToken);
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         using (var db = new PersonDbContext(options))

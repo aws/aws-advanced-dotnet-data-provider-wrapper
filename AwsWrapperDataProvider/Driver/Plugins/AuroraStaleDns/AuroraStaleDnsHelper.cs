@@ -41,7 +41,7 @@ public class AuroraStaleDnsHelper
         this.pluginService = pluginService;
     }
 
-    public DbConnection OpenVerifiedConnection(
+    public async Task<DbConnection> OpenVerifiedConnection(
         bool isInitialConnection,
         IHostListProviderService hostListProviderService,
         HostSpec hostSpec,
@@ -51,10 +51,10 @@ public class AuroraStaleDnsHelper
         // If this is not a writer cluster DNS, no verification needed
         if (!RdsUtils.IsWriterClusterDns(hostSpec.Host))
         {
-            return openFunc();
+            return await openFunc();
         }
 
-        DbConnection connection = openFunc();
+        DbConnection connection = await openFunc();
 
         // Get the IP address that the cluster endpoint resolved to
         string? clusterInetAddress = GetHostIpAddress(hostSpec.Host);
@@ -73,7 +73,7 @@ public class AuroraStaleDnsHelper
 
         foreach (var reader in this.GetReaders() ?? [])
         {
-            using var readerConn = this.pluginService.OpenConnection(reader, props, null);
+            using var readerConn = await this.pluginService.OpenConnection(reader, props, null, true);
             HostRole readerRole = this.pluginService.GetHostRole(readerConn);
             Logger.LogTrace("Current connection role: {role} for {host}", readerRole, reader);
         }
@@ -115,7 +115,7 @@ public class AuroraStaleDnsHelper
             }
 
             // Create a new connection to the correct writer instance
-            DbConnection writerConnection = this.pluginService.OpenConnection(this.writerHostSpec, props, null);
+            DbConnection writerConnection = await this.pluginService.OpenConnection(this.writerHostSpec, props, null, true);
 
             // Update the initial connection host spec if this is the initial connection
             if (isInitialConnection)

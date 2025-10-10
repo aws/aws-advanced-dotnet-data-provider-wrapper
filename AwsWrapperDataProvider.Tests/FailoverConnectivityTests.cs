@@ -41,6 +41,54 @@ public class FailoverConnectivityTests : IntegrationTestBase
     [Trait("Database", "pg")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
+    public async Task WriterFailover_FailOnConnectionInvocation_Async()
+    {
+        Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
+        string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
+        var initialWriterInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.GetInstance(currentWriter);
+
+        var connectionString = ConnectionStringHelper.GetUrl(
+            Engine,
+            initialWriterInstanceInfo.Host,
+            initialWriterInstanceInfo.Port,
+            Username,
+            Password,
+            ProxyDatabaseInfo.DefaultDbName,
+            2,
+            10,
+            "failover");
+        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}";
+
+        using AwsWrapperConnection connection = Engine switch
+        {
+            DatabaseEngine.MYSQL => new AwsWrapperConnection<MySqlConnection>(connectionString),
+            DatabaseEngine.PG => new AwsWrapperConnection<NpgsqlConnection>(connectionString),
+            _ => throw new NotSupportedException($"Unsupported engine: {Engine}"),
+        };
+        connection.Open();
+        Assert.Equal(ConnectionState.Open, connection.State);
+
+        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var crashTask = AuroraUtils.CrashInstance(currentWriter, tcs);
+
+        // Wait for simulation to start
+        await tcs.Task;
+
+        Assert.Throws<FailoverSuccessException>(() =>
+        {
+            this.logger.WriteLine("Executing instance ID query to trigger failover...");
+            AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
+        });
+
+        await crashTask;
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    [Trait("Database", "mysql")]
+    [Trait("Database", "pg")]
+    [Trait("Engine", "aurora")]
+    [Trait("Engine", "multi-az-cluster")]
     public async Task WriterFailover_FailOnConnectionInvocation()
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");

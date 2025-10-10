@@ -29,12 +29,11 @@ public static class SecretsManagerUtility
 
     private static readonly JsonSerializerOptions SerializerOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
 
-    public static AwsRdsSecrets GetRdsSecretFromAwsSecretsManager(string secretId, AmazonSecretsManagerClient client)
+    public static async Task<AwsRdsSecrets> GetRdsSecretFromAwsSecretsManager(string secretId, AmazonSecretsManagerClient client)
     {
         try
         {
-            GetSecretValueResponse response = client.GetSecretValueAsync(new GetSecretValueRequest { SecretId = secretId })
-                .GetAwaiter().GetResult();
+            GetSecretValueResponse response = await client.GetSecretValueAsync(new GetSecretValueRequest { SecretId = secretId });
             AwsRdsSecrets? secrets = JsonSerializer.Deserialize<AwsRdsSecrets>(response.SecretString, SerializerOptions);
 
             return secrets?.Username == null || secrets?.Password == null

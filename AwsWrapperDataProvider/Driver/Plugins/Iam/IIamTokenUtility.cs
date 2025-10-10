@@ -14,11 +14,11 @@
 
 using Amazon.Runtime;
 
-namespace AwsWrapperDataProvider.Driver.Plugins.Efm;
+namespace AwsWrapperDataProvider.Driver.Plugins.Iam;
 
 public interface IIamTokenUtility
 {
     public string GetCacheKey(string user, string hostname, int port, string region);
 
-    public string GenerateAuthenticationToken(string region, string hostname, int port, string user, AWSCredentials? credentials);
+    public Task<string> GenerateAuthenticationToken(string region, string hostname, int port, string user, AWSCredentials? credentials);
 }

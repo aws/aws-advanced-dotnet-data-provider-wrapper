@@ -35,43 +35,46 @@ public class DefaultConnectionPlugin(
     private readonly IConnectionProvider? effectiveConnPrivider = effectiveConnProvider;
     private readonly IPluginService pluginService = pluginService;
 
-    public T Execute<T>(
+    public async Task<T> Execute<T>(
         object methodInvokedOn,
         string methodName,
         ADONetDelegate<T> methodFunc,
         params object[] methodArgs)
     {
         Logger.LogTrace("Executing method {MethodName} on {MethodInvokedOn} with args: {MethodArgs}", methodName, methodInvokedOn?.GetType().FullName, methodArgs);
-        return methodFunc();
+        return await methodFunc();
     }
 
-    public DbConnection OpenConnection(
+    public async Task<DbConnection> OpenConnection(
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
-        ADONetDelegate<DbConnection> methodFunc)
+        ADONetDelegate<DbConnection> methodFunc,
+        bool async)
     {
-        return this.OpenInternal(hostSpec, props, this.defaultConnProvider, isInitialConnection);
+        return await this.OpenInternal(hostSpec, props, this.defaultConnProvider, isInitialConnection, async);
     }
 
-    public DbConnection ForceOpenConnection(
+    public async Task<DbConnection> ForceOpenConnection(
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
-        ADONetDelegate<DbConnection> methodFunc)
+        ADONetDelegate<DbConnection> methodFunc,
+        bool async)
     {
-        return this.OpenInternal(hostSpec, props, this.defaultConnProvider, isInitialConnection);
+        return await this.OpenInternal(hostSpec, props, this.defaultConnProvider, isInitialConnection, async);
     }
 
     /// <summary>
     /// Internal connection opening logic that mirrors JDBC wrapper's connectInternal method.
     /// Creates a new connection using the connection provider.
     /// </summary>
-    private DbConnection OpenInternal(
+    private async Task<DbConnection> OpenInternal(
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         IConnectionProvider connProvider,
-        bool isInitialConnection)
+        bool isInitialConnection,
+        bool async)
     {
         // Create a new connection if it's not the initial connection or CurrentConnection is not null
         DbConnection? conn;
@@ -91,7 +94,15 @@ public class DefaultConnectionPlugin(
 
         // Update connection string that may have been modified by other plugins
         conn.ConnectionString = this.pluginService.TargetConnectionDialect.PrepareConnectionString(this.pluginService.Dialect, hostSpec, props);
-        conn.Open();
+        if (async)
+        {
+            await conn.OpenAsync();
+        }
+        else
+        {
+            conn.Open();
+        }
+
         Logger.LogTrace("Connection {Type}@{Id} is opened.", conn.GetType().FullName, RuntimeHelpers.GetHashCode(conn));
 
         // Set availability and update dialect
@@ -104,12 +115,12 @@ public class DefaultConnectionPlugin(
         return conn;
     }
 
-    public void InitHostProvider(
+    public Task InitHostProvider(
         string initialUrl,
         Dictionary<string, string> props,
         IHostListProviderService hostListProviderService,
         ADONetDelegate initHostProviderFunc)
     {
-        // do nothing
+        return Task.CompletedTask;
     }
 }

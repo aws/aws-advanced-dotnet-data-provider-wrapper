@@ -382,7 +382,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
             try
             {
-                newConnection = this.pluginService.ForceOpenConnection(this.initialHostSpec, this.properties, null);
+                newConnection = await this.pluginService.ForceOpenConnection(this.initialHostSpec, this.properties, null, true);
 
                 if (Interlocked.CompareExchange(ref this.monitoringConnection, newConnection, null) == null)
                 {
@@ -739,7 +739,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                     {
                         try
                         {
-                            connection = monitor.pluginService.ForceOpenConnection(hostSpec, monitor.properties, null);
+                            connection = await monitor.pluginService.ForceOpenConnection(hostSpec, monitor.properties, null, true);
                             monitor.pluginService.SetAvailability(hostSpec.AsAliases(), HostAvailability.Available);
                         }
                         catch (DbException)
