@@ -124,7 +124,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
         using (var db = new PersonDbContext(options))
         {
-            await foreach (Person p in db.Persons.Where(x => x.FirstName != null && x.FirstName.StartsWith('J')).AsAsyncEnumerable())
+            await foreach (Person p in db.Persons.Where(x => x.FirstName != null && x.FirstName.StartsWith("J")).AsAsyncEnumerable())
             {
                 Console.WriteLine($"{p.Id}: {p.FirstName} {p.LastName}");
             }
