@@ -103,18 +103,14 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             using (var session = sessionFactory.OpenSession())
             {
                 this.CreateAndClearPersonsTable(session);
-            }
 
-            using (var session = sessionFactory.OpenSession())
-            using (var transaction = session.BeginTransaction())
-            {
-                var person = new Person { FirstName = "Jane", LastName = "Smith" };
-                session.Save(person);
-                transaction.Commit();
-            }
+                using (var transaction = session.BeginTransaction())
+                {
+                    var person = new Person { FirstName = "Jane", LastName = "Smith" };
+                    session.Save(person);
+                    transaction.Commit();
+                }
 
-            using (var session = sessionFactory.OpenSession())
-            {
                 var persons = session.CreateCriteria(typeof(Person))
                     .Add(Restrictions.Like("FirstName", "J%"))
                     .List<Person>();
@@ -146,39 +142,33 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             using (var session = sessionFactory.OpenSession())
             {
                 this.CreateAndClearPersonsTable(session);
-            }
 
-            using (var session = sessionFactory.OpenSession())
-            using (var transaction = session.BeginTransaction())
-            {
-                var jane = new Person { FirstName = "Jane", LastName = "Smith" };
-                session.Save(jane);
-                transaction.Commit();
-            }
+                using (var transaction = session.BeginTransaction())
+                {
+                    var jane = new Person { FirstName = "Jane", LastName = "Smith" };
+                    session.Save(jane);
+                    transaction.Commit();
+                }
 
-            // Crash instance before opening new connection
-            var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            await AuroraUtils.CrashInstance(currentWriter, tcs);
+                // Crash instance before opening new connection
+                var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                await AuroraUtils.CrashInstance(currentWriter, tcs);
 
-            // These operations should work transparently - driver handles failover during connection
-            using (var session = sessionFactory.OpenSession())
-            using (var transaction = session.BeginTransaction())
-            {
-                var john = new Person { FirstName = "John", LastName = "Smith" };
-                session.Save(john);
-                transaction.Commit();
-            }
+                // These operations should work transparently - driver handles failover during connection
+                using (var transaction = session.BeginTransaction())
+                {
+                    var john = new Person { FirstName = "John", LastName = "Smith" };
+                    session.Save(john);
+                    transaction.Commit();
+                }
 
-            using (var session = sessionFactory.OpenSession())
-            using (var transaction = session.BeginTransaction())
-            {
-                var joe = new Person { FirstName = "Joe", LastName = "Smith" };
-                session.Save(joe);
-                transaction.Commit();
-            }
+                using (var transaction = session.BeginTransaction())
+                {
+                    var joe = new Person { FirstName = "Joe", LastName = "Smith" };
+                    session.Save(joe);
+                    transaction.Commit();
+                }
 
-            using (var session = sessionFactory.OpenSession())
-            {
                 var persons = session.CreateCriteria(typeof(Person)).List<Person>();
                 Assert.Contains(persons, p => p.FirstName == "Jane");
                 Assert.Contains(persons, p => p.FirstName == "John");
@@ -210,49 +200,42 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             using (var session = sessionFactory.OpenSession())
             {
                 this.CreateAndClearPersonsTable(session);
-            }
 
-            using (var session = sessionFactory.OpenSession())
-            using (var transaction = session.BeginTransaction())
-            {
-                var jane = new Person { FirstName = "Jane", LastName = "Smith" };
-                session.Save(jane);
-                transaction.Commit();
-            }
-
-            using (var session = sessionFactory.OpenSession())
-            using (var newTransaction = session.BeginTransaction())
-            {
-                var john = new Person { FirstName = "John", LastName = "Smith" };
-
-                var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-                var crashInstanceTask = AuroraUtils.CrashInstance(currentWriter, tcs);
-                await tcs.Task;
-
-                var exception = await Assert.ThrowsAnyAsync<HibernateException>(() =>
+                using (var transaction = session.BeginTransaction())
                 {
-                    session.Save(john);
-                    newTransaction.Commit();
-                    return Task.CompletedTask;
-                });
+                    var jane = new Person { FirstName = "Jane", LastName = "Smith" };
+                    session.Save(jane);
+                    transaction.Commit();
+                }
 
-                await crashInstanceTask;
+                using (var newTransaction = session.BeginTransaction())
+                {
+                    var john = new Person { FirstName = "John", LastName = "Smith" };
 
-                // Verify the inner exception is FailoverSuccessException
-                Assert.IsType<TransactionStateUnknownException>(exception.InnerException);
-            }
+                    var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                    var crashInstanceTask = AuroraUtils.CrashInstance(currentWriter, tcs);
+                    await tcs.Task;
 
-            // Session state may be invalid after failover exception, continue with new operations/
-            using (var session = sessionFactory.OpenSession())
-            using (var finalTransaction = session.BeginTransaction())
-            {
-                var joe = new Person { FirstName = "Joe", LastName = "Smith" };
-                session.Save(joe);
-                finalTransaction.Commit();
-            }
+                    var exception = await Assert.ThrowsAnyAsync<HibernateException>(() =>
+                    {
+                        session.Save(john);
+                        newTransaction.Commit();
+                        return Task.CompletedTask;
+                    });
 
-            using (var session = sessionFactory.OpenSession())
-            {
+                    await crashInstanceTask;
+
+                    // Verify the inner exception is FailoverSuccessException
+                    Assert.IsType<TransactionStateUnknownException>(exception.InnerException);
+                }
+
+                using (var finalTransaction = session.BeginTransaction())
+                {
+                    var joe = new Person { FirstName = "Joe", LastName = "Smith" };
+                    session.Save(joe);
+                    finalTransaction.Commit();
+                }
+
                 var persons = session.CreateCriteria(typeof(Person)).List<Person>();
                 Assert.Contains(persons, p => p.FirstName == "Jane");
                 Assert.Contains(persons, p => p.FirstName == "Joe");
@@ -285,52 +268,47 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             using (var session = sessionFactory.OpenSession())
             {
                 this.CreateAndClearPersonsTable(session);
-            }
 
-            // Add initial data
-            using (var session = sessionFactory.OpenSession())
-            using (var transaction = session.BeginTransaction())
-            {
-                var jane = new Person { FirstName = "Jane", LastName = "Smith" };
-                session.Save(jane);
-                transaction.Commit();
-            }
-
-            // Crash instance and let driver handle failover
-            using (var session = sessionFactory.OpenSession())
-            using (var transaction = session.BeginTransaction())
-            {
-                var john = new Person { FirstName = "John", LastName = "Smith" };
-
-                var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-                var clusterFailureTask = AuroraUtils.SimulateTemporaryFailureTask(ProxyClusterEndpoint, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
-                var writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
-                await tcs.Task;
-
-                var exception = await Assert.ThrowsAnyAsync<HibernateException>(() =>
+                using (var transaction = session.BeginTransaction())
                 {
-                    session.Save(john);
+                    var jane = new Person { FirstName = "Jane", LastName = "Smith" };
+                    session.Save(jane);
                     transaction.Commit();
-                    return Task.CompletedTask;
-                });
+                }
 
-                await Task.WhenAll(clusterFailureTask, writerNodeFailureTask);
+                // Crash instance and let driver handle failover
+                using (var transaction = session.BeginTransaction())
+                {
+                    var john = new Person { FirstName = "John", LastName = "Smith" };
 
-                // Verify the inner exception is FailoverSuccessException
-                Assert.IsType<TransactionStateUnknownException>(exception.InnerException);
-            }
+                    var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                    var clusterFailureTask = AuroraUtils.SimulateTemporaryFailureTask(ProxyClusterEndpoint,
+                        TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
+                    var writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero,
+                        TimeSpan.FromSeconds(20), tcs);
+                    await tcs.Task;
 
-            var joe = new Person { FirstName = "Joe", LastName = "Smith" };
-            using (var session = sessionFactory.OpenSession())
-            using (var transaction = session.BeginTransaction())
-            {
-                session.Save(joe);
-                transaction.Commit();
-            }
+                    var exception = await Assert.ThrowsAnyAsync<HibernateException>(() =>
+                    {
+                        session.Save(john);
+                        transaction.Commit();
+                        return Task.CompletedTask;
+                    });
 
-            // Verify records - John should not exist (failed during failover), Jane and Joe should exist
-            using (var session = sessionFactory.OpenSession())
-            {
+                    await Task.WhenAll(clusterFailureTask, writerNodeFailureTask);
+
+                    // Verify the inner exception is FailoverSuccessException
+                    Assert.IsType<TransactionStateUnknownException>(exception.InnerException);
+                }
+
+                var joe = new Person { FirstName = "Joe", LastName = "Smith" };
+                using (var transaction = session.BeginTransaction())
+                {
+                    session.Save(joe);
+                    transaction.Commit();
+                }
+
+                // Verify records - John should not exist (failed during failover), Jane and Joe should exist
                 var persons = session.CreateCriteria(typeof(Person)).List<Person>();
                 Assert.Contains(persons, p => p.FirstName == "Jane");
                 Assert.Contains(persons, p => p.FirstName == "Joe");

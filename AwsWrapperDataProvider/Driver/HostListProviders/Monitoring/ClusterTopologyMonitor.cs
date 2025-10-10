@@ -415,7 +415,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                 // Don't close this connection - it's now the monitoring connection
                 newConnection = null;
             }
-            catch (Exception ex) when (ex is DbException or SocketException or EndOfStreamException)
+            catch (Exception ex) when (ex is DbException or EndOfStreamException)
             {
                 // Suppress connection errors and continue
                 LoggerUtils.LogWithThreadId(Logger, LogLevel.Warning, ex, "DbException thrown during finding a monitoring connection, and ignored.");
@@ -743,7 +743,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                             connection = monitor.pluginService.ForceOpenConnection(hostSpec, monitor.properties, null);
                             monitor.pluginService.SetAvailability(hostSpec.AsAliases(), HostAvailability.Available);
                         }
-                        catch (Exception ex) when (ex is DbException or EndOfStreamException or SocketException)
+                        catch (Exception ex) when (ex is DbException or EndOfStreamException)
                         {
                             monitor.pluginService.SetAvailability(hostSpec.AsAliases(), HostAvailability.Unavailable);
                             await monitor.DisposeConnectionAsync(connection);
@@ -758,7 +758,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                         {
                             writerId = await monitor.GetWriterNodeIdAsync(connection);
                         }
-                        catch (Exception ex) when (ex is DbException or EndOfStreamException or SocketException)
+                        catch (Exception ex) when (ex is DbException or EndOfStreamException)
                         {
                             await monitor.DisposeConnectionAsync(connection);
                             connection = null;

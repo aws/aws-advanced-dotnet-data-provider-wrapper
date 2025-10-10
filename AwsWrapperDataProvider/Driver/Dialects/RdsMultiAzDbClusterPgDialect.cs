@@ -61,7 +61,7 @@ public class RdsMultiAzDbClusterPgDialect : PgDialect
             using IDbCommand isDialectCommand = connection.CreateCommand();
             isDialectCommand.CommandText = IsRdsClusterQuery;
             using IDataReader isDialectReader = isDialectCommand.ExecuteReader();
-            return !isDialectReader.IsDBNull(0) && isDialectReader.Read();
+            return isDialectReader.Read() && !isDialectReader.IsDBNull(0);
         }
         catch (Exception ex)
         {
