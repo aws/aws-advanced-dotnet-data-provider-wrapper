@@ -124,16 +124,18 @@ public class PluginService : IPluginService, IHostListProviderService
         {
             DbConnection? oldConnection = this.CurrentConnection;
 
-            Logger.LogInformation("SetCurrentConnection: Old connection Hash={OldHash} State={OldState}, New connection Hash={NewHash} State={NewState}, Host={Host}",
+            Logger.LogInformation("SetCurrentConnection: Old connection Hash={OldHash} DataSource={OldDataSource} State={OldState}, New connection Hash={NewHash} DataSource={NewDataSource} State={NewState}, Host={Host}",
                 oldConnection != null ? RuntimeHelpers.GetHashCode(oldConnection) : 0,
-                oldConnection?.State.ToString() ?? "null",
+                oldConnection?.DataSource,
+                oldConnection?.State,
                 RuntimeHelpers.GetHashCode(connection),
+                connection.DataSource,
                 connection.State,
                 hostSpec?.Host ?? "null");
 
             this.CurrentConnection = connection;
             this.currentHostSpec = hostSpec;
-            Logger.LogTrace("New connection is set: {ConnectionString}", connection?.ConnectionString);
+            Logger.LogTrace("New connection is set DataSource={DataSource} ", connection?.DataSource);
 
             try
             {
@@ -141,13 +143,15 @@ public class PluginService : IPluginService, IHostListProviderService
                 {
                     if (oldConnection != null)
                     {
-                        Logger.LogDebug("Disposing old connection Hash={Hash} State={State}",
+                        Logger.LogDebug("Disposing old connection DataSource={DataSource} Hash={Hash} State={State}",
+                            oldConnection.DataSource,
                             RuntimeHelpers.GetHashCode(oldConnection),
                             oldConnection.State);
                     }
 
                     oldConnection?.Dispose();
-                    Logger.LogTrace("Old connection is disposed: {ConnectionString}", connection?.ConnectionString);
+                    Logger.LogTrace("Old connection is disposed.");
+                    Logger.LogTrace("New connection DataSource={DataSource} State={DataSource}", connection?.DataSource, connection?.State);
                 }
                 else
                 {
