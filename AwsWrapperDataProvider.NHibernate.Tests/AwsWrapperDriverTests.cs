@@ -232,7 +232,6 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
 
                 session.Clear();
 
-
                 var joe = new Person { FirstName = "Joe", LastName = "Smith" };
 
                 using (var finalTransaction = session.BeginTransaction())
