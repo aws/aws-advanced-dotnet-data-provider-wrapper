@@ -230,8 +230,10 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                     Assert.IsType<TransactionStateUnknownException>(exception.InnerException);
                 }
 
-                var joe = new Person { FirstName = "Joe", LastName = "Smith" };
+                session.Clear();
 
+
+                var joe = new Person { FirstName = "Joe", LastName = "Smith" };
 
                 using (var finalTransaction = session.BeginTransaction())
                 {
@@ -307,6 +309,8 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                     // Verify the inner exception is FailoverSuccessException
                     Assert.IsType<TransactionStateUnknownException>(exception.InnerException);
                 }
+
+                session.Clear();
 
                 var joe = new Person { FirstName = "Joe", LastName = "Smith" };
                 using (var transaction = session.BeginTransaction())
