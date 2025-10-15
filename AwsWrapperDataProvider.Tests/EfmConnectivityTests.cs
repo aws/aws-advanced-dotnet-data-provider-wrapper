@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data;
+using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Plugins.Efm;
 using AwsWrapperDataProvider.Driver.Utils;
 using AwsWrapperDataProvider.Tests.Container.Utils;
@@ -170,7 +171,7 @@ public class EfmConnectivityTests
         }
     }
 
-    private static string GetConnectedHost(IDbConnection connection, string initialHost)
+    private static string GetConnectedHost(DbConnection connection, string initialHost)
     {
         string? hostName = AuroraUtils.QueryInstanceId(connection);
         string clusterInstanceTemplate = RdsUtils.GetRdsInstanceHostPattern(initialHost);

@@ -34,14 +34,17 @@ public class FailoverConnectivityTests : IntegrationTestBase
     /// <summary>
     /// Current writer dies, driver failover occurs when executing a method against the connection.
     /// </summary>
+    /// <param name="async">True if testing async calls, false if testing sync calls.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Fact]
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
     [Trait("Database", "pg")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
-    public async Task WriterFailover_FailOnConnectionInvocation_Async()
+    public async Task WriterFailover_FailOnConnectionInvocation(bool async)
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
         string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
@@ -65,7 +68,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
             DatabaseEngine.PG => new AwsWrapperConnection<NpgsqlConnection>(connectionString),
             _ => throw new NotSupportedException($"Unsupported engine: {Engine}"),
         };
-        connection.Open();
+        await AuroraUtils.OpenDbConnection(connection, async);
         Assert.Equal(ConnectionState.Open, connection.State);
 
         var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -74,58 +77,10 @@ public class FailoverConnectivityTests : IntegrationTestBase
         // Wait for simulation to start
         await tcs.Task;
 
-        Assert.Throws<FailoverSuccessException>(() =>
+        await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
         {
             this.logger.WriteLine("Executing instance ID query to trigger failover...");
-            AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
-        });
-
-        await crashTask;
-    }
-
-    [Fact]
-    [Trait("Category", "Integration")]
-    [Trait("Database", "mysql")]
-    [Trait("Database", "pg")]
-    [Trait("Engine", "aurora")]
-    [Trait("Engine", "multi-az-cluster")]
-    public async Task WriterFailover_FailOnConnectionInvocation()
-    {
-        Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
-        string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
-        var initialWriterInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.GetInstance(currentWriter);
-
-        var connectionString = ConnectionStringHelper.GetUrl(
-            Engine,
-            initialWriterInstanceInfo.Host,
-            initialWriterInstanceInfo.Port,
-            Username,
-            Password,
-            ProxyDatabaseInfo.DefaultDbName,
-            2,
-            10,
-            "failover");
-        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}";
-
-        using AwsWrapperConnection connection = Engine switch
-        {
-            DatabaseEngine.MYSQL => new AwsWrapperConnection<MySqlConnection>(connectionString),
-            DatabaseEngine.PG => new AwsWrapperConnection<NpgsqlConnection>(connectionString),
-            _ => throw new NotSupportedException($"Unsupported engine: {Engine}"),
-        };
-        connection.Open();
-        Assert.Equal(ConnectionState.Open, connection.State);
-
-        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var crashTask = AuroraUtils.CrashInstance(currentWriter, tcs);
-
-        // Wait for simulation to start
-        await tcs.Task;
-
-        Assert.Throws<FailoverSuccessException>(() =>
-        {
-            this.logger.WriteLine("Executing instance ID query to trigger failover...");
-            AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
+            await AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, async);
         });
 
         await crashTask;
@@ -134,14 +89,17 @@ public class FailoverConnectivityTests : IntegrationTestBase
     /// <summary>
     /// Current reader dies, no other reader instance, failover to writer.
     /// </summary>
+    /// <param name="async">True if testing async calls, false if testing sync calls.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Fact]
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
     [Trait("Database", "pg")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
-    public async Task FailFromReaderToWriter()
+    public async Task FailFromReaderToWriter(bool async)
     {
         Assert.SkipWhen(NumberOfInstances != 2, "Skipped due to test requiring number of database instances = 2.");
 
@@ -167,31 +125,33 @@ public class FailoverConnectivityTests : IntegrationTestBase
             DatabaseEngine.PG => new AwsWrapperConnection<NpgsqlConnection>(connectionString),
             _ => throw new NotSupportedException($"Unsupported engine: {Engine}"),
         };
-        connection.Open();
+        await AuroraUtils.OpenDbConnection(connection, async);
         Assert.Equal(ConnectionState.Open, connection.State);
 
         await ProxyHelper.DisableConnectivityAsync(readerInstanceInfo.InstanceId);
 
-        Assert.Throws<FailoverSuccessException>(() =>
+        await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
         {
             this.logger.WriteLine("Executing instance ID query to trigger failover...");
-            AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
+            await AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, async);
         });
 
         // Assert that we are currently connected to the writer instance.
-        var currentConnectionId = AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
+        var currentConnectionId = await AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, async);
         Assert.NotNull(currentConnectionId);
         Assert.Equal(currentWriter, currentConnectionId);
         Assert.True(await AuroraUtils.IsDBInstanceWriterAsync(currentConnectionId));
     }
 
-    [Fact]
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
     [Trait("Database", "pg")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
-    public async Task WriterFailover_WriterReelected()
+    public async Task WriterFailover_WriterReelected(bool async)
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
 
@@ -216,7 +176,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
             DatabaseEngine.PG => new AwsWrapperConnection<NpgsqlConnection>(connectionString),
             _ => throw new NotSupportedException($"Unsupported engine: {Engine}"),
         };
-        connection.Open();
+        await AuroraUtils.OpenDbConnection(connection, async);
         Assert.Equal(ConnectionState.Open, connection.State);
 
         var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -224,28 +184,30 @@ public class FailoverConnectivityTests : IntegrationTestBase
 
         // Wait for the simulation to start
         await tcs.Task;
-        Assert.Throws<FailoverSuccessException>(() =>
+        await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
         {
             this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Executing instance ID query to trigger failover...");
-            this.logger.WriteLine(AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment) ?? "No instance ID returned");
+            this.logger.WriteLine(await AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, async) ?? "No instance ID returned");
             this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Finished executing without exception thrown");
         });
 
         // Assert that we are currently connected to the writer instance.
-        var currentConnectionId = AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
+        var currentConnectionId = await AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, async);
         Assert.NotNull(currentConnectionId);
         Assert.Equal(currentWriter, currentConnectionId);
         Assert.True(await AuroraUtils.IsDBInstanceWriterAsync(currentConnectionId));
         await simulationTask;
     }
 
-    [Fact]
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
     [Trait("Database", "pg")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
-    public async Task ReaderFailover_ReaderOrWriter()
+    public async Task ReaderFailover_ReaderOrWriter(bool async)
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
 
@@ -271,25 +233,27 @@ public class FailoverConnectivityTests : IntegrationTestBase
             DatabaseEngine.PG => new AwsWrapperConnection<NpgsqlConnection>(connectionString),
             _ => throw new NotSupportedException($"Unsupported engine: {Engine}"),
         };
-        connection.Open();
+        await AuroraUtils.OpenDbConnection(connection, async);
         Assert.Equal(ConnectionState.Open, connection.State);
 
         await ProxyHelper.DisableConnectivityAsync(currentWriter);
 
-        Assert.Throws<FailoverSuccessException>(() =>
+        await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
         {
             this.logger.WriteLine("Executing instance ID query to trigger failover...");
-            AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
+            await AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, async);
         });
     }
 
-    [Fact]
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
     [Trait("Database", "pg")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
-    public async Task ReaderFailover_StrictReader()
+    public async Task ReaderFailover_StrictReader(bool async)
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
 
@@ -315,7 +279,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
             DatabaseEngine.PG => new AwsWrapperConnection<NpgsqlConnection>(connectionString),
             _ => throw new NotSupportedException($"Unsupported engine: {Engine}"),
         };
-        connection.Open();
+        await AuroraUtils.OpenDbConnection(connection, async);
         Assert.Equal(ConnectionState.Open, connection.State);
 
         var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -324,27 +288,29 @@ public class FailoverConnectivityTests : IntegrationTestBase
         // Wait for simulation to start
         await tcs.Task;
 
-        Assert.Throws<FailoverSuccessException>(() =>
+        await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
         {
             this.logger.WriteLine("Executing instance ID query to trigger failover...");
-            AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
+            await AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, async);
         });
 
         // Assert that we are currently connected to the reader instance.
-        var currentConnectionId = AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
+        var currentConnectionId = await AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, async);
         Assert.NotNull(currentConnectionId);
         Assert.False(await AuroraUtils.IsDBInstanceWriterAsync(currentConnectionId));
 
         await crashTask;
     }
 
-    [Fact]
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
     [Trait("Database", "pg")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
-    public async Task ReaderFailover_WriterReelected()
+    public async Task ReaderFailover_WriterReelected(bool async)
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
 
@@ -370,7 +336,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
             DatabaseEngine.PG => new AwsWrapperConnection<NpgsqlConnection>(connectionString),
             _ => throw new NotSupportedException($"Unsupported engine: {Engine}"),
         };
-        connection.Open();
+        await AuroraUtils.OpenDbConnection(connection, async);
         Assert.Equal(ConnectionState.Open, connection.State);
 
         var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -378,10 +344,10 @@ public class FailoverConnectivityTests : IntegrationTestBase
 
         // Wait for the simulation to start
         await tcs.Task;
-        Assert.Throws<FailoverSuccessException>(() =>
+        await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
         {
             this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Executing instance ID query to trigger failover...");
-            AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
+            await AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, async);
             this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Finished executing without exception thrown");
         });
         await simulationTask;

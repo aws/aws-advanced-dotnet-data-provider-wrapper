@@ -122,7 +122,6 @@ public class AwsWrapperDataReader : DbDataReader
         {
             await this.targetDataReader.DisposeAsync();
         }
-
     }
 
     public override bool GetBoolean(int i) => this.targetDataReader.GetBoolean(i);
