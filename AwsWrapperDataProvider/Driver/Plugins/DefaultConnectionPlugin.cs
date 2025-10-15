@@ -93,31 +93,15 @@ public class DefaultConnectionPlugin(
 
         // Update connection string that may have been modified by other plugins
         conn.ConnectionString = this.pluginService.TargetConnectionDialect.PrepareConnectionString(this.pluginService.Dialect, hostSpec, props);
+        conn.Open();
 
-        int updateDialectRetries = 0;
-
-        // TODO: Fix bug where first command execution after open sometime results in a EndOfStreamException and closes connection, and remove retry logic.
-        while (updateDialectRetries < UpdateDialectMaxRetries)
+        this.pluginService.SetAvailability(hostSpec!.AsAliases(), HostAvailability.Available);
+        if (isInitialConnection)
         {
-            conn.Open();
-            Logger.LogTrace("Connection {Type}@{Id}, DataSource = {DataSource} is opened.", conn.GetType().FullName, RuntimeHelpers.GetHashCode(conn), conn.DataSource);
-
-            // Set availability and update dialect
-            this.pluginService.SetAvailability(hostSpec!.AsAliases(), HostAvailability.Available);
-            if (isInitialConnection)
-            {
-                this.pluginService.UpdateDialect(conn);
-            }
-
-            if (conn.State == System.Data.ConnectionState.Open)
-            {
-                return conn;
-            }
-
-            updateDialectRetries++;
+            this.pluginService.UpdateDialect(conn);
         }
 
-        throw new InvalidOperationException("Failed to open connection after multiple attempts.");
+        return conn;
     }
 
     public void InitHostProvider(

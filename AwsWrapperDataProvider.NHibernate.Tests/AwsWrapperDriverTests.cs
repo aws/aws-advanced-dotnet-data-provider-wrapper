@@ -69,17 +69,17 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                     {
                         var row = (object[])session.CreateSQLQuery(@"
                             SELECT 
-                                NOT pg_is_in_recovery()                                        AS is_writer,
-                                current_setting('transaction_read_only') = 'off'              AS tx_writable,
-                                current_setting('default_transaction_read_only') = 'off'      AS default_tx_writable
+                                NOT pg_is_in_recovery() AS is_writer,
+                                current_setting('transaction_read_only') = 'off' AS tx_writable,
+                                current_setting('default_transaction_read_only') = 'off' AS default_tx_writable
                         ").UniqueResult();
 
                         bool isWriter = (bool)row[0];
                         bool txWritable = (bool)row[1];
                         bool defaultTxWritable = (bool)row[2];
 
-                        Assert.True(isWriter,          "Expected writer: pg_is_in_recovery() should be false.");
-                        Assert.True(txWritable,        "Expected transaction_read_only = off.");
+                        Assert.True(isWriter, "Expected writer: pg_is_in_recovery() should be false.");
+                        Assert.True(txWritable, "Expected transaction_read_only = off.");
                         Assert.True(defaultTxWritable, "Expected default_transaction_read_only = off.");
                         break;
                     }
@@ -174,7 +174,8 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                 + ";Plugins=failover;"
                 + "EnableConnectFailover=true;"
                 + "FailoverMode=StrictWriter;"
-                + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
+                + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort};"
+                + $"Pooling=false;";
             var cfg = this.GetNHibernateConfiguration(wrapperConnectionString);
             var sessionFactory = cfg.BuildSessionFactory();
 

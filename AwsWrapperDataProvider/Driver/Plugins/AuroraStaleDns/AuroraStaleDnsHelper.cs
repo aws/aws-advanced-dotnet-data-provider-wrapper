@@ -46,8 +46,7 @@ public class AuroraStaleDnsHelper
         IHostListProviderService hostListProviderService,
         HostSpec hostSpec,
         Dictionary<string, string> props,
-        ADONetDelegate<DbConnection> openFunc,
-        IConnectionPlugin? pluginToSkip = null)
+        ADONetDelegate<DbConnection> openFunc)
     {
         // If this is not a writer cluster DNS, no verification needed
         if (!RdsUtils.IsWriterClusterDns(hostSpec.Host))
@@ -71,13 +70,6 @@ public class AuroraStaleDnsHelper
         // Check the role of the connection we actually got
         HostRole connectionRole = this.pluginService.GetHostRole(connection);
         Logger.LogTrace("Current connection role: {role}", connectionRole);
-
-        foreach (var reader in this.GetReaders() ?? [])
-        {
-            using var readerConn = this.pluginService.OpenConnection(reader, props, pluginToSkip);
-            HostRole readerRole = this.pluginService.GetHostRole(readerConn);
-            Logger.LogTrace("Current connection role: {role} for {host}", readerRole, reader);
-        }
 
         this.pluginService.ForceRefreshHostList(connection);
         Logger.LogTrace(LoggerUtils.LogTopology(this.pluginService.AllHosts, null));
@@ -116,7 +108,7 @@ public class AuroraStaleDnsHelper
             }
 
             // Create a new connection to the correct writer instance
-            DbConnection writerConnection = this.pluginService.OpenConnection(this.writerHostSpec, props, pluginToSkip);
+            DbConnection writerConnection = this.pluginService.OpenConnection(this.writerHostSpec, props, null);
 
             // Update the initial connection host spec if this is the initial connection
             if (isInitialConnection)
