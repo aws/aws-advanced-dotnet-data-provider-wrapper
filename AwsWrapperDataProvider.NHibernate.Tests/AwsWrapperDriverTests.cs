@@ -203,6 +203,8 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                     transaction.Commit();
                 }
 
+                this.AssertSessionIsWritable(session);
+
                 var joe = new Person { FirstName = "Joe", LastName = "Smith" };
 
                 using (var transaction = session.BeginTransaction())

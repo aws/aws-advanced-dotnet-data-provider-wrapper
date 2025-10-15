@@ -241,6 +241,8 @@ public class PluginService : IPluginService, IHostListProviderService
             this.NotifyNodeChangeList(this.AllHosts, updateHostList);
             this.AllHosts = updateHostList;
         }
+
+        Logger.LogDebug("PluginService.RefreshHostList() completed with AllHost = {AllHosts}", LoggerUtils.LogTopology(this.AllHosts, "All Hosts"));
     }
 
     public void RefreshHostList(DbConnection connection)
@@ -256,7 +258,7 @@ public class PluginService : IPluginService, IHostListProviderService
         this.NotifyNodeChangeList(this.AllHosts, updateHostList);
         this.AllHosts = updateHostList;
 
-        Logger.LogDebug("PluginService.RefreshHostList() completed with connection state = {State}", connection.State);
+        Logger.LogDebug("PluginService.RefreshHostList() completed with connection state = {State}, AllHost = {AllHosts}", connection.State,  LoggerUtils.LogTopology(this.AllHosts, "All Hosts"));
     }
 
     public void ForceRefreshHostList()
@@ -265,6 +267,8 @@ public class PluginService : IPluginService, IHostListProviderService
         this.UpdateHostAvailability(updateHostList);
         this.NotifyNodeChangeList(this.AllHosts, updateHostList);
         this.AllHosts = updateHostList;
+
+        Logger.LogDebug("PluginService.ForceRefreshHostList() completed with AllHost = {AllHosts}", LoggerUtils.LogTopology(this.AllHosts, "All Hosts"));
     }
 
     public void ForceRefreshHostList(DbConnection connection)
@@ -273,6 +277,8 @@ public class PluginService : IPluginService, IHostListProviderService
         this.UpdateHostAvailability(updateHostList);
         this.NotifyNodeChangeList(this.AllHosts, updateHostList);
         this.AllHosts = updateHostList;
+
+        Logger.LogDebug("PluginService.ForceRefreshHostList() completed with connection state = {State}, AllHost = {AllHosts}", connection.State,  LoggerUtils.LogTopology(this.AllHosts, "All Hosts"));
     }
 
     public void ForceRefreshHostList(bool shouldVerifyWriter, long timeoutMs)
@@ -283,6 +289,7 @@ public class PluginService : IPluginService, IHostListProviderService
             this.UpdateHostAvailability(updateHostList);
             this.NotifyNodeChangeList(this.AllHosts, updateHostList);
             this.AllHosts = updateHostList;
+            Logger.LogDebug("PluginService.ForceRefreshHostList() updated AllHost = {AllHosts}", LoggerUtils.LogTopology(this.AllHosts, "All Hosts"));
         }
         else
         {

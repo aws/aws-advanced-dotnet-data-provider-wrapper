@@ -175,7 +175,8 @@ public class FailoverPlugin : AbstractConnectionPlugin
                 this.hostListProviderService!,
                 hostSpec!,
                 properties,
-                methodFunc);
+                methodFunc,
+                this);
         }
 
         var hostSpecWithAvailability = this.pluginService.GetHosts()
@@ -190,7 +191,8 @@ public class FailoverPlugin : AbstractConnectionPlugin
                     this.hostListProviderService!,
                     hostSpec!,
                     properties,
-                    methodFunc);
+                    methodFunc,
+                    this);
             }
             catch (Exception e)
             {
@@ -491,10 +493,6 @@ public class FailoverPlugin : AbstractConnectionPlugin
     private void ThrowFailoverSuccessException()
     {
         Logger.LogTrace("Failover succeeded");
-
-        // Reset the closed state since we now have a working connection
-        Logger.LogDebug("Resetting isClosed from {OldValue} to false after successful failover", this.isClosed);
-        this.isClosed = false;
 
         if (this.pluginService.CurrentConnection != null)
         {
