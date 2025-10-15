@@ -40,16 +40,21 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
         // Network-bound methods that might fail and trigger failover
         "DbConnection.Open",
         "DbConnection.OpenAsync",
+        "DbConnection.BeginDbTransaction",
+        "DbConnection.BeginDbTransactionAsync",
+
         "DbCommand.ExecuteNonQuery",
         "DbCommand.ExecuteNonQueryAsync",
         "DbCommand.ExecuteReader",
         "DbCommand.ExecuteReaderAsync",
         "DbCommand.ExecuteScalar",
         "DbCommand.ExecuteScalarAsync",
+
         "DbDataReader.Read",
         "DbDataReader.ReadAsync",
         "DbDataReader.NextResult",
         "DbDataReader.NextResultAsync",
+
         "DbTransaction.Commit",
         "DbTransaction.CommitAsync",
         "DbTransaction.Rollback",

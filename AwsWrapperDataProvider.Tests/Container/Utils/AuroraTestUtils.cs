@@ -18,7 +18,6 @@ using System.Data.Common;
 using System.Diagnostics;
 using System.Globalization;
 using System.Net;
-using System.Net.NetworkInformation;
 using Amazon;
 using Amazon.RDS;
 using Amazon.RDS.Model;
@@ -27,7 +26,6 @@ using Amazon.Runtime.Credentials;
 using Amazon.SecretsManager;
 using Amazon.SecretsManager.Model;
 using AwsWrapperDataProvider.Driver.Utils;
-using Toxiproxy.Net;
 
 namespace AwsWrapperDataProvider.Tests.Container.Utils;
 

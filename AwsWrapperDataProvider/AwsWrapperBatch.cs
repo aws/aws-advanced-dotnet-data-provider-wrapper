@@ -132,8 +132,7 @@ public class AwsWrapperBatch : DbBatch
                 this.connectionPluginManager!,
                 this.targetBatch,
                 "DbBatch.ExecuteReader",
-                () => Task.FromResult(this.targetBatch.ExecuteReader(behavior)))
-            .GetAwaiter().GetResult();
+                () => Task.FromResult(this.targetBatch.ExecuteReader(behavior))).GetAwaiter().GetResult();
 
         return new AwsWrapperDataReader(dataReader, this.connectionPluginManager!);
     }
@@ -158,13 +157,14 @@ public class AwsWrapperBatch : DbBatch
             () => Task.FromResult(this.targetBatch.ExecuteNonQuery())).GetAwaiter().GetResult();
     }
 
-    public override async Task<int> ExecuteNonQueryAsync(CancellationToken cancellationToken = default)
+    public override Task<int> ExecuteNonQueryAsync(CancellationToken cancellationToken = default)
     {
-        return await WrapperUtils.ExecuteWithPlugins(
+        return WrapperUtils.ExecuteWithPlugins(
             this.connectionPluginManager!,
             this.targetBatch,
             "DbBatch.ExecuteNonQueryAsync",
-            () => this.targetBatch.ExecuteNonQueryAsync(cancellationToken));
+            () => this.targetBatch.ExecuteNonQueryAsync(cancellationToken),
+            cancellationToken);
     }
 
     public override object? ExecuteScalar()
@@ -176,13 +176,14 @@ public class AwsWrapperBatch : DbBatch
             () => Task.FromResult(this.targetBatch.ExecuteScalar())).GetAwaiter().GetResult();
     }
 
-    public override async Task<object?> ExecuteScalarAsync(CancellationToken cancellationToken = default)
+    public override Task<object?> ExecuteScalarAsync(CancellationToken cancellationToken = default)
     {
-        return await WrapperUtils.ExecuteWithPlugins(
+        return WrapperUtils.ExecuteWithPlugins(
             this.connectionPluginManager!,
             this.targetBatch,
             "DbBatch.ExecuteScalarAsync",
-            () => this.targetBatch.ExecuteScalarAsync(cancellationToken));
+            () => this.targetBatch.ExecuteScalarAsync(cancellationToken),
+            cancellationToken);
     }
 
     public override void Prepare()

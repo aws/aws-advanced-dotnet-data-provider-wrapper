@@ -160,20 +160,20 @@ public class ConnectionPluginManager
         return pluginChainDelegate!;
     }
 
-    public virtual async Task<T> Execute<T>(
+    public virtual Task<T> Execute<T>(
         object methodInvokeOn,
         string methodName,
         ADONetDelegate<T> methodFunc,
         params object[] methodArgs)
     {
-        return await this.ExecuteWithSubscribedPlugins(
+        return this.ExecuteWithSubscribedPlugins(
             methodName,
-            async (plugin, methodFunc) => await plugin.Execute(methodInvokeOn, methodName, methodFunc, methodArgs),
+            (plugin, methodFunc) => plugin.Execute(methodInvokeOn, methodName, methodFunc, methodArgs),
             methodFunc,
             null);
     }
 
-    public virtual async Task<DbConnection> Open(
+    public virtual Task<DbConnection> Open(
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
@@ -181,14 +181,14 @@ public class ConnectionPluginManager
         bool async)
     {
         // Execute the plugin chain and return the connection
-        return await this.ExecuteWithSubscribedPlugins<DbConnection>(
+        return this.ExecuteWithSubscribedPlugins<DbConnection>(
             ConnectMethod,
-            async (plugin, methodFunc) => await plugin.OpenConnection(hostSpec, props, isInitialConnection, () => methodFunc(), async),
+            (plugin, methodFunc) => plugin.OpenConnection(hostSpec, props, isInitialConnection, () => methodFunc(), async),
             () => throw new UnreachableException("Function should not be called."),
             pluginToSkip);
     }
 
-    public virtual async Task<DbConnection> ForceOpen(
+    public virtual Task<DbConnection> ForceOpen(
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
@@ -196,19 +196,19 @@ public class ConnectionPluginManager
         bool async)
     {
         // Execute the plugin chain and return the connection
-        return await this.ExecuteWithSubscribedPlugins<DbConnection>(
+        return this.ExecuteWithSubscribedPlugins<DbConnection>(
             ForceConnectMethod,
-            async (plugin, methodFunc) => await plugin.ForceOpenConnection(hostSpec, props, isInitialConnection, () => methodFunc(), async),
+            (plugin, methodFunc) => plugin.ForceOpenConnection(hostSpec, props, isInitialConnection, () => methodFunc(), async),
             () => throw new UnreachableException("Function should not be called."),
             pluginToSkip);
     }
 
-    public virtual async Task InitHostProvider(
+    public virtual Task InitHostProvider(
         string initialConnectionString,
         Dictionary<string, string> props,
         IHostListProviderService hostListProviderService)
     {
-        await this.ExecuteWithSubscribedPlugins<object>(
+        return this.ExecuteWithSubscribedPlugins<object>(
             InitHostMethod,
             async (plugin, methodFunc) =>
             {

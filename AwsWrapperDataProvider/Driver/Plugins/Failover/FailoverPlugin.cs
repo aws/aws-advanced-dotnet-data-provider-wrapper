@@ -62,6 +62,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
         "DbConnection.Open",
         "DbConnection.OpenAsync",
         "DbConnection.BeginDbTransaction",
+        "DbConnection.BeginDbTransactionAsync",
 
         "DbCommand.ExecuteNonQuery",
         "DbCommand.ExecuteNonQueryAsync",
@@ -79,10 +80,6 @@ public class FailoverPlugin : AbstractConnectionPlugin
         "DbTransaction.CommitAsync",
         "DbTransaction.Rollback",
         "DbTransaction.RollbackAsync",
-
-        // Connection management methods
-        MethodClose,
-        MethodDispose,
 
         // Special methods
         "DbConnection.ClearWarnings",
