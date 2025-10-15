@@ -51,10 +51,11 @@ public class RdsMultiAzDbClusterPgDialect : PgDialect
 
     public override bool IsDialect(IDbConnection connection)
     {
-        Logger.LogDebug("RdsMultiAzDbClusterPgDialect.IsDialect() called with connection state = {State}, type = {Type}@{Id}",
+        Logger.LogDebug("RdsMultiAzDbClusterPgDialect.IsDialect() called with connection state = {State}, type = {Type}@{Id}, Database = {Database}",
             connection.State,
             connection.GetType().FullName,
-            RuntimeHelpers.GetHashCode(connection));
+            RuntimeHelpers.GetHashCode(connection),
+            connection.Database);
 
         try
         {

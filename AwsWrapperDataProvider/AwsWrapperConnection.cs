@@ -206,10 +206,11 @@ public class AwsWrapperConnection : DbConnection
         this.pluginService!.SetCurrentConnection(connection, this.pluginService.InitialConnectionHostSpec);
         this.pluginService.RefreshHostList();
 
-        Logger.LogDebug("AwsWrapperConnection.Open() completed with connection state = {State}, type = {Type}@{Id}",
+        Logger.LogDebug("AwsWrapperConnection.Open() completed with connection state = {State}, type = {Type}@{Id}, DataSource = {DataSource}",
             connection.State,
             connection.GetType().FullName,
-            RuntimeHelpers.GetHashCode(connection));
+            RuntimeHelpers.GetHashCode(connection),
+            connection.DataSource);
     }
 
     protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel)
@@ -218,11 +219,12 @@ public class AwsWrapperConnection : DbConnection
         ArgumentNullException.ThrowIfNull(this.pluginService.CurrentConnection);
         ArgumentNullException.ThrowIfNull(this.PluginManager);
 
-        Logger.LogDebug("AwsWrapperConnection.BeginDbTransaction() called with wrapper state = {WrapperState}, current connection state = {CurrentState}, type = {Type}@{Id}",
+        Logger.LogDebug("AwsWrapperConnection.BeginDbTransaction() called with wrapper state = {WrapperState}, current connection state = {CurrentState}, type = {Type}@{Id}, DataSource = {DataSource}",
             this.State,
             this.pluginService.CurrentConnection.State,
             this.pluginService.CurrentConnection.GetType().FullName,
-            RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection));
+            RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection),
+            this.pluginService.CurrentConnection.DataSource);
 
         DbTransaction targetTransaction = WrapperUtils.ExecuteWithPlugins(
             this.PluginManager,
@@ -248,7 +250,7 @@ public class AwsWrapperConnection : DbConnection
             this.pluginService.CurrentConnection,
             "DbConnection.CreateCommand",
             () => (TCommand)this.pluginService.CurrentConnection.CreateCommand());
-        Logger.LogDebug("DbCommand created for DbConnection@{Id}", RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection));
+        Logger.LogDebug("DbCommand created for DbConnection@{Id}, DataSource = {DataSource}", RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection), this.pluginService.CurrentConnection.DataSource);
 
         this.ConnectionProperties![PropertyDefinition.TargetCommandType.Name] = typeof(TCommand).AssemblyQualifiedName!;
         return new AwsWrapperCommand<TCommand>(command, this, this.PluginManager);

@@ -245,10 +245,11 @@ public class PluginService : IPluginService, IHostListProviderService
 
     public void RefreshHostList(DbConnection connection)
     {
-        Logger.LogDebug("PluginService.RefreshHostList() called with connection state = {State}, type = {Type}@{Id}",
+        Logger.LogDebug("PluginService.RefreshHostList() called with connection state = {State}, type = {Type}@{Id}, DataSource = {DataSource}",
             connection.State,
             connection.GetType().FullName,
-            RuntimeHelpers.GetHashCode(connection));
+            RuntimeHelpers.GetHashCode(connection),
+            connection.DataSource);
 
         IList<HostSpec> updateHostList = this.hostListProvider.Refresh(connection);
         this.UpdateHostAvailability(updateHostList);

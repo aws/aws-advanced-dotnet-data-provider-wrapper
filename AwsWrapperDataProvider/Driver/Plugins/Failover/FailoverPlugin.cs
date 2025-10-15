@@ -112,9 +112,10 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
         if (this.pluginService.CurrentConnection != null)
         {
-            Logger.LogDebug("Current connection state: {State}, Hash={Hash}",
+            Logger.LogDebug("Current connection state: {State}, Hash={Hash}, DataSource={DataSource}",
                 this.pluginService.CurrentConnection.State,
-                RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection));
+                RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection),
+                this.pluginService.CurrentConnection.DataSource);
         }
 
         if (this.pluginService.CurrentConnection != null
@@ -233,10 +234,11 @@ public class FailoverPlugin : AbstractConnectionPlugin
             this.pluginService.ForceRefreshHostList(connection);
         }
 
-        Logger.LogDebug("FailoverPlugin.OpenConnection returning connection state = {State}, type = {Type}@{Id}",
+        Logger.LogDebug("FailoverPlugin.OpenConnection returning connection state = {State}, type = {Type}@{Id}, DataSource = {DataSource}",
             connection.State,
             connection.GetType().FullName,
-            RuntimeHelpers.GetHashCode(connection));
+            RuntimeHelpers.GetHashCode(connection),
+            connection.DataSource);
 
         return connection;
     }
@@ -255,9 +257,10 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
         if (this.pluginService.CurrentConnection != null)
         {
-            Logger.LogWarning("Current connection when invalid invocation: Hash={Hash}, State={State}",
+            Logger.LogWarning("Current connection when invalid invocation: Hash={Hash}, State={State}, DataSource={DataSource}",
                 RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection),
-                this.pluginService.CurrentConnection.State);
+                this.pluginService.CurrentConnection.State,
+                this.pluginService.CurrentConnection.DataSource);
         }
 
         if (!this.closedExplicitly)
@@ -327,9 +330,10 @@ public class FailoverPlugin : AbstractConnectionPlugin
         Logger.LogInformation("Reader failover successful. Switching to host: {Host}.", result.HostSpec.Host);
 
         this.pluginService.SetCurrentConnection(result.Connection, result.HostSpec);
-        Logger.LogInformation("Reader failover: Set new connection {Hash} with state {State} to host {Host}",
+        Logger.LogInformation("Reader failover: Set new connection {Hash} with state {State}, DataSource {DataSource} to host {Host}",
             RuntimeHelpers.GetHashCode(result.Connection),
             result.Connection.State,
+            result.Connection.DataSource,
             result.HostSpec.Host);
         this.ThrowFailoverSuccessException();
     }
@@ -494,9 +498,10 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
         if (this.pluginService.CurrentConnection != null)
         {
-            Logger.LogDebug("Current connection after failover: Hash={Hash}, State={State}",
+            Logger.LogDebug("Current connection after failover: Hash={Hash}, State={State}, DataSource={DataSource}",
                 RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection),
-                this.pluginService.CurrentConnection.State);
+                this.pluginService.CurrentConnection.State,
+                this.pluginService.CurrentConnection.DataSource);
         }
 
         if (this.shouldThrowTransactionError)
@@ -527,9 +532,10 @@ public class FailoverPlugin : AbstractConnectionPlugin
         try
         {
             this.pluginService.CurrentConnection?.Close();
-            Logger.LogTrace("Current connection {Type}@{Id} is closed.",
+            Logger.LogTrace("Current connection {Type}@{Id}, DataSource = {DataSource} is closed.",
                 this.pluginService.CurrentConnection?.GetType().FullName,
-                RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection));
+                RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection),
+                this.pluginService.CurrentConnection?.DataSource);
         }
         catch (Exception ex)
         {

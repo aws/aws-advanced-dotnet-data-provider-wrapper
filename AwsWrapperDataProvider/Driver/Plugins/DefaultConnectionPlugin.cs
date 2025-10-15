@@ -80,7 +80,7 @@ public class DefaultConnectionPlugin(
         if (isInitialConnection && this.pluginService.CurrentConnection != null)
         {
             conn = this.pluginService.CurrentConnection;
-            Logger.LogTrace("Reusing existing connection {Type}@{Id}.", conn.GetType().FullName, RuntimeHelpers.GetHashCode(conn));
+            Logger.LogTrace("Reusing existing connection {Type}@{Id}, DataSource = {DataSource}.", conn.GetType().FullName, RuntimeHelpers.GetHashCode(conn), conn.DataSource);
         }
         else
         {
@@ -100,7 +100,7 @@ public class DefaultConnectionPlugin(
         while (updateDialectRetries < UpdateDialectMaxRetries)
         {
             conn.Open();
-            Logger.LogTrace("Connection {Type}@{Id} is opened.", conn.GetType().FullName, RuntimeHelpers.GetHashCode(conn));
+            Logger.LogTrace("Connection {Type}@{Id}, DataSource = {DataSource} is opened.", conn.GetType().FullName, RuntimeHelpers.GetHashCode(conn), conn.DataSource);
 
             // Set availability and update dialect
             this.pluginService.SetAvailability(hostSpec!.AsAliases(), HostAvailability.Available);

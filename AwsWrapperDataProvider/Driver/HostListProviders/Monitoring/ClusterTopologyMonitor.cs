@@ -227,7 +227,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                     if (hosts == null)
                     {
                         // Can't get topology, switch to panic mode
-                        LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "Monitoring connection@{Id} is set to null", RuntimeHelpers.GetHashCode(this.monitoringConnection));
+                        LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "Monitoring connection@{Id}, DataSource = {DataSource} is set to null", RuntimeHelpers.GetHashCode(this.monitoringConnection), this.monitoringConnection?.DataSource);
                         var conn = Interlocked.Exchange(ref this.monitoringConnection, null);
 
                         this.isVerifiedWriterConnection = false;
@@ -269,10 +269,10 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         }
         finally
         {
-            LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "Cancelling all node monitoring tasks from topology monitor connection@{Id}", RuntimeHelpers.GetHashCode(this.monitoringConnection));
+            LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "Cancelling all node monitoring tasks from topology monitor connection@{Id}, DataSource = {DataSource}", RuntimeHelpers.GetHashCode(this.monitoringConnection), this.monitoringConnection?.DataSource);
             this.ctsNodeMonitoring.Cancel();
 
-            LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "Monitoring connection@{Id} is set to null", RuntimeHelpers.GetHashCode(this.monitoringConnection));
+            LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "Monitoring connection@{Id}, DataSource = {DataSource} is set to null", RuntimeHelpers.GetHashCode(this.monitoringConnection), this.monitoringConnection?.DataSource);
             var conn = Interlocked.Exchange(ref this.monitoringConnection, null);
             await this.DisposeConnectionAsync(conn);
 
@@ -294,7 +294,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
         if (shouldVerifyWriter)
         {
-            LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "Monitoring connection@{Id} is set to null", RuntimeHelpers.GetHashCode(this.monitoringConnection));
+            LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "Monitoring connection@{Id}, DataSource = {DataSource} is set to null", RuntimeHelpers.GetHashCode(this.monitoringConnection), this.monitoringConnection?.DataSource);
             var connectionToClose = Interlocked.Exchange(ref this.monitoringConnection, null);
             this.isVerifiedWriterConnection = false;
             this.DisposeConnectionAsync(connectionToClose).GetAwaiter().GetResult();
@@ -387,7 +387,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
                 if (Interlocked.CompareExchange(ref this.monitoringConnection, newConnection, null) == null)
                 {
-                    LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, string.Format(Resources.ClusterTopologyMonitor_OpenedMonitoringConnection, RuntimeHelpers.GetHashCode(this.monitoringConnection), this.initialHostSpec.Host));
+                    LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, string.Format(Resources.ClusterTopologyMonitor_OpenedMonitoringConnection, RuntimeHelpers.GetHashCode(this.monitoringConnection), this.monitoringConnection.DataSource, this.initialHostSpec.Host));
 
                     if (!string.IsNullOrEmpty(await this.GetWriterNodeIdAsync(this.monitoringConnection)))
                     {
@@ -458,7 +458,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
         if (hosts == null)
         {
-            LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "Monitoring connection@{Id} is set to null", RuntimeHelpers.GetHashCode(this.monitoringConnection));
+            LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "Monitoring connection@{Id}, DataSource = {DataSource} is set to null", RuntimeHelpers.GetHashCode(this.monitoringConnection), this.monitoringConnection.DataSource);
             var connToDispose = Interlocked.Exchange(ref this.monitoringConnection, null);
 
             this.isVerifiedWriterConnection = false;
@@ -526,7 +526,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         catch (Exception ex)
         {
             // Ignore
-            LoggerUtils.LogWithThreadId(Logger, LogLevel.Warning, ex, "Exception thrown during getting the node Id for topology monitoring connection@{id}, and ignored.", RuntimeHelpers.GetHashCode(connection));
+            LoggerUtils.LogWithThreadId(Logger, LogLevel.Warning, ex, "Exception thrown during getting the node Id for topology monitoring connection@{id}, DataSource = {DataSource}, and ignored.", RuntimeHelpers.GetHashCode(connection), connection.DataSource);
             throw;
         }
 
@@ -547,7 +547,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         }
         catch (Exception ex)
         {
-            LoggerUtils.LogWithThreadId(Logger, LogLevel.Warning, ex, "Exception thrown during getting the writer node Id for topology monitoring connection@{id}", RuntimeHelpers.GetHashCode(connection));
+            LoggerUtils.LogWithThreadId(Logger, LogLevel.Warning, ex, "Exception thrown during getting the writer node Id for topology monitoring connection@{id}, DataSource = {DataSource}", RuntimeHelpers.GetHashCode(connection), connection.DataSource);
             throw;
         }
 
@@ -561,7 +561,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         if (connection != null)
         {
             await connection.DisposeAsync();
-            LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "Connection {Type}@{Id} is disposed.", connection.GetType().FullName, RuntimeHelpers.GetHashCode(connection));
+            LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "Connection {Type}@{Id}, DataSource = {DataSource} is disposed.", connection.GetType().FullName, RuntimeHelpers.GetHashCode(connection), connection.DataSource);
         }
     }
 
