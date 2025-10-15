@@ -67,37 +67,32 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             {
                 case DatabaseEngine.PG:
                     {
-                        // Force true booleans from PG via ::boolean so NHibernate returns CLR bools.
-                        var row = (object[]) session.CreateSQLQuery(@"
-                SELECT 
-                    pg_is_in_recovery()::boolean        AS in_recovery,
-                    current_setting('transaction_read_only')::boolean AS tx_read_only,
-                    current_setting('default_transaction_read_only')::boolean AS default_tx_read_only
-            ").UniqueResult();
+                        var row = (object[])session.CreateSQLQuery(@"
+                            SELECT 
+                                NOT pg_is_in_recovery()                                        AS is_writer,
+                                current_setting('transaction_read_only') = 'off'              AS tx_writable,
+                                current_setting('default_transaction_read_only') = 'off'      AS default_tx_writable
+                        ").UniqueResult();
 
-                        bool inRecovery           = (bool) row[0];
-                        bool txReadOnly           = (bool) row[1];
-                        bool defaultTxReadOnly    = (bool) row[2];
+                        bool isWriter = (bool)row[0];
+                        bool txWritable = (bool)row[1];
+                        bool defaultTxWritable = (bool)row[2];
 
-                        // Writer should NOT be in recovery and tx should NOT be read-only.
-                        Assert.False(inRecovery,    "Expected writer: pg_is_in_recovery() should be false.");
-                        Assert.False(txReadOnly,    "Expected transaction_read_only = off.");
-                        // Optional: usually off; keep as info if you prefer not to assert.
-                        Assert.False(defaultTxReadOnly, "Expected default_transaction_read_only = off.");
+                        Assert.True(isWriter,          "Expected writer: pg_is_in_recovery() should be false.");
+                        Assert.True(txWritable,        "Expected transaction_read_only = off.");
+                        Assert.True(defaultTxWritable, "Expected default_transaction_read_only = off.");
                         break;
                     }
 
                 case DatabaseEngine.MYSQL:
                 default:
                     {
-                        // Force a numeric (0/1) so we can assert exact value.
                         var val = session.CreateSQLQuery(
                             "SELECT CAST(COALESCE(@@super_read_only, @@global.read_only) AS SIGNED)"
                         ).UniqueResult();
 
-                        // Expect 0 for writable.
                         var readOnlyFlag = Convert.ToInt64(val);
-                        Assert.Equal(0L, readOnlyFlag); // 0 = writable, 1 = read-only
+                        Assert.Equal(0L, readOnlyFlag);
                         break;
                     }
             }
