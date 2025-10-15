@@ -175,9 +175,9 @@ public class AwsWrapperConnection : DbConnection
             }).GetAwaiter().GetResult();
     }
 
-    public override async Task CloseAsync()
+    public override Task CloseAsync()
     {
-        await WrapperUtils.RunWithPlugins(
+        return WrapperUtils.RunWithPlugins(
             this.PluginManager,
             this.pluginService.CurrentConnection!,
             "DbConnection.CloseAsync",
@@ -189,9 +189,9 @@ public class AwsWrapperConnection : DbConnection
         this.OpenInternal(CancellationToken.None, false).GetAwaiter().GetResult();
     }
 
-    public override async Task OpenAsync(CancellationToken cancellationToken)
+    public override Task OpenAsync(CancellationToken cancellationToken)
     {
-        await this.OpenInternal(cancellationToken, true);
+        return this.OpenInternal(cancellationToken, true);
     }
 
     private async Task OpenInternal(CancellationToken cancellationToken, bool async)

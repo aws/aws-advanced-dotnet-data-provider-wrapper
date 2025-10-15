@@ -234,10 +234,10 @@ public class AwsWrapperCommand : DbCommand
             () => Task.FromResult(this._targetDbCommand!.ExecuteNonQuery())).GetAwaiter().GetResult();
     }
 
-    public override async Task<int> ExecuteNonQueryAsync(CancellationToken cancellationToken)
+    public override Task<int> ExecuteNonQueryAsync(CancellationToken cancellationToken)
     {
         this.EnsureTargetDbCommandCreated();
-        return await WrapperUtils.ExecuteWithPlugins(
+        return WrapperUtils.ExecuteWithPlugins(
             this._pluginManager!,
             this._targetDbCommand!,
             "DbCommand.ExecuteNonQueryAsync",
@@ -254,10 +254,10 @@ public class AwsWrapperCommand : DbCommand
             () => Task.FromResult(this._targetDbCommand!.ExecuteScalar())).GetAwaiter().GetResult();
     }
 
-    public override async Task<object?> ExecuteScalarAsync(CancellationToken cancellationToken)
+    public override Task<object?> ExecuteScalarAsync(CancellationToken cancellationToken)
     {
         this.EnsureTargetDbCommandCreated();
-        return await WrapperUtils.ExecuteWithPlugins(
+        return WrapperUtils.ExecuteWithPlugins(
             this._pluginManager!,
             this._targetDbCommand!,
             "DbCommand.ExecuteScalarAsync",
@@ -278,10 +278,10 @@ public class AwsWrapperCommand : DbCommand
             }).GetAwaiter().GetResult();
     }
 
-    public override async Task PrepareAsync(CancellationToken cancellationToken = default)
+    public override Task PrepareAsync(CancellationToken cancellationToken = default)
     {
         this.EnsureTargetDbCommandCreated();
-        await WrapperUtils.RunWithPlugins(
+        return WrapperUtils.RunWithPlugins(
             this._pluginManager!,
             this._targetDbCommand!,
             "DbCommand.PrepareAsync",

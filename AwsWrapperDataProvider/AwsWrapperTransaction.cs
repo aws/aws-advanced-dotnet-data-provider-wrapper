@@ -104,9 +104,9 @@ public class AwsWrapperTransaction : DbTransaction
             savepointName).GetAwaiter().GetResult();
     }
 
-    public override async Task SaveAsync(string savepointName, CancellationToken cancellationToken = default)
+    public override Task SaveAsync(string savepointName, CancellationToken cancellationToken = default)
     {
-        await WrapperUtils.RunWithPlugins(
+        return WrapperUtils.RunWithPlugins(
             this.pluginManager!,
             this.TargetTransaction!,
             "DbTransaction.SaveAsync",
@@ -129,9 +129,9 @@ public class AwsWrapperTransaction : DbTransaction
             savepointName).GetAwaiter().GetResult();
     }
 
-    public override async Task RollbackAsync(string savepointName, CancellationToken cancellationToken = default)
+    public override Task RollbackAsync(string savepointName, CancellationToken cancellationToken = default)
     {
-        await WrapperUtils.RunWithPlugins(
+        return WrapperUtils.RunWithPlugins(
             this.pluginManager!,
             this.TargetTransaction!,
             "DbTransaction.RollbackAsync",
@@ -154,9 +154,9 @@ public class AwsWrapperTransaction : DbTransaction
             savepointName).GetAwaiter().GetResult();
     }
 
-    public override async Task ReleaseAsync(string savepointName, CancellationToken cancellationToken = default)
+    public override Task ReleaseAsync(string savepointName, CancellationToken cancellationToken = default)
     {
-        await WrapperUtils.RunWithPlugins(
+        return WrapperUtils.RunWithPlugins(
             this.pluginManager!,
             this.TargetTransaction!,
             "DbTransaction.ReleaseAsync",

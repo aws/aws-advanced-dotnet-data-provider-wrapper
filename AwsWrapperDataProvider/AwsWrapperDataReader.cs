@@ -59,9 +59,9 @@ public class AwsWrapperDataReader : DbDataReader
             }).GetAwaiter().GetResult();
     }
 
-    public override async Task CloseAsync()
+    public override Task CloseAsync()
     {
-        await WrapperUtils.RunWithPlugins(
+        return WrapperUtils.RunWithPlugins(
             this.connectionPluginManager,
             this.targetDataReader,
             "DbDataReader.CloseAsync",
@@ -80,9 +80,9 @@ public class AwsWrapperDataReader : DbDataReader
             .GetAwaiter().GetResult();
     }
 
-    public override async Task<bool> NextResultAsync(CancellationToken cancellationToken)
+    public override Task<bool> NextResultAsync(CancellationToken cancellationToken)
     {
-        return await WrapperUtils.ExecuteWithPlugins(
+        return WrapperUtils.ExecuteWithPlugins(
             this.connectionPluginManager,
             this.targetDataReader,
             "DbDataReader.NextResultAsync",
@@ -99,9 +99,9 @@ public class AwsWrapperDataReader : DbDataReader
             .GetAwaiter().GetResult();
     }
 
-    public override async Task<bool> ReadAsync(CancellationToken cancellationToken)
+    public override Task<bool> ReadAsync(CancellationToken cancellationToken)
     {
-        return await WrapperUtils.ExecuteWithPlugins(
+        return WrapperUtils.ExecuteWithPlugins(
             this.connectionPluginManager,
             this.targetDataReader,
             "DbDataReader.ReadAsync",
