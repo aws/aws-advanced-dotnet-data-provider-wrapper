@@ -72,10 +72,10 @@ public class MultiAzClusterTopologyMonitor : ClusterTopologyMonitor
                 command.CommandText = this.fetchWriterNodeQuery;
                 await using var reader = await command.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
 
-                if (await reader.ReadAsync())
+                if (await reader.ReadAsync(this.ctsTopologyMonitoring.Token))
                 {
                     int columnIndex = reader.GetOrdinal(this.fetchWriterNodeColumnName);
-                    string? nodeId = reader.IsDBNull(columnIndex)
+                    string? nodeId = await reader.IsDBNullAsync(columnIndex, this.ctsTopologyMonitoring.Token)
                         ? null
                         : Convert.ToString(reader.GetValue(columnIndex), CultureInfo.InvariantCulture);
 
@@ -90,9 +90,9 @@ public class MultiAzClusterTopologyMonitor : ClusterTopologyMonitor
             {
                 nodeIdCommand.CommandText = this.nodeIdQuery;
                 using var reader = await nodeIdCommand.ExecuteReaderAsync();
-                if (reader.Read())
+                if (await reader.ReadAsync(this.ctsTopologyMonitoring.Token))
                 {
-                    return reader.IsDBNull(0)
+                    return await reader.IsDBNullAsync(0, this.ctsTopologyMonitoring.Token)
                         ? null
                         : Convert.ToString(reader.GetValue(0), CultureInfo.InvariantCulture);
                 }
@@ -116,10 +116,10 @@ public class MultiAzClusterTopologyMonitor : ClusterTopologyMonitor
                 command.CommandText = this.fetchWriterNodeQuery;
                 await using var reader = await command.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
 
-                if (await reader.ReadAsync())
+                if (await reader.ReadAsync(this.ctsTopologyMonitoring.Token))
                 {
                     int columnIndex = reader.GetOrdinal(this.fetchWriterNodeColumnName);
-                    string? nodeId = reader.IsDBNull(columnIndex)
+                    string? nodeId = await reader.IsDBNullAsync(columnIndex, this.ctsTopologyMonitoring.Token)
                         ? null
                         : Convert.ToString(reader.GetValue(columnIndex), CultureInfo.InvariantCulture);
 
@@ -133,10 +133,10 @@ public class MultiAzClusterTopologyMonitor : ClusterTopologyMonitor
             using (var nodeIdCommand = connection.CreateCommand())
             {
                 nodeIdCommand.CommandText = this.nodeIdQuery;
-                using var reader = await nodeIdCommand.ExecuteReaderAsync();
-                if (reader.Read())
+                using var reader = await nodeIdCommand.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
+                if (await reader.ReadAsync(this.ctsTopologyMonitoring.Token))
                 {
-                    return reader.IsDBNull(0)
+                    return await reader.IsDBNullAsync(0, this.ctsTopologyMonitoring.Token)
                         ? null
                         : Convert.ToString(reader.GetValue(0), CultureInfo.InvariantCulture);
                 }

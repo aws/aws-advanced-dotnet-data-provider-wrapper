@@ -258,11 +258,12 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         {
             // Suppress Error.
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             LoggerUtils.LogWithThreadId(
                 Logger,
                 LogLevel.Trace,
+                ex,
                 string.Format(Resources.ClusterTopologyMonitor_ExceptionDuringMonitoringStop,
                 this.initialHostSpec.Host));
         }
@@ -441,7 +442,11 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         // TODO: Generate correct writer host spec with node name query
         // Workaround: Update the real host for multiaz cluster
         Logger.LogTrace("Writer host before update: {writerHostSpec}", this.writerHostSpec);
-        this.writerHostSpec = this.topologyMap.Get<IList<HostSpec>>(this.clusterId)?.FirstOrDefault(h => h.HostId == this.writerHostSpec!.HostId) ?? this.writerHostSpec;
+        if (this.writerHostSpec is not null)
+        {
+            this.writerHostSpec = this.topologyMap.Get<IList<HostSpec>>(this.clusterId)?.FirstOrDefault(h => h.HostId == this.writerHostSpec.HostId) ?? this.writerHostSpec;
+        }
+
         Logger.LogTrace("Writer host after update: {writerHostSpec}", this.writerHostSpec);
 
         if (writerVerifiedByThisThread)
