@@ -109,7 +109,7 @@ public class AwsWrapperConnection : DbConnection
 
         this.PluginManager = new(connectionProvider, null, this, profile);
 
-        PluginService pluginService = new(this, this.PluginManager, this.ConnectionProperties, this.connectionString, connectionDialect, profile);
+        PluginService pluginService = new(this, this.PluginManager, this.ConnectionProperties, connectionDialect, profile);
 
         this.pluginService = pluginService;
         this.hostListProviderService = pluginService;

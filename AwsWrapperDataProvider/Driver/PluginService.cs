@@ -82,7 +82,6 @@ public class PluginService : IPluginService, IHostListProviderService
         AwsWrapperConnection wrapperConnection,
         ConnectionPluginManager pluginManager,
         Dictionary<string, string> props,
-        string connectionString,
         ITargetConnectionDialect? targetConnectionDialect,
         ConfigurationProfile? configurationProfile)
     {
