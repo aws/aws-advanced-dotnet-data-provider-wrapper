@@ -35,34 +35,34 @@ public class DefaultConnectionPlugin(
     private readonly IConnectionProvider? effectiveConnPrivider = effectiveConnProvider;
     private readonly IPluginService pluginService = pluginService;
 
-    public async Task<T> Execute<T>(
+    public Task<T> Execute<T>(
         object methodInvokedOn,
         string methodName,
         ADONetDelegate<T> methodFunc,
         params object[] methodArgs)
     {
         Logger.LogTrace("Executing method {MethodName} on {MethodInvokedOn} with args: {MethodArgs}", methodName, methodInvokedOn?.GetType().FullName, methodArgs);
-        return await methodFunc();
+        return methodFunc();
     }
 
-    public async Task<DbConnection> OpenConnection(
+    public Task<DbConnection> OpenConnection(
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
         ADONetDelegate<DbConnection> methodFunc,
         bool async)
     {
-        return await this.OpenInternal(hostSpec, props, this.defaultConnProvider, isInitialConnection, async);
+        return this.OpenInternal(hostSpec, props, this.defaultConnProvider, isInitialConnection, async);
     }
 
-    public async Task<DbConnection> ForceOpenConnection(
+    public Task<DbConnection> ForceOpenConnection(
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
         ADONetDelegate<DbConnection> methodFunc,
         bool async)
     {
-        return await this.OpenInternal(hostSpec, props, this.defaultConnProvider, isInitialConnection, async);
+        return this.OpenInternal(hostSpec, props, this.defaultConnProvider, isInitialConnection, async);
     }
 
     /// <summary>

@@ -32,6 +32,7 @@ public class TestPluginOne : IConnectionPlugin
 
     public async Task<T> Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, object[] methodArgs)
     {
+        await Task.Delay(10);
         this.calls.Add(this.GetType().Name + ":before");
 
         T result;
@@ -46,6 +47,7 @@ public class TestPluginOne : IConnectionPlugin
             throw;
         }
 
+        await Task.Delay(10);
         this.calls.Add(this.GetType().Name + ":after");
 
         return result;
