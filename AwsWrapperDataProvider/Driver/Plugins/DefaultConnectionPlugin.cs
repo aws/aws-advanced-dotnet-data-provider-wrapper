@@ -109,7 +109,7 @@ public class DefaultConnectionPlugin(
         this.pluginService.SetAvailability(hostSpec!.AsAliases(), HostAvailability.Available);
         if (isInitialConnection)
         {
-            this.pluginService.UpdateDialect(conn);
+            await this.pluginService.UpdateDialectAsync(conn);
         }
 
         return conn;

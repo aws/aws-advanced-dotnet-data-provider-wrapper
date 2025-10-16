@@ -64,11 +64,11 @@ public class MonitoringRdsHostListProvider : RdsHostListProvider, IBlockingHostL
         ClearAll();
     }
 
-    public IList<HostSpec> ForceRefresh(bool shouldVerifyWriter, long timeoutMs)
+    public async Task<IList<HostSpec>> ForceRefreshAsync(bool shouldVerifyWriter, long timeoutMs)
     {
         IClusterTopologyMonitor monitor = Monitors.Get<IClusterTopologyMonitor>(this.ClusterId) ?? this.InitMonitor();
 
-        IList<HostSpec> hosts = monitor.ForceRefresh(shouldVerifyWriter, timeoutMs);
+        IList<HostSpec> hosts = await monitor.ForceRefreshAsync(shouldVerifyWriter, timeoutMs);
         this.hostList = hosts.ToList();
         return this.hostList.AsReadOnly();
     }

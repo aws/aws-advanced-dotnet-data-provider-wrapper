@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data;
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Exceptions;
 using AwsWrapperDataProvider.Driver.HostInfo;
@@ -46,14 +45,14 @@ public class MySqlDialect : IDialect
         IHostListProviderService hostListProviderService,
         IPluginService pluginService) => new ConnectionStringHostListProvider(props, hostListProviderService);
 
-    public virtual bool IsDialect(IDbConnection conn)
+    public virtual async Task<bool> IsDialect(DbConnection conn)
     {
         try
         {
-            using IDbCommand command = conn.CreateCommand();
+            using DbCommand command = conn.CreateCommand();
             command.CommandText = this.ServerVersionQuery;
-            using IDataReader reader = command.ExecuteReader();
-            while (reader.Read())
+            using DbDataReader reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
             {
                 int columnCount = reader.FieldCount;
                 for (int i = 0; i < columnCount; i++)

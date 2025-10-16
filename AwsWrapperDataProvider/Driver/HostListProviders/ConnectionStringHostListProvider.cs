@@ -72,10 +72,10 @@ public class ConnectionStringHostListProvider : IStaticHostListProvider
         throw new NotSupportedException("ConnectionStringHostListProvider does not support GetClusterId.");
     }
 
-    public HostSpec? IdentifyConnection(DbConnection connection, DbTransaction? transaction = null)
+    public Task<HostSpec?> IdentifyConnectionAsync(DbConnection connection, DbTransaction? transaction = null)
     {
         // TODO Log unsupported operation.
-        return null;
+        return Task.FromResult<HostSpec?>(null);
     }
 
     private void Init()

@@ -209,7 +209,7 @@ public class AuroraInitialConnectionStrategyPluginTests
 
         this.mockPluginService.Setup(x => x.AllHosts).Returns([writerHost]);
         this.mockPluginService.Setup(x => x.CurrentConnection).Returns(this.mockConnection.Object);
-        this.mockPluginService.Setup(x => x.IdentifyConnection(It.IsAny<DbConnection>(), It.IsAny<DbTransaction>())).Returns(actualWriterHost);
+        this.mockPluginService.Setup(x => x.IdentifyConnectionAsync(It.IsAny<DbConnection>(), It.IsAny<DbTransaction>())).ReturnsAsync(actualWriterHost);
         this.mockHostListProviderService.Setup(x => x.IsStaticHostListProvider()).Returns(false);
 
         await this.plugin.InitHostProvider("test-url", props, this.mockHostListProviderService.Object, () => Task.CompletedTask);
@@ -217,7 +217,7 @@ public class AuroraInitialConnectionStrategyPluginTests
         await this.plugin.OpenConnection(writerHost, props, true, methodFunc.Object, true);
 
         this.mockPluginService.Verify(x => x.ForceRefreshHostList(It.IsAny<DbConnection>()), Times.Once);
-        this.mockPluginService.Verify(x => x.IdentifyConnection(It.IsAny<DbConnection>(), It.IsAny<DbTransaction>()), Times.Once);
+        this.mockPluginService.Verify(x => x.IdentifyConnectionAsync(It.IsAny<DbConnection>(), It.IsAny<DbTransaction>()), Times.Once);
     }
 
     [Fact]
@@ -237,7 +237,7 @@ public class AuroraInitialConnectionStrategyPluginTests
         // Setup scenario where only writer exists (no readers)
         this.mockPluginService.Setup(x => x.AllHosts).Returns([writerHost]);
         this.mockPluginService.Setup(x => x.CurrentConnection).Returns(this.mockConnection.Object);
-        this.mockPluginService.Setup(x => x.IdentifyConnection(It.IsAny<DbConnection>(), It.IsAny<DbTransaction>())).Returns(writerHost);
+        this.mockPluginService.Setup(x => x.IdentifyConnectionAsync(It.IsAny<DbConnection>(), It.IsAny<DbTransaction>())).ReturnsAsync(writerHost);
         this.mockPluginService.Setup(x => x.AcceptsStrategy("random")).Returns(true);
         this.mockPluginService.Setup(x => x.GetHostSpecByStrategy(HostRole.Reader, "random")).Returns((HostSpec?)null!);
         this.mockHostListProviderService.Setup(x => x.IsStaticHostListProvider()).Returns(false);

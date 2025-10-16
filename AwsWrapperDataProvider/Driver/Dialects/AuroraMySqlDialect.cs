@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data;
+using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -42,14 +42,14 @@ public class AuroraMySqlDialect : MySqlDialect
         typeof(RdsMultiAzDbClusterMySqlDialect),
     ];
 
-    public override bool IsDialect(IDbConnection connection)
+    public override async Task<bool> IsDialect(DbConnection connection)
     {
         try
         {
-            using IDbCommand command = connection.CreateCommand();
+            using DbCommand command = connection.CreateCommand();
             command.CommandText = IsDialectQuery;
-            using IDataReader reader = command.ExecuteReader();
-            return reader.Read();
+            using DbDataReader reader = await command.ExecuteReaderAsync();
+            return await reader.ReadAsync();
         }
         catch (Exception ex)
         {

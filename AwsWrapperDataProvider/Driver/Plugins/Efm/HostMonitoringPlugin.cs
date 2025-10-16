@@ -92,7 +92,7 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
         {
             Logger.LogTrace(Resources.EfmHostMonitor_ActivatedMonitoring);
 
-            HostSpec monitoringHostSpec = this.GetMonitoringHostSpec();
+            HostSpec monitoringHostSpec = await this.GetMonitoringHostSpec();
 
             monitorContext = this.monitorService!.StartMonitoring(
                 this.pluginService.CurrentConnection!,
@@ -144,7 +144,7 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
             if (type.IsRdsCluster)
             {
                 hostSpec.ResetAliases();
-                this.pluginService.FillAliases(conn, hostSpec);
+                await this.pluginService.FillAliasesAsync(conn, hostSpec);
             }
         }
 
@@ -156,7 +156,7 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
         this.monitorService ??= new HostMonitorService(this.pluginService, this.props);
     }
 
-    public HostSpec GetMonitoringHostSpec()
+    public async Task<HostSpec> GetMonitoringHostSpec()
     {
         if (this.monitoringHostSpec == null)
         {
@@ -168,13 +168,13 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
                 if (rdsUrlType.IsRdsCluster)
                 {
                     Logger.LogTrace("Monitoring HostSpec is associated with a cluster endpoint, plugin needs to identify the cluster connection.");
-                    this.monitoringHostSpec = this.pluginService.IdentifyConnection(this.pluginService.CurrentConnection!, this.pluginService.CurrentTransaction);
+                    this.monitoringHostSpec = await this.pluginService.IdentifyConnectionAsync(this.pluginService.CurrentConnection!, this.pluginService.CurrentTransaction);
                     if (this.monitoringHostSpec == null)
                     {
                         throw new Exception("Unable to identify connection and gather monitoring host spec");
                     }
 
-                    this.pluginService.FillAliases(this.pluginService.CurrentConnection!, this.monitoringHostSpec, this.pluginService.CurrentTransaction);
+                    await this.pluginService.FillAliasesAsync(this.pluginService.CurrentConnection!, this.monitoringHostSpec, this.pluginService.CurrentTransaction);
                 }
             }
             catch (Exception ex)

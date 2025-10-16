@@ -32,5 +32,5 @@ public interface IHostListProvider
 
     string GetClusterId();
 
-    HostSpec? IdentifyConnection(DbConnection connection, DbTransaction? transaction = null);
+    Task<HostSpec?> IdentifyConnectionAsync(DbConnection connection, DbTransaction? transaction = null);
 }

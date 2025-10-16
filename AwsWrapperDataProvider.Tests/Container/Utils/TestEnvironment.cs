@@ -50,7 +50,7 @@ public class TestEnvironment
 
             while ((instanceIDs.Count != testRequest.NumOfInstances ||
                     instanceIDs.Count == 0 ||
-                    !await auroraUtil.IsDBInstanceWriterAsync(instanceIDs[0])) &&
+                    !(await auroraUtil.IsDBInstanceWriterAsync(instanceIDs[0]))) &&
                     stopwatch.Elapsed < timeout)
             {
                 await Task.Delay(5000);
@@ -58,7 +58,7 @@ public class TestEnvironment
                 instanceIDs = auroraUtil.GetAuroraInstanceIds();
             }
 
-            if (instanceIDs.Count == 0 || !await auroraUtil.IsDBInstanceWriterAsync(testInfo.RdsDbName!, instanceIDs[0]))
+            if (instanceIDs.Count == 0 || !(await auroraUtil.IsDBInstanceWriterAsync(testInfo.RdsDbName!, instanceIDs[0])))
             {
                 throw new Exception("First instance is not a writer.");
             }

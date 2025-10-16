@@ -280,7 +280,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         }
     }
 
-    public IList<HostSpec> ForceRefresh(bool shouldVerifyWriter, long timeoutMs)
+    public async Task<IList<HostSpec>> ForceRefreshAsync(bool shouldVerifyWriter, long timeoutMs)
     {
         if (Interlocked.Read(ref this.ignoreNewTopologyRequestsEndTime) > DateTime.UtcNow.Ticks)
         {
@@ -297,7 +297,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "Monitoring connection@{Id} is set to null", RuntimeHelpers.GetHashCode(this.monitoringConnection));
             var connectionToClose = Interlocked.Exchange(ref this.monitoringConnection, null);
             this.isVerifiedWriterConnection = false;
-            this.DisposeConnectionAsync(connectionToClose).GetAwaiter().GetResult();
+            await this.DisposeConnectionAsync(connectionToClose);
         }
 
         return this.WaitTillTopologyGetsUpdated(timeoutMs);
@@ -709,13 +709,13 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         }
 
         var conn = Interlocked.Exchange(ref this.monitoringConnection, null);
-        this.DisposeConnectionAsync(conn).GetAwaiter().GetResult();
+        conn?.Dispose();
 
         var readerConn = Interlocked.Exchange(ref this.nodeThreadsReaderConnection, null);
-        this.DisposeConnectionAsync(readerConn).GetAwaiter().GetResult();
+        readerConn?.Dispose();
 
         var writerConn = Interlocked.Exchange(ref this.nodeThreadsWriterConnection, null);
-        this.DisposeConnectionAsync(writerConn).GetAwaiter().GetResult();
+        writerConn?.Dispose();
 
         this.ctsTopologyMonitoring.Dispose();
     }

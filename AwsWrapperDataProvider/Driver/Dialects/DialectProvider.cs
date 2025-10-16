@@ -13,7 +13,7 @@
 // limitations under the License.
 
 using System.Data;
-
+using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -136,7 +136,7 @@ public class DialectProvider
         return this.dialect;
     }
 
-    public IDialect UpdateDialect(IDbConnection connection, IDialect currDialect)
+    public async Task<IDialect> UpdateDialectAsync(DbConnection connection, IDialect currDialect)
     {
         Logger.LogDebug("UpdateDialect called with current dialect: {currentDialect}", currDialect.GetType().FullName);
         Logger.LogDebug("Connection type: {connectionType}", connection.GetType().FullName);
@@ -152,7 +152,7 @@ public class DialectProvider
 
             try
             {
-                if (dialect.IsDialect(connection))
+                if (await dialect.IsDialect(connection))
                 {
                     Logger.LogDebug("Dialect match found: {dialect}", dialect.GetType().FullName);
                     this.dialect = dialect;
@@ -174,7 +174,7 @@ public class DialectProvider
         Logger.LogDebug("Testing current dialect: {currentDialect}", currDialect.GetType().FullName);
         try
         {
-            if (currDialect.IsDialect(connection))
+            if (await currDialect.IsDialect(connection))
             {
                 Logger.LogDebug("Current dialect is valid: {currentDialect}", currDialect.GetType().FullName);
                 return currDialect;

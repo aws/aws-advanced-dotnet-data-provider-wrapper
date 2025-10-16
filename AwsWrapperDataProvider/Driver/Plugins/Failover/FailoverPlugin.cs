@@ -286,7 +286,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
     private async Task FailoverReader()
     {
         Logger.LogInformation("Starting reader failover process.");
-        this.pluginService.ForceRefreshHostList(false, 0);
+        await this.pluginService.ForceRefreshHostList(false, 0);
 
         var result = await this.GetReaderFailoverConnection(DateTime.UtcNow.AddMilliseconds(this.failoverTimeoutMs));
         Logger.LogInformation("Reader failover successful. Switching to host: {Host}.", result.HostSpec.Host);
@@ -402,7 +402,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
     private async Task FailoverWriter()
     {
         // Force refresh host list and wait for topology to stabilize
-        this.pluginService.ForceRefreshHostList(true, this.failoverTimeoutMs);
+        await this.pluginService.ForceRefreshHostList(true, this.failoverTimeoutMs);
 
         var updatedHosts = this.pluginService.AllHosts;
         var writerCandidate = updatedHosts.FirstOrDefault(x => x.Role == HostRole.Writer);

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data;
+using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Exceptions;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
@@ -45,7 +46,7 @@ public class PgDialect : IDialect
         IHostListProviderService hostListProviderService,
         IPluginService pluginService) => new ConnectionStringHostListProvider(props, hostListProviderService);
 
-    public virtual bool IsDialect(IDbConnection conn)
+    public virtual async Task<bool> IsDialect(DbConnection conn)
     {
         try
         {
@@ -55,11 +56,11 @@ public class PgDialect : IDialect
                 return false;
             }
 
-            using IDbCommand command = conn.CreateCommand();
+            using var command = conn.CreateCommand();
             command.CommandText = "SELECT 1 FROM pg_proc LIMIT 1";
-            using IDataReader reader = command.ExecuteReader();
+            using var reader = await command.ExecuteReaderAsync();
 
-            if (reader.Read())
+            if (await reader.ReadAsync())
             {
                 return true;
             }

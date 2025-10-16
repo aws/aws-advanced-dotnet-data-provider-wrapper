@@ -110,7 +110,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
                 {
                     writerConnectionCandidate = await methodFunc();
                     this.pluginService.ForceRefreshHostList(writerConnectionCandidate);
-                    writerCandidate = this.pluginService.IdentifyConnection(writerConnectionCandidate);
+                    writerCandidate = await this.pluginService.IdentifyConnectionAsync(writerConnectionCandidate);
 
                     if (writerCandidate == null || writerCandidate.Role != HostRole.Writer)
                     {
@@ -191,7 +191,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
                 {
                     readerConnectionCandidate = await methodFunc();
                     this.pluginService.ForceRefreshHostList(readerConnectionCandidate);
-                    readerCandidate = this.pluginService.IdentifyConnection(readerConnectionCandidate);
+                    readerCandidate = await this.pluginService.IdentifyConnectionAsync(readerConnectionCandidate);
 
                     if (readerCandidate == null)
                     {

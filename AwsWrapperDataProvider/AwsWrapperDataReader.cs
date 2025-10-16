@@ -180,5 +180,14 @@ public class AwsWrapperDataReader : DbDataReader
             .GetAwaiter().GetResult();
     }
 
+    public override Task<bool> IsDBNullAsync(int ordinal, CancellationToken cancellationToken)
+    {
+        return WrapperUtils.ExecuteWithPlugins(
+            this.connectionPluginManager,
+            this.targetDataReader,
+            "DbDataReader.IsDBNullAsync",
+            () => this.targetDataReader.IsDBNullAsync(ordinal, cancellationToken));
+    }
+
     public override IEnumerator GetEnumerator() => this.targetDataReader.GetEnumerator();
 }

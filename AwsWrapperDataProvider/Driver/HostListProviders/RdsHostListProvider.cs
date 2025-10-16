@@ -221,7 +221,7 @@ public class RdsHostListProvider : IDynamicHostListProvider
         return this.ClusterId;
     }
 
-    public virtual HostSpec? IdentifyConnection(DbConnection connection, DbTransaction? transaction = null)
+    public virtual async Task<HostSpec?> IdentifyConnectionAsync(DbConnection connection, DbTransaction? transaction = null)
     {
         try
         {
@@ -230,9 +230,9 @@ public class RdsHostListProvider : IDynamicHostListProvider
             {
                 command.CommandText = this.nodeIdQuery;
                 command.Transaction = transaction;
-                using var resultSet = command.ExecuteReader();
+                using var resultSet = await command.ExecuteReaderAsync();
 
-                if (!resultSet.Read())
+                if (!(await resultSet.ReadAsync()))
                 {
                     return null;
                 }

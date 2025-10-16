@@ -241,11 +241,11 @@ public class PluginService : IPluginService, IHostListProviderService
         this.AllHosts = updateHostList;
     }
 
-    public void ForceRefreshHostList(bool shouldVerifyWriter, long timeoutMs)
+    public async Task ForceRefreshHostList(bool shouldVerifyWriter, long timeoutMs)
     {
         if (this.HostListProvider is IBlockingHostListProvider blockingHostListProvider)
         {
-            IList<HostSpec> updateHostList = blockingHostListProvider.ForceRefresh(shouldVerifyWriter, timeoutMs);
+            IList<HostSpec> updateHostList = await blockingHostListProvider.ForceRefreshAsync(shouldVerifyWriter, timeoutMs);
             this.UpdateHostAvailability(updateHostList);
             this.NotifyNodeChangeList(this.AllHosts, updateHostList);
             this.AllHosts = updateHostList;
@@ -270,10 +270,10 @@ public class PluginService : IPluginService, IHostListProviderService
         return this.pluginManager.ForceOpen(hostSpec, props, this.CurrentConnection == null, pluginToSkip, async);
     }
 
-    public void UpdateDialect(DbConnection connection)
+    public async Task UpdateDialectAsync(DbConnection connection)
     {
         IDialect dialect = this.Dialect;
-        this.Dialect = this.dialectProvider.UpdateDialect(connection, this.Dialect);
+        this.Dialect = await this.dialectProvider.UpdateDialectAsync(connection, this.Dialect);
         Logger.LogDebug("Dialect updated to: {dialect}", this.Dialect.GetType().FullName);
 
         if (dialect != this.Dialect)
@@ -285,12 +285,12 @@ public class PluginService : IPluginService, IHostListProviderService
         this.RefreshHostList(connection);
     }
 
-    public HostSpec? IdentifyConnection(DbConnection connection, DbTransaction? transaction = null)
+    public Task<HostSpec?> IdentifyConnectionAsync(DbConnection connection, DbTransaction? transaction = null)
     {
-        return this.hostListProvider.IdentifyConnection(connection, transaction);
+        return this.hostListProvider.IdentifyConnectionAsync(connection, transaction);
     }
 
-    public void FillAliases(DbConnection connection, HostSpec hostSpec, DbTransaction? transaction = null)
+    public async Task FillAliasesAsync(DbConnection connection, HostSpec hostSpec, DbTransaction? transaction = null)
     {
         if (hostSpec.GetAliases().Count > 0)
         {
@@ -304,8 +304,8 @@ public class PluginService : IPluginService, IHostListProviderService
             command.CommandText = this.Dialect.HostAliasQuery;
             command.Transaction = transaction;
 
-            using var resultSet = command.ExecuteReader();
-            while (resultSet.Read())
+            using var resultSet = await command.ExecuteReaderAsync();
+            while (await resultSet.ReadAsync())
             {
                 string alias = resultSet.GetString(0);
                 hostSpec.AddAlias(alias);
@@ -316,7 +316,7 @@ public class PluginService : IPluginService, IHostListProviderService
             // ignore
         }
 
-        HostSpec? existingHostSpec = this.IdentifyConnection(connection, transaction);
+        HostSpec? existingHostSpec = await this.IdentifyConnectionAsync(connection, transaction);
         if (existingHostSpec != null)
         {
             var aliases = existingHostSpec.AsAliases();

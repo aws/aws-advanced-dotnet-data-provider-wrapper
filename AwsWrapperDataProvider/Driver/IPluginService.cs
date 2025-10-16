@@ -100,7 +100,8 @@ public interface IPluginService : IExceptionHandlerService
     /// </summary>
     /// <param name="shouldVerifyWriter">Whether to verify the writer.</param>
     /// <param name="timeoutMs">Timeout in milliseconds.</param>
-    void ForceRefreshHostList(bool shouldVerifyWriter, long timeoutMs);
+    /// <returns>The task.</returns>
+    Task ForceRefreshHostList(bool shouldVerifyWriter, long timeoutMs);
 
     /// <summary>
     /// Connects to a host, skipping a specific plugin.
@@ -127,15 +128,16 @@ public interface IPluginService : IExceptionHandlerService
     /// Updates the dialect based on the given connection.
     /// </summary>
     /// <param name="connection">The database connection.</param>
-    void UpdateDialect(DbConnection connection);
+    /// <returns>The task.</returns>
+    Task UpdateDialectAsync(DbConnection connection);
 
     /// <summary>
     /// Identifies the host associated with the given connection.
     /// </summary>
     /// <param name="connection">The database connection.</param>
     /// <param name="transaction">The database transaction.</param>
-    /// <returns>The host specification.</returns>
-    HostSpec? IdentifyConnection(DbConnection connection, DbTransaction? transaction = null);
+    /// <returns>The host specification task.</returns>
+    Task<HostSpec?> IdentifyConnectionAsync(DbConnection connection, DbTransaction? transaction = null);
 
     /// <summary>
     /// Fills in aliases for the given host specification using the connection.
@@ -143,7 +145,8 @@ public interface IPluginService : IExceptionHandlerService
     /// <param name="connection">The database connection.</param>
     /// <param name="hostSpec">The host specification.</param>
     /// <param name="transaction">The database transaction.</param>
-    void FillAliases(DbConnection connection, HostSpec hostSpec, DbTransaction? transaction = null);
+    /// <returns>The task.</returns>
+    Task FillAliasesAsync(DbConnection connection, HostSpec hostSpec, DbTransaction? transaction = null);
 
     /// <summary>
     /// Gets the connection provider.

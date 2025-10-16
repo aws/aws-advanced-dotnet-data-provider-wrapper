@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data;
+using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Exceptions;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
@@ -46,9 +46,9 @@ public class UnknownDialect : IDialect
         IHostListProviderService hostListProviderService,
         IPluginService pluginService) => new ConnectionStringHostListProvider(props, hostListProviderService);
 
-    public bool IsDialect(IDbConnection conn)
+    public Task<bool> IsDialect(DbConnection conn)
     {
-        return false;
+        return Task.FromResult(false);
     }
 
     public void PrepareConnectionProperties(Dictionary<string, string> props, HostSpec hostSpec)
