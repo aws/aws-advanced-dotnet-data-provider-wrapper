@@ -25,14 +25,16 @@ namespace AwsWrapperDataProvider;
 public class AwsWrapperCommand : DbCommand
 {
     private static readonly ILogger<AwsWrapperCommand> Logger = LoggerUtils.GetLogger<AwsWrapperCommand>();
-    protected Type? _targetDbCommandType;
-    internal DbConnection? TargetDbConnection;
-    protected AwsWrapperConnection? _wrapperConnection;
+
     internal DbCommand? TargetDbCommand;
-    protected string? _commandText;
-    protected int? _commandTimeout;
+    internal DbConnection? TargetDbConnection;
+
+    protected Type? targetDbCommandType;
+    protected AwsWrapperConnection? wrapperConnection;
+    protected string? commandText;
+    protected int? commandTimeout;
     protected AwsWrapperTransaction? wrapperTransaction;
-    protected ConnectionPluginManager? _pluginManager;
+    protected ConnectionPluginManager? pluginManager;
 
     public AwsWrapperCommand()
     {
@@ -41,22 +43,22 @@ public class AwsWrapperCommand : DbCommand
     internal AwsWrapperCommand(DbCommand command, AwsWrapperConnection connection, ConnectionPluginManager pluginManager)
     {
         this.TargetDbCommand = command;
-        this._targetDbCommandType = this.TargetDbCommand.GetType();
-        this._wrapperConnection = connection;
+        this.targetDbCommandType = this.TargetDbCommand.GetType();
+        this.wrapperConnection = connection;
         this.TargetDbConnection = connection.TargetDbConnection;
-        this._pluginManager = pluginManager;
+        this.pluginManager = pluginManager;
     }
 
     public AwsWrapperCommand(DbCommand command, DbConnection? connection)
     {
         this.TargetDbCommand = command;
-        this._targetDbCommandType = this.TargetDbCommand.GetType();
+        this.targetDbCommandType = this.TargetDbCommand.GetType();
         this.TargetDbConnection = connection;
         if (connection is AwsWrapperConnection awsWrapperConnection)
         {
-            this._wrapperConnection = awsWrapperConnection;
+            this.wrapperConnection = awsWrapperConnection;
             this.TargetDbConnection = awsWrapperConnection.TargetDbConnection;
-            this._pluginManager = awsWrapperConnection.PluginManager;
+            this.pluginManager = awsWrapperConnection.PluginManager;
         }
         else
         {
@@ -74,13 +76,13 @@ public class AwsWrapperCommand : DbCommand
 
     public AwsWrapperCommand(Type targetDbCommandType, string? commandText, AwsWrapperConnection? connection)
     {
-        this._targetDbCommandType = targetDbCommandType;
-        this._commandText = commandText;
+        this.targetDbCommandType = targetDbCommandType;
+        this.commandText = commandText;
         if (connection != null)
         {
-            this._wrapperConnection = connection;
+            this.wrapperConnection = connection;
             this.TargetDbConnection = connection.TargetDbConnection;
-            this._pluginManager = connection.PluginManager;
+            this.pluginManager = connection.PluginManager;
             this.EnsureTargetDbCommandCreated();
             this.TargetDbCommand!.Connection = this.TargetDbConnection;
         }
@@ -89,10 +91,10 @@ public class AwsWrapperCommand : DbCommand
     [AllowNull]
     public override string CommandText
     {
-        get => this._commandText ?? string.Empty;
+        get => this.commandText ?? string.Empty;
         set
         {
-            this._commandText = value;
+            this.commandText = value;
             if (this.TargetDbCommand != null)
             {
                 this.TargetDbCommand.CommandText = value ?? string.Empty;
@@ -149,14 +151,14 @@ public class AwsWrapperCommand : DbCommand
 
     protected override DbConnection? DbConnection
     {
-        get => this._wrapperConnection;
+        get => this.wrapperConnection;
         set
         {
             if (value == null)
             {
-                this._wrapperConnection = null;
+                this.wrapperConnection = null;
                 this.TargetDbConnection = null;
-                this._pluginManager = null;
+                this.pluginManager = null;
                 return;
             }
 
@@ -165,12 +167,12 @@ public class AwsWrapperCommand : DbCommand
                 throw new InvalidOperationException("Provided connection is not of type AwsWrapperConnection.");
             }
 
-            this._wrapperConnection = (AwsWrapperConnection)value;
-            this.TargetDbConnection = this._wrapperConnection.TargetDbConnection;
-            this._pluginManager = this._wrapperConnection.PluginManager;
+            this.wrapperConnection = (AwsWrapperConnection)value;
+            this.TargetDbConnection = this.wrapperConnection.TargetDbConnection;
+            this.pluginManager = this.wrapperConnection.PluginManager;
             if (this.TargetDbCommand != null)
             {
-                this.TargetDbCommand.Connection = this._wrapperConnection?.TargetDbConnection;
+                this.TargetDbCommand.Connection = this.wrapperConnection?.TargetDbConnection;
             }
         }
     }
@@ -217,7 +219,7 @@ public class AwsWrapperCommand : DbCommand
     {
         this.EnsureTargetDbCommandCreated();
         WrapperUtils.RunWithPlugins(
-            this._pluginManager!,
+            this.pluginManager!,
             this.TargetDbCommand!,
             "DbCommand.Cancel",
             () =>
@@ -231,7 +233,7 @@ public class AwsWrapperCommand : DbCommand
     {
         this.EnsureTargetDbCommandCreated();
         return WrapperUtils.ExecuteWithPlugins(
-            this._pluginManager!,
+            this.pluginManager!,
             this.TargetDbCommand!,
             "DbCommand.ExecuteNonQuery",
             () => Task.FromResult(this.TargetDbCommand!.ExecuteNonQuery())).GetAwaiter().GetResult();
@@ -241,7 +243,7 @@ public class AwsWrapperCommand : DbCommand
     {
         this.EnsureTargetDbCommandCreated();
         return WrapperUtils.ExecuteWithPlugins(
-            this._pluginManager!,
+            this.pluginManager!,
             this.TargetDbCommand!,
             "DbCommand.ExecuteNonQueryAsync",
             () => this.TargetDbCommand!.ExecuteNonQueryAsync(cancellationToken));
@@ -251,7 +253,7 @@ public class AwsWrapperCommand : DbCommand
     {
         this.EnsureTargetDbCommandCreated();
         return WrapperUtils.ExecuteWithPlugins(
-            this._pluginManager!,
+            this.pluginManager!,
             this.TargetDbCommand!,
             "DbCommand.ExecuteScalar",
             () => Task.FromResult(this.TargetDbCommand!.ExecuteScalar())).GetAwaiter().GetResult();
@@ -261,7 +263,7 @@ public class AwsWrapperCommand : DbCommand
     {
         this.EnsureTargetDbCommandCreated();
         return WrapperUtils.ExecuteWithPlugins(
-            this._pluginManager!,
+            this.pluginManager!,
             this.TargetDbCommand!,
             "DbCommand.ExecuteScalarAsync",
             () => this.TargetDbCommand!.ExecuteScalarAsync(cancellationToken));
@@ -271,7 +273,7 @@ public class AwsWrapperCommand : DbCommand
     {
         this.EnsureTargetDbCommandCreated();
         WrapperUtils.RunWithPlugins(
-            this._pluginManager!,
+            this.pluginManager!,
             this.TargetDbCommand!,
             "DbCommand.Prepare",
             () =>
@@ -285,7 +287,7 @@ public class AwsWrapperCommand : DbCommand
     {
         this.EnsureTargetDbCommandCreated();
         return WrapperUtils.RunWithPlugins(
-            this._pluginManager!,
+            this.pluginManager!,
             this.TargetDbCommand!,
             "DbCommand.PrepareAsync",
             () => this.TargetDbCommand!.PrepareAsync(cancellationToken));
@@ -295,7 +297,7 @@ public class AwsWrapperCommand : DbCommand
     {
         this.EnsureTargetDbCommandCreated();
         return WrapperUtils.ExecuteWithPlugins(
-            this._pluginManager!,
+            this.pluginManager!,
             this.TargetDbCommand!,
             "DbCommand.CreateParameter",
             () => Task.FromResult(this.TargetDbCommand!.CreateParameter()))
@@ -306,30 +308,30 @@ public class AwsWrapperCommand : DbCommand
     {
         this.EnsureTargetDbCommandCreated();
         DbDataReader reader = WrapperUtils.ExecuteWithPlugins(
-            this._pluginManager!,
+            this.pluginManager!,
             this.TargetDbCommand!,
             "DbCommand.ExecuteReader",
             () => Task.FromResult(this.TargetDbCommand!.ExecuteReader(behavior)))
             .GetAwaiter().GetResult();
-        return new AwsWrapperDataReader(reader, this._pluginManager!);
+        return new AwsWrapperDataReader(reader, this.pluginManager!);
     }
 
     protected override async Task<DbDataReader> ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
     {
         this.EnsureTargetDbCommandCreated();
         DbDataReader reader = await WrapperUtils.ExecuteWithPlugins(
-            this._pluginManager!,
+            this.pluginManager!,
             this.TargetDbCommand!,
             "DbCommand.ExecuteReaderAsync",
             () => this.TargetDbCommand!.ExecuteReaderAsync(behavior, cancellationToken));
-        return new AwsWrapperDataReader(reader, this._pluginManager!);
+        return new AwsWrapperDataReader(reader, this.pluginManager!);
     }
 
     protected override void Dispose(bool disposing)
     {
         if (disposing)
         {
-            this._wrapperConnection?.UnregisterWrapperCommand(this);
+            this.wrapperConnection?.UnregisterWrapperCommand(this);
             if (this.TargetDbCommand != null)
             {
                 this.TargetDbCommand.Dispose();
@@ -340,7 +342,7 @@ public class AwsWrapperCommand : DbCommand
 
     public override async ValueTask DisposeAsync()
     {
-        this._wrapperConnection?.UnregisterWrapperCommand(this);
+        this.wrapperConnection?.UnregisterWrapperCommand(this);
         if (this.TargetDbCommand is not null)
         {
             await this.TargetDbCommand.DisposeAsync();
@@ -351,9 +353,9 @@ public class AwsWrapperCommand : DbCommand
     {
         if (this.TargetDbCommand == null)
         {
-            if (this._targetDbCommandType != null)
+            if (this.targetDbCommandType != null)
             {
-                this.TargetDbCommand = Activator.CreateInstance(this._targetDbCommandType) as DbCommand;
+                this.TargetDbCommand = Activator.CreateInstance(this.targetDbCommandType) as DbCommand;
                 if (this.TargetDbCommand == null)
                 {
                     throw new Exception("Provided type doesn't implement IDbCommand.");
@@ -362,9 +364,9 @@ public class AwsWrapperCommand : DbCommand
             else if (this.TargetDbConnection != null)
             {
                 this.TargetDbCommand = this.TargetDbConnection.CreateCommand();
-                if (this._targetDbCommandType == null)
+                if (this.targetDbCommandType == null)
                 {
-                    this._targetDbCommandType = this.TargetDbCommand?.GetType();
+                    this.targetDbCommandType = this.TargetDbCommand?.GetType();
                 }
             }
 
@@ -373,14 +375,14 @@ public class AwsWrapperCommand : DbCommand
                 this.TargetDbCommand!.Connection = this.TargetDbConnection;
             }
 
-            if (this._commandText != null)
+            if (this.commandText != null)
             {
-                this.TargetDbCommand!.CommandText = this._commandText;
+                this.TargetDbCommand!.CommandText = this.commandText;
             }
 
-            if (this._commandTimeout != null)
+            if (this.commandTimeout != null)
             {
-                this.TargetDbCommand!.CommandTimeout = this._commandTimeout.Value;
+                this.TargetDbCommand!.CommandTimeout = this.commandTimeout.Value;
             }
 
             if (this.wrapperTransaction != null)
