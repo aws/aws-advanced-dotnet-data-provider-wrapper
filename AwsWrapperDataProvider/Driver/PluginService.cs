@@ -256,23 +256,18 @@ public class PluginService : IPluginService, IHostListProviderService
         }
     }
 
-    public async Task<DbConnection> OpenConnection(
+    public Task<DbConnection> OpenConnection(
         HostSpec hostSpec,
         Dictionary<string, string> props,
         IConnectionPlugin? pluginToSkip,
         bool async)
     {
-        return await this.pluginManager.Open(hostSpec, props, this.CurrentConnection == null, pluginToSkip, async);
+        return this.pluginManager.Open(hostSpec, props, this.CurrentConnection == null, pluginToSkip, async);
     }
 
-    public async Task<DbConnection> ForceOpenConnection(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin? pluginToSkip, bool async)
+    public Task<DbConnection> ForceOpenConnection(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin? pluginToSkip, bool async)
     {
-        return await this.pluginManager.ForceOpen(hostSpec, props, this.CurrentConnection == null, pluginToSkip, async);
-    }
-
-    public Task OpenConnectionAsync(HostSpec hostSpec, Dictionary<string, string> props)
-    {
-        throw new NotImplementedException();
+        return this.pluginManager.ForceOpen(hostSpec, props, this.CurrentConnection == null, pluginToSkip, async);
     }
 
     public void UpdateDialect(DbConnection connection)

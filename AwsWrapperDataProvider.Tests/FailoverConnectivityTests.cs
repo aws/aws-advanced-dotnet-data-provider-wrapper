@@ -79,7 +79,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
 
         await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
         {
-            this.logger.WriteLine("Executing instance ID query to trigger failover...");
+            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Executing instance ID query to trigger failover...");
             await AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, async);
         });
 
@@ -132,7 +132,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
 
         await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
         {
-            this.logger.WriteLine("Executing instance ID query to trigger failover...");
+            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Executing instance ID query to trigger failover...");
             await AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, async);
         });
 
@@ -240,7 +240,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
 
         await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
         {
-            this.logger.WriteLine("Executing instance ID query to trigger failover...");
+            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Executing instance ID query to trigger failover...");
             await AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, async);
         });
     }
@@ -290,7 +290,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
 
         await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
         {
-            this.logger.WriteLine("Executing instance ID query to trigger failover...");
+            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Executing instance ID query to trigger failover...");
             await AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, async);
         });
 

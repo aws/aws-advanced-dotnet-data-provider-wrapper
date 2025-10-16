@@ -151,10 +151,10 @@ public class AwsWrapperConnection : DbConnection
             databaseName).GetAwaiter().GetResult();
     }
 
-    public override async Task ChangeDatabaseAsync(string databaseName, CancellationToken cancellationToken = default)
+    public override Task ChangeDatabaseAsync(string databaseName, CancellationToken cancellationToken = default)
     {
         this.database = databaseName;
-        await WrapperUtils.RunWithPlugins(
+        return WrapperUtils.RunWithPlugins(
             this.PluginManager,
             this.pluginService.CurrentConnection!,
             "DbConnection.ChangeDatabaseAsync",
