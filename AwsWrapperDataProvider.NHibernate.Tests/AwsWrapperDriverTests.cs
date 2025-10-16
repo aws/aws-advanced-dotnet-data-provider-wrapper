@@ -12,15 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data;
 using System.Reflection;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
 using AwsWrapperDataProvider.Tests;
 using AwsWrapperDataProvider.Tests.Container.Utils;
+using MySql.Data.MySqlClient;
 using NHibernate;
 using NHibernate.Cfg;
 using NHibernate.Criterion;
 using NHibernate.Driver;
 using NHibernate.Driver.MySqlConnector;
+using Npgsql;
 
 [assembly: CollectionBehavior(DisableTestParallelization = true)]
 [assembly: CaptureConsole]
@@ -284,6 +287,100 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                 Assert.Contains(persons, p => p.FirstName == "Joe");
                 Assert.Equal(3, persons.Count);
             }
+        }
+
+        [Fact]
+        [Trait("Category", "Integration")]
+        [Trait("Database", "pg-nh")]
+        [Trait("Engine", "aurora")]
+        public async Task WriterFailover_FailOnConnectionInvocation()
+        {
+            Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
+            string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
+            var initialWriterInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.GetInstance(currentWriter);
+
+            var connectionString = ConnectionStringHelper.GetUrl(
+                Engine,
+                initialWriterInstanceInfo.Host,
+                initialWriterInstanceInfo.Port,
+                Username,
+                Password,
+                ProxyDatabaseInfo.DefaultDbName,
+                2,
+                10,
+                "failover");
+            connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}; Pooling=false";
+
+            using AwsWrapperConnection connection = Engine switch
+            {
+                DatabaseEngine.MYSQL => new AwsWrapperConnection<MySqlConnection>(connectionString),
+                DatabaseEngine.PG => new AwsWrapperConnection<NpgsqlConnection>(connectionString),
+                _ => throw new NotSupportedException($"Unsupported engine: {Engine}"),
+            };
+            connection.Open();
+            Assert.Equal(ConnectionState.Open, connection.State);
+
+            var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var crashTask = AuroraUtils.CrashInstance(currentWriter, tcs);
+
+            // Wait for simulation to start
+            await tcs.Task;
+
+            Assert.Throws<FailoverSuccessException>(() =>
+            {
+                AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
+            });
+
+            await crashTask;
+
+            Assert.NotNull(AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment));
+        }
+
+        [Fact]
+        [Trait("Category", "Integration")]
+        [Trait("Database", "pg-nh")]
+        [Trait("Engine", "aurora")]
+        public async Task WriterFailover_FailOnConnectionInvocation_WithPooling()
+        {
+            Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
+            string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
+            var initialWriterInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.GetInstance(currentWriter);
+
+            var connectionString = ConnectionStringHelper.GetUrl(
+                Engine,
+                initialWriterInstanceInfo.Host,
+                initialWriterInstanceInfo.Port,
+                Username,
+                Password,
+                ProxyDatabaseInfo.DefaultDbName,
+                2,
+                10,
+                "failover");
+            connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}; Pooling=true";
+
+            using AwsWrapperConnection connection = Engine switch
+            {
+                DatabaseEngine.MYSQL => new AwsWrapperConnection<MySqlConnection>(connectionString),
+                DatabaseEngine.PG => new AwsWrapperConnection<NpgsqlConnection>(connectionString),
+                _ => throw new NotSupportedException($"Unsupported engine: {Engine}"),
+            };
+            connection.Open();
+            Assert.Equal(ConnectionState.Open, connection.State);
+
+            var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var crashTask = AuroraUtils.CrashInstance(currentWriter, tcs);
+
+            // Wait for simulation to start
+            await tcs.Task;
+
+            Assert.Throws<FailoverSuccessException>(() =>
+            {
+                AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
+            });
+
+            await crashTask;
+
+            Assert.NotNull(AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment));
         }
 
         // [Fact]

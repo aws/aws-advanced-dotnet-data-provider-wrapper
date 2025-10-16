@@ -37,9 +37,8 @@ public class FailoverConnectivityTests : IntegrationTestBase
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     [Trait("Category", "Integration")]
-    // [Trait("Database", "mysql")]
-    // [Trait("Database", "pg")]
-    [Trait("Database", "pg-nh")]
+    [Trait("Database", "mysql")]
+    [Trait("Database", "pg")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
     public async Task WriterFailover_FailOnConnectionInvocation()
@@ -92,11 +91,10 @@ public class FailoverConnectivityTests : IntegrationTestBase
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     [Trait("Category", "Integration")]
-    // [Trait("Database", "mysql")]
-    // [Trait("Database", "pg")]
-    [Trait("Database", "pg-nh")]
+    [Trait("Database", "mysql")]
+    [Trait("Database", "pg")]
     [Trait("Engine", "aurora")]
-    // [Trait("Engine", "multi-az-cluster")]
+    [Trait("Engine", "multi-az-cluster")]
     public async Task WriterFailover_FailOnConnectionInvocation_WithPooling()
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
