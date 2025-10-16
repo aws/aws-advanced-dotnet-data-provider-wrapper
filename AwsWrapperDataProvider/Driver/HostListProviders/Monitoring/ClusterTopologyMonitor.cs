@@ -441,7 +441,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         // TODO: Generate correct writer host spec with node name query
         // Workaround: Update the real host for multiaz cluster
         Logger.LogTrace("Writer host before update: {writerHostSpec}", this.writerHostSpec);
-        this.writerHostSpec = hosts?.FirstOrDefault(h => h.HostId == this.writerHostSpec!.HostId) ?? this.writerHostSpec;
+        this.writerHostSpec = this.topologyMap.Get<IList<HostSpec>>(this.clusterId)?.FirstOrDefault(h => h.HostId == this.writerHostSpec!.HostId) ?? this.writerHostSpec;
         Logger.LogTrace("Writer host after update: {writerHostSpec}", this.writerHostSpec);
 
         if (writerVerifiedByThisThread)

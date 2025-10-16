@@ -802,7 +802,7 @@ public class AuroraTestUtils
         string? result;
         if (async)
         {
-            result = Convert.ToString(await command.ExecuteScalarAsync());
+            result = Convert.ToString(await command.ExecuteScalarAsync(TestContext.Current.CancellationToken));
         }
         else
         {

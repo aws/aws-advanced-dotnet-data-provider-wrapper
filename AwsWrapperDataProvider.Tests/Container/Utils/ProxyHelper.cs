@@ -104,9 +104,7 @@ public class ProxyHelper
     public static async Task DisableConnectivityAsync(string instanceName)
     {
         Proxy proxy = TestEnvironment.Env.GetProxy(instanceName);
-        Console.WriteLine($"Before disable, Proxy {proxy.Name} enabled: {proxy.Enabled}");
         await DisableConnectivityAsync(proxy);
-        Console.WriteLine($"After disable, Proxy {proxy.Name} enabled: {proxy.Enabled}");
     }
 
     private static async Task DisableConnectivityAsync(Proxy proxy)

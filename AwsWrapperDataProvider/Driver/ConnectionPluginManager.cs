@@ -183,7 +183,7 @@ public class ConnectionPluginManager
         // Execute the plugin chain and return the connection
         return this.ExecuteWithSubscribedPlugins<DbConnection>(
             ConnectMethod,
-            async (plugin, methodFunc) => await plugin.OpenConnection(hostSpec, props, isInitialConnection, () => methodFunc(), async),
+            async (plugin, methodFunc) => await plugin.OpenConnection(hostSpec, props, isInitialConnection, methodFunc, async),
             () => throw new UnreachableException("Function should not be called."),
             pluginToSkip);
     }
@@ -198,7 +198,7 @@ public class ConnectionPluginManager
         // Execute the plugin chain and return the connection
         return this.ExecuteWithSubscribedPlugins<DbConnection>(
             ForceConnectMethod,
-            async (plugin, methodFunc) => await plugin.ForceOpenConnection(hostSpec, props, isInitialConnection, () => methodFunc(), async),
+            async (plugin, methodFunc) => await plugin.ForceOpenConnection(hostSpec, props, isInitialConnection, methodFunc, async),
             () => throw new UnreachableException("Function should not be called."),
             pluginToSkip);
     }
