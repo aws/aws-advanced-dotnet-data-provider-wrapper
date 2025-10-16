@@ -22,7 +22,7 @@ public class PersonDbContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         => optionsBuilder.UseAwsWrapper(
-                "Host=<insert_rds_instance_here>;Username=pgadmin;Password=my_password_2020;Database=postgres;",
+                "Host=<insert_rds_instance_here>;Username=pgadmin;Password=<password>;Database=postgres;",
                 wrappedOptionBuilder => wrappedOptionBuilder.UseNpgsql());
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
