@@ -49,6 +49,8 @@ public class AwsWrapperConnection : DbConnection
 
     internal DbConnection? TargetDbConnection => this.pluginService.CurrentConnection;
 
+    internal readonly List<AwsWrapperCommand> ActiveWrapperCommands = new();
+
     [AllowNull]
     public override string ConnectionString
     {
@@ -105,9 +107,9 @@ public class AwsWrapperConnection : DbConnection
 
         DbConnectionProvider connectionProvider = new();
 
-        this.PluginManager = new(connectionProvider, null, this);
+        this.PluginManager = new(connectionProvider, null, this, profile);
 
-        PluginService pluginService = new(this.targetType, this.PluginManager, this.ConnectionProperties, this.connectionString, connectionDialect, profile);
+        PluginService pluginService = new(this, this.PluginManager, this.ConnectionProperties, connectionDialect, profile);
 
         this.pluginService = pluginService;
         this.hostListProviderService = pluginService;
@@ -270,7 +272,9 @@ public class AwsWrapperConnection : DbConnection
         Logger.LogDebug("DbCommand created for DbConnection@{Id}", RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection));
 
         this.ConnectionProperties[PropertyDefinition.TargetCommandType.Name] = typeof(TCommand).AssemblyQualifiedName!;
-        return new AwsWrapperCommand<TCommand>(command, this, this.PluginManager);
+        var wrapperCommand = new AwsWrapperCommand<TCommand>(command, this, this.PluginManager);
+        this.ActiveWrapperCommands.Add(wrapperCommand);
+        return wrapperCommand;
     }
 
     protected override DbBatch CreateDbBatch() => this.CreateBatch();
@@ -321,6 +325,11 @@ public class AwsWrapperConnection : DbConnection
         throw new Exception(string.Format(Properties.Resources.Error_CantLoadTargetConnectionType, targetConnectionTypeString));
     }
 
+    internal void UnregisterWrapperCommand(AwsWrapperCommand command)
+    {
+        this.ActiveWrapperCommands.Remove(command);
+    }
+
     public static void ClearCache()
     {
         RdsHostListProvider.ClearAll();
@@ -346,5 +355,5 @@ public class AwsWrapperConnection<TConn> : AwsWrapperConnection where TConn : Db
         profile)
     { }
 
-    public new TConn? TargetDbConnection => this.pluginService?.CurrentConnection as TConn;
+    internal new TConn? TargetDbConnection => this.pluginService?.CurrentConnection as TConn;
 }

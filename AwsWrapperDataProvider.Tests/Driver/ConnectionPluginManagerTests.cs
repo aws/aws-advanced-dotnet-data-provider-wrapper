@@ -32,7 +32,7 @@ public class ConnectionPluginManagerTests
     {
         this.mockConnectionProvider = Mock.Of<IConnectionProvider>();
         this.mockWrapperConnection = new Mock<AwsWrapperConnection<MySqlConnection>>(
-            "Server=<insert_rds_instance_here>;User ID=admin;Password=my_password_2020;Initial Catalog=test;").Object;
+            "Server=<insert_rds_instance_here>;User ID=admin;Password=<password>;Initial Catalog=test;").Object;
     }
 
     [Fact]
