@@ -46,9 +46,9 @@ public class AuroraMySqlDialect : MySqlDialect
     {
         try
         {
-            using DbCommand command = connection.CreateCommand();
+            await using var command = connection.CreateCommand();
             command.CommandText = IsDialectQuery;
-            using DbDataReader reader = await command.ExecuteReaderAsync();
+            await using var reader = await command.ExecuteReaderAsync();
             return await reader.ReadAsync();
         }
         catch (Exception ex)

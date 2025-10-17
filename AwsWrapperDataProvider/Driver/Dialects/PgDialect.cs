@@ -56,9 +56,9 @@ public class PgDialect : IDialect
                 return false;
             }
 
-            using var command = conn.CreateCommand();
+            await using var command = conn.CreateCommand();
             command.CommandText = "SELECT 1 FROM pg_proc LIMIT 1";
-            using var reader = await command.ExecuteReaderAsync();
+            await using var reader = await command.ExecuteReaderAsync();
 
             if (await reader.ReadAsync())
             {

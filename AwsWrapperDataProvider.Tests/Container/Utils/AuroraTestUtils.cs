@@ -184,7 +184,7 @@ public class AuroraTestUtils
                 {
                     try
                     {
-                        using var connection = DriverHelper.CreateUnopenedConnection(engine, url);
+                        await using var connection = DriverHelper.CreateUnopenedConnection(engine, url);
                         await connection.OpenAsync(cts.Token);
                         if (connection.State == ConnectionState.Open)
                         {
@@ -798,7 +798,7 @@ public class AuroraTestUtils
 
     public async Task<string> ExecuteQuery(DbConnection connection, DatabaseEngine engine, DatabaseEngineDeployment deployment, string query, bool async)
     {
-        using var command = connection.CreateCommand();
+        await using var command = connection.CreateCommand();
         command.CommandText = query;
         string? result;
         if (async)

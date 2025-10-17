@@ -59,9 +59,9 @@ public class AuroraPgDialect : PgDialect
 
         try
         {
-            using var command = connection.CreateCommand();
+            await using var command = connection.CreateCommand();
             command.CommandText = $"{ExtensionsSql}; {TopologySql}";
-            using var reader = await command.ExecuteReaderAsync();
+            await using var reader = await command.ExecuteReaderAsync();
             if (await reader.ReadAsync())
             {
                 bool auroraUtils = reader.GetBoolean(reader.GetOrdinal("aurora_stat_utils"));

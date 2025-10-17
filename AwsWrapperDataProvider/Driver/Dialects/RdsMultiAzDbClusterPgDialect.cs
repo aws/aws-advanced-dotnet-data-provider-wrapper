@@ -52,9 +52,9 @@ public class RdsMultiAzDbClusterPgDialect : PgDialect
     {
         try
         {
-            using var isDialectCommand = connection.CreateCommand();
+            await using var isDialectCommand = connection.CreateCommand();
             isDialectCommand.CommandText = IsRdsClusterQuery;
-            using var isDialectReader = await isDialectCommand.ExecuteReaderAsync();
+            await using var isDialectReader = await isDialectCommand.ExecuteReaderAsync();
             return await isDialectReader.ReadAsync() && !(await isDialectReader.IsDBNullAsync(0));
         }
         catch (Exception ex)

@@ -37,9 +37,9 @@ public class RdsMySqlDialect : MySqlDialect
 
         try
         {
-            using var command = conn.CreateCommand();
+            await using var command = conn.CreateCommand();
             command.CommandText = this.ServerVersionQuery;
-            using var reader = await command.ExecuteReaderAsync();
+            await using var reader = await command.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
                 int columnCount = reader.FieldCount;

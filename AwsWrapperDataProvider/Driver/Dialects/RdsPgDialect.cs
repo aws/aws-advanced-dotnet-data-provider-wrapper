@@ -42,9 +42,9 @@ public class RdsPgDialect : PgDialect
 
         try
         {
-            using var command = conn.CreateCommand();
+            await using var command = conn.CreateCommand();
             command.CommandText = ExtensionsSql;
-            using var reader = await command.ExecuteReaderAsync();
+            await using var reader = await command.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
                 bool rdsTools = reader.GetBoolean(reader.GetOrdinal("rds_tools"));

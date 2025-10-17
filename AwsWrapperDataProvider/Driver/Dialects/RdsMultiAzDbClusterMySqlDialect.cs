@@ -44,31 +44,31 @@ public class RdsMultiAzDbClusterMySqlDialect : MySqlDialect
     {
         try
         {
-            using (var topologyTableExistCommand = connection.CreateCommand())
+            await using (var topologyTableExistCommand = connection.CreateCommand())
             {
                 topologyTableExistCommand.CommandText = TopologyTableExistQuery;
-                using var topologyTableExistReader = await topologyTableExistCommand.ExecuteReaderAsync();
+                await using var topologyTableExistReader = await topologyTableExistCommand.ExecuteReaderAsync();
                 if (!(await topologyTableExistReader.ReadAsync()))
                 {
                     return false;
                 }
             }
 
-            using (var topologyCommand = connection.CreateCommand())
+            await using (var topologyCommand = connection.CreateCommand())
             {
                 topologyCommand.CommandText = TopologyQuery;
-                using var topologyReader = await topologyCommand.ExecuteReaderAsync();
+                await using var topologyReader = await topologyCommand.ExecuteReaderAsync();
                 if (!(await topologyReader.ReadAsync()))
                 {
                     return false;
                 }
             }
 
-            using (var isDialectCommand = connection.CreateCommand())
+            await using (var isDialectCommand = connection.CreateCommand())
             {
                 isDialectCommand.CommandText = IsDialectQuery;
 
-                using var reader = await isDialectCommand.ExecuteReaderAsync(CommandBehavior.SingleRow);
+                await using var reader = await isDialectCommand.ExecuteReaderAsync(CommandBehavior.SingleRow);
                 if (!(await reader.ReadAsync()))
                 {
                     return false;

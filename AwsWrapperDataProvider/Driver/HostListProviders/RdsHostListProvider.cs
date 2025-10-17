@@ -226,11 +226,11 @@ public class RdsHostListProvider : IDynamicHostListProvider
         try
         {
             string instanceName;
-            using (var command = connection.CreateCommand())
+            await using (var command = connection.CreateCommand())
             {
                 command.CommandText = this.nodeIdQuery;
                 command.Transaction = transaction;
-                using var resultSet = await command.ExecuteReaderAsync();
+                await using var resultSet = await command.ExecuteReaderAsync();
 
                 if (!(await resultSet.ReadAsync()))
                 {

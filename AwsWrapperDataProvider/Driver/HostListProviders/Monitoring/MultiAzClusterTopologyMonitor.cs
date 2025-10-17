@@ -67,7 +67,7 @@ public class MultiAzClusterTopologyMonitor : ClusterTopologyMonitor
     {
         try
         {
-            using (var command = connection.CreateCommand())
+            await using (var command = connection.CreateCommand())
             {
                 command.CommandText = this.fetchWriterNodeQuery;
                 await using var reader = await command.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
@@ -86,10 +86,10 @@ public class MultiAzClusterTopologyMonitor : ClusterTopologyMonitor
                 }
             }
 
-            using (var nodeIdCommand = connection.CreateCommand())
+            await using (var nodeIdCommand = connection.CreateCommand())
             {
                 nodeIdCommand.CommandText = this.nodeIdQuery;
-                using var reader = await nodeIdCommand.ExecuteReaderAsync();
+                await using var reader = await nodeIdCommand.ExecuteReaderAsync();
                 if (await reader.ReadAsync(this.ctsTopologyMonitoring.Token))
                 {
                     return await reader.IsDBNullAsync(0, this.ctsTopologyMonitoring.Token)
@@ -111,7 +111,7 @@ public class MultiAzClusterTopologyMonitor : ClusterTopologyMonitor
     {
         try
         {
-            using (var command = connection.CreateCommand())
+            await using (var command = connection.CreateCommand())
             {
                 command.CommandText = this.fetchWriterNodeQuery;
                 await using var reader = await command.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
@@ -130,10 +130,10 @@ public class MultiAzClusterTopologyMonitor : ClusterTopologyMonitor
                 }
             }
 
-            using (var nodeIdCommand = connection.CreateCommand())
+            await using (var nodeIdCommand = connection.CreateCommand())
             {
                 nodeIdCommand.CommandText = this.nodeIdQuery;
-                using var reader = await nodeIdCommand.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
+                await using var reader = await nodeIdCommand.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
                 if (await reader.ReadAsync(this.ctsTopologyMonitoring.Token))
                 {
                     return await reader.IsDBNullAsync(0, this.ctsTopologyMonitoring.Token)

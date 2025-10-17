@@ -517,7 +517,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
     {
         try
         {
-            using var command = connection.CreateCommand();
+            await using var command = connection.CreateCommand();
             command.CommandText = this.nodeIdQuery;
             await using var reader = await command.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
             if (await reader.ReadAsync(this.ctsTopologyMonitoring.Token))
@@ -541,7 +541,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
     {
         try
         {
-            using var command = connection.CreateCommand();
+            await using var command = connection.CreateCommand();
             command.CommandText = this.writerTopologyQuery;
             await using var reader = await command.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
             if (await reader.ReadAsync(this.ctsTopologyMonitoring.Token))
@@ -633,7 +633,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         {
             string? suggestedWriterNodeId = await this.GetSuggestedWriterNodeIdAsync(connection);
 
-            using var command = connection.CreateCommand();
+            await using var command = connection.CreateCommand();
             if (command.CommandTimeout == 0)
             {
                 command.CommandTimeout = DefaultTopologyQueryTimeoutSec;

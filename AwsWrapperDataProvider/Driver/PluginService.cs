@@ -305,11 +305,11 @@ public class PluginService : IPluginService, IHostListProviderService
         hostSpec.AddAlias(hostSpec.AsAlias());
         try
         {
-            using var command = connection.CreateCommand();
+            await using var command = connection.CreateCommand();
             command.CommandText = this.Dialect.HostAliasQuery;
             command.Transaction = transaction;
 
-            using var resultSet = await command.ExecuteReaderAsync();
+            await using var resultSet = await command.ExecuteReaderAsync();
             while (await resultSet.ReadAsync())
             {
                 string alias = resultSet.GetString(0);
