@@ -17,6 +17,7 @@ using System.Net.Sockets;
 using System.Text;
 using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Logging;
+using Npgsql;
 
 namespace AwsWrapperDataProvider.Driver.Exceptions;
 
@@ -60,7 +61,7 @@ public class PgExceptionHandler : GenericExceptionHandler
                 return true;
             }
 
-            if (currException is DbException dbException)
+            if (currException is NpgsqlException dbException)
             {
                 string sqlState = dbException.SqlState ?? string.Empty;
 

@@ -86,7 +86,7 @@ public class MySqlExceptionHandler : GenericExceptionHandler
                 return true;
             }
 
-            if (currException is DbException dbException)
+            if (currException is MySqlException dbException)
             {
                 string sqlState = dbException.SqlState ?? string.Empty;
 
