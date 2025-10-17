@@ -118,7 +118,7 @@ public class PluginService : IPluginService, IHostListProviderService
         throw new NotImplementedException();
     }
 
-    public void SetCurrentConnection(DbConnection connection, HostSpec? hostSpec)
+    public void SetCurrentConnection(DbConnection? connection, HostSpec? hostSpec)
     {
         lock (this.connectionSwitchLock)
         {

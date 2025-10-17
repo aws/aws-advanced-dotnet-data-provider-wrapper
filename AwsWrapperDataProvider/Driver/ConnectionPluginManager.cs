@@ -15,7 +15,6 @@
 using System.Data.Common;
 using System.Diagnostics;
 using System.Reflection;
-using System.Threading.Tasks;
 using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.HostInfo;
@@ -142,16 +141,21 @@ public class ConnectionPluginManager
                 if (pluginChainDelegate == null)
                 {
                     // DefaultConnectionPlugin always terminates the list of plugins
-                    pluginChainDelegate = async (pipelineDelegate, methodFunc, pluginToSkip) => await pipelineDelegate(plugin, methodFunc);
+                    pluginChainDelegate = (pipelineDelegate, methodFunc, pluginToSkip) => pipelineDelegate(plugin, methodFunc);
                 }
                 else
                 {
                     PluginChainADONetDelegate<T> finalDelegate = pluginChainDelegate;
-                    pluginChainDelegate = async (pipelineDelegate, methodFunc, pluginToSkip) =>
+                    pluginChainDelegate = (pipelineDelegate, methodFunc, pluginToSkip) =>
                     {
-                        return plugin == pluginToSkip
-                            ? await finalDelegate(pipelineDelegate, methodFunc, pluginToSkip)
-                            : await pipelineDelegate(plugin, async () => await finalDelegate(pipelineDelegate, methodFunc, pluginToSkip));
+                        if (plugin == pluginToSkip)
+                        {
+                            return finalDelegate(pipelineDelegate, methodFunc, pluginToSkip);
+                        }
+                        else
+                        {
+                            return pipelineDelegate(plugin, () => finalDelegate(pipelineDelegate, methodFunc, pluginToSkip));
+                        }
                     };
                 }
             }
@@ -168,7 +172,7 @@ public class ConnectionPluginManager
     {
         return this.ExecuteWithSubscribedPlugins(
             methodName,
-            async (plugin, methodFunc) => await plugin.Execute(methodInvokeOn, methodName, methodFunc, methodArgs),
+            (plugin, methodFunc) => plugin.Execute(methodInvokeOn, methodName, methodFunc, methodArgs),
             methodFunc,
             null);
     }
@@ -183,7 +187,7 @@ public class ConnectionPluginManager
         // Execute the plugin chain and return the connection
         return this.ExecuteWithSubscribedPlugins<DbConnection>(
             ConnectMethod,
-            async (plugin, methodFunc) => await plugin.OpenConnection(hostSpec, props, isInitialConnection, methodFunc, async),
+            (plugin, methodFunc) => plugin.OpenConnection(hostSpec, props, isInitialConnection, methodFunc, async),
             () => throw new UnreachableException("Function should not be called."),
             pluginToSkip);
     }
@@ -198,7 +202,7 @@ public class ConnectionPluginManager
         // Execute the plugin chain and return the connection
         return this.ExecuteWithSubscribedPlugins<DbConnection>(
             ForceConnectMethod,
-            async (plugin, methodFunc) => await plugin.ForceOpenConnection(hostSpec, props, isInitialConnection, methodFunc, async),
+            (plugin, methodFunc) => plugin.ForceOpenConnection(hostSpec, props, isInitialConnection, methodFunc, async),
             () => throw new UnreachableException("Function should not be called."),
             pluginToSkip);
     }
