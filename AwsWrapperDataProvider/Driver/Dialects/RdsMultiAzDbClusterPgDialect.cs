@@ -24,12 +24,12 @@ namespace AwsWrapperDataProvider.Driver.Dialects;
 public class RdsMultiAzDbClusterPgDialect : PgDialect
 {
     // TODO: Update the driver version when releasing a new version.
-    private static readonly string DriverVersion = "2.5.5";
+    private static readonly string DriverVersion = "0.0.1";
 
     private static readonly ILogger<RdsMultiAzDbClusterPgDialect> Logger = LoggerUtils.GetLogger<RdsMultiAzDbClusterPgDialect>();
 
     private static readonly string TopologyQuery =
-        $"SELECT id, endpoint, port FROM rds_tools.show_topology('aws_jdbc_driver-{DriverVersion}')";
+        $"SELECT id, endpoint, port FROM rds_tools.show_topology('aws_dotnet_driver-{DriverVersion}')";
 
     private static readonly string FetchWriterNodeQuery =
         "SELECT multi_az_db_cluster_source_dbi_resource_id FROM rds_tools.multi_az_db_cluster_source_dbi_resource_id()"
