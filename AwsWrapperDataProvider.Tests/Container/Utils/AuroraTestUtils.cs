@@ -684,12 +684,12 @@ public class AuroraTestUtils
                     await Task.Delay(delay);
                 }
 
-                await ProxyHelper.DisableAllConnectivityAsync();
-                await Task.Delay(1000);
+                await ProxyHelper.DisableConnectivityAsync(instanceName);
+                await Task.Delay(2000);
                 tcs.TrySetResult();
 
                 await Task.Delay(duration);
-                await ProxyHelper.EnableAllConnectivityAsync();
+                await ProxyHelper.EnableConnectivityAsync(instanceName);
             }
             catch (Exception ex)
             {
