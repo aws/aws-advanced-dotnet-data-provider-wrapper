@@ -41,7 +41,7 @@ public class AuroraStaleDnsHelper
         this.pluginService = pluginService;
     }
 
-    public async Task<DbConnection> OpenVerifiedConnection(
+    public async Task<DbConnection> OpenVerifiedConnectionAsync(
         bool isInitialConnection,
         IHostListProviderService hostListProviderService,
         HostSpec hostSpec,
@@ -116,7 +116,7 @@ public class AuroraStaleDnsHelper
                 hostListProviderService.InitialConnectionHostSpec = this.writerHostSpec;
             }
 
-            connection.Dispose();
+            await connection.DisposeAsync();
             return writerConnection;
         }
 

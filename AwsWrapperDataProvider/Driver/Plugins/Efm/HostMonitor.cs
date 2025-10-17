@@ -129,7 +129,7 @@ public class HostMonitor : IHostMonitor
         Logger.LogTrace(string.Format(Resources.EfmHostMonitor_StoppedMonitoring, this.hostSpec.Host));
     }
 
-    public async void NewContextRun(CancellationToken token)
+    public async Task NewContextRun(CancellationToken token)
     {
         Logger.LogTrace(string.Format(Resources.EfmHostMonitor_StartedPollingNewContexts, this.hostSpec.Host));
 
@@ -179,7 +179,7 @@ public class HostMonitor : IHostMonitor
         Logger.LogTrace(string.Format(Resources.EfmHostMonitor_StoppedPollingNewContexts, this.hostSpec.Host));
     }
 
-    public async void Run(CancellationToken token)
+    public async Task Run(CancellationToken token)
     {
         Logger.LogTrace(string.Format(Resources.EfmHostMonitor_StartedMonitoringActiveContexts, this.hostSpec.Host));
 
@@ -203,7 +203,7 @@ public class HostMonitor : IHostMonitor
 
                 Logger.LogTrace("Current active contexts count: {count}", this.activeContexts.Count);
                 DateTime statusCheckStartTime = DateTime.UtcNow;
-                bool isValid = await this.CheckConnectionStatus();
+                bool isValid = await this.CheckConnectionStatusAsync();
                 DateTime statusCheckEndTime = DateTime.UtcNow;
 
                 this.UpdateNodeHealthStatus(isValid, statusCheckStartTime, statusCheckEndTime);
@@ -295,7 +295,7 @@ public class HostMonitor : IHostMonitor
         Logger.LogTrace(string.Format(Resources.EfmHostMonitor_StoppedMonitoringActiveContexts, this.hostSpec.Host));
     }
 
-    private async Task<bool> CheckConnectionStatus()
+    private async Task<bool> CheckConnectionStatusAsync()
     {
         try
         {
@@ -333,13 +333,13 @@ public class HostMonitor : IHostMonitor
                 return true;
             }
 
-            using (var validityCheckCommand = this.monitoringConn!.CreateCommand())
+            await using (var validityCheckCommand = this.monitoringConn!.CreateCommand())
             {
                 validityCheckCommand.CommandText = "SELECT 1";
                 int validTimeoutSeconds = Math.Max((this.failureDetectionIntervalMs - ThreadSleepMs) / 2000, 1);
                 Logger.LogTrace($"Command timeout for ping is {validTimeoutSeconds} seconds");
                 validityCheckCommand.CommandTimeout = validTimeoutSeconds;
-                validityCheckCommand.ExecuteScalar();
+                await validityCheckCommand.ExecuteScalarAsync();
             }
 
             return !this.TestUnhealthyCluster;

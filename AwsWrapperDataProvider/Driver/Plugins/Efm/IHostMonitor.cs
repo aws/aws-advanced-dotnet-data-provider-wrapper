@@ -22,5 +22,5 @@ public interface IHostMonitor : IDisposable
 
     public bool CanDispose();
 
-    public void Run(CancellationToken token);
+    public Task Run(CancellationToken token);
 }

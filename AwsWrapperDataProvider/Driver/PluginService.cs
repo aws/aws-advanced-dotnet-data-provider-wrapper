@@ -246,7 +246,7 @@ public class PluginService : IPluginService, IHostListProviderService
         this.AllHosts = updateHostList;
     }
 
-    public async Task ForceRefreshHostList(bool shouldVerifyWriter, long timeoutMs)
+    public async Task ForceRefreshHostListAsync(bool shouldVerifyWriter, long timeoutMs)
     {
         if (this.HostListProvider is IBlockingHostListProvider blockingHostListProvider)
         {

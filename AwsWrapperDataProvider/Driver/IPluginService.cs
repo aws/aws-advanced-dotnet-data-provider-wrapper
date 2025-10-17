@@ -101,7 +101,7 @@ public interface IPluginService : IExceptionHandlerService
     /// <param name="shouldVerifyWriter">Whether to verify the writer.</param>
     /// <param name="timeoutMs">Timeout in milliseconds.</param>
     /// <returns>The task.</returns>
-    Task ForceRefreshHostList(bool shouldVerifyWriter, long timeoutMs);
+    Task ForceRefreshHostListAsync(bool shouldVerifyWriter, long timeoutMs);
 
     /// <summary>
     /// Connects to a host, skipping a specific plugin.
