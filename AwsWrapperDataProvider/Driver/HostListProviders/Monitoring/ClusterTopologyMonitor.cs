@@ -444,7 +444,11 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         Logger.LogTrace("Writer host before update: {writerHostSpec}", this.writerHostSpec);
         if (this.writerHostSpec is not null)
         {
-            this.writerHostSpec = this.topologyMap.Get<IList<HostSpec>>(this.clusterId)?.FirstOrDefault(h => h.HostId == this.writerHostSpec.HostId) ?? this.writerHostSpec;
+            var writerHostSpecWithCorrectHost = this.topologyMap.Get<IList<HostSpec>>(this.clusterId)?.FirstOrDefault(h => h.HostId == this.writerHostSpec.HostId) ?? this.writerHostSpec;
+            this.writerHostSpec = this.hostListProviderService.HostSpecBuilder
+                .CopyFrom(this.writerHostSpec)
+                .WithHost(writerHostSpecWithCorrectHost.Host)
+                .Build();
         }
 
         Logger.LogTrace("Writer host after update: {writerHostSpec}", this.writerHostSpec);
@@ -522,7 +526,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             await using var reader = await command.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
             if (await reader.ReadAsync(this.ctsTopologyMonitoring.Token))
             {
-                return reader.IsDBNull(0)
+                return await reader.IsDBNullAsync(0)
                     ? null
                     : Convert.ToString(reader.GetValue(0), CultureInfo.InvariantCulture);
             }

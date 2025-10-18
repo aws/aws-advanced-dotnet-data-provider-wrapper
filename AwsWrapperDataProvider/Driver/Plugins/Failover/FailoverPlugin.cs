@@ -299,6 +299,8 @@ public class FailoverPlugin : AbstractConnectionPlugin
         var readerCandidates = hosts.Where(h => h.Role == HostRole.Reader).ToHashSet();
         var originalWriter = hosts.FirstOrDefault(h => h.Role == HostRole.Writer);
         bool isOriginalWriterStillWriter = false;
+        Logger.LogInformation("Original writer: {Host}.", originalWriter);
+        Logger.LogInformation(LoggerUtils.LogTopology([.. readerCandidates], $"Reader candidates: "));
 
         do
         {
@@ -364,7 +366,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
                 try
                 {
-                    Logger.LogInformation("Trying the original writer which may have been demoted to a reader");
+                    Logger.LogInformation("Trying the original writer {hostSpec} which may have been demoted to a reader", originalWriter);
                     DbConnection candidateConn = await this.pluginService.OpenConnection(originalWriter, this.props, this, true);
                     var role = this.pluginService.GetHostRole(candidateConn);
 
