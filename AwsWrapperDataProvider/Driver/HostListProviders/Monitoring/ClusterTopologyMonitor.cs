@@ -564,8 +564,8 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
     {
         if (connection != null)
         {
+            LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "Connection {Type}@{Id} is being disposed.", connection.GetType().FullName, RuntimeHelpers.GetHashCode(connection));
             await connection.DisposeAsync();
-            LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "Connection {Type}@{Id} is disposed.", connection.GetType().FullName, RuntimeHelpers.GetHashCode(connection));
         }
     }
 

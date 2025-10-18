@@ -94,12 +94,13 @@ public class MySqlExceptionHandler : GenericExceptionHandler
                 log.AppendLine("=== DbException Details ===");
                 log.AppendLine($"Type: {dbException.GetType().FullName}");
                 log.AppendLine($"Message: {dbException.Message}");
-                log.AppendLine($"Sql State: {dbException.SqlState}");
+                log.AppendLine($"Number: {dbException.Number}");
                 log.AppendLine($"Error Code: {dbException.ErrorCode}");
+                log.AppendLine($"Sql State: {dbException.SqlState}");
                 log.AppendLine($"Source: {dbException.Source}");
                 Logger.LogDebug(log.ToString());
 
-                if (this.NetworkErrorStates.Contains(sqlState))
+                if (this.NetworkErrorStates.Contains(sqlState) || dbException.ErrorCode == MySqlErrorCode.CommandTimeoutExpired)
                 {
                     Logger.LogDebug("Current exception is a network exception: {type}", currException.GetType().FullName);
                     return true;
