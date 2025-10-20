@@ -54,11 +54,11 @@ dependencies {
     testImplementation("io.opentelemetry:opentelemetry-exporter-otlp:1.29.0")
     // Note: all org.testcontainers dependencies should have the same version
     testImplementation("org.testcontainers:testcontainers:2.0.1")
-    testImplementation("org.testcontainers:mysql:2.0.1")
-    testImplementation("org.testcontainers:postgresql:2.0.1")
-    testImplementation("org.testcontainers:mariadb:2.0.1")
-    testImplementation("org.testcontainers:junit-jupiter:2.0.1")
-    testImplementation("org.testcontainers:toxiproxy:2.0.1")
+    testImplementation("org.testcontainers:testcontainers-mysql:2.0.1")
+    testImplementation("org.testcontainers:testcontainers-postgresql:2.0.1")
+    testImplementation("org.testcontainers:testcontainers-mariadb:2.0.1")
+    testImplementation("org.testcontainers:testcontainers-junit-jupiter:2.0.1")
+    testImplementation("org.testcontainers:testcontainers-toxiproxy:2.0.1:2.0.1")
 }
 
 tasks.test {
