@@ -58,7 +58,7 @@ dependencies {
     testImplementation("org.testcontainers:testcontainers-postgresql:2.0.1")
     testImplementation("org.testcontainers:testcontainers-mariadb:2.0.1")
     testImplementation("org.testcontainers:testcontainers-junit-jupiter:2.0.1")
-    testImplementation("org.testcontainers:testcontainers-toxiproxy:2.0.1:2.0.1")
+    testImplementation("org.testcontainers:testcontainers-toxiproxy:2.0.1")
 }
 
 tasks.test {
