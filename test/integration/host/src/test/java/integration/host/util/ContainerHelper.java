@@ -53,7 +53,7 @@ public class ContainerHelper {
   private static final String MARIADB_CONTAINER_IMAGE_NAME = "mariadb:10";
   // Note: this image version may need to be occasionally updated to keep it up-to-date and prevent toxiproxy issues.
   private static final DockerImageName TOXIPROXY_IMAGE =
-      DockerImageName.parse("ghcr.io/shopify/toxiproxy:2.11.0");
+      DockerImageName.parse("ghcr.io/shopify/toxiproxy:latest");
 
   private static final int PROXY_CONTROL_PORT = 8474;
   private static final int PROXY_PORT = 8666;

@@ -50,7 +50,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
     protected readonly HostSpec clusterInstanceTemplate;
     protected readonly CancellationTokenSource ctsTopologyMonitoring = new();
     protected readonly object topologyUpdatedLock = new();
-    protected readonly ConcurrentDictionary<string, Task> nodeThreads = new();
+    protected readonly ConcurrentDictionary<string, Lazy<Task>> nodeThreads = new();
     protected readonly Task monitoringTask;
     protected readonly object disposeLock = new();
 
@@ -148,14 +148,17 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                                 NodeMonitoringTask nodeMonitoringTask = new(this, hostSpec, this.writerHostSpec);
 
                                 // Run new task only if not existed
-                                _ = this.nodeThreads.GetOrAdd(
+                                var lazyTask = this.nodeThreads.GetOrAdd(
                                     hostSpec.Host,
-                                    _ =>
-                                    {
-                                        var task = Task.Run(() => nodeMonitoringTask.RunNodeMonitoringAsync(this.ctsNodeMonitoring.Token), this.ctsNodeMonitoring.Token);
-                                        LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, $"Node Monitoring Task@{RuntimeHelpers.GetHashCode(nodeMonitoringTask)} created for host {hostSpec}");
-                                        return task;
-                                    });
+                                    _ => new Lazy<Task>(
+                                        () =>
+                                        {
+                                            var task = Task.Run(() => nodeMonitoringTask.RunNodeMonitoringAsync(this.ctsNodeMonitoring.Token), this.ctsNodeMonitoring.Token);
+                                            LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, $"Node Monitoring Task@{RuntimeHelpers.GetHashCode(nodeMonitoringTask)} created for host {hostSpec}");
+                                            return task;
+                                        },
+                                        LazyThreadSafetyMode.ExecutionAndPublication));
+                                _ = lazyTask.Value;
                             }
                         }
                     }
@@ -198,14 +201,17 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                                 NodeMonitoringTask nodeMonitoringTask = new(this, hostSpec, this.writerHostSpec);
 
                                 // Run new task only if not existed
-                                _ = this.nodeThreads.GetOrAdd(
+                                var lazyTask = this.nodeThreads.GetOrAdd(
                                     hostSpec.Host,
-                                    _ =>
-                                    {
-                                        var task = Task.Run(() => nodeMonitoringTask.RunNodeMonitoringAsync(this.ctsNodeMonitoring.Token), this.ctsNodeMonitoring.Token);
-                                        LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, $"Node Monitoring Task@{RuntimeHelpers.GetHashCode(task)} created for host {hostSpec}");
-                                        return task;
-                                    });
+                                    _ => new Lazy<Task>(
+                                        () =>
+                                        {
+                                            var task = Task.Run(() => nodeMonitoringTask.RunNodeMonitoringAsync(this.ctsNodeMonitoring.Token), this.ctsNodeMonitoring.Token);
+                                            LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, $"Node Monitoring Task@{RuntimeHelpers.GetHashCode(task)} created for host {hostSpec}");
+                                            return task;
+                                    },
+                                        LazyThreadSafetyMode.ExecutionAndPublication));
+                                _ = lazyTask.Value;
                             }
                         }
                     }
@@ -271,6 +277,16 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         {
             LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "Cancelling all node monitoring tasks from topology monitor connection@{Id}", RuntimeHelpers.GetHashCode(this.monitoringConnection));
             this.ctsNodeMonitoring.Cancel();
+
+            try
+            {
+                var tasks = this.nodeThreads.Values.Select(lz => lz.Value).ToArray();
+                await Task.WhenAll(tasks);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "One or more node monitoring tasks failed during shutdown.");
+            }
 
             LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "Monitoring connection@{Id} is set to null", RuntimeHelpers.GetHashCode(this.monitoringConnection));
             var conn = Interlocked.Exchange(ref this.monitoringConnection, null);
