@@ -641,6 +641,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         lock (this.topologyUpdatedLock)
         {
             this.topologyMap.Set(this.clusterId, hosts, this.topologyCacheExpiration);
+            LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, LoggerUtils.LogTopology(hosts, $"Topology Cache Updated for Cluster Id {this.clusterId}. Found {hosts.Count} hosts"));
             this.requestToUpdateTopology = false;
             LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "Notifying topologyUpdatedLock...");
             Monitor.PulseAll(this.topologyUpdatedLock);
@@ -855,7 +856,6 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                 if (this.writerChanged)
                 {
                     monitor.UpdateTopologyCache(hosts);
-                    LoggerUtils.LogWithThreadId(NodeMonitorLogger, LogLevel.Trace, LoggerUtils.LogTopology(hosts, $"Topology Cache Updated. Found {hosts.Count} hosts"));
                     return;
                 }
 
@@ -872,7 +872,6 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
                     this.writerChanged = true;
                     monitor.UpdateTopologyCache(hosts);
-                    LoggerUtils.LogWithThreadId(NodeMonitorLogger, LogLevel.Trace, LoggerUtils.LogTopology(hosts, $"Topology Cache Updated. Found {hosts.Count} hosts"));
                 }
             }
             catch (Exception ex)

@@ -170,7 +170,7 @@ public class AuroraTestUtils
         }
 
         var tasks = new List<Task>();
-        var cts = new CancellationTokenSource(timeout);
+        using var cts = new CancellationTokenSource(timeout);
 
         foreach (var instance in instances)
         {
