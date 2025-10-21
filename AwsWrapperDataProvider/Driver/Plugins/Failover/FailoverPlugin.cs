@@ -398,7 +398,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
         }
         while (DateTime.UtcNow < failoverEndTime);
 
-        throw new TimeoutException("Failover reader timeout");
+        throw new FailoverFailedException("Failover reader timeout");
     }
 
     private void FailoverWriter()
