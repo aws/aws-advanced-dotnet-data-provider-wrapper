@@ -247,6 +247,10 @@ public class FailoverConnectivityTests : IntegrationTestBase
 
     [Theory]
     [InlineData(true)]
+    [InlineData(true)]
+    [InlineData(true)]
+    [InlineData(false)]
+    [InlineData(false)]
     [InlineData(false)]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
@@ -271,7 +275,8 @@ public class FailoverConnectivityTests : IntegrationTestBase
             10,
             "failover");
         connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}" +
-            $"; FailoverMode=StrictReader";
+            $"; FailoverMode=StrictReader" +
+            $"; FailoverTimeoutMs=120000";
 
         using AwsWrapperConnection connection = Engine switch
         {

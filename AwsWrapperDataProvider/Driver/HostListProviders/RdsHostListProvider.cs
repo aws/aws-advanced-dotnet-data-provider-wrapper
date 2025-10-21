@@ -289,7 +289,7 @@ public class RdsHostListProvider : IDynamicHostListProvider
         command.CommandText = this.isReaderQuery;
         using IDataReader reader = command.ExecuteReader();
 
-        if (reader.Read())
+        while (reader.Read())
         {
             bool isReader = reader.GetBoolean(0);
             return isReader ? HostRole.Reader : HostRole.Writer;
