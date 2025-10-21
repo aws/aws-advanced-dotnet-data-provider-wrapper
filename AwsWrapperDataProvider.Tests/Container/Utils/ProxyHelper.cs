@@ -38,6 +38,11 @@ public class ProxyHelper
     {
         Proxy proxy = TestEnvironment.Env.GetProxy(instanceName);
         await EnableConnectivityAsync(proxy);
+        var toxics = await proxy.GetAllToxicsAsync();
+        foreach (ToxicBase toxic in toxics)
+        {
+            Console.WriteLine($"After enable: Toxic on proxy {proxy.Name}: {toxic.Name}, Type: {toxic.Type}");
+        }
     }
 
     public static async Task ClearAllLatencyAsync()
@@ -105,6 +110,11 @@ public class ProxyHelper
     {
         Proxy proxy = TestEnvironment.Env.GetProxy(instanceName);
         await DisableConnectivityAsync(proxy);
+        var toxics = await proxy.GetAllToxicsAsync();
+        foreach (ToxicBase toxic in toxics)
+        {
+            Console.WriteLine($"After disable: Toxic on proxy {proxy.Name}: {toxic.Name}, Type: {toxic.Type}");
+        }
     }
 
     private static async Task DisableConnectivityAsync(Proxy proxy)
