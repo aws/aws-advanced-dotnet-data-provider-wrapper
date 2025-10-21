@@ -113,7 +113,15 @@ public class ProxyHelper
         var toxics = await proxy.GetAllToxicsAsync();
         foreach (ToxicBase toxic in toxics)
         {
-            Console.WriteLine($"After disable: Toxic on proxy {proxy.Name}: {toxic.Name}, Type: {toxic.Type}, ToxicityType: {toxic.Toxicity}");
+            Console.WriteLine($"After disable: Toxic on proxy {proxy.Name}: {toxic.Name}, Type: {toxic.Type}, Toxicity: {toxic.Toxicity}");
+            if (toxic is BandwidthToxic bandwidthToxic)
+            {
+                Console.WriteLine($"Rate: {bandwidthToxic.Attributes.Rate}");
+            }
+            else if (toxic is TimeoutToxic timeoutToxic)
+            {
+                Console.WriteLine($"Timeout: {timeoutToxic.Attributes.Timeout}");
+            }
         }
     }
 
