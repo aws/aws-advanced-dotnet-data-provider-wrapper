@@ -338,7 +338,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
                     // The role is Writer or Unknown, and we are in StrictReader mode
                     remainingReaders.Remove(readerCandidate);
-                    await candidateConn.DisposeAsync();
+                    await candidateConn.DisposeAsync().ConfigureAwait(false);
 
                     if (role == HostRole.Writer)
                     {
@@ -376,7 +376,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
                         return new ReaderFailoverResult(candidateConn, updatedHostSpec);
                     }
 
-                    await candidateConn.DisposeAsync();
+                    await candidateConn.DisposeAsync().ConfigureAwait(false);
 
                     if (role == HostRole.Writer)
                     {
@@ -433,7 +433,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
         {
             try
             {
-                await writerCandidateConn.DisposeAsync();
+                await writerCandidateConn.DisposeAsync().ConfigureAwait(false);
             }
             catch (Exception)
             {

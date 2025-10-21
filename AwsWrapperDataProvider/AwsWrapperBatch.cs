@@ -230,7 +230,7 @@ public class AwsWrapperBatch : DbBatch
     {
         if (this.targetBatch is not null)
         {
-            await this.targetBatch.DisposeAsync();
+            await this.targetBatch.DisposeAsync().ConfigureAwait(false);
         }
     }
 }

@@ -116,7 +116,7 @@ public class AuroraStaleDnsHelper
                 hostListProviderService.InitialConnectionHostSpec = this.writerHostSpec;
             }
 
-            await connection.DisposeAsync();
+            await connection.DisposeAsync().ConfigureAwait(false);
             return writerConnection;
         }
 

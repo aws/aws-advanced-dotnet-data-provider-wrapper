@@ -183,7 +183,7 @@ public class AwsWrapperTransaction : DbTransaction
     {
         if (this.TargetTransaction is not null)
         {
-            await this.TargetTransaction.DisposeAsync();
+            await this.TargetTransaction.DisposeAsync().ConfigureAwait(false);
         }
     }
 }

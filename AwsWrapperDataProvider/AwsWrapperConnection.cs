@@ -300,7 +300,7 @@ public class AwsWrapperConnection : DbConnection
         if (this.pluginService.CurrentConnection is not null)
         {
             Logger.LogTrace("Disposing target db connection@{id}", RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection));
-            await this.pluginService.CurrentConnection.DisposeAsync();
+            await this.pluginService.CurrentConnection.DisposeAsync().ConfigureAwait(false);
             this.pluginService.SetCurrentConnection(null, null);
         }
     }

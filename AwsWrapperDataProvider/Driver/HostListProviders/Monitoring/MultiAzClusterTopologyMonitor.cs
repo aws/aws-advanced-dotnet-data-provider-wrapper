@@ -65,6 +65,7 @@ public class MultiAzClusterTopologyMonitor : ClusterTopologyMonitor
 
     protected override async Task<string?> GetWriterNodeIdAsync(DbConnection connection)
     {
+        await this.monitoringConnectionSemaphore.WaitAsync();
         try
         {
             await using (var command = connection.CreateCommand())
@@ -104,6 +105,10 @@ public class MultiAzClusterTopologyMonitor : ClusterTopologyMonitor
         {
             Logger.LogTrace("Error getting writer node ID: {Error}", ex.Message);
             return null;
+        }
+        finally
+        {
+            this.monitoringConnectionSemaphore.Release();
         }
     }
 

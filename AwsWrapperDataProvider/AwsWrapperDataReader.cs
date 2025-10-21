@@ -120,7 +120,7 @@ public class AwsWrapperDataReader : DbDataReader
     {
         if (this.targetDataReader is not null)
         {
-            await this.targetDataReader.DisposeAsync();
+            await this.targetDataReader.DisposeAsync().ConfigureAwait(false);
         }
     }
 

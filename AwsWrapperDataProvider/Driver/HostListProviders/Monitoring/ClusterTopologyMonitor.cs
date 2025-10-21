@@ -53,6 +53,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
     protected readonly ConcurrentDictionary<string, Lazy<Task>> nodeThreads = new();
     protected readonly Task monitoringTask;
     protected readonly object disposeLock = new();
+    protected readonly SemaphoreSlim monitoringConnectionSemaphore = new(1, 1);
 
     protected CancellationTokenSource ctsNodeMonitoring;
     protected string clusterId;
@@ -535,6 +536,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
     protected async Task<string?> GetNodeIdAsync(DbConnection connection)
     {
+        await this.monitoringConnectionSemaphore.WaitAsync();
         try
         {
             await using var command = connection.CreateCommand();
@@ -553,12 +555,17 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             LoggerUtils.LogWithThreadId(Logger, LogLevel.Warning, ex, "Exception thrown during getting the node Id for topology monitoring connection@{id}, and ignored.", RuntimeHelpers.GetHashCode(connection));
             throw;
         }
+        finally
+        {
+            this.monitoringConnectionSemaphore.Release();
+        }
 
         return null;
     }
 
     protected virtual async Task<string?> GetWriterNodeIdAsync(DbConnection connection)
     {
+        await this.monitoringConnectionSemaphore.WaitAsync();
         try
         {
             await using var command = connection.CreateCommand();
@@ -574,6 +581,10 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             LoggerUtils.LogWithThreadId(Logger, LogLevel.Warning, ex, "Exception thrown during getting the writer node Id for topology monitoring connection@{id}", RuntimeHelpers.GetHashCode(connection));
             throw;
         }
+        finally
+        {
+            this.monitoringConnectionSemaphore.Release();
+        }
 
         return null;
     }
@@ -582,10 +593,18 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
     protected async Task DisposeConnectionAsync(DbConnection? connection)
     {
-        if (connection != null)
+        await this.monitoringConnectionSemaphore.WaitAsync();
+        try
         {
-            LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "Connection {Type}@{Id} is being disposed.", connection.GetType().FullName, RuntimeHelpers.GetHashCode(connection));
-            await connection.DisposeAsync();
+            if (connection != null)
+            {
+                LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "Connection {Type}@{Id} is being disposed.", connection.GetType().FullName, RuntimeHelpers.GetHashCode(connection));
+                await connection.DisposeAsync().ConfigureAwait(false);
+            }
+        }
+        finally
+        {
+            this.monitoringConnectionSemaphore.Release();
         }
     }
 
@@ -650,6 +669,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
     protected async Task<IList<HostSpec>?> QueryForTopologyAsync(DbConnection connection)
     {
+        await this.monitoringConnectionSemaphore.WaitAsync();
         try
         {
             string? suggestedWriterNodeId = await this.GetSuggestedWriterNodeIdAsync(connection);
@@ -701,6 +721,10 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         {
             LoggerUtils.LogWithThreadId(Logger, LogLevel.Warning, ex, string.Format(Resources.ClusterTopologyMonitor_ErrorProcessingQueryResults, ex));
             return null;
+        }
+        finally
+        {
+            this.monitoringConnectionSemaphore.Release();
         }
     }
 

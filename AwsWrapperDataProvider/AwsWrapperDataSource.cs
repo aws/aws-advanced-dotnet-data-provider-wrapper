@@ -88,6 +88,6 @@ public class AwsWrapperDataSource : DbDataSource
 
     protected override async ValueTask DisposeAsyncCore()
     {
-        await this.targetDataSource.DisposeAsync();
+        await this.targetDataSource.DisposeAsync().ConfigureAwait(false);
     }
 }

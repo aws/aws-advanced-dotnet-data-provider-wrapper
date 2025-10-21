@@ -38,11 +38,6 @@ public class ProxyHelper
     {
         Proxy proxy = TestEnvironment.Env.GetProxy(instanceName);
         await EnableConnectivityAsync(proxy);
-        var toxics = await proxy.GetAllToxicsAsync();
-        foreach (ToxicBase toxic in toxics)
-        {
-            Console.WriteLine($"After enable: Toxic on proxy {proxy.Name}: {toxic.Name}, Type: {toxic.Type}, Toxicity: {toxic.Toxicity}");
-        }
     }
 
     public static async Task ClearAllLatencyAsync()
@@ -110,19 +105,6 @@ public class ProxyHelper
     {
         Proxy proxy = TestEnvironment.Env.GetProxy(instanceName);
         await DisableConnectivityAsync(proxy);
-        var toxics = await proxy.GetAllToxicsAsync();
-        foreach (ToxicBase toxic in toxics)
-        {
-            Console.WriteLine($"After disable: Toxic on proxy {proxy.Name}: {toxic.Name}, Type: {toxic.Type}, Toxicity: {toxic.Toxicity}");
-            if (toxic is BandwidthToxic bandwidthToxic)
-            {
-                Console.WriteLine($"Rate: {bandwidthToxic.Attributes.Rate}");
-            }
-            else if (toxic is TimeoutToxic timeoutToxic)
-            {
-                Console.WriteLine($"Timeout: {timeoutToxic.Attributes.Timeout}");
-            }
-        }
     }
 
     private static async Task DisableConnectivityAsync(Proxy proxy)

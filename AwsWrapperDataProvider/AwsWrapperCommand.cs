@@ -345,7 +345,7 @@ public class AwsWrapperCommand : DbCommand
         this.wrapperConnection?.UnregisterWrapperCommand(this);
         if (this.TargetDbCommand is not null)
         {
-            await this.TargetDbCommand.DisposeAsync();
+            await this.TargetDbCommand.DisposeAsync().ConfigureAwait(false);
         }
     }
 
