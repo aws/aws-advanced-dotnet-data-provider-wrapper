@@ -41,7 +41,7 @@ public class ProxyHelper
         var toxics = await proxy.GetAllToxicsAsync();
         foreach (ToxicBase toxic in toxics)
         {
-            Console.WriteLine($"After enable: Toxic on proxy {proxy.Name}: {toxic.Name}, Type: {toxic.Type}, ToxicityType: {toxic.Toxicity}");
+            Console.WriteLine($"After enable: Toxic on proxy {proxy.Name}: {toxic.Name}, Type: {toxic.Type}, Toxicity: {toxic.Toxicity}");
         }
     }
 
