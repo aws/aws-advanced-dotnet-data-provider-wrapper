@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using AwsWrapperDataProvider.Dialect.MySqlClient;
+using AwsWrapperDataProvider.Dialect.MySqlConnector;
+using AwsWrapperDataProvider.Dialect.Npgsql;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo.HostSelectors;
@@ -62,6 +65,10 @@ public abstract class IntegrationTestBase : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
+        MySqlClientDialectLoader.Load();
+        MySqlConnectorDialectLoader.Load();
+        NpgsqlDialectLoader.Load();
+
         // Loading Aws Authentication Plugins to Plugin Chain.
         AwsAuthenticationPluginProvider.AwsAuthenticationPluginLoader.Load();
 

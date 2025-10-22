@@ -17,13 +17,28 @@ using System.Net.Sockets;
 using System.Text;
 using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Logging;
-using MySqlConnector;
 
 namespace AwsWrapperDataProvider.Driver.Exceptions;
 
 public class MySqlExceptionHandler : GenericExceptionHandler
 {
     private static readonly ILogger<MySqlExceptionHandler> Logger = LoggerUtils.GetLogger<MySqlExceptionHandler>();
+
+    private static bool IsMySqlException(Exception exception)
+    {
+        return exception.GetType().Name == "MySqlException";
+    }
+
+    private static int GetMySqlExceptionNumber(Exception exception)
+    {
+        var numberProperty = exception.GetType().GetProperty("Number");
+        return numberProperty?.GetValue(exception) as int? ?? 0;
+    }
+
+    private static bool IsMySqlEndOfStreamException(Exception exception)
+    {
+        return exception.GetType().Name == "MySqlEndOfStreamException";
+    }
 
     // TODO: Check if we need to handle HikariMariaDb exception codes as well.
     private readonly HashSet<string> networkErrorStates =
@@ -62,10 +77,10 @@ public class MySqlExceptionHandler : GenericExceptionHandler
 
     private bool IsLoginException(DbException exception)
     {
-        if (exception.SqlState == null && exception is MySqlException mySqlException)
+        if (exception.SqlState == null && IsMySqlException(exception))
         {
             // invalid username/password
-            return mySqlException.Number == 1045;
+            return GetMySqlExceptionNumber(exception) == 1045;
         }
         else
         {
@@ -81,7 +96,7 @@ public class MySqlExceptionHandler : GenericExceptionHandler
         {
             Logger.LogDebug("Current exception {type}: {message}", currException.GetType().FullName, currException.Message);
 
-            if (currException is SocketException or TimeoutException or MySqlEndOfStreamException or EndOfStreamException)
+            if (currException is SocketException or TimeoutException or EndOfStreamException || IsMySqlEndOfStreamException(currException))
             {
                 Logger.LogDebug("Current exception is a network exception: {type}", currException.GetType().FullName);
                 return true;
