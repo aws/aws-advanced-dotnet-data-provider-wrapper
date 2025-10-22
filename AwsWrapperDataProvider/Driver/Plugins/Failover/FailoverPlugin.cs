@@ -42,7 +42,6 @@ public class FailoverPlugin : AbstractConnectionPlugin
     private readonly IPluginService pluginService;
     private readonly Dictionary<string, string> props;
     private readonly int failoverTimeoutMs;
-    private readonly FailoverMode failoverMode;
     private readonly string failoverReaderHostSelectorStrategy;
     private readonly bool enableConnectFailover;
     private readonly bool skipFailoverOnInterruptedThread;
@@ -55,6 +54,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
     private bool isClosed;
     private bool shouldThrowTransactionError = false;
     private Exception? lastExceptionDealtWith;
+    private FailoverMode? failoverMode;
 
     public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string>()
     {
@@ -96,7 +96,6 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
         // Initialize configuration settings using PropertyDefinition
         this.failoverTimeoutMs = (int)PropertyDefinition.FailoverTimeoutMs.GetInt(props)!;
-        this.failoverMode = this.GetFailoverMode();
         this.failoverReaderHostSelectorStrategy = PropertyDefinition.ReaderHostSelectorStrategy.GetString(props)!;
         this.enableConnectFailover = PropertyDefinition.EnableConnectFailover.GetBoolean(props);
         this.skipFailoverOnInterruptedThread = PropertyDefinition.SkipFailoverOnInterruptedThread.GetBoolean(props);
@@ -138,10 +137,27 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
     private void InitFailoverMode()
     {
+        if (this.rdsUrlType != null || this.failoverMode != null)
+        {
+            return;
+        }
+
         ArgumentNullException.ThrowIfNull(this.hostListProviderService);
         ArgumentNullException.ThrowIfNull(this.hostListProviderService.InitialConnectionHostSpec);
 
         this.rdsUrlType = RdsUtils.IdentifyRdsType(this.hostListProviderService.InitialConnectionHostSpec.Host);
+
+        var modeStr = PropertyDefinition.FailoverMode.GetString(this.props);
+        if (Enum.TryParse<FailoverMode>(modeStr, true, out var mode))
+        {
+            this.failoverMode = mode;
+        }
+        else
+        {
+            this.failoverMode = this.rdsUrlType == RdsUrlType.RdsReaderCluster
+                ? FailoverMode.ReaderOrWriter
+                : FailoverMode.StrictWriter;
+        }
     }
 
     public override DbConnection OpenConnection(HostSpec? hostSpec, Dictionary<string, string> properties, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
@@ -529,17 +545,5 @@ public class FailoverPlugin : AbstractConnectionPlugin
     private bool IsFailoverEnabled()
     {
         return this.rdsUrlType != RdsUrlType.RdsProxy && this.pluginService.AllHosts.Count > 0;
-    }
-
-    private FailoverMode GetFailoverMode()
-    {
-        var modeStr = PropertyDefinition.FailoverMode.GetString(this.props);
-        if (string.IsNullOrEmpty(modeStr))
-        {
-            // Default based on connection type - this would need to be determined based on URL analysis
-            return FailoverMode.StrictWriter;
-        }
-
-        return Enum.TryParse<FailoverMode>(modeStr, true, out var mode) ? mode : FailoverMode.StrictWriter;
     }
 }
