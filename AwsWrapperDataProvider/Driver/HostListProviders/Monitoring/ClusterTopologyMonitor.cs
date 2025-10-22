@@ -638,6 +638,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         try
         {
             var hosts = await this.QueryForTopologyAsync(connection);
+            Logger.LogTrace(LoggerUtils.LogTopology(hosts, $"UpdateTopologyCache:"));
             if (hosts?.Count > 0)
             {
                 this.UpdateTopologyCache(hosts);
@@ -658,7 +659,6 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         {
             this.topologyMap.Set(this.clusterId, hosts, this.topologyCacheExpiration);
             this.requestToUpdateTopology = false;
-            Logger.LogTrace(LoggerUtils.LogTopology(hosts, $"UpdateTopologyCache:"));
             Logger.LogTrace("Notifying topologyUpdatedLock...");
             Monitor.PulseAll(this.topologyUpdatedLock);
         }
@@ -871,6 +871,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             try
             {
                 var hosts = await monitor.QueryForTopologyAsync(connection);
+                LoggerUtils.MonitoringLogWithHost(hostSpec, NodeMonitorLogger, LogLevel.Trace, LoggerUtils.LogTopology(hosts, $"UpdateTopologyCache:"));
                 if (hosts == null)
                 {
                     return;
