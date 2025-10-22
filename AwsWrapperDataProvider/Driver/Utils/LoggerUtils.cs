@@ -54,4 +54,20 @@ public static class LoggerUtils
         var topology = string.Join($"{Environment.NewLine}    ", hosts.Select(h => h.ToString()));
         return $"{messagePrefix} Topology@{RuntimeHelpers.GetHashCode(hosts)}{Environment.NewLine}    {topology}";
     }
+
+    public static void MonitoringLogWithHost(HostSpec hostSpec, ILogger logger, LogLevel level, string message, params object?[] args)
+    {
+        using (logger.BeginScope("Monitoring node: {}", hostSpec))
+        {
+            logger.Log(level, message, args);
+        }
+    }
+
+    public static void MonitoringLogWithHost(HostSpec hostSpec, ILogger logger, LogLevel level, Exception ex, string message, params object?[] args)
+    {
+        using (logger.BeginScope("Monitoring node: {}", hostSpec))
+        {
+            logger.Log(level, ex, message, args);
+        }
+    }
 }

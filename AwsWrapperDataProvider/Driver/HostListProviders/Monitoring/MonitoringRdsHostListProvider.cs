@@ -69,7 +69,7 @@ public class MonitoringRdsHostListProvider : RdsHostListProvider, IBlockingHostL
         IClusterTopologyMonitor monitor = Monitors.Get<IClusterTopologyMonitor>(this.ClusterId) ?? this.InitMonitor();
 
         IList<HostSpec> hosts = await monitor.ForceRefreshAsync(shouldVerifyWriter, timeoutMs);
-        this.hostList = hosts.ToList();
+        this.hostList = [.. hosts];
         return this.hostList.AsReadOnly();
     }
 

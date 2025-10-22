@@ -774,7 +774,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             bool updateTopology = false;
             DateTime start = DateTime.UtcNow;
 
-            NodeMonitorLogger.LogTrace("Running node monitoring task for host: {host}", hostSpec.ToString());
+            LoggerUtils.MonitoringLogWithHost(hostSpec, NodeMonitorLogger, LogLevel.Trace, "Start running node monitoring task");
             try
             {
                 while (!monitor.nodeThreadsStop && !token.IsCancellationRequested)
@@ -811,7 +811,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                         {
                             if (Interlocked.CompareExchange(ref monitor.nodeThreadsWriterConnection, connection, null) == null)
                             {
-                                NodeMonitorLogger.LogInformation(string.Format(Resources.NodeMonitoringTask_DetectedWriter, writerId));
+                                LoggerUtils.MonitoringLogWithHost(hostSpec, NodeMonitorLogger, LogLevel.Information, string.Format(Resources.NodeMonitoringTask_DetectedWriter, writerId));
                                 await monitor.FetchTopologyAndUpdateCacheAsync(connection);
                                 monitor.nodeThreadsWriterHostSpec = hostSpec;
                                 monitor.nodeThreadsStop = true;
@@ -848,16 +848,16 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             catch (OperationCanceledException ex)
             {
                 // Expected
-                NodeMonitorLogger.LogTrace(ex, "Operation canncelled: {message}", ex.Message);
+                LoggerUtils.MonitoringLogWithHost(hostSpec, NodeMonitorLogger, LogLevel.Trace, ex, "Operation canncelled: {message}", ex.Message);
             }
             catch (Exception ex)
             {
-                NodeMonitorLogger.LogWarning(ex, "Unknown exception thrown: {message}", ex.Message);
+                LoggerUtils.MonitoringLogWithHost(hostSpec, NodeMonitorLogger, LogLevel.Warning, ex, "Unknown exception thrown: {message}", ex.Message);
             }
             finally
             {
                 await monitor.DisposeConnectionAsync(connection);
-                NodeMonitorLogger.LogTrace(string.Format(Resources.NodeMonitoringTask_ThreadCompleted, RuntimeHelpers.GetHashCode(this), (DateTime.UtcNow - start).TotalMilliseconds));
+                LoggerUtils.MonitoringLogWithHost(hostSpec, NodeMonitorLogger, LogLevel.Trace, string.Format(Resources.NodeMonitoringTask_ThreadCompleted, RuntimeHelpers.GetHashCode(this), (DateTime.UtcNow - start).TotalMilliseconds));
             }
         }
 
@@ -883,7 +883,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                 if (latestWriterHostSpec != null && writerHostSpec != null &&
                     latestWriterHostSpec.GetHostAndPort() != writerHostSpec.GetHostAndPort())
                 {
-                    NodeMonitorLogger.LogTrace(string.Format(
+                    LoggerUtils.MonitoringLogWithHost(hostSpec, NodeMonitorLogger, LogLevel.Trace, string.Format(
                         Resources.NodeMonitoringTask_WriterNodeChanged,
                         writerHostSpec.Host,
                         latestWriterHostSpec.Host));
@@ -895,7 +895,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             catch (Exception ex)
             {
                 // Ignore errors
-                NodeMonitorLogger.LogTrace(ex, "Exception caught but ignored: {message}", ex.Message);
+                LoggerUtils.MonitoringLogWithHost(hostSpec, NodeMonitorLogger, LogLevel.Trace, ex, "Exception caught but ignored: {message}", ex.Message);
             }
         }
     }
