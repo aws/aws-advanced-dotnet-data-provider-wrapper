@@ -247,10 +247,6 @@ public class FailoverConnectivityTests : IntegrationTestBase
 
     [Theory]
     [InlineData(true)]
-    [InlineData(true)]
-    [InlineData(true)]
-    [InlineData(false)]
-    [InlineData(false)]
     [InlineData(false)]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
