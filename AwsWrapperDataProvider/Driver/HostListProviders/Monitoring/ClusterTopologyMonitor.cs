@@ -184,6 +184,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                             if (Interlocked.CompareExchange(ref this.ignoreNewTopologyRequestsEndTime, 0, -1) != -1)
                             {
                                 Interlocked.Exchange(ref this.ignoreNewTopologyRequestsEndTime, DateTime.UtcNow.Add(IgnoreTopologyRequestDuration).Ticks);
+                                Logger.LogTrace("Ignoring topology request until {utcTime}", new DateTime(this.ignoreNewTopologyRequestsEndTime, DateTimeKind.Utc));
                             }
 
                             this.nodeThreadsStop = true;
@@ -473,6 +474,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             if (Interlocked.CompareExchange(ref this.ignoreNewTopologyRequestsEndTime, 0, -1) != -1)
             {
                 Interlocked.Exchange(ref this.ignoreNewTopologyRequestsEndTime, DateTime.UtcNow.Add(IgnoreTopologyRequestDuration).Ticks);
+                Logger.LogTrace("Ignoring topology request until {utcTime}", new DateTime(this.ignoreNewTopologyRequestsEndTime, DateTimeKind.Utc));
             }
         }
 
@@ -656,6 +658,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         {
             this.topologyMap.Set(this.clusterId, hosts, this.topologyCacheExpiration);
             this.requestToUpdateTopology = false;
+            Logger.LogTrace(LoggerUtils.LogTopology(hosts, $"UpdateTopologyCache:"));
             Logger.LogTrace("Notifying topologyUpdatedLock...");
             Monitor.PulseAll(this.topologyUpdatedLock);
         }
@@ -673,6 +676,8 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             {
                 command.CommandTimeout = DefaultTopologyQueryTimeoutSec;
             }
+
+            Logger.LogTrace("Command timeout for querying topology: {time} seconds", command.CommandTimeout);
 
             command.CommandText = this.topologyQuery;
             await using var reader = await command.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
