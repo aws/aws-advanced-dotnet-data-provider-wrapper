@@ -64,6 +64,25 @@ public class EfmConnectivityTests
         await PerformEfmTest(connectionString, clusterEndpoint, failureDetectionTime, failureDetectionInterval, failureDetectionCount);
     }
 
+    [Fact]
+    [Trait("Category", "Integration")]
+    [Trait("Category", "Manual")]
+    public async Task EfmPluginTest_WithMonitoringProperty()
+    {
+        const string clusterEndpoint = "endpoint"; // Replace with your cluster endpoint
+        const string user = "username"; // Replace with the name of the db user to connect with
+        const string password = "password"; // Replace with password of the db user to connect with
+        const string database = "database"; // Replace with your database name
+
+        int failureDetectionTime = 1000; // start monitoring after one second
+        int failureDetectionInterval = 1000; // check on the connection every 1 second
+        int failureDetectionCount = 1; // five failures before considered unhealthy
+
+        var connectionString = $"Host={clusterEndpoint};Username={user};Password={password};Database={database};";
+        connectionString += $"; Plugins=efm;FailureDetectionTime={failureDetectionTime};FailureDetectionInterval={failureDetectionInterval};FailureDetectionCount={failureDetectionCount};monitoring-connecttimeout=50";
+        await PerformEfmTest(connectionString, clusterEndpoint, failureDetectionTime, failureDetectionInterval, failureDetectionCount);
+    }
+
     internal static async Task PerformEfmTest(string connectionString, string initialHost, int failureDetectionTime, int failureDetectionInterval, int failureDetectionCount)
     {
         try

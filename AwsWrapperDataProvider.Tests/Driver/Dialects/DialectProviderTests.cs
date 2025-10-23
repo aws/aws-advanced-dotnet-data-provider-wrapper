@@ -20,8 +20,9 @@ using AwsWrapperDataProvider.Driver.Exceptions;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
 using Moq;
-using MySqlConnector;
 using Npgsql;
+using MySqlConnection = MySqlConnector.MySqlConnection;
+using MySqlDataMySqlConnection = MySql.Data.MySqlClient.MySqlConnection;
 
 namespace AwsWrapperDataProvider.Tests.Driver.Dialects;
 
@@ -63,6 +64,13 @@ public class DialectProviderTests
             { PropertyDefinition.Server.Name, "database-test-name.cluster-XYZ.us-east-2.rds.amazonaws.com" },
             { PropertyDefinition.TargetConnectionType.Name, typeof(MySqlConnection).AssemblyQualifiedName! },
         }, typeof(AuroraMySqlDialect)
+        },
+        {
+            new Dictionary<string, string>
+            {
+                { PropertyDefinition.Server.Name, "some-unknown-host.com" },
+                { PropertyDefinition.TargetConnectionType.Name, typeof(MySqlDataMySqlConnection).AssemblyQualifiedName! },
+            }, typeof(MySqlDialect)
         },
         {
             new Dictionary<string, string>

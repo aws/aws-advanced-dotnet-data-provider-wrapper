@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data.Common;
 using System.Net.Sockets;
 using System.Text;
 using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Logging;
-using Npgsql;
 
 namespace AwsWrapperDataProvider.Driver.Exceptions;
 
@@ -60,7 +60,7 @@ public class PgExceptionHandler : GenericExceptionHandler
                 return true;
             }
 
-            if (currException is NpgsqlException dbException)
+            if (currException is DbException dbException)
             {
                 string sqlState = dbException.SqlState ?? string.Empty;
 

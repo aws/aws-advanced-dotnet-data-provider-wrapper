@@ -7,6 +7,7 @@
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <OutputType>Exe</OutputType>
+    <RootNamespace>AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,7 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\AwsWrapperDataProvider.EntityFrameworkCore.MySQL\AwsWrapperDataProvider.EntityFrameworkCore.MySQL.csproj" />
+    <ProjectReference Include="..\AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector\AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.csproj" />
     <ProjectReference Include="..\AwsWrapperDataProvider.Tests\AwsWrapperDataProvider.Tests.csproj" />
   </ItemGroup>
 

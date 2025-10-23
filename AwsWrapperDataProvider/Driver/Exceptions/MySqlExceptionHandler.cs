@@ -17,13 +17,28 @@ using System.Net.Sockets;
 using System.Text;
 using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Logging;
-using MySqlConnector;
 
 namespace AwsWrapperDataProvider.Driver.Exceptions;
 
 public class MySqlExceptionHandler : GenericExceptionHandler
 {
     private static readonly ILogger<MySqlExceptionHandler> Logger = LoggerUtils.GetLogger<MySqlExceptionHandler>();
+
+    private static bool IsMySqlException(Exception exception)
+    {
+        return exception.GetType().Name == "MySqlException";
+    }
+
+    private static int GetMySqlExceptionNumber(Exception exception)
+    {
+        var numberProperty = exception.GetType().GetProperty("Number");
+        return numberProperty?.GetValue(exception) as int? ?? 0;
+    }
+
+    private static bool IsMySqlEndOfStreamException(Exception exception)
+    {
+        return exception.GetType().Name == "MySqlEndOfStreamException";
+    }
 
     // TODO: Check if we need to handle HikariMariaDb exception codes as well.
     private readonly HashSet<string> networkErrorStates =
@@ -62,15 +77,26 @@ public class MySqlExceptionHandler : GenericExceptionHandler
 
     private bool IsLoginException(DbException exception)
     {
-        if (exception.SqlState == null && exception is MySqlException mySqlException)
+        if (exception.SqlState == null && IsMySqlException(exception))
         {
             // invalid username/password
-            return mySqlException.Number == 1045;
+            return GetMySqlExceptionNumber(exception) == 1045;
         }
         else
         {
             return this.ExceptionHasSqlState(exception, this.LoginErrorStates);
         }
+    }
+
+    private bool IsMySqlCommandTimeoutException(DbException exception)
+    {
+        if (IsMySqlException(exception))
+        {
+            // MySQL command timeout error code
+            return GetMySqlExceptionNumber(exception) == -1;
+        }
+
+        return false;
     }
 
     public override bool IsNetworkException(Exception exception)
@@ -80,13 +106,13 @@ public class MySqlExceptionHandler : GenericExceptionHandler
         while (currException != null)
         {
             Logger.LogDebug("Current exception {type}", currException.GetType().FullName);
-            if (currException is SocketException or TimeoutException or MySqlEndOfStreamException or EndOfStreamException)
+            if (currException is SocketException or TimeoutException or EndOfStreamException || IsMySqlEndOfStreamException(currException))
             {
                 Logger.LogDebug("Current exception is a network exception: {type}", currException.GetType().FullName);
                 return true;
             }
 
-            if (currException is MySqlException dbException)
+            if (currException is DbException dbException)
             {
                 string sqlState = dbException.SqlState ?? string.Empty;
 
@@ -94,13 +120,12 @@ public class MySqlExceptionHandler : GenericExceptionHandler
                 log.AppendLine("=== DbException Details ===");
                 log.AppendLine($"Type: {dbException.GetType().FullName}");
                 log.AppendLine($"Message: {dbException.Message}");
-                log.AppendLine($"Number: {dbException.Number}");
                 log.AppendLine($"Error Code: {dbException.ErrorCode}");
                 log.AppendLine($"Sql State: {dbException.SqlState}");
                 log.AppendLine($"Source: {dbException.Source}");
                 Logger.LogDebug(log.ToString());
 
-                if (this.NetworkErrorStates.Contains(sqlState) || dbException.ErrorCode == MySqlErrorCode.CommandTimeoutExpired)
+                if (this.NetworkErrorStates.Contains(sqlState) || this.IsMySqlCommandTimeoutException(dbException))
                 {
                     Logger.LogDebug("Current exception is a network exception: {type}", currException.GetType().FullName);
                     return true;

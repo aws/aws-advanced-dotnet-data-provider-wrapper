@@ -246,19 +246,26 @@ public class PluginService : IPluginService, IHostListProviderService
         this.AllHosts = updateHostList;
     }
 
-    public async Task ForceRefreshHostListAsync(bool shouldVerifyWriter, long timeoutMs)
+    public async Task<bool> ForceRefreshHostListAsync(bool shouldVerifyWriter, long timeoutMs)
     {
-        if (this.HostListProvider is IBlockingHostListProvider blockingHostListProvider)
+        try
         {
-            IList<HostSpec> updateHostList = await blockingHostListProvider.ForceRefreshAsync(shouldVerifyWriter, timeoutMs);
-            this.UpdateHostAvailability(updateHostList);
-            this.NotifyNodeChangeList(this.AllHosts, updateHostList);
-            this.AllHosts = updateHostList;
+            if (this.HostListProvider is IBlockingHostListProvider blockingHostListProvider)
+            {
+                IList<HostSpec> updateHostList = await blockingHostListProvider.ForceRefreshAsync(shouldVerifyWriter, timeoutMs);
+                this.UpdateHostAvailability(updateHostList);
+                this.NotifyNodeChangeList(this.AllHosts, updateHostList);
+                this.AllHosts = updateHostList;
+                return true;
+            }
         }
-        else
+        catch (TimeoutException)
         {
-            throw new InvalidOperationException("[PluginService] Required IBlockingHostListProvider");
+            Logger.LogDebug("A timeout exception occurred after waiting {timeoutMs} ms for refreshed topology.", timeoutMs);
+            return false;
         }
+
+        throw new InvalidOperationException("[PluginService] Required IBlockingHostListProvider");
     }
 
     public Task<DbConnection> OpenConnection(

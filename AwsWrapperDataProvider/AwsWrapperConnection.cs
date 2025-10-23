@@ -19,14 +19,7 @@ using System.Runtime.CompilerServices;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
-using AwsWrapperDataProvider.Driver.Dialects;
-using AwsWrapperDataProvider.Driver.HostInfo.HostSelectors;
 using AwsWrapperDataProvider.Driver.HostListProviders;
-using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
-using AwsWrapperDataProvider.Driver.Plugins.Efm;
-using AwsWrapperDataProvider.Driver.Plugins.FederatedAuth;
-using AwsWrapperDataProvider.Driver.Plugins.Iam;
-using AwsWrapperDataProvider.Driver.Plugins.SecretsManager;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Logging;
@@ -332,20 +325,6 @@ public class AwsWrapperConnection : DbConnection
     internal void UnregisterWrapperCommand(AwsWrapperCommand command)
     {
         this.ActiveWrapperCommands.Remove(command);
-    }
-
-    public static void ClearCache()
-    {
-        RdsHostListProvider.ClearAll();
-        MonitoringRdsHostListProvider.CloseAllMonitors();
-        HostMonitorService.CloseAllMonitors();
-        PluginService.ClearCache();
-        DialectProvider.ResetEndpointCache();
-        SecretsManagerAuthPlugin.ClearCache();
-        FederatedAuthPlugin.ClearCache();
-        IamAuthPlugin.ClearCache();
-        OktaAuthPlugin.ClearCache();
-        RoundRobinHostSelector.ClearCache();
     }
 }
 
