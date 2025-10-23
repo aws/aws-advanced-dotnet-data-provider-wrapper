@@ -32,6 +32,8 @@ public class PgDialect : IDialect
 
     public string ServerVersionQuery { get; } = "SELECT 'version', VERSION()";
 
+    internal static readonly string PGSelect1Query = "SELECT 1 FROM pg_proc LIMIT 1";
+
     public IExceptionHandler ExceptionHandler { get; } = new PgExceptionHandler();
 
     public virtual IList<Type> DialectUpdateCandidates { get; } =
@@ -57,7 +59,7 @@ public class PgDialect : IDialect
             }
 
             await using var command = conn.CreateCommand();
-            command.CommandText = "SELECT 1 FROM pg_proc LIMIT 1";
+            command.CommandText = PGSelect1Query;
             await using var reader = await command.ExecuteReaderAsync();
 
             if (await reader.ReadAsync())

@@ -12,12 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Exceptions;
-using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
-using Moq;
-using Xunit;
 
 namespace AwsWrapperDataProvider.Tests.Driver.Exceptions
 {
