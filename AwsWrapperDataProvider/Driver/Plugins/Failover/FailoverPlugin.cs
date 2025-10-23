@@ -296,21 +296,16 @@ public class FailoverPlugin : AbstractConnectionPlugin
     private async Task<ReaderFailoverResult> GetReaderFailoverConnectionAsync(DateTime failoverEndTime)
     {
         var hosts = this.pluginService.GetHosts();
-        Logger.LogInformation(LoggerUtils.LogTopology(hosts, $"All hosts: "));
-
-        var readerCandidatesList = hosts.Where(h => h.Role == HostRole.Reader);
-        Logger.LogInformation(LoggerUtils.LogTopology([.. readerCandidatesList], $"List Reader candidates: "));
-
-        var readerCandidates = readerCandidatesList.ToHashSet();
-        Logger.LogInformation(LoggerUtils.LogTopology([.. readerCandidates], $"HashSet Reader candidates: "));
-
         var originalWriter = hosts.FirstOrDefault(h => h.Role == HostRole.Writer);
-        Logger.LogInformation("Original writer: {Host}.", originalWriter);
-
         bool isOriginalWriterStillWriter = false;
 
         do
         {
+            // Update reader candidates, topology may have changed
+            hosts = this.pluginService.GetHosts();
+            Logger.LogDebug(LoggerUtils.LogTopology(hosts, $"All hosts: "));
+            var readerCandidates = hosts.Where(h => h.Role == HostRole.Reader).ToHashSet();
+
             // First, try all original readers
             var remainingReaders = new HashSet<HostSpec>(readerCandidates);
             while (remainingReaders.Count > 0 && DateTime.UtcNow < failoverEndTime)
