@@ -360,6 +360,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
                     if (role == HostRole.Writer)
                     {
+                        isOriginalWriterStillWriter = false;
                         readerCandidates.Remove(readerCandidate);
                     }
                     else
@@ -379,6 +380,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
             {
                 if (this.failoverMode == FailoverMode.StrictReader && isOriginalWriterStillWriter)
                 {
+                    await Task.Delay(100);
                     continue;
                 }
 
@@ -411,6 +413,8 @@ public class FailoverPlugin : AbstractConnectionPlugin
                     Logger.LogInformation(ex, $"[Reader Failover] Failed to connect to host: {originalWriter.GetHostAndPort()}");
                 }
             }
+
+            await Task.Delay(100);
         }
         while (DateTime.UtcNow < failoverEndTime);
 
