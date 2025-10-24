@@ -13,6 +13,8 @@
 // limitations under the License.
 
 using System.Data.Common;
+using Amazon.SecurityToken.Model.Internal.MarshallTransformations;
+using AwsWrapperDataProvider.Driver.Exceptions;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -107,7 +109,15 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
 
                 if (writerCandidate == null || RdsUtils.IsRdsClusterDns(writerCandidate.Host))
                 {
-                    writerConnectionCandidate = methodFunc();
+                    try
+                    {
+                        writerConnectionCandidate = methodFunc();
+                    }
+                    catch (InvalidOpenConnectionException)
+                    {
+                        writerConnectionCandidate = this.pluginService.OpenConnection(this.pluginService.CurrentHostSpec!, props, this);
+                    }
+
                     this.pluginService.ForceRefreshHostList(writerConnectionCandidate);
                     writerCandidate = this.pluginService.IdentifyConnection(writerConnectionCandidate);
 
@@ -127,7 +137,15 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
                     return writerConnectionCandidate;
                 }
 
-                writerConnectionCandidate = this.pluginService.ForceOpenConnection(writerCandidate, props, null);
+                try
+                {
+                    writerConnectionCandidate = this.pluginService.ForceOpenConnection(writerCandidate, props, null);
+                }
+                catch (InvalidOpenConnectionException)
+                {
+                    // Use default host spec to recover from invalid connection
+                    writerConnectionCandidate = this.pluginService.ForceOpenConnection(writerCandidate, props, null);
+                }
 
                 if (this.pluginService.GetHostRole(writerConnectionCandidate) != HostRole.Writer)
                 {
@@ -188,7 +206,15 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
 
                 if (readerCandidate == null || RdsUtils.IsRdsClusterDns(readerCandidate.Host))
                 {
-                    readerConnectionCandidate = methodFunc();
+                    try
+                    {
+                        readerConnectionCandidate = methodFunc();
+                    }
+                    catch (InvalidOpenConnectionException)
+                    {
+                        readerConnectionCandidate = this.pluginService.OpenConnection(this.pluginService.CurrentHostSpec!, props, this);
+                    }
+
                     this.pluginService.ForceRefreshHostList(readerConnectionCandidate);
                     readerCandidate = this.pluginService.IdentifyConnection(readerConnectionCandidate);
 
@@ -224,7 +250,19 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
                     return readerConnectionCandidate;
                 }
 
-                readerConnectionCandidate = this.pluginService.ForceOpenConnection(readerCandidate, props, null);
+                try
+                {
+                    readerConnectionCandidate = this.pluginService.ForceOpenConnection(readerCandidate, props, null);
+                }
+                catch (InvalidOpenConnectionException)
+                {
+                    // Try use another reader if possible.
+                    readerCandidate = this.pluginService
+                        .GetHosts()
+                        .FirstOrDefault(host => host.Role == HostRole.Reader && host.HostId != readerCandidate.HostId) ?? readerCandidate;
+
+                    readerConnectionCandidate = this.pluginService.ForceOpenConnection(readerCandidate, props, null);
+                }
 
                 if (this.pluginService.GetHostRole(readerConnectionCandidate) != HostRole.Reader)
                 {

@@ -13,8 +13,8 @@
 // limitations under the License.
 
 using System.Data.Common;
-using System.Runtime.CompilerServices;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
+using AwsWrapperDataProvider.Driver.Exceptions;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -75,31 +75,44 @@ public class DefaultConnectionPlugin(
         IConnectionProvider connProvider,
         bool isInitialConnection)
     {
-        // Create a new connection if it's not the initial connection or CurrentConnection is not null
         DbConnection? conn;
-        if (isInitialConnection && this.pluginService.CurrentConnection != null)
-        {
-            conn = this.pluginService.CurrentConnection;
-            Logger.LogTrace("Reusing existing connection {Type}@{Id}, DataSource = {DataSource}.", conn.GetType().FullName, RuntimeHelpers.GetHashCode(conn), conn.DataSource);
-        }
-        else
-        {
-            conn = connProvider.CreateDbConnection(
-                this.pluginService.Dialect,
-                this.pluginService.TargetConnectionDialect,
-                hostSpec,
-                props);
-        }
+
+        // TODO: Investigate if configuration has changed for optimization
+        // if (isInitialConnection && this.pluginService.CurrentConnection != null)
+        // {
+        //     conn = this.pluginService.CurrentConnection;
+        //     Logger.LogTrace("Reusing existing connection {Type}@{Id}, DataSource = {DataSource}.", conn.GetType().FullName, RuntimeHelpers.GetHashCode(conn), conn.DataSource);
+        // }
+        // else
+        // {
+
+        conn = connProvider.CreateDbConnection(
+            this.pluginService.Dialect,
+            this.pluginService.TargetConnectionDialect,
+            hostSpec,
+            props);
+
+        // }
 
         // Update connection string that may have been modified by other plugins
         conn.ConnectionString = this.pluginService.TargetConnectionDialect.PrepareConnectionString(this.pluginService.Dialect, hostSpec, props);
         conn.Open();
 
-        this.pluginService.SetAvailability(hostSpec!.AsAliases(), HostAvailability.Available);
+        // TODO: Add configuration to skip ping check. (Not urgent)
+        // Ping to check if connection is actually alive.
+        // Due to connection pooling, the Open() call may succeed with Open status even if the database is not reachable.
+        if (!this.pluginService.TargetConnectionDialect.Ping(conn))
+        {
+            // set SQLState and include original exception.
+            throw new InvalidOpenConnectionException("Unable to ping the database to verify the connection.");
+        }
+
         if (isInitialConnection)
         {
             this.pluginService.UpdateDialect(conn);
         }
+
+        this.pluginService.SetAvailability(hostSpec!.AsAliases(), HostAvailability.Available);
 
         return conn;
     }

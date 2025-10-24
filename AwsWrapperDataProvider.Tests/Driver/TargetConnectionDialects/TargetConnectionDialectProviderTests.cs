@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data;
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
@@ -111,6 +112,11 @@ public class TargetConnectionDialectProviderTests
         public string? GetSqlState(DbException exception) => string.Empty;
 
         public ISet<string> GetAllowedOnConnectionMethodNames() => new HashSet<string>();
+
+        public bool Ping(IDbConnection connection)
+        {
+            return true;
+        }
 
         public string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props)
         {

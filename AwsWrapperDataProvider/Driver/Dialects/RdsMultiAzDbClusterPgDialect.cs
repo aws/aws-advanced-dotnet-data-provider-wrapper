@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
@@ -37,6 +38,9 @@ public class RdsMultiAzDbClusterPgDialect : PgDialect
         + " WHERE multi_az_db_cluster_source_dbi_resource_id !="
         + " (SELECT dbi_resource_id FROM rds_tools.dbi_resource_id())";
 
+    private const string HasRdsToolsExtensionQuery =
+        "SELECT EXISTS (SELECT 1 FROM pg_catalog.pg_extension WHERE extname = 'rds_tools');";
+
     private static readonly string IsRdsClusterQuery =
         "SELECT multi_az_db_cluster_source_dbi_resource_id FROM rds_tools.multi_az_db_cluster_source_dbi_resource_id()";
 
@@ -59,10 +63,26 @@ public class RdsMultiAzDbClusterPgDialect : PgDialect
 
         try
         {
-            using IDbCommand isDialectCommand = connection.CreateCommand();
-            isDialectCommand.CommandText = IsRdsClusterQuery;
-            using IDataReader isDialectReader = isDialectCommand.ExecuteReader();
-            return isDialectReader.Read() && !isDialectReader.IsDBNull(0);
+            // check if rds_tools extension is installed
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = HasRdsToolsExtensionQuery;
+                var existsObject = command.ExecuteScalar();
+                var hasRdsTools = existsObject is bool b ? b : Convert.ToBoolean(existsObject, CultureInfo.InvariantCulture);
+                if (!hasRdsTools)
+                {
+                    Logger.LogTrace("rds_tools extension not installed; skipping dialect function call.");
+                    return false;
+                }
+            }
+
+            // check is rds multi az cluster
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = IsRdsClusterQuery;
+                using var reader = command.ExecuteReader();
+                return reader.Read() && !reader.IsDBNull(0);
+            }
         }
         catch (Exception ex)
         {

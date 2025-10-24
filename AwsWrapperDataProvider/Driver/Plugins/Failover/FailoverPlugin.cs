@@ -175,7 +175,8 @@ public class FailoverPlugin : AbstractConnectionPlugin
                 this.hostListProviderService!,
                 hostSpec!,
                 properties,
-                methodFunc);
+                methodFunc,
+                this);
         }
 
         var hostSpecWithAvailability = this.pluginService.GetHosts()
@@ -190,7 +191,8 @@ public class FailoverPlugin : AbstractConnectionPlugin
                     this.hostListProviderService!,
                     hostSpec!,
                     properties,
-                    methodFunc); 
+                    methodFunc,
+                    this);
             }
             catch (Exception e)
             {

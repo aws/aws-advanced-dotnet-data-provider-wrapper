@@ -14,6 +14,7 @@
 
 using System.Data.Common;
 using System.Net;
+using AwsWrapperDataProvider.Driver.Exceptions;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -46,7 +47,8 @@ public class AuroraStaleDnsHelper
         IHostListProviderService hostListProviderService,
         HostSpec hostSpec,
         Dictionary<string, string> props,
-        ADONetDelegate<DbConnection> openFunc)
+        ADONetDelegate<DbConnection> openFunc,
+        IConnectionPlugin? pluginToSkip = null)
     {
         // If this is not a writer cluster DNS, no verification needed
         if (!RdsUtils.IsWriterClusterDns(hostSpec.Host))
@@ -54,9 +56,19 @@ public class AuroraStaleDnsHelper
             return openFunc();
         }
 
-        DbConnection connection = openFunc();
+        DbConnection connection;
 
-        // Get the IP address that the cluster endpoint resolved to
+        try
+        {
+            connection = openFunc();
+            // TODO: investigate if the whole function needs to be retried on other exception.
+        }
+        catch (InvalidOpenConnectionException)
+        {
+            Logger.LogTrace("INFO: Caught InvalidOpenConnectionException, retrying open connection.");
+            connection = this.pluginService.OpenConnection(hostSpec, props, pluginToSkip);
+        }
+
         string? clusterInetAddress = GetHostIpAddress(hostSpec.Host);
         Logger.LogTrace(
             "Cluster endpoint {host} resolved to IP address {ipAddress}",
@@ -102,6 +114,7 @@ public class AuroraStaleDnsHelper
             var allowedHosts = this.pluginService.GetHosts();
             if (!ContainsHostUrl(allowedHosts, this.writerHostSpec.Host))
             {
+                // TODO: Check do we need to retry when throw errors?
                 throw new InvalidOperationException(
                     $"Current writer {this.writerHostSpec.Host} is not in the allowed hosts list. " +
                     $"Allowed hosts: {string.Join(", ", allowedHosts.Select(h => h.Host))}");

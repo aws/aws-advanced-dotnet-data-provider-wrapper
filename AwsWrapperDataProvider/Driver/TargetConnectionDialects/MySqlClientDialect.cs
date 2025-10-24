@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -25,5 +26,22 @@ public class MySqlClientDialect : GenericTargetConnectionDialect
     public override string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props)
     {
         return this.PrepareConnectionString(dialect, hostSpec, props, PropertyDefinition.Server);
+    }
+
+    public override bool Ping(IDbConnection connection)
+    {
+        try
+        {
+            if (connection is MySqlConnection mySqlConnection)
+            {
+                return mySqlConnection.Ping();
+            }
+        }
+        catch
+        {
+            return false;
+        }
+
+        return false;
     }
 }

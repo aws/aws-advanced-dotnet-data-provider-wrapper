@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -29,5 +30,24 @@ public class NpgsqlDialect : GenericTargetConnectionDialect
         Dictionary<string, string> props)
     {
         return this.PrepareConnectionString(dialect, hostSpec, props, PropertyDefinition.Host);
+    }
+
+    public virtual bool Ping(IDbConnection connection)
+    {
+        try
+        {
+            if (connection is NpgsqlConnection npgsqlConnection)
+            {
+                using var cmd = new NpgsqlCommand("SELECT 1", npgsqlConnection);
+                cmd.ExecuteScalar();
+                return true;
+            }
+        }
+        catch
+        {
+            return false;
+        }
+
+        return false;
     }
 }

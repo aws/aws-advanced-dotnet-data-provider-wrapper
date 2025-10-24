@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data;
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
@@ -50,4 +51,11 @@ public interface ITargetConnectionDialect
     /// </summary>
     /// <returns>Set of allowed method names.</returns>
     ISet<string> GetAllowedOnConnectionMethodNames();
+
+    /// <summary>
+    /// Checks if the connection is alive.
+    /// </summary>
+    /// <param name="connection">Connection to ping.</param>
+    /// <returns>True if connection alive.</returns>
+    bool Ping(IDbConnection connection);
 }

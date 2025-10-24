@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data;
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
@@ -33,6 +34,30 @@ public abstract class GenericTargetConnectionDialect : ITargetConnectionDialect
     public ISet<string> GetAllowedOnConnectionMethodNames()
     {
         throw new NotImplementedException("Will implement in Milestone 5, as feature is only relevant to Failover.");
+    }
+
+    public virtual bool Ping(IDbConnection connection)
+    {
+        try
+        {
+            if (connection.State != ConnectionState.Open)
+            {
+                connection.Open();
+            }
+
+            using (IDbCommand command = connection.CreateCommand())
+            {
+                command.CommandText = "SELECT 1";
+                command.CommandType = CommandType.Text;
+                command.ExecuteScalar();
+            }
+
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     protected string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, AwsWrapperProperty hostProperty)
