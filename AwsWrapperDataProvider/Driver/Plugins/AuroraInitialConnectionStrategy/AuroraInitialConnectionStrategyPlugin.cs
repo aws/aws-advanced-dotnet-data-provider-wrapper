@@ -130,7 +130,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
 
                 writerConnectionCandidate = await this.pluginService.ForceOpenConnection(writerCandidate, props, null, true);
 
-                if (this.pluginService.GetHostRole(writerConnectionCandidate) != HostRole.Writer)
+                if ((await this.pluginService.GetHostRole(writerConnectionCandidate)) != HostRole.Writer)
                 {
                     this.pluginService.ForceRefreshHostList(writerConnectionCandidate);
                     this.DisposeConnection(writerConnectionCandidate);
@@ -227,7 +227,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
 
                 readerConnectionCandidate = await this.pluginService.ForceOpenConnection(readerCandidate, props, null, true);
 
-                if (this.pluginService.GetHostRole(readerConnectionCandidate) != HostRole.Reader)
+                if ((await this.pluginService.GetHostRole(readerConnectionCandidate)) != HostRole.Reader)
                 {
                     this.pluginService.ForceRefreshHostList(readerConnectionCandidate);
 

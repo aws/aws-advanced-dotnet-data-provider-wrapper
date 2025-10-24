@@ -312,6 +312,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
     private async Task<ReaderFailoverResult> GetReaderFailoverConnectionAsync(DateTime failoverEndTime)
     {
         var hosts = this.pluginService.GetHosts();
+        Logger.LogDebug(LoggerUtils.LogTopology(hosts, $"All hosts: "));
         var originalWriter = hosts.FirstOrDefault(h => h.Role == HostRole.Writer);
         bool isOriginalWriterStillWriter = false;
 
@@ -319,7 +320,6 @@ public class FailoverPlugin : AbstractConnectionPlugin
         {
             // Update reader candidates, topology may have changed
             hosts = this.pluginService.GetHosts();
-            Logger.LogDebug(LoggerUtils.LogTopology(hosts, $"All hosts: "));
             var readerCandidates = hosts.Where(h => h.Role == HostRole.Reader).ToHashSet();
 
             // First, try all original readers
@@ -346,7 +346,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
                 try
                 {
                     DbConnection candidateConn = await this.pluginService.OpenConnection(readerCandidate, this.props, this, true);
-                    var role = this.pluginService.GetHostRole(candidateConn);
+                    var role = await this.pluginService.GetHostRole(candidateConn);
 
                     if (role == HostRole.Reader || this.failoverMode != FailoverMode.StrictReader)
                     {
@@ -386,7 +386,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
                 {
                     Logger.LogInformation("Trying the original writer {hostSpec} which may have been demoted to a reader", originalWriter);
                     DbConnection candidateConn = await this.pluginService.OpenConnection(originalWriter, this.props, this, true);
-                    var role = this.pluginService.GetHostRole(candidateConn);
+                    var role = await this.pluginService.GetHostRole(candidateConn);
 
                     if (role == HostRole.Reader || this.failoverMode != FailoverMode.StrictReader)
                     {
@@ -446,7 +446,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
             throw new FailoverFailedException($"Exception connecting to writer {writerCandidate.Host}", ex);
         }
 
-        var role = this.pluginService.GetHostRole(writerCandidateConn);
+        var role = await this.pluginService.GetHostRole(writerCandidateConn);
         if (role != HostRole.Writer)
         {
             try

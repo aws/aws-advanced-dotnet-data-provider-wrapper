@@ -283,13 +283,13 @@ public class RdsHostListProvider : IDynamicHostListProvider
         throw new InvalidOperationException("An error occurred while obtaining the connection's host ID.");
     }
 
-    public virtual HostRole GetHostRole(IDbConnection connection)
+    public virtual async Task<HostRole> GetHostRoleAsync(DbConnection connection)
     {
-        using IDbCommand command = connection.CreateCommand();
+        await using var command = connection.CreateCommand();
         command.CommandText = this.isReaderQuery;
-        using IDataReader reader = command.ExecuteReader();
+        await using var reader = await command.ExecuteReaderAsync();
 
-        while (reader.Read())
+        while (await reader.ReadAsync())
         {
             bool isReader = reader.GetBoolean(0);
             return isReader ? HostRole.Reader : HostRole.Writer;

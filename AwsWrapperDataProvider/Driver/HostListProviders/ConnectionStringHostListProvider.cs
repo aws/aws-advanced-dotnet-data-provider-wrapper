@@ -62,7 +62,7 @@ public class ConnectionStringHostListProvider : IStaticHostListProvider
         return this.ForceRefresh();
     }
 
-    public HostRole GetHostRole(IDbConnection connection)
+    public Task<HostRole> GetHostRoleAsync(DbConnection connection)
     {
         throw new NotSupportedException("ConnectionStringHostListProvider does not support GetHostRole.");
     }

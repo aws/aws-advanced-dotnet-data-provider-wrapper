@@ -154,9 +154,9 @@ public class PluginService : IPluginService, IHostListProviderService
         return this.AllHosts;
     }
 
-    public HostRole GetHostRole(DbConnection? connection)
+    public async Task<HostRole> GetHostRole(DbConnection? connection)
     {
-        return this.hostListProvider.GetHostRole(connection!);
+        return await this.hostListProvider.GetHostRoleAsync(connection!);
     }
 
     public void SetAvailability(ICollection<string> hostAliases, HostAvailability availability)

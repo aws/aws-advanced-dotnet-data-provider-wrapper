@@ -28,7 +28,7 @@ public interface IHostListProvider
 
     IList<HostSpec> ForceRefresh(IDbConnection connection);
 
-    HostRole GetHostRole(IDbConnection connection);
+    Task<HostRole> GetHostRoleAsync(DbConnection connection);
 
     string GetClusterId();
 

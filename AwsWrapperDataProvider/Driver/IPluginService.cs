@@ -64,7 +64,7 @@ public interface IPluginService : IExceptionHandlerService
     /// </summary>
     /// <param name="connection">The database connection.</param>
     /// <returns>The host role.</returns>
-    HostRole GetHostRole(DbConnection? connection);
+    Task<HostRole> GetHostRole(DbConnection? connection);
 
     /// <summary>
     /// Sets the availability of hosts.
