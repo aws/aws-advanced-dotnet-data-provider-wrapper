@@ -20,7 +20,6 @@ using AwsWrapperDataProvider.Tests.Container.Utils;
 using MySql.Data.MySqlClient;
 using NHibernate;
 using NHibernate.Cfg;
-using NHibernate.Criterion;
 using NHibernate.Driver;
 using NHibernate.Driver.MySqlConnector;
 using Npgsql;
