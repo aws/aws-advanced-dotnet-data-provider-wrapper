@@ -109,7 +109,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
                 if (writerCandidate == null || RdsUtils.IsRdsClusterDns(writerCandidate.Host))
                 {
                     writerConnectionCandidate = await methodFunc();
-                    this.pluginService.ForceRefreshHostList(writerConnectionCandidate);
+                    await this.pluginService.ForceRefreshHostListAsync(writerConnectionCandidate);
                     writerCandidate = await this.pluginService.IdentifyConnectionAsync(writerConnectionCandidate);
 
                     if (writerCandidate == null || writerCandidate.Role != HostRole.Writer)
@@ -132,7 +132,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
 
                 if ((await this.pluginService.GetHostRole(writerConnectionCandidate)) != HostRole.Writer)
                 {
-                    this.pluginService.ForceRefreshHostList(writerConnectionCandidate);
+                    await this.pluginService.ForceRefreshHostListAsync(writerConnectionCandidate);
                     this.DisposeConnection(writerConnectionCandidate);
                     await Task.Delay(retryDelay);
                 }
@@ -190,7 +190,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
                 if (readerCandidate == null || RdsUtils.IsRdsClusterDns(readerCandidate.Host))
                 {
                     readerConnectionCandidate = await methodFunc();
-                    this.pluginService.ForceRefreshHostList(readerConnectionCandidate);
+                    await this.pluginService.ForceRefreshHostListAsync(readerConnectionCandidate);
                     readerCandidate = await this.pluginService.IdentifyConnectionAsync(readerConnectionCandidate);
 
                     if (readerCandidate == null)
@@ -229,7 +229,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
 
                 if ((await this.pluginService.GetHostRole(readerConnectionCandidate)) != HostRole.Reader)
                 {
-                    this.pluginService.ForceRefreshHostList(readerConnectionCandidate);
+                    await this.pluginService.ForceRefreshHostListAsync(readerConnectionCandidate);
 
                     if (this.HasNoReader())
                     {

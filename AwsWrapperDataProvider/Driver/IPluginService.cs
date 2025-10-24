@@ -76,24 +76,28 @@ public interface IPluginService : IExceptionHandlerService
     /// <summary>
     /// Refreshes the host list.
     /// </summary>
-    void RefreshHostList();
+    /// <returns>Refresh host list task.</returns>
+    Task RefreshHostListAsync();
 
     /// <summary>
     /// Refreshes the host list using the given connection.
     /// </summary>
     /// <param name="connection">The database connection.</param>
-    void RefreshHostList(DbConnection connection);
+    /// <returns>Refresh host list task.</returns>
+    Task RefreshHostListAsync(DbConnection connection);
 
     /// <summary>
     /// Forces a refresh of the host list.
     /// </summary>
-    void ForceRefreshHostList();
+    /// <returns>Force refresh host list task.</returns>
+    Task ForceRefreshHostListAsync();
 
     /// <summary>
     /// Forces a refresh of the host list using the given connection.
     /// </summary>
     /// <param name="connection">The database connection.</param>
-    void ForceRefreshHostList(DbConnection connection);
+    /// <returns>Force refresh host list task.</returns>
+    Task ForceRefreshHostListAsync(DbConnection connection);
 
     /// <summary>
     /// Forces a refresh of the host list with verification options.

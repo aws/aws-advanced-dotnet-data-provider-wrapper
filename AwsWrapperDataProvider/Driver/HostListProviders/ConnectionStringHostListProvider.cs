@@ -40,26 +40,26 @@ public class ConnectionStringHostListProvider : IStaticHostListProvider
         this.isSingleWriterConnectionString = PropertyDefinition.SingleWriterConnectionString.GetBoolean(props);
     }
 
-    public IList<HostSpec> Refresh()
+    public Task<IList<HostSpec>> RefreshAsync()
     {
         this.Init();
-        return this.hostList.AsReadOnly();
+        return Task.FromResult((IList<HostSpec>)this.hostList.AsReadOnly());
     }
 
-    public IList<HostSpec> Refresh(IDbConnection connection)
+    public async Task<IList<HostSpec>> RefreshAsync(DbConnection? connection)
     {
-        return this.Refresh();
+        return await this.RefreshAsync();
     }
 
-    public IList<HostSpec> ForceRefresh()
+    public Task<IList<HostSpec>> ForceRefreshAsync()
     {
         this.Init();
-        return this.hostList.AsReadOnly();
+        return Task.FromResult((IList<HostSpec>)this.hostList.AsReadOnly());
     }
 
-    public IList<HostSpec> ForceRefresh(IDbConnection connection)
+    public async Task<IList<HostSpec>> ForceRefreshAsync(DbConnection? connection)
     {
-        return this.ForceRefresh();
+        return await this.ForceRefreshAsync();
     }
 
     public Task<HostRole> GetHostRoleAsync(DbConnection connection)

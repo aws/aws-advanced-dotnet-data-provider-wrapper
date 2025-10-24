@@ -210,7 +210,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
         {
             try
             {
-                this.pluginService.RefreshHostList();
+                await this.pluginService.RefreshHostListAsync();
                 await this.FailoverAsync();
             }
             catch (FailoverSuccessException)
@@ -226,7 +226,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
         if (isInitialConnection)
         {
-            this.pluginService.RefreshHostList(connection);
+            await this.pluginService.RefreshHostListAsync(connection);
         }
 
         return connection;

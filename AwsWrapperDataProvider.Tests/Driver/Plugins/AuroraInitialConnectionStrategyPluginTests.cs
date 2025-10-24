@@ -216,7 +216,7 @@ public class AuroraInitialConnectionStrategyPluginTests
 
         await this.plugin.OpenConnection(writerHost, props, true, methodFunc.Object, true);
 
-        this.mockPluginService.Verify(x => x.ForceRefreshHostList(It.IsAny<DbConnection>()), Times.Once);
+        this.mockPluginService.Verify(x => x.ForceRefreshHostListAsync(It.IsAny<DbConnection>()), Times.Once);
         this.mockPluginService.Verify(x => x.IdentifyConnectionAsync(It.IsAny<DbConnection>(), It.IsAny<DbTransaction>()), Times.Once);
     }
 
@@ -246,7 +246,7 @@ public class AuroraInitialConnectionStrategyPluginTests
 
         await this.plugin.OpenConnection(readerHost, props, true, methodFunc.Object, true);
 
-        this.mockPluginService.Verify(x => x.ForceRefreshHostList(It.IsAny<DbConnection>()), Times.Once);
+        this.mockPluginService.Verify(x => x.ForceRefreshHostListAsync(It.IsAny<DbConnection>()), Times.Once);
         this.mockHostListProviderService.VerifySet(x => x.InitialConnectionHostSpec = It.IsAny<HostSpec>(), Times.Once);
     }
 

@@ -109,7 +109,7 @@ public class AwsWrapperConnection : DbConnection
 
         this.PluginManager.InitConnectionPluginChain(this.pluginService, this.ConnectionProperties);
 
-        this.pluginService.RefreshHostList();
+        this.pluginService.RefreshHostListAsync().GetAwaiter().GetResult();
         this.pluginService.SetCurrentConnection(
             connectionProvider.CreateDbConnection(
                 this.pluginService.Dialect,
@@ -209,7 +209,7 @@ public class AwsWrapperConnection : DbConnection
             true,
             async);
         this.pluginService.SetCurrentConnection(connection, this.pluginService.InitialConnectionHostSpec);
-        this.pluginService.RefreshHostList();
+        await this.pluginService.RefreshHostListAsync();
     }
 
     protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel)

@@ -71,7 +71,7 @@ public class AuroraStaleDnsHelper
         HostRole connectionRole = await this.pluginService.GetHostRole(connection);
         Logger.LogTrace("Current connection role: {role}", connectionRole);
 
-        this.pluginService.ForceRefreshHostList(connection);
+        await this.pluginService.ForceRefreshHostListAsync(connection);
         Logger.LogTrace(LoggerUtils.LogTopology(this.pluginService.AllHosts, null));
 
         this.writerHostSpec = this.GetWriter();

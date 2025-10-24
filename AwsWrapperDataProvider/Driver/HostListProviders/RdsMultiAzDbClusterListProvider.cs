@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data;
+using System.Data.Common;
 using System.Globalization;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -40,47 +41,47 @@ public class RdsMultiAzDbClusterListProvider : RdsHostListProvider
         this.fetchWriterNodeQueryHeader = fetchWriterNodeQueryHeader;
     }
 
-    internal override List<HostSpec> QueryForTopology(IDbConnection conn)
+    internal override async Task<List<HostSpec>?> QueryForTopologyAsync(DbConnection conn)
     {
         string? writerNodeId;
 
-        using (IDbCommand fetchWriterNodeCommand = conn.CreateCommand())
+        await using (var fetchWriterNodeCommand = conn.CreateCommand())
         {
             fetchWriterNodeCommand.CommandTimeout = DefaultTopologyQueryTimeoutSec;
             fetchWriterNodeCommand.CommandText = this.fetchWriterNodeQuery;
-            using IDataReader writerNodeReader = fetchWriterNodeCommand.ExecuteReader();
-            writerNodeId = this.ProcessWriterNodeId(writerNodeReader);
+            await using var writerNodeReader = await fetchWriterNodeCommand.ExecuteReaderAsync();
+            writerNodeId = await this.ProcessWriterNodeId(writerNodeReader);
         }
 
         if (writerNodeId == null)
         {
-            using (IDbCommand nodeIdCommand = conn.CreateCommand())
+            await using (var nodeIdCommand = conn.CreateCommand())
             {
                 nodeIdCommand.CommandTimeout = DefaultTopologyQueryTimeoutSec;
                 nodeIdCommand.CommandText = this.nodeIdQuery;
-                using var nodeIdReader = nodeIdCommand.ExecuteReader();
-                while (nodeIdReader.Read())
+                await using var nodeIdReader = await nodeIdCommand.ExecuteReaderAsync();
+                while (await nodeIdReader.ReadAsync())
                 {
-                    writerNodeId = nodeIdReader.IsDBNull(0)
+                    writerNodeId = await nodeIdReader.IsDBNullAsync(0)
                         ? null
                         : Convert.ToString(nodeIdReader.GetValue(0), CultureInfo.InvariantCulture);
                 }
             }
         }
 
-        using IDbCommand topologyCommand = conn.CreateCommand();
+        await using var topologyCommand = conn.CreateCommand();
         topologyCommand.CommandTimeout = DefaultTopologyQueryTimeoutSec;
         topologyCommand.CommandText = this.topologyQuery;
-        using var topologyReader = topologyCommand.ExecuteReader();
-        return this.ProcessTopologyQueryResults(topologyReader, writerNodeId);
+        await using var topologyReader = await topologyCommand.ExecuteReaderAsync();
+        return await this.ProcessTopologyQueryResultsAsync(topologyReader, writerNodeId);
     }
 
-    private string? ProcessWriterNodeId(IDataReader fetchWriterNodeReader)
+    private async Task<string?> ProcessWriterNodeId(DbDataReader fetchWriterNodeReader)
     {
-        if (fetchWriterNodeReader.Read())
+        if (await fetchWriterNodeReader.ReadAsync())
         {
             int ordinal = fetchWriterNodeReader.GetOrdinal(this.fetchWriterNodeQueryHeader);
-            if (!fetchWriterNodeReader.IsDBNull(ordinal))
+            if (!(await fetchWriterNodeReader.IsDBNullAsync(ordinal)))
             {
                 return Convert.ToString(fetchWriterNodeReader.GetValue(ordinal), CultureInfo.InvariantCulture);
             }
@@ -91,11 +92,11 @@ public class RdsMultiAzDbClusterListProvider : RdsHostListProvider
         return null;
     }
 
-    private List<HostSpec> ProcessTopologyQueryResults(IDataReader topologyReader, string? writerNodeId)
+    private async Task<List<HostSpec>> ProcessTopologyQueryResultsAsync(DbDataReader topologyReader, string? writerNodeId)
     {
         var hostMap = new Dictionary<string, HostSpec>(StringComparer.Ordinal);
 
-        while (topologyReader.Read())
+        while (await topologyReader.ReadAsync())
         {
             var host = this.CreateHost(topologyReader, writerNodeId);
             hostMap[host.Host] = host;

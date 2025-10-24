@@ -199,16 +199,16 @@ public class RdsHostListProvider : IDynamicHostListProvider
         }
     }
 
-    public virtual IList<HostSpec> ForceRefresh()
+    public virtual async Task<IList<HostSpec>> ForceRefreshAsync()
     {
-        return this.ForceRefresh(null);
+        return await this.ForceRefreshAsync(null);
     }
 
-    public virtual IList<HostSpec> ForceRefresh(IDbConnection? connection)
+    public virtual async Task<IList<HostSpec>> ForceRefreshAsync(DbConnection? connection)
     {
         this.EnsureInitialized();
-        IDbConnection? currentConnection = connection ?? this.hostListProviderService.CurrentConnection;
-        FetchTopologyResult result = this.GetTopology(currentConnection, true);
+        DbConnection? currentConnection = connection ?? this.hostListProviderService.CurrentConnection;
+        FetchTopologyResult result = await this.GetTopologyAsync(currentConnection, true);
         Logger.LogTrace(LoggerUtils.LogTopology(result.Hosts, null));
 
         this.hostList = result.Hosts;
@@ -240,13 +240,13 @@ public class RdsHostListProvider : IDynamicHostListProvider
                 instanceName = Convert.ToString(resultSet.GetValue(0), CultureInfo.InvariantCulture)!;
             }
 
-            IList<HostSpec> topology = this.Refresh(connection);
+            IList<HostSpec> topology = await this.RefreshAsync(connection);
             bool isForcedRefresh = false;
 
             // TODO Clean up if statement
             if (topology == null)
             {
-                topology = this.ForceRefresh(connection);
+                topology = await this.ForceRefreshAsync(connection);
                 isForcedRefresh = true;
 
                 if (topology == null)
@@ -261,7 +261,7 @@ public class RdsHostListProvider : IDynamicHostListProvider
 
             if (foundHost == null && !isForcedRefresh)
             {
-                topology = this.ForceRefresh(connection);
+                topology = await this.ForceRefreshAsync(connection);
                 if (topology == null)
                 {
                     return null;
@@ -299,22 +299,22 @@ public class RdsHostListProvider : IDynamicHostListProvider
         throw new InvalidOperationException("Failed to determine host role from the database.");
     }
 
-    public virtual IList<HostSpec> Refresh()
+    public virtual async Task<IList<HostSpec>> RefreshAsync()
     {
-        return this.Refresh(null);
+        return await this.RefreshAsync(null);
     }
 
-    public virtual IList<HostSpec> Refresh(IDbConnection? connection)
+    public virtual async Task<IList<HostSpec>> RefreshAsync(DbConnection? connection)
     {
         this.EnsureInitialized();
-        IDbConnection? currentConnection = connection ?? this.hostListProviderService.CurrentConnection;
-        FetchTopologyResult result = this.GetTopology(currentConnection, false);
+        DbConnection? currentConnection = connection ?? this.hostListProviderService.CurrentConnection;
+        FetchTopologyResult result = await this.GetTopologyAsync(currentConnection, false);
         Logger.LogTrace(LoggerUtils.LogTopology(result.Hosts, result.IsCachedData ? "From cache" : "New Topology"));
         this.hostList = result.Hosts;
         return this.hostList.AsReadOnly();
     }
 
-    internal FetchTopologyResult GetTopology(IDbConnection? connection, bool forceUpdate)
+    internal async Task<FetchTopologyResult> GetTopologyAsync(DbConnection? connection, bool forceUpdate)
     {
         this.EnsureInitialized();
 
@@ -335,7 +335,7 @@ public class RdsHostListProvider : IDynamicHostListProvider
                 return new FetchTopologyResult(false, this.initialHostList);
             }
 
-            List<HostSpec>? hosts = this.QueryForTopology(connection);
+            List<HostSpec>? hosts = await this.QueryForTopologyAsync(connection);
             if (hosts != null && hosts.Count > 0)
             {
                 TopologyCache.Set(this.ClusterId, hosts, this.topologyRefreshRate);
@@ -385,17 +385,17 @@ public class RdsHostListProvider : IDynamicHostListProvider
         }
     }
 
-    internal virtual List<HostSpec>? QueryForTopology(IDbConnection connection)
+    internal virtual async Task<List<HostSpec>?> QueryForTopologyAsync(DbConnection connection)
     {
-        using IDbCommand command = connection.CreateCommand();
+        await using var command = connection.CreateCommand();
         command.CommandTimeout = DefaultTopologyQueryTimeoutSec;
         command.CommandText = this.topologyQuery;
-        using IDataReader reader = command.ExecuteReader();
+        await using var reader = await command.ExecuteReaderAsync();
 
         List<HostSpec> hosts = [];
         List<HostSpec> writers = [];
 
-        while (reader.Read())
+        while (await reader.ReadAsync())
         {
             // According to the topology query the result set
             // should contain 5 columns: node ID, 1/0 (writer/reader), CPU utilization, node lag in time, last update timestamp.

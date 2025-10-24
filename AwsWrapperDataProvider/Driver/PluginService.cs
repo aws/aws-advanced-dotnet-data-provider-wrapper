@@ -211,9 +211,9 @@ public class PluginService : IPluginService, IHostListProviderService
         }
     }
 
-    public void RefreshHostList()
+    public async Task RefreshHostListAsync()
     {
-        IList<HostSpec> updateHostList = this.hostListProvider.Refresh();
+        IList<HostSpec> updateHostList = await this.hostListProvider.RefreshAsync();
         if (!updateHostList.SequenceEqual(this.AllHosts))
         {
             this.UpdateHostAvailability(updateHostList);
@@ -222,25 +222,25 @@ public class PluginService : IPluginService, IHostListProviderService
         }
     }
 
-    public void RefreshHostList(DbConnection connection)
+    public async Task RefreshHostListAsync(DbConnection connection)
     {
-        IList<HostSpec> updateHostList = this.hostListProvider.Refresh(connection);
+        IList<HostSpec> updateHostList = await this.hostListProvider.RefreshAsync(connection);
         this.UpdateHostAvailability(updateHostList);
         this.NotifyNodeChangeList(this.AllHosts, updateHostList);
         this.AllHosts = updateHostList;
     }
 
-    public void ForceRefreshHostList()
+    public async Task ForceRefreshHostListAsync()
     {
-        IList<HostSpec> updateHostList = this.hostListProvider.ForceRefresh();
+        IList<HostSpec> updateHostList = await this.hostListProvider.ForceRefreshAsync();
         this.UpdateHostAvailability(updateHostList);
         this.NotifyNodeChangeList(this.AllHosts, updateHostList);
         this.AllHosts = updateHostList;
     }
 
-    public void ForceRefreshHostList(DbConnection connection)
+    public async Task ForceRefreshHostListAsync(DbConnection connection)
     {
-        IList<HostSpec> updateHostList = this.hostListProvider.ForceRefresh(connection);
+        IList<HostSpec> updateHostList = await this.hostListProvider.ForceRefreshAsync(connection);
         this.UpdateHostAvailability(updateHostList);
         this.NotifyNodeChangeList(this.AllHosts, updateHostList);
         this.AllHosts = updateHostList;
@@ -294,7 +294,7 @@ public class PluginService : IPluginService, IHostListProviderService
                                      ?? this.hostListProvider;
         }
 
-        this.RefreshHostList(connection);
+        await this.RefreshHostListAsync(connection);
     }
 
     public Task<HostSpec?> IdentifyConnectionAsync(DbConnection connection, DbTransaction? transaction = null)
