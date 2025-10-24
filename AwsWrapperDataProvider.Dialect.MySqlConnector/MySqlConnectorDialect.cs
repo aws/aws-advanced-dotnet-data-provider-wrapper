@@ -15,37 +15,30 @@
 using System.Data;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
+using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
-using Npgsql;
+using MySqlConnector;
 
-namespace AwsWrapperDataProvider.Driver.TargetConnectionDialects;
+namespace AwsWrapperDataProvider.Dialect.MySqlConnector;
 
-public class NpgsqlDialect : GenericTargetConnectionDialect
+public class MySqlConnectorDialect : AbstractTargetConnectionDialect
 {
-    public override Type DriverConnectionType { get; } = typeof(NpgsqlConnection);
+    public override Type DriverConnectionType { get; } = typeof(MySqlConnection);
 
     public override string PrepareConnectionString(
         IDialect dialect,
         HostSpec? hostSpec,
         Dictionary<string, string> props)
     {
-        return this.PrepareConnectionString(dialect, hostSpec, props, PropertyDefinition.Host);
+        PropertyDefinition.Port.GetInt(props);
+        return this.PrepareConnectionString(dialect, hostSpec, props, PropertyDefinition.Server);
     }
 
-    public virtual bool Ping(IDbConnection connection)
+    public override bool Ping(IDbConnection connection)
     {
-        try
+        if (connection is MySqlConnection mySqlConnection)
         {
-            if (connection is NpgsqlConnection npgsqlConnection)
-            {
-                using var cmd = new NpgsqlCommand("SELECT 1", npgsqlConnection);
-                cmd.ExecuteScalar();
-                return true;
-            }
-        }
-        catch
-        {
-            return false;
+            return mySqlConnection.Ping();
         }
 
         return false;

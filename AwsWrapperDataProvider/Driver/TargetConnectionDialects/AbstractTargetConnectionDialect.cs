@@ -1,4 +1,4 @@
-﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -13,49 +13,30 @@
 // limitations under the License.
 
 using System.Data;
+using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
 
 namespace AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 
-public class GenericTargetConnectionDialect : AbstractTargetConnectionDialect
+public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
 {
-    public override Type DriverConnectionType { get; }
+    public abstract Type DriverConnectionType { get; }
 
-    public GenericTargetConnectionDialect(Type connectionType)
+    public bool IsDialect(Type connectionType)
     {
-        this.DriverConnectionType = connectionType;
+        return connectionType == this.DriverConnectionType;
     }
 
-    public override string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props)
+    public abstract string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props);
+
+    public ISet<string> GetAllowedOnConnectionMethodNames()
     {
-        return this.PrepareConnectionString(dialect, hostSpec, props, PropertyDefinition.Host);
+        throw new NotImplementedException("Will implement in Milestone 5, as feature is only relevant to Failover.");
     }
 
-    public override bool Ping(IDbConnection connection)
-    {
-        try
-        {
-            if (connection.State != ConnectionState.Open)
-            {
-                connection.Open();
-            }
-
-            using (IDbCommand command = connection.CreateCommand())
-            {
-                command.CommandText = "SELECT 1";
-                command.CommandType = CommandType.Text;
-                command.ExecuteScalar();
-            }
-
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
-    }
+    public abstract bool Ping(IDbConnection connection);
 
     protected string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, AwsWrapperProperty hostProperty)
     {

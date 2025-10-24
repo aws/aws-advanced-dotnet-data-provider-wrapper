@@ -36,7 +36,7 @@ public class PluginService : IPluginService, IHostListProviderService
     private static readonly ILogger<PluginService> Logger = LoggerUtils.GetLogger<PluginService>();
 
     private readonly object connectionSwitchLock = new();
-
+    private readonly AwsWrapperConnection wrapperConnection;
     private readonly ConnectionPluginManager pluginManager;
     private readonly Dictionary<string, string> props;
     private readonly DialectProvider dialectProvider;
@@ -79,13 +79,13 @@ public class PluginService : IPluginService, IHostListProviderService
     }
 
     public PluginService(
-        Type connectionType,
+        AwsWrapperConnection wrapperConnection,
         ConnectionPluginManager pluginManager,
         Dictionary<string, string> props,
-        string connectionString,
         ITargetConnectionDialect? targetConnectionDialect,
         ConfigurationProfile? configurationProfile)
     {
+        this.wrapperConnection = wrapperConnection;
         this.pluginManager = pluginManager;
         this.props = props;
         this.TargetConnectionDialect = configurationProfile?.TargetConnectionDialect ?? targetConnectionDialect ?? throw new ArgumentNullException(nameof(targetConnectionDialect));
@@ -141,12 +141,9 @@ public class PluginService : IPluginService, IHostListProviderService
             {
                 if (!ReferenceEquals(connection, oldConnection))
                 {
-                    if (oldConnection != null)
+                    foreach (var cmd in this.wrapperConnection.ActiveWrapperCommands)
                     {
-                        Logger.LogDebug("Disposing old connection DataSource={DataSource} Hash={Hash} State={State}",
-                            oldConnection.DataSource,
-                            RuntimeHelpers.GetHashCode(oldConnection),
-                            oldConnection.State);
+                        cmd.SetCurrentConnection(connection);
                     }
 
                     oldConnection?.Dispose();
@@ -258,7 +255,7 @@ public class PluginService : IPluginService, IHostListProviderService
         this.NotifyNodeChangeList(this.AllHosts, updateHostList);
         this.AllHosts = updateHostList;
 
-        Logger.LogDebug("PluginService.RefreshHostList() completed with connection state = {State}, AllHost = {AllHosts}", connection.State,  LoggerUtils.LogTopology(this.AllHosts, "All Hosts"));
+        Logger.LogDebug("PluginService.RefreshHostList() completed with connection state = {State}, AllHost = {AllHosts}", connection.State, LoggerUtils.LogTopology(this.AllHosts, "All Hosts"));
     }
 
     public void ForceRefreshHostList()
@@ -278,23 +275,29 @@ public class PluginService : IPluginService, IHostListProviderService
         this.NotifyNodeChangeList(this.AllHosts, updateHostList);
         this.AllHosts = updateHostList;
 
-        Logger.LogDebug("PluginService.ForceRefreshHostList() completed with connection state = {State}, AllHost = {AllHosts}", connection.State,  LoggerUtils.LogTopology(this.AllHosts, "All Hosts"));
+        Logger.LogDebug("PluginService.ForceRefreshHostList() completed with connection state = {State}, AllHost = {AllHosts}", connection.State, LoggerUtils.LogTopology(this.AllHosts, "All Hosts"));
     }
 
-    public void ForceRefreshHostList(bool shouldVerifyWriter, long timeoutMs)
+    public bool ForceRefreshHostList(bool shouldVerifyWriter, long timeoutMs)
     {
         if (this.HostListProvider is IBlockingHostListProvider blockingHostListProvider)
         {
-            IList<HostSpec> updateHostList = blockingHostListProvider.ForceRefresh(shouldVerifyWriter, timeoutMs);
-            this.UpdateHostAvailability(updateHostList);
-            this.NotifyNodeChangeList(this.AllHosts, updateHostList);
-            this.AllHosts = updateHostList;
-            Logger.LogDebug("PluginService.ForceRefreshHostList() updated AllHost = {AllHosts}", LoggerUtils.LogTopology(this.AllHosts, "All Hosts"));
+            try
+            {
+                IList<HostSpec> updateHostList = blockingHostListProvider.ForceRefresh(shouldVerifyWriter, timeoutMs);
+                this.UpdateHostAvailability(updateHostList);
+                this.NotifyNodeChangeList(this.AllHosts, updateHostList);
+                this.AllHosts = updateHostList;
+                return true;
+            }
+            catch (TimeoutException)
+            {
+                Logger.LogDebug("A timeout exception occurred after waiting {timeoutMs} ms for refreshed topology.", timeoutMs);
+                return false;
+            }
         }
-        else
-        {
-            throw new InvalidOperationException("[PluginService] Required IBlockingHostListProvider");
-        }
+
+        throw new InvalidOperationException("[PluginService] Required IBlockingHostListProvider");
     }
 
     public DbConnection OpenConnection(

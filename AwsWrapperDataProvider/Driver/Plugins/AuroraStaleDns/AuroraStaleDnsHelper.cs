@@ -61,6 +61,7 @@ public class AuroraStaleDnsHelper
         try
         {
             connection = openFunc();
+
             // TODO: investigate if the whole function needs to be retried on other exception.
         }
         catch (InvalidOpenConnectionException)

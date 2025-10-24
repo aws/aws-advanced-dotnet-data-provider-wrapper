@@ -7,16 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.RDS" Version="4.0.4" />
-    <PackageReference Include="AWSSDK.SecretsManager" Version="4.0.1.2" />
-    <PackageReference Include="AWSSDK.SecurityToken" Version="4.0.2.2" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.9" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.6" />
-    <PackageReference Include="MySql.Data" Version="9.3.0" />
-    <PackageReference Include="MySqlConnector" Version="2.4.0" />
-    <PackageReference Include="Npgsql" Version="9.0.3" />
   </ItemGroup>
 
   <ItemGroup>

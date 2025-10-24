@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using System.Data.Common;
-using Amazon.SecurityToken.Model.Internal.MarshallTransformations;
 using AwsWrapperDataProvider.Driver.Exceptions;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;

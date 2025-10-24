@@ -91,8 +91,8 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                 default:
                     {
                         var val = session.CreateSQLQuery(
-                            "SELECT CAST(COALESCE(@@super_read_only, @@global.read_only) AS SIGNED)"
-                        ).UniqueResult();
+                            "SELECT CAST(COALESCE(@@super_read_only, @@global.read_only) AS SIGNED)")
+                        .UniqueResult();
 
                         var readOnlyFlag = Convert.ToInt64(val);
                         Assert.Equal(0L, readOnlyFlag);
@@ -166,6 +166,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
         [Trait("Database", "mysql-nh")]
         [Trait("Database", "pg-nh")]
         [Trait("Engine", "aurora")]
+
         // [Trait("Engine", "multi-az")]
         public async Task NHibernateCrashBeforeOpenWithFailoverTest_WithoutPooling()
         {
@@ -230,6 +231,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
         [Trait("Database", "mysql-nh")]
         [Trait("Database", "pg-nh")]
         [Trait("Engine", "aurora")]
+
         // [Trait("Engine", "multi-az")]
         public async Task NHibernateCrashBeforeOpenWithFailoverTest_WithPooling()
         {

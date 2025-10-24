@@ -26,7 +26,6 @@ public class HostMonitor : IHostMonitor
 {
     private static readonly ILogger<HostMonitor> Logger = LoggerUtils.GetLogger<HostMonitor>();
     private static readonly int ThreadSleepMs = 100;
-    private static readonly string MonitoringPropertyPrefix = "monitoring-";
 
     private readonly ConcurrentQueue<WeakReference<HostMonitorConnectionContext>> activeContexts = new();
     private readonly MemoryCache newContexts = new(new MemoryCacheOptions());
@@ -312,9 +311,9 @@ public class HostMonitor : IHostMonitor
 
                 foreach (string key in this.properties.Keys)
                 {
-                    if (key.StartsWith(MonitoringPropertyPrefix))
+                    if (key.StartsWith(PropertyDefinition.MonitoringPropertyPrefix))
                     {
-                        monitoringConnProperties[key[MonitoringPropertyPrefix.Length..]] = this.properties[key];
+                        monitoringConnProperties[key[PropertyDefinition.MonitoringPropertyPrefix.Length..]] = this.properties[key];
                         monitoringConnProperties.Remove(key);
                     }
                 }
@@ -336,7 +335,7 @@ public class HostMonitor : IHostMonitor
             using (var validityCheckCommand = this.monitoringConn!.CreateCommand())
             {
                 validityCheckCommand.CommandText = "SELECT 1";
-                int validTimeoutSeconds = (this.failureDetectionIntervalMs - ThreadSleepMs) / 2000;
+                int validTimeoutSeconds = Math.Max((this.failureDetectionIntervalMs - ThreadSleepMs) / 2000, 1);
                 Logger.LogTrace($"Command timeout for ping is {validTimeoutSeconds} seconds");
                 validityCheckCommand.CommandTimeout = validTimeoutSeconds;
                 validityCheckCommand.ExecuteScalar();

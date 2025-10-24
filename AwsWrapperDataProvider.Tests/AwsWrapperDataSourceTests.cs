@@ -24,7 +24,7 @@ public class AwsWrapperDataSourceTests
     [Trait("Category", "Unit")]
     public void Constructor_WithMySqlDataSource_CreatesWrappedConnection()
     {
-        DbDataSource dataSource = new MySqlDataSource("Server=<insert_rds_instance_here>;User ID=admin;Password=my_password_2020;Initial Catalog=test;");
+        DbDataSource dataSource = new MySqlDataSource("Server=<insert_rds_instance_here>;User ID=admin;Password=<password>;Initial Catalog=test;");
         DbDataSource wrapper = new AwsWrapperDataSource(dataSource);
         DbConnection connection = wrapper.CreateConnection();
 
@@ -35,7 +35,7 @@ public class AwsWrapperDataSourceTests
     [Trait("Category", "Unit")]
     public void Constructor_WithMySqlDataSource_CreatesWrappedBatch()
     {
-        DbDataSource dataSource = new MySqlDataSource("Server=<insert_rds_instance_here>;User ID=admin;Password=my_password_2020;Initial Catalog=test;");
+        DbDataSource dataSource = new MySqlDataSource("Server=<insert_rds_instance_here>;User ID=admin;Password=<password>;Initial Catalog=test;");
         DbDataSource wrapper = new AwsWrapperDataSource(dataSource);
         DbBatch batch = wrapper.CreateBatch();
 
@@ -46,7 +46,7 @@ public class AwsWrapperDataSourceTests
     [Trait("Category", "Unit")]
     public void Constructor_WithMySqlDataSource_CreatesWrappedCommand()
     {
-        DbDataSource dataSource = new MySqlDataSource("Server=<insert_rds_instance_here>;User ID=admin;Password=my_password_2020;Initial Catalog=test;");
+        DbDataSource dataSource = new MySqlDataSource("Server=<insert_rds_instance_here>;User ID=admin;Password=<password>;Initial Catalog=test;");
         DbDataSource wrapper = new AwsWrapperDataSource(dataSource);
         DbCommand batch = wrapper.CreateCommand();
 
@@ -57,7 +57,7 @@ public class AwsWrapperDataSourceTests
     [Trait("Category", "Unit")]
     public void Constructor_WithNpgsqlDataSource_CreatesWrappedConnection()
     {
-        DbDataSource dataSource = NpgsqlDataSource.Create("Host=<insert_rds_instance_here>;Username=pgadmin;Password=my_password_2020;Database=postgres;");
+        DbDataSource dataSource = NpgsqlDataSource.Create("Host=<insert_rds_instance_here>;Username=pgadmin;Password=<password>;Database=postgres;");
         DbDataSource wrapper = new AwsWrapperDataSource(dataSource);
         DbConnection connection = wrapper.CreateConnection();
 
@@ -68,7 +68,7 @@ public class AwsWrapperDataSourceTests
     [Trait("Category", "Unit")]
     public void Constructor_WithNpgsqlDataSource_CreatesWrappedBatch()
     {
-        DbDataSource dataSource = NpgsqlDataSource.Create("Host=<insert_rds_instance_here>;Username=pgadmin;Password=my_password_2020;Database=postgres;");
+        DbDataSource dataSource = NpgsqlDataSource.Create("Host=<insert_rds_instance_here>;Username=pgadmin;Password=<password>;Database=postgres;");
         DbDataSource wrapper = new AwsWrapperDataSource(dataSource);
         DbBatch batch = wrapper.CreateBatch();
 
@@ -79,7 +79,7 @@ public class AwsWrapperDataSourceTests
     [Trait("Category", "Unit")]
     public void Constructor_WithNpgsqlDataSource_CreatesWrappedCommand()
     {
-        DbDataSource dataSource = NpgsqlDataSource.Create("Host=<insert_rds_instance_here>;Username=pgadmin;Password=my_password_2020;Database=postgres;");
+        DbDataSource dataSource = NpgsqlDataSource.Create("Host=<insert_rds_instance_here>;Username=pgadmin;Password=<password>;Database=postgres;");
         DbDataSource wrapper = new AwsWrapperDataSource(dataSource);
         DbCommand batch = wrapper.CreateCommand();
 

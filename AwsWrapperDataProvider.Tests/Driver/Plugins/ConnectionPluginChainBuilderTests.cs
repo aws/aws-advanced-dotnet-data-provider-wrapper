@@ -50,6 +50,36 @@ public class ConnectionPluginChainBuilderTests
 
     [Fact]
     [Trait("Category", "Unit")]
+    public void TestGetAllPlugins()
+    {
+        AwsAuthenticationPluginProvider.AwsAuthenticationPluginLoader.Load();
+
+        string allPluginCodes = string.Join(
+            ",",
+            PluginCodes.ExecutionTime,
+            PluginCodes.Failover,
+            PluginCodes.HostMonitoring,
+            PluginCodes.Iam,
+            PluginCodes.InitialConnection,
+            PluginCodes.FederatedAuth,
+            PluginCodes.Okta);
+        AwsAuthenticationPluginProvider.AwsAuthenticationPluginLoader awsAuthenticationPluginLoader = new();
+        Dictionary<string, string> props = new() { { PropertyDefinition.Plugins.Name, allPluginCodes } };
+        ConnectionPluginChainBuilder pluginChainBuilder = new();
+
+        IList<IConnectionPlugin> plugins = pluginChainBuilder.GetPlugins(
+            this.pluginServiceMock.Object,
+            this.connectionProviderMock.Object,
+            null,
+            props,
+            null);
+
+        Assert.NotNull(plugins);
+        Assert.Equal(8, plugins.Count);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
     public void TestPreservePluginOrder()
     {
         Dictionary<string, string> props = new()

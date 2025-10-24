@@ -14,6 +14,9 @@
 
 using System.Data;
 using System.Data.Common;
+using AwsWrapperDataProvider.Dialect.MySqlClient;
+using AwsWrapperDataProvider.Dialect.MySqlConnector;
+using AwsWrapperDataProvider.Dialect.Npgsql;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
@@ -25,26 +28,25 @@ namespace AwsWrapperDataProvider.Tests.Driver.TargetConnectionDialects;
 
 public class TargetConnectionDialectProviderTests
 {
+    static TargetConnectionDialectProviderTests()
+    {
+        MySqlClientDialectLoader.Load();
+        MySqlConnectorDialectLoader.Load();
+        NpgsqlDialectLoader.Load();
+    }
+
     [Theory]
     [Trait("Category", "Unit")]
     [InlineData(typeof(NpgsqlConnection), typeof(NpgsqlDialect))]
     [InlineData(typeof(MySqlConnection), typeof(MySqlConnectorDialect))]
+    [InlineData(typeof(MySql.Data.MySqlClient.MySqlConnection), typeof(MySqlClientDialect))]
+    [InlineData(typeof(AwsWrapperConnection), typeof(GenericTargetConnectionDialect))]
     public void GetDialect_WithSupportedConnectionType_ReturnsTargetDriverDialect(Type connectionType, Type dialectType)
     {
         var dialect = TargetConnectionDialectProvider.GetDialect(connectionType, null);
         Assert.NotNull(dialect);
         Assert.IsType(dialectType, dialect);
         Assert.Equal(connectionType, dialect.DriverConnectionType);
-    }
-
-    [Fact]
-    [Trait("Category", "Unit")]
-    public void GetDialect_WithUnsupportedConnectionType_ThrowsNotSupportedException()
-    {
-        var exception = Assert.Throws<NotSupportedException>(() =>
-            TargetConnectionDialectProvider.GetDialect(typeof(AwsWrapperConnection), null));
-
-        Assert.Contains("No dialect found for connection type", exception.Message);
     }
 
     [Fact]

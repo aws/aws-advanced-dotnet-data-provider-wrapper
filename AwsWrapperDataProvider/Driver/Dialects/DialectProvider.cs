@@ -32,11 +32,11 @@ public class DialectProvider
     private static readonly MemoryCache KnownEndpointDialects = new(new MemoryCacheOptions());
     private static readonly TimeSpan EndpointCacheExpiration = TimeSpan.FromHours(24);
 
-    private static readonly Dictionary<Type, string> ConnectionToDatasourceMap = new()
+    private static readonly Dictionary<string, string> ConnectionToDatasourceMap = new()
     {
-        { typeof(Npgsql.NpgsqlConnection), PgDataSource },
-        { typeof(MySqlConnector.MySqlConnection), MySqlDataSource },
-        { typeof(MySql.Data.MySqlClient.MySqlConnection), MySqlDataSource },
+        { "Npgsql.NpgsqlConnection", PgDataSource },
+        { "MySqlConnector.MySqlConnection", MySqlDataSource },
+        { "MySql.Data.MySqlClient.MySqlConnection", MySqlDataSource },
     };
 
     private static readonly Dictionary<Type, IDialect> KnownDialectsByType = new()
@@ -129,8 +129,11 @@ public class DialectProvider
         }
 
         RdsUrlType rdsUrlType = RdsUtils.IdentifyRdsType(host);
-        Type targetConnectionType = Type.GetType(PropertyDefinition.TargetConnectionType.GetString(this.properties)!) ?? throw new InvalidCastException("Target connection type not found.");
-        string targetDatasourceType = ConnectionToDatasourceMap.GetValueOrDefault(targetConnectionType) ?? "unknown";
+        string targetConnectionType = PropertyDefinition.TargetConnectionType.GetString(this.properties)! ?? throw new InvalidCastException("Target connection type not found.");
+        string targetDatasourceType = ConnectionToDatasourceMap
+            .FirstOrDefault(kvp => targetConnectionType.Contains(kvp.Key))
+            .Value ?? "unknown";
+
         Type dialectType = DialectTypeMap.GetValueOrDefault((rdsUrlType, targetDatasourceType), typeof(UnknownDialect));
         this.dialect = KnownDialectsByType[dialectType];
         Logger.LogDebug("Guessed dialect: {dialect}", this.dialect.GetType().FullName);
