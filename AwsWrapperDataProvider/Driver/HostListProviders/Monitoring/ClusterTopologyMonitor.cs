@@ -211,7 +211,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                                             var task = Task.Run(() => nodeMonitoringTask.RunNodeMonitoringAsync(this.ctsNodeMonitoring.Token), this.ctsNodeMonitoring.Token);
                                             Logger.LogTrace($"Node Monitoring Task@{RuntimeHelpers.GetHashCode(task)} created for host {hostSpec}");
                                             return task;
-                                    },
+                                        },
                                         LazyThreadSafetyMode.ExecutionAndPublication));
                                 _ = lazyTask.Value;
                             }
