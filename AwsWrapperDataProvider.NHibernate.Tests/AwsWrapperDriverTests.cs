@@ -132,7 +132,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
         [Trait("Database", "mysql-nh")]
         [Trait("Database", "pg-nh")]
         [Trait("Engine", "aurora")]
-        [Trait("Engine", "multi-az")]
+        [Trait("Engine", "multi-az-cluster")]
         public void NHibernateAddTest()
         {
             var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName);
@@ -166,7 +166,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
         [Trait("Database", "mysql-nh")]
         [Trait("Database", "pg-nh")]
         [Trait("Engine", "aurora")]
-        [Trait("Engine", "multi-az")]
+        [Trait("Engine", "multi-az-cluster")]
         public async Task NHibernateCrashBeforeOpenWithFailoverTest_WithoutPooling()
         {
             Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
@@ -230,7 +230,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
         [Trait("Database", "mysql-nh")]
         [Trait("Database", "pg-nh")]
         [Trait("Engine", "aurora")]
-        [Trait("Engine", "multi-az")]
+        [Trait("Engine", "multi-az-cluster")]
         public async Task NHibernateCrashBeforeOpenWithFailoverTest_WithPooling()
         {
             Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
@@ -294,7 +294,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
         [Trait("Database", "mysql-nh")]
         [Trait("Database", "pg-nh")]
         [Trait("Engine", "aurora")]
-        [Trait("Engine", "multi-az")]
+        [Trait("Engine", "multi-az-cluster")]
         public async Task NHibernateCrashAfterOpenWithFailoverTest()
         {
             Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
@@ -365,7 +365,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
         [Trait("Category", "Integration")]
         [Trait("Database", "mysql-nh")]
         [Trait("Engine", "aurora")]
-        [Trait("Engine", "multi-az")]
+        [Trait("Engine", "multi-az-cluster")]
         public async Task NHibernateTempFailureWithFailoverTest()
         {
             Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
