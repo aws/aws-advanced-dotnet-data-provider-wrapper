@@ -458,7 +458,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
         if (hosts == null)
         {
-            LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "Monitoring connection@{Id}, DataSource = {DataSource} is set to null", RuntimeHelpers.GetHashCode(this.monitoringConnection), this.monitoringConnection.DataSource);
+            LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, "Monitoring connection@{Id}, DataSource = {DataSource} is set to null", RuntimeHelpers.GetHashCode(this.monitoringConnection), this.monitoringConnection?.DataSource);
             var connToDispose = Interlocked.Exchange(ref this.monitoringConnection, null);
 
             this.isVerifiedWriterConnection = false;

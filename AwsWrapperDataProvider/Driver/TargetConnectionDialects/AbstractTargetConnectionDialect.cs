@@ -38,7 +38,7 @@ public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
 
     public abstract bool Ping(IDbConnection connection);
 
-    protected string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, AwsWrapperProperty hostProperty)
+    protected virtual string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, AwsWrapperProperty hostProperty)
     {
         Dictionary<string, string> targetConnectionParameters = props.Where(x =>
             !PropertyDefinition.InternalWrapperProperties

@@ -57,7 +57,7 @@ public class GenericTargetConnectionDialect : AbstractTargetConnectionDialect
         }
     }
 
-    protected string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, AwsWrapperProperty hostProperty)
+    protected override string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, AwsWrapperProperty hostProperty)
     {
         Dictionary<string, string> targetConnectionParameters = props.Where(x =>
             !PropertyDefinition.InternalWrapperProperties
