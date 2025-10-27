@@ -20,6 +20,7 @@ using AwsWrapperDataProvider.Tests.Container.Utils;
 using MySql.Data.MySqlClient;
 using NHibernate;
 using NHibernate.Cfg;
+using NHibernate.Criterion;
 using NHibernate.Driver;
 using NHibernate.Driver.MySqlConnector;
 using Npgsql;
@@ -126,47 +127,46 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             return cfg.AddProperties(properties);
         }
 
-        // [Fact]
-        // [Trait("Category", "Integration")]
-        // [Trait("Database", "mysql-nh")]
-        // [Trait("Database", "pg-nh")]
-        // [Trait("Engine", "aurora")]
-        // [Trait("Engine", "multi-az")]
-        // public void NHibernateAddTest()
-        // {
-        //     var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName);
-        //     var wrapperConnectionString = connectionString + ";Plugins=initialConnection,failover;";
-        //
-        //     var cfg = this.GetNHibernateConfiguration(wrapperConnectionString);
-        //     var sessionFactory = cfg.BuildSessionFactory();
-        //
-        //     using (var session = sessionFactory.OpenSession())
-        //     {
-        //         this.CreateAndClearPersonsTable(session);
-        //
-        //         using (var transaction = session.BeginTransaction())
-        //         {
-        //             var person = new Person { FirstName = "Jane", LastName = "Smith" };
-        //             session.Save(person);
-        //             transaction.Commit();
-        //         }
-        //
-        //         var persons = session.CreateCriteria(typeof(Person))
-        //             .Add(Restrictions.Like("FirstName", "J%"))
-        //             .List<Person>();
-        //
-        //         Assert.NotEmpty(persons);
-        //         Assert.Contains(persons, p => p.FirstName == "Jane");
-        //     }
-        // }
+        [Fact]
+        [Trait("Category", "Integration")]
+        [Trait("Database", "mysql-nh")]
+        [Trait("Database", "pg-nh")]
+        [Trait("Engine", "aurora")]
+        [Trait("Engine", "multi-az")]
+        public void NHibernateAddTest()
+        {
+            var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName);
+            var wrapperConnectionString = connectionString + ";Plugins=initialConnection,failover;";
+
+            var cfg = this.GetNHibernateConfiguration(wrapperConnectionString);
+            var sessionFactory = cfg.BuildSessionFactory();
+
+            using (var session = sessionFactory.OpenSession())
+            {
+                this.CreateAndClearPersonsTable(session);
+
+                using (var transaction = session.BeginTransaction())
+                {
+                    var person = new Person { FirstName = "Jane", LastName = "Smith" };
+                    session.Save(person);
+                    transaction.Commit();
+                }
+
+                var persons = session.CreateCriteria(typeof(Person))
+                    .Add(Restrictions.Like("FirstName", "J%"))
+                    .List<Person>();
+
+                Assert.NotEmpty(persons);
+                Assert.Contains(persons, p => p.FirstName == "Jane");
+            }
+        }
 
         [Fact]
         [Trait("Category", "Integration")]
         [Trait("Database", "mysql-nh")]
         [Trait("Database", "pg-nh")]
         [Trait("Engine", "aurora")]
-
-        // [Trait("Engine", "multi-az")]
+        [Trait("Engine", "multi-az")]
         public async Task NHibernateCrashBeforeOpenWithFailoverTest_WithoutPooling()
         {
             Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
@@ -230,8 +230,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
         [Trait("Database", "mysql-nh")]
         [Trait("Database", "pg-nh")]
         [Trait("Engine", "aurora")]
-
-        // [Trait("Engine", "multi-az")]
+        [Trait("Engine", "multi-az")]
         public async Task NHibernateCrashBeforeOpenWithFailoverTest_WithPooling()
         {
             Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
@@ -292,294 +291,201 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
 
         [Fact]
         [Trait("Category", "Integration")]
+        [Trait("Database", "mysql-nh")]
         [Trait("Database", "pg-nh")]
         [Trait("Engine", "aurora")]
-        public async Task WriterFailover_FailOnConnectionInvocation()
+        [Trait("Engine", "multi-az")]
+        public async Task NHibernateCrashAfterOpenWithFailoverTest()
         {
             Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
+
             string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
-            var initialWriterInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.GetInstance(currentWriter);
+            var connectionString =
+                ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName);
+            var wrapperConnectionString = connectionString
+                                          + ";Plugins=failover;"
+                                          + "EnableConnectFailover=true;"
+                                          + "FailoverMode=StrictWriter;"
+                                          + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
+            var cfg = this.GetNHibernateConfiguration(wrapperConnectionString);
+            var sessionFactory = cfg.BuildSessionFactory();
 
-            var connectionString = ConnectionStringHelper.GetUrl(
-                Engine,
-                initialWriterInstanceInfo.Host,
-                initialWriterInstanceInfo.Port,
-                Username,
-                Password,
-                ProxyDatabaseInfo.DefaultDbName,
-                2,
-                10,
-                "failover");
-            connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}; Pooling=false";
-
-            using AwsWrapperConnection connection = Engine switch
+            using (var session = sessionFactory.OpenSession())
             {
-                DatabaseEngine.MYSQL => new AwsWrapperConnection<MySqlConnection>(connectionString),
-                DatabaseEngine.PG => new AwsWrapperConnection<NpgsqlConnection>(connectionString),
-                _ => throw new NotSupportedException($"Unsupported engine: {Engine}"),
-            };
-            connection.Open();
-            Assert.Equal(ConnectionState.Open, connection.State);
+                this.CreateAndClearPersonsTable(session);
 
-            var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            var crashTask = AuroraUtils.CrashInstance(currentWriter, tcs);
+                using (var transaction = session.BeginTransaction())
+                {
+                    var jane = new Person { FirstName = "Jane", LastName = "Smith" };
+                    session.Save(jane);
+                    transaction.Commit();
+                }
 
-            // Wait for simulation to start
-            await tcs.Task;
+                var john = new Person { FirstName = "John", LastName = "Smith" };
 
-            Assert.Throws<FailoverSuccessException>(() =>
-            {
-                AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
-            });
+                using (var newTransaction = session.BeginTransaction())
+                {
+                    var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                    var crashInstanceTask = AuroraUtils.CrashInstance(currentWriter, tcs);
+                    await tcs.Task;
 
-            await crashTask;
+                    var exception = await Assert.ThrowsAnyAsync<HibernateException>(() =>
+                    {
+                        session.Save(john);
+                        newTransaction.Commit();
+                        return Task.CompletedTask;
+                    });
 
-            Assert.NotNull(AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment));
+                    await crashInstanceTask;
+
+                    // Verify the inner exception is FailoverSuccessException
+                    Assert.IsType<TransactionStateUnknownException>(exception.InnerException);
+                }
+
+                session.Clear();
+
+                var joe = new Person { FirstName = "Joe", LastName = "Smith" };
+
+                using (var finalTransaction = session.BeginTransaction())
+                {
+                    session.Save(joe);
+                    finalTransaction.Commit();
+                }
+
+                var persons = session.CreateCriteria(typeof(Person)).List<Person>();
+                Assert.Contains(persons, p => p.FirstName == "Jane");
+                Assert.Contains(persons, p => p.FirstName == "Joe");
+
+                // John may or may not be saved depending on when failover occurred
+                Assert.True(persons.Count >= 2);
+            }
         }
 
         [Fact]
         [Trait("Category", "Integration")]
-        [Trait("Database", "pg-nh")]
+        [Trait("Database", "mysql-nh")]
         [Trait("Engine", "aurora")]
-        public async Task WriterFailover_FailOnConnectionInvocation_WithPooling()
+        [Trait("Engine", "multi-az")]
+        public async Task NHibernateTempFailureWithFailoverTest()
         {
             Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
+
             string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
-            var initialWriterInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.GetInstance(currentWriter);
 
-            var connectionString = ConnectionStringHelper.GetUrl(
-                Engine,
-                initialWriterInstanceInfo.Host,
-                initialWriterInstanceInfo.Port,
-                Username,
-                Password,
-                ProxyDatabaseInfo.DefaultDbName,
-                2,
-                10,
-                "failover");
-            connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}; Pooling=true";
+            var connectionString = ConnectionStringHelper.GetUrl(Engine, ProxyClusterEndpoint, ProxyPort, Username, Password, DefaultDbName, 2, 10);
+            var wrapperConnectionString = connectionString
+                + ";Plugins=failover;"
+                + "EnableConnectFailover=true;"
+                + "FailoverMode=StrictWriter;"
+                + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
+            var cfg = this.GetNHibernateConfiguration(wrapperConnectionString);
 
-            using AwsWrapperConnection connection = Engine switch
+            var sessionFactory = cfg.BuildSessionFactory();
+
+            using (var session = sessionFactory.OpenSession())
             {
-                DatabaseEngine.MYSQL => new AwsWrapperConnection<MySqlConnection>(connectionString),
-                DatabaseEngine.PG => new AwsWrapperConnection<NpgsqlConnection>(connectionString),
-                _ => throw new NotSupportedException($"Unsupported engine: {Engine}"),
-            };
-            connection.Open();
-            Assert.Equal(ConnectionState.Open, connection.State);
+                this.CreateAndClearPersonsTable(session);
 
-            var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            var crashTask = AuroraUtils.CrashInstance(currentWriter, tcs);
+                using (var transaction = session.BeginTransaction())
+                {
+                    var jane = new Person { FirstName = "Jane", LastName = "Smith" };
+                    session.Save(jane);
+                    transaction.Commit();
+                }
 
-            // Wait for simulation to start
-            await tcs.Task;
+                var john = new Person { FirstName = "John", LastName = "Smith" };
 
-            Assert.Throws<FailoverSuccessException>(() =>
-            {
-                AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment);
-            });
+                // Crash instance and let driver handle failover
+                using (var transaction = session.BeginTransaction())
+                {
+                    var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                    var clusterFailureTask = AuroraUtils.SimulateTemporaryFailureTask(ProxyClusterEndpoint,
+                        TimeSpan.Zero,
+                        TimeSpan.FromSeconds(20),
+                        tcs);
+                    var writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter,
+                        TimeSpan.Zero,
+                        TimeSpan.FromSeconds(20),
+                        tcs);
+                    await tcs.Task;
 
-            await crashTask;
+                    var exception = await Assert.ThrowsAnyAsync<HibernateException>(() =>
+                    {
+                        session.Save(john);
+                        transaction.Commit();
+                        return Task.CompletedTask;
+                    });
 
-            Assert.NotNull(AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment));
+                    await Task.WhenAll(clusterFailureTask, writerNodeFailureTask);
+
+                    // Verify the inner exception is FailoverSuccessException
+                    Assert.IsType<TransactionStateUnknownException>(exception.InnerException);
+                }
+
+                session.Clear();
+
+                var joe = new Person { FirstName = "Joe", LastName = "Smith" };
+                using (var transaction = session.BeginTransaction())
+                {
+                    session.Save(joe);
+                    transaction.Commit();
+                }
+
+                // Verify records - John should not exist (failed during failover), Jane and Joe should exist
+                var persons = session.CreateCriteria(typeof(Person)).List<Person>();
+                Assert.Contains(persons, p => p.FirstName == "Jane");
+                Assert.Contains(persons, p => p.FirstName == "Joe");
+                Assert.DoesNotContain(persons, p => p.FirstName == "John");
+                Assert.Equal(2, persons.Count);
+            }
         }
 
-        // [Fact]
-        // [Trait("Category", "Integration")]
-        // [Trait("Database", "mysql-nh")]
-        // [Trait("Database", "pg-nh")]
-        // [Trait("Engine", "aurora")]
-        // [Trait("Engine", "multi-az")]
-        // public async Task NHibernateCrashAfterOpenWithFailoverTest()
-        // {
-        //     Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
-        //
-        //     string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
-        //     var connectionString =
-        //         ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName);
-        //     var wrapperConnectionString = connectionString
-        //                                   + ";Plugins=failover;"
-        //                                   + "EnableConnectFailover=true;"
-        //                                   + "FailoverMode=StrictWriter;"
-        //                                   + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
-        //     var cfg = this.GetNHibernateConfiguration(wrapperConnectionString);
-        //     var sessionFactory = cfg.BuildSessionFactory();
-        //
-        //     using (var session = sessionFactory.OpenSession())
-        //     {
-        //         this.CreateAndClearPersonsTable(session);
-        //
-        //         using (var transaction = session.BeginTransaction())
-        //         {
-        //             var jane = new Person { FirstName = "Jane", LastName = "Smith" };
-        //             session.Save(jane);
-        //             transaction.Commit();
-        //         }
-        //
-        //         var john = new Person { FirstName = "John", LastName = "Smith" };
-        //
-        //         using (var newTransaction = session.BeginTransaction())
-        //         {
-        //             var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        //             var crashInstanceTask = AuroraUtils.CrashInstance(currentWriter, tcs);
-        //             await tcs.Task;
-        //
-        //             var exception = await Assert.ThrowsAnyAsync<HibernateException>(() =>
-        //             {
-        //                 session.Save(john);
-        //                 newTransaction.Commit();
-        //                 return Task.CompletedTask;
-        //             });
-        //
-        //             await crashInstanceTask;
-        //
-        //             // Verify the inner exception is FailoverSuccessException
-        //             Assert.IsType<TransactionStateUnknownException>(exception.InnerException);
-        //         }
-        //
-        //         session.Clear();
-        //
-        //         var joe = new Person { FirstName = "Joe", LastName = "Smith" };
-        //
-        //         using (var finalTransaction = session.BeginTransaction())
-        //         {
-        //             session.Save(joe);
-        //             finalTransaction.Commit();
-        //         }
-        //
-        //         var persons = session.CreateCriteria(typeof(Person)).List<Person>();
-        //         Assert.Contains(persons, p => p.FirstName == "Jane");
-        //         Assert.Contains(persons, p => p.FirstName == "Joe");
-        //
-        //         // John may or may not be saved depending on when failover occurred
-        //         Assert.True(persons.Count >= 2);
-        //     }
-        // }
+        [Fact]
+        [Trait("Category", "Integration")]
+        [Trait("Database", "mysql-nh")]
+        [Trait("Database", "pg-nh")]
+        [Trait("Engine", "aurora")]
+        [Trait("Engine", "multi-az")]
+        public async Task NHibernateSessionQueryWithFailoverTest()
+        {
+            Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
 
-        // [Fact]
-        // [Trait("Category", "Integration")]
-        // [Trait("Database", "mysql-nh")]
-        // [Trait("Engine", "aurora")]
-        // [Trait("Engine", "multi-az")]
-        // public async Task NHibernateTempFailureWithFailoverTest()
-        // {
-        //     Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
-        //
-        //     string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
-        //
-        //     var connectionString = ConnectionStringHelper.GetUrl(Engine, ProxyClusterEndpoint, ProxyPort, Username, Password, DefaultDbName, 2, 10);
-        //     var wrapperConnectionString = connectionString
-        //         + ";Plugins=failover;"
-        //         + "EnableConnectFailover=true;"
-        //         + "FailoverMode=StrictWriter;"
-        //         + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
-        //     var cfg = this.GetNHibernateConfiguration(wrapperConnectionString);
-        //
-        //     var sessionFactory = cfg.BuildSessionFactory();
-        //
-        //     using (var session = sessionFactory.OpenSession())
-        //     {
-        //         this.CreateAndClearPersonsTable(session);
-        //
-        //         using (var transaction = session.BeginTransaction())
-        //         {
-        //             var jane = new Person { FirstName = "Jane", LastName = "Smith" };
-        //             session.Save(jane);
-        //             transaction.Commit();
-        //         }
-        //
-        //         var john = new Person { FirstName = "John", LastName = "Smith" };
-        //
-        //         // Crash instance and let driver handle failover
-        //         using (var transaction = session.BeginTransaction())
-        //         {
-        //             var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        //             var clusterFailureTask = AuroraUtils.SimulateTemporaryFailureTask(ProxyClusterEndpoint,
-        //                 TimeSpan.Zero,
-        //                 TimeSpan.FromSeconds(20),
-        //                 tcs);
-        //             var writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter,
-        //                 TimeSpan.Zero,
-        //                 TimeSpan.FromSeconds(20),
-        //                 tcs);
-        //             await tcs.Task;
-        //
-        //             var exception = await Assert.ThrowsAnyAsync<HibernateException>(() =>
-        //             {
-        //                 session.Save(john);
-        //                 transaction.Commit();
-        //                 return Task.CompletedTask;
-        //             });
-        //
-        //             await Task.WhenAll(clusterFailureTask, writerNodeFailureTask);
-        //
-        //             // Verify the inner exception is FailoverSuccessException
-        //             Assert.IsType<TransactionStateUnknownException>(exception.InnerException);
-        //         }
-        //
-        //         session.Clear();
-        //
-        //         var joe = new Person { FirstName = "Joe", LastName = "Smith" };
-        //         using (var transaction = session.BeginTransaction())
-        //         {
-        //             session.Save(joe);
-        //             transaction.Commit();
-        //         }
-        //
-        //         // Verify records - John should not exist (failed during failover), Jane and Joe should exist
-        //         var persons = session.CreateCriteria(typeof(Person)).List<Person>();
-        //         Assert.Contains(persons, p => p.FirstName == "Jane");
-        //         Assert.Contains(persons, p => p.FirstName == "Joe");
-        //         Assert.DoesNotContain(persons, p => p.FirstName == "John");
-        //         Assert.Equal(2, persons.Count);
-        //     }
-        // }
+            string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
+            var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName);
+            var wrapperConnectionString = connectionString
+                + ";Plugins=failover;"
+                + "EnableConnectFailover=true;"
+                + "FailoverMode=StrictWriter;"
+                + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
+            var cfg = this.GetNHibernateConfiguration(wrapperConnectionString);
+            var sessionFactory = cfg.BuildSessionFactory();
 
-        // [Fact]
-        // [Trait("Category", "Integration")]
-        // [Trait("Database", "mysql-nh")]
-        // [Trait("Database", "pg-nh")]
-        // [Trait("Engine", "aurora")]
-        // public async Task NHibernateSessionQueryWithFailoverTest()
-        // {
-        //     Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
-        //
-        //     string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
-        //     var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName);
-        //     var wrapperConnectionString = connectionString
-        //         + ";Plugins=failover;"
-        //         + "EnableConnectFailover=true;"
-        //         + "FailoverMode=StrictWriter;"
-        //         + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
-        //     var cfg = this.GetNHibernateConfiguration(wrapperConnectionString);
-        //     var sessionFactory = cfg.BuildSessionFactory();
-        //
-        //     using (var session = sessionFactory.OpenSession())
-        //     {
-        //         this.CreateAndClearPersonsTable(session);
-        //     }
-        //
-        //     using (var session = sessionFactory.OpenSession())
-        //     {
-        //         var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        //         var crashTask = AuroraUtils.CrashInstance(currentWriter, tcs);
-        //         await tcs.Task;
-        //
-        //         var exception = Assert.ThrowsAny<HibernateException>(() =>
-        //         {
-        //             session.CreateSQLQuery("SELECT 1").UniqueResult();
-        //         });
-        //
-        //         await crashTask;
-        //
-        //         Assert.IsType<FailoverSuccessException>(exception.InnerException);
-        //     }
-        //
-        //     using (var session = sessionFactory.OpenSession())
-        //     {
-        //         var result = session.CreateSQLQuery("SELECT 1").UniqueResult();
-        //         Assert.NotNull(result);
-        //     }
-        // }
+            using (var session = sessionFactory.OpenSession())
+            {
+                this.CreateAndClearPersonsTable(session);
+            }
+
+            using (var session = sessionFactory.OpenSession())
+            {
+                var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                var crashTask = AuroraUtils.CrashInstance(currentWriter, tcs);
+                await tcs.Task;
+
+                var exception = Assert.ThrowsAny<HibernateException>(() =>
+                {
+                    session.CreateSQLQuery("SELECT 1").UniqueResult();
+                });
+
+                await crashTask;
+
+                Assert.IsType<FailoverSuccessException>(exception.InnerException);
+            }
+
+            using (var session = sessionFactory.OpenSession())
+            {
+                var result = session.CreateSQLQuery("SELECT 1").UniqueResult();
+                Assert.NotNull(result);
+            }
+        }
     }
 }
