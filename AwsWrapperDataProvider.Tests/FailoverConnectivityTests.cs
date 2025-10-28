@@ -283,6 +283,8 @@ public class FailoverConnectivityTests : IntegrationTestBase
         await AuroraUtils.OpenDbConnection(connection, async);
         Assert.Equal(ConnectionState.Open, connection.State);
 
+        await Task.Delay(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+        this.logger.WriteLine("===============test env set up done=================");
         var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var crashTask = AuroraUtils.CrashInstance(currentWriter, tcs);
 

@@ -222,6 +222,8 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                 }
                 else
                 {
+                    Logger.LogTrace($"In regular mode");
+
                     // Regular mode (not panic mode)
                     if (!this.nodeThreads.IsEmpty)
                     {
@@ -607,7 +609,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
     protected async Task DelayAsync(bool useHighRefreshRate)
     {
-        if (this.highRefreshRateEndTime > DateTime.UtcNow && this.highRefreshRateEndTime < DateTime.UtcNow)
+        if (this.highRefreshRateEndTime > DateTime.MinValue && this.highRefreshRateEndTime < DateTime.UtcNow)
         {
             useHighRefreshRate = true;
         }
@@ -638,7 +640,6 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         try
         {
             var hosts = await this.QueryForTopologyAsync(connection);
-            Logger.LogTrace(LoggerUtils.LogTopology(hosts, $"UpdateTopologyCache:"));
             if (hosts?.Count > 0)
             {
                 this.UpdateTopologyCache(hosts);
@@ -658,6 +659,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         lock (this.topologyUpdatedLock)
         {
             this.topologyMap.Set(this.clusterId, hosts, this.topologyCacheExpiration);
+            Logger.LogTrace(LoggerUtils.LogTopology(hosts, $"UpdateTopologyCache:"));
             this.requestToUpdateTopology = false;
             Logger.LogTrace("Notifying topologyUpdatedLock...");
             Monitor.PulseAll(this.topologyUpdatedLock);
@@ -871,7 +873,6 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             try
             {
                 var hosts = await monitor.QueryForTopologyAsync(connection);
-                LoggerUtils.MonitoringLogWithHost(hostSpec, NodeMonitorLogger, LogLevel.Trace, LoggerUtils.LogTopology(hosts, $"UpdateTopologyCache:"));
                 if (hosts == null)
                 {
                     return;

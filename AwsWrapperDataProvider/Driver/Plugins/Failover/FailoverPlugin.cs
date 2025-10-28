@@ -126,7 +126,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
         }
         catch (Exception exception)
         {
-            await this.DealWithOriginalException(exception);
+            await this.DealWithOriginalExceptionAsync(exception);
         }
 
         throw new UnreachableException("[FailoverPlugin] Should not reach here.");
@@ -257,7 +257,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
         return this.pluginService.TargetConnectionDialect.GetAllowedOnConnectionMethodNames().Contains(methodName);
     }
 
-    private async Task DealWithOriginalException(Exception originalException)
+    private async Task DealWithOriginalExceptionAsync(Exception originalException)
     {
         Logger.LogDebug("Processing exception: {ExceptionMessage}", originalException.ToString());
 

@@ -184,11 +184,11 @@ public class PluginService : IPluginService, IHostListProviderService
         {
             var currentAvailability = host.Availability;
             host.Availability = availability;
-            Logger.LogTrace("Host {host} availability changed from {old} to {new}", host, currentAvailability, availability);
             HostAvailabilityExpiringCache.Set(host.GetHostAndPort(), availability, DefaultHostAvailabilityCacheExpiration);
 
             if (currentAvailability != availability)
             {
+                Logger.LogTrace("Host {host} availability changed from {old} to {new}", host, currentAvailability, availability);
                 NodeChangeOptions hostChanges;
                 switch (availability)
                 {
