@@ -336,7 +336,7 @@ public class HostMonitor : IHostMonitor
             {
                 validityCheckCommand.CommandText = "SELECT 1";
                 int validTimeoutSeconds = Math.Max((this.failureDetectionIntervalMs - ThreadSleepMs) / 2000, 1);
-                Logger.LogTrace($"Command timeout for ping is {validTimeoutSeconds} seconds");
+                Logger.LogDebug($"Command timeout for ping is {validTimeoutSeconds} seconds");
                 validityCheckCommand.CommandTimeout = validTimeoutSeconds;
                 await validityCheckCommand.ExecuteScalarAsync();
             }

@@ -677,7 +677,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                 command.CommandTimeout = DefaultTopologyQueryTimeoutSec;
             }
 
-            Logger.LogTrace("Command timeout for querying topology: {time} seconds", command.CommandTimeout);
+            Logger.LogDebug("Command timeout for querying topology: {time} seconds", command.CommandTimeout);
 
             command.CommandText = this.topologyQuery;
             await using var reader = await command.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
