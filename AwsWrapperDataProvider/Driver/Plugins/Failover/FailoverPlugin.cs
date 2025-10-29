@@ -319,7 +319,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
         do
         {
             // Update reader candidates, topology may have changed
-            await this.pluginService.RefreshHostListAsync();
+            await this.pluginService.ForceRefreshHostListAsync(false, 0);
             hosts = this.pluginService.GetHosts();
             var readerCandidates = hosts.Where(h => h.Role == HostRole.Reader).ToHashSet();
 
@@ -414,8 +414,6 @@ public class FailoverPlugin : AbstractConnectionPlugin
                     Logger.LogInformation(ex, $"[Reader Failover] Failed to connect to host: {originalWriter.GetHostAndPort()}");
                 }
             }
-
-            await Task.Delay(100);
         }
         while (DateTime.UtcNow < failoverEndTime);
 
