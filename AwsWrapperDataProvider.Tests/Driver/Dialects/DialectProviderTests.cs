@@ -202,6 +202,29 @@ public class DialectProviderTests
 
     [Fact]
     [Trait("Category", "Unit")]
+    public void UpdateDialect_CalledTwice_UpdateOnce()
+    {
+        string query = string.Empty;
+        this.mockCommand.SetupSet(c => c.CommandText = It.IsAny<string>()).Callback<string>(commandText => query = commandText);
+        this.mockReader.Setup(r => r.Read()).Returns(() => query switch
+        {
+            "SHOW VARIABLES LIKE 'aurora_version'" => true,
+            _ => false,
+        });
+        this.mockReader.Setup(r => r.FieldCount).Returns(1);
+        this.mockReader.Setup(r => r.GetString(0)).Returns("Source distribution");
+
+        var mysqlDialect = new MySqlDialect();
+
+        this.dialectProvider.UpdateDialect(this.mockConnection.Object, mysqlDialect);
+        var updatedDialect = this.dialectProvider.UpdateDialect(this.mockConnection.Object, mysqlDialect);
+
+        Assert.IsType<AuroraMySqlDialect>(updatedDialect);
+        this.mockConnection.Verify(c => c.CreateCommand(), Times.Exactly(2)); // Should only update one iteration
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
     public void UpdateDialect_WithMysqlDialect_ReturnsRdsMysqlDialect()
     {
         var returnSequence = new List<bool>([true, false]);

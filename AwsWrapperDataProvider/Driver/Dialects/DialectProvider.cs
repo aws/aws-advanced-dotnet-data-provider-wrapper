@@ -84,6 +84,7 @@ public class DialectProvider
 
     private readonly PluginService pluginService;
     private IDialect? dialect = null;
+    private bool canUpdate = false;
 
     public DialectProvider(PluginService pluginService)
     {
@@ -98,6 +99,7 @@ public class DialectProvider
     public IDialect GuessDialect(Dictionary<string, string> props)
     {
         this.dialect = null;
+        this.canUpdate = false;
 
         // Check for custom dialect in properties
         if (PropertyDefinition.TargetDialect.GetString(props) is { } customDialectTypeName &&
@@ -135,6 +137,7 @@ public class DialectProvider
         this.dialect = KnownDialectsByType[dialectType];
         Logger.LogDebug("Guessed dialect: {dialect}", this.dialect.GetType().FullName);
 
+        this.canUpdate = true;
         return this.dialect;
     }
 
@@ -143,6 +146,12 @@ public class DialectProvider
         Logger.LogDebug("UpdateDialect called with current dialect: {currentDialect}", currDialect.GetType().FullName);
         Logger.LogDebug("Connection type: {connectionType}", connection.GetType().FullName);
         Logger.LogDebug("Connection string: {connectionString}", connection.ConnectionString);
+
+        if (!this.canUpdate && this.dialect != null)
+        {
+            Logger.LogDebug("Current dialect: {dialect}, canUpdate: {canUpdate}", this.dialect.GetType().FullName, this.canUpdate);
+            return this.dialect;
+        }
 
         IList<Type> dialectCandidates = currDialect.DialectUpdateCandidates;
         Logger.LogDebug("Testing {count} dialect candidates", dialectCandidates.Count);
@@ -160,6 +169,7 @@ public class DialectProvider
                     this.dialect = dialect;
                     KnownEndpointDialects.Set(this.pluginService.InitialConnectionHostSpec!.Host, dialect, EndpointCacheExpiration);
                     KnownEndpointDialects.Set(connection.ConnectionString, dialect, EndpointCacheExpiration);
+                    this.canUpdate = false;
                     return this.dialect;
                 }
                 else
@@ -179,6 +189,7 @@ public class DialectProvider
             if (currDialect.IsDialect(connection))
             {
                 Logger.LogDebug("Current dialect is valid: {currentDialect}", currDialect.GetType().FullName);
+                this.canUpdate = false;
                 return currDialect;
             }
         }
@@ -197,6 +208,7 @@ public class DialectProvider
             throw new ArgumentException(Properties.Resources.Error_UnableToFindValidDialectType);
         }
 
+        this.canUpdate = false;
         return currDialect;
     }
 
