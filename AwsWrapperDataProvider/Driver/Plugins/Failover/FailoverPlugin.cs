@@ -319,8 +319,9 @@ public class FailoverPlugin : AbstractConnectionPlugin
         do
         {
             // Update reader candidates, topology may have changed
-            await this.pluginService.ForceRefreshHostListAsync(false, 0);
+            await this.pluginService.ForceRefreshHostListAsync(false, 10000);
             hosts = this.pluginService.GetHosts();
+            hosts.ToList().ForEach(hostSpec => this.pluginService.SetAvailability(hostSpec.AsAliases(), HostAvailability.Available));
             var readerCandidates = hosts.Where(h => h.Role == HostRole.Reader).ToHashSet();
 
             // First, try all original readers
