@@ -4,16 +4,11 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <RootNamespace>AwsWrapperDataProvider.MySql</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.RDS" Version="4.0.9.2" />
-    <PackageReference Include="AWSSDK.SecretsManager" Version="4.0.1.10" />
-    <PackageReference Include="AWSSDK.SecurityToken" Version="4.0.2.3" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\AwsWrapperDataProvider\AwsWrapperDataProvider.csproj" />
+    <PackageReference Include="MySql.Data" Version="9.4.0" />
   </ItemGroup>
 
     <ItemGroup>
@@ -28,5 +23,10 @@
             <_Parameter1>DynamicProxyGenAssembly2</_Parameter1>
         </AssemblyAttribute>
     </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AwsWrapperDataProvider.Dialect.Npgsql\AwsWrapperDataProvider.Dialect.Npgsql.csproj" />
+    <ProjectReference Include="..\AwsWrapperDataProvider\AwsWrapperDataProvider.csproj" />
+  </ItemGroup>
 
 </Project>

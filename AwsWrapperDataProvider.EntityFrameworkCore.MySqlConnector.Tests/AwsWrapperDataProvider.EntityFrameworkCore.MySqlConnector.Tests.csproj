@@ -7,11 +7,12 @@
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <OutputType>Exe</OutputType>
+    <RootNamespace>AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.4" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.9" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.9">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
@@ -23,7 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\AwsWrapperDataProvider.EntityFrameworkCore.MySQL\AwsWrapperDataProvider.EntityFrameworkCore.MySQL.csproj" />
+    <ProjectReference Include="..\AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector\AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.csproj" />
     <ProjectReference Include="..\AwsWrapperDataProvider.Tests\AwsWrapperDataProvider.Tests.csproj" />
   </ItemGroup>
 

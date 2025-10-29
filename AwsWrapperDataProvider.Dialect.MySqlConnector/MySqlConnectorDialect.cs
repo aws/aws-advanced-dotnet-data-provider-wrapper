@@ -14,16 +14,22 @@
 
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
+using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
-using MySql.Data.MySqlClient;
+using MySqlConnector;
 
-namespace AwsWrapperDataProvider.Driver.TargetConnectionDialects;
+namespace AwsWrapperDataProvider.Dialect.MySqlConnector;
 
-public class MySqlClientDialect : GenericTargetConnectionDialect
+public class MySqlConnectorDialect : AbstractTargetConnectionDialect
 {
     public override Type DriverConnectionType { get; } = typeof(MySqlConnection);
-    public override string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props)
+
+    public override string PrepareConnectionString(
+        IDialect dialect,
+        HostSpec? hostSpec,
+        Dictionary<string, string> props)
     {
+        PropertyDefinition.Port.GetInt(props);
         return this.PrepareConnectionString(dialect, hostSpec, props, PropertyDefinition.Server);
     }
 }

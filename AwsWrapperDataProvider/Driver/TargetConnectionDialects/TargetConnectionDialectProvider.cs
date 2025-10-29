@@ -20,11 +20,11 @@ namespace AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 
 public static class TargetConnectionDialectProvider
 {
-    private static readonly Dictionary<Type, Type> ConnectionToDialectMap = new()
+    private static readonly Dictionary<string, ITargetConnectionDialect?> ConnectionDialectsByConnectionType = new()
     {
-        { typeof(Npgsql.NpgsqlConnection), typeof(NpgsqlDialect) },
-        { typeof(MySqlConnector.MySqlConnection), typeof(MySqlConnectorDialect) },
-        { typeof(MySql.Data.MySqlClient.MySqlConnection), typeof(MySqlClientDialect) },
+        { TargetConnectionTypes.Npgsql, null },
+        { TargetConnectionTypes.MySqlConnector, null },
+        { TargetConnectionTypes.MySqlClient, null },
     };
 
     public static ITargetConnectionDialect GetDialect(
@@ -55,12 +55,17 @@ public static class TargetConnectionDialectProvider
             throw new InvalidOperationException($"Failed to instantiate custom dialect type '{customDialectTypeName}'");
         }
 
-        if (!ConnectionToDialectMap.TryGetValue(connectionType, out var dialectType))
+        string connectionTypeName = connectionType.FullName!;
+        if (!ConnectionDialectsByConnectionType.ContainsKey(connectionTypeName))
         {
-            throw new NotSupportedException($"No dialect found for connection type {connectionType.Name}");
+            return new GenericTargetConnectionDialect(connectionType);
         }
 
-        ITargetConnectionDialect dialect = (ITargetConnectionDialect)Activator.CreateInstance(dialectType)!;
-        return dialect;
+        return ConnectionDialectsByConnectionType[connectionType.FullName!] ?? new GenericTargetConnectionDialect(connectionType);
+    }
+
+    public static void RegisterDialect(string connectionType, ITargetConnectionDialect dialect)
+    {
+        ConnectionDialectsByConnectionType[connectionType] = dialect;
     }
 }
