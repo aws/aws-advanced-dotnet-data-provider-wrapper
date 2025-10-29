@@ -27,6 +27,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AwsWrapperDataProvider.Plug
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AwsWrapperDataProvider.Plugin.FederatedAuth", "AwsWrapperDataProvider.Plugin.FederatedAuth\AwsWrapperDataProvider.Plugin.FederatedAuth.csproj", "{D87E0507-5E62-4852-BDFC-CB9E167A85FB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MySqlEntityFrameworkExample", "docs\examples\MySqlEntityFrameworkExample\MySqlEntityFrameworkExample.csproj", "{BC7CAF4A-F541-4975-BF06-B053C4E1DB41}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AwsWrapperDataProviderExample", "docs\examples\AwsWrapperDataProviderExample\AwsWrapperDataProviderExample.csproj", "{D87E38B7-7E97-4439-8BD6-915B3DB4178B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
