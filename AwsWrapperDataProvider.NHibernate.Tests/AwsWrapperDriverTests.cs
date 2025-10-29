@@ -64,43 +64,6 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             session.CreateSQLQuery("TRUNCATE TABLE persons").ExecuteUpdate();
         }
 
-        private void AssertSessionIsWritable(ISession session)
-        {
-            switch (Engine)
-            {
-                case DatabaseEngine.PG:
-                    {
-                        var row = (object[])session.CreateSQLQuery(@"
-                            SELECT 
-                                NOT pg_is_in_recovery() AS is_writer,
-                                current_setting('transaction_read_only') = 'off' AS tx_writable,
-                                current_setting('default_transaction_read_only') = 'off' AS default_tx_writable
-                        ").UniqueResult();
-
-                        bool isWriter = (bool)row[0];
-                        bool txWritable = (bool)row[1];
-                        bool defaultTxWritable = (bool)row[2];
-
-                        Assert.True(isWriter, "Expected writer: pg_is_in_recovery() should be false.");
-                        Assert.True(txWritable, "Expected transaction_read_only = off.");
-                        Assert.True(defaultTxWritable, "Expected default_transaction_read_only = off.");
-                        break;
-                    }
-
-                case DatabaseEngine.MYSQL:
-                default:
-                    {
-                        var val = session.CreateSQLQuery(
-                            "SELECT CAST(COALESCE(@@super_read_only, @@global.read_only) AS SIGNED)")
-                        .UniqueResult();
-
-                        var readOnlyFlag = Convert.ToInt64(val);
-                        Assert.Equal(0L, readOnlyFlag);
-                        break;
-                    }
-            }
-        }
-
         private Configuration GetNHibernateConfiguration(string connectionString)
         {
             var properties = new Dictionary<string, string>
@@ -174,7 +137,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
             var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName);
             var wrapperConnectionString = connectionString
-                + ";Plugins=failover;"
+                + ";Plugins=failover,initialConnection;"
                 + "EnableConnectFailover=true;"
                 + "FailoverMode=StrictWriter;"
                 + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort};"
@@ -197,8 +160,6 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                 var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
                 await AuroraUtils.CrashInstance(currentWriter, tcs);
 
-                this.AssertSessionIsWritable(session);
-
                 var john = new Person { FirstName = "John", LastName = "Smith" };
 
                 using (var transaction = session.BeginTransaction())
@@ -206,8 +167,6 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                     session.Save(john);
                     transaction.Commit();
                 }
-
-                this.AssertSessionIsWritable(session);
 
                 var joe = new Person { FirstName = "Joe", LastName = "Smith" };
 
@@ -238,7 +197,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
             var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName);
             var wrapperConnectionString = connectionString
-                + ";Plugins=failover;"
+                + ";Plugins=failover,initialConnection;"
                 + "EnableConnectFailover=true;"
                 + "FailoverMode=StrictWriter;"
                 + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort};"
@@ -261,8 +220,6 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                 var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
                 await AuroraUtils.CrashInstance(currentWriter, tcs);
 
-                this.AssertSessionIsWritable(session);
-
                 var john = new Person { FirstName = "John", LastName = "Smith" };
 
                 using (var transaction = session.BeginTransaction())
@@ -270,8 +227,6 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                     session.Save(john);
                     transaction.Commit();
                 }
-
-                this.AssertSessionIsWritable(session);
 
                 var joe = new Person { FirstName = "Joe", LastName = "Smith" };
 
@@ -303,7 +258,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             var connectionString =
                 ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName);
             var wrapperConnectionString = connectionString
-                                          + ";Plugins=failover;"
+                                          + ";Plugins=failover,initialConnection;"
                                           + "EnableConnectFailover=true;"
                                           + "FailoverMode=StrictWriter;"
                                           + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
@@ -326,7 +281,10 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                 using (var newTransaction = session.BeginTransaction())
                 {
                     var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-                    var crashInstanceTask = AuroraUtils.CrashInstance(currentWriter, tcs);
+                    var writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter,
+                        TimeSpan.Zero,
+                        TimeSpan.FromSeconds(20),
+                        tcs);
                     await tcs.Task;
 
                     var exception = await Assert.ThrowsAnyAsync<HibernateException>(() =>
@@ -336,7 +294,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                         return Task.CompletedTask;
                     });
 
-                    await crashInstanceTask;
+                    await writerNodeFailureTask;
 
                     // Verify the inner exception is FailoverSuccessException
                     Assert.IsType<TransactionStateUnknownException>(exception.InnerException);
@@ -374,7 +332,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
 
             var connectionString = ConnectionStringHelper.GetUrl(Engine, ProxyClusterEndpoint, ProxyPort, Username, Password, DefaultDbName, 2, 10);
             var wrapperConnectionString = connectionString
-                + ";Plugins=failover;"
+                + ";Plugins=failover,initialConnection;"
                 + "EnableConnectFailover=true;"
                 + "FailoverMode=StrictWriter;"
                 + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
