@@ -104,11 +104,11 @@ public class ContainerHelper {
     // For Entity Framework tests
     if (task.endsWith("ef")) {
         exitCode = execInContainer(container, consumer,
-                "dotnet", "ef", "migrations", "add", "InitialCreate_" + System.currentTimeMillis(), "--project", "AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests");
+                "dotnet", "ef", "migrations", "add", "InitialCreate_" + System.currentTimeMillis(), "--project", "AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.Tests");
         assertEquals(0, exitCode, "Failed to generate Entity framework migration.");
 
         exitCode = execInContainer(container, consumer,
-                "dotnet", "ef", "database", "update", "--project", "AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests");
+                "dotnet", "ef", "database", "update", "--project", "AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.Tests");
         assertEquals(0, exitCode, "Failed to update database with migration");
     }
 
@@ -222,11 +222,15 @@ public class ContainerHelper {
         .withFileSystemBind("../../../Directory.Build.props", "/app/Directory.Build.props", BindMode.READ_ONLY)
         .withFileSystemBind("../../../global.json", "/app/global.json", BindMode.READ_ONLY)
         .withFileSystemBind("../../../AwsWrapperDataProvider.Benchmarks", "/app/AwsWrapperDataProvider.Benchmarks", BindMode.READ_WRITE)
-        .withFileSystemBind("../../../AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests", "/app/AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests", BindMode.READ_WRITE)
-        .withFileSystemBind("../../../AwsWrapperDataProvider.EntityFrameworkCore.MySQL", "/app/AwsWrapperDataProvider.EntityFrameworkCore.MySQL", BindMode.READ_WRITE)
+        .withFileSystemBind("../../../AwsWrapperDataProvider.Dialect.MySqlClient", "/app/AwsWrapperDataProvider.Dialect.MySqlClient", BindMode.READ_WRITE)
+        .withFileSystemBind("../../../AwsWrapperDataProvider.Dialect.MySqlConnector", "/app/AwsWrapperDataProvider.Dialect.MySqlConnector", BindMode.READ_WRITE)
+        .withFileSystemBind("../../../AwsWrapperDataProvider.Dialect.Npgsql", "/app/AwsWrapperDataProvider.Dialect.Npgsql", BindMode.READ_WRITE)
+        .withFileSystemBind("../../../AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.Tests", "/app/AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.Tests", BindMode.READ_WRITE)
+        .withFileSystemBind("../../../AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector", "/app/AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector", BindMode.READ_WRITE)
         .withFileSystemBind("../../../AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL.Tests", "/app/AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL.Tests", BindMode.READ_WRITE)
         .withFileSystemBind("../../../AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL", "/app/AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL", BindMode.READ_WRITE)
         .withFileSystemBind("../../../AwsWrapperDataProvider", "/app/AwsWrapperDataProvider", BindMode.READ_WRITE)
+        .withFileSystemBind("../../../AwsWrapperDataProvider.AwsAuthenticationPluginProvider", "/app/AwsWrapperDataProvider.AwsAuthenticationPluginProvider", BindMode.READ_WRITE)
         .withFileSystemBind("../../../AwsWrapperDataProvider.Tests", "/app/AwsWrapperDataProvider.Tests", BindMode.READ_WRITE)
         .withFileSystemBind("../gradle", "/app/gradle", BindMode.READ_WRITE)
         .withFileSystemBind("../../../test/integration/container", "/app/test/integration/container", BindMode.READ_WRITE)

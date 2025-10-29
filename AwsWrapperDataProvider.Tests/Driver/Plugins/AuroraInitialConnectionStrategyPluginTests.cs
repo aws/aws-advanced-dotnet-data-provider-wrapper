@@ -93,7 +93,7 @@ public class AuroraInitialConnectionStrategyPluginTests
         var methodFunc = new Mock<ADONetDelegate<DbConnection>>();
         var writerHost = new HostSpec("writer-host", 5432, null, HostRole.Writer, HostAvailability.Available);
 
-        this.mockPluginService.Setup(x => x.AllHosts).Returns(new List<HostSpec> { writerHost });
+        this.mockPluginService.Setup(x => x.AllHosts).Returns([writerHost]);
         this.mockPluginService.Setup(x => x.CurrentConnection).Returns(this.mockConnection.Object);
         this.mockPluginService.Setup(x => x.GetHostRole(It.IsAny<DbConnection>())).Returns(HostRole.Writer);
 
@@ -113,7 +113,7 @@ public class AuroraInitialConnectionStrategyPluginTests
         var methodFunc = new Mock<ADONetDelegate<DbConnection>>();
         var readerHost = new HostSpec("reader-host", 5432, null, HostRole.Reader, HostAvailability.Available);
 
-        this.mockPluginService.Setup(x => x.AllHosts).Returns(new List<HostSpec> { readerHost });
+        this.mockPluginService.Setup(x => x.AllHosts).Returns([readerHost]);
         this.mockPluginService.Setup(x => x.CurrentConnection).Returns(this.mockConnection.Object);
         this.mockPluginService.Setup(x => x.GetHostRole(It.IsAny<DbConnection>())).Returns(HostRole.Reader);
         this.mockPluginService.Setup(x => x.AcceptsStrategy("random")).Returns(true);
@@ -152,7 +152,7 @@ public class AuroraInitialConnectionStrategyPluginTests
         var methodFunc = new Mock<ADONetDelegate<DbConnection>>();
         var writerHost = new HostSpec("writer-host", 5432, null, HostRole.Writer, HostAvailability.Available);
 
-        this.mockPluginService.Setup(x => x.AllHosts).Returns(new List<HostSpec> { writerHost });
+        this.mockPluginService.Setup(x => x.AllHosts).Returns([writerHost]);
         this.mockPluginService.Setup(x => x.CurrentConnection).Returns(this.mockConnection.Object);
         this.mockPluginService.Setup(x => x.GetHostRole(It.IsAny<DbConnection>())).Returns(HostRole.Writer);
 
@@ -179,7 +179,7 @@ public class AuroraInitialConnectionStrategyPluginTests
         var methodFunc = new Mock<ADONetDelegate<DbConnection>>();
         var readerHost = new HostSpec("reader-host", 5432, null, HostRole.Reader, HostAvailability.Available);
 
-        this.mockPluginService.Setup(x => x.AllHosts).Returns(new List<HostSpec> { readerHost });
+        this.mockPluginService.Setup(x => x.AllHosts).Returns([readerHost]);
         this.mockPluginService.Setup(x => x.CurrentConnection).Returns(this.mockConnection.Object);
         this.mockPluginService.Setup(x => x.GetHostRole(It.IsAny<DbConnection>())).Returns(HostRole.Reader);
         this.mockPluginService.Setup(x => x.AcceptsStrategy("random")).Returns(true);
@@ -207,9 +207,9 @@ public class AuroraInitialConnectionStrategyPluginTests
         var writerHost = new HostSpec("test-cluster.cluster-xyz.us-east-1.rds.amazonaws.com", 5432, null, HostRole.Writer, HostAvailability.Available);
         var actualWriterHost = new HostSpec("writer-instance.xyz.us-east-1.rds.amazonaws.com", 5432, null, HostRole.Writer, HostAvailability.Available);
 
-        this.mockPluginService.Setup(x => x.AllHosts).Returns(new List<HostSpec> { writerHost });
+        this.mockPluginService.Setup(x => x.AllHosts).Returns([writerHost]);
         this.mockPluginService.Setup(x => x.CurrentConnection).Returns(this.mockConnection.Object);
-        this.mockPluginService.Setup(x => x.IdentifyConnection(It.IsAny<DbConnection>())).Returns(actualWriterHost);
+        this.mockPluginService.Setup(x => x.IdentifyConnection(It.IsAny<DbConnection>(), It.IsAny<DbTransaction>())).Returns(actualWriterHost);
         this.mockHostListProviderService.Setup(x => x.IsStaticHostListProvider()).Returns(false);
 
         this.plugin.InitHostProvider("test-url", props, this.mockHostListProviderService.Object, () => { });
@@ -217,7 +217,7 @@ public class AuroraInitialConnectionStrategyPluginTests
         this.plugin.OpenConnection(writerHost, props, true, methodFunc.Object);
 
         this.mockPluginService.Verify(x => x.ForceRefreshHostList(It.IsAny<DbConnection>()), Times.Once);
-        this.mockPluginService.Verify(x => x.IdentifyConnection(It.IsAny<DbConnection>()), Times.Once);
+        this.mockPluginService.Verify(x => x.IdentifyConnection(It.IsAny<DbConnection>(), It.IsAny<DbTransaction>()), Times.Once);
     }
 
     [Fact]
@@ -235,9 +235,9 @@ public class AuroraInitialConnectionStrategyPluginTests
         var writerHost = new HostSpec("writer-instance.xyz.us-east-1.rds.amazonaws.com", 5432, null, HostRole.Writer, HostAvailability.Available);
 
         // Setup scenario where only writer exists (no readers)
-        this.mockPluginService.Setup(x => x.AllHosts).Returns(new List<HostSpec> { writerHost });
+        this.mockPluginService.Setup(x => x.AllHosts).Returns([writerHost]);
         this.mockPluginService.Setup(x => x.CurrentConnection).Returns(this.mockConnection.Object);
-        this.mockPluginService.Setup(x => x.IdentifyConnection(It.IsAny<DbConnection>())).Returns(writerHost);
+        this.mockPluginService.Setup(x => x.IdentifyConnection(It.IsAny<DbConnection>(), It.IsAny<DbTransaction>())).Returns(writerHost);
         this.mockPluginService.Setup(x => x.AcceptsStrategy("random")).Returns(true);
         this.mockPluginService.Setup(x => x.GetHostSpecByStrategy(HostRole.Reader, "random")).Returns((HostSpec?)null!);
         this.mockHostListProviderService.Setup(x => x.IsStaticHostListProvider()).Returns(false);
@@ -263,7 +263,7 @@ public class AuroraInitialConnectionStrategyPluginTests
         var methodFunc = new Mock<ADONetDelegate<DbConnection>>();
         var readerHost = new HostSpec("test-cluster.cluster-ro-xyz.us-east-1.rds.amazonaws.com", 5432, null, HostRole.Reader, HostAvailability.Available);
 
-        this.mockPluginService.Setup(x => x.AllHosts).Returns(new List<HostSpec> { readerHost });
+        this.mockPluginService.Setup(x => x.AllHosts).Returns([readerHost]);
         this.mockPluginService.Setup(x => x.AcceptsStrategy("invalid-strategy")).Returns(false);
         this.mockHostListProviderService.Setup(x => x.IsStaticHostListProvider()).Returns(false);
 
@@ -283,7 +283,7 @@ public class AuroraInitialConnectionStrategyPluginTests
         var methodFunc = new Mock<ADONetDelegate<DbConnection>>();
         var writerHost = new HostSpec("writer-host", 5432, null, HostRole.Writer, HostAvailability.Available);
 
-        this.mockPluginService.Setup(x => x.AllHosts).Returns(new List<HostSpec> { writerHost });
+        this.mockPluginService.Setup(x => x.AllHosts).Returns([writerHost]);
         this.mockPluginService.Setup(x => x.CurrentConnection).Returns(this.mockConnection.Object);
         this.mockPluginService.Setup(x => x.GetHostRole(It.IsAny<DbConnection>())).Returns(HostRole.Writer);
         this.mockHostListProviderService.Setup(x => x.IsStaticHostListProvider()).Returns(false);

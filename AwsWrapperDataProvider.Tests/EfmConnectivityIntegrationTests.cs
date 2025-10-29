@@ -12,8 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data;
+using System.Data.Common;
+using System.Diagnostics;
 using AwsWrapperDataProvider.Driver.Plugins.Efm;
 using AwsWrapperDataProvider.Tests.Container.Utils;
+using MySqlConnector;
+using Npgsql;
 
 namespace AwsWrapperDataProvider.Tests;
 
@@ -64,5 +69,59 @@ public class EfmConnectivityIntegrationTests : IntegrationTestBase
         var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName, plugins: "efm");
         connectionString += $";FailureDetectionTime={failureDetectionTime};FailureDetectionInterval={failureDetectionInterval};FailureDetectionCount={failureDetectionCount};";
         await EfmConnectivityTests.PerformEfmTest(connectionString, Endpoint, failureDetectionTime, failureDetectionInterval, failureDetectionCount);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    [Trait("Database", "pg")]
+    [Trait("Engine", "aurora")]
+    [Trait("Engine", "multi-az-cluster")]
+    [Trait("Engine", "multi-az-instance")]
+    public async Task EfmPluginTest_NetworkFailureDetection()
+    {
+        int failureDelaySec = 10;
+        int maxDurationsSec = 30;
+        var instance = ProxyDatabaseInfo.Instances[0].Host;
+        var port = ProxyDatabaseInfo.Instances[0].Port;
+        var instanceId = ProxyDatabaseInfo.Instances[0].InstanceId;
+
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, instance, port, Username, Password, DefaultDbName, commandTimeout: maxDurationsSec, connectionTimeout: 10, plugins: "efm");
+        connectionString += $";FailureDetectionTime={5000};FailureDetectionCount=1;";
+
+        using AwsWrapperConnection connection = Engine switch
+        {
+            DatabaseEngine.MYSQL => new AwsWrapperConnection<MySqlConnection>(connectionString),
+            DatabaseEngine.PG => new AwsWrapperConnection<NpgsqlConnection>(connectionString),
+            _ => throw new NotSupportedException($"Unsupported engine: {Engine}"),
+        };
+        connection.Open();
+        Assert.Equal(ConnectionState.Open, connection.State);
+
+        using var command = connection.CreateCommand();
+        command.CommandText = AuroraUtils.GetSleepSql(Engine, maxDurationsSec);
+
+        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        await Task.WhenAll([
+            AuroraUtils.SimulateTemporaryFailureTask(instanceId, TimeSpan.FromSeconds(failureDelaySec), TimeSpan.FromSeconds(maxDurationsSec), tcs),
+
+            Task.Run(() =>
+            {
+                var stopwatch = Stopwatch.StartNew();
+                try
+                {
+                    command.ExecuteScalar();
+                    Assert.Fail("Sleep query should have failed");
+                }
+                catch (DbException)
+                {
+                    var durationMs = stopwatch.Elapsed.TotalMilliseconds;
+                    Assert.True(
+                        durationMs > failureDelaySec * 1000 && durationMs < maxDurationsSec * 1000,
+                        $"Time before failure was not between {failureDelaySec} and {maxDurationsSec} seconds, actual duration was {durationMs / 1000} seconds.");
+                }
+            },
+            TestContext.Current.CancellationToken)
+            ]);
     }
 }

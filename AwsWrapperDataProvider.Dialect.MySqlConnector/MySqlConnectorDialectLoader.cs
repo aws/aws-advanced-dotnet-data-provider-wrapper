@@ -12,9 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace AwsWrapperDataProvider.Driver.Plugins;
+using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 
-public interface IConnectionPluginFactory
+namespace AwsWrapperDataProvider.Dialect.MySqlConnector;
+
+public static class MySqlConnectorDialectLoader
 {
-    IConnectionPlugin GetInstance(IPluginService pluginService, Dictionary<string, string> props);
+    public static void Load()
+    {
+        TargetConnectionDialectProvider.RegisterDialect(TargetConnectionTypes.MySqlConnector, new MySqlConnectorDialect());
+    }
 }

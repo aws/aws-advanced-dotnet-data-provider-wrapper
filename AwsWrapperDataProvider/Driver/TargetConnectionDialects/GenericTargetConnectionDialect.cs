@@ -1,4 +1,4 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -12,46 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
 
 namespace AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 
-public abstract class GenericTargetConnectionDialect : ITargetConnectionDialect
+public class GenericTargetConnectionDialect : AbstractTargetConnectionDialect
 {
-    public abstract Type DriverConnectionType { get; }
+    public override Type DriverConnectionType { get; }
 
-    public bool IsDialect(Type connectionType)
+    public GenericTargetConnectionDialect(Type connectionType)
     {
-        return connectionType == this.DriverConnectionType;
+        this.DriverConnectionType = connectionType;
     }
 
-    public abstract string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props);
-
-    public ISet<string> GetAllowedOnConnectionMethodNames()
+    public override string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props)
     {
-        throw new NotImplementedException("Will implement in Milestone 5, as feature is only relevant to Failover.");
-    }
-
-    protected string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, AwsWrapperProperty hostProperty)
-    {
-        Dictionary<string, string> targetConnectionParameters = props.Where(x =>
-            !PropertyDefinition.InternalWrapperProperties
-                .Select(prop => prop.Name)
-                .Contains(x.Key)).ToDictionary();
-
-        if (hostSpec != null)
-        {
-            dialect.PrepareConnectionProperties(targetConnectionParameters, hostSpec);
-            hostProperty.Set(targetConnectionParameters, hostSpec.Host);
-            if (hostSpec.IsPortSpecified)
-            {
-                PropertyDefinition.Port.Set(targetConnectionParameters, hostSpec.Port.ToString());
-            }
-        }
-
-        return string.Join("; ", targetConnectionParameters.Select(x => $"{x.Key}={x.Value}"));
+        return this.PrepareConnectionString(dialect, hostSpec, props, PropertyDefinition.Host);
     }
 }

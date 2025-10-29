@@ -14,21 +14,21 @@
 
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
+using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
-using MySqlConnector;
+using Npgsql;
 
-namespace AwsWrapperDataProvider.Driver.TargetConnectionDialects;
+namespace AwsWrapperDataProvider.Dialect.Npgsql;
 
-public class MySqlConnectorDialect : GenericTargetConnectionDialect
+public class NpgsqlDialect : AbstractTargetConnectionDialect
 {
-    public override Type DriverConnectionType { get; } = typeof(MySqlConnection);
+    public override Type DriverConnectionType { get; } = typeof(NpgsqlConnection);
 
     public override string PrepareConnectionString(
         IDialect dialect,
         HostSpec? hostSpec,
         Dictionary<string, string> props)
     {
-        PropertyDefinition.Port.GetInt(props);
-        return this.PrepareConnectionString(dialect, hostSpec, props, PropertyDefinition.Server);
+        return this.PrepareConnectionString(dialect, hostSpec, props, PropertyDefinition.Host);
     }
 }

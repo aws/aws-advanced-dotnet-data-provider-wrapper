@@ -810,7 +810,7 @@ public class AuroraTestUtils
         return result;
     }
 
-    public string ExecuteInstanceIdQuery(IDbConnection connection, DatabaseEngine engine, DatabaseEngineDeployment deployment)
+    public string? ExecuteInstanceIdQuery(IDbConnection connection, DatabaseEngine engine, DatabaseEngineDeployment deployment)
     {
         string instanceId;
         try
@@ -832,5 +832,15 @@ public class AuroraTestUtils
             connection,
             TestEnvironment.Env.Info.Request.Engine,
             TestEnvironment.Env.Info.Request.Deployment);
+    }
+
+    public string GetSleepSql(DatabaseEngine engine, int seconds)
+    {
+        return engine switch
+        {
+            DatabaseEngine.MYSQL => $"SELECT sleep({seconds})",
+            DatabaseEngine.PG => $"SELECT pg_sleep({seconds})",
+            _ => throw new NotSupportedException($"Unsupported database engine: {engine}"),
+        };
     }
 }

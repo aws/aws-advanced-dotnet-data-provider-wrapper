@@ -36,7 +36,7 @@ public class PluginService : IPluginService, IHostListProviderService
     private static readonly ILogger<PluginService> Logger = LoggerUtils.GetLogger<PluginService>();
 
     private readonly object connectionSwitchLock = new();
-
+    private readonly AwsWrapperConnection wrapperConnection;
     private readonly ConnectionPluginManager pluginManager;
     private readonly Dictionary<string, string> props;
     private readonly DialectProvider dialectProvider;
@@ -79,13 +79,13 @@ public class PluginService : IPluginService, IHostListProviderService
     }
 
     public PluginService(
-        Type connectionType,
+        AwsWrapperConnection wrapperConnection,
         ConnectionPluginManager pluginManager,
         Dictionary<string, string> props,
-        string connectionString,
         ITargetConnectionDialect? targetConnectionDialect,
         ConfigurationProfile? configurationProfile)
     {
+        this.wrapperConnection = wrapperConnection;
         this.pluginManager = pluginManager;
         this.props = props;
         this.TargetConnectionDialect = configurationProfile?.TargetConnectionDialect ?? targetConnectionDialect ?? throw new ArgumentNullException(nameof(targetConnectionDialect));
@@ -132,6 +132,11 @@ public class PluginService : IPluginService, IHostListProviderService
             {
                 if (!ReferenceEquals(connection, oldConnection))
                 {
+                    foreach (var cmd in this.wrapperConnection.ActiveWrapperCommands)
+                    {
+                        cmd.SetCurrentConnection(connection);
+                    }
+
                     oldConnection?.Dispose();
                     Logger.LogTrace("Old connection {Type}@{Id} is disposed.", oldConnection?.GetType().FullName, RuntimeHelpers.GetHashCode(oldConnection));
                 }
@@ -241,19 +246,26 @@ public class PluginService : IPluginService, IHostListProviderService
         this.AllHosts = updateHostList;
     }
 
-    public void ForceRefreshHostList(bool shouldVerifyWriter, long timeoutMs)
+    public bool ForceRefreshHostList(bool shouldVerifyWriter, long timeoutMs)
     {
         if (this.HostListProvider is IBlockingHostListProvider blockingHostListProvider)
         {
-            IList<HostSpec> updateHostList = blockingHostListProvider.ForceRefresh(shouldVerifyWriter, timeoutMs);
-            this.UpdateHostAvailability(updateHostList);
-            this.NotifyNodeChangeList(this.AllHosts, updateHostList);
-            this.AllHosts = updateHostList;
+            try
+            {
+                IList<HostSpec> updateHostList = blockingHostListProvider.ForceRefresh(shouldVerifyWriter, timeoutMs);
+                this.UpdateHostAvailability(updateHostList);
+                this.NotifyNodeChangeList(this.AllHosts, updateHostList);
+                this.AllHosts = updateHostList;
+                return true;
+            }
+            catch (TimeoutException)
+            {
+                Logger.LogDebug("A timeout exception occurred after waiting {timeoutMs} ms for refreshed topology.", timeoutMs);
+                return false;
+            }
         }
-        else
-        {
-            throw new InvalidOperationException("[PluginService] Required IBlockingHostListProvider");
-        }
+
+        throw new InvalidOperationException("[PluginService] Required IBlockingHostListProvider");
     }
 
     public DbConnection OpenConnection(
@@ -289,12 +301,12 @@ public class PluginService : IPluginService, IHostListProviderService
         this.RefreshHostList(connection);
     }
 
-    public HostSpec? IdentifyConnection(DbConnection connection)
+    public HostSpec? IdentifyConnection(DbConnection connection, DbTransaction? transaction = null)
     {
-        return this.hostListProvider.IdentifyConnection(connection);
+        return this.hostListProvider.IdentifyConnection(connection, transaction);
     }
 
-    public void FillAliases(DbConnection connection, HostSpec hostSpec)
+    public void FillAliases(DbConnection connection, HostSpec hostSpec, DbTransaction? transaction = null)
     {
         if (hostSpec.GetAliases().Count > 0)
         {
@@ -306,6 +318,7 @@ public class PluginService : IPluginService, IHostListProviderService
         {
             using var command = connection.CreateCommand();
             command.CommandText = this.Dialect.HostAliasQuery;
+            command.Transaction = transaction;
 
             using var resultSet = command.ExecuteReader();
             while (resultSet.Read())
@@ -319,7 +332,7 @@ public class PluginService : IPluginService, IHostListProviderService
             // ignore
         }
 
-        HostSpec? existingHostSpec = this.IdentifyConnection(connection);
+        HostSpec? existingHostSpec = this.IdentifyConnection(connection, transaction);
         if (existingHostSpec != null)
         {
             var aliases = existingHostSpec.AsAliases();

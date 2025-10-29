@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace AwsWrapperDataProvider.Driver.Plugins;
+namespace AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 
-public interface IConnectionPluginFactory
+public static class TargetConnectionTypes
 {
-    IConnectionPlugin GetInstance(IPluginService pluginService, Dictionary<string, string> props);
+    public static string Npgsql = "Npgsql.NpgsqlConnection";
+    public static string MySqlConnector = "MySqlConnector.MySqlConnection";
+    public static string MySqlClient = "MySql.Data.MySqlClient.MySqlConnection";
 }

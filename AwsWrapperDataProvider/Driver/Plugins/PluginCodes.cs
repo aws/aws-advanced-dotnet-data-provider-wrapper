@@ -14,7 +14,14 @@
 
 namespace AwsWrapperDataProvider.Driver.Plugins;
 
-public interface IConnectionPluginFactory
+public static class PluginCodes
 {
-    IConnectionPlugin GetInstance(IPluginService pluginService, Dictionary<string, string> props);
+    public const string ExecutionTime = "executionTime";
+    public const string Failover = "failover";
+    public const string HostMonitoring = "efm";
+    public const string Iam = "iam";
+    public const string SecretsManager = "awsSecretsManager";
+    public const string InitialConnection = "initialConnection";
+    public const string FederatedAuth = "federatedAuth";
+    public const string Okta = "okta";
 }

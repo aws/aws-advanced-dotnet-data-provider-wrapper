@@ -19,14 +19,7 @@ using System.Runtime.CompilerServices;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
-using AwsWrapperDataProvider.Driver.Dialects;
-using AwsWrapperDataProvider.Driver.HostInfo.HostSelectors;
 using AwsWrapperDataProvider.Driver.HostListProviders;
-using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
-using AwsWrapperDataProvider.Driver.Plugins.Efm;
-using AwsWrapperDataProvider.Driver.Plugins.FederatedAuth;
-using AwsWrapperDataProvider.Driver.Plugins.Iam;
-using AwsWrapperDataProvider.Driver.Plugins.SecretsManager;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Logging;
@@ -48,6 +41,8 @@ public class AwsWrapperConnection : DbConnection
     internal Dictionary<string, string> ConnectionProperties { get; private set; }
 
     internal DbConnection? TargetDbConnection => this.pluginService.CurrentConnection;
+
+    internal readonly List<AwsWrapperCommand> ActiveWrapperCommands = new();
 
     [AllowNull]
     public override string ConnectionString
@@ -105,9 +100,9 @@ public class AwsWrapperConnection : DbConnection
 
         DbConnectionProvider connectionProvider = new();
 
-        this.PluginManager = new(connectionProvider, null, this);
+        this.PluginManager = new(connectionProvider, null, this, profile);
 
-        PluginService pluginService = new(this.targetType, this.PluginManager, this.ConnectionProperties, this.connectionString, connectionDialect, profile);
+        PluginService pluginService = new(this, this.PluginManager, this.ConnectionProperties, connectionDialect, profile);
 
         this.pluginService = pluginService;
         this.hostListProviderService = pluginService;
@@ -211,7 +206,9 @@ public class AwsWrapperConnection : DbConnection
         Logger.LogDebug("DbCommand created for DbConnection@{Id}", RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection));
 
         this.ConnectionProperties[PropertyDefinition.TargetCommandType.Name] = typeof(TCommand).AssemblyQualifiedName!;
-        return new AwsWrapperCommand<TCommand>(command, this, this.PluginManager);
+        var wrapperCommand = new AwsWrapperCommand<TCommand>(command, this, this.PluginManager);
+        this.ActiveWrapperCommands.Add(wrapperCommand);
+        return wrapperCommand;
     }
 
     protected override DbBatch CreateDbBatch() => this.CreateBatch();
@@ -246,18 +243,9 @@ public class AwsWrapperConnection : DbConnection
         throw new Exception(string.Format(Properties.Resources.Error_CantLoadTargetConnectionType, targetConnectionTypeString));
     }
 
-    public static void ClearCache()
+    internal void UnregisterWrapperCommand(AwsWrapperCommand command)
     {
-        RdsHostListProvider.ClearAll();
-        MonitoringRdsHostListProvider.CloseAllMonitors();
-        HostMonitorService.CloseAllMonitors();
-        PluginService.ClearCache();
-        DialectProvider.ResetEndpointCache();
-        SecretsManagerAuthPlugin.ClearCache();
-        FederatedAuthPlugin.ClearCache();
-        IamAuthPlugin.ClearCache();
-        OktaAuthPlugin.ClearCache();
-        RoundRobinHostSelector.ClearCache();
+        this.ActiveWrapperCommands.Remove(command);
     }
 }
 
@@ -271,5 +259,5 @@ public class AwsWrapperConnection<TConn> : AwsWrapperConnection where TConn : Db
         profile)
     { }
 
-    public new TConn? TargetDbConnection => this.pluginService?.CurrentConnection as TConn;
+    internal new TConn? TargetDbConnection => this.pluginService?.CurrentConnection as TConn;
 }
