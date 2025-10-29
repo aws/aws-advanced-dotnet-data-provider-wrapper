@@ -113,7 +113,7 @@ public class ContainerHelper {
     }
 
     exitCode = execInContainer(container, consumer, "dotnet", "test", "--filter",
-            "FullyQualifiedName~ReaderFailover_StrictReader&Category=Integration&Database=" + task + "&Engine=" + engineDeployment, "--no-build", "--logger:\"console;verbosity=detailed\"");
+            "Category=Integration&Database=" + task + "&Engine=" + engineDeployment, "--no-build", "--logger:\"console;verbosity=detailed\"");
 
     System.out.println("==== Container console feed ==== <<<<");
     assertEquals(0, exitCode, "Some tests failed.");
