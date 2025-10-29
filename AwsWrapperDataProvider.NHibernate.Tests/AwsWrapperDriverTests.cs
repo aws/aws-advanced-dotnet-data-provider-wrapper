@@ -281,15 +281,13 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                 using (var newTransaction = session.BeginTransaction())
                 {
                     var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-                    var writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter,
-                        TimeSpan.Zero,
-                        TimeSpan.FromSeconds(20),
-                        tcs);
+                    var writerNodeFailureTask = AuroraUtils.CrashInstance(currentWriter, tcs);
                     await tcs.Task;
 
                     var exception = await Assert.ThrowsAnyAsync<HibernateException>(() =>
                     {
                         session.Save(john);
+                        session.CreateSQLQuery("SELECT pg_sleep(60)").ExecuteUpdate();
                         newTransaction.Commit();
                         return Task.CompletedTask;
                     });
@@ -332,7 +330,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
 
             var connectionString = ConnectionStringHelper.GetUrl(Engine, ProxyClusterEndpoint, ProxyPort, Username, Password, DefaultDbName, 2, 10);
             var wrapperConnectionString = connectionString
-                + ";Plugins=failover,initialConnection;"
+                + ";Plugins=failover;"
                 + "EnableConnectFailover=true;"
                 + "FailoverMode=StrictWriter;"
                 + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
