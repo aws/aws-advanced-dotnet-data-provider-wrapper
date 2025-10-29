@@ -24,6 +24,7 @@ using NHibernate.Criterion;
 using NHibernate.Driver;
 using NHibernate.Driver.MySqlConnector;
 using Npgsql;
+using Org.BouncyCastle.Pqc.Crypto.Crystals.Dilithium;
 
 [assembly: CollectionBehavior(DisableTestParallelization = true)]
 [assembly: CaptureConsole]
@@ -33,6 +34,18 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
     public class AwsWrapperDriverTests : IntegrationTestBase
     {
         protected override bool MakeSureFirstInstanceWriter => true;
+
+        private string GetSleepQuery()
+        {
+            switch (Engine)
+            {
+                case DatabaseEngine.PG:
+                    return "SELECT pg_sleep(60)";
+                case DatabaseEngine.MYSQL:
+                default:
+                    return "SELECT SLEEP(60)";
+            }
+        }
 
         private void CreateAndClearPersonsTable(ISession session)
         {
@@ -287,7 +300,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                     var exception = await Assert.ThrowsAnyAsync<HibernateException>(() =>
                     {
                         session.Save(john);
-                        session.CreateSQLQuery("SELECT pg_sleep(60)").ExecuteUpdate();
+                        session.CreateSQLQuery(this.GetSleepQuery()).ExecuteUpdate();
                         newTransaction.Commit();
                         return Task.CompletedTask;
                     });
