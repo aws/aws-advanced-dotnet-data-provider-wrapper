@@ -33,7 +33,7 @@ public class RdsMultiAzDbClusterPgDialect : PgDialect
 
     private static readonly string FetchWriterNodeQuery =
         "SELECT multi_az_db_cluster_source_dbi_resource_id FROM rds_tools.multi_az_db_cluster_source_dbi_resource_id()"
-        + " WHERE multi_az_db_cluster_source_dbi_resource_id !="
+        + " WHERE multi_az_db_cluster_source_dbi_resource_id OPERATOR(pg_catalog.!=)"
         + " (SELECT dbi_resource_id FROM rds_tools.dbi_resource_id())";
 
     private static readonly string IsRdsClusterQuery =
@@ -46,7 +46,7 @@ public class RdsMultiAzDbClusterPgDialect : PgDialect
         "SELECT dbi_resource_id FROM rds_tools.dbi_resource_id()";
 
     private static readonly string IsReaderQuery =
-        "SELECT pg_is_in_recovery()";
+        "SELECT pg_catalog.pg_is_in_recovery()";
 
     public override bool IsDialect(IDbConnection connection)
     {

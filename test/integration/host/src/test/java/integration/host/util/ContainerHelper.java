@@ -61,14 +61,6 @@ public class ContainerHelper {
   private static final String XRAY_TELEMETRY_IMAGE_NAME = "amazon/aws-xray-daemon";
   private static final String OTLP_TELEMETRY_IMAGE_NAME = "amazon/aws-otel-collector";
 
-  private static final String RETRIEVE_TOPOLOGY_SQL_POSTGRES =
-      "SELECT SERVER_ID, SESSION_ID FROM aurora_replica_status() "
-          + "ORDER BY CASE WHEN SESSION_ID = 'MASTER_SESSION_ID' THEN 0 ELSE 1 END";
-  private static final String RETRIEVE_TOPOLOGY_SQL_MYSQL =
-      "SELECT SERVER_ID, SESSION_ID FROM information_schema.replica_host_status "
-          + "ORDER BY IF(SESSION_ID = 'MASTER_SESSION_ID', 0, 1)";
-  private static final String SERVER_ID = "SERVER_ID";
-
   public Long runCmd(GenericContainer<?> container, String... cmd)
       throws IOException, InterruptedException {
     System.out.println("==== Container console feed ==== >>>>");
