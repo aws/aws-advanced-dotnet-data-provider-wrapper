@@ -26,12 +26,12 @@ jobs:
       - name: Restore dependencies
         run: |
           dotnet restore AwsWrapperDataProvider/AwsWrapperDataProvider.csproj
-          dotnet restore AwsWrapperDataProvider.EntityFrameworkCore.MySQL/AwsWrapperDataProvider.EntityFrameworkCore.MySQL.csproj
+          dotnet restore AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector/AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector.csproj
 
       - name: Build projects
         run: |
           dotnet build AwsWrapperDataProvider/AwsWrapperDataProvider.csproj --configuration Release --no-restore
-          dotnet build AwsWrapperDataProvider.EntityFrameworkCore.MySQL/AwsWrapperDataProvider.EntityFrameworkCore.MySQL.csproj --configuration Release --no-restore
+          dotnet build AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector/AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector.csproj --configuration Release --no-restore
 
       - name: Configure A AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -64,7 +64,7 @@ jobs:
       - name: Pack NuGet packages
         run: |
           dotnet pack AwsWrapperDataProvider/AwsWrapperDataProvider.csproj --configuration Release --no-build -p:PackageVersion=${{ github.event.inputs.version }} --output ./packages
-          dotnet pack AwsWrapperDataProvider.EntityFrameworkCore.MySQL/AwsWrapperDataProvider.EntityFrameworkCore.MySQL.csproj --configuration Release --no-build -p:PackageVersion=${{ github.event.inputs.version }} --output ./packages
+          dotnet pack AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector/AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector.csproj --configuration Release --no-build -p:PackageVersion=${{ github.event.inputs.version }} --output ./packages
 
 #      - name: Upload packages as artifacts
 #        uses: actions/upload-artifact@v4

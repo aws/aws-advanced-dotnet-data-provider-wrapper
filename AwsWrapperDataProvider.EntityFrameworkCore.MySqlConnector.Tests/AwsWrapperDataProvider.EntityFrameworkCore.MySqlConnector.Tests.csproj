@@ -7,7 +7,6 @@
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <OutputType>Exe</OutputType>
-    <RootNamespace>AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
