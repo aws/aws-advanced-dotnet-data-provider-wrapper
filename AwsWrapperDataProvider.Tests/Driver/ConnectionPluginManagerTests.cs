@@ -13,10 +13,13 @@
 // limitations under the License.
 
 using System.Data.Common;
+using AwsWrapperDataProvider.Dialect.MySqlClient;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
+using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
+using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
 using AwsWrapperDataProvider.Tests.Driver.Plugins;
 using Moq;
@@ -235,8 +238,11 @@ public class ConnectionPluginManagerTests
             this.mockWrapperConnection,
             null);
 
+        Mock<IPluginService> pluginServiceMock = new();
+        pluginServiceMock.Setup(ps => ps.TargetConnectionDialect).Returns(new MySqlClientDialect());
+
         pluginManager.InitConnectionPluginChain(
-            Mock.Of<IPluginService>(),
+            pluginServiceMock.Object,
             props);
 
         IList<IConnectionPlugin> plugins = TestUtils.GetNonPublicInstanceField<IList<IConnectionPlugin>>(pluginManager, "plugins")!;
