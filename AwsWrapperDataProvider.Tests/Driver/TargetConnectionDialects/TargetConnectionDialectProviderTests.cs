@@ -114,6 +114,11 @@ public class TargetConnectionDialectProviderTests
 
         public ISet<string> GetAllowedOnConnectionMethodNames() => new HashSet<string>();
 
+        public string PreparePluginCodes(Dictionary<string, string> props)
+        {
+            return "efm,failover";
+        }
+
         public string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props)
         {
             return "TestConnectionString";

@@ -50,4 +50,12 @@ public interface ITargetConnectionDialect
     /// </summary>
     /// <returns>Set of allowed method names.</returns>
     ISet<string> GetAllowedOnConnectionMethodNames();
+
+    /// <summary>
+    /// Prepares the plugin codes from the given props if specified.
+    /// Returns default plugin codes that are compatible with the dialect otherwise.
+    /// </summary>
+    /// <param name="props">Connection properties.</param>
+    /// <returns>A string of plugin codes.</returns>
+    string PreparePluginCodes(Dictionary<string, string> props);
 }
