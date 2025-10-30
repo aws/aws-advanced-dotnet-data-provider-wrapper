@@ -65,8 +65,8 @@ public class OktaAuthPluginTests
         this.mockCredentials = new Mock<AWSCredentials>();
         this.mockCredentialsProviderFactory = new Mock<CredentialsProviderFactory>();
         this.mockCredentialsProviderFactory.Setup(
-            factory => factory.GetAwsCredentialsProvider(It.IsAny<string>(), It.IsAny<RegionEndpoint>(), It.IsAny<Dictionary<string, string>>()))
-            .Returns(new SimpleCredentialsProvider(this.mockCredentials.Object));
+            factory => factory.GetAwsCredentialsProviderAsync(It.IsAny<string>(), It.IsAny<RegionEndpoint>(), It.IsAny<Dictionary<string, string>>()))
+            .ReturnsAsync(new SimpleCredentialsProvider(this.mockCredentials.Object));
 
         this.mockIamTokenUtility = new Mock<IIamTokenUtility>();
         this.mockIamTokenUtility.Setup(

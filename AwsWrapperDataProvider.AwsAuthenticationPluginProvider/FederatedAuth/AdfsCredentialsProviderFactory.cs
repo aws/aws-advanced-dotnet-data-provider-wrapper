@@ -30,16 +30,16 @@ public partial class AdfsCredentialsProviderFactory(IPluginService pluginService
 
     public static readonly string IdpName = "adfs";
 
-    private static string GetSignInPageBody(HttpClient httpClient, string uri)
+    private static async Task<string> GetSignInPageBodyAsync(HttpClient httpClient, string uri)
     {
         SamlUtils.ValidateUrl(uri);
         try
         {
-            HttpResponseMessage resp = httpClient.GetAsync(uri).GetAwaiter().GetResult();
+            HttpResponseMessage resp = await httpClient.GetAsync(uri);
 
             return !resp.IsSuccessStatusCode
                 ? throw new Exception("Sign on page request failed.")
-                : resp.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+                : await resp.Content.ReadAsStringAsync();
         }
         catch (Exception ex)
         {
@@ -47,17 +47,16 @@ public partial class AdfsCredentialsProviderFactory(IPluginService pluginService
         }
     }
 
-    private static string GetFormActionBody(HttpClient httpClient, string uri, Dictionary<string, string> parameters)
+    private static async Task<string> GetFormActionBodyAsync(HttpClient httpClient, string uri, Dictionary<string, string> parameters)
     {
         SamlUtils.ValidateUrl(uri);
         try
         {
-            HttpResponseMessage resp = httpClient.PostAsync(uri, new FormUrlEncodedContent(parameters))
-                .GetAwaiter().GetResult();
+            HttpResponseMessage resp = await httpClient.PostAsync(uri, new FormUrlEncodedContent(parameters));
 
             return !resp.IsSuccessStatusCode
                 ? throw new Exception("Sign on page request failed.")
-                : resp.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+                : await resp.Content.ReadAsStringAsync();
         }
         catch (Exception ex)
         {
@@ -190,13 +189,13 @@ public partial class AdfsCredentialsProviderFactory(IPluginService pluginService
         return match == null ? string.Empty : EscapeHtmlEntity(match.Groups[1].Value);
     }
 
-    public override string GetSamlAssertion(Dictionary<string, string> props)
+    public override async Task<string> GetSamlAssertionAsync(Dictionary<string, string> props)
     {
         int connectionTimeoutMs = PropertyDefinition.HttpClientConnectTimeout.GetInt(props) ?? FederatedAuthPlugin.DefaultHttpTimeoutMs;
-        HttpClient httpClient = HttpClientFactory.GetDisposableHttpClient(connectionTimeoutMs);
+        using HttpClient httpClient = HttpClientFactory.GetDisposableHttpClient(connectionTimeoutMs);
 
         string uri = GetSignInPageUrl(props);
-        string signInPageBody = GetSignInPageBody(httpClient, uri);
+        string signInPageBody = await GetSignInPageBodyAsync(httpClient, uri);
         string action = GetFormActionFromHtmlBody(signInPageBody);
 
         if (action.Length > 0 && action.StartsWith('/'))
@@ -205,11 +204,10 @@ public partial class AdfsCredentialsProviderFactory(IPluginService pluginService
         }
 
         Dictionary<string, string> parameters = GetParametersFromHtmlBody(signInPageBody, props);
-        string content = GetFormActionBody(httpClient, uri, parameters);
+        string content = await GetFormActionBodyAsync(httpClient, uri, parameters);
 
         Match samlMatch = FederatedAuthPlugin.SamlResponsePattern().Match(content) ?? throw new Exception("Failed login");
 
-        httpClient.Dispose();
         return samlMatch.Groups[FederatedAuthPlugin.SamlResponsePatternGroup].Value;
     }
 }

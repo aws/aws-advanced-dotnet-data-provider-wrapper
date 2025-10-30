@@ -32,20 +32,19 @@ public abstract class SamlCredentialsProviderFactory : CredentialsProviderFactor
         }
     }
 
-    public override AWSCredentialsProvider GetAwsCredentialsProvider(string host, RegionEndpoint region, Dictionary<string, string> props)
+    public override async Task<AWSCredentialsProvider> GetAwsCredentialsProviderAsync(string host, RegionEndpoint region, Dictionary<string, string> props)
     {
-        string samlAssertion = this.GetSamlAssertion(props);
+        string samlAssertion = await this.GetSamlAssertionAsync(props);
         string roleArn = PropertyDefinition.IamRoleArn.GetString(props) ?? throw new Exception("Missing IAM role ARN");
         string principalArn = PropertyDefinition.IamIdpArn.GetString(props) ?? throw new Exception("Missing IAM IDP ARN");
 
         AmazonSecurityTokenServiceClient client = new(region);
 
-        AssumeRoleWithSAMLResponse result = client.AssumeRoleWithSAMLAsync(
-            new AssumeRoleWithSAMLRequest { SAMLAssertion = samlAssertion, RoleArn = roleArn, PrincipalArn = principalArn })
-            .GetAwaiter().GetResult();
+        AssumeRoleWithSAMLResponse result = await client.AssumeRoleWithSAMLAsync(
+            new AssumeRoleWithSAMLRequest { SAMLAssertion = samlAssertion, RoleArn = roleArn, PrincipalArn = principalArn });
 
         return new SamlAWSCredentialsProvider(result.Credentials);
     }
 
-    public abstract string GetSamlAssertion(Dictionary<string, string> props);
+    public abstract Task<string> GetSamlAssertionAsync(Dictionary<string, string> props);
 }
