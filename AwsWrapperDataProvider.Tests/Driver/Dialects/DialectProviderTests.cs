@@ -29,6 +29,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.Dialects;
 public class DialectProviderTests
 {
     private readonly Mock<PluginService> mockPluginService;
+    private readonly DialectProvider dialectProvider;
 
     private readonly Mock<IDbConnection> mockConnection;
     private readonly Mock<IDbCommand> mockCommand;
@@ -40,6 +41,7 @@ public class DialectProviderTests
     {
         this.mockPluginService = new Mock<PluginService>();
         this.mockPluginService.Object.InitialConnectionHostSpec = new HostSpecBuilder().WithHost("anyHost").Build();
+        this.dialectProvider = new DialectProvider(this.mockPluginService.Object, this.defaultProps);
 
         this.mockConnection = new Mock<IDbConnection>();
         this.mockConnection.SetupAllProperties();
