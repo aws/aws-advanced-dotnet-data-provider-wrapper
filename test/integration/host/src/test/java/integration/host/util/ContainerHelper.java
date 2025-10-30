@@ -104,11 +104,11 @@ public class ContainerHelper {
     // For Entity Framework tests
     if (task.endsWith("ef")) {
         exitCode = execInContainer(container, consumer,
-                "dotnet", "ef", "migrations", "add", "InitialCreate_" + System.currentTimeMillis(), "--project", "AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests");
+                "dotnet", "ef", "migrations", "add", "InitialCreate_" + System.currentTimeMillis(), "--project", "AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.Tests");
         assertEquals(0, exitCode, "Failed to generate Entity framework migration.");
 
         exitCode = execInContainer(container, consumer,
-                "dotnet", "ef", "database", "update", "--project", "AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests");
+                "dotnet", "ef", "database", "update", "--project", "AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.Tests");
         assertEquals(0, exitCode, "Failed to update database with migration");
     }
 
