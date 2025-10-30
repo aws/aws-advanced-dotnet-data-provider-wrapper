@@ -24,9 +24,17 @@ namespace AwsWrapperDataProvider.Dialect.MySqlClient;
 public class MySqlClientDialect : AbstractTargetConnectionDialect
 {
     public override Type DriverConnectionType { get; } = typeof(MySqlConnection);
-    public override string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props)
+
+    public override string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, bool isForceOpen = false)
     {
-        return this.PrepareConnectionString(dialect, hostSpec, props, PropertyDefinition.Server);
+        Dictionary<string, string> copyOfProps = new(props);
+
+        if (isForceOpen)
+        {
+            copyOfProps["Pooling"] = "false";
+        }
+
+        return this.PrepareConnectionString(dialect, hostSpec, copyOfProps, PropertyDefinition.Server);
     }
 
     public override bool Ping(IDbConnection connection)

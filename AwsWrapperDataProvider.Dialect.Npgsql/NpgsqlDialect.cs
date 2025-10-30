@@ -28,9 +28,17 @@ public class NpgsqlDialect : AbstractTargetConnectionDialect
     public override string PrepareConnectionString(
         IDialect dialect,
         HostSpec? hostSpec,
-        Dictionary<string, string> props)
+        Dictionary<string, string> props,
+        bool isForceOpen = false)
     {
-        return this.PrepareConnectionString(dialect, hostSpec, props, PropertyDefinition.Host);
+        Dictionary<string, string> copyOfProps = new(props);
+
+        if (isForceOpen)
+        {
+            copyOfProps["Pooling"] = "false";
+        }
+
+        return this.PrepareConnectionString(dialect, hostSpec, copyOfProps, PropertyDefinition.Host);
     }
 
     public override bool Ping(IDbConnection connection)

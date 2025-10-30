@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data.Common;
+using System.Runtime.CompilerServices;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.Exceptions;
 using AwsWrapperDataProvider.Driver.HostInfo;
@@ -53,7 +54,7 @@ public class DefaultConnectionPlugin(
         bool isInitialConnection,
         ADONetDelegate<DbConnection> methodFunc)
     {
-        return this.OpenInternal(hostSpec, props, this.defaultConnProvider, isInitialConnection);
+        return this.OpenInternal(hostSpec, props, this.defaultConnProvider, isInitialConnection, false);
     }
 
     public DbConnection ForceOpenConnection(
@@ -62,7 +63,7 @@ public class DefaultConnectionPlugin(
         bool isInitialConnection,
         ADONetDelegate<DbConnection> methodFunc)
     {
-        return this.OpenInternal(hostSpec, props, this.defaultConnProvider, isInitialConnection);
+        return this.OpenInternal(hostSpec, props, this.defaultConnProvider, isInitialConnection, true);
     }
 
     /// <summary>
@@ -73,26 +74,25 @@ public class DefaultConnectionPlugin(
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         IConnectionProvider connProvider,
-        bool isInitialConnection)
+        bool isInitialConnection,
+        bool isForceOpen)
     {
         DbConnection? conn;
 
         // TODO: Investigate if configuration has changed for optimization
-        // if (isInitialConnection && this.pluginService.CurrentConnection != null)
-        // {
-        //     conn = this.pluginService.CurrentConnection;
-        //     Logger.LogTrace("Reusing existing connection {Type}@{Id}, DataSource = {DataSource}.", conn.GetType().FullName, RuntimeHelpers.GetHashCode(conn), conn.DataSource);
-        // }
-        // else
-        // {
-
-        conn = connProvider.CreateDbConnection(
-            this.pluginService.Dialect,
-            this.pluginService.TargetConnectionDialect,
-            hostSpec,
-            props);
-
-        // }
+        if (isInitialConnection && this.pluginService.CurrentConnection != null)
+        {
+            conn = this.pluginService.CurrentConnection;
+            Logger.LogTrace("Reusing existing connection {Type}@{Id}, DataSource = {DataSource}.", conn.GetType().FullName, RuntimeHelpers.GetHashCode(conn), conn.DataSource);
+        }
+        else
+        {
+            conn = connProvider.CreateDbConnection(
+                this.pluginService.Dialect,
+                this.pluginService.TargetConnectionDialect,
+                hostSpec,
+                props);
+        }
 
         // Update connection string that may have been modified by other plugins
         conn.ConnectionString = this.pluginService.TargetConnectionDialect.PrepareConnectionString(this.pluginService.Dialect, hostSpec, props);

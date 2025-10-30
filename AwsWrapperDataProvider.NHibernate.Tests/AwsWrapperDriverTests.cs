@@ -173,6 +173,10 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                 var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
                 await AuroraUtils.CrashInstance(currentWriter, tcs);
 
+                // Since the new transaction should be a fresh connection adding timeout just to make sure that failover has completed.
+                await Task.Delay(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
+
+
                 var john = new Person { FirstName = "John", LastName = "Smith" };
 
                 using (var transaction = session.BeginTransaction())
@@ -232,6 +236,9 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                 // Crash instance before opening new connection
                 var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
                 await AuroraUtils.CrashInstance(currentWriter, tcs);
+
+                // Since the new transaction should be a fresh connection adding timeout just to make sure that failover has completed.
+                await Task.Delay(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
 
                 var john = new Person { FirstName = "John", LastName = "Smith" };
 

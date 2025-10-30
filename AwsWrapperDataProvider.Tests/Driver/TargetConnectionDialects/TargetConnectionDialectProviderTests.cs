@@ -120,7 +120,7 @@ public class TargetConnectionDialectProviderTests
             return true;
         }
 
-        public string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props)
+        public string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, bool isForceOpen = false)
         {
             return "TestConnectionString";
         }

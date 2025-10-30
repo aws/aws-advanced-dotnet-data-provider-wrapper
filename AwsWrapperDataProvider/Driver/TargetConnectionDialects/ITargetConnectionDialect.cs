@@ -43,8 +43,9 @@ public interface ITargetConnectionDialect
     /// <param name="dialect">The dialect of connection.</param>
     /// <param name="hostSpec">The host specification.</param>
     /// <param name="props">Connection properties.</param>
+    /// <param name="isForcedOpen">Is connection string for a forced open connection.</param>
     /// <returns>The prepared connection string.</returns>
-    string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props);
+    string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, bool isForcedOpen = false);
 
     /// <summary>
     /// Gets the set of method names that are allowed to be called on the connection.

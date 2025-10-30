@@ -28,10 +28,18 @@ public class MySqlConnectorDialect : AbstractTargetConnectionDialect
     public override string PrepareConnectionString(
         IDialect dialect,
         HostSpec? hostSpec,
-        Dictionary<string, string> props)
+        Dictionary<string, string> props,
+        bool isForceOpen = false)
     {
         PropertyDefinition.Port.GetInt(props);
-        return this.PrepareConnectionString(dialect, hostSpec, props, PropertyDefinition.Server);
+        Dictionary<string, string> copyOfProps = new(props);
+
+        if (isForceOpen)
+        {
+            copyOfProps["Pooling"] = "false";
+        }
+
+        return this.PrepareConnectionString(dialect, hostSpec, copyOfProps, PropertyDefinition.Server);
     }
 
     public override bool Ping(IDbConnection connection)

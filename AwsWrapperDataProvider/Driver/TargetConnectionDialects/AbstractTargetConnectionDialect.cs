@@ -29,7 +29,7 @@ public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
         return connectionType == this.DriverConnectionType;
     }
 
-    public abstract string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props);
+    public abstract string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, bool isForcedOpen = false);
 
     public ISet<string> GetAllowedOnConnectionMethodNames()
     {
