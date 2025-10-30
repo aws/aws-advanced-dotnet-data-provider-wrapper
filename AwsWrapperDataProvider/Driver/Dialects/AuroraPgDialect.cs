@@ -25,23 +25,25 @@ public class AuroraPgDialect : PgDialect
     private static readonly ILogger<AuroraPgDialect> Logger = LoggerUtils.GetLogger<AuroraPgDialect>();
 
     private static readonly string ExtensionsSql = "SELECT (setting LIKE '%aurora_stat_utils%') AS aurora_stat_utils "
-          + "FROM pg_settings "
-          + "WHERE name='rds.extensions'";
+          + "FROM pg_catalog.pg_settings "
+          + "WHERE name OPERATOR(pg_catalog.=) 'rds.extensions'";
 
-    private static readonly string TopologySql = "SELECT 1 FROM aurora_replica_status() LIMIT 1";
+    private static readonly string TopologySql = "SELECT 1 FROM pg_catalog.aurora_replica_status() LIMIT 1";
 
-    private static readonly string TopologyQuery = "SELECT SERVER_ID, CASE WHEN SESSION_ID = 'MASTER_SESSION_ID' THEN TRUE ELSE FALSE END, "
+    private static readonly string TopologyQuery = "SELECT SERVER_ID, CASE WHEN SESSION_ID OPERATOR(pg_catalog.=) 'MASTER_SESSION_ID' THEN TRUE ELSE FALSE END, "
           + "CPU, COALESCE(REPLICA_LAG_IN_MSEC, 0), LAST_UPDATE_TIMESTAMP "
-          + "FROM aurora_replica_status() "
-          + "WHERE EXTRACT(EPOCH FROM(NOW() - LAST_UPDATE_TIMESTAMP)) <= 300 OR SESSION_ID = 'MASTER_SESSION_ID' "
+          + "FROM pg_catalog.aurora_replica_status() "
+          + "WHERE EXTRACT("
+          + "EPOCH FROM(pg_catalog.NOW() OPERATOR(pg_catalog.-) LAST_UPDATE_TIMESTAMP)) OPERATOR(pg_catalog.<=) 300 "
+          + "OR SESSION_ID OPERATOR(pg_catalog.=) 'MASTER_SESSION_ID' "
           + "OR LAST_UPDATE_TIMESTAMP IS NULL";
 
-    private static readonly string NodeIdQuery = "SELECT aurora_db_instance_identifier(), pg_catalog.aurora_db_instance_identifier()";
+    private static readonly string NodeIdQuery = "SELECT pg_catalog.aurora_db_instance_identifier(), pg_catalog.aurora_db_instance_identifier()";
 
-    private static readonly string IsReaderQuery = "SELECT pg_is_in_recovery()";
+    private static readonly string IsReaderQuery = "SELECT pg_catalog.pg_is_in_recovery()";
 
-    private static readonly string IsWriterQuery = "SELECT SERVER_ID FROM aurora_replica_status() "
-        + "WHERE SESSION_ID = 'MASTER_SESSION_ID' AND SERVER_ID = aurora_db_instance_identifier()";
+    private static readonly string IsWriterQuery = "SELECT SERVER_ID FROM pg_catalog.aurora_replica_status() "
+        + "WHERE SESSION_ID OPERATOR(pg_catalog.=) 'MASTER_SESSION_ID' AND SERVER_ID OPERATOR(pg_catalog.=) aurora_db_instance_identifier()";
 
     public override IList<Type> DialectUpdateCandidates { get; } = [
         typeof(RdsMultiAzDbClusterPgDialect),
