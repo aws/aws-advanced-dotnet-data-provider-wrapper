@@ -148,7 +148,7 @@ public class DriverHelper {
       case MYSQL:
         return "SELECT @@hostname";
       case PG:
-        return "SELECT inet_server_addr()";
+        return "SELECT pg_catalog.inet_server_addr()";
       default:
         throw new NotImplementedException(databaseEngine.toString());
     }

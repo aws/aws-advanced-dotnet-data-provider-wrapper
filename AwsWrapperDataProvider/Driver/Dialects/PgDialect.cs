@@ -28,11 +28,11 @@ public class PgDialect : IDialect
 
     public int DefaultPort { get; } = 5432;
 
-    public string HostAliasQuery { get; } = "SELECT CONCAT(inet_server_addr(), ':', inet_server_port())";
+    public string HostAliasQuery { get; } = "SELECT pg_catalog.CONCAT(pg_catalog.inet_server_addr(), ':', pg_catalog.inet_server_port())";
 
-    public string ServerVersionQuery { get; } = "SELECT 'version', VERSION()";
+    public string ServerVersionQuery { get; } = "SELECT 'version', pg_catalog.VERSION()";
 
-    internal static readonly string PGSelect1Query = "SELECT 1 FROM pg_proc LIMIT 1";
+    internal static readonly string PGSelect1Query = "SELECT 1 FROM pg_catalog.pg_proc LIMIT 1";
 
     public IExceptionHandler ExceptionHandler { get; } = new PgExceptionHandler();
 

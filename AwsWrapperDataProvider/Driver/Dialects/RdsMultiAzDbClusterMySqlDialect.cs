@@ -33,7 +33,7 @@ public class RdsMultiAzDbClusterMySqlDialect : MySqlDialect
     private const string FetchWriterNodeQuery = "SHOW REPLICA STATUS";
     private const string FetchWriterNodeQueryColumnName = "Source_Server_Id";
 
-    private const string NodeIdQuery = "SELECT @@server_id";
+    private const string NodeIdQuery = "SELECT id, SUBSTRING_INDEX(endpoint, '.', 1) FROM mysql.rds_topology WHERE id = @@server_id";
     private const string IsReaderQuery = "SELECT @@read_only";
 
     private const string IsDialectQuery = "SHOW VARIABLES LIKE 'report_host'";

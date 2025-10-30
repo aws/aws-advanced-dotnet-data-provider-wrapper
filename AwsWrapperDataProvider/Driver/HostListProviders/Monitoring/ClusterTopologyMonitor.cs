@@ -417,10 +417,10 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                         else
                         {
                             Logger.LogTrace("{host} IS NOT a rds instance", this.initialHostSpec.Host);
-                            string? nodeId = await this.GetNodeIdAsync(this.monitoringConnection);
-                            if (!string.IsNullOrEmpty(nodeId))
+                            var (nodeId, nodeName) = await this.GetNodeIdAsync(this.monitoringConnection);
+                            if (!string.IsNullOrEmpty(nodeId) && !string.IsNullOrEmpty(nodeName))
                             {
-                                this.writerHostSpec = this.CreateHost(nodeId, nodeId, true, 0, null);
+                                this.writerHostSpec = this.CreateHost(nodeName, nodeId, true, 0, null);
                                 Logger.LogTrace(string.Format(Resources.ClusterTopologyMonitor_WriterMonitoringConnection, this.writerHostSpec));
                             }
                         }
@@ -453,21 +453,6 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         }
 
         IList<HostSpec>? hosts = await this.FetchTopologyAndUpdateCacheAsync(this.monitoringConnection);
-
-        // TODO: Generate correct writer host spec with node name query
-        // Workaround: Update the real host for multiaz cluster
-        Logger.LogTrace("Writer host before update: {writerHostSpec}", this.writerHostSpec);
-        if (this.writerHostSpec is not null)
-        {
-            var writerHostSpecWithCorrectHost = this.topologyMap.Get<IList<HostSpec>>(this.clusterId)?.FirstOrDefault(h => h.HostId == this.writerHostSpec.HostId) ?? this.writerHostSpec;
-            this.writerHostSpec = this.hostListProviderService.HostSpecBuilder
-                .CopyFrom(this.writerHostSpec)
-                .WithHost(writerHostSpecWithCorrectHost.Host)
-                .Build();
-        }
-
-        Logger.LogTrace("Writer host after update: {writerHostSpec}", this.writerHostSpec);
-
         if (writerVerifiedByThisThread)
         {
             // We verify the writer on initial connection and on failover, but we only want to ignore new topology
@@ -533,7 +518,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         return host;
     }
 
-    protected async Task<string?> GetNodeIdAsync(DbConnection connection)
+    protected async Task<(string? NodeId, string? NodeName)> GetNodeIdAsync(DbConnection connection)
     {
         await this.monitoringConnectionSemaphore.WaitAsync();
         try
@@ -543,9 +528,9 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             await using var reader = await command.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
             if (await reader.ReadAsync(this.ctsTopologyMonitoring.Token))
             {
-                return await reader.IsDBNullAsync(0)
-                    ? null
-                    : Convert.ToString(reader.GetValue(0), CultureInfo.InvariantCulture);
+                return await reader.IsDBNullAsync(0) || await reader.IsDBNullAsync(1)
+                    ? (null, null)
+                    : (Convert.ToString(reader.GetValue(0), CultureInfo.InvariantCulture), Convert.ToString(reader.GetValue(1), CultureInfo.InvariantCulture));
             }
         }
         catch (Exception ex)
@@ -559,7 +544,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             this.monitoringConnectionSemaphore.Release();
         }
 
-        return null;
+        return (null, null);
     }
 
     protected virtual async Task<string?> GetWriterNodeIdAsync(DbConnection connection)

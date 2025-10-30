@@ -174,6 +174,28 @@ public class DialectProviderTests
 
     [Fact]
     [Trait("Category", "Unit")]
+    public async Task UpdateDialect_CalledTwice_UpdateOnce()
+    {
+        this.mockConnection.Mocks
+            .When(cmd => cmd.CommandText == new MySqlDialect().ServerVersionQuery)
+            .ReturnsTable(MockTable.WithColumns("Variable_name", "Value").AddRow("version_comment", "Source distribution"));
+
+        this.mockConnection.Mocks
+            .When(cmd => cmd.CommandText == AuroraMySqlDialect.IsDialectQuery)
+            .ReturnsTable(MockTable.WithColumns("Variable_name", "Value").AddRow("aurora_version", "3.08.2"));
+
+        var mysqlDialect = new MySqlDialect();
+
+        var updatedDialect = await this.dialectProvider.UpdateDialectAsync(this.mockConnection, mysqlDialect);
+        Assert.False(this.dialectProvider.CanUpdate);
+        Assert.IsType<AuroraMySqlDialect>(updatedDialect);
+
+        updatedDialect = await this.dialectProvider.UpdateDialectAsync(this.mockConnection, mysqlDialect);
+        Assert.IsType<AuroraMySqlDialect>(updatedDialect);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
     public async Task UpdateDialect_WithMysqlDialect_ReturnsRdsMysqlDialect()
     {
         this.mockConnection.Mocks

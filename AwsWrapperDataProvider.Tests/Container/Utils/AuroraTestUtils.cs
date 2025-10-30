@@ -410,8 +410,8 @@ public class AuroraTestUtils
             {
                 DatabaseEngine.MYSQL => "SELECT SERVER_ID, SESSION_ID FROM information_schema.replica_host_status " +
                                             "ORDER BY IF(SESSION_ID = 'MASTER_SESSION_ID', 0, 1)",
-                DatabaseEngine.PG => "SELECT SERVER_ID, SESSION_ID FROM aurora_replica_status() " +
-                                            "ORDER BY CASE WHEN SESSION_ID = 'MASTER_SESSION_ID' THEN 0 ELSE 1 END",
+                DatabaseEngine.PG => "SELECT SERVER_ID, SESSION_ID FROM pg_catalog.aurora_replica_status() " +
+                                            "ORDER BY CASE WHEN SESSION_ID OPERATOR(pg_catalog.=) 'MASTER_SESSION_ID' THEN 0 ELSE 1 END",
                 _ => throw new NotSupportedException(databaseEngine.ToString()),
             },
             DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER => databaseEngine switch
@@ -780,7 +780,7 @@ public class AuroraTestUtils
             DatabaseEngineDeployment.AURORA => engine switch
             {
                 DatabaseEngine.MYSQL => "SELECT @@aurora_server_id as id",
-                DatabaseEngine.PG => "SELECT aurora_db_instance_identifier()",
+                DatabaseEngine.PG => "SELECT pg_catalog.aurora_db_instance_identifier()",
                 _ => throw new NotSupportedException($"Unsupported database engine: {engine}"),
             },
             DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER => engine switch
