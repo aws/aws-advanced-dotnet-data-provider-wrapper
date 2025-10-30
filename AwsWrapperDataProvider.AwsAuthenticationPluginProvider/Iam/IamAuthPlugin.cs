@@ -74,7 +74,7 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
         {
             try
             {
-                token = await this.iamTokenUtility.GenerateAuthenticationToken(iamRegion, iamHost, iamPort, iamUser, null);
+                token = await this.iamTokenUtility.GenerateAuthenticationTokenAsync(iamRegion, iamHost, iamPort, iamUser, null);
                 int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? DefaultIamExpirationSeconds;
                 IamTokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
                 isCachedToken = false;
@@ -107,7 +107,7 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
             // should the token not work (login exception + is cached token), generate a new one and try again
             try
             {
-                token = await this.iamTokenUtility.GenerateAuthenticationToken(iamRegion, iamHost, iamPort, iamUser, null);
+                token = await this.iamTokenUtility.GenerateAuthenticationTokenAsync(iamRegion, iamHost, iamPort, iamUser, null);
                 int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? DefaultIamExpirationSeconds;
                 IamTokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
                 Logger.LogTrace("Generated new authentication token");

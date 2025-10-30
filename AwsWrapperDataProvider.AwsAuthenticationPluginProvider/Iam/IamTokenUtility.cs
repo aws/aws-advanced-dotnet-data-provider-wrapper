@@ -25,7 +25,7 @@ public class IamTokenUtility : IIamTokenUtility
         return user + ":" + hostname + ":" + port + ":" + region;
     }
 
-    public async Task<string> GenerateAuthenticationToken(string region, string hostname, int port, string user, AWSCredentials? credentials)
+    public async Task<string> GenerateAuthenticationTokenAsync(string region, string hostname, int port, string user, AWSCredentials? credentials)
     {
         try
         {

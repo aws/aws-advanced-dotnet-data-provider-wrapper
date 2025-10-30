@@ -73,7 +73,7 @@ public class OktaAuthPluginTests
             utility => utility.GetCacheKey(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>()))
             .Returns((string user, string hostname, int port, string region) => CacheKey(user, hostname, port, region));
         this.mockIamTokenUtility.Setup(
-            utility => utility.GenerateAuthenticationToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<AWSCredentials?>()))
+            utility => utility.GenerateAuthenticationTokenAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<AWSCredentials?>()))
             .ReturnsAsync(() => this.iamTokenUtilityGeneratedToken);
 
         this.oktaAuthPlugin = new(this.mockPluginService.Object, this.props, this.mockCredentialsProviderFactory.Object, this.mockIamTokenUtility.Object);

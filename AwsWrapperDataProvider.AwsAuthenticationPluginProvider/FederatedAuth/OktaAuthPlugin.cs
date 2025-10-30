@@ -79,7 +79,7 @@ public partial class OktaAuthPlugin(IPluginService pluginService, Dictionary<str
         }
         else
         {
-            await this.UpdateAuthenticationToken(hostSpec, props, host, port, region, cacheKey, dbUser);
+            await this.UpdateAuthenticationTokenAsync(hostSpec, props, host, port, region, cacheKey, dbUser);
             isCachedToken = false;
             Logger.LogTrace("Generated new authentication token");
         }
@@ -98,13 +98,13 @@ public partial class OktaAuthPlugin(IPluginService pluginService, Dictionary<str
             }
 
             // should the token not work (login exception + is cached token), generate a new one and try again
-            await this.UpdateAuthenticationToken(hostSpec, props, host, port, region, cacheKey, dbUser);
+            await this.UpdateAuthenticationTokenAsync(hostSpec, props, host, port, region, cacheKey, dbUser);
 
             return await methodFunc();
         }
     }
 
-    private async Task UpdateAuthenticationToken(HostSpec? hostSpec, Dictionary<string, string> props, string host, int port, string region, string cacheKey, string dbUser)
+    private async Task UpdateAuthenticationTokenAsync(HostSpec? hostSpec, Dictionary<string, string> props, string host, int port, string region, string cacheKey, string dbUser)
     {
         int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? IamAuthPlugin.DefaultIamExpirationSeconds;
         RegionEndpoint regionEndpoint = RegionUtils.IsValidRegion(region) ? RegionEndpoint.GetBySystemName(region) : throw new Exception("Invalid region");
@@ -112,7 +112,7 @@ public partial class OktaAuthPlugin(IPluginService pluginService, Dictionary<str
         AWSCredentialsProvider credentialsProvider = await this.credentialsFactory.GetAwsCredentialsProviderAsync(host, regionEndpoint, props);
         AWSCredentials credentials = credentialsProvider.GetAWSCredentials();
 
-        string token = await this.iamTokenUtility.GenerateAuthenticationToken(region, host, port, dbUser, credentials);
+        string token = await this.iamTokenUtility.GenerateAuthenticationTokenAsync(region, host, port, dbUser, credentials);
         props[PropertyDefinition.Password.Name] = token;
         IamTokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
     }
