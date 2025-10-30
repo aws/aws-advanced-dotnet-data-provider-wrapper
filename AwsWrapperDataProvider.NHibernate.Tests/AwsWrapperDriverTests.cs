@@ -40,10 +40,10 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             switch (Engine)
             {
                 case DatabaseEngine.PG:
-                    return "SELECT pg_sleep(60)";
+                    return "SELECT pg_sleep(120)";
                 case DatabaseEngine.MYSQL:
                 default:
-                    return "SELECT SLEEP(60)";
+                    return "SELECT SLEEP(120)";
             }
         }
 
@@ -295,29 +295,36 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                     transaction.Commit();
                 }
 
-                var john = new Person { FirstName = "John", LastName = "Smith" };
-
                 using (var newTransaction = session.BeginTransaction())
                 {
+                    var token = TestContext.Current.CancellationToken;
+
                     var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-                    var writerNodeFailureTask = AuroraUtils.CrashInstance(currentWriter, tcs);
+                    var writerNodeFailureTask = Task.Run(async () =>
+                    {
+                        await Task.Delay(TimeSpan.FromSeconds(5));
+                        await AuroraUtils.CrashInstance(currentWriter, tcs);
+                    },
+                        token);
                     await tcs.Task;
 
-                    var exception = await Assert.ThrowsAnyAsync<HibernateException>(() =>
+                    var exception = await Assert.ThrowsAnyAsync<HibernateException>(async () =>
                     {
-                        session.Save(john);
-                        session.CreateSQLQuery(this.GetSleepQuery()).ExecuteUpdate();
-                        newTransaction.Commit();
-                        return Task.CompletedTask;
+                        await session.CreateSQLQuery(this.GetSleepQuery()).ExecuteUpdateAsync(token);
+                        await newTransaction.CommitAsync(token);
                     });
 
-                    await writerNodeFailureTask;
+                    await Task.WhenAny(writerNodeFailureTask, Task.Delay(TimeSpan.FromMinutes(2), token));
 
                     // Verify the inner exception is FailoverSuccessException
                     Assert.IsType<TransactionStateUnknownException>(exception.InnerException);
                 }
 
                 session.Clear();
+
+                // Since the new transaction should be a fresh connection adding timeout just to make sure that failover has completed.
+                await Task.Delay(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
+
 
                 var joe = new Person { FirstName = "Joe", LastName = "Smith" };
 
