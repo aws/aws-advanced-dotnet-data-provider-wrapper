@@ -36,7 +36,7 @@ public class AuroraPgDialect : PgDialect
           + "WHERE EXTRACT(EPOCH FROM(NOW() - LAST_UPDATE_TIMESTAMP)) <= 300 OR SESSION_ID = 'MASTER_SESSION_ID' "
           + "OR LAST_UPDATE_TIMESTAMP IS NULL";
 
-    private static readonly string NodeIdQuery = "SELECT aurora_db_instance_identifier()";
+    private static readonly string NodeIdQuery = "SELECT aurora_db_instance_identifier(), pg_catalog.aurora_db_instance_identifier()";
 
     private static readonly string IsReaderQuery = "SELECT pg_is_in_recovery()";
 
