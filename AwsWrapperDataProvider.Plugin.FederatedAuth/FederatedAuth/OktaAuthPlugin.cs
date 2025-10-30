@@ -13,24 +13,25 @@
 // limitations under the License.
 
 using System.Data.Common;
-using System.Text.RegularExpressions;
 using Amazon;
 using Amazon.Runtime;
+using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.HostInfo;
-using AwsWrapperDataProvider.Driver.Plugins.Efm;
-using AwsWrapperDataProvider.Driver.Plugins.Iam;
+using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Plugin.FederatedAuth.Utils;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 
-namespace AwsWrapperDataProvider.Driver.Plugins.FederatedAuth;
+namespace AwsWrapperDataProvider.Plugin.FederatedAuth.FederatedAuth;
 
-public partial class FederatedAuthPlugin(IPluginService pluginService, Dictionary<string, string> props, CredentialsProviderFactory credentialsFactory, IIamTokenUtility iamTokenUtility) : AbstractConnectionPlugin
+public partial class OktaAuthPlugin(IPluginService pluginService, Dictionary<string, string> props, CredentialsProviderFactory credentialsFactory, ITokenUtility tokenUtility) : AbstractConnectionPlugin
 {
+    public static readonly int DefaultIamExpirationSeconds = 870;
+
+    private static readonly ILogger<OktaAuthPlugin> Logger = LoggerUtils.GetLogger<OktaAuthPlugin>();
+
     public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string> { "DbConnection.Open", "DbConnection.OpenAsync", "DbConnection.ForceOpen" };
-
-    public static readonly int DefaultHttpTimeoutMs = 60000;
-
-    private static readonly MemoryCache IamTokenCache = new(new MemoryCacheOptions());
 
     private readonly IPluginService pluginService = pluginService;
 
@@ -38,12 +39,9 @@ public partial class FederatedAuthPlugin(IPluginService pluginService, Dictionar
 
     private readonly CredentialsProviderFactory credentialsFactory = credentialsFactory;
 
-    private readonly IIamTokenUtility iamTokenUtility = iamTokenUtility;
+    private readonly ITokenUtility tokenUtility = tokenUtility;
 
-    public static readonly string SamlResponsePatternGroup = "saml";
-
-    [GeneratedRegex("SAMLResponse\\W+value=\"(?<saml>[^\"]+)\"", RegexOptions.IgnoreCase, "en-CA")]
-    public static partial Regex SamlResponsePattern();
+    internal static readonly MemoryCache IamTokenCache = new(new MemoryCacheOptions());
 
     public static void ClearCache()
     {
@@ -75,17 +73,19 @@ public partial class FederatedAuthPlugin(IPluginService pluginService, Dictionar
         string region = RegionUtils.GetRegion(host, props, PropertyDefinition.IamRegion) ?? throw new Exception("Could not determine region.");
         string dbUser = PropertyDefinition.DbUser.GetString(props) ?? throw new Exception("DB user not provided.");
 
-        string cacheKey = this.iamTokenUtility.GetCacheKey(dbUser, host, port, region);
-        bool isCachedToken = true;
-
+        string cacheKey = this.tokenUtility.GetCacheKey(dbUser, host, port, region);
+        bool isCachedToken;
         if (IamTokenCache.TryGetValue(cacheKey, out string? token) && token != null)
         {
             props[PropertyDefinition.Password.Name] = token;
+            isCachedToken = true;
+            Logger.LogTrace("Use cached authentication token");
         }
         else
         {
             this.UpdateAuthenticationToken(hostSpec, props, host, port, region, cacheKey, dbUser);
             isCachedToken = false;
+            Logger.LogTrace("Generated new authentication token");
         }
 
         props[PropertyDefinition.User.Name] = dbUser;
@@ -110,13 +110,13 @@ public partial class FederatedAuthPlugin(IPluginService pluginService, Dictionar
 
     private void UpdateAuthenticationToken(HostSpec? hostSpec, Dictionary<string, string> props, string host, int port, string region, string cacheKey, string dbUser)
     {
-        int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? IamAuthPlugin.DefaultIamExpirationSeconds;
+        int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? DefaultIamExpirationSeconds;
         RegionEndpoint regionEndpoint = RegionUtils.IsValidRegion(region) ? RegionEndpoint.GetBySystemName(region) : throw new Exception("Invalid region");
 
         AWSCredentialsProvider credentialsProvider = this.credentialsFactory.GetAwsCredentialsProvider(host, regionEndpoint, props);
         AWSCredentials credentials = credentialsProvider.GetAWSCredentials();
 
-        string token = this.iamTokenUtility.GenerateAuthenticationToken(region, host, port, dbUser, credentials);
+        string token = this.tokenUtility.GenerateAuthenticationToken(region, host, port, dbUser, credentials);
         props[PropertyDefinition.Password.Name] = token;
         IamTokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
     }

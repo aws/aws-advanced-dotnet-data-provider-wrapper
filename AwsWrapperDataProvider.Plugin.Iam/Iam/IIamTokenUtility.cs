@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Amazon;
+using Amazon.Runtime;
 
-namespace AwsWrapperDataProvider.Driver.Plugins.FederatedAuth;
+namespace AwsWrapperDataProvider.Plugin.Iam.Iam;
 
-public abstract class CredentialsProviderFactory
+public interface IIamTokenUtility
 {
-    public abstract AWSCredentialsProvider GetAwsCredentialsProvider(string host, RegionEndpoint region, Dictionary<string, string> props);
+    public string GetCacheKey(string user, string hostname, int port, string region);
+
+    public string GenerateAuthenticationToken(string region, string hostname, int port, string user, AWSCredentials? credentials);
 }

@@ -14,7 +14,7 @@
 
 using System.Net;
 
-namespace AwsWrapperDataProvider.Driver.Plugins.FederatedAuth;
+namespace AwsWrapperDataProvider.Plugin.FederatedAuth.FederatedAuth;
 
 public class HttpClientFactory
 {

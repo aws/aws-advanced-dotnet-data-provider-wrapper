@@ -130,8 +130,9 @@ public class ConnectionPluginChainBuilder
             .ToList();
     }
 
-    public static void RegisterPluginFactory(string pluginCode, Lazy<IConnectionPluginFactory> factory)
+    public static void RegisterPluginFactory<T>(string pluginCode)
+        where T : IConnectionPluginFactory, new()
     {
-        PluginFactoryTypesByCode[pluginCode] = factory;
+        PluginFactoryTypesByCode[pluginCode] = new Lazy<IConnectionPluginFactory>(() => new T());
     }
 }

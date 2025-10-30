@@ -16,10 +16,11 @@ using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Web;
+using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Logging;
 
-namespace AwsWrapperDataProvider.Driver.Plugins.FederatedAuth;
+namespace AwsWrapperDataProvider.Plugin.FederatedAuth.FederatedAuth;
 
 public partial class OktaCredentialsProviderFactory(IPluginService pluginService) : SamlCredentialsProviderFactory
 {
