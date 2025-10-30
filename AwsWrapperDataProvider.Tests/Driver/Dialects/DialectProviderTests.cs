@@ -115,8 +115,8 @@ public class DialectProviderTests
         this.mockCommand.SetupSet(c => c.CommandText = It.IsAny<string>()).Callback<string>(commandText => query = commandText);
         this.mockReader.Setup(reader => reader.Read()).Returns(() => query switch
         {
-            "SELECT 1 FROM pg_proc LIMIT 1" => true,
-            "SELECT (setting LIKE '%rds_tools%') AS rds_tools, (setting LIKE '%aurora_stat_utils%') AS aurora_stat_utils FROM pg_settings WHERE name='rds.extensions'" => true,
+            "SELECT 1 FROM pg_catalog.pg_proc LIMIT 1" => true,
+            "SELECT (setting LIKE '%rds_tools%') AS rds_tools, (setting LIKE '%aurora_stat_utils%') AS aurora_stat_utils FROM pg_catalog.pg_settings WHERE name OPERATOR(pg_catalog.=) 'rds.extensions'" => true,
             _ => false,
         });
         this.mockReader.Setup(reader => reader.GetOrdinal("rds_tools")).Returns(0);
@@ -198,6 +198,29 @@ public class DialectProviderTests
 
         Assert.IsType<AuroraMySqlDialect>(updatedDialect);
         this.mockConnection.Verify(c => c.CreateCommand(), Times.Exactly(2)); // Updated to account for RdsMultiAzDbClusterListProvider check
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void UpdateDialect_CalledTwice_UpdateOnce()
+    {
+        string query = string.Empty;
+        this.mockCommand.SetupSet(c => c.CommandText = It.IsAny<string>()).Callback<string>(commandText => query = commandText);
+        this.mockReader.Setup(r => r.Read()).Returns(() => query switch
+        {
+            "SHOW VARIABLES LIKE 'aurora_version'" => true,
+            _ => false,
+        });
+        this.mockReader.Setup(r => r.FieldCount).Returns(1);
+        this.mockReader.Setup(r => r.GetString(0)).Returns("Source distribution");
+
+        var mysqlDialect = new MySqlDialect();
+
+        this.dialectProvider.UpdateDialect(this.mockConnection.Object, mysqlDialect);
+        var updatedDialect = this.dialectProvider.UpdateDialect(this.mockConnection.Object, mysqlDialect);
+
+        Assert.IsType<AuroraMySqlDialect>(updatedDialect);
+        this.mockConnection.Verify(c => c.CreateCommand(), Times.Exactly(2)); // Should only update one iteration
     }
 
     [Fact]
