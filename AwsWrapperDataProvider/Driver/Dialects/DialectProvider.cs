@@ -85,7 +85,6 @@ public class DialectProvider
     private readonly PluginService pluginService;
     private readonly Dictionary<string, string> properties;
     private IDialect? dialect;
-    private IDialect? dialect = null;
     private bool canUpdate = false;
 
     public DialectProvider(PluginService pluginService, Dictionary<string, string> props)
