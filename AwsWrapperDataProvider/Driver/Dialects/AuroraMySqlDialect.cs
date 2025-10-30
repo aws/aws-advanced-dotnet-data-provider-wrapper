@@ -31,7 +31,7 @@ public class AuroraMySqlDialect : MySqlDialect
 
     private static readonly string IsReaderQuery = "SELECT @@innodb_read_only";
 
-    private static readonly string NodeIdQuery = "SELECT @@aurora_server_id";
+    private static readonly string NodeIdQuery = "SELECT @@aurora_server_id, @@aurora_server_id";
 
     private static readonly string IsDialectQuery = "SHOW VARIABLES LIKE 'aurora_version'";
 

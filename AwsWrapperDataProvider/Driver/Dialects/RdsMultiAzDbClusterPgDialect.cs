@@ -43,7 +43,7 @@ public class RdsMultiAzDbClusterPgDialect : PgDialect
         "multi_az_db_cluster_source_dbi_resource_id";
 
     private static readonly string NodeIdQuery =
-        "SELECT dbi_resource_id FROM rds_tools.dbi_resource_id()";
+        "SELECT id, SUBSTRING(endpoint FROM 0 FOR POSITION('.' IN endpoint)) FROM rds_tools.show_topology() WHERE id OPERATOR(pg_catalog.=) rds_tools.dbi_resource_id()";
 
     private static readonly string IsReaderQuery =
         "SELECT pg_catalog.pg_is_in_recovery()";

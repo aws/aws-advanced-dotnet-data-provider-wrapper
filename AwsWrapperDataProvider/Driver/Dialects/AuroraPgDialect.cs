@@ -38,7 +38,7 @@ public class AuroraPgDialect : PgDialect
           + "OR SESSION_ID OPERATOR(pg_catalog.=) 'MASTER_SESSION_ID' "
           + "OR LAST_UPDATE_TIMESTAMP IS NULL";
 
-    private static readonly string NodeIdQuery = "SELECT pg_catalog.aurora_db_instance_identifier()";
+    private static readonly string NodeIdQuery = "SELECT pg_catalog.aurora_db_instance_identifier(), pg_catalog.aurora_db_instance_identifier()";
 
     private static readonly string IsReaderQuery = "SELECT pg_catalog.pg_is_in_recovery()";
 
