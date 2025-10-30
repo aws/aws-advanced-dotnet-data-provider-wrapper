@@ -176,7 +176,6 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                 // Since the new transaction should be a fresh connection adding timeout just to make sure that failover has completed.
                 await Task.Delay(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
 
-
                 var john = new Person { FirstName = "John", LastName = "Smith" };
 
                 using (var transaction = session.BeginTransaction())
