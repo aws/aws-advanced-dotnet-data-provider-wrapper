@@ -5,6 +5,11 @@ on:
     branches:
       - build/signing-action
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number for deployment e.g. 0.1.0'
+        required: true
+        type: string
 
 permissions:
   id-token: write   # This is required for requesting the JWT
@@ -43,7 +48,7 @@ jobs:
           role-session-name: aws-dotnet-win-signer
 
       - name: Configure Signer AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5.1.0
         with:
           role-skip-session-tagging: true
           role-chaining: true
@@ -73,7 +78,7 @@ jobs:
 #          path: ./packages/*.nupkg
 #
 #      - name: Configure NuGet credential
-#        uses: aws-actions/configure-aws-credentials@v4
+#        uses: aws-actions/configure-aws-credentials@v5.1.0
 #        with:
 #          role-to-assume: ${{ secrets.NUGET_ACCESS_ROLE_ARN }}
 #          aws-region: ${{ secrets.AWS_SIGNER_REGION }}
