@@ -18,6 +18,8 @@ namespace AwsWrapperDataProvider.Driver.Exceptions;
 
 public class InvalidOpenConnectionException : DbException
 {
+    public override string? SqlState { get; }
+
     public InvalidOpenConnectionException()
         : base("Connection is out of date and invalid.")
     {
@@ -31,5 +33,9 @@ public class InvalidOpenConnectionException : DbException
     public InvalidOpenConnectionException(string message, Exception? innerException)
         : base(message, innerException)
     {
+        if (innerException is DbException dbException)
+        {
+            this.SqlState = dbException.SqlState;
+        }
     }
 }

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data;
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Exceptions;
 using AwsWrapperDataProvider.Driver.HostInfo;
@@ -22,6 +23,8 @@ namespace AwsWrapperDataProvider.Driver.Plugins.AuroraInitialConnectionStrategy;
 
 public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
 {
+    private const int DnsRetries = 3;
+
     private readonly IPluginService pluginService;
     private readonly VerifyOpenedConnectionType? verifyOpenedConnectionType;
 
@@ -114,7 +117,13 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
                     }
                     catch (InvalidOpenConnectionException)
                     {
-                        writerConnectionCandidate = this.pluginService.OpenConnection(this.pluginService.CurrentHostSpec!, props, this);
+                        writerConnectionCandidate?.Dispose();
+                        writerConnectionCandidate = this.RetryInvalidOpenConnection(props);
+
+                        if (writerConnectionCandidate == null)
+                        {
+                            throw;
+                        }
                     }
 
                     this.pluginService.ForceRefreshHostList(writerConnectionCandidate);
@@ -136,15 +145,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
                     return writerConnectionCandidate;
                 }
 
-                try
-                {
-                    writerConnectionCandidate = this.pluginService.ForceOpenConnection(writerCandidate, props, null);
-                }
-                catch (InvalidOpenConnectionException)
-                {
-                    // Use default host spec to recover from invalid connection
-                    writerConnectionCandidate = this.pluginService.ForceOpenConnection(writerCandidate, props, null);
-                }
+                writerConnectionCandidate = this.pluginService.ForceOpenConnection(writerCandidate, props, null);
 
                 if (this.pluginService.GetHostRole(writerConnectionCandidate) != HostRole.Writer)
                 {
@@ -211,7 +212,13 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
                     }
                     catch (InvalidOpenConnectionException)
                     {
-                        readerConnectionCandidate = this.pluginService.OpenConnection(this.pluginService.CurrentHostSpec!, props, this);
+                        readerConnectionCandidate?.Dispose();
+                        readerConnectionCandidate = this.RetryInvalidOpenConnection(props);
+
+                        if (readerConnectionCandidate == null)
+                        {
+                            throw;
+                        }
                     }
 
                     this.pluginService.ForceRefreshHostList(readerConnectionCandidate);
@@ -249,19 +256,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
                     return readerConnectionCandidate;
                 }
 
-                try
-                {
-                    readerConnectionCandidate = this.pluginService.ForceOpenConnection(readerCandidate, props, null);
-                }
-                catch (InvalidOpenConnectionException)
-                {
-                    // Try use another reader if possible.
-                    readerCandidate = this.pluginService
-                        .GetHosts()
-                        .FirstOrDefault(host => host.Role == HostRole.Reader && host.HostId != readerCandidate.HostId) ?? readerCandidate;
-
-                    readerConnectionCandidate = this.pluginService.ForceOpenConnection(readerCandidate, props, null);
-                }
+                readerConnectionCandidate = this.pluginService.ForceOpenConnection(readerCandidate, props, null);
 
                 if (this.pluginService.GetHostRole(readerConnectionCandidate) != HostRole.Reader)
                 {
@@ -369,4 +364,29 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
         { "writer", VerifyOpenedConnectionType.Writer },
         { "reader", VerifyOpenedConnectionType.Reader },
     };
+
+    private DbConnection? RetryInvalidOpenConnection(Dictionary<string, string> props)
+    {
+        DbConnection? connection = null;
+
+        for (int attempt = 1; attempt <= DnsRetries; attempt++)
+        {
+            connection?.Dispose();
+            connection = this.pluginService.ForceOpenConnection(this.pluginService.CurrentHostSpec!, props, this);
+
+            if (this.pluginService.TargetConnectionDialect.Ping(connection).ConnectionAlive)
+            {
+                return connection;
+            }
+
+            if (attempt == DnsRetries)
+            {
+                break;
+            }
+
+            Thread.Sleep(100);
+        }
+
+        return null;
+    }
 }

@@ -61,13 +61,17 @@ public class AuroraStaleDnsHelper
         try
         {
             connection = openFunc();
-
-            // TODO: investigate if the whole function needs to be retried on other exception.
         }
         catch (InvalidOpenConnectionException)
         {
-            Logger.LogTrace("INFO: Caught InvalidOpenConnectionException, retrying open connection.");
-            connection = this.pluginService.OpenConnection(hostSpec, props, pluginToSkip);
+            DbConnection? retryConnection = this.RetryInvalidOpenConnection(hostSpec, props);
+
+            if (retryConnection == null)
+            {
+                throw;
+            }
+
+            connection = retryConnection;
         }
 
         string? clusterInetAddress = GetHostIpAddress(hostSpec.Host);
@@ -175,5 +179,27 @@ public class AuroraStaleDnsHelper
     private IList<HostSpec>? GetReaders()
     {
         return [.. this.pluginService.AllHosts.Where(host => host.Role != HostRole.Writer)];
+    }
+
+    private DbConnection? RetryInvalidOpenConnection(HostSpec hostSpec, Dictionary<string, string> props)
+    {
+        for (int attempt = 1; attempt <= DnsRetries; attempt++)
+        {
+            DbConnection connection = this.pluginService.ForceOpenConnection(hostSpec, props, null);
+
+            if (this.pluginService.TargetConnectionDialect.Ping(connection).ConnectionAlive)
+            {
+                return connection;
+            }
+
+            if (attempt == DnsRetries)
+            {
+                return null;
+            }
+
+            Thread.Sleep(100);
+        }
+
+        return null;
     }
 }

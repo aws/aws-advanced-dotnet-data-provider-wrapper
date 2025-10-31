@@ -324,7 +324,6 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                 // Since the new transaction should be a fresh connection adding timeout just to make sure that failover has completed.
                 await Task.Delay(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
 
-
                 var joe = new Person { FirstName = "Joe", LastName = "Smith" };
 
                 using (var finalTransaction = session.BeginTransaction())
@@ -344,7 +343,6 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
 
         [Fact]
         [Trait("Category", "Integration")]
-        [Trait("Database", "mysql-nh")]
         [Trait("Database", "pg-nh")]
         [Trait("Engine", "multi-az-cluster")]
         public async Task NHibernateCrashAfterOpenWithFailoverTest_MultiAzCluster()
@@ -402,7 +400,6 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
 
                 // Since the new transaction should be a fresh connection adding timeout just to make sure that failover has completed.
                 await Task.Delay(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
-
 
                 var joe = new Person { FirstName = "Joe", LastName = "Smith" };
 
