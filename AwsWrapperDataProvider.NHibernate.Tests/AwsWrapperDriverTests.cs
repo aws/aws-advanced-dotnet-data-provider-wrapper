@@ -285,7 +285,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                 DefaultDbName);
 
             var wrapperConnectionString = connectionString
-                                          + ";Plugins=failover,initialConnection;"
+                                          + ";Plugins=failover;"
                                           + "EnableConnectFailover=true;"
                                           + "FailoverMode=StrictWriter;"
                                           + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
