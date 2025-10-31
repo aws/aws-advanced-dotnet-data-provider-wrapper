@@ -23,8 +23,8 @@ public class RdsPgDialect : PgDialect
 {
     private const string ExtensionsSql = "SELECT (setting LIKE '%rds_tools%') AS rds_tools, "
                                          + "(setting LIKE '%aurora_stat_utils%') AS aurora_stat_utils "
-                                         + "FROM pg_settings "
-                                         + "WHERE name='rds.extensions'";
+                                         + "FROM pg_catalog.pg_settings "
+                                         + "WHERE name OPERATOR(pg_catalog.=) 'rds.extensions'";
 
     private static readonly ILogger<RdsPgDialect> Logger = LoggerUtils.GetLogger<RdsPgDialect>();
 
