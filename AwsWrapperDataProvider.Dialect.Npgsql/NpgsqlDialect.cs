@@ -41,7 +41,7 @@ public class NpgsqlDialect : AbstractTargetConnectionDialect
         return this.PrepareConnectionString(dialect, hostSpec, copyOfProps, PropertyDefinition.Host);
     }
 
-    public override bool Ping(IDbConnection connection)
+    public override (bool ConnectionAlive, Exception? ConnectionException) Ping(IDbConnection connection)
     {
         try
         {
@@ -49,14 +49,14 @@ public class NpgsqlDialect : AbstractTargetConnectionDialect
             {
                 using var cmd = new NpgsqlCommand("SELECT 1", npgsqlConnection);
                 cmd.ExecuteScalar();
-                return true;
+                return (true, null);
             }
         }
-        catch
+        catch (Exception ex)
         {
-            return false;
+            return (false, ex);
         }
 
-        return false;
+        return (false, null);
     }
 }

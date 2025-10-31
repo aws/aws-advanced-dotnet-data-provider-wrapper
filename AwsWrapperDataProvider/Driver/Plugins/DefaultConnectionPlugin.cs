@@ -101,10 +101,11 @@ public class DefaultConnectionPlugin(
         // TODO: Add configuration to skip ping check. (Not urgent)
         // Ping to check if connection is actually alive.
         // Due to connection pooling, the Open() call may succeed with Open status even if the database is not reachable.
-        if (!this.pluginService.TargetConnectionDialect.Ping(conn))
+        (bool pingSuccess, Exception? pingException) = this.pluginService.TargetConnectionDialect.Ping(conn);
+        if (!pingSuccess)
         {
             // set SQLState and include original exception.
-            throw new InvalidOpenConnectionException("Unable to ping the database to verify the connection.");
+            throw new InvalidOpenConnectionException("Unable to ping the database to verify the connection.", pingException);
         }
 
         if (isInitialConnection)

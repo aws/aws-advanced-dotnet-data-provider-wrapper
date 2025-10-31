@@ -37,20 +37,13 @@ public class MySqlClientDialect : AbstractTargetConnectionDialect
         return this.PrepareConnectionString(dialect, hostSpec, copyOfProps, PropertyDefinition.Server);
     }
 
-    public override bool Ping(IDbConnection connection)
+    public override (bool ConnectionAlive, Exception? ConnectionException) Ping(IDbConnection connection)
     {
-        try
+        if (connection is MySqlConnection mySqlConnection)
         {
-            if (connection is MySqlConnection mySqlConnection)
-            {
-                return mySqlConnection.Ping();
-            }
-        }
-        catch
-        {
-            return false;
+            return (mySqlConnection.Ping(), null);
         }
 
-        return false;
+        return (false, null);
     }
 }

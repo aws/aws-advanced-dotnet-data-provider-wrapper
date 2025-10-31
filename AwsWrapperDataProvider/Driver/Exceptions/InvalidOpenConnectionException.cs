@@ -28,7 +28,7 @@ public class InvalidOpenConnectionException : DbException
     {
     }
 
-    public InvalidOpenConnectionException(string message, Exception innerException)
+    public InvalidOpenConnectionException(string message, Exception? innerException)
         : base(message, innerException)
     {
     }

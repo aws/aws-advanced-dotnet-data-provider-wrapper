@@ -57,6 +57,6 @@ public interface ITargetConnectionDialect
     /// Checks if the connection is alive.
     /// </summary>
     /// <param name="connection">Connection to ping.</param>
-    /// <returns>True if connection alive.</returns>
-    bool Ping(IDbConnection connection);
+    /// <returns>Tuple of bool that is True if connection alive, and Exception if ping throws an exception.</returns>
+    (bool ConnectionAlive, Exception? ConnectionException) Ping(IDbConnection connection);
 }

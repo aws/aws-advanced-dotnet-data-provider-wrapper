@@ -386,7 +386,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                         tcs);
                     await tcs.Task;
 
-                    var exception = await Assert.ThrowsAnyAsync<HibernateException>(() =>
+                    var exception = Assert.ThrowsAny<HibernateException>(() =>
                     {
                         session.CreateSQLQuery(this.GetSleepQuery()).ExecuteUpdate();
                         newTransaction.Commit();

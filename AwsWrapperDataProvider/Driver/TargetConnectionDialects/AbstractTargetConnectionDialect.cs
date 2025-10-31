@@ -36,7 +36,7 @@ public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
         throw new NotImplementedException("Will implement in Milestone 5, as feature is only relevant to Failover.");
     }
 
-    public abstract bool Ping(IDbConnection connection);
+    public abstract (bool ConnectionAlive, Exception? ConnectionException) Ping(IDbConnection connection);
 
     protected virtual string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, AwsWrapperProperty hostProperty)
     {

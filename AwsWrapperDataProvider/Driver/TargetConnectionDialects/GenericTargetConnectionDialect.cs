@@ -33,7 +33,7 @@ public class GenericTargetConnectionDialect : AbstractTargetConnectionDialect
         return this.PrepareConnectionString(dialect, hostSpec, props, PropertyDefinition.Host);
     }
 
-    public override bool Ping(IDbConnection connection)
+    public override (bool ConnectionAlive, Exception? ConnectionException) Ping(IDbConnection connection)
     {
         try
         {
@@ -49,11 +49,11 @@ public class GenericTargetConnectionDialect : AbstractTargetConnectionDialect
                 command.ExecuteScalar();
             }
 
-            return true;
+            return (true, null);
         }
-        catch
+        catch (Exception ex)
         {
-            return false;
+            return (false, ex);
         }
     }
 

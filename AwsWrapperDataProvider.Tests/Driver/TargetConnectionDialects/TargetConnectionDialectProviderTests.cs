@@ -115,9 +115,9 @@ public class TargetConnectionDialectProviderTests
 
         public ISet<string> GetAllowedOnConnectionMethodNames() => new HashSet<string>();
 
-        public bool Ping(IDbConnection connection)
+        public (bool ConnectionAlive, Exception? ConnectionException) Ping(IDbConnection connection)
         {
-            return true;
+            return (true, null);
         }
 
         public string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, bool isForceOpen = false)
