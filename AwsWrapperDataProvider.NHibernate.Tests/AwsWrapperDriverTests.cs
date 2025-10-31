@@ -268,24 +268,15 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
         [Trait("Database", "mysql-nh")]
         [Trait("Database", "pg-nh")]
         [Trait("Engine", "aurora")]
-        [Trait("Engine", "multi-az-cluster")]
         public async Task NHibernateCrashAfterOpenWithFailoverTest()
         {
             Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
 
             string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
-            var initialWriterInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.GetInstance(currentWriter);
-
-            var connectionString = ConnectionStringHelper.GetUrl(
-                Engine,
-                initialWriterInstanceInfo.Host,
-                initialWriterInstanceInfo.Port,
-                Username,
-                Password,
-                DefaultDbName);
-
+            var connectionString =
+                ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName);
             var wrapperConnectionString = connectionString
-                                          + ";Plugins=failover;"
+                                          + ";Plugins=failover,initialConnection;"
                                           + "EnableConnectFailover=true;"
                                           + "FailoverMode=StrictWriter;"
                                           + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
@@ -354,6 +345,86 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
         [Fact]
         [Trait("Category", "Integration")]
         [Trait("Database", "mysql-nh")]
+        [Trait("Database", "pg-nh")]
+        [Trait("Engine", "multi-az-cluster")]
+        public async Task NHibernateCrashAfterOpenWithFailoverTest_MultiAzCluster()
+        {
+            Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
+
+            string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
+            var connectionString =
+                ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName);
+            var wrapperConnectionString = connectionString
+                                          + ";Plugins=failover,initialConnection;"
+                                          + "EnableConnectFailover=true;"
+                                          + "FailoverMode=StrictWriter;"
+                                          + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
+            var cfg = this.GetNHibernateConfiguration(wrapperConnectionString);
+            var sessionFactory = cfg.BuildSessionFactory();
+
+            using (var session = sessionFactory.OpenSession())
+            {
+                this.CreateAndClearPersonsTable(session);
+
+                using (var transaction = session.BeginTransaction())
+                {
+                    var jane = new Person { FirstName = "Jane", LastName = "Smith" };
+                    session.Save(jane);
+                    transaction.Commit();
+                }
+
+                using (var newTransaction = session.BeginTransaction())
+                {
+                    var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                    var clusterFailureTask = AuroraUtils.SimulateTemporaryFailureTask(ProxyClusterEndpoint,
+                        TimeSpan.Zero,
+                        TimeSpan.FromSeconds(20),
+                        tcs);
+                    var writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter,
+                        TimeSpan.Zero,
+                        TimeSpan.FromSeconds(20),
+                        tcs);
+                    await tcs.Task;
+
+                    var exception = await Assert.ThrowsAnyAsync<HibernateException>(() =>
+                    {
+                        session.CreateSQLQuery(this.GetSleepQuery()).ExecuteUpdate();
+                        newTransaction.Commit();
+                    });
+
+                    await Task.WhenAll(clusterFailureTask, writerNodeFailureTask);
+
+                    // Verify the inner exception is FailoverSuccessException
+                    Assert.IsType<TransactionStateUnknownException>(exception.InnerException);
+                }
+
+                session.Clear();
+
+                // Since the new transaction should be a fresh connection adding timeout just to make sure that failover has completed.
+                await Task.Delay(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
+
+
+                var joe = new Person { FirstName = "Joe", LastName = "Smith" };
+
+                using (var finalTransaction = session.BeginTransaction())
+                {
+                    session.Save(joe);
+                    finalTransaction.Commit();
+                }
+
+                var persons = session.CreateCriteria(typeof(Person)).List<Person>();
+                Assert.Contains(persons, p => p.FirstName == "Jane");
+                Assert.Contains(persons, p => p.FirstName == "Joe");
+
+                // John may or may not be saved depending on when failover occurred
+                Assert.True(persons.Count >= 2);
+            }
+        }
+
+        [Fact]
+        [Trait("Category", "Integration")]
+        [Trait("Database", "mysql-nh")]
+        [Trait("Database", "pg-nh")]
         [Trait("Engine", "aurora")]
         [Trait("Engine", "multi-az-cluster")]
         public async Task NHibernateTempFailureWithFailoverTest()
