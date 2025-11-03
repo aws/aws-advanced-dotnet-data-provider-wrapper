@@ -39,7 +39,7 @@ public class RdsMultiAzDbClusterPgDialect : PgDialect
         + " (SELECT dbi_resource_id FROM rds_tools.dbi_resource_id())";
 
     private static readonly string HasRdsToolsExtensionQuery =
-        "SELECT EXISTS (SELECT 1 FROM pg_catalog.pg_extension WHERE extname = 'rds_tools');";
+        "SELECT EXISTS (SELECT 1 FROM pg_catalog.pg_extension WHERE extname OPERATOR(pg_catalog.=) 'rds_tools');";
 
     private static readonly string IsRdsClusterQuery =
         "SELECT multi_az_db_cluster_source_dbi_resource_id FROM rds_tools.multi_az_db_cluster_source_dbi_resource_id()";
