@@ -63,15 +63,19 @@ jobs:
 
       - name: Extract version from tag
         id: get_version
+        env:
+          REF: ${{ github.ref }}
         run: |
-          echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+          echo "VERSION=${REF#refs/tags/v}" >> $GITHUB_ENV
           echo "Version is $VERSION"
           echo "Version is ${{ env.VERSION }}"
           
       - name: Print version
+        env:
+          VERSION1: ${{ github.ref }}
         run: |
-          echo "Version is $VERSION"
-          echo "Version is ${{ env.VERSION }}"
+          echo "Version is $VERSION1"
+          echo "Version is ${{ env.VERSION1 }}"
 
       - name: Pack NuGet packages
         run: |
