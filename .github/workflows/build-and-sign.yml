@@ -3,7 +3,7 @@ name: Build, Sign and Publish .NET Wrapper
 on:
   push:
     tags:
-      - 'v*'
+      - '[0-9]+.[0-9]+.[0-9]+'
 
 permissions:
   id-token: write   # This is required for requesting the JWT
@@ -61,22 +61,21 @@ jobs:
             -AwsSignedBucket "${{ secrets.AWS_SIGNED_BUCKET }}" `
             -AwsBucketKeyPrefix "${{ secrets.AWS_S3_BUCKET_KEY_PREFIX }}"
 
-      - name: Extract version from tag
-        id: get_version
-        env:
-          REF: ${{ github.ref }}
+      - name: 'Set Version Env Variable'
+        shell: pwsh
         run: |
-          echo "VERSION=${${{ github.ref }}#refs/tags/v}" >> $GITHUB_ENV
-          echo "Version is $VERSION"
-          echo "env.REF is ${{ env.REF }}"
-          echo "GITHUB_REF_NAME is $GITHUB_REF_NAME"
-          echo "GITHUB_REF is $GITHUB_REF"
-          echo "github.ref is ${{ github.ref }}"
+          $version = $env:GITHUB_REF -replace '^refs/.*/', ''
+          echo "RELEASE_VERSION=$version" >> $env:GITHUB_ENV
+
+      - name: print version
+        run: |
+          echo "RELEASE_VERSION is $RELEASE_VERSION"
+          echo "env.RELEASE_VERSION is ${{ env.RELEASE_VERSION }}"
 
       - name: Pack NuGet packages
         run: |
-          dotnet pack AwsWrapperDataProvider/AwsWrapperDataProvider.csproj --configuration Release --no-build -p:PackageVersion=$VERSION --output ./packages
-          dotnet pack AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector/AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector.csproj --configuration Release --no-build -p:PackageVersion=$VERSION --output ./packages
+          dotnet pack AwsWrapperDataProvider/AwsWrapperDataProvider.csproj --configuration Release --no-build -p:PackageVersion=$RELEASE_VERSION --output ./packages
+          dotnet pack AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector/AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector.csproj --configuration Release --no-build -p:PackageVersion=$RELEASE_VERSION --output ./packages
 
 #      - name: Upload packages as artifacts
 #        uses: actions/upload-artifact@v4
