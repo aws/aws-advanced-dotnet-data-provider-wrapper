@@ -67,15 +67,10 @@ jobs:
           $version = $env:GITHUB_REF -replace '^refs/.*/', ''
           echo "RELEASE_VERSION=$version" >> $env:GITHUB_ENV
 
-      - name: print version
-        run: |
-          echo "RELEASE_VERSION is $RELEASE_VERSION"
-          echo "env.RELEASE_VERSION is ${{ env.RELEASE_VERSION }}"
-
       - name: Pack NuGet packages
         run: |
-          dotnet pack AwsWrapperDataProvider/AwsWrapperDataProvider.csproj --configuration Release --no-build -p:PackageVersion=$RELEASE_VERSION --output ./packages
-          dotnet pack AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector/AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector.csproj --configuration Release --no-build -p:PackageVersion=$RELEASE_VERSION --output ./packages
+          dotnet pack AwsWrapperDataProvider/AwsWrapperDataProvider.csproj --configuration Release --no-build -p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
+          dotnet pack AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector/AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector.csproj --configuration Release --no-build -p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
 
 #      - name: Upload packages as artifacts
 #        uses: actions/upload-artifact@v4
