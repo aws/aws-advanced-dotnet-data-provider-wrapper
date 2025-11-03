@@ -2,14 +2,8 @@ name: Build, Sign and Publish .NET Wrapper
 
 on:
   push:
-    branches:
-      - build/signing-action
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version number for deployment e.g. 0.1.0'
-        required: true
-        type: string
+    tags:
+      - 'v*'
 
 permissions:
   id-token: write   # This is required for requesting the JWT
@@ -64,12 +58,17 @@ jobs:
           Invoke-SignDlls `
             -BuildPath ".." `
             -AwsUnsignedBucket "${{ secrets.AWS_UNSIGNED_BUCKET }}" `
-            -AwsSignedBucket "${{ secrets.AWS_SIGNED_BUCKET }}"
+            -AwsSignedBucket "${{ secrets.AWS_SIGNED_BUCKET }}" `
+            -AwsBucketKeyPrefix "${{ secrets.AWS_S3_BUCKET_KEY_PREFIX }}"
+
+      - name: Extract version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
 
       - name: Pack NuGet packages
         run: |
-          dotnet pack AwsWrapperDataProvider/AwsWrapperDataProvider.csproj --configuration Release --no-build -p:PackageVersion=${{ github.event.inputs.version }} --output ./packages
-          dotnet pack AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector/AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector.csproj --configuration Release --no-build -p:PackageVersion=${{ github.event.inputs.version }} --output ./packages
+          dotnet pack AwsWrapperDataProvider/AwsWrapperDataProvider.csproj --configuration Release --no-build -p:PackageVersion=${{ env.VERSION }} --output ./packages
+          dotnet pack AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector/AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector.csproj --configuration Release --no-build -p:PackageVersion=${{ env.VERSION }} --output ./packages
 
 #      - name: Upload packages as artifacts
 #        uses: actions/upload-artifact@v4

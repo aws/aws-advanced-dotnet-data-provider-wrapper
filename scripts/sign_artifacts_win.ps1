@@ -24,9 +24,12 @@ function Invoke-SignFile {
         # The name of the unsigned AWS bucket
         [Parameter(Mandatory=$true)]
         [string]$AwsUnsignedBucket,
-        [Parameter(Mandatory=$true)]
         # The name of the signed AWS bucket
+        [Parameter(Mandatory=$true)]
         [string]$AwsSignedBucket,
+        # The key prefix of the bucket
+        [Parameter(Mandatory=$true)]
+        [string]$AwsBucketKeyPrefix,
         [Parameter(Mandatory=$false)]
         [bool]$AsMockResponse=$false
     )
@@ -39,7 +42,7 @@ function Invoke-SignFile {
     }
 
     $fileName = Split-Path $FilePath -Leaf
-    $key = "SignerAwsAdvancedDotnetWrapper_Windows/AuthenticodeSigner-SHA256-RSA/$fileName"
+    $key = "$AwsBucketKeyPrefix$fileName"
     $maxRetries = 10
 
     # Upload unsigned file to S3
@@ -103,6 +106,9 @@ function Invoke-SignDlls {
         [Parameter(Mandatory=$true)]
         # The name of the signed AWS bucket
         [string]$AwsSignedBucket,
+        # The key prefix of the bucket
+        [Parameter(Mandatory=$true)]
+        [string]$AwsBucketKeyPrefix,
         [Parameter(Mandatory=$false)]
         [bool]$AsMockResponse=$false
     )
@@ -121,7 +127,7 @@ function Invoke-SignDlls {
 
     # Sign each DLL file
     foreach ($dllFile in $dllFiles) {
-        if (!(Invoke-SignFile -FilePath $dllFile -AwsUnsignedBucket $AwsUnsignedBucket -AwsSignedBucket $AwsSignedBucket -AsMockResponse $AsMockResponse)) {
+        if (!(Invoke-SignFile -FilePath $dllFile -AwsUnsignedBucket $AwsUnsignedBucket -AwsSignedBucket $AwsSignedBucket -AwsBucketKeyPrefix $AwsBucketKeyPrefix -AsMockResponse $AsMockResponse)) {
             Write-Host "Failed to sign: $dllFile"
             return $false
         }
