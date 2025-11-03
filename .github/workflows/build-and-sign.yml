@@ -67,8 +67,8 @@ jobs:
 
       - name: Pack NuGet packages
         run: |
-          dotnet pack AwsWrapperDataProvider/AwsWrapperDataProvider.csproj --configuration Release --no-build -p:PackageVersion=${{ env.VERSION }} --output ./packages
-          dotnet pack AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector/AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector.csproj --configuration Release --no-build -p:PackageVersion=${{ env.VERSION }} --output ./packages
+          dotnet pack AwsWrapperDataProvider/AwsWrapperDataProvider.csproj --configuration Release --no-build -p:PackageVersion=$VERSION --output ./packages
+          dotnet pack AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector/AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector.csproj --configuration Release --no-build -p:PackageVersion=$VERSION --output ./packages
 
 #      - name: Upload packages as artifacts
 #        uses: actions/upload-artifact@v4
