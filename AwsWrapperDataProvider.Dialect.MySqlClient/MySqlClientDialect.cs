@@ -15,6 +15,7 @@
 using System.Data;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
+using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
 using MySql.Data.MySqlClient;
@@ -23,6 +24,8 @@ namespace AwsWrapperDataProvider.Dialect.MySqlClient;
 
 public class MySqlClientDialect : AbstractTargetConnectionDialect
 {
+    private const string DefaultPluginCode = "initialConnection, failover";
+
     public override Type DriverConnectionType { get; } = typeof(MySqlConnection);
 
     public override string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, bool isForceOpen = false)
@@ -45,5 +48,11 @@ public class MySqlClientDialect : AbstractTargetConnectionDialect
         }
 
         return (false, null);
+    }
+
+    public override string GetPluginCodesOrDefault(Dictionary<string, string> props)
+    {
+        string pluginsCodes = PropertyDefinition.Plugins.GetString(props) ?? DefaultPluginCode;
+        return pluginsCodes.Contains(PluginCodes.HostMonitoring) ? throw new InvalidOperationException("Invalid usage of Host Monitoring plugin with Mysql dialect.") : pluginsCodes;
     }
 }

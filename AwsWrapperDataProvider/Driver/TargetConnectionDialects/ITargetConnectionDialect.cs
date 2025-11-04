@@ -59,4 +59,12 @@ public interface ITargetConnectionDialect
     /// <param name="connection">Connection to ping.</param>
     /// <returns>Tuple of bool that is True if connection alive, and Exception if ping throws an exception.</returns>
     (bool ConnectionAlive, Exception? ConnectionException) Ping(IDbConnection connection);
+
+    /// <summary>
+    /// Prepares the plugin codes from the given props if specified.
+    /// Returns default plugin codes that are compatible with the dialect otherwise.
+    /// </summary>
+    /// <param name="props">Connection properties.</param>
+    /// <returns>A string of plugin codes.</returns>
+    string GetPluginCodesOrDefault(Dictionary<string, string> props);
 }

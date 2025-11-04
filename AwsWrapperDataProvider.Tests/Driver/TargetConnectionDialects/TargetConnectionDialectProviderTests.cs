@@ -120,6 +120,11 @@ public class TargetConnectionDialectProviderTests
             return (true, null);
         }
 
+        public string GetPluginCodesOrDefault(Dictionary<string, string> props)
+        {
+            return "efm,failover";
+        }
+
         public string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, bool isForceOpen = false)
         {
             return "TestConnectionString";

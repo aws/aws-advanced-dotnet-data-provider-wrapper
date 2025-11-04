@@ -22,6 +22,8 @@ namespace AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 
 public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
 {
+    private const string DefaultPluginCode = "initialConnection, efm,failover";
+
     public abstract Type DriverConnectionType { get; }
 
     public bool IsDialect(Type connectionType)
@@ -33,7 +35,38 @@ public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
 
     public ISet<string> GetAllowedOnConnectionMethodNames()
     {
-        throw new NotImplementedException("Will implement in Milestone 5, as feature is only relevant to Failover.");
+        return new HashSet<string>
+        {
+            "DbConnection.get_ConnectionString",
+            "DbConnection.get_ConnectionTimeout",
+            "DbConnection.get_Database",
+            "DbConnection.get_DataSource",
+            "DbConnection.get_State",
+            "DbConnection.Close",
+            "DbConnection.CloseAsync",
+            "DbConnection.DisposeAsync",
+            "DbConnection.get_CanCreateBatch",
+            "DbConnection.CreateBatch",
+            "DbConnection.CreateCommand",
+            "DbConnection.OpenAsync",
+            "DbConnection.get_Site",
+            "DbConnection.Dispose",
+            "DbConnection.get_Container",
+            "DbConnection.ToString",
+            "DbConnection.GetType",
+            "DbConnection.GetHashCode",
+            "DbCommand.get_Site",
+            "DbCommand.Dispose",
+            "DbCommand.get_Container",
+            "DbCommand.ToString",
+            "DbCommand.GetType",
+            "DbCommand.GetHashCode",
+        };
+    }
+
+    public virtual string GetPluginCodesOrDefault(Dictionary<string, string> props)
+    {
+        return PropertyDefinition.Plugins.GetString(props) ?? DefaultPluginCode;
     }
 
     public abstract (bool ConnectionAlive, Exception? ConnectionException) Ping(IDbConnection connection);

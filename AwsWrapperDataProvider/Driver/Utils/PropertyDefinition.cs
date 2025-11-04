@@ -48,7 +48,7 @@ public static class PropertyDefinition
 
     public static readonly AwsWrapperProperty Plugins = new(
         "Plugins",
-        "efm,failover",
+        null,
         "Comma separated list of connection plugin codes");
 
     public static readonly AwsWrapperProperty AutoSortPluginOrder = new(
