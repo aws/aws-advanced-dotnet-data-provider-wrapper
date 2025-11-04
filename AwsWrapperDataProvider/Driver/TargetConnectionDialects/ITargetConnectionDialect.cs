@@ -58,11 +58,4 @@ public interface ITargetConnectionDialect
     /// <param name="props">Connection properties.</param>
     /// <returns>A string of plugin codes.</returns>
     string GetPluginCodesOrDefault(Dictionary<string, string> props);
-
-    /// <summary>
-    /// Checks if SSL validation is disabled based on the given properties.
-    /// </summary>
-    /// <param name="props">Connection properties.</param>
-    /// <returns>True if SSL validation is disabled.</returns>
-    bool IsSslValidationDisabled(Dictionary<string, string> props);
 }

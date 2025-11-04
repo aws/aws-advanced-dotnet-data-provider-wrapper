@@ -53,12 +53,6 @@ public class DbConnectionProvider() : IConnectionProvider
         HostSpec? hostSpec,
         Dictionary<string, string> props)
     {
-        // Check and warn about SSL insecure configuration
-        if (targetConnectionDialect.IsSslValidationDisabled(props))
-        {
-            Logger.LogWarning(Resources.AwsWrapperProperty_SslValidationIsDisabled);
-        }
-
         Type targetConnectionType = targetConnectionDialect.DriverConnectionType;
         string connectionString = targetConnectionDialect.PrepareConnectionString(dialect, hostSpec, props);
 
