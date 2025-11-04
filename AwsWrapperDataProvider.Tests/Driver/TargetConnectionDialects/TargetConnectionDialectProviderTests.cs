@@ -119,11 +119,6 @@ public class TargetConnectionDialectProviderTests
             return "efm,failover";
         }
 
-        public bool IsSslValidationDisabled(Dictionary<string, string> props)
-        {
-            return false;
-        }
-
         public string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props)
         {
             return "TestConnectionString";

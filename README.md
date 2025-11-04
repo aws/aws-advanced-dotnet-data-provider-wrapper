@@ -28,21 +28,6 @@ The AWS Advanced .NET Wrapper also works with RDS provided databases that are no
 
 ## Security
 
-### Important: sslInsecure Parameter
-
-Wrapped datasources allows for users to disables server certificate verification. **This configuration poses significant security risks and should never be used in production environments.**
-
-**Security Risks:**
-- Disabling certificate verification makes connections vulnerable to man-in-the-middle attacks
-- Attackers could intercept and modify database communications
-- Sensitive data transmitted to/from the database could be compromised
-
-**Recommendations:**
-- **Never disabled SSL verification in production environments**
-- Use proper SSL/TLS certificates with valid certificate chains
-- For environments where standard certificate validation is problematic, implement certificate pinning as an alternative
-- The wrapper will log runtime warnings when certificate validation is disabled
-
 See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
 
 ## License
