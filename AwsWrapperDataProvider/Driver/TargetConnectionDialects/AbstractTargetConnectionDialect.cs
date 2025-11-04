@@ -21,7 +21,10 @@ namespace AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 
 public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
 {
-    private const string DefaultPluginCode = "initialConnection, efm,failover";
+    private const string DefaultPluginCode = "initialConnection,efm,failover";
+
+    private static readonly List<string> SslDisabledKeys = new() { "Ssl Mode", "SllMode" };
+
 
     public abstract Type DriverConnectionType { get; }
 
@@ -86,5 +89,20 @@ public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
         }
 
         return string.Join("; ", targetConnectionParameters.Select(x => $"{x.Key}={x.Value}"));
+    }
+
+    public virtual bool IsSslValidationDisabled(Dictionary<string, string> props)
+    {
+        foreach (var key in SslDisabledKeys)
+        {
+            if (props.TryGetValue(key, out var v) &&
+                !string.IsNullOrWhiteSpace(v) &&
+                (v.Equals("none", StringComparison.OrdinalIgnoreCase) || v.Equals("disable", StringComparison.OrdinalIgnoreCase)))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
