@@ -313,7 +313,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
             ProxyDatabaseInfo.DefaultDbName,
             2,
             10,
-            "failover");
+            "failover,initialConnection");
         connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}" +
             $"; FailoverMode=StrictReader";
 
