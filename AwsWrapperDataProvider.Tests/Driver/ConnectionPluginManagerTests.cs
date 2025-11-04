@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using AwsWrapperDataProvider.Dialect.MySqlClient;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.HostInfo;
@@ -234,8 +235,11 @@ public class ConnectionPluginManagerTests
             this.mockWrapperConnection,
             null);
 
+        Mock<IPluginService> pluginServiceMock = new();
+        pluginServiceMock.Setup(ps => ps.TargetConnectionDialect).Returns(new MySqlClientDialect());
+
         pluginManager.InitConnectionPluginChain(
-            Mock.Of<IPluginService>(),
+            pluginServiceMock.Object,
             props);
 
         IList<IConnectionPlugin> plugins = TestUtils.GetNonPublicInstanceField<IList<IConnectionPlugin>>(pluginManager, "plugins")!;
