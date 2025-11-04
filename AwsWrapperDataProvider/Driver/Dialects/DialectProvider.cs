@@ -124,6 +124,7 @@ public class DialectProvider
 
         if (KnownEndpointDialects.TryGetValue(host, out IDialect? cachedDialect) && cachedDialect != null)
         {
+            Logger.LogDebug("Dialect retrieved from cache: {dialect}", cachedDialect.GetType().FullName);
             this.dialect = cachedDialect;
             return this.dialect!;
         }
