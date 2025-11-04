@@ -17,7 +17,7 @@ using Amazon.RDS.Util;
 using Amazon.Runtime;
 using AwsWrapperDataProvider.Driver.Plugins.Efm;
 
-namespace AwsWrapperDataProvider.Driver.Plugins.Iam;
+namespace AwsWrapperDataProvider.Plugin.Iam.Iam;
 
 public class IamTokenUtility : IIamTokenUtility
 {

@@ -15,7 +15,7 @@
 using System.Text.RegularExpressions;
 using AwsWrapperDataProvider.Driver.Utils;
 
-namespace AwsWrapperDataProvider.Driver.Plugins.FederatedAuth;
+namespace AwsWrapperDataProvider.Plugin.FederatedAuth.FederatedAuth;
 
 public partial class SamlUtils
 {

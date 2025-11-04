@@ -27,7 +27,6 @@ namespace AwsWrapperDataProvider.Driver.Plugins;
 public class ConnectionPluginChainBuilder
 {
     private const int WeightRelativeToPriorPlugin = -1;
-    private const string DefaultPluginCode = "efm,failover";
 
     private static readonly ILogger<ConnectionPluginChainBuilder> Logger = LoggerUtils.GetLogger<ConnectionPluginChainBuilder>();
 
@@ -70,7 +69,7 @@ public class ConnectionPluginChainBuilder
         }
         else
         {
-            string pluginsCodes = PropertyDefinition.Plugins.GetString(props) ?? DefaultPluginCode;
+            string pluginsCodes = pluginService.TargetConnectionDialect.GetPluginCodesOrDefault(props);
             string[] pluginsCodesArray = [.. pluginsCodes.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)];
             Logger.LogDebug("Current Plugins: " + string.Join(",", pluginsCodesArray));
 
@@ -130,8 +129,9 @@ public class ConnectionPluginChainBuilder
             .ToList();
     }
 
-    public static void RegisterPluginFactory(string pluginCode, Lazy<IConnectionPluginFactory> factory)
+    public static void RegisterPluginFactory<T>(string pluginCode)
+        where T : IConnectionPluginFactory, new()
     {
-        PluginFactoryTypesByCode[pluginCode] = factory;
+        PluginFactoryTypesByCode[pluginCode] = new Lazy<IConnectionPluginFactory>(() => new T());
     }
 }

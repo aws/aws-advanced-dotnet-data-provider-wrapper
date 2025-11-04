@@ -12,12 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using AwsWrapperDataProvider.Dialect.MySqlClient;
+using AwsWrapperDataProvider.Dialect.Npgsql;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.Plugins;
+using AwsWrapperDataProvider.Driver.Plugins.AuroraInitialConnectionStrategy;
 using AwsWrapperDataProvider.Driver.Plugins.Efm;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
+using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Plugin.FederatedAuth.FederatedAuth;
+using AwsWrapperDataProvider.Plugin.Iam.Iam;
+using AwsWrapperDataProvider.Plugin.SecretsManager.SecretsManager;
 using Moq;
 
 namespace AwsWrapperDataProvider.Tests.Driver.Plugins;
@@ -26,6 +33,12 @@ public class ConnectionPluginChainBuilderTests
 {
     private readonly Mock<IPluginService> pluginServiceMock = new();
     private readonly Mock<IConnectionProvider> connectionProviderMock = new();
+    private readonly Mock<ITargetConnectionDialect> dialectMock = new();
+
+    public ConnectionPluginChainBuilderTests()
+    {
+        this.pluginServiceMock.Setup(ps => ps.TargetConnectionDialect).Returns(new NpgsqlDialect());
+    }
 
     [Fact]
     [Trait("Category", "Unit")]
@@ -52,7 +65,11 @@ public class ConnectionPluginChainBuilderTests
     [Trait("Category", "Unit")]
     public void TestGetAllPlugins()
     {
-        AwsAuthenticationPluginProvider.AwsAuthenticationPluginLoader.Load();
+        // Loading Aws Authentication Plugins to Plugin Chain.
+        ConnectionPluginChainBuilder.RegisterPluginFactory<IamAuthPluginFactory>(PluginCodes.Iam);
+        ConnectionPluginChainBuilder.RegisterPluginFactory<FederatedAuthPluginFactory>(PluginCodes.FederatedAuth);
+        ConnectionPluginChainBuilder.RegisterPluginFactory<OktaAuthPluginFactory>(PluginCodes.Okta);
+        ConnectionPluginChainBuilder.RegisterPluginFactory<SecretsManagerAuthPluginFactory>(PluginCodes.SecretsManager);
 
         string allPluginCodes = string.Join(
             ",",
@@ -63,7 +80,6 @@ public class ConnectionPluginChainBuilderTests
             PluginCodes.InitialConnection,
             PluginCodes.FederatedAuth,
             PluginCodes.Okta);
-        AwsAuthenticationPluginProvider.AwsAuthenticationPluginLoader awsAuthenticationPluginLoader = new();
         Dictionary<string, string> props = new() { { PropertyDefinition.Plugins.Name, allPluginCodes } };
         ConnectionPluginChainBuilder pluginChainBuilder = new();
 
@@ -159,10 +175,11 @@ public class ConnectionPluginChainBuilderTests
             null);
 
         Assert.NotNull(plugins);
-        Assert.Equal(3, plugins.Count);
-        Assert.IsType<FailoverPlugin>(plugins[0]);
-        Assert.IsType<HostMonitoringPlugin>(plugins[1]);
-        Assert.IsType<DefaultConnectionPlugin>(plugins[2]);
+        Assert.Equal(4, plugins.Count);
+        Assert.IsType<AuroraInitialConnectionStrategyPlugin>(plugins[0]);
+        Assert.IsType<FailoverPlugin>(plugins[1]);
+        Assert.IsType<HostMonitoringPlugin>(plugins[2]);
+        Assert.IsType<DefaultConnectionPlugin>(plugins[3]);
     }
 
     [Fact]
@@ -197,5 +214,52 @@ public class ConnectionPluginChainBuilderTests
             null,
             props,
             null));
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void TestMysqlDefaultPluginsCodes()
+    {
+        MySqlClientDialect mySqlClientDialect = new();
+        this.pluginServiceMock.Setup(ps => ps.TargetConnectionDialect).Returns(mySqlClientDialect);
+
+        ConnectionPluginChainBuilder pluginChainBuilder = new();
+
+        IList<IConnectionPlugin> plugins = pluginChainBuilder.GetPlugins(
+            this.pluginServiceMock.Object,
+            this.connectionProviderMock.Object,
+            null,
+            [],
+            null);
+
+        Assert.NotNull(plugins);
+        Assert.Equal(3, plugins.Count);
+        Assert.IsType<AuroraInitialConnectionStrategyPlugin>(plugins[0]);
+        Assert.IsType<FailoverPlugin>(plugins[1]);
+        Assert.IsType<DefaultConnectionPlugin>(plugins[2]);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void TestMysqlPluginsCodesContainsEFM()
+    {
+        MySqlClientDialect mySqlClientDialect = new();
+        this.pluginServiceMock.Setup(ps => ps.TargetConnectionDialect).Returns(mySqlClientDialect);
+
+        Dictionary<string, string> props = new()
+        {
+            { PropertyDefinition.Plugins.Name, "efm,failover" },
+            { PropertyDefinition.AutoSortPluginOrder.Name, "false" },
+        };
+
+        ConnectionPluginChainBuilder pluginChainBuilder = new();
+
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            pluginChainBuilder.GetPlugins(
+                this.pluginServiceMock.Object,
+                this.connectionProviderMock.Object,
+                null,
+                props,
+                null));
     }
 }

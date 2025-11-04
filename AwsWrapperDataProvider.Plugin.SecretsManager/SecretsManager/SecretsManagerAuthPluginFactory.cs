@@ -14,9 +14,12 @@
 
 using Amazon;
 using Amazon.SecretsManager;
+using AwsWrapperDataProvider.Driver;
+using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Plugin.SecretsManager.Utils;
 
-namespace AwsWrapperDataProvider.Driver.Plugins.SecretsManager;
+namespace AwsWrapperDataProvider.Plugin.SecretsManager.SecretsManager;
 
 public class SecretsManagerAuthPluginFactory : IConnectionPluginFactory
 {

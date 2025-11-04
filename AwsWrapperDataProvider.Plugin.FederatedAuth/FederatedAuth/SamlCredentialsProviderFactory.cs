@@ -18,7 +18,7 @@ using Amazon.SecurityToken;
 using Amazon.SecurityToken.Model;
 using AwsWrapperDataProvider.Driver.Utils;
 
-namespace AwsWrapperDataProvider.Driver.Plugins.FederatedAuth;
+namespace AwsWrapperDataProvider.Plugin.FederatedAuth.FederatedAuth;
 
 public abstract class SamlCredentialsProviderFactory : CredentialsProviderFactory
 {
