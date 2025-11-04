@@ -113,7 +113,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
         public void NHibernateAddTest()
         {
             var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName);
-            var wrapperConnectionString = connectionString + ";Plugins=initialConnection,failover;";
+            var wrapperConnectionString = connectionString + ";Plugins=failover;";
 
             var cfg = this.GetNHibernateConfiguration(wrapperConnectionString);
             var sessionFactory = cfg.BuildSessionFactory();
