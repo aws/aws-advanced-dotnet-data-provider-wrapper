@@ -14,9 +14,10 @@
 
 using System.Text;
 using System.Text.RegularExpressions;
+using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Utils;
 
-namespace AwsWrapperDataProvider.Driver.Plugins.FederatedAuth;
+namespace AwsWrapperDataProvider.Plugin.FederatedAuth.FederatedAuth;
 
 public partial class AdfsCredentialsProviderFactory(IPluginService pluginService) : SamlCredentialsProviderFactory
 {

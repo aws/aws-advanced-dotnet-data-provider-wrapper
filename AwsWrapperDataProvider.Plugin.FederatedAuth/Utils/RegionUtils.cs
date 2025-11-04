@@ -14,8 +14,9 @@
 
 using System.Text.RegularExpressions;
 using Amazon;
+using AwsWrapperDataProvider.Driver.Utils;
 
-namespace AwsWrapperDataProvider.Driver.Utils;
+namespace AwsWrapperDataProvider.Plugin.FederatedAuth.Utils;
 
 /// <summary>
 /// Methods to get the AWS region from a variety of sources.

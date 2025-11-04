@@ -12,11 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Amazon.Runtime;
+using AwsWrapperDataProvider.Driver;
+using AwsWrapperDataProvider.Driver.Plugins;
 
-namespace AwsWrapperDataProvider.Driver.Plugins.FederatedAuth;
+namespace AwsWrapperDataProvider.Plugin.Iam.Iam;
 
-public abstract class AWSCredentialsProvider
+public class IamAuthPluginFactory : IConnectionPluginFactory
 {
-    public abstract AWSCredentials GetAWSCredentials();
+    public IConnectionPlugin GetInstance(IPluginService pluginService, Dictionary<string, string> props)
+    {
+        return new IamAuthPlugin(pluginService, props, new IamTokenUtility());
+    }
 }

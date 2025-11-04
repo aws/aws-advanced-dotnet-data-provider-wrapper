@@ -14,11 +14,9 @@
 
 using Amazon.Runtime;
 
-namespace AwsWrapperDataProvider.Driver.Plugins.Efm;
+namespace AwsWrapperDataProvider.Plugin.FederatedAuth.FederatedAuth;
 
-public interface IIamTokenUtility
+public abstract class AWSCredentialsProvider
 {
-    public string GetCacheKey(string user, string hostname, int port, string region);
-
-    public string GenerateAuthenticationToken(string region, string hostname, int port, string user, AWSCredentials? credentials);
+    public abstract AWSCredentials GetAWSCredentials();
 }
