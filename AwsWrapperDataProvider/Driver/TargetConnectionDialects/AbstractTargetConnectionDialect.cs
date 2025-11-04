@@ -21,6 +21,8 @@ namespace AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 
 public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
 {
+    private const string DefaultPluginCode = "initialConnection, efm,failover";
+
     public abstract Type DriverConnectionType { get; }
 
     public bool IsDialect(Type connectionType)
@@ -59,6 +61,11 @@ public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
             "DbCommand.GetType",
             "DbCommand.GetHashCode",
         };
+    }
+
+    public virtual string GetPluginCodesOrDefault(Dictionary<string, string> props)
+    {
+        return PropertyDefinition.Plugins.GetString(props) ?? DefaultPluginCode;
     }
 
     protected string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, AwsWrapperProperty hostProperty)
