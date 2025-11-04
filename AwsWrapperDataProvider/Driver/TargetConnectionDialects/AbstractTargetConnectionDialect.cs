@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -24,7 +23,6 @@ public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
     private const string DefaultPluginCode = "initialConnection,efm,failover";
 
     private static readonly List<string> SslDisabledKeys = new() { "Ssl Mode", "SllMode" };
-
 
     public abstract Type DriverConnectionType { get; }
 
