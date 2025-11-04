@@ -22,8 +22,6 @@ namespace AwsWrapperDataProvider.Plugin.Iam.Utils;
 /// </summary>
 public static partial class RegionUtils
 {
-    private static readonly string RegionGroup = "region";
-
     public static bool IsValidRegion(string region)
     {
         return RegionEndpoint.EnumerableAllRegions.Any(r => r.SystemName.Equals(region, StringComparison.OrdinalIgnoreCase));
