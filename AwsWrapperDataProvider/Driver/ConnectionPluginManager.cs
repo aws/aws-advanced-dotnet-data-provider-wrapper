@@ -148,14 +148,9 @@ public class ConnectionPluginManager
                     PluginChainADONetDelegate<T> finalDelegate = pluginChainDelegate;
                     pluginChainDelegate = (pipelineDelegate, methodFunc, pluginToSkip) =>
                     {
-                        if (plugin == pluginToSkip)
-                        {
-                            return finalDelegate(pipelineDelegate, methodFunc, pluginToSkip);
-                        }
-                        else
-                        {
-                            return pipelineDelegate(plugin, () => finalDelegate(pipelineDelegate, methodFunc, pluginToSkip));
-                        }
+                        return plugin == pluginToSkip
+                            ? finalDelegate(pipelineDelegate, methodFunc, pluginToSkip)
+                            : pipelineDelegate(plugin, () => finalDelegate(pipelineDelegate, methodFunc, pluginToSkip));
                     };
                 }
             }
