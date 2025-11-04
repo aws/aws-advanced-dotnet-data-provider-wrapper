@@ -115,6 +115,7 @@ function Invoke-SignDlls {
 
     # Find DLL files to sign
     $dllFiles = Get-ChildItem -Path $BuildPath -Filter "*.dll" -Recurse | Where-Object { 
+        $_.FullName -match "\\bin\\Release\\" -and
         $_.Name -like "*AwsWrapperDataProvider*" 
     } | Select-Object -ExpandProperty FullName
 

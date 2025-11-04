@@ -24,13 +24,21 @@ jobs:
 
       - name: Restore dependencies
         run: |
-          dotnet restore AwsWrapperDataProvider/AwsWrapperDataProvider.csproj
-          dotnet restore AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector/AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector.csproj
+          dotnet restore AwsWrapperDataProvider\AwsWrapperDataProvider.csproj /p:_IsPacking=true
+          dotnet restore AwsWrapperDataProvider.AwsAuthenticationPluginProvider\AwsWrapperDataProvider.AwsAuthenticationPluginProvider.csproj /p:_IsPacking=true
+          dotnet restore AwsWrapperDataProvider.Dialect.MySqlClient\AwsWrapperDataProvider.Dialect.MySqlClient.csproj /p:_IsPacking=true
+          dotnet restore AwsWrapperDataProvider.Dialect.MySqlConnector\AwsWrapperDataProvider.Dialect.MySqlConnector.csproj /p:_IsPacking=true
+          dotnet restore AwsWrapperDataProvider.Dialect.Npgsql\AwsWrapperDataProvider.Dialect.Npgsql.csproj /p:_IsPacking=true
+          dotnet restore AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector\AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector.csproj /p:_IsPacking=true
 
       - name: Build projects
         run: |
-          dotnet build AwsWrapperDataProvider/AwsWrapperDataProvider.csproj --configuration Release --no-restore
-          dotnet build AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector/AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector.csproj --configuration Release --no-restore
+          dotnet build AwsWrapperDataProvider\AwsWrapperDataProvider.csproj --configuration Release --no-restore
+          dotnet build AwsWrapperDataProvider.AwsAuthenticationPluginProvider\AwsWrapperDataProvider.AwsAuthenticationPluginProvider.csproj --configuration Release --no-restore
+          dotnet build AwsWrapperDataProvider.Dialect.MySqlClient\AwsWrapperDataProvider.Dialect.MySqlClient.csproj --configuration Release --no-restore
+          dotnet build AwsWrapperDataProvider.Dialect.MySqlConnector\AwsWrapperDataProvider.Dialect.MySqlConnector.csproj --configuration Release --no-restore
+          dotnet build AwsWrapperDataProvider.Dialect.Npgsql\AwsWrapperDataProvider.Dialect.Npgsql.csproj --configuration Release --no-restore
+          dotnet build AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector\AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector.csproj --configuration Release --no-restore
 
       - name: Configure A AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -69,14 +77,18 @@ jobs:
 
       - name: Pack NuGet packages
         run: |
-          dotnet pack AwsWrapperDataProvider/AwsWrapperDataProvider.csproj --configuration Release --no-build -p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
-          dotnet pack AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector/AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector.csproj --configuration Release --no-build -p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
+          dotnet pack AwsWrapperDataProvider\AwsWrapperDataProvider.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
+          dotnet pack AwsWrapperDataProvider.AwsAuthenticationPluginProvider\AwsWrapperDataProvider.AwsAuthenticationPluginProvider.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
+          dotnet pack AwsWrapperDataProvider.Dialect.MySqlClient\AwsWrapperDataProvider.Dialect.MySqlClient.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
+          dotnet pack AwsWrapperDataProvider.Dialect.MySqlConnector\AwsWrapperDataProvider.Dialect.MySqlConnector.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
+          dotnet pack AwsWrapperDataProvider.Dialect.Npgsql\AwsWrapperDataProvider.Dialect.Npgsql.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
+          dotnet pack AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector\AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
 
-#      - name: Upload packages as artifacts
-#        uses: actions/upload-artifact@v4
-#        with:
-#          name: nuget-packages
-#          path: ./packages/*.nupkg
+      - name: Upload packages as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages
+          path: .\packages\*.nupkg
 #
 #      - name: Configure NuGet credential
 #        uses: aws-actions/configure-aws-credentials@v5.1.0
@@ -88,4 +100,4 @@ jobs:
 #        shell: pwsh
 #        run: |
 #          $nugetKey = aws secretsmanager get-secret-value --secret-id ${{ secrets.NUGET_SECRETS_ID }} --region ${{ secrets.AWS_SIGNER_REGION }} --output text --query SecretString | ConvertFrom-Json
-#          dotnet nuget push ./packages/*.nupkg --source https://api.nuget.org/v3/index.json --api-key $nugetKey.Key
+#          dotnet nuget push .\packages\*.nupkg --source https://api.nuget.org/v3/index.json --api-key $nugetKey.Key

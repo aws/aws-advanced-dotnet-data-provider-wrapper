@@ -41,4 +41,17 @@
     </EmbeddedResource>
   </ItemGroup>
 
+  <PropertyGroup Condition=" '$(_IsPacking)' == 'true' ">
+    <!-- NuGet packages -->
+    <IsPackable>true</IsPackable>
+    <PackageProjectUrl>https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/</PackageProjectUrl>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <IncludePackageReadmeFile>true</IncludePackageReadmeFile>
+    <PackageReleaseNotes>See release notes at https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/releases</PackageReleaseNotes>
+    <PackageTags>AWS</PackageTags>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper.git</RepositoryUrl>
+</PropertyGroup>
+
 </Project>
