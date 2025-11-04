@@ -12,11 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Amazon;
+using Microsoft.Extensions.Logging;
 
-namespace AwsWrapperDataProvider.Driver.Plugins.FederatedAuth;
+namespace AwsWrapperDataProvider.Driver.Utils;
 
-public abstract class CredentialsProviderFactory
+public class FileLoggerProvider : ILoggerProvider
 {
-    public abstract AWSCredentialsProvider GetAwsCredentialsProvider(string host, RegionEndpoint region, Dictionary<string, string> props);
+    private readonly string directory;
+    private readonly object lockObject = new();
+
+    public FileLoggerProvider(string directory)
+    {
+        this.directory = directory;
+    }
+
+    public ILogger CreateLogger(string categoryName) => new FileLogger(categoryName, this.directory, this.lockObject);
+
+    public void Dispose() { }
 }

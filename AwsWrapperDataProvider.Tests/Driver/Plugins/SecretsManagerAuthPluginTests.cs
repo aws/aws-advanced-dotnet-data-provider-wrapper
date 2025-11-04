@@ -18,11 +18,11 @@ using Amazon.SecretsManager.Model;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
-using AwsWrapperDataProvider.Driver.Plugins.SecretsManager;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Plugin.SecretsManager.SecretsManager;
 using Moq;
 
-namespace AwsWrapperDataProvider.Tests;
+namespace AwsWrapperDataProvider.Tests.Driver.Plugins;
 
 public class SecretsManagerAuthPluginTests
 {

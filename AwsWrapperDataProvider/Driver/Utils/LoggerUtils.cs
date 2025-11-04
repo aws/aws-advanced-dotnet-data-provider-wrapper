@@ -23,14 +23,17 @@ public static class LoggerUtils
 {
     private static readonly ILoggerFactory LoggerFactory;
 
+    private static readonly bool EnabledFileLog = Environment.GetEnvironmentVariable("ENABLED_FILE_LOG") == "false";
+    private static readonly string LogPath = Environment.GetEnvironmentVariable("LOG_DIRECTORY_PATH") ?? "./";
+
     static LoggerUtils()
     {
         LoggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
         {
             builder
-            .SetMinimumLevel(LogLevel.Trace)
-            .AddDebug()
-            .AddConsole(options => options.FormatterName = "simple");
+                .SetMinimumLevel(LogLevel.Trace)
+                .AddDebug()
+                .AddConsole(options => options.FormatterName = "simple");
 
             builder.AddSimpleConsole(options =>
             {
@@ -39,6 +42,11 @@ public static class LoggerUtils
                 options.UseUtcTimestamp = true;
                 options.ColorBehavior = LoggerColorBehavior.Enabled;
             });
+
+            if (EnabledFileLog)
+            {
+                builder.AddProvider(new FileLoggerProvider(LogPath));
+            }
         });
     }
 

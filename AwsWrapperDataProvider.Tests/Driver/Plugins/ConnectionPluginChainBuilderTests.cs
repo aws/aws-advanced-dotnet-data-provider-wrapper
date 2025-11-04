@@ -22,6 +22,9 @@ using AwsWrapperDataProvider.Driver.Plugins.Efm;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Plugin.FederatedAuth.FederatedAuth;
+using AwsWrapperDataProvider.Plugin.Iam.Iam;
+using AwsWrapperDataProvider.Plugin.SecretsManager.SecretsManager;
 using Moq;
 
 namespace AwsWrapperDataProvider.Tests.Driver.Plugins;
@@ -62,7 +65,11 @@ public class ConnectionPluginChainBuilderTests
     [Trait("Category", "Unit")]
     public void TestGetAllPlugins()
     {
-        AwsAuthenticationPluginProvider.AwsAuthenticationPluginLoader.Load();
+        // Loading Aws Authentication Plugins to Plugin Chain.
+        ConnectionPluginChainBuilder.RegisterPluginFactory<IamAuthPluginFactory>(PluginCodes.Iam);
+        ConnectionPluginChainBuilder.RegisterPluginFactory<FederatedAuthPluginFactory>(PluginCodes.FederatedAuth);
+        ConnectionPluginChainBuilder.RegisterPluginFactory<OktaAuthPluginFactory>(PluginCodes.Okta);
+        ConnectionPluginChainBuilder.RegisterPluginFactory<SecretsManagerAuthPluginFactory>(PluginCodes.SecretsManager);
 
         string allPluginCodes = string.Join(
             ",",

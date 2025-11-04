@@ -14,11 +14,13 @@
 
 using System.Data.Common;
 using Amazon.SecretsManager;
+using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.HostInfo;
+using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Caching.Memory;
 
-namespace AwsWrapperDataProvider.Driver.Plugins.SecretsManager;
+namespace AwsWrapperDataProvider.Plugin.SecretsManager.SecretsManager;
 
 public class SecretsManagerAuthPlugin(IPluginService pluginService, Dictionary<string, string> props, string secretId, string region, int secretValueExpirySecs, AmazonSecretsManagerClient client) : AbstractConnectionPlugin
 {

@@ -16,7 +16,7 @@ using System.Text.Json;
 using Amazon.SecretsManager;
 using Amazon.SecretsManager.Model;
 
-namespace AwsWrapperDataProvider.Driver.Plugins.SecretsManager;
+namespace AwsWrapperDataProvider.Plugin.SecretsManager.SecretsManager;
 
 public static class SecretsManagerUtility
 {

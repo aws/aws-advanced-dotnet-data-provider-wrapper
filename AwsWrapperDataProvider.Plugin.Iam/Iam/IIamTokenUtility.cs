@@ -14,7 +14,7 @@
 
 using Amazon.Runtime;
 
-namespace AwsWrapperDataProvider.Driver.Plugins.Efm;
+namespace AwsWrapperDataProvider.Plugin.Iam.Iam;
 
 public interface IIamTokenUtility
 {
