@@ -12,13 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Amazon.Runtime;
+using Microsoft.Extensions.Logging;
 
-namespace AwsWrapperDataProvider.Driver.Plugins.Iam;
+namespace AwsWrapperDataProvider.Driver.Utils;
 
-public interface IIamTokenUtility
+public class FileLoggerProvider : ILoggerProvider
 {
-    public string GetCacheKey(string user, string hostname, int port, string region);
+    private readonly string directory;
+    private readonly object lockObject = new();
 
-    public Task<string> GenerateAuthenticationTokenAsync(string region, string hostname, int port, string user, AWSCredentials? credentials);
+    public FileLoggerProvider(string directory)
+    {
+        this.directory = directory;
+    }
+
+    public ILogger CreateLogger(string categoryName) => new FileLogger(categoryName, this.directory, this.lockObject);
+
+    public void Dispose() { }
 }

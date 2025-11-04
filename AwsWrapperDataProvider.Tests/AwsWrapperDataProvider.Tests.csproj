@@ -11,7 +11,7 @@
 
   <ItemGroup>
     <PackageReference Include="AWSSDK.EC2" Version="4.0.44.1" />
-    <PackageReference Include="AWSSDK.RDS" Version="4.0.9.2"/>
+    <PackageReference Include="AWSSDK.RDS" Version="4.0.10.7" />
     <PackageReference Include="coverlet.collector" Version="6.0.4">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -28,6 +28,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\AwsWrapperDataProvider.Plugin.FederatedAuth\AwsWrapperDataProvider.Plugin.FederatedAuth.csproj" />
+    <ProjectReference Include="..\AwsWrapperDataProvider.Plugin.Iam\AwsWrapperDataProvider.Plugin.Iam.csproj" />
+    <ProjectReference Include="..\AwsWrapperDataProvider.Plugin.SecretsManager\AwsWrapperDataProvider.Plugin.SecretsManager.csproj" />
     <ProjectReference Include="..\AwsWrapperDataProvider.Dialect.MySqlConnector\AwsWrapperDataProvider.Dialect.MySqlConnector.csproj" />
     <ProjectReference Include="..\AwsWrapperDataProvider.Dialect.MySqlClient\AwsWrapperDataProvider.Dialect.MySqlClient.csproj" />
     <ProjectReference Include="..\AwsWrapperDataProvider.Dialect.Npgsql\AwsWrapperDataProvider.Dialect.Npgsql.csproj" />
@@ -35,16 +38,15 @@
   </ItemGroup>
 
     <ItemGroup>
-        <Using Include="Xunit"/>
+        <Using Include="Xunit" />
     </ItemGroup>
 
     <ItemGroup>
-        <Folder Include="Driver\Plugins\Failover\"/>
+        <Folder Include="Driver\Plugins\Failover\" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\AwsWrapperDataProvider.AwsAuthenticationPluginProvider\AwsWrapperDataProvider.AwsAuthenticationPluginProvider.csproj"/>
-        <ProjectReference Include="..\AwsWrapperDataProvider\AwsWrapperDataProvider.csproj"/>
+        <ProjectReference Include="..\AwsWrapperDataProvider\AwsWrapperDataProvider.csproj" />
     </ItemGroup>
 
 </Project>

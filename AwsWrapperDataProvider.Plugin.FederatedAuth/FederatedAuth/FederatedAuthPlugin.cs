@@ -16,15 +16,19 @@ using System.Data.Common;
 using System.Text.RegularExpressions;
 using Amazon;
 using Amazon.Runtime;
+using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.HostInfo;
-using AwsWrapperDataProvider.Driver.Plugins.Iam;
+using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Plugin.FederatedAuth.Utils;
 using Microsoft.Extensions.Caching.Memory;
 
-namespace AwsWrapperDataProvider.Driver.Plugins.FederatedAuth;
+namespace AwsWrapperDataProvider.Plugin.FederatedAuth.FederatedAuth;
 
-public partial class FederatedAuthPlugin(IPluginService pluginService, Dictionary<string, string> props, CredentialsProviderFactory credentialsFactory, IIamTokenUtility iamTokenUtility) : AbstractConnectionPlugin
+public partial class FederatedAuthPlugin(IPluginService pluginService, Dictionary<string, string> props, CredentialsProviderFactory credentialsFactory, ITokenUtility tokenUtility) : AbstractConnectionPlugin
 {
+    public static readonly int DefaultIamExpirationSeconds = 870;
+
     public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string> { "DbConnection.Open", "DbConnection.OpenAsync", "DbConnection.ForceOpen" };
 
     public static readonly int DefaultHttpTimeoutMs = 60000;
@@ -37,8 +41,7 @@ public partial class FederatedAuthPlugin(IPluginService pluginService, Dictionar
 
     private readonly CredentialsProviderFactory credentialsFactory = credentialsFactory;
 
-    private readonly IIamTokenUtility iamTokenUtility = iamTokenUtility;
-
+    private readonly ITokenUtility tokenUtility = tokenUtility;
     public static readonly string SamlResponsePatternGroup = "saml";
 
     [GeneratedRegex("SAMLResponse\\W+value=\"(?<saml>[^\"]+)\"", RegexOptions.IgnoreCase, "en-CA")]
@@ -74,7 +77,7 @@ public partial class FederatedAuthPlugin(IPluginService pluginService, Dictionar
         string region = RegionUtils.GetRegion(host, props, PropertyDefinition.IamRegion) ?? throw new Exception("Could not determine region.");
         string dbUser = PropertyDefinition.DbUser.GetString(props) ?? throw new Exception("DB user not provided.");
 
-        string cacheKey = this.iamTokenUtility.GetCacheKey(dbUser, host, port, region);
+        string cacheKey = this.tokenUtility.GetCacheKey(dbUser, host, port, region);
         bool isCachedToken = true;
 
         if (IamTokenCache.TryGetValue(cacheKey, out string? token) && token != null)
@@ -109,13 +112,13 @@ public partial class FederatedAuthPlugin(IPluginService pluginService, Dictionar
 
     private async Task UpdateAuthenticationTokenAsync(HostSpec? hostSpec, Dictionary<string, string> props, string host, int port, string region, string cacheKey, string dbUser)
     {
-        int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? IamAuthPlugin.DefaultIamExpirationSeconds;
+        int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? DefaultIamExpirationSeconds;
         RegionEndpoint regionEndpoint = RegionUtils.IsValidRegion(region) ? RegionEndpoint.GetBySystemName(region) : throw new Exception("Invalid region");
 
         AWSCredentialsProvider credentialsProvider = await this.credentialsFactory.GetAwsCredentialsProviderAsync(host, regionEndpoint, props);
         AWSCredentials credentials = credentialsProvider.GetAWSCredentials();
 
-        string token = await this.iamTokenUtility.GenerateAuthenticationTokenAsync(region, host, port, dbUser, credentials);
+        string token = await this.tokenUtility.GenerateAuthenticationTokenAsync(region, host, port, dbUser, credentials);
         props[PropertyDefinition.Password.Name] = token;
         IamTokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
     }

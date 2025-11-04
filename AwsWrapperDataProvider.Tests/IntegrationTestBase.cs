@@ -20,10 +20,11 @@ using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo.HostSelectors;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
+using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Plugins.Efm;
-using AwsWrapperDataProvider.Driver.Plugins.FederatedAuth;
-using AwsWrapperDataProvider.Driver.Plugins.Iam;
-using AwsWrapperDataProvider.Driver.Plugins.SecretsManager;
+using AwsWrapperDataProvider.Plugin.FederatedAuth.FederatedAuth;
+using AwsWrapperDataProvider.Plugin.Iam.Iam;
+using AwsWrapperDataProvider.Plugin.SecretsManager.SecretsManager;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 
 [assembly: CollectionBehavior(DisableTestParallelization = true)]
@@ -70,7 +71,10 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         NpgsqlDialectLoader.Load();
 
         // Loading Aws Authentication Plugins to Plugin Chain.
-        AwsAuthenticationPluginProvider.AwsAuthenticationPluginLoader.Load();
+        ConnectionPluginChainBuilder.RegisterPluginFactory<IamAuthPluginFactory>(PluginCodes.Iam);
+        ConnectionPluginChainBuilder.RegisterPluginFactory<FederatedAuthPluginFactory>(PluginCodes.FederatedAuth);
+        ConnectionPluginChainBuilder.RegisterPluginFactory<OktaAuthPluginFactory>(PluginCodes.Okta);
+        ConnectionPluginChainBuilder.RegisterPluginFactory<SecretsManagerAuthPluginFactory>(PluginCodes.SecretsManager);
 
         if (TestEnvironment.Env.Info.Request.Features.Contains(TestEnvironmentFeatures.NETWORK_OUTAGES_ENABLED))
         {

@@ -18,9 +18,8 @@ using Amazon.Runtime;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
-using AwsWrapperDataProvider.Driver.Plugins.FederatedAuth;
-using AwsWrapperDataProvider.Driver.Plugins.Iam;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Plugin.FederatedAuth.FederatedAuth;
 using Microsoft.Extensions.Caching.Memory;
 using Moq;
 
@@ -46,7 +45,7 @@ public class OktaAuthPluginTests
     private readonly Dictionary<string, string> props = [];
     private readonly Mock<AWSCredentials> mockCredentials;
     private readonly Mock<CredentialsProviderFactory> mockCredentialsProviderFactory;
-    private readonly Mock<IIamTokenUtility> mockIamTokenUtility;
+    private readonly Mock<ITokenUtility> mockTokenUtility;
     private readonly OktaAuthPlugin oktaAuthPlugin;
     private readonly ADONetDelegate<DbConnection> methodFunc;
 
@@ -68,15 +67,15 @@ public class OktaAuthPluginTests
             factory => factory.GetAwsCredentialsProviderAsync(It.IsAny<string>(), It.IsAny<RegionEndpoint>(), It.IsAny<Dictionary<string, string>>()))
             .ReturnsAsync(new SimpleCredentialsProvider(this.mockCredentials.Object));
 
-        this.mockIamTokenUtility = new Mock<IIamTokenUtility>();
-        this.mockIamTokenUtility.Setup(
+        this.mockTokenUtility = new Mock<ITokenUtility>();
+        this.mockTokenUtility.Setup(
             utility => utility.GetCacheKey(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>()))
             .Returns((string user, string hostname, int port, string region) => CacheKey(user, hostname, port, region));
-        this.mockIamTokenUtility.Setup(
+        this.mockTokenUtility.Setup(
             utility => utility.GenerateAuthenticationTokenAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<AWSCredentials?>()))
             .ReturnsAsync(() => this.iamTokenUtilityGeneratedToken);
 
-        this.oktaAuthPlugin = new(this.mockPluginService.Object, this.props, this.mockCredentialsProviderFactory.Object, this.mockIamTokenUtility.Object);
+        this.oktaAuthPlugin = new(this.mockPluginService.Object, this.props, this.mockCredentialsProviderFactory.Object, this.mockTokenUtility.Object);
 
         this.methodFunc = () => Task.FromResult(new Mock<DbConnection>().Object);
     }

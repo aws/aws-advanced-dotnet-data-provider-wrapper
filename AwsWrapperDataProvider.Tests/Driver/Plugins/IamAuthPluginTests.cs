@@ -17,8 +17,8 @@ using Amazon.Runtime;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
-using AwsWrapperDataProvider.Driver.Plugins.Iam;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Plugin.Iam.Iam;
 using Microsoft.Extensions.Caching.Memory;
 using Moq;
 

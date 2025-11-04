@@ -16,9 +16,9 @@ using Amazon;
 using Amazon.RDS.Util;
 using Amazon.Runtime;
 
-namespace AwsWrapperDataProvider.Driver.Plugins.Iam;
+namespace AwsWrapperDataProvider.Plugin.FederatedAuth.FederatedAuth;
 
-public class IamTokenUtility : IIamTokenUtility
+public class TokenUtility : ITokenUtility
 {
     public string GetCacheKey(string user, string hostname, int port, string region)
     {
@@ -43,7 +43,7 @@ public class IamTokenUtility : IIamTokenUtility
         }
         catch (Exception ex)
         {
-            throw new Exception("Couldn't generate token for IAM authentication.", ex);
+            throw new Exception("Couldn't generate token for Aws authentication.", ex);
         }
     }
 }

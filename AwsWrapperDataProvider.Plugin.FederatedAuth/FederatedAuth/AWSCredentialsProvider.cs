@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Amazon;
+using Amazon.Runtime;
 
-namespace AwsWrapperDataProvider.Driver.Plugins.FederatedAuth;
+namespace AwsWrapperDataProvider.Plugin.FederatedAuth.FederatedAuth;
 
-public abstract class CredentialsProviderFactory
+public abstract class AWSCredentialsProvider
 {
-    public abstract Task<AWSCredentialsProvider> GetAwsCredentialsProviderAsync(string host, RegionEndpoint region, Dictionary<string, string> props);
+    public abstract AWSCredentials GetAWSCredentials();
 }

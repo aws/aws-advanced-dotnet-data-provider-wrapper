@@ -13,12 +13,15 @@
 // limitations under the License.
 
 using System.Data.Common;
+using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.HostInfo;
+using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Plugin.Iam.Utils;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
-namespace AwsWrapperDataProvider.Driver.Plugins.Iam;
+namespace AwsWrapperDataProvider.Plugin.Iam.Iam;
 
 public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, string> props, IIamTokenUtility iamTokenUtility) : AbstractConnectionPlugin
 {
