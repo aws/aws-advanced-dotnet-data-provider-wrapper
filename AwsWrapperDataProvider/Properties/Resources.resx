@@ -149,7 +149,7 @@
   <data name="ClusterTopologyMonitor.TopologyNotUpdated" xml:space="preserve">
       <value>Topology hasn't been updated after {0} ms.</value>
     </data>
-   <data name="ClusterTopologyMonitor.OpenedMonitoringConnection" xml:space="preserve">
+  <data name="ClusterTopologyMonitor.OpenedMonitoringConnection" xml:space="preserve">
       <value>New cluster topology monitoring connection@{0}, DataSource = {1} opened for node {2}.</value>
     </data>
   <data name="ClusterTopologyMonitor.IgnoringTopologyRequest" xml:space="preserve">

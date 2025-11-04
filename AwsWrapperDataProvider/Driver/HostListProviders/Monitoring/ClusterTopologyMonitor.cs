@@ -598,7 +598,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
             return hosts;
         }
-        catch (Exception ex)
+        catch (DbException ex)
         {
             LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, string.Format(Resources.ClusterTopologyMonitor_ErrorFetchingTopology, ex));
             return null;

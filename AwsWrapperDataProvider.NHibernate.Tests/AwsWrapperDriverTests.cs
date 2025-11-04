@@ -109,6 +109,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
         [Trait("Database", "pg-nh")]
         [Trait("Engine", "aurora")]
         [Trait("Engine", "multi-az-cluster")]
+        [Trait("Engine", "multi-az-instance")]
         public void NHibernateAddTest()
         {
             var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName);
