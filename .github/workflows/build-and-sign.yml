@@ -25,7 +25,9 @@ jobs:
       - name: Restore dependencies
         run: |
           dotnet restore AwsWrapperDataProvider\AwsWrapperDataProvider.csproj /p:_IsPacking=true
-          dotnet restore AwsWrapperDataProvider.AwsAuthenticationPluginProvider\AwsWrapperDataProvider.AwsAuthenticationPluginProvider.csproj /p:_IsPacking=true
+          dotnet restore AwsWrapperDataProvider.Plugin.FederatedAuth\AwsWrapperDataProvider.Plugin.FederatedAuth.csproj /p:_IsPacking=true
+          dotnet restore AwsWrapperDataProvider.Plugin.Iam\AwsWrapperDataProvider.Plugin.Iam.csproj /p:_IsPacking=true
+          dotnet restore AwsWrapperDataProvider.Plugin.SecretsManager\AwsWrapperDataProvider.Plugin.SecretsManager.csproj /p:_IsPacking=true
           dotnet restore AwsWrapperDataProvider.Dialect.MySqlClient\AwsWrapperDataProvider.Dialect.MySqlClient.csproj /p:_IsPacking=true
           dotnet restore AwsWrapperDataProvider.Dialect.MySqlConnector\AwsWrapperDataProvider.Dialect.MySqlConnector.csproj /p:_IsPacking=true
           dotnet restore AwsWrapperDataProvider.Dialect.Npgsql\AwsWrapperDataProvider.Dialect.Npgsql.csproj /p:_IsPacking=true
@@ -34,7 +36,9 @@ jobs:
       - name: Build projects
         run: |
           dotnet build AwsWrapperDataProvider\AwsWrapperDataProvider.csproj --configuration Release --no-restore
-          dotnet build AwsWrapperDataProvider.AwsAuthenticationPluginProvider\AwsWrapperDataProvider.AwsAuthenticationPluginProvider.csproj --configuration Release --no-restore
+          dotnet build AwsWrapperDataProvider.Plugin.FederatedAuth\AwsWrapperDataProvider.Plugin.FederatedAuth.csproj --configuration Release --no-restore
+          dotnet build AwsWrapperDataProvider.Plugin.Iam\AwsWrapperDataProvider.Plugin.Iam.csproj --configuration Release --no-restore
+          dotnet build AwsWrapperDataProvider.Plugin.SecretsManager\AwsWrapperDataProvider.Plugin.SecretsManager.csproj --configuration Release --no-restore
           dotnet build AwsWrapperDataProvider.Dialect.MySqlClient\AwsWrapperDataProvider.Dialect.MySqlClient.csproj --configuration Release --no-restore
           dotnet build AwsWrapperDataProvider.Dialect.MySqlConnector\AwsWrapperDataProvider.Dialect.MySqlConnector.csproj --configuration Release --no-restore
           dotnet build AwsWrapperDataProvider.Dialect.Npgsql\AwsWrapperDataProvider.Dialect.Npgsql.csproj --configuration Release --no-restore
@@ -78,7 +82,9 @@ jobs:
       - name: Pack NuGet packages
         run: |
           dotnet pack AwsWrapperDataProvider\AwsWrapperDataProvider.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
-          dotnet pack AwsWrapperDataProvider.AwsAuthenticationPluginProvider\AwsWrapperDataProvider.AwsAuthenticationPluginProvider.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
+          dotnet pack AwsWrapperDataProvider.Plugin.FederatedAuth\AwsWrapperDataProvider.Plugin.FederatedAuth.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
+          dotnet pack AwsWrapperDataProvider.Plugin.Iam\AwsWrapperDataProvider.Plugin.Iam.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
+          dotnet pack AwsWrapperDataProvider.Plugin.SecretsManager\AwsWrapperDataProvider.Plugin.SecretsManager.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
           dotnet pack AwsWrapperDataProvider.Dialect.MySqlClient\AwsWrapperDataProvider.Dialect.MySqlClient.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
           dotnet pack AwsWrapperDataProvider.Dialect.MySqlConnector\AwsWrapperDataProvider.Dialect.MySqlConnector.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
           dotnet pack AwsWrapperDataProvider.Dialect.Npgsql\AwsWrapperDataProvider.Dialect.Npgsql.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
