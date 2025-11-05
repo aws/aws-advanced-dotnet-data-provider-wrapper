@@ -91,8 +91,7 @@ public class DefaultConnectionPlugin(
                 if (!pingSuccess)
                 {
                     conn.Dispose();
-                    conn = connProvider.CreateDbConnection(this.pluginService.Dialect,
-                        this.pluginService.TargetConnectionDialect, hostSpec, props);
+                    conn = connProvider.CreateDbConnection(this.pluginService.Dialect, this.pluginService.TargetConnectionDialect, hostSpec, props);
                     conn.Open();
 
                     if (attempt == UpdateDialectMaxRetries)
