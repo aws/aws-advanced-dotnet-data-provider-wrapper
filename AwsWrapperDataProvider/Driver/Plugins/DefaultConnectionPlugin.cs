@@ -77,25 +77,7 @@ public class DefaultConnectionPlugin(
         bool isInitialConnection,
         bool isForceOpen)
     {
-        DbConnection? conn;
-
-        // TODO: Investigate if configuration has changed for optimization
-        if (isInitialConnection && this.pluginService.CurrentConnection != null)
-        {
-            conn = this.pluginService.CurrentConnection;
-            Logger.LogTrace("Reusing existing connection {Type}@{Id}, DataSource = {DataSource}.", conn.GetType().FullName, RuntimeHelpers.GetHashCode(conn), conn.DataSource);
-        }
-        else
-        {
-            conn = connProvider.CreateDbConnection(
-                this.pluginService.Dialect,
-                this.pluginService.TargetConnectionDialect,
-                hostSpec,
-                props);
-        }
-
-        // Update connection string that may have been modified by other plugins
-        conn.ConnectionString = this.pluginService.TargetConnectionDialect.PrepareConnectionString(this.pluginService.Dialect, hostSpec, props);
+        DbConnection conn = connProvider.CreateDbConnection(this.pluginService.Dialect, this.pluginService.TargetConnectionDialect, hostSpec, props);
         conn.Open();
 
         // TODO: Add configuration to skip ping check. (Not urgent)
@@ -103,10 +85,25 @@ public class DefaultConnectionPlugin(
         // Due to connection pooling, the Open() call may succeed with Open status even if the database is not reachable.
         if (!isForceOpen)
         {
-            (bool pingSuccess, Exception? pingException) = this.pluginService.TargetConnectionDialect.Ping(conn);
-            if (!pingSuccess)
+            for (int attempt = 1; attempt <= UpdateDialectMaxRetries; attempt++)
             {
-                throw new InvalidOpenConnectionException("Unable to ping the database to verify the connection.", pingException);
+                (bool pingSuccess, Exception? pingException) = this.pluginService.TargetConnectionDialect.Ping(conn);
+                if (!pingSuccess)
+                {
+                    conn.Dispose();
+                    conn = connProvider.CreateDbConnection(this.pluginService.Dialect,
+                        this.pluginService.TargetConnectionDialect, hostSpec, props);
+                    conn.Open();
+
+                    if (attempt == UpdateDialectMaxRetries)
+                    {
+                        throw new InvalidOpenConnectionException("Unable to establish a valid connection after multiple attempts.", pingException);
+                    }
+                }
+                else
+                {
+                    break;
+                }
             }
         }
 
