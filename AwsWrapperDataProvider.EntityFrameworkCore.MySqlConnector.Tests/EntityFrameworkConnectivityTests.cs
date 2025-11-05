@@ -62,11 +62,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
     public void MysqlEFAddTest()
     {
         var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName);
-        var wrapperConnectionString = connectionString + $";Plugins=initialConnection,failover;";
-        if (Deployment != DatabaseEngineDeployment.AURORA && Deployment != DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER)
-        {
-            wrapperConnectionString = connectionString + $";Plugins=failover;";
-        }
+        var wrapperConnectionString = connectionString + $";Plugins=failover;";
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
             .UseAwsWrapper(
@@ -105,11 +101,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
     public async Task MysqlEFAddTestAsync()
     {
         var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName);
-        var wrapperConnectionString = connectionString + $";Plugins=initialConnection,failover;";
-        if (Deployment != DatabaseEngineDeployment.AURORA && Deployment != DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER)
-        {
-            wrapperConnectionString = connectionString + $";Plugins=failover;";
-        }
+        var wrapperConnectionString = connectionString + $";Plugins=failover;";
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
             .UseAwsWrapper(
@@ -153,7 +145,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
         var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName, 2, 10);
 
         var wrapperConnectionString = connectionString
-            + $";Plugins=initialConnection,failover;" +
+            + $";Plugins=failover;" +
             $"EnableConnectFailover=true;" +
             $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
 
@@ -320,7 +312,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
         var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName, 2, 10);
 
         var wrapperConnectionString = connectionString
-            + $";Plugins=initialConnection,failover;" +
+            + $";Plugins=failover;" +
             $"EnableConnectFailover=true;" +
             $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
 
