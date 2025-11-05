@@ -208,7 +208,7 @@ public class AwsWrapperConnection : DbConnection
             this.ConnectionProperties,
             true,
             async);
-        this.pluginService.SetCurrentConnection(connection, this.pluginService.InitialConnectionHostSpec);
+        this.pluginService.SetCurrentConnection(connection, this.pluginService.CurrentHostSpec);
         await this.pluginService.RefreshHostListAsync();
     }
 
