@@ -67,7 +67,8 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
             connectionCandidate = await this.GetVerifiedWriterConnection(
                 props,
                 isInitialConnection,
-                methodFunc);
+                methodFunc,
+                async);
         }
         else if (urlType == RdsUrlType.RdsReaderCluster ||
             (isInitialConnection && this.verifyOpenedConnectionType == VerifyOpenedConnectionType.Reader))
@@ -75,7 +76,8 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
             connectionCandidate = await this.GetVerifiedReaderConnection(
                 props,
                 isInitialConnection,
-                methodFunc);
+                methodFunc,
+                async);
         }
 
         if (connectionCandidate == null)
