@@ -65,10 +65,10 @@ public class DbConnectionProvider() : IConnectionProvider
         }
 
         Logger.LogTrace(
-            "Connection created: {ConnectionType}@{Id} with Connection string {connectionString},",
+            "Connection created: {ConnectionType}@{Id} with data source {ds},",
             targetConnection.GetType().FullName,
             RuntimeHelpers.GetHashCode(targetConnection),
-            connectionString);
+            targetConnection.DataSource);
 
         return targetConnection;
     }

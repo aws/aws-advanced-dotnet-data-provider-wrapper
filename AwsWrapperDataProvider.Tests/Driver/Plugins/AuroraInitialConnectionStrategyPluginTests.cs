@@ -101,7 +101,7 @@ public class AuroraInitialConnectionStrategyPluginTests
 
         await this.plugin.OpenConnection(hostSpec, this.defaultProps, false, methodFunc.Object, true);
 
-        this.mockPluginService.Verify(x => x.ForceOpenConnection(It.IsAny<HostSpec>(), It.IsAny<Dictionary<string, string>>(), null, true), Times.Once);
+        this.mockPluginService.Verify(x => x.OpenConnection(It.IsAny<HostSpec>(), It.IsAny<Dictionary<string, string>>(), It.Is<AuroraInitialConnectionStrategyPlugin>(p => true), true), Times.Once);
     }
 
     [Fact]
@@ -123,7 +123,7 @@ public class AuroraInitialConnectionStrategyPluginTests
 
         await this.plugin.OpenConnection(hostSpec, this.defaultProps, false, methodFunc.Object, true);
 
-        this.mockPluginService.Verify(x => x.ForceOpenConnection(It.IsAny<HostSpec>(), It.IsAny<Dictionary<string, string>>(), null, true), Times.Once);
+        this.mockPluginService.Verify(x => x.OpenConnection(It.IsAny<HostSpec>(), It.IsAny<Dictionary<string, string>>(), It.Is<AuroraInitialConnectionStrategyPlugin>(p => true), true), Times.Once);
     }
 
     [Fact]
@@ -160,7 +160,7 @@ public class AuroraInitialConnectionStrategyPluginTests
 
         await pluginWithVerify.OpenConnection(hostSpec, props, true, methodFunc.Object, true);
 
-        this.mockPluginService.Verify(x => x.ForceOpenConnection(It.IsAny<HostSpec>(), It.IsAny<Dictionary<string, string>>(), null, true), Times.Once);
+        this.mockPluginService.Verify(x => x.OpenConnection(It.IsAny<HostSpec>(), It.IsAny<Dictionary<string, string>>(), It.Is<AuroraInitialConnectionStrategyPlugin>(p => true), true), Times.Once);
     }
 
     [Fact]
@@ -190,7 +190,7 @@ public class AuroraInitialConnectionStrategyPluginTests
         await pluginWithVerify.OpenConnection(hostSpec, props, true, methodFunc.Object, true);
 
         this.mockPluginService.Verify(x => x.GetHostSpecByStrategy(HostRole.Reader, "random"), Times.Once);
-        this.mockPluginService.Verify(x => x.ForceOpenConnection(It.IsAny<HostSpec>(), It.IsAny<Dictionary<string, string>>(), null, true), Times.Once);
+        this.mockPluginService.Verify(x => x.OpenConnection(It.IsAny<HostSpec>(), It.IsAny<Dictionary<string, string>>(), It.Is<AuroraInitialConnectionStrategyPlugin>(p => true), true), Times.Once);
     }
 
     [Fact]

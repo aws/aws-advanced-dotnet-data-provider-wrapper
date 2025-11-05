@@ -103,7 +103,7 @@ public class DefaultConnectionPlugin(
             conn.Open();
         }
 
-        Logger.LogTrace("Connection {Type}@{Id} is opened with connection string {cs}.", conn.GetType().FullName, RuntimeHelpers.GetHashCode(conn), conn.ConnectionString);
+        Logger.LogTrace("Connection {Type}@{Id} is opened with data source {ds}.", conn.GetType().FullName, RuntimeHelpers.GetHashCode(conn), conn.DataSource);
 
         // Set availability and update dialect
         this.pluginService.SetAvailability(hostSpec!.AsAliases(), HostAvailability.Available);
