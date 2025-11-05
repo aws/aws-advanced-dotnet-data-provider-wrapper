@@ -204,7 +204,7 @@ public class AwsWrapperConnection : DbConnection
 
         DbConnection connection = await WrapperUtils.OpenWithPlugins(
             this.PluginManager,
-            this.pluginService.InitialConnectionHostSpec,
+            this.pluginService.CurrentHostSpec,
             this.ConnectionProperties,
             true,
             async);
