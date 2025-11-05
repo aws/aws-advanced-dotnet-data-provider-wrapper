@@ -63,6 +63,10 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
     {
         var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName);
         var wrapperConnectionString = connectionString + $";Plugins=initialConnection,failover;";
+        if (Deployment != DatabaseEngineDeployment.AURORA && Deployment != DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER)
+        {
+            wrapperConnectionString = connectionString + $";Plugins=failover;";
+        }
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
             .UseAwsWrapper(
@@ -102,6 +106,10 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
     {
         var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName);
         var wrapperConnectionString = connectionString + $";Plugins=initialConnection,failover;";
+        if (Deployment != DatabaseEngineDeployment.AURORA && Deployment != DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER)
+        {
+            wrapperConnectionString = connectionString + $";Plugins=failover;";
+        }
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
             .UseAwsWrapper(
@@ -172,8 +180,6 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
             var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             await AuroraUtils.CrashInstance(currentWriter, tcs);
 
-            await Task.Delay(10000, TestContext.Current.CancellationToken);
-
             Person john = new() { FirstName = "John", LastName = "Smith" };
             db.Add(john);
             db.SaveChanges();
@@ -232,8 +238,6 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
             var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             await AuroraUtils.CrashInstance(currentWriter, tcs);
-
-            await Task.Delay(10000, TestContext.Current.CancellationToken);
 
             Person john = new() { FirstName = "John", LastName = "Smith" };
             await db.AddAsync(john, TestContext.Current.CancellationToken);
@@ -305,8 +309,6 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
                     var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
                     var crashInstanceTask = AuroraUtils.CrashInstance(currentWriter, tcs);
                     await tcs.Task;
-
-                    await Task.Delay(10000, TestContext.Current.CancellationToken);
 
                     // Query to trigger failover
                     var anyUser = await db.Persons.AnyAsync(cancellationToken: TestContext.Current.CancellationToken);
@@ -389,8 +391,6 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
                     var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
                     var crashInstanceTask = AuroraUtils.CrashInstance(currentWriter, tcs);
                     await tcs.Task;
-
-                    await Task.Delay(10000, TestContext.Current.CancellationToken);
 
                     // Query to trigger failover
                     var anyUser = await db.Persons.AnyAsync(cancellationToken: TestContext.Current.CancellationToken);
