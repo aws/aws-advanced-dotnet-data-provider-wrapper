@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using System.Data;
-using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -22,7 +21,7 @@ namespace AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 
 public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
 {
-    private const string DefaultPluginCode = "initialConnection, efm,failover";
+    private const string DefaultPluginCode = "initialConnection,efm,failover";
 
     public abstract Type DriverConnectionType { get; }
 

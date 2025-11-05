@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using AwsWrapperDataProvider.Driver.HostInfo;
-using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Utils;
@@ -38,12 +37,6 @@ public static class ConnectionPropertiesUtils
             .Where(pairs => pairs.Length == 2 && !string.IsNullOrEmpty(pairs[0]))
             .GroupBy(pairs => pairs[0], StringComparer.OrdinalIgnoreCase)
             .ToDictionary(g => g.Key, g => g.Last()[1], StringComparer.OrdinalIgnoreCase);
-
-        // Check and warn about SSL insecure configuration
-        if (PropertyDefinition.SslInsecure.GetBoolean(props))
-        {
-            Logger.LogWarning(Resources.AwsWrapperProperty_SslValidationIsDisabled);
-        }
 
         return props;
     }
