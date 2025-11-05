@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using Amazon.EC2.Model;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
 using AwsWrapperDataProvider.Tests;
 using AwsWrapperDataProvider.Tests.Container.Utils;
@@ -177,8 +178,18 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
             db.Add(jane);
             db.SaveChanges();
 
+            await db.Database.OpenConnectionAsync(cancellationToken: TestContext.Current.CancellationToken);
+            var instanceId = await AuroraUtils.ExecuteInstanceIdQuery(db.Database.GetDbConnection(), Engine, Deployment, true);
+            this.logger.WriteLine($"Current writer before crash is {instanceId}");
+            await db.Database.CloseConnectionAsync();
+
             var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             await AuroraUtils.CrashInstance(currentWriter, tcs);
+
+            await db.Database.OpenConnectionAsync(cancellationToken: TestContext.Current.CancellationToken);
+            instanceId = await AuroraUtils.ExecuteInstanceIdQuery(db.Database.GetDbConnection(), Engine, Deployment, true);
+            this.logger.WriteLine($"Current writer after crash is {instanceId}");
+            await db.Database.CloseConnectionAsync();
 
             Person john = new() { FirstName = "John", LastName = "Smith" };
             db.Add(john);
@@ -236,8 +247,18 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
             await db.AddAsync(jane, TestContext.Current.CancellationToken);
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
+            await db.Database.OpenConnectionAsync(cancellationToken: TestContext.Current.CancellationToken);
+            var instanceId = await AuroraUtils.ExecuteInstanceIdQuery(db.Database.GetDbConnection(), Engine, Deployment, true);
+            this.logger.WriteLine($"Current writer before crash is {instanceId}");
+            await db.Database.CloseConnectionAsync();
+
             var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             await AuroraUtils.CrashInstance(currentWriter, tcs);
+
+            await db.Database.OpenConnectionAsync(cancellationToken: TestContext.Current.CancellationToken);
+            instanceId = await AuroraUtils.ExecuteInstanceIdQuery(db.Database.GetDbConnection(), Engine, Deployment, true);
+            this.logger.WriteLine($"Current writer after crash is {instanceId}");
+            await db.Database.CloseConnectionAsync();
 
             Person john = new() { FirstName = "John", LastName = "Smith" };
             await db.AddAsync(john, TestContext.Current.CancellationToken);
@@ -294,6 +315,11 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
             db.Add(jane);
             db.SaveChanges();
 
+            await db.Database.OpenConnectionAsync(cancellationToken: TestContext.Current.CancellationToken);
+            var instanceId = await AuroraUtils.ExecuteInstanceIdQuery(db.Database.GetDbConnection(), Engine, Deployment, true);
+            this.logger.WriteLine($"Current writer before crash is {instanceId}");
+            await db.Database.CloseConnectionAsync();
+
             Person john = new() { FirstName = "John", LastName = "Smith" };
             await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
             {
@@ -324,6 +350,11 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
             });
 
             Assert.Equal(EntityState.Detached, db.Entry(john).State);
+
+            await db.Database.OpenConnectionAsync(cancellationToken: TestContext.Current.CancellationToken);
+            instanceId = await AuroraUtils.ExecuteInstanceIdQuery(db.Database.GetDbConnection(), Engine, Deployment, true);
+            this.logger.WriteLine($"Current writer after crash is {instanceId}");
+            await db.Database.CloseConnectionAsync();
 
             Person joe = new() { FirstName = "Joe", LastName = "Smith" };
             db.Add(joe);
@@ -376,6 +407,11 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
             await db.AddAsync(jane, TestContext.Current.CancellationToken);
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
+            await db.Database.OpenConnectionAsync(cancellationToken: TestContext.Current.CancellationToken);
+            var instanceId = await AuroraUtils.ExecuteInstanceIdQuery(db.Database.GetDbConnection(), Engine, Deployment, true);
+            this.logger.WriteLine($"Current writer before crash is {instanceId}");
+            await db.Database.CloseConnectionAsync();
+
             Person john = new() { FirstName = "John", LastName = "Smith" };
             await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
             {
@@ -406,6 +442,11 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
             });
 
             Assert.Equal(EntityState.Detached, db.Entry(john).State);
+
+            await db.Database.OpenConnectionAsync(cancellationToken: TestContext.Current.CancellationToken);
+            instanceId = await AuroraUtils.ExecuteInstanceIdQuery(db.Database.GetDbConnection(), Engine, Deployment, true);
+            this.logger.WriteLine($"Current writer after crash is {instanceId}");
+            await db.Database.CloseConnectionAsync();
 
             Person joe = new() { FirstName = "Joe", LastName = "Smith" };
             await db.AddAsync(joe, TestContext.Current.CancellationToken);
