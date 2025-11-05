@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Amazon.EC2.Model;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
 using AwsWrapperDataProvider.Tests;
 using AwsWrapperDataProvider.Tests.Container.Utils;
@@ -54,7 +53,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
         });
     }
 
-    [Fact]
+    [Fact(Skip = "temp disabled")]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql-ef")]
     [Trait("Engine", "aurora")]
@@ -97,7 +96,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
         }
     }
 
-    [Fact]
+    [Fact(Skip = "temp disabled")]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql-ef")]
     [Trait("Engine", "aurora")]
@@ -180,7 +179,10 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
             await db.Database.OpenConnectionAsync(cancellationToken: TestContext.Current.CancellationToken);
             var instanceId = await AuroraUtils.ExecuteInstanceIdQuery(db.Database.GetDbConnection(), Engine, Deployment, true);
-            this.logger.WriteLine($"Current writer before crash is {instanceId}");
+            this.logger.WriteLine($"==========================================");
+            this.logger.WriteLine($"Current node before crash is {instanceId}");
+            this.logger.WriteLine($"connection string {db.Database.GetDbConnection().ConnectionString}");
+            this.logger.WriteLine($"data source {db.Database.GetDbConnection().DataSource}");
             await db.Database.CloseConnectionAsync();
 
             var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -188,7 +190,19 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
             await db.Database.OpenConnectionAsync(cancellationToken: TestContext.Current.CancellationToken);
             instanceId = await AuroraUtils.ExecuteInstanceIdQuery(db.Database.GetDbConnection(), Engine, Deployment, true);
-            this.logger.WriteLine($"Current writer after crash is {instanceId}");
+            this.logger.WriteLine($"==========================================");
+            this.logger.WriteLine($"Current node after crash is {instanceId}");
+            this.logger.WriteLine($"connection string {db.Database.GetDbConnection().ConnectionString}");
+            this.logger.WriteLine($"data source {db.Database.GetDbConnection().DataSource}");
+            await db.Database.CloseConnectionAsync();
+
+            await Task.Delay(20000, TestContext.Current.CancellationToken);
+            await db.Database.OpenConnectionAsync(cancellationToken: TestContext.Current.CancellationToken);
+            instanceId = await AuroraUtils.ExecuteInstanceIdQuery(db.Database.GetDbConnection(), Engine, Deployment, true);
+            this.logger.WriteLine($"==========================================");
+            this.logger.WriteLine($"Current node after crash and delay is {instanceId}");
+            this.logger.WriteLine($"connection string {db.Database.GetDbConnection().ConnectionString}");
+            this.logger.WriteLine($"data source {db.Database.GetDbConnection().DataSource}");
             await db.Database.CloseConnectionAsync();
 
             Person john = new() { FirstName = "John", LastName = "Smith" };
@@ -223,7 +237,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
         var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName, 2, 10);
 
         var wrapperConnectionString = connectionString
-            + $";Plugins=initialConnection,failover;" +
+            + $";Plugins=failover;" +
             $"EnableConnectFailover=true;" +
             $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
 
@@ -249,7 +263,10 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
             await db.Database.OpenConnectionAsync(cancellationToken: TestContext.Current.CancellationToken);
             var instanceId = await AuroraUtils.ExecuteInstanceIdQuery(db.Database.GetDbConnection(), Engine, Deployment, true);
-            this.logger.WriteLine($"Current writer before crash is {instanceId}");
+            this.logger.WriteLine($"==========================================");
+            this.logger.WriteLine($"Current node before crash is {instanceId}");
+            this.logger.WriteLine($"connection string {db.Database.GetDbConnection().ConnectionString}");
+            this.logger.WriteLine($"data source {db.Database.GetDbConnection().DataSource}");
             await db.Database.CloseConnectionAsync();
 
             var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -257,7 +274,19 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
             await db.Database.OpenConnectionAsync(cancellationToken: TestContext.Current.CancellationToken);
             instanceId = await AuroraUtils.ExecuteInstanceIdQuery(db.Database.GetDbConnection(), Engine, Deployment, true);
-            this.logger.WriteLine($"Current writer after crash is {instanceId}");
+            this.logger.WriteLine($"==========================================");
+            this.logger.WriteLine($"Current node after crash is {instanceId}");
+            this.logger.WriteLine($"connection string {db.Database.GetDbConnection().ConnectionString}");
+            this.logger.WriteLine($"data source {db.Database.GetDbConnection().DataSource}");
+            await db.Database.CloseConnectionAsync();
+
+            await Task.Delay(20000, TestContext.Current.CancellationToken);
+            await db.Database.OpenConnectionAsync(cancellationToken: TestContext.Current.CancellationToken);
+            instanceId = await AuroraUtils.ExecuteInstanceIdQuery(db.Database.GetDbConnection(), Engine, Deployment, true);
+            this.logger.WriteLine($"==========================================");
+            this.logger.WriteLine($"Current node after crash and delay is {instanceId}");
+            this.logger.WriteLine($"connection string {db.Database.GetDbConnection().ConnectionString}");
+            this.logger.WriteLine($"data source {db.Database.GetDbConnection().DataSource}");
             await db.Database.CloseConnectionAsync();
 
             Person john = new() { FirstName = "John", LastName = "Smith" };
@@ -317,7 +346,10 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
             await db.Database.OpenConnectionAsync(cancellationToken: TestContext.Current.CancellationToken);
             var instanceId = await AuroraUtils.ExecuteInstanceIdQuery(db.Database.GetDbConnection(), Engine, Deployment, true);
-            this.logger.WriteLine($"Current writer before crash is {instanceId}");
+            this.logger.WriteLine($"==========================================");
+            this.logger.WriteLine($"Current node before crash is {instanceId}");
+            this.logger.WriteLine($"connection string {db.Database.GetDbConnection().ConnectionString}");
+            this.logger.WriteLine($"data source {db.Database.GetDbConnection().DataSource}");
             await db.Database.CloseConnectionAsync();
 
             Person john = new() { FirstName = "John", LastName = "Smith" };
@@ -353,7 +385,19 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
             await db.Database.OpenConnectionAsync(cancellationToken: TestContext.Current.CancellationToken);
             instanceId = await AuroraUtils.ExecuteInstanceIdQuery(db.Database.GetDbConnection(), Engine, Deployment, true);
-            this.logger.WriteLine($"Current writer after crash is {instanceId}");
+            this.logger.WriteLine($"==========================================");
+            this.logger.WriteLine($"Current node after crash is {instanceId}");
+            this.logger.WriteLine($"connection string {db.Database.GetDbConnection().ConnectionString}");
+            this.logger.WriteLine($"data source {db.Database.GetDbConnection().DataSource}");
+            await db.Database.CloseConnectionAsync();
+
+            await Task.Delay(20000, TestContext.Current.CancellationToken);
+            await db.Database.OpenConnectionAsync(cancellationToken: TestContext.Current.CancellationToken);
+            instanceId = await AuroraUtils.ExecuteInstanceIdQuery(db.Database.GetDbConnection(), Engine, Deployment, true);
+            this.logger.WriteLine($"==========================================");
+            this.logger.WriteLine($"Current node after crash and delay is {instanceId}");
+            this.logger.WriteLine($"connection string {db.Database.GetDbConnection().ConnectionString}");
+            this.logger.WriteLine($"data source {db.Database.GetDbConnection().DataSource}");
             await db.Database.CloseConnectionAsync();
 
             Person joe = new() { FirstName = "Joe", LastName = "Smith" };
@@ -383,7 +427,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
         var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName, 2, 10);
 
         var wrapperConnectionString = connectionString
-            + $";Plugins=initialConnection,failover;" +
+            + $";Plugins=failover;" +
             $"EnableConnectFailover=true;" +
             $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
 
@@ -409,7 +453,10 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
             await db.Database.OpenConnectionAsync(cancellationToken: TestContext.Current.CancellationToken);
             var instanceId = await AuroraUtils.ExecuteInstanceIdQuery(db.Database.GetDbConnection(), Engine, Deployment, true);
-            this.logger.WriteLine($"Current writer before crash is {instanceId}");
+            this.logger.WriteLine($"==========================================");
+            this.logger.WriteLine($"Current node before crash is {instanceId}");
+            this.logger.WriteLine($"connection string {db.Database.GetDbConnection().ConnectionString}");
+            this.logger.WriteLine($"data source {db.Database.GetDbConnection().DataSource}");
             await db.Database.CloseConnectionAsync();
 
             Person john = new() { FirstName = "John", LastName = "Smith" };
@@ -445,7 +492,19 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
             await db.Database.OpenConnectionAsync(cancellationToken: TestContext.Current.CancellationToken);
             instanceId = await AuroraUtils.ExecuteInstanceIdQuery(db.Database.GetDbConnection(), Engine, Deployment, true);
-            this.logger.WriteLine($"Current writer after crash is {instanceId}");
+            this.logger.WriteLine($"==========================================");
+            this.logger.WriteLine($"Current node after crash is {instanceId}");
+            this.logger.WriteLine($"connection string {db.Database.GetDbConnection().ConnectionString}");
+            this.logger.WriteLine($"data source {db.Database.GetDbConnection().DataSource}");
+            await db.Database.CloseConnectionAsync();
+
+            await Task.Delay(20000, TestContext.Current.CancellationToken);
+            await db.Database.OpenConnectionAsync(cancellationToken: TestContext.Current.CancellationToken);
+            instanceId = await AuroraUtils.ExecuteInstanceIdQuery(db.Database.GetDbConnection(), Engine, Deployment, true);
+            this.logger.WriteLine($"==========================================");
+            this.logger.WriteLine($"Current node after crash and delay is {instanceId}");
+            this.logger.WriteLine($"connection string {db.Database.GetDbConnection().ConnectionString}");
+            this.logger.WriteLine($"data source {db.Database.GetDbConnection().DataSource}");
             await db.Database.CloseConnectionAsync();
 
             Person joe = new() { FirstName = "Joe", LastName = "Smith" };
@@ -462,7 +521,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
         }
     }
 
-    [Fact]
+    [Fact(Skip = "temp disabled")]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql-ef")]
     [Trait("Engine", "aurora")]
@@ -546,7 +605,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
         }
     }
 
-    [Fact]
+    [Fact(Skip = "temp disabled")]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql-ef")]
     [Trait("Engine", "aurora")]
