@@ -17,7 +17,6 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Pomelo.EntityFrameworkCore.MySql.Storage.Internal;
 
 namespace AwsWrapperDataProvider.EntityFrameworkCore.MySQL;
 
