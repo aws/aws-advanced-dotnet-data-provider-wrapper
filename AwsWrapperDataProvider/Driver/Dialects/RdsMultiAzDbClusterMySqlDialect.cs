@@ -93,7 +93,7 @@ public class RdsMultiAzDbClusterMySqlDialect : MySqlDialect
     private HostListProviderSupplier GetHostListProviderSupplier()
     {
         return (props, hostListProviderService, pluginService) =>
-            PropertyDefinition.Plugins.GetString(props)!.Contains("failover") ?
+            (PropertyDefinition.Plugins.GetString(props) ?? DefaultPluginCodes).Contains("failover") ?
                 new MonitoringRdsMultiAzHostListProvider(
                     props,
                     hostListProviderService,

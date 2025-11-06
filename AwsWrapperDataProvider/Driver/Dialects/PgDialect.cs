@@ -26,6 +26,8 @@ public class PgDialect : IDialect
 {
     private static readonly ILogger<PgDialect> Logger = LoggerUtils.GetLogger<PgDialect>();
 
+    public static readonly string DefaultPluginCodes = "initialConnection,efm,failover";
+
     public int DefaultPort { get; } = 5432;
 
     public string HostAliasQuery { get; } = "SELECT pg_catalog.CONCAT(pg_catalog.inet_server_addr(), ':', pg_catalog.inet_server_port())";
