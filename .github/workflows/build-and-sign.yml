@@ -32,6 +32,7 @@ jobs:
           dotnet restore AwsWrapperDataProvider.Dialect.MySqlConnector\AwsWrapperDataProvider.Dialect.MySqlConnector.csproj /p:_IsPacking=true
           dotnet restore AwsWrapperDataProvider.Dialect.Npgsql\AwsWrapperDataProvider.Dialect.Npgsql.csproj /p:_IsPacking=true
           dotnet restore AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector\AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector.csproj /p:_IsPacking=true
+          dotnet restore AwsWrapperDataProvider.NHibernate\AwsWrapperDataProvider.NHibernate.csproj /p:_IsPacking=true
 
       - name: Build projects
         run: |
@@ -43,6 +44,7 @@ jobs:
           dotnet build AwsWrapperDataProvider.Dialect.MySqlConnector\AwsWrapperDataProvider.Dialect.MySqlConnector.csproj --configuration Release --no-restore
           dotnet build AwsWrapperDataProvider.Dialect.Npgsql\AwsWrapperDataProvider.Dialect.Npgsql.csproj --configuration Release --no-restore
           dotnet build AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector\AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector.csproj --configuration Release --no-restore
+          dotnet build AwsWrapperDataProvider.NHibernate\AwsWrapperDataProvider.NHibernate.csproj --configuration Release --no-restore
 
       - name: Configure A AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -89,6 +91,7 @@ jobs:
           dotnet pack AwsWrapperDataProvider.Dialect.MySqlConnector\AwsWrapperDataProvider.Dialect.MySqlConnector.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
           dotnet pack AwsWrapperDataProvider.Dialect.Npgsql\AwsWrapperDataProvider.Dialect.Npgsql.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
           dotnet pack AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector\AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
+          dotnet pack AwsWrapperDataProvider.NHibernate\AwsWrapperDataProvider.NHibernate.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
 
       - name: Upload packages as artifacts
         uses: actions/upload-artifact@v4
