@@ -7,11 +7,11 @@ This project provides a database dialect implementation for MySql.Data (MySQL Co
 ## Dependencies
 
 This project depends on:
-- **MySql.Data**: Official MySQL Connector/NET from Oracle
+- **[MySql.Data](https://www.nuget.org/packages/MySql.Data/)**: Official MySQL Connector/NET from Oracle
 
 ## Usage
 
-The dialect must be explicitly loaded before using MySql.Data with the AWS Wrapper:
+The dialect must be explicitly loaded before using MySql.Data with the AWS Advanced .NET Data Provider Wrapper:
 
 ```csharp
 using AwsWrapperDataProvider.MySqlClient;
@@ -19,7 +19,7 @@ using AwsWrapperDataProvider.MySqlClient;
 // Register the MySql.Data dialect
 MySqlClientDialectLoader.Load();
 
-// Now you can use MySql.Data with the AWS Wrapper
+// Now you can use MySql.Data with the AWS Advanced .NET Data Provider Wrapper
 var connection = new AwsWrapperConnection(connectionString);
 ```
 
@@ -30,4 +30,4 @@ The dialect enables support for:
 
 ## Documentation
 
-For comprehensive information about the AWS Advanced .NET Data Provider Wrapper, visit the [main documentation](../docs/).
+For comprehensive information about the AWS Advanced .NET Data Provider Wrapper, visit the [main documentation](../docs/). For dialect-specific information, see [Custom Dialects](../docs/using-the-dotnet-driver/CustomDialects.md).

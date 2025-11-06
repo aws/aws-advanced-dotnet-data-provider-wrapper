@@ -7,7 +7,7 @@ This plugin provides AWS IAM database authentication support for the AWS Advance
 ## Dependencies
 
 This project depends on:
-- **AWSSDK.RDS**: AWS SDK for RDS to generate authentication tokens
+- **[AWSSDK.RDS](https://www.nuget.org/packages/AWSSDK.RDS/)**: AWS SDK for RDS to generate authentication tokens
 
 ## Usage
 
@@ -27,38 +27,6 @@ var connectionString = "Server=your-rds-instance.amazonaws.com;" +
                        "Plugins=iam;";
 ```
 
-### Prerequisites
-
-1. **IAM Policy**: Your IAM user/role must have the `rds-db:connect` permission
-2. **Database User**: Create a database user mapped to your IAM user/role
-3. **AWS Credentials**: Configure AWS credentials (via AWS CLI, environment variables, or IAM roles)
-
-### Example IAM Policy
-
-```json
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": [
-                "rds-db:connect"
-            ],
-            "Resource": [
-                "arn:aws:rds-db:region:account-id:dbuser:db-instance-id/db-user-name"
-            ]
-        }
-    ]
-}
-```
-
-## Supported Databases
-
-- Aurora MySQL
-- Aurora PostgreSQL
-- RDS MySQL
-- RDS PostgreSQL
-
 ## Documentation
 
-For comprehensive information about IAM database authentication and the AWS Advanced .NET Data Provider Wrapper, visit the [main documentation](../docs/).
+For comprehensive information about IAM database authentication and the AWS Advanced .NET Data Provider Wrapper, visit the [Using the IAM Authentication Plugin](../docs/using-the-dotnet-driver/using-plugins/UsingTheIamAuthenticationPlugin.md) guide.

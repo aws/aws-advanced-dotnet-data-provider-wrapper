@@ -7,11 +7,11 @@ This project provides a database dialect implementation for MySqlConnector, enab
 ## Dependencies
 
 This project depends on:
-- **MySqlConnector**: High-performance MySQL connector for .NET
+- **[MySqlConnector](https://www.nuget.org/packages/MySqlConnector/)**: High-performance MySQL connector for .NET
 
 ## Usage
 
-The dialect must be explicitly loaded before using MySqlConnector with the AWS Wrapper:
+The dialect must be explicitly loaded before using MySqlConnector with the AWS Advanced .NET Data Provider Wrapper:
 
 ```csharp
 using AwsWrapperDataProvider.MySqlConnector;
@@ -23,11 +23,6 @@ MySqlConnectorDialectLoader.Load();
 var connection = new AwsWrapperConnection(connectionString);
 ```
 
-The dialect enables support for:
-- Aurora MySQL clusters
-- RDS MySQL instances
-- Self-managed MySQL databases
-
 ## Documentation
 
-For comprehensive information about the AWS Advanced .NET Data Provider Wrapper, visit the [main documentation](../docs/).
+For comprehensive information about the AWS Advanced .NET Data Provider Wrapper, visit the [main documentation](../docs/). For dialect-specific information, see [Custom Dialects](../docs/using-the-dotnet-driver/CustomDialects.md).

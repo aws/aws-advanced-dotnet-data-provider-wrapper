@@ -7,7 +7,7 @@ This project provides a database dialect implementation for Npgsql, enabling the
 ## Dependencies
 
 This project depends on:
-- **Npgsql**: High-performance PostgreSQL driver for .NET
+- **[Npgsql](https://www.nuget.org/packages/Npgsql/)**: High-performance PostgreSQL driver for .NET
 
 ## Usage
 
@@ -30,4 +30,4 @@ The dialect enables support for:
 
 ## Documentation
 
-For comprehensive information about the AWS Advanced .NET Data Provider Wrapper, visit the [main documentation](../docs/).
+For comprehensive information about the AWS Advanced .NET Data Provider Wrapper, visit the [main documentation](../docs/). For dialect-specific information, see [Custom Dialects](../docs/using-the-dotnet-driver/CustomDialects.md).
