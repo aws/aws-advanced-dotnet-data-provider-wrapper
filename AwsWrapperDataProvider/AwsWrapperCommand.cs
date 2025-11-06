@@ -60,10 +60,6 @@ public class AwsWrapperCommand : DbCommand
             this.TargetDbConnection = awsWrapperConnection.TargetDbConnection;
             this.pluginManager = awsWrapperConnection.PluginManager;
         }
-        else
-        {
-            throw new InvalidOperationException(Properties.Resources.Error_NotAwsWrapperConnection);
-        }
     }
 
     public AwsWrapperCommand(DbCommand command) : this(command, null) { }

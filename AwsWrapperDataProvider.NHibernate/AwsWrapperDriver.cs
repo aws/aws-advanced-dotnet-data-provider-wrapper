@@ -22,7 +22,6 @@ namespace AwsWrapperDataProvider.NHibernate
     public class AwsWrapperDriver : DriverBase, IEmbeddedBatcherFactoryProvider
     {
         protected DriverBase? _targetDriver;
-        private AwsWrapperConnection? _lastCreatedConnection;
 
         public AwsWrapperDriver(Type targetDriverType)
         {
@@ -44,18 +43,13 @@ namespace AwsWrapperDataProvider.NHibernate
         public override DbConnection CreateConnection()
         {
             var targetConnection = this._targetDriver?.CreateConnection() ?? throw new InvalidOperationException("Target driver not set");
-            this._lastCreatedConnection = new AwsWrapperConnection(targetConnection.GetType());
-            return this._lastCreatedConnection;
+            return new AwsWrapperConnection(targetConnection);
         }
 
         public override DbCommand CreateCommand()
         {
-            if (this._lastCreatedConnection == null)
-            {
-                throw new InvalidOperationException("CreateConnection must be called before CreateCommand. The AwsWrapperDriver requires a connection to be created first.");
-            }
-
-            return this._lastCreatedConnection.CreateCommand();
+            var targetCommand = this._targetDriver?.CreateCommand() ?? throw new InvalidOperationException("Target driver not set");
+            return new AwsWrapperCommand(targetCommand);
         }
 
         public override IResultSetsCommand GetResultSetsCommand(ISessionImplementor session) =>

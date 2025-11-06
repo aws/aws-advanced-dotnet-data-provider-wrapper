@@ -387,6 +387,16 @@ public class AwsWrapperConnection : DbConnection
         return new AwsWrapperBatch(batch, this, this.PluginManager!);
     }
 
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            Logger.LogTrace("Disposing target db connection@{id}", RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection));
+            this.pluginService.CurrentConnection?.Dispose();
+            this.pluginService.SetCurrentConnection(null, null);
+        }
+    }
+
     public override async ValueTask DisposeAsync()
     {
         if (this.pluginService?.CurrentConnection is not null)
