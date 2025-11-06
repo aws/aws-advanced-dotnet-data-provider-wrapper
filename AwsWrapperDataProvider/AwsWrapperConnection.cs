@@ -81,14 +81,13 @@ public class AwsWrapperConnection : DbConnection
         connection.ConnectionString,
         profile)
     {
-        this.pluginService!.SetCurrentConnection(connection, this.pluginService.InitialConnectionHostSpec);
         this.database = connection.Database;
     }
 
     public AwsWrapperConnection(DbConnection connection) : this(connection, null)
     { }
 
-    public AwsWrapperConnection(string connectionString, ConfigurationProfile? profile) : this(
+    public AwsWrapperConnection(string? connectionString, ConfigurationProfile? profile) : this(
         null,
         connectionString,
         profile)
@@ -96,7 +95,7 @@ public class AwsWrapperConnection : DbConnection
 
     public AwsWrapperConnection(string connectionString) : this(null, connectionString) { }
 
-    public AwsWrapperConnection(Type? targetType, string connectionString) : this(
+    public AwsWrapperConnection(Type? targetType, string? connectionString) : this(
         targetType,
         connectionString,
         null)
@@ -113,6 +112,7 @@ public class AwsWrapperConnection : DbConnection
         if (string.IsNullOrEmpty(connectionString))
         {
             this.deferredInitialization = true;
+            this.targetType = targetType;
         }
         else
         {
