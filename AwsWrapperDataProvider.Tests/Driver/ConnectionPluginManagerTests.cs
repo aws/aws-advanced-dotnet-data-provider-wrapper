@@ -12,14 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data.Common;
 using AwsWrapperDataProvider.Dialect.MySqlClient;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
-using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
-using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
 using AwsWrapperDataProvider.Tests.Driver.Plugins;
 using Moq;
@@ -41,7 +38,7 @@ public class ConnectionPluginManagerTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void TestExecuteCallA()
+    public async Task TestExecuteCallA()
     {
         List<string> calls = [];
         List<IConnectionPlugin> testPlugins =
@@ -56,13 +53,13 @@ public class ConnectionPluginManagerTests
             testPlugins,
             this.mockWrapperConnection);
 
-        string result = connectionPluginManager.Execute(
+        string result = await connectionPluginManager.Execute(
             this.mockWrapperConnection,
             "testADONetCall_A",
             () =>
             {
                 calls.Add("targetCall");
-                return "resulTestValue";
+                return Task.FromResult("resulTestValue");
             },
             []);
 
@@ -79,7 +76,7 @@ public class ConnectionPluginManagerTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void TestExecuteCallB()
+    public async Task TestExecuteCallB()
     {
         List<string> calls = [];
         List<IConnectionPlugin> testPlugins =
@@ -95,13 +92,13 @@ public class ConnectionPluginManagerTests
             testPlugins,
             this.mockWrapperConnection);
 
-        string result = connectionPluginManager.Execute(
+        string result = await connectionPluginManager.Execute(
             this.mockWrapperConnection,
             "testADONetCall_B",
             () =>
             {
                 calls.Add("targetCall");
-                return "resulTestValue";
+                return Task.FromResult("resulTestValue");
             },
             []);
 
@@ -116,7 +113,7 @@ public class ConnectionPluginManagerTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void TestExecuteCallC()
+    public async Task TestExecuteCallC()
     {
         List<string> calls = [];
         List<IConnectionPlugin> testPlugins =
@@ -132,13 +129,13 @@ public class ConnectionPluginManagerTests
             testPlugins,
             this.mockWrapperConnection);
 
-        string result = connectionPluginManager.Execute(
+        string result = await connectionPluginManager.Execute(
             this.mockWrapperConnection,
             "testADONetCall_C",
             () =>
             {
                 calls.Add("targetCall");
-                return "resulTestValue";
+                return Task.FromResult("resulTestValue");
             },
             []);
 
@@ -151,9 +148,8 @@ public class ConnectionPluginManagerTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void TestOpen()
+    public async Task TestOpen()
     {
-        DbConnection expectedConnection = Mock.Of<DbConnection>();
         List<string> calls = [];
         List<IConnectionPlugin> testPlugins =
         [
@@ -170,11 +166,12 @@ public class ConnectionPluginManagerTests
 
         try
         {
-            connectionPluginManager.Open(
+            await connectionPluginManager.Open(
                 new HostSpecBuilder().WithHost("anyHost").Build(),
                 [],
                 true,
-                null);
+                null,
+                true);
         }
         catch
         {
@@ -188,9 +185,8 @@ public class ConnectionPluginManagerTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void TestOpenWithSkipPlugin()
+    public async Task TestOpenWithSkipPlugin()
     {
-        DbConnection expectedConnection = Mock.Of<DbConnection>();
         List<string> calls = [];
         IConnectionPlugin pluginOne = new TestPluginOne(calls);
         List<IConnectionPlugin> testPlugins =
@@ -208,11 +204,12 @@ public class ConnectionPluginManagerTests
 
         try
         {
-            connectionPluginManager.Open(
+            await connectionPluginManager.Open(
                 new HostSpecBuilder().WithHost("anyHost").Build(),
                 [],
                 true,
-                pluginOne);
+                pluginOne,
+                true);
         }
         catch
         {

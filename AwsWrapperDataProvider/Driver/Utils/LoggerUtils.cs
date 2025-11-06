@@ -63,24 +63,17 @@ public static class LoggerUtils
         return $"{messagePrefix} Topology@{RuntimeHelpers.GetHashCode(hosts)}{Environment.NewLine}    {topology}";
     }
 
-    public static IDisposable BeginThreadScope(ILogger logger)
+    public static void MonitoringLogWithHost(HostSpec hostSpec, ILogger logger, LogLevel level, string message, params object?[] args)
     {
-        int threadId = Environment.CurrentManagedThreadId;
-        int taskId = Task.CurrentId ?? -1;
-        return logger.BeginScope("ThreadId:{ThreadId} TaskId:{TaskId}", threadId, taskId)!;
-    }
-
-    public static void LogWithThreadId(ILogger logger, LogLevel level, string message, params object?[] args)
-    {
-        using (BeginThreadScope(logger))
+        using (logger.BeginScope("Monitoring node: {}", hostSpec))
         {
             logger.Log(level, message, args);
         }
     }
 
-    public static void LogWithThreadId(ILogger logger, LogLevel level, Exception ex, string message, params object?[] args)
+    public static void MonitoringLogWithHost(HostSpec hostSpec, ILogger logger, LogLevel level, Exception ex, string message, params object?[] args)
     {
-        using (BeginThreadScope(logger))
+        using (logger.BeginScope("Monitoring node: {}", hostSpec))
         {
             logger.Log(level, ex, message, args);
         }

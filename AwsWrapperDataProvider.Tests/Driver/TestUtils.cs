@@ -68,12 +68,21 @@ public static class TestUtils
         Expression<Func<TMock, TReturn>> expression)
         where TMock : class
     {
-        mockPluginManager.Verify(p => p.Execute(
+        mockPluginManager.Verify(
+            p => p.Execute(
                 mockObject.Object,
                 It.IsAny<string>(),
-                It.IsAny<ADONetDelegate<TReturn>>(),
+                It.IsAny<ADONetDelegate<It.IsAnyType>>(),
                 It.IsAny<object[]>()),
             Times.Once);
+        mockObject.Verify(expression, Times.Once);
+    }
+
+    public static void VerifyDelegatesToTargetObject<TMock, TReturn>(
+    Mock<TMock> mockObject,
+    Expression<Func<TMock, TReturn>> expression)
+    where TMock : class
+    {
         mockObject.Verify(expression, Times.Once);
     }
 
@@ -83,7 +92,8 @@ public static class TestUtils
         Expression<Action<TMock>> expression)
         where TMock : class
     {
-        mockPluginManager.Verify(p => p.Execute(
+        mockPluginManager.Verify(
+            p => p.Execute(
                 mockObject.Object,
                 It.IsAny<string>(),
                 It.IsAny<ADONetDelegate<object>>(),
@@ -98,7 +108,8 @@ public static class TestUtils
         string methodName)
         where TMock : class
     {
-        mockPluginManager.Verify(p => p.Execute<TReturn>(
+        mockPluginManager.Verify(
+            p => p.Execute<TReturn>(
                 mockObject.Object,
                 methodName,
                 It.IsAny<ADONetDelegate<TReturn>>(),

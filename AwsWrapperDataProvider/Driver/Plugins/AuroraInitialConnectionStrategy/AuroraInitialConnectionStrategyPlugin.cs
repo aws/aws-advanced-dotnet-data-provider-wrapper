@@ -35,7 +35,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
 
     public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string> { "DbConnection.Open", "DbConnection.OpenAsync", "initHostProvider" };
 
-    public override void InitHostProvider(
+    public override async Task InitHostProvider(
         string initialUrl,
         Dictionary<string, string> props,
         IHostListProviderService hostListProviderService,
@@ -48,14 +48,15 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
             throw new Exception("AuroraInitialConnectionStrategyPlugin requires dynamic provider.");
         }
 
-        initHostProviderFunc.Invoke();
+        await initHostProviderFunc.Invoke();
     }
 
-    public override DbConnection OpenConnection(
+    public override async Task<DbConnection> OpenConnection(
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
-        ADONetDelegate<DbConnection> methodFunc)
+        ADONetDelegate<DbConnection> methodFunc,
+        bool async)
     {
         RdsUrlType urlType = RdsUtils.IdentifyRdsType(hostSpec?.Host);
         DbConnection? connectionCandidate = null;
@@ -63,32 +64,35 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
         if (urlType == RdsUrlType.RdsWriterCluster ||
             (isInitialConnection && this.verifyOpenedConnectionType == VerifyOpenedConnectionType.Writer))
         {
-            connectionCandidate = this.GetVerifiedWriterConnection(
+            connectionCandidate = await this.GetVerifiedWriterConnection(
                 props,
                 isInitialConnection,
-                methodFunc);
+                methodFunc,
+                async);
         }
         else if (urlType == RdsUrlType.RdsReaderCluster ||
             (isInitialConnection && this.verifyOpenedConnectionType == VerifyOpenedConnectionType.Reader))
         {
-            connectionCandidate = this.GetVerifiedReaderConnection(
+            connectionCandidate = await this.GetVerifiedReaderConnection(
                 props,
                 isInitialConnection,
-                methodFunc);
+                methodFunc,
+                async);
         }
 
         if (connectionCandidate == null)
         {
-            return methodFunc();
+            return await methodFunc();
         }
 
         return connectionCandidate;
     }
 
-    private DbConnection? GetVerifiedWriterConnection(
+    private async Task<DbConnection?> GetVerifiedWriterConnection(
         Dictionary<string, string> props,
         bool isInitialConnection,
-        ADONetDelegate<DbConnection> methodFunc)
+        ADONetDelegate<DbConnection> methodFunc,
+        bool async)
     {
         ArgumentNullException.ThrowIfNull(this.hostListProviderService);
 
@@ -103,19 +107,20 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
 
             try
             {
+                await this.pluginService.ForceRefreshHostListAsync();
                 writerCandidate = this.GetWriter();
 
                 if (writerCandidate == null || RdsUtils.IsRdsClusterDns(writerCandidate.Host))
                 {
-                    writerConnectionCandidate = methodFunc();
-                    this.pluginService.ForceRefreshHostList(writerConnectionCandidate);
-                    writerCandidate = this.pluginService.IdentifyConnection(writerConnectionCandidate);
+                    writerConnectionCandidate = await methodFunc();
+                    await this.pluginService.ForceRefreshHostListAsync(writerConnectionCandidate);
+                    writerCandidate = await this.pluginService.IdentifyConnectionAsync(writerConnectionCandidate);
 
                     if (writerCandidate == null || writerCandidate.Role != HostRole.Writer)
                     {
                         // Shouldn't be here. But let's try again.
                         this.DisposeConnection(writerConnectionCandidate);
-                        Task.Delay(retryDelay);
+                        await Task.Delay(retryDelay);
                         continue;
                     }
 
@@ -127,13 +132,13 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
                     return writerConnectionCandidate;
                 }
 
-                writerConnectionCandidate = this.pluginService.ForceOpenConnection(writerCandidate, props, null);
+                writerConnectionCandidate = await this.pluginService.OpenConnection(writerCandidate, props, this, async);
 
-                if (this.pluginService.GetHostRole(writerConnectionCandidate) != HostRole.Writer)
+                if ((await this.pluginService.GetHostRole(writerConnectionCandidate)) != HostRole.Writer)
                 {
-                    this.pluginService.ForceRefreshHostList(writerConnectionCandidate);
+                    await this.pluginService.ForceRefreshHostListAsync(writerConnectionCandidate);
                     this.DisposeConnection(writerConnectionCandidate);
-                    Task.Delay(retryDelay);
+                    await Task.Delay(retryDelay);
                 }
 
                 if (isInitialConnection)
@@ -166,10 +171,11 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
         return null;
     }
 
-    private DbConnection? GetVerifiedReaderConnection(
+    private async Task<DbConnection?> GetVerifiedReaderConnection(
         Dictionary<string, string> props,
         bool isInitialConnection,
-        ADONetDelegate<DbConnection> methodFunc)
+        ADONetDelegate<DbConnection> methodFunc,
+        bool async)
     {
         ArgumentNullException.ThrowIfNull(this.hostListProviderService);
 
@@ -184,18 +190,19 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
 
             try
             {
+                await this.pluginService.ForceRefreshHostListAsync();
                 readerCandidate = this.GetReader(props);
 
                 if (readerCandidate == null || RdsUtils.IsRdsClusterDns(readerCandidate.Host))
                 {
-                    readerConnectionCandidate = methodFunc();
-                    this.pluginService.ForceRefreshHostList(readerConnectionCandidate);
-                    readerCandidate = this.pluginService.IdentifyConnection(readerConnectionCandidate);
+                    readerConnectionCandidate = await methodFunc();
+                    await this.pluginService.ForceRefreshHostListAsync(readerConnectionCandidate);
+                    readerCandidate = await this.pluginService.IdentifyConnectionAsync(readerConnectionCandidate);
 
                     if (readerCandidate == null)
                     {
                         this.DisposeConnection(readerConnectionCandidate);
-                        Task.Delay(retryDelay);
+                        await Task.Delay(retryDelay);
                         continue;
                     }
 
@@ -212,7 +219,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
                         }
 
                         this.DisposeConnection(readerConnectionCandidate);
-                        Task.Delay(retryDelay);
+                        await Task.Delay(retryDelay);
                         continue;
                     }
 
@@ -224,11 +231,11 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
                     return readerConnectionCandidate;
                 }
 
-                readerConnectionCandidate = this.pluginService.ForceOpenConnection(readerCandidate, props, null);
+                readerConnectionCandidate = await this.pluginService.OpenConnection(readerCandidate, props, this, async);
 
-                if (this.pluginService.GetHostRole(readerConnectionCandidate) != HostRole.Reader)
+                if ((await this.pluginService.GetHostRole(readerConnectionCandidate)) != HostRole.Reader)
                 {
-                    this.pluginService.ForceRefreshHostList(readerConnectionCandidate);
+                    await this.pluginService.ForceRefreshHostListAsync(readerConnectionCandidate);
 
                     if (this.HasNoReader())
                     {
@@ -241,7 +248,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
                     }
 
                     this.DisposeConnection(readerConnectionCandidate);
-                    Task.Delay(retryDelay);
+                    await Task.Delay(retryDelay);
                     continue;
                 }
 

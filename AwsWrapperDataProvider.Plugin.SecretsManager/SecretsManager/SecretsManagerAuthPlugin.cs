@@ -54,25 +54,25 @@ public class SecretsManagerAuthPlugin(IPluginService pluginService, Dictionary<s
         SecretValueCache.Clear();
     }
 
-    public override DbConnection OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
+    public override async Task<DbConnection> OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc, bool async)
     {
-        return this.ConnectInternal(hostSpec, props, methodFunc);
+        return await this.ConnectInternal(hostSpec, props, methodFunc);
     }
 
-    public override DbConnection ForceOpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
+    public override async Task<DbConnection> ForceOpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc, bool async)
     {
         // For ForceOpenConnection, we can reuse the same logic as OpenConnection
-        return this.ConnectInternal(hostSpec, props, methodFunc);
+        return await this.ConnectInternal(hostSpec, props, methodFunc);
     }
 
-    private DbConnection ConnectInternal(HostSpec? hostSpec, Dictionary<string, string> props, ADONetDelegate<DbConnection> methodFunc)
+    private async Task<DbConnection> ConnectInternal(HostSpec? hostSpec, Dictionary<string, string> props, ADONetDelegate<DbConnection> methodFunc)
     {
-        bool secretsWasFetched = this.UpdateSecrets(false);
+        bool secretsWasFetched = await this.UpdateSecrets(false);
         this.ApplySecretToProperties(props);
 
         try
         {
-            return methodFunc();
+            return await methodFunc();
         }
         catch (Exception ex)
         {
@@ -82,19 +82,19 @@ public class SecretsManagerAuthPlugin(IPluginService pluginService, Dictionary<s
             }
 
             // should the token not work (login exception + is cached token), generate a new one and try again
-            this.UpdateSecrets(true);
+            await this.UpdateSecrets(true);
             this.ApplySecretToProperties(props);
-            return methodFunc();
+            return await methodFunc();
         }
     }
 
-    private bool UpdateSecrets(bool forceReFetch)
+    private async Task<bool> UpdateSecrets(bool forceReFetch)
     {
         bool secretsWasFetched = false;
 
         if (forceReFetch || !SecretValueCache.TryGetValue(this.cacheKey, out SecretsManagerUtility.AwsRdsSecrets? secret))
         {
-            secret = SecretsManagerUtility.GetRdsSecretFromAwsSecretsManager(this.secretId, this.client);
+            secret = await SecretsManagerUtility.GetRdsSecretFromAwsSecretsManager(this.secretId, this.client);
             SecretValueCache.Set(this.cacheKey, secret, TimeSpan.FromSeconds(this.secretValueExpirySecs));
             secretsWasFetched = true;
         }

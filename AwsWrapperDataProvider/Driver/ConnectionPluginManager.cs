@@ -38,8 +38,9 @@ public class ConnectionPluginManager
     private const string ForceConnectMethod = "DbConnection.ForceOpen";
     private const string InitHostMethod = "initHostProvider";
 
-    private delegate T PluginPipelineDelegate<T>(IConnectionPlugin plugin, ADONetDelegate<T> methodFunc);
-    private delegate T PluginChainADONetDelegate<T>(PluginPipelineDelegate<T> pipelineDelegate, ADONetDelegate<T> methodFunc, IConnectionPlugin pluginToSkip);
+    private delegate Task<T> PluginPipelineDelegate<T>(IConnectionPlugin plugin, ADONetDelegate<T> methodFunc);
+
+    private delegate Task<T> PluginChainADONetDelegate<T>(PluginPipelineDelegate<T> pipelineDelegate, ADONetDelegate<T> methodFunc, IConnectionPlugin? pluginToSkip);
 
     public ConnectionPluginManager(
         IConnectionProvider defaultConnProvider,
@@ -90,7 +91,7 @@ public class ConnectionPluginManager
             this.configurationProfile);
     }
 
-    private T ExecuteWithSubscribedPlugins<T>(
+    private async Task<T> ExecuteWithSubscribedPlugins<T>(
         string methodName,
         PluginPipelineDelegate<T> pluginPipelineDelegate,
         ADONetDelegate<T> methodFunc,
@@ -99,23 +100,20 @@ public class ConnectionPluginManager
         ArgumentNullException.ThrowIfNull(pluginPipelineDelegate);
         ArgumentNullException.ThrowIfNull(methodFunc);
 
-        if (!this.pluginChainDelegates.TryGetValue(methodName, out Delegate? pluginChainDelegate))
+        if (!this.pluginChainDelegates.TryGetValue(methodName, out Delegate? del))
         {
-            pluginChainDelegate = this.MakePluginChainDelegate<T>(methodName);
-            this.pluginChainDelegates.Add(methodName, pluginChainDelegate!);
+            del = this.MakePluginChainDelegate<T>(methodName);
+            this.pluginChainDelegates.Add(methodName, del);
         }
 
-        if (pluginChainDelegate == null)
+        if (del is not PluginChainADONetDelegate<T> pluginChainDelegate)
         {
             throw new Exception(Properties.Resources.Error_ProcessingAdoNetCall);
         }
 
         try
         {
-            return (T)pluginChainDelegate.DynamicInvoke(
-                pluginPipelineDelegate,
-                methodFunc,
-                pluginToSkip)!;
+            return await pluginChainDelegate(pluginPipelineDelegate, methodFunc, pluginToSkip);
         }
         catch (TargetInvocationException exception)
         {
@@ -161,7 +159,7 @@ public class ConnectionPluginManager
         return pluginChainDelegate!;
     }
 
-    public virtual T Execute<T>(
+    public virtual Task<T> Execute<T>(
         object methodInvokeOn,
         string methodName,
         ADONetDelegate<T> methodFunc,
@@ -171,47 +169,49 @@ public class ConnectionPluginManager
             methodName,
             (plugin, methodFunc) => plugin.Execute(methodInvokeOn, methodName, methodFunc, methodArgs),
             methodFunc,
-            null)!;
+            null);
     }
 
-    public virtual DbConnection Open(
+    public virtual Task<DbConnection> Open(
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
-        IConnectionPlugin? pluginToSkip)
+        IConnectionPlugin? pluginToSkip,
+        bool async)
     {
         // Execute the plugin chain and return the connection
         return this.ExecuteWithSubscribedPlugins<DbConnection>(
             ConnectMethod,
-            (plugin, methodFunc) => plugin.OpenConnection(hostSpec, props, isInitialConnection, () => methodFunc()),
+            (plugin, methodFunc) => plugin.OpenConnection(hostSpec, props, isInitialConnection, methodFunc, async),
             () => throw new UnreachableException("Function should not be called."),
             pluginToSkip);
     }
 
-    public virtual DbConnection ForceOpen(
+    public virtual Task<DbConnection> ForceOpen(
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
-        IConnectionPlugin? pluginToSkip)
+        IConnectionPlugin? pluginToSkip,
+        bool async)
     {
         // Execute the plugin chain and return the connection
         return this.ExecuteWithSubscribedPlugins<DbConnection>(
             ForceConnectMethod,
-            (plugin, methodFunc) => plugin.ForceOpenConnection(hostSpec, props, isInitialConnection, () => methodFunc()),
+            (plugin, methodFunc) => plugin.ForceOpenConnection(hostSpec, props, isInitialConnection, methodFunc, async),
             () => throw new UnreachableException("Function should not be called."),
             pluginToSkip);
     }
 
-    public virtual void InitHostProvider(
+    public virtual Task InitHostProvider(
         string initialConnectionString,
         Dictionary<string, string> props,
         IHostListProviderService hostListProviderService)
     {
-        this.ExecuteWithSubscribedPlugins<object>(
+        return this.ExecuteWithSubscribedPlugins<object>(
             InitHostMethod,
-            (plugin, methodFunc) =>
+            async (plugin, methodFunc) =>
             {
-                plugin.InitHostProvider(
+                await plugin.InitHostProvider(
                     initialConnectionString,
                     props,
                     hostListProviderService,

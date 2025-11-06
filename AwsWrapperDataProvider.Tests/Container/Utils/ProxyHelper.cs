@@ -111,15 +111,15 @@ public class ProxyHelper
     {
         try
         {
-            BandwidthToxic bandWidthToxic = new()
+            TimeoutToxic timeoutToxic = new()
             {
                 Name = "DOWN-STREAM",
                 Stream = ToxicDirection.DownStream, // from database server towards driver
                 Toxicity = 1.0f,
+                Attributes = { Timeout = 0 },
             };
 
-            bandWidthToxic.Attributes.Rate = 0;
-            await proxy.AddAsync(bandWidthToxic);
+            await proxy.AddAsync(timeoutToxic);
         }
         catch (Exception ex)
         {
@@ -128,15 +128,15 @@ public class ProxyHelper
 
         try
         {
-            BandwidthToxic bandWidthToxic = new()
+            TimeoutToxic timeoutToxic = new()
             {
                 Name = "UP-STREAM",
                 Stream = ToxicDirection.UpStream, // from driver towards database server
                 Toxicity = 1.0f,
+                Attributes = { Timeout = 0 },
             };
 
-            bandWidthToxic.Attributes.Rate = 0;
-            await proxy.AddAsync(bandWidthToxic);
+            await proxy.AddAsync(timeoutToxic);
         }
         catch (Exception ex)
         {

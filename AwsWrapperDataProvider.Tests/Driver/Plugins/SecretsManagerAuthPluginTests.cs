@@ -60,16 +60,16 @@ public class SecretsManagerAuthPluginTests
             870, // default expiration
             this.mockSecretsManagerClient.Object);
 
-        this.methodFunc = () => new Mock<DbConnection>().Object;
+        this.methodFunc = () => Task.FromResult(new Mock<DbConnection>().Object);
 
         SecretsManagerAuthPlugin.ClearCache();
     }
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void OpenConnection_WithNoCachedSecret_FetchesSecret()
+    public async Task OpenConnection_WithNoCachedSecret_FetchesSecret()
     {
-        _ = this.secretsManagerAuthPlugin.OpenConnection(new HostSpec(Host, Port, HostRole.Writer, HostAvailability.Available), this.props, true, this.methodFunc);
+        _ = await this.secretsManagerAuthPlugin.OpenConnection(new HostSpec(Host, Port, HostRole.Writer, HostAvailability.Available), this.props, true, this.methodFunc, true);
 
         Assert.Equal("test-user", this.props[PropertyDefinition.User.Name]);
         Assert.Equal("test-password", this.props[PropertyDefinition.Password.Name]);
@@ -82,7 +82,7 @@ public class SecretsManagerAuthPluginTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void OpenConnection_WithInvalidSecretJson_ThrowsException()
+    public async Task OpenConnection_WithInvalidSecretJson_ThrowsException()
     {
         // Setup invalid secret response
         var invalidSecretResponse = new GetSecretValueResponse
@@ -103,13 +103,13 @@ public class SecretsManagerAuthPluginTests
             870,
             mockClient.Object);
 
-        Assert.Throws<Exception>(() =>
-            plugin.OpenConnection(new HostSpec(Host, Port, HostRole.Writer, HostAvailability.Available), this.props, true, this.methodFunc));
+        await Assert.ThrowsAsync<Exception>(() =>
+            plugin.OpenConnection(new HostSpec(Host, Port, HostRole.Writer, HostAvailability.Available), this.props, true, this.methodFunc, true));
     }
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void OpenConnection_WithSecretsManagerException_ThrowsException()
+    public async Task OpenConnection_WithSecretsManagerException_ThrowsException()
     {
         var mockClient = new Mock<AmazonSecretsManagerClient>(Mock.Of<Amazon.Runtime.AWSCredentials>(), new AmazonSecretsManagerConfig { RegionEndpoint = Amazon.RegionEndpoint.USEast1 });
         mockClient.Setup(
@@ -124,19 +124,19 @@ public class SecretsManagerAuthPluginTests
             870,
             mockClient.Object);
 
-        Assert.Throws<Exception>(() =>
-            plugin.OpenConnection(new HostSpec(Host, Port, HostRole.Writer, HostAvailability.Available), this.props, true, this.methodFunc));
+        await Assert.ThrowsAsync<Exception>(() =>
+            plugin.OpenConnection(new HostSpec(Host, Port, HostRole.Writer, HostAvailability.Available), this.props, true, this.methodFunc, true));
     }
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void OpenConnection_WithNonLoginException_ThrowsException()
+    public async Task OpenConnection_WithNonLoginException_ThrowsException()
     {
         ADONetDelegate<DbConnection> failingMethodFunc = () => throw new Exception("Non-login error");
 
         this.mockPluginService.Setup(s => s.IsLoginException(It.IsAny<Exception>())).Returns(false);
 
-        Assert.Throws<Exception>(() =>
-            this.secretsManagerAuthPlugin.OpenConnection(new HostSpec(Host, Port, HostRole.Writer, HostAvailability.Available), this.props, true, failingMethodFunc));
+        await Assert.ThrowsAsync<Exception>(() =>
+            this.secretsManagerAuthPlugin.OpenConnection(new HostSpec(Host, Port, HostRole.Writer, HostAvailability.Available), this.props, true, failingMethodFunc, true));
     }
 }

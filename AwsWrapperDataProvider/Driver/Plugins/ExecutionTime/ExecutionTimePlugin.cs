@@ -24,10 +24,10 @@ public class ExecutionTimePlugin : AbstractConnectionPlugin
 
     public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string>() { "*" };
 
-    public override T Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, params object[] methodArgs)
+    public override async Task<T> Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, params object[] methodArgs)
     {
         var sw = Stopwatch.StartNew();
-        T results = base.Execute(methodInvokedOn, methodName, methodFunc, methodArgs);
+        T results = await base.Execute(methodInvokedOn, methodName, methodFunc, methodArgs);
         sw.Stop();
 
         long ticks = sw.ElapsedTicks;

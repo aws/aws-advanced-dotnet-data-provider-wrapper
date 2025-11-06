@@ -18,5 +18,5 @@ namespace AwsWrapperDataProvider.Plugin.FederatedAuth.FederatedAuth;
 
 public abstract class CredentialsProviderFactory
 {
-    public abstract AWSCredentialsProvider GetAwsCredentialsProvider(string host, RegionEndpoint region, Dictionary<string, string> props);
+    public abstract Task<AWSCredentialsProvider> GetAwsCredentialsProviderAsync(string host, RegionEndpoint region, Dictionary<string, string> props);
 }

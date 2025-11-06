@@ -19,309 +19,175 @@ using System.Diagnostics.CodeAnalysis;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Utils;
 
-namespace AwsWrapperDataProvider
+namespace AwsWrapperDataProvider;
+
+public class AwsWrapperDataReader : DbDataReader
 {
-    public class AwsWrapperDataReader : DbDataReader
+    private readonly ConnectionPluginManager connectionPluginManager;
+    protected DbDataReader targetDataReader;
+
+    internal AwsWrapperDataReader(DbDataReader targetDataReader, ConnectionPluginManager connectionPluginManager)
     {
-        private readonly ConnectionPluginManager _connectionPluginManager;
-        protected DbDataReader _targetDataReader;
+        this.connectionPluginManager = connectionPluginManager;
+        this.targetDataReader = targetDataReader;
+    }
 
-        internal AwsWrapperDataReader(DbDataReader targetDataReader, ConnectionPluginManager connectionPluginManager)
-        {
-            this._connectionPluginManager = connectionPluginManager;
-            this._targetDataReader = targetDataReader;
-        }
+    public override int Depth => this.targetDataReader.Depth;
 
-        public override int Depth => WrapperUtils.ExecuteWithPlugins(
-                this._connectionPluginManager,
-                this._targetDataReader,
-                "DbDataReader.Depth",
-                () => this._targetDataReader.Depth);
+    public override bool IsClosed => this.targetDataReader.IsClosed;
 
-        public override bool IsClosed => WrapperUtils.ExecuteWithPlugins(
-                this._connectionPluginManager,
-                this._targetDataReader,
-                "DbDataReader.IsClosed",
-                () => this._targetDataReader.IsClosed);
+    public override int RecordsAffected => this.targetDataReader.RecordsAffected;
 
-        public override int RecordsAffected => WrapperUtils.ExecuteWithPlugins(
-                this._connectionPluginManager,
-                this._targetDataReader,
-                "DbDataReader.RecordsAffected",
-                () => this._targetDataReader.RecordsAffected);
+    public override int FieldCount => this.targetDataReader.FieldCount;
 
-        public override int FieldCount => WrapperUtils.ExecuteWithPlugins(
-            this._connectionPluginManager,
-            this._targetDataReader,
-            "DbDataReader.FieldCount",
-            () => this._targetDataReader.FieldCount);
+    public override bool HasRows => this.targetDataReader.HasRows;
 
-        public override bool HasRows => WrapperUtils.ExecuteWithPlugins(
-            this._connectionPluginManager,
-            this._targetDataReader,
-            "DbDataReader.HasRows",
-            () => this._targetDataReader.HasRows);
+    public override object this[int i] => this.targetDataReader[i];
 
-        public override object this[int i] => WrapperUtils.ExecuteWithPlugins(
-            this._connectionPluginManager,
-            this._targetDataReader,
-            "DbDataReader[i]",
-            () => this._targetDataReader[i]);
+    public override object this[string name] => this.targetDataReader[name];
 
-        public override object this[string name] => WrapperUtils.ExecuteWithPlugins(
-            this._connectionPluginManager,
-            this._targetDataReader,
-            "DbDataReader[name]",
-            () => this._targetDataReader[name]);
-
-        public override void Close()
-        {
-            WrapperUtils.RunWithPlugins(
-                this._connectionPluginManager,
-                this._targetDataReader,
-                "DbDataReader.Close",
-                () => this._targetDataReader.Close());
-        }
-
-        public override DataTable? GetSchemaTable()
-        {
-            return WrapperUtils.ExecuteWithPlugins(
-                this._connectionPluginManager,
-                this._targetDataReader,
-                "DbDataReader.GetSchemaTable",
-                () => this._targetDataReader.GetSchemaTable());
-        }
-
-        public override bool NextResult()
-        {
-            return WrapperUtils.ExecuteWithPlugins(
-                this._connectionPluginManager,
-                this._targetDataReader,
-                "DbDataReader.NextResult",
-                () => this._targetDataReader.NextResult());
-        }
-
-        public override bool Read()
-        {
-            return WrapperUtils.ExecuteWithPlugins(
-                this._connectionPluginManager,
-                this._targetDataReader,
-                "DbDataReader.Read",
-                () => this._targetDataReader.Read());
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing && this._targetDataReader is not null)
+    public override void Close()
+    {
+        WrapperUtils.RunWithPlugins(
+            this.connectionPluginManager,
+            this.targetDataReader,
+            "DbDataReader.Close",
+            () =>
             {
-                WrapperUtils.RunWithPlugins(
-                    this._connectionPluginManager,
-                    this._targetDataReader,
-                    "DbDataReader.Dispose",
-                    () => this._targetDataReader.Dispose());
-            }
-        }
+                this.targetDataReader.Close();
+                return Task.CompletedTask;
+            }).GetAwaiter().GetResult();
+    }
 
-        public override bool GetBoolean(int i)
-        {
-            return WrapperUtils.ExecuteWithPlugins(
-                this._connectionPluginManager,
-                this._targetDataReader,
-                "DbDataReader.GetBoolean",
-                () => this._targetDataReader.GetBoolean(i));
-        }
+    public override Task CloseAsync()
+    {
+        return WrapperUtils.RunWithPlugins(
+            this.connectionPluginManager,
+            this.targetDataReader,
+            "DbDataReader.CloseAsync",
+            () => this.targetDataReader.CloseAsync());
+    }
 
-        public override byte GetByte(int i)
-        {
-            return WrapperUtils.ExecuteWithPlugins(
-                this._connectionPluginManager,
-                this._targetDataReader,
-                "DbDataReader.GetByte",
-                () => this._targetDataReader.GetByte(i));
-        }
+    public override DataTable? GetSchemaTable() => this.targetDataReader.GetSchemaTable();
 
-        public override long GetBytes(int i, long fieldOffset, byte[]? buffer, int bufferoffset, int length)
-        {
-            return WrapperUtils.ExecuteWithPlugins(
-                this._connectionPluginManager,
-                this._targetDataReader,
-                "DbDataReader.GetBytes",
-                () => this._targetDataReader.GetBytes(i, fieldOffset, buffer, bufferoffset, length));
-        }
+    public override bool NextResult()
+    {
+        return WrapperUtils.ExecuteWithPlugins(
+            this.connectionPluginManager,
+            this.targetDataReader,
+            "DbDataReader.NextResult",
+            () => Task.FromResult(this.targetDataReader.NextResult()))
+            .GetAwaiter().GetResult();
+    }
 
-        public override char GetChar(int i)
-        {
-            return WrapperUtils.ExecuteWithPlugins(
-                this._connectionPluginManager,
-                this._targetDataReader,
-                "DbDataReader.GetChar",
-                () => this._targetDataReader.GetChar(i));
-        }
+    public override Task<bool> NextResultAsync(CancellationToken cancellationToken)
+    {
+        return WrapperUtils.ExecuteWithPlugins(
+            this.connectionPluginManager,
+            this.targetDataReader,
+            "DbDataReader.NextResultAsync",
+            () => this.targetDataReader.NextResultAsync(cancellationToken));
+    }
 
-        public override long GetChars(int i, long fieldoffset, char[]? buffer, int bufferoffset, int length)
-        {
-            return WrapperUtils.ExecuteWithPlugins(
-                this._connectionPluginManager,
-                this._targetDataReader,
-                "DbDataReader.GetChars",
-                () => this._targetDataReader.GetChars(i, fieldoffset, buffer, bufferoffset, length));
-        }
+    public override bool Read()
+    {
+        return WrapperUtils.ExecuteWithPlugins(
+            this.connectionPluginManager,
+            this.targetDataReader,
+            "DbDataReader.Read",
+            () => Task.FromResult(this.targetDataReader.Read()))
+            .GetAwaiter().GetResult();
+    }
 
-        public override string GetDataTypeName(int i)
-        {
-            return WrapperUtils.ExecuteWithPlugins(
-                this._connectionPluginManager,
-                this._targetDataReader,
-                "DbDataReader.GetDataTypeName",
-                () => this._targetDataReader.GetDataTypeName(i));
-        }
+    public override Task<bool> ReadAsync(CancellationToken cancellationToken)
+    {
+        return WrapperUtils.ExecuteWithPlugins(
+            this.connectionPluginManager,
+            this.targetDataReader,
+            "DbDataReader.ReadAsync",
+            () => this.targetDataReader.ReadAsync(cancellationToken));
+    }
 
-        public override DateTime GetDateTime(int i)
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
         {
-            return WrapperUtils.ExecuteWithPlugins(
-                this._connectionPluginManager,
-                this._targetDataReader,
-                "DbDataReader.GetDataTypeTime",
-                () => this._targetDataReader.GetDateTime(i));
-        }
-
-        public override decimal GetDecimal(int i)
-        {
-            return WrapperUtils.ExecuteWithPlugins(
-                this._connectionPluginManager,
-                this._targetDataReader,
-                "DbDataReader.GetDecimal",
-                () => this._targetDataReader.GetDecimal(i));
-        }
-
-        public override double GetDouble(int i)
-        {
-            return WrapperUtils.ExecuteWithPlugins(
-                this._connectionPluginManager,
-                this._targetDataReader,
-                "DbDataReader.GetDouble",
-                () => this._targetDataReader.GetDouble(i));
-        }
-
-        // TODO: Write integration test to check if user can use reflection on Type after trimming.
-        [return:
-            DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields |
-                                       DynamicallyAccessedMemberTypes.PublicProperties)]
-        public override Type GetFieldType(int i)
-        {
-            return WrapperUtils.ExecuteWithPlugins(
-                this._connectionPluginManager,
-                this._targetDataReader,
-                "DbDataReader.GetFieldType",
-                () => this._targetDataReader.GetFieldType(i));
-        }
-
-        public override float GetFloat(int i)
-        {
-            return WrapperUtils.ExecuteWithPlugins(
-                this._connectionPluginManager,
-                this._targetDataReader,
-                "DbDataReader.GetFloat",
-                () => this._targetDataReader.GetFloat(i));
-        }
-
-        public override Guid GetGuid(int i)
-        {
-            return WrapperUtils.ExecuteWithPlugins(
-                this._connectionPluginManager,
-                this._targetDataReader,
-                "DbDataReader.GetGuid",
-                () => this._targetDataReader.GetGuid(i));
-        }
-
-        public override short GetInt16(int i)
-        {
-            return WrapperUtils.ExecuteWithPlugins(
-                this._connectionPluginManager,
-                this._targetDataReader,
-                "DbDataReader.GetInt16",
-                () => this._targetDataReader.GetInt16(i));
-        }
-
-        public override int GetInt32(int i)
-        {
-            return WrapperUtils.ExecuteWithPlugins(
-                this._connectionPluginManager,
-                this._targetDataReader,
-                "DbDataReader.GetInt32",
-                () => this._targetDataReader.GetInt32(i));
-        }
-
-        public override long GetInt64(int i)
-        {
-            return WrapperUtils.ExecuteWithPlugins(
-                this._connectionPluginManager,
-                this._targetDataReader,
-                "DbDataReader.GetInt64",
-                () => this._targetDataReader.GetInt64(i));
-        }
-
-        public override string GetName(int i)
-        {
-            return WrapperUtils.ExecuteWithPlugins(
-                this._connectionPluginManager,
-                this._targetDataReader,
-                "DbDataReader.GetName",
-                () => this._targetDataReader.GetName(i));
-        }
-
-        public override int GetOrdinal(string name)
-        {
-            return WrapperUtils.ExecuteWithPlugins(
-                this._connectionPluginManager,
-                this._targetDataReader,
-                "DbDataReader.GetOrdinal",
-                () => this._targetDataReader.GetOrdinal(name));
-        }
-
-        public override string GetString(int i)
-        {
-            return WrapperUtils.ExecuteWithPlugins(
-                this._connectionPluginManager,
-                this._targetDataReader,
-                "DbDataReader.GetString",
-                () => this._targetDataReader.GetString(i));
-        }
-
-        public override object GetValue(int i)
-        {
-            return WrapperUtils.ExecuteWithPlugins(
-                this._connectionPluginManager,
-                this._targetDataReader,
-                "DbDataReader.GetValue",
-                () => this._targetDataReader.GetValue(i));
-        }
-
-        public override int GetValues(object[] values)
-        {
-            return WrapperUtils.ExecuteWithPlugins(
-                this._connectionPluginManager,
-                this._targetDataReader,
-                "DbDataReader.GetValues",
-                () => this._targetDataReader.GetValues(values));
-        }
-
-        public override bool IsDBNull(int i)
-        {
-            return WrapperUtils.ExecuteWithPlugins(
-                this._connectionPluginManager,
-                this._targetDataReader,
-                "DbDataReader.IsDBNull",
-                () => this._targetDataReader.IsDBNull(i));
-        }
-
-        public override IEnumerator GetEnumerator()
-        {
-            return WrapperUtils.ExecuteWithPlugins(
-                this._connectionPluginManager,
-                this._targetDataReader,
-                "DbDataReader.GetEnumerator",
-                () => this._targetDataReader.GetEnumerator());
+            this.targetDataReader?.Dispose();
         }
     }
+
+    public override async ValueTask DisposeAsync()
+    {
+        if (this.targetDataReader is not null)
+        {
+            await this.targetDataReader.DisposeAsync().ConfigureAwait(false);
+        }
+    }
+
+    public override bool GetBoolean(int i) => this.targetDataReader.GetBoolean(i);
+
+    public override byte GetByte(int i) => this.targetDataReader.GetByte(i);
+
+    public override long GetBytes(int i, long fieldOffset, byte[]? buffer, int bufferoffset, int length)
+    => this.targetDataReader.GetBytes(i, fieldOffset, buffer, bufferoffset, length);
+
+    public override char GetChar(int i) => this.targetDataReader.GetChar(i);
+
+    public override long GetChars(int i, long fieldoffset, char[]? buffer, int bufferoffset, int length)
+    => this.targetDataReader.GetChars(i, fieldoffset, buffer, bufferoffset, length);
+
+    public override string GetDataTypeName(int i) => this.targetDataReader.GetDataTypeName(i);
+
+    public override DateTime GetDateTime(int i) => this.targetDataReader.GetDateTime(i);
+
+    public override decimal GetDecimal(int i) => this.targetDataReader.GetDecimal(i);
+
+    public override double GetDouble(int i) => this.targetDataReader.GetDouble(i);
+
+    // TODO: Write integration test to check if user can use reflection on Type after trimming.
+    [return:
+        DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields |
+                                   DynamicallyAccessedMemberTypes.PublicProperties)]
+    public override Type GetFieldType(int i) => this.targetDataReader.GetFieldType(i);
+
+    public override float GetFloat(int i) => this.targetDataReader.GetFloat(i);
+
+    public override Guid GetGuid(int i) => this.targetDataReader.GetGuid(i);
+
+    public override short GetInt16(int i) => this.targetDataReader.GetInt16(i);
+
+    public override int GetInt32(int i) => this.targetDataReader.GetInt32(i);
+
+    public override long GetInt64(int i) => this.targetDataReader.GetInt64(i);
+
+    public override string GetName(int i) => this.targetDataReader.GetName(i);
+
+    public override int GetOrdinal(string name) => this.targetDataReader.GetOrdinal(name);
+
+    public override string GetString(int i) => this.targetDataReader.GetString(i);
+
+    public override object GetValue(int i) => this.targetDataReader.GetValue(i);
+
+    public override int GetValues(object[] values) => this.targetDataReader.GetValues(values);
+
+    public override bool IsDBNull(int i)
+    {
+        return WrapperUtils.ExecuteWithPlugins(
+            this.connectionPluginManager,
+            this.targetDataReader,
+            "DbDataReader.IsDBNull",
+            () => Task.FromResult(this.targetDataReader.IsDBNull(i)))
+            .GetAwaiter().GetResult();
+    }
+
+    public override Task<bool> IsDBNullAsync(int ordinal, CancellationToken cancellationToken)
+    {
+        return WrapperUtils.ExecuteWithPlugins(
+            this.connectionPluginManager,
+            this.targetDataReader,
+            "DbDataReader.IsDBNullAsync",
+            () => this.targetDataReader.IsDBNullAsync(ordinal, cancellationToken));
+    }
+
+    public override IEnumerator GetEnumerator() => this.targetDataReader.GetEnumerator();
 }

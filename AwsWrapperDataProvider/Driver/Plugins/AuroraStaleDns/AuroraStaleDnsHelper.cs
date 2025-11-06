@@ -41,7 +41,7 @@ public class AuroraStaleDnsHelper
         this.pluginService = pluginService;
     }
 
-    public DbConnection OpenVerifiedConnection(
+    public async Task<DbConnection> OpenVerifiedConnectionAsync(
         bool isInitialConnection,
         IHostListProviderService hostListProviderService,
         HostSpec hostSpec,
@@ -51,10 +51,10 @@ public class AuroraStaleDnsHelper
         // If this is not a writer cluster DNS, no verification needed
         if (!RdsUtils.IsWriterClusterDns(hostSpec.Host))
         {
-            return openFunc();
+            return await openFunc();
         }
 
-        DbConnection connection = openFunc();
+        DbConnection connection = await openFunc();
 
         // Get the IP address that the cluster endpoint resolved to
         string? clusterInetAddress = GetHostIpAddress(hostSpec.Host);
@@ -68,10 +68,10 @@ public class AuroraStaleDnsHelper
         }
 
         // Check the role of the connection we actually got
-        HostRole connectionRole = this.pluginService.GetHostRole(connection);
+        HostRole connectionRole = await this.pluginService.GetHostRole(connection);
         Logger.LogTrace("Current connection role: {role}", connectionRole);
 
-        this.pluginService.ForceRefreshHostList(connection);
+        await this.pluginService.ForceRefreshHostListAsync(connection);
         Logger.LogTrace(LoggerUtils.LogTopology(this.pluginService.AllHosts, null));
 
         this.writerHostSpec = this.GetWriter();
@@ -108,7 +108,7 @@ public class AuroraStaleDnsHelper
             }
 
             // Create a new connection to the correct writer instance
-            DbConnection writerConnection = this.pluginService.OpenConnection(this.writerHostSpec, props, null);
+            DbConnection writerConnection = await this.pluginService.OpenConnection(this.writerHostSpec, props, null, true);
 
             // Update the initial connection host spec if this is the initial connection
             if (isInitialConnection)
@@ -116,7 +116,7 @@ public class AuroraStaleDnsHelper
                 hostListProviderService.InitialConnectionHostSpec = this.writerHostSpec;
             }
 
-            connection.Dispose();
+            await connection.DisposeAsync().ConfigureAwait(false);
             return writerConnection;
         }
 

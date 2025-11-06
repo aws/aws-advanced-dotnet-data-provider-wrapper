@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data;
+using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
@@ -48,14 +48,14 @@ public class RdsMultiAzDbClusterPgDialect : PgDialect
     private static readonly string IsReaderQuery =
         "SELECT pg_catalog.pg_is_in_recovery()";
 
-    public override bool IsDialect(IDbConnection connection)
+    public override async Task<bool> IsDialect(DbConnection connection)
     {
         try
         {
-            using IDbCommand isDialectCommand = connection.CreateCommand();
+            await using var isDialectCommand = connection.CreateCommand();
             isDialectCommand.CommandText = IsRdsClusterQuery;
-            using IDataReader isDialectReader = isDialectCommand.ExecuteReader();
-            return isDialectReader.Read() && !isDialectReader.IsDBNull(0);
+            await using var isDialectReader = await isDialectCommand.ExecuteReaderAsync();
+            return await isDialectReader.ReadAsync() && !(await isDialectReader.IsDBNullAsync(0));
         }
         catch (Exception ex)
         {

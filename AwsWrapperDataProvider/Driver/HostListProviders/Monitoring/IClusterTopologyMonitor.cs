@@ -40,7 +40,7 @@ public interface IClusterTopologyMonitor : IDisposable
     /// <param name="timeoutMs">Timeout in milliseconds.</param>
     /// <returns>List of host specifications.</returns>
     /// <exception cref="TimeoutException">Thrown when the operation times out.</exception>
-    IList<HostSpec> ForceRefresh(bool writerImportant, long timeoutMs);
+    Task<IList<HostSpec>> ForceRefreshAsync(bool writerImportant, long timeoutMs);
 
     /// <summary>
     /// Forces a refresh of the cluster topology using the provided connection.

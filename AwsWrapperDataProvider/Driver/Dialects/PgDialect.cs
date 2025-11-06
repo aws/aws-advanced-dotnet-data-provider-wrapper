@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data;
+using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Exceptions;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
@@ -31,6 +32,8 @@ public class PgDialect : IDialect
 
     public string ServerVersionQuery { get; } = "SELECT 'version', pg_catalog.VERSION()";
 
+    internal static readonly string PGSelect1Query = "SELECT 1 FROM pg_catalog.pg_proc LIMIT 1";
+
     public IExceptionHandler ExceptionHandler { get; } = new PgExceptionHandler();
 
     public virtual IList<Type> DialectUpdateCandidates { get; } =
@@ -45,7 +48,7 @@ public class PgDialect : IDialect
         IHostListProviderService hostListProviderService,
         IPluginService pluginService) => new ConnectionStringHostListProvider(props, hostListProviderService);
 
-    public virtual bool IsDialect(IDbConnection conn)
+    public virtual async Task<bool> IsDialect(DbConnection conn)
     {
         try
         {
@@ -55,11 +58,11 @@ public class PgDialect : IDialect
                 return false;
             }
 
-            using IDbCommand command = conn.CreateCommand();
-            command.CommandText = "SELECT 1 FROM pg_catalog.pg_proc LIMIT 1";
-            using IDataReader reader = command.ExecuteReader();
+            await using var command = conn.CreateCommand();
+            command.CommandText = PGSelect1Query;
+            await using var reader = await command.ExecuteReaderAsync();
 
-            if (reader.Read())
+            if (await reader.ReadAsync())
             {
                 return true;
             }

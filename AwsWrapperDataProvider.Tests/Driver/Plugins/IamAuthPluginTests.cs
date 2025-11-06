@@ -54,19 +54,19 @@ public class IamAuthPluginTests
             utility => utility.GetCacheKey(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>()))
             .Returns((string user, string hostname, int port, string region) => GetCacheKey(user, hostname, port, region));
         this.mockIamTokenUtility.Setup(
-            utility => utility.GenerateAuthenticationToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<AWSCredentials?>()))
-            .Returns(() => this.iamTokenUtilityGeneratedToken);
+            utility => utility.GenerateAuthenticationTokenAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<AWSCredentials?>()))
+            .ReturnsAsync(() => this.iamTokenUtilityGeneratedToken);
 
         this.iamAuthPlugin = new(this.mockPluginService.Object, this.props, this.mockIamTokenUtility.Object);
         this.methodFunc = new Mock<ADONetDelegate<DbConnection>>();
-        this.methodFunc.Setup(f => f()).Returns(new Mock<DbConnection>().Object);
+        this.methodFunc.Setup(f => f()).Returns(Task.FromResult(new Mock<DbConnection>().Object));
     }
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void OpenConnection_WithNoCachedToken_GeneratesToken()
+    public async Task OpenConnection_WithNoCachedToken_GeneratesToken()
     {
-        _ = this.iamAuthPlugin.OpenConnection(this.hostSpec, this.props, true, this.methodFunc.Object);
+        _ = await this.iamAuthPlugin.OpenConnection(this.hostSpec, this.props, true, this.methodFunc.Object, true);
         Assert.Equal("generated-token", this.props[PropertyDefinition.Password.Name]);
         Assert.Equal(1, IamAuthPlugin.IamTokenCache.Count);
         Assert.Equal("generated-token", IamAuthPlugin.IamTokenCache.Get<string>(this.cacheKey));
@@ -74,11 +74,11 @@ public class IamAuthPluginTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void OpenConnection_WithCachedToken_UsesCachedToken()
+    public async Task OpenConnection_WithCachedToken_UsesCachedToken()
     {
         IamAuthPlugin.IamTokenCache.Set(this.cacheKey, "cached-token", TimeSpan.FromDays(999)); // doesn't expire
 
-        _ = this.iamAuthPlugin.OpenConnection(this.hostSpec, this.props, true, this.methodFunc.Object);
+        _ = await this.iamAuthPlugin.OpenConnection(this.hostSpec, this.props, true, this.methodFunc.Object, true);
 
         Assert.Equal("cached-token", this.props[PropertyDefinition.Password.Name]);
         Assert.Equal(1, IamAuthPlugin.IamTokenCache.Count);
@@ -94,7 +94,7 @@ public class IamAuthPluginTests
         // wait 200 milliseconds for token to expire
         await Task.Delay(200, TestContext.Current.CancellationToken);
 
-        _ = this.iamAuthPlugin.OpenConnection(this.hostSpec, this.props, true, this.methodFunc.Object);
+        _ = await this.iamAuthPlugin.OpenConnection(this.hostSpec, this.props, true, this.methodFunc.Object, true);
 
         Assert.Equal("generated-token", this.props[PropertyDefinition.Password.Name]);
         Assert.Equal(1, IamAuthPlugin.IamTokenCache.Count);
@@ -103,15 +103,15 @@ public class IamAuthPluginTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void OpenConnection_WithLoginErrorAndCachedToken_GeneratesToken()
+    public async Task OpenConnection_WithLoginErrorAndCachedToken_GeneratesToken()
     {
         IamAuthPlugin.IamTokenCache.Set(this.cacheKey, "cached-token", TimeSpan.FromDays(999)); // doesn't expire
         this.methodFunc.SetupSequence(f => f())
             .Throws(new Exception("Error"))
-            .Returns(new Mock<DbConnection>().Object);
+            .Returns(Task.FromResult(new Mock<DbConnection>().Object));
         this.mockPluginService.Setup(s => s.IsLoginException(It.IsAny<Exception>())).Returns(true);
 
-        _ = this.iamAuthPlugin.OpenConnection(this.hostSpec, this.props, true, this.methodFunc.Object);
+        _ = await this.iamAuthPlugin.OpenConnection(this.hostSpec, this.props, true, this.methodFunc.Object, true);
 
         Assert.Equal("generated-token", this.props[PropertyDefinition.Password.Name]);
         Assert.Equal(1, IamAuthPlugin.IamTokenCache.Count);

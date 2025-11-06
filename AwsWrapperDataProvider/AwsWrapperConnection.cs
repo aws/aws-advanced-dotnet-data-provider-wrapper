@@ -109,7 +109,7 @@ public class AwsWrapperConnection : DbConnection
 
         this.PluginManager.InitConnectionPluginChain(this.pluginService, this.ConnectionProperties);
 
-        this.pluginService.RefreshHostList();
+        this.pluginService.RefreshHostListAsync().GetAwaiter().GetResult();
         this.pluginService.SetCurrentConnection(
             connectionProvider.CreateDbConnection(
                 this.pluginService.Dialect,
@@ -138,7 +138,22 @@ public class AwsWrapperConnection : DbConnection
             this.PluginManager,
             this.pluginService.CurrentConnection!,
             "DbConnection.ChangeDatabase",
-            () => this.pluginService.CurrentConnection!.ChangeDatabase(databaseName),
+            () =>
+            {
+                this.pluginService.CurrentConnection!.ChangeDatabase(databaseName);
+                return Task.CompletedTask;
+            },
+            databaseName).GetAwaiter().GetResult();
+    }
+
+    public override Task ChangeDatabaseAsync(string databaseName, CancellationToken cancellationToken = default)
+    {
+        this.database = databaseName;
+        return WrapperUtils.RunWithPlugins(
+            this.PluginManager,
+            this.pluginService.CurrentConnection!,
+            "DbConnection.ChangeDatabaseAsync",
+            () => this.pluginService.CurrentConnection!.ChangeDatabaseAsync(databaseName),
             databaseName);
     }
 
@@ -148,10 +163,33 @@ public class AwsWrapperConnection : DbConnection
             this.PluginManager,
             this.pluginService.CurrentConnection!,
             "DbConnection.Close",
-            () => this.pluginService.CurrentConnection!.Close());
+            () =>
+            {
+                this.pluginService.CurrentConnection!.Close();
+                return Task.CompletedTask;
+            }).GetAwaiter().GetResult();
+    }
+
+    public override Task CloseAsync()
+    {
+        return WrapperUtils.RunWithPlugins(
+            this.PluginManager,
+            this.pluginService.CurrentConnection!,
+            "DbConnection.CloseAsync",
+            () => this.pluginService.CurrentConnection!.CloseAsync());
     }
 
     public override void Open()
+    {
+        this.OpenInternal(CancellationToken.None, false).GetAwaiter().GetResult();
+    }
+
+    public override Task OpenAsync(CancellationToken cancellationToken)
+    {
+        return this.OpenInternal(cancellationToken, true);
+    }
+
+    private async Task OpenInternal(CancellationToken cancellationToken, bool async)
     {
         if (this.State != ConnectionState.Closed)
         {
@@ -162,15 +200,18 @@ public class AwsWrapperConnection : DbConnection
         ArgumentNullException.ThrowIfNull(this.PluginManager);
         ArgumentNullException.ThrowIfNull(this.hostListProviderService);
 
-        this.PluginManager.InitHostProvider(this.connectionString, this.ConnectionProperties, this.hostListProviderService);
+        await this.PluginManager.InitHostProvider(this.connectionString, this.ConnectionProperties, this.hostListProviderService);
 
-        DbConnection connection = WrapperUtils.OpenWithPlugins(
+        var currentHostSpec = this.pluginService.CurrentHostSpec;
+
+        DbConnection connection = await WrapperUtils.OpenWithPlugins(
             this.PluginManager,
-            this.pluginService.InitialConnectionHostSpec,
+            currentHostSpec,
             this.ConnectionProperties,
-            true);
-        this.pluginService.SetCurrentConnection(connection, this.pluginService.InitialConnectionHostSpec);
-        this.pluginService.RefreshHostList();
+            true,
+            async);
+        this.pluginService.SetCurrentConnection(connection, currentHostSpec);
+        await this.pluginService.RefreshHostListAsync();
     }
 
     protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel)
@@ -183,8 +224,27 @@ public class AwsWrapperConnection : DbConnection
             this.PluginManager,
             this.pluginService.CurrentConnection,
             "DbConnection.BeginDbTransaction",
-            () => this.pluginService.CurrentConnection!.BeginTransaction(isolationLevel),
-            isolationLevel);
+            () => Task.FromResult(this.pluginService.CurrentConnection!.BeginTransaction(isolationLevel)),
+            isolationLevel)
+            .GetAwaiter().GetResult();
+
+        this.pluginService.CurrentTransaction = targetTransaction;
+        return new AwsWrapperTransaction(this, this.pluginService, this.PluginManager);
+    }
+
+    protected override async ValueTask<DbTransaction> BeginDbTransactionAsync(IsolationLevel isolationLevel, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(this.pluginService);
+        ArgumentNullException.ThrowIfNull(this.pluginService.CurrentConnection);
+        ArgumentNullException.ThrowIfNull(this.PluginManager);
+
+        DbTransaction targetTransaction = await WrapperUtils.ExecuteWithPlugins(
+            this.PluginManager,
+            this.pluginService.CurrentConnection,
+            "DbConnection.BeginDbTransactionAsync",
+            async () => await this.pluginService.CurrentConnection!.BeginTransactionAsync(isolationLevel, cancellationToken),
+            isolationLevel,
+            cancellationToken);
 
         this.pluginService.CurrentTransaction = targetTransaction;
         return new AwsWrapperTransaction(this, this.pluginService, this.PluginManager);
@@ -202,7 +262,8 @@ public class AwsWrapperConnection : DbConnection
             this.PluginManager,
             this.pluginService.CurrentConnection,
             "DbConnection.CreateCommand",
-            () => (TCommand)this.pluginService.CurrentConnection.CreateCommand());
+            () => Task.FromResult((TCommand)this.pluginService.CurrentConnection.CreateCommand()))
+            .GetAwaiter().GetResult();
         Logger.LogDebug("DbCommand created for DbConnection@{Id}", RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection));
 
         this.ConnectionProperties[PropertyDefinition.TargetCommandType.Name] = typeof(TCommand).AssemblyQualifiedName!;
@@ -217,6 +278,26 @@ public class AwsWrapperConnection : DbConnection
     {
         DbBatch batch = this.TargetDbConnection!.CreateBatch();
         return new AwsWrapperBatch(batch, this, this.PluginManager);
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            Logger.LogTrace("Disposing target db connection@{id}", RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection));
+            this.pluginService.CurrentConnection?.Dispose();
+            this.pluginService.SetCurrentConnection(null, null);
+        }
+    }
+
+    public override async ValueTask DisposeAsync()
+    {
+        if (this.pluginService.CurrentConnection is not null)
+        {
+            Logger.LogTrace("Disposing target db connection@{id}", RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection));
+            await this.pluginService.CurrentConnection.DisposeAsync().ConfigureAwait(false);
+            this.pluginService.SetCurrentConnection(null, null);
+        }
     }
 
     private Type GetTargetType(Dictionary<string, string> props)

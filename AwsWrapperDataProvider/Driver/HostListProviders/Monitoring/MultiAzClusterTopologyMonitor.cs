@@ -65,17 +65,18 @@ public class MultiAzClusterTopologyMonitor : ClusterTopologyMonitor
 
     protected override async Task<string?> GetWriterNodeIdAsync(DbConnection connection)
     {
+        await this.monitoringConnectionSemaphore.WaitAsync();
         try
         {
-            using (var command = connection.CreateCommand())
+            await using (var command = connection.CreateCommand())
             {
                 command.CommandText = this.fetchWriterNodeQuery;
                 await using var reader = await command.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
 
-                if (await reader.ReadAsync())
+                if (await reader.ReadAsync(this.ctsTopologyMonitoring.Token))
                 {
                     int columnIndex = reader.GetOrdinal(this.fetchWriterNodeColumnName);
-                    string? nodeId = reader.IsDBNull(columnIndex)
+                    string? nodeId = await reader.IsDBNullAsync(columnIndex, this.ctsTopologyMonitoring.Token)
                         ? null
                         : Convert.ToString(reader.GetValue(columnIndex), CultureInfo.InvariantCulture);
 
@@ -86,13 +87,13 @@ public class MultiAzClusterTopologyMonitor : ClusterTopologyMonitor
                 }
             }
 
-            using (var nodeIdCommand = connection.CreateCommand())
+            await using (var nodeIdCommand = connection.CreateCommand())
             {
                 nodeIdCommand.CommandText = this.nodeIdQuery;
-                using var reader = await nodeIdCommand.ExecuteReaderAsync();
-                if (reader.Read())
+                await using var reader = await nodeIdCommand.ExecuteReaderAsync();
+                if (await reader.ReadAsync(this.ctsTopologyMonitoring.Token))
                 {
-                    return reader.IsDBNull(0)
+                    return await reader.IsDBNullAsync(0, this.ctsTopologyMonitoring.Token)
                         ? null
                         : Convert.ToString(reader.GetValue(0), CultureInfo.InvariantCulture);
                 }
@@ -105,21 +106,25 @@ public class MultiAzClusterTopologyMonitor : ClusterTopologyMonitor
             Logger.LogTrace("Error getting writer node ID: {Error}", ex.Message);
             return null;
         }
+        finally
+        {
+            this.monitoringConnectionSemaphore.Release();
+        }
     }
 
     protected override async Task<string?> GetSuggestedWriterNodeIdAsync(DbConnection connection)
     {
         try
         {
-            using (var command = connection.CreateCommand())
+            await using (var command = connection.CreateCommand())
             {
                 command.CommandText = this.fetchWriterNodeQuery;
                 await using var reader = await command.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
 
-                if (await reader.ReadAsync())
+                if (await reader.ReadAsync(this.ctsTopologyMonitoring.Token))
                 {
                     int columnIndex = reader.GetOrdinal(this.fetchWriterNodeColumnName);
-                    string? nodeId = reader.IsDBNull(columnIndex)
+                    string? nodeId = await reader.IsDBNullAsync(columnIndex, this.ctsTopologyMonitoring.Token)
                         ? null
                         : Convert.ToString(reader.GetValue(columnIndex), CultureInfo.InvariantCulture);
 
@@ -130,13 +135,13 @@ public class MultiAzClusterTopologyMonitor : ClusterTopologyMonitor
                 }
             }
 
-            using (var nodeIdCommand = connection.CreateCommand())
+            await using (var nodeIdCommand = connection.CreateCommand())
             {
                 nodeIdCommand.CommandText = this.nodeIdQuery;
-                using var reader = await nodeIdCommand.ExecuteReaderAsync();
-                if (reader.Read())
+                await using var reader = await nodeIdCommand.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
+                if (await reader.ReadAsync(this.ctsTopologyMonitoring.Token))
                 {
-                    return reader.IsDBNull(0)
+                    return await reader.IsDBNullAsync(0, this.ctsTopologyMonitoring.Token)
                         ? null
                         : Convert.ToString(reader.GetValue(0), CultureInfo.InvariantCulture);
                 }

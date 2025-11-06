@@ -30,14 +30,15 @@ public class TestPluginOne : IConnectionPlugin
         this.calls = calls;
     }
 
-    public T Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, object[] methodArgs)
+    public async Task<T> Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, object[] methodArgs)
     {
+        await Task.Delay(10);
         this.calls.Add(this.GetType().Name + ":before");
 
         T result;
         try
         {
-            result = methodFunc();
+            result = await methodFunc();
         }
         catch (Exception e)
         {
@@ -46,6 +47,7 @@ public class TestPluginOne : IConnectionPlugin
             throw;
         }
 
+        await Task.Delay(10);
         this.calls.Add(this.GetType().Name + ":after");
 
         return result;
@@ -56,32 +58,32 @@ public class TestPluginOne : IConnectionPlugin
         throw new NotImplementedException();
     }
 
-    public virtual DbConnection OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
+    public virtual async Task<DbConnection> OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc, bool async)
     {
         this.calls.Add(this.GetType().Name + ":before open");
-        DbConnection connection = methodFunc();
+        DbConnection connection = await methodFunc();
         this.calls.Add(this.GetType().Name + ":after open");
         return connection;
     }
 
-    public virtual DbConnection ForceOpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
+    public virtual async Task<DbConnection> ForceOpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc, bool async)
     {
         this.calls.Add(this.GetType().Name + ":before open");
-        DbConnection connection = methodFunc();
+        DbConnection connection = await methodFunc();
         this.calls.Add(this.GetType().Name + ":after open");
         return connection;
     }
 
-    public DbConnection ForceConnect(HostSpec hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> forceConnectmethodFunc)
+    public async Task<DbConnection> ForceConnect(HostSpec hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> forceConnectmethodFunc)
     {
         this.calls.Add(this.GetType().Name + ":before forceConnect");
-        DbConnection result = forceConnectmethodFunc();
+        DbConnection result = await forceConnectmethodFunc();
         this.calls.Add(this.GetType().Name + ":after forceConnect");
         return result;
     }
 
-    public void InitHostProvider(string initialUrl, Dictionary<string, string> props, IHostListProviderService hostListProviderService, ADONetDelegate initHostProviderFunc)
+    public Task InitHostProvider(string initialUrl, Dictionary<string, string> props, IHostListProviderService hostListProviderService, ADONetDelegate initHostProviderFunc)
     {
-        // do nothing
+        return Task.CompletedTask;
     }
 }

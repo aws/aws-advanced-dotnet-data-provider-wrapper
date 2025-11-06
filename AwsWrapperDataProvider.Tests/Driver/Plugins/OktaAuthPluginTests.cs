@@ -64,44 +64,44 @@ public class OktaAuthPluginTests
         this.mockCredentials = new Mock<AWSCredentials>();
         this.mockCredentialsProviderFactory = new Mock<CredentialsProviderFactory>();
         this.mockCredentialsProviderFactory.Setup(
-            factory => factory.GetAwsCredentialsProvider(It.IsAny<string>(), It.IsAny<RegionEndpoint>(), It.IsAny<Dictionary<string, string>>()))
-            .Returns(new SimpleCredentialsProvider(this.mockCredentials.Object));
+            factory => factory.GetAwsCredentialsProviderAsync(It.IsAny<string>(), It.IsAny<RegionEndpoint>(), It.IsAny<Dictionary<string, string>>()))
+            .ReturnsAsync(new SimpleCredentialsProvider(this.mockCredentials.Object));
 
         this.mockTokenUtility = new Mock<ITokenUtility>();
         this.mockTokenUtility.Setup(
             utility => utility.GetCacheKey(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>()))
             .Returns((string user, string hostname, int port, string region) => CacheKey(user, hostname, port, region));
         this.mockTokenUtility.Setup(
-            utility => utility.GenerateAuthenticationToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<AWSCredentials?>()))
-            .Returns(() => this.iamTokenUtilityGeneratedToken);
+            utility => utility.GenerateAuthenticationTokenAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<AWSCredentials?>()))
+            .ReturnsAsync(() => this.iamTokenUtilityGeneratedToken);
 
         this.oktaAuthPlugin = new(this.mockPluginService.Object, this.props, this.mockCredentialsProviderFactory.Object, this.mockTokenUtility.Object);
 
-        this.methodFunc = () => new Mock<DbConnection>().Object;
+        this.methodFunc = () => Task.FromResult(new Mock<DbConnection>().Object);
     }
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void OpenConnection_WithNoCachedToken_GeneratesToken()
+    public async Task OpenConnection_WithNoCachedToken_GeneratesToken()
     {
         this.props[PropertyDefinition.DbUser.Name] = "db-user";
         this.iamTokenUtilityGeneratedToken = "generated-token";
 
-        _ = this.oktaAuthPlugin.OpenConnection(new HostSpec(Host, Port, HostRole.Writer, HostAvailability.Available), this.props, true, this.methodFunc);
+        _ = await this.oktaAuthPlugin.OpenConnection(new HostSpec(Host, Port, HostRole.Writer, HostAvailability.Available), this.props, true, this.methodFunc, true);
         Assert.Equal("db-user", this.props[PropertyDefinition.User.Name]);
         Assert.Equal("generated-token", this.props[PropertyDefinition.Password.Name]);
     }
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void OpenConnection_WithCachedToken_UsesCachedToken()
+    public async Task OpenConnection_WithCachedToken_UsesCachedToken()
     {
         OktaAuthPlugin.IamTokenCache.Set(CacheKey("db-user", Host, Port, Region), "cached-token", TimeSpan.FromDays(999)); // doesn't expire
 
         this.props[PropertyDefinition.DbUser.Name] = "db-user";
         this.iamTokenUtilityGeneratedToken = "incorrect-token";
 
-        _ = this.oktaAuthPlugin.OpenConnection(new HostSpec(Host, Port, HostRole.Writer, HostAvailability.Available), this.props, true, this.methodFunc);
+        _ = await this.oktaAuthPlugin.OpenConnection(new HostSpec(Host, Port, HostRole.Writer, HostAvailability.Available), this.props, true, this.methodFunc, true);
 
         Assert.Equal("db-user", this.props[PropertyDefinition.User.Name]);
         Assert.Equal("cached-token", this.props[PropertyDefinition.Password.Name]);
@@ -119,7 +119,7 @@ public class OktaAuthPluginTests
         this.props[PropertyDefinition.DbUser.Name] = "db-user";
         this.iamTokenUtilityGeneratedToken = "generated-token";
 
-        _ = this.oktaAuthPlugin.OpenConnection(new HostSpec(Host, Port, HostRole.Writer, HostAvailability.Available), this.props, true, this.methodFunc);
+        _ = await this.oktaAuthPlugin.OpenConnection(new HostSpec(Host, Port, HostRole.Writer, HostAvailability.Available), this.props, true, this.methodFunc, true);
 
         Assert.Equal("db-user", this.props[PropertyDefinition.User.Name]);
         Assert.Equal("generated-token", this.props[PropertyDefinition.Password.Name]);

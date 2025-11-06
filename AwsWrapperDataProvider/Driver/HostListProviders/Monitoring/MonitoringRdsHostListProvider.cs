@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data;
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -64,12 +63,12 @@ public class MonitoringRdsHostListProvider : RdsHostListProvider, IBlockingHostL
         ClearAll();
     }
 
-    public IList<HostSpec> ForceRefresh(bool shouldVerifyWriter, long timeoutMs)
+    public async Task<IList<HostSpec>> ForceRefreshAsync(bool shouldVerifyWriter, long timeoutMs)
     {
         IClusterTopologyMonitor monitor = Monitors.Get<IClusterTopologyMonitor>(this.ClusterId) ?? this.InitMonitor();
 
-        IList<HostSpec> hosts = monitor.ForceRefresh(shouldVerifyWriter, timeoutMs);
-        this.hostList = hosts.ToList();
+        IList<HostSpec> hosts = await monitor.ForceRefreshAsync(shouldVerifyWriter, timeoutMs);
+        this.hostList = [.. hosts];
         return this.hostList.AsReadOnly();
     }
 
@@ -95,13 +94,13 @@ public class MonitoringRdsHostListProvider : RdsHostListProvider, IBlockingHostL
             this.CreateCacheEntryOptions());
     }
 
-    internal override List<HostSpec>? QueryForTopology(IDbConnection connection)
+    internal override async Task<List<HostSpec>?> QueryForTopologyAsync(DbConnection connection)
     {
         // Get monitor with automatic expiration check (like Java's monitors.get with expiration)
         var monitor = Monitors.Get<IClusterTopologyMonitor>(this.ClusterId) ?? this.InitMonitor();
         try
         {
-            var topology = monitor.ForceRefreshAsync((DbConnection)connection, DefaultTopologyQueryTimeoutSec * 1000).GetAwaiter().GetResult();
+            var topology = await monitor.ForceRefreshAsync(connection, DefaultTopologyQueryTimeoutSec * 1000);
             return [.. topology];
         }
         catch (TimeoutException)
