@@ -77,7 +77,19 @@ public class DefaultConnectionPlugin(
         bool isInitialConnection,
         bool isForceOpen)
     {
-        DbConnection conn = connProvider.CreateDbConnection(this.pluginService.Dialect, this.pluginService.TargetConnectionDialect, hostSpec, props);
+        DbConnection? conn;
+
+        if (isInitialConnection && this.pluginService.CurrentConnection != null)
+        {
+            conn = this.pluginService.CurrentConnection;
+            conn.ConnectionString = this.pluginService.TargetConnectionDialect.PrepareConnectionString(this.pluginService.Dialect, hostSpec, props);
+            Logger.LogTrace("Reusing existing connection {Type}@{Id}.", conn.GetType().FullName, RuntimeHelpers.GetHashCode(conn));
+        }
+        else
+        {
+            conn = connProvider.CreateDbConnection(this.pluginService.Dialect, this.pluginService.TargetConnectionDialect, hostSpec, props);
+        }
+
         conn.Open();
 
         // TODO: Add configuration to skip ping check. (Not urgent)

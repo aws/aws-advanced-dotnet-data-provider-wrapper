@@ -182,11 +182,6 @@ public class DialectProvider
             {
                 Logger.LogError(ex, "Error testing dialect candidate {dialectCandidate}: {message}", dialectCandidate.FullName, ex.Message);
             }
-
-            if (connection.State == ConnectionState.Closed)
-            {
-                return currDialect;
-            }
         }
 
         Logger.LogDebug("Testing current dialect: {currentDialect}", currDialect.GetType().FullName);

@@ -384,16 +384,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             try
             {
                 newConnection = this.pluginService.ForceOpenConnection(this.initialHostSpec, this.properties, null);
-            }
-            catch (Exception ex) when (ex is DbException or EndOfStreamException)
-            {
-                LoggerUtils.LogWithThreadId(Logger, LogLevel.Warning, ex, "Unable to open monitoring connection.");
-                await this.DisposeConnectionAsync(newConnection);
-                return null;
-            }
 
-            try
-            {
                 if (Interlocked.CompareExchange(ref this.monitoringConnection, newConnection, null) == null)
                 {
                     LoggerUtils.LogWithThreadId(Logger, LogLevel.Trace, string.Format(Resources.ClusterTopologyMonitor_OpenedMonitoringConnection, RuntimeHelpers.GetHashCode(this.monitoringConnection), this.monitoringConnection.DataSource, this.initialHostSpec.Host));
@@ -424,7 +415,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                 // Don't close this connection - it's now the monitoring connection
                 newConnection = null;
             }
-            catch (DbException ex)
+            catch (Exception ex) when (ex is DbException or EndOfStreamException)
             {
                 // Suppress connection errors and continue
                 LoggerUtils.LogWithThreadId(Logger, LogLevel.Warning, ex, "DbException thrown during finding a monitoring connection, and ignored.");
