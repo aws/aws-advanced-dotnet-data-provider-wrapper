@@ -8,7 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AWSSDK.RDS" Version="4.0.10.7" />
+        <PackageReference Include="AWSSDK.RDS" Version="4.0.10" />
         <PackageReference Include="AWSSDK.SecurityToken" Version="4.0.3" />
     </ItemGroup>
 
@@ -32,6 +32,7 @@
     <PropertyGroup Condition=" '$(_IsPacking)' == 'true' ">
         <!-- NuGet packages -->
         <IsPackable>true</IsPackable>
+        <PackageId>AWS.AdvancedDotnetDataProviderWrapper.Plugin.FederatedAuth</PackageId>
         <PackageProjectUrl>https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/</PackageProjectUrl>
         <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
         <PackageReleaseNotes>See release notes at https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/releases</PackageReleaseNotes>
