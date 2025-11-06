@@ -35,7 +35,7 @@
     <PackageProjectUrl>https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/</PackageProjectUrl>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageReleaseNotes>See release notes at https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/releases</PackageReleaseNotes>
-    <PackageTags>AWS</PackageTags>
+    <PackageTags>AWS;ADO.NET;database;MySql;mysqlconnector</PackageTags>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper.git</RepositoryUrl>
   </PropertyGroup>

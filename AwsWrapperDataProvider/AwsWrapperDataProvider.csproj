@@ -50,7 +50,7 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <IncludePackageReadmeFile>true</IncludePackageReadmeFile>
     <PackageReleaseNotes>See release notes at https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/releases</PackageReleaseNotes>
-    <PackageTags>AWS</PackageTags>
+    <PackageTags>AWS;ADO.NET;database</PackageTags>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper.git</RepositoryUrl>
   </PropertyGroup>
