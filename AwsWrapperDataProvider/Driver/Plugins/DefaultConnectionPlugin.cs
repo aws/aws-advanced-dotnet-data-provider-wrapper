@@ -38,7 +38,7 @@ public class DefaultConnectionPlugin(
     private readonly IConnectionProvider? effectiveConnPrivider = effectiveConnProvider;
     private readonly IPluginService pluginService = pluginService;
 
-    public T Execute<T>(
+    public Task<T> Execute<T>(
         object methodInvokedOn,
         string methodName,
         ADONetDelegate<T> methodFunc,
@@ -48,34 +48,37 @@ public class DefaultConnectionPlugin(
         return methodFunc();
     }
 
-    public DbConnection OpenConnection(
+    public Task<DbConnection> OpenConnection(
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
-        ADONetDelegate<DbConnection> methodFunc)
+        ADONetDelegate<DbConnection> methodFunc,
+        bool async)
     {
-        return this.OpenInternal(hostSpec, props, this.defaultConnProvider, isInitialConnection, false);
+        return this.OpenInternal(hostSpec, props, this.defaultConnProvider, isInitialConnection, false, async);
     }
 
-    public DbConnection ForceOpenConnection(
+    public Task<DbConnection> ForceOpenConnection(
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
-        ADONetDelegate<DbConnection> methodFunc)
+        ADONetDelegate<DbConnection> methodFunc,
+        bool async)
     {
-        return this.OpenInternal(hostSpec, props, this.defaultConnProvider, isInitialConnection, true);
+        return this.OpenInternal(hostSpec, props, this.defaultConnProvider, isInitialConnection, true, async);
     }
 
     /// <summary>
     /// Internal connection opening logic that mirrors JDBC wrapper's connectInternal method.
     /// Creates a new connection using the connection provider.
     /// </summary>
-    private DbConnection OpenInternal(
+    private async Task<DbConnection> OpenInternal(
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         IConnectionProvider connProvider,
         bool isInitialConnection,
-        bool isForceOpen)
+        bool isForceOpen,
+        bool async)
     {
         DbConnection? conn;
 
@@ -90,7 +93,16 @@ public class DefaultConnectionPlugin(
             conn = connProvider.CreateDbConnection(this.pluginService.Dialect, this.pluginService.TargetConnectionDialect, hostSpec, props);
         }
 
-        conn.Open();
+        if (async)
+        {
+            await conn.OpenAsync();
+        }
+        else
+        {
+            conn.Open();
+        }
+
+        Logger.LogTrace("Connection {Type}@{Id} is opened with data source {ds}.", conn.GetType().FullName, RuntimeHelpers.GetHashCode(conn), conn.DataSource);
 
         // TODO: Add configuration to skip ping check. (Not urgent)
         // Ping to check if connection is actually alive.
@@ -102,9 +114,9 @@ public class DefaultConnectionPlugin(
                 (bool pingSuccess, Exception? pingException) = this.pluginService.TargetConnectionDialect.Ping(conn);
                 if (!pingSuccess)
                 {
-                    conn.Dispose();
+                    await conn.DisposeAsync();
                     conn = connProvider.CreateDbConnection(this.pluginService.Dialect, this.pluginService.TargetConnectionDialect, hostSpec, props);
-                    conn.Open();
+                    await conn.OpenAsync();
 
                     if (attempt == UpdateDialectMaxRetries)
                     {
@@ -120,7 +132,7 @@ public class DefaultConnectionPlugin(
 
         if (isInitialConnection)
         {
-            this.pluginService.UpdateDialect(conn);
+            await this.pluginService.UpdateDialectAsync(conn);
         }
 
         this.pluginService.SetAvailability(hostSpec!.AsAliases(), HostAvailability.Available);
@@ -128,12 +140,12 @@ public class DefaultConnectionPlugin(
         return conn;
     }
 
-    public void InitHostProvider(
+    public Task InitHostProvider(
         string initialUrl,
         Dictionary<string, string> props,
         IHostListProviderService hostListProviderService,
         ADONetDelegate initHostProviderFunc)
     {
-        // do nothing
+        return Task.CompletedTask;
     }
 }

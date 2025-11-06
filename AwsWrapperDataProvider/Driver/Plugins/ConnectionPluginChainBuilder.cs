@@ -102,7 +102,7 @@ public class ConnectionPluginChainBuilder
         }
 
         List<IConnectionPlugin> plugins = [
-            ..pluginFactories.Select(factory => factory.GetInstance(pluginService, props)),
+            .. pluginFactories.Select(factory => factory.GetInstance(pluginService, props)),
             new DefaultConnectionPlugin(pluginService, defaultConnectionProvider, effectiveConnectionProvider)
         ];
 

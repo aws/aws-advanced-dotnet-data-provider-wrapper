@@ -40,16 +40,21 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
         // Network-bound methods that might fail and trigger failover
         "DbConnection.Open",
         "DbConnection.OpenAsync",
+        "DbConnection.BeginDbTransaction",
+        "DbConnection.BeginDbTransactionAsync",
+
         "DbCommand.ExecuteNonQuery",
         "DbCommand.ExecuteNonQueryAsync",
         "DbCommand.ExecuteReader",
         "DbCommand.ExecuteReaderAsync",
         "DbCommand.ExecuteScalar",
         "DbCommand.ExecuteScalarAsync",
+
         "DbDataReader.Read",
         "DbDataReader.ReadAsync",
         "DbDataReader.NextResult",
         "DbDataReader.NextResultAsync",
+
         "DbTransaction.Commit",
         "DbTransaction.CommitAsync",
         "DbTransaction.Rollback",
@@ -67,11 +72,11 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
         this.isEnabled = PropertyDefinition.FailureDetectionEnabled.GetBoolean(props);
     }
 
-    public override T Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, params object[] methodArgs)
+    public override async Task<T> Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, params object[] methodArgs)
     {
         if (!this.isEnabled || !this.SubscribedMethods.Contains(methodName))
         {
-            return methodFunc();
+            return await methodFunc();
         }
 
         int failureDetectionTimeMillis = PropertyDefinition.FailureDetectionTime.GetInt(this.props) ?? DefaultFailureDetectionTime;
@@ -87,7 +92,7 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
         {
             Logger.LogTrace(Resources.EfmHostMonitor_ActivatedMonitoring);
 
-            HostSpec monitoringHostSpec = this.GetMonitoringHostSpec();
+            HostSpec monitoringHostSpec = await this.GetMonitoringHostSpec();
 
             monitorContext = this.monitorService!.StartMonitoring(
                 this.pluginService.CurrentConnection!,
@@ -97,7 +102,7 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
                 failureDetectionIntervalMillis,
                 failureDetectionCount);
 
-            result = methodFunc();
+            result = await methodFunc();
         }
         catch (Exception ex)
         {
@@ -118,19 +123,19 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
         return result;
     }
 
-    public override DbConnection OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
+    public override async Task<DbConnection> OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc, bool async)
     {
-        return this.ConnectInternal(hostSpec, methodFunc);
+        return await this.ConnectInternal(hostSpec, methodFunc);
     }
 
-    public override DbConnection ForceOpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
+    public override async Task<DbConnection> ForceOpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc, bool async)
     {
-        return this.ConnectInternal(hostSpec, methodFunc);
+        return await this.ConnectInternal(hostSpec, methodFunc);
     }
 
-    private DbConnection ConnectInternal(HostSpec? hostSpec, ADONetDelegate<DbConnection> methodFunc)
+    private async Task<DbConnection> ConnectInternal(HostSpec? hostSpec, ADONetDelegate<DbConnection> methodFunc)
     {
-        DbConnection conn = methodFunc();
+        DbConnection conn = await methodFunc();
 
         if (hostSpec != null)
         {
@@ -139,7 +144,7 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
             if (type.IsRdsCluster)
             {
                 hostSpec.ResetAliases();
-                this.pluginService.FillAliases(conn, hostSpec);
+                await this.pluginService.FillAliasesAsync(conn, hostSpec);
             }
         }
 
@@ -151,7 +156,7 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
         this.monitorService ??= new HostMonitorService(this.pluginService, this.props);
     }
 
-    public HostSpec GetMonitoringHostSpec()
+    public async Task<HostSpec> GetMonitoringHostSpec()
     {
         if (this.monitoringHostSpec == null)
         {
@@ -163,13 +168,13 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
                 if (rdsUrlType.IsRdsCluster)
                 {
                     Logger.LogTrace("Monitoring HostSpec is associated with a cluster endpoint, plugin needs to identify the cluster connection.");
-                    this.monitoringHostSpec = this.pluginService.IdentifyConnection(this.pluginService.CurrentConnection!, this.pluginService.CurrentTransaction);
+                    this.monitoringHostSpec = await this.pluginService.IdentifyConnectionAsync(this.pluginService.CurrentConnection!, this.pluginService.CurrentTransaction);
                     if (this.monitoringHostSpec == null)
                     {
                         throw new Exception("Unable to identify connection and gather monitoring host spec");
                     }
 
-                    this.pluginService.FillAliases(this.pluginService.CurrentConnection!, this.monitoringHostSpec, this.pluginService.CurrentTransaction);
+                    await this.pluginService.FillAliasesAsync(this.pluginService.CurrentConnection!, this.monitoringHostSpec, this.pluginService.CurrentTransaction);
                 }
             }
             catch (Exception ex)

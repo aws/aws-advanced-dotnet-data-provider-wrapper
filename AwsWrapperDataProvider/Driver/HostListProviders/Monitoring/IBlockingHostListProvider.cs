@@ -18,5 +18,5 @@ namespace AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 
 public interface IBlockingHostListProvider : IHostListProvider
 {
-    IList<HostSpec> ForceRefresh(bool shouldVerifyWriter, long timeoutMs);
+    Task<IList<HostSpec>> ForceRefreshAsync(bool shouldVerifyWriter, long timeoutMs);
 }

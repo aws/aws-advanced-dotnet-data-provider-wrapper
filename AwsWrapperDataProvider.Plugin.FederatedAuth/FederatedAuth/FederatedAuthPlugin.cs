@@ -52,17 +52,17 @@ public partial class FederatedAuthPlugin(IPluginService pluginService, Dictionar
         IamTokenCache.Clear();
     }
 
-    public override DbConnection OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
+    public override async Task<DbConnection> OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc, bool async)
     {
-        return this.ConnectInternal(hostSpec, props, methodFunc);
+        return await this.ConnectInternal(hostSpec, props, methodFunc);
     }
 
-    public override DbConnection ForceOpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
+    public override async Task<DbConnection> ForceOpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc, bool async)
     {
-        return this.ConnectInternal(hostSpec, props, methodFunc);
+        return await this.ConnectInternal(hostSpec, props, methodFunc);
     }
 
-    private DbConnection ConnectInternal(HostSpec? hostSpec, Dictionary<string, string> props, ADONetDelegate<DbConnection> methodFunc)
+    private async Task<DbConnection> ConnectInternal(HostSpec? hostSpec, Dictionary<string, string> props, ADONetDelegate<DbConnection> methodFunc)
     {
         SamlUtils.CheckIdpCredentialsWithFallback(PropertyDefinition.IdpUsername, PropertyDefinition.IdpPassword, props);
 
@@ -86,7 +86,7 @@ public partial class FederatedAuthPlugin(IPluginService pluginService, Dictionar
         }
         else
         {
-            this.UpdateAuthenticationToken(hostSpec, props, host, port, region, cacheKey, dbUser);
+            await this.UpdateAuthenticationTokenAsync(hostSpec, props, host, port, region, cacheKey, dbUser);
             isCachedToken = false;
         }
 
@@ -94,7 +94,7 @@ public partial class FederatedAuthPlugin(IPluginService pluginService, Dictionar
 
         try
         {
-            return methodFunc();
+            return await methodFunc();
         }
         catch (Exception ex)
         {
@@ -104,21 +104,21 @@ public partial class FederatedAuthPlugin(IPluginService pluginService, Dictionar
             }
 
             // should the token not work (login exception + is cached token), generate a new one and try again
-            this.UpdateAuthenticationToken(hostSpec, props, host, port, region, cacheKey, dbUser);
+            await this.UpdateAuthenticationTokenAsync(hostSpec, props, host, port, region, cacheKey, dbUser);
 
-            return methodFunc();
+            return await methodFunc();
         }
     }
 
-    private void UpdateAuthenticationToken(HostSpec? hostSpec, Dictionary<string, string> props, string host, int port, string region, string cacheKey, string dbUser)
+    private async Task UpdateAuthenticationTokenAsync(HostSpec? hostSpec, Dictionary<string, string> props, string host, int port, string region, string cacheKey, string dbUser)
     {
         int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? DefaultIamExpirationSeconds;
         RegionEndpoint regionEndpoint = RegionUtils.IsValidRegion(region) ? RegionEndpoint.GetBySystemName(region) : throw new Exception("Invalid region");
 
-        AWSCredentialsProvider credentialsProvider = this.credentialsFactory.GetAwsCredentialsProvider(host, regionEndpoint, props);
+        AWSCredentialsProvider credentialsProvider = await this.credentialsFactory.GetAwsCredentialsProviderAsync(host, regionEndpoint, props);
         AWSCredentials credentials = credentialsProvider.GetAWSCredentials();
 
-        string token = this.tokenUtility.GenerateAuthenticationToken(region, host, port, dbUser, credentials);
+        string token = await this.tokenUtility.GenerateAuthenticationTokenAsync(region, host, port, dbUser, credentials);
         props[PropertyDefinition.Password.Name] = token;
         IamTokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
     }

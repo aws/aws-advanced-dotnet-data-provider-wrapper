@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data;
+using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -33,7 +33,7 @@ public class AuroraMySqlDialect : MySqlDialect
 
     private static readonly string NodeIdQuery = "SELECT @@aurora_server_id, @@aurora_server_id";
 
-    private static readonly string IsDialectQuery = "SHOW VARIABLES LIKE 'aurora_version'";
+    internal static readonly string IsDialectQuery = "SHOW VARIABLES LIKE 'aurora_version'";
 
     private static readonly string IsWriterQuery = "SELECT SERVER_ID FROM information_schema.replica_host_status "
         + "WHERE SESSION_ID = 'MASTER_SESSION_ID' AND SERVER_ID = @@aurora_server_id";
@@ -42,14 +42,14 @@ public class AuroraMySqlDialect : MySqlDialect
         typeof(RdsMultiAzDbClusterMySqlDialect),
     ];
 
-    public override bool IsDialect(IDbConnection connection)
+    public override async Task<bool> IsDialect(DbConnection connection)
     {
         try
         {
-            using IDbCommand command = connection.CreateCommand();
+            await using var command = connection.CreateCommand();
             command.CommandText = IsDialectQuery;
-            using IDataReader reader = command.ExecuteReader();
-            return reader.Read();
+            await using var reader = await command.ExecuteReaderAsync();
+            return await reader.ReadAsync();
         }
         catch (Exception ex)
         {

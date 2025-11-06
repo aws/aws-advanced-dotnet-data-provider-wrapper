@@ -80,10 +80,14 @@ public class AwsWrapperDataSource : DbDataSource
 
     protected override void Dispose(bool disposing)
     {
+        if (disposing)
+        {
+            this.targetDataSource?.Dispose();
+        }
     }
 
-    protected override ValueTask DisposeAsyncCore()
+    protected override async ValueTask DisposeAsyncCore()
     {
-        return ValueTask.CompletedTask;
+        await this.targetDataSource.DisposeAsync().ConfigureAwait(false);
     }
 }

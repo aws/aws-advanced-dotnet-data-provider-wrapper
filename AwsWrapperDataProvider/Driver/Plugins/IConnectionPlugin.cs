@@ -38,7 +38,7 @@ public interface IConnectionPlugin
     /// <param name="methodArgs">The arguments to pass to the method.</param>
     /// <typeparam name="T">The return type of the method.</typeparam>
     /// <returns>The result of the method execution.</returns>
-    T Execute<T>(
+    Task<T> Execute<T>(
         object methodInvokedOn,
         string methodName,
         ADONetDelegate<T> methodFunc,
@@ -51,12 +51,14 @@ public interface IConnectionPlugin
     /// <param name="props">Connection properties.</param>
     /// <param name="isInitialConnection">Whether this is the initial connection.</param>
     /// <param name="methodFunc">The callable that executes the actual connection.</param>
+    /// <param name="async">True if calling OpenAsync, false if calling Open.</param>
     /// <returns>The created database connection.</returns>
-    DbConnection OpenConnection(
+    Task<DbConnection> OpenConnection(
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
-        ADONetDelegate<DbConnection> methodFunc);
+        ADONetDelegate<DbConnection> methodFunc,
+        bool async);
 
     /// <summary>
     /// Forces a connection to the given host using the given properties.
@@ -68,12 +70,14 @@ public interface IConnectionPlugin
     /// <param name="props">Connection properties.</param>
     /// <param name="isInitialConnection">Whether this is the initial connection.</param>
     /// <param name="methodFunc">The callable that executes the actual connection.</param>
+    /// <param name="async">True if calling OpenAsync, false if calling Open.</param>
     /// <returns>The created database connection.</returns>
-    DbConnection ForceOpenConnection(
+    Task<DbConnection> ForceOpenConnection(
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
-        ADONetDelegate<DbConnection> methodFunc);
+        ADONetDelegate<DbConnection> methodFunc,
+        bool async);
 
     /// <summary>
     /// Initializes the host provider.
@@ -82,7 +86,8 @@ public interface IConnectionPlugin
     /// <param name="props">Connection properties.</param>
     /// <param name="hostListProviderService">The host list provider service.</param>
     /// <param name="initHostProviderFunc">The function to initialize the host provider.</param>
-    void InitHostProvider(
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    Task InitHostProvider(
         string initialUrl,
         Dictionary<string, string> props,
         IHostListProviderService hostListProviderService,
@@ -94,9 +99,10 @@ public interface IConnectionPlugin
 /// </summary>
 /// <typeparam name="T">The return type.</typeparam>
 /// <returns>The method result.</returns>
-public delegate T ADONetDelegate<out T>();
+public delegate Task<T> ADONetDelegate<T>();
 
 /// <summary>
 /// Delegate for ADO.NET methods that don't return a value.
 /// </summary>
-public delegate void ADONetDelegate();
+/// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+public delegate Task ADONetDelegate();

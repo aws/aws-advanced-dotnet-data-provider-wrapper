@@ -71,13 +71,15 @@ public class EfmConnectivityIntegrationTests : IntegrationTestBase
         await EfmConnectivityTests.PerformEfmTest(connectionString, Endpoint, failureDetectionTime, failureDetectionInterval, failureDetectionCount);
     }
 
-    [Fact]
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
     [Trait("Engine", "multi-az-instance")]
-    public async Task EfmPluginTest_NetworkFailureDetection()
+    public async Task EfmPluginTest_NetworkFailureDetection(bool async)
     {
         int failureDelaySec = 10;
         int maxDurationsSec = 30;
@@ -94,7 +96,7 @@ public class EfmConnectivityIntegrationTests : IntegrationTestBase
             DatabaseEngine.PG => new AwsWrapperConnection<NpgsqlConnection>(connectionString),
             _ => throw new NotSupportedException($"Unsupported engine: {Engine}"),
         };
-        connection.Open();
+        await AuroraUtils.OpenDbConnection(connection, async);
         Assert.Equal(ConnectionState.Open, connection.State);
 
         using var command = connection.CreateCommand();
@@ -105,12 +107,12 @@ public class EfmConnectivityIntegrationTests : IntegrationTestBase
         await Task.WhenAll([
             AuroraUtils.SimulateTemporaryFailureTask(instanceId, TimeSpan.FromSeconds(failureDelaySec), TimeSpan.FromSeconds(maxDurationsSec), tcs),
 
-            Task.Run(() =>
+            Task.Run(async () =>
             {
                 var stopwatch = Stopwatch.StartNew();
                 try
                 {
-                    command.ExecuteScalar();
+                    await AuroraUtils.ExecuteScalar(command, async);
                     Assert.Fail("Sleep query should have failed");
                 }
                 catch (DbException)

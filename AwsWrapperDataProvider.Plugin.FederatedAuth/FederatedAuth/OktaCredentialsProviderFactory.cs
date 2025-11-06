@@ -43,7 +43,7 @@ public partial class OktaCredentialsProviderFactory(IPluginService pluginService
     private static readonly ILogger<OktaCredentialsProviderFactory> Logger = LoggerUtils.GetLogger<OktaCredentialsProviderFactory>();
     private readonly IPluginService pluginService = pluginService;
 
-    private static string GetSessionToken(HttpClient httpClient, Dictionary<string, string> props)
+    private static async Task<string> GetSessionTokenAsync(HttpClient httpClient, Dictionary<string, string> props)
     {
         string idpHost = PropertyDefinition.IdpEndpoint.GetString(props) ?? throw new Exception("IDP Endpoint not provided.");
         string idpUser = PropertyDefinition.IdpUsername.GetString(props) ?? throw new Exception("IDP Username not provided.");
@@ -56,14 +56,14 @@ public partial class OktaCredentialsProviderFactory(IPluginService pluginService
             string requestBody = $"{{\"username\":\"{idpUser}\",\"password\":\"{idpPassword}\"}}";
             HttpContent content = new StringContent(requestBody, Encoding.UTF8, "application/json");
 
-            HttpResponseMessage resp = httpClient.PostAsync(sessionTokenEndpoint, content).GetAwaiter().GetResult();
+            HttpResponseMessage resp = await httpClient.PostAsync(sessionTokenEndpoint, content);
 
             if (!resp.IsSuccessStatusCode)
             {
                 throw new Exception("OKTA session token request failed: " + resp.ToString());
             }
 
-            string responseJson = resp.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+            string responseJson = await resp.Content.ReadAsStringAsync();
 
             Match match = SessionTokenPattern().Match(responseJson);
 
@@ -89,13 +89,13 @@ public partial class OktaCredentialsProviderFactory(IPluginService pluginService
         return baseUri;
     }
 
-    public override string GetSamlAssertion(Dictionary<string, string> props)
+    public override async Task<string> GetSamlAssertionAsync(Dictionary<string, string> props)
     {
         try
         {
             int connectionTimeoutMs = PropertyDefinition.HttpClientConnectTimeout.GetInt(props) ?? FederatedAuthPlugin.DefaultHttpTimeoutMs;
-            HttpClient httpClient = HttpClientFactory.GetDisposableHttpClient(connectionTimeoutMs);
-            string sessionToken = GetSessionToken(httpClient, props);
+            using HttpClient httpClient = HttpClientFactory.GetDisposableHttpClient(connectionTimeoutMs);
+            string sessionToken = await GetSessionTokenAsync(httpClient, props);
             string baseUri = GetSamlUrl(props);
 
             // construct a new URI using the base URI and the session token
@@ -106,14 +106,14 @@ public partial class OktaCredentialsProviderFactory(IPluginService pluginService
 
             string samlRequestUri = uriBuilder.ToString();
 
-            HttpResponseMessage resp = httpClient.GetAsync(samlRequestUri).GetAwaiter().GetResult();
+            HttpResponseMessage resp = await httpClient.GetAsync(samlRequestUri);
 
             if (!resp.IsSuccessStatusCode)
             {
                 throw new Exception("OKTA SAML request failed: " + resp.ToString());
             }
 
-            string responseHtml = resp.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+            string responseHtml = await resp.Content.ReadAsStringAsync();
 
             MatchCollection matches = SamlResponseTagPattern().Matches(responseHtml);
 

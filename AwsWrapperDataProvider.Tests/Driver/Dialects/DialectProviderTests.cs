@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data;
 using System.Data.Common;
+using Apps72.Dev.Data.DbMocker;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.Exceptions;
@@ -28,13 +28,9 @@ namespace AwsWrapperDataProvider.Tests.Driver.Dialects;
 
 public class DialectProviderTests
 {
+    private readonly MockDbConnection mockConnection;
     private readonly Mock<PluginService> mockPluginService;
     private readonly DialectProvider dialectProvider;
-
-    private readonly Mock<IDbConnection> mockConnection;
-    private readonly Mock<IDbCommand> mockCommand;
-    private readonly Mock<IDataReader> mockReader;
-
     private readonly Dictionary<string, string> defaultProps = new();
 
     public DialectProviderTests()
@@ -43,14 +39,8 @@ public class DialectProviderTests
         this.mockPluginService.Object.InitialConnectionHostSpec = new HostSpecBuilder().WithHost("anyHost").Build();
         this.dialectProvider = new DialectProvider(this.mockPluginService.Object, this.defaultProps);
 
-        this.mockConnection = new Mock<IDbConnection>();
-        this.mockConnection.SetupAllProperties();
-        this.mockConnection.Object.ConnectionString = "anyHost";
-        this.mockConnection.Setup(conn => conn.State).Returns(ConnectionState.Open);
-        this.mockCommand = new Mock<IDbCommand>();
-        this.mockReader = new Mock<IDataReader>();
-        this.mockConnection.Setup(c => c.CreateCommand()).Returns(this.mockCommand.Object);
-        this.mockCommand.Setup(c => c.ExecuteReader()).Returns(this.mockReader.Object);
+        this.mockConnection = new MockDbConnection();
+        this.mockConnection.Open();
     }
 
     public static TheoryData<Dictionary<string, string>, Type> GuessDialectTestData =>
@@ -113,172 +103,124 @@ public class DialectProviderTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void UpdateDialect_PgToRdsPg()
+    public async Task UpdateDialect_PgToRdsPg()
     {
-        string query = string.Empty;
-        this.mockCommand.SetupSet(c => c.CommandText = It.IsAny<string>()).Callback<string>(commandText => query = commandText);
-        this.mockReader.Setup(reader => reader.Read()).Returns(() => query switch
-        {
-            "SELECT 1 FROM pg_catalog.pg_proc LIMIT 1" => true,
-            "SELECT (setting LIKE '%rds_tools%') AS rds_tools, (setting LIKE '%aurora_stat_utils%') AS aurora_stat_utils FROM pg_catalog.pg_settings WHERE name OPERATOR(pg_catalog.=) 'rds.extensions'" => true,
-            _ => false,
-        });
-        this.mockReader.Setup(reader => reader.GetOrdinal("rds_tools")).Returns(0);
-        this.mockReader.Setup(reader => reader.GetBoolean(0)).Returns(true);
-        this.mockReader.Setup(reader => reader.GetOrdinal("aurora_stat_utils")).Returns(1);
-        this.mockReader.Setup(reader => reader.GetBoolean(1)).Returns(false);
-
+        this.mockConnection.Mocks
+            .When(cmd => cmd.CommandText == PgDialect.PGSelect1Query)
+            .ReturnsTable(MockTable.WithColumns("?column?").AddRow(1));
+        this.mockConnection.Mocks
+            .When(cmd => cmd.CommandText == RdsPgDialect.ExtensionsSql)
+            .ReturnsTable(MockTable.WithColumns("rds_tools", "aurora_stat_utils").AddRow(true, false));
         var initialDialect = new PgDialect();
-        var dialectProvider = new DialectProvider(this.mockPluginService.Object, this.defaultProps);
-        var updatedDialect = dialectProvider.UpdateDialect(this.mockConnection.Object, initialDialect);
+        var updatedDialect = await this.dialectProvider.UpdateDialectAsync(this.mockConnection, initialDialect);
         Assert.IsType<RdsPgDialect>(updatedDialect);
-        this.mockConnection.Verify(c => c.CreateCommand(), Times.Exactly(5));
     }
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void UpdateDialect_WithNoMatchingDialectCandidate_ReturnsOriginalDialect()
+    public async Task UpdateDialect_WithNoMatchingDialectCandidate_ReturnsOriginalDialect()
     {
-        this.mockReader.Setup(r => r.Read()).Returns(false);
-
         var initialDialectMock = new Mock<IDialect>();
         initialDialectMock.Setup(d => d.DialectUpdateCandidates).Returns(
         [
             typeof(AuroraPgDialect),
             typeof(PgDialect),
         ]);
-        initialDialectMock.Setup(d => d.IsDialect(this.mockConnection.Object)).Returns(true);
-
-        var dialectProvider = new DialectProvider(this.mockPluginService.Object, this.defaultProps);
-        var updatedDialect = dialectProvider.UpdateDialect(this.mockConnection.Object, initialDialectMock.Object);
+        initialDialectMock.Setup(d => d.IsDialect(this.mockConnection)).ReturnsAsync(true);
+        var updatedDialect = await this.dialectProvider.UpdateDialectAsync(this.mockConnection, initialDialectMock.Object);
 
         Assert.Same(initialDialectMock.Object, updatedDialect);
-        this.mockConnection.Verify(c => c.CreateCommand(), Times.AtLeastOnce);
     }
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void UpdateDialect_WithUnknownDialect_ThrowsArgumentException()
+    public async Task UpdateDialect_WithUnknownDialect_ThrowsArgumentException()
     {
         var unknownDialect = new UnknownDialect();
 
-        var dialectProvider = new DialectProvider(this.mockPluginService.Object, this.defaultProps);
-        Assert.Throws<ArgumentException>(() =>
-            dialectProvider.UpdateDialect(this.mockConnection.Object, unknownDialect));
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            this.dialectProvider.UpdateDialectAsync(this.mockConnection, unknownDialect));
     }
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void UpdateDialect_WithUnknownDialect_ReturnsMysqlDialect()
+    public async Task UpdateDialect_WithUnknownDialect_ReturnsMysqlDialect()
     {
-        string query = string.Empty;
-        this.mockCommand.SetupSet(c => c.CommandText = It.IsAny<string>()).Callback<string>(commandText => query = commandText);
-        this.mockReader.Setup(r => r.Read()).Returns(() => query switch
-            {
-                "SHOW VARIABLES LIKE 'version_comment'" => true,
-                _ => false,
-            });
-        this.mockReader.Setup(r => r.FieldCount).Returns(1);
-        this.mockReader.Setup(r => r.GetString(0)).Returns("MySQL Community Server (GPL)");
+        this.mockConnection.Mocks
+            .When(cmd => cmd.CommandText == new MySqlDialect().ServerVersionQuery)
+            .ReturnsTable(MockTable.WithColumns("Variable_name", "Value").AddRow("version_comment", "MySQL Community Server (GPL)"));
+
         var unknownDialect = new UnknownDialect();
 
-        var dialectProvider = new DialectProvider(this.mockPluginService.Object, this.defaultProps);
-        var updatedDialect = dialectProvider.UpdateDialect(this.mockConnection.Object, unknownDialect);
+        var updatedDialect = await this.dialectProvider.UpdateDialectAsync(this.mockConnection, unknownDialect);
         Assert.IsType<MySqlDialect>(updatedDialect);
     }
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void UpdateDialect_WithMysqlDialect_ReturnsAuroraMysqlDialect()
+    public async Task UpdateDialect_WithMysqlDialect_ReturnsAuroraMysqlDialect()
     {
-        string query = string.Empty;
-        this.mockCommand.SetupSet(c => c.CommandText = It.IsAny<string>()).Callback<string>(commandText => query = commandText);
-        this.mockReader.Setup(r => r.Read()).Returns(() => query switch
-        {
-            "SHOW VARIABLES LIKE 'aurora_version'" => true,
-            _ => false,
-        });
-        this.mockReader.Setup(r => r.FieldCount).Returns(1);
-        this.mockReader.Setup(r => r.GetString(0)).Returns("Source distribution");
+        this.mockConnection.Mocks
+            .When(cmd => cmd.CommandText == new MySqlDialect().ServerVersionQuery)
+            .ReturnsTable(MockTable.WithColumns("Variable_name", "Value").AddRow("version_comment", "Source distribution"));
+
+        this.mockConnection.Mocks
+            .When(cmd => cmd.CommandText == AuroraMySqlDialect.IsDialectQuery)
+            .ReturnsTable(MockTable.WithColumns("Variable_name", "Value").AddRow("aurora_version", "3.08.2"));
 
         var mysqlDialect = new MySqlDialect();
 
-        var dialectProvider = new DialectProvider(this.mockPluginService.Object, this.defaultProps);
-        var updatedDialect = dialectProvider.UpdateDialect(this.mockConnection.Object, mysqlDialect);
+        var updatedDialect = await this.dialectProvider.UpdateDialectAsync(this.mockConnection, mysqlDialect);
 
         Assert.IsType<AuroraMySqlDialect>(updatedDialect);
-        this.mockConnection.Verify(c => c.CreateCommand(), Times.Exactly(2)); // Updated to account for RdsMultiAzDbClusterListProvider check
     }
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void UpdateDialect_CalledTwice_UpdateOnce()
+    public async Task UpdateDialect_CalledTwice_UpdateOnce()
     {
-        string query = string.Empty;
-        this.mockCommand.SetupSet(c => c.CommandText = It.IsAny<string>()).Callback<string>(commandText => query = commandText);
-        this.mockReader.Setup(r => r.Read()).Returns(() => query switch
-        {
-            "SHOW VARIABLES LIKE 'aurora_version'" => true,
-            _ => false,
-        });
-        this.mockReader.Setup(r => r.FieldCount).Returns(1);
-        this.mockReader.Setup(r => r.GetString(0)).Returns("Source distribution");
+        this.mockConnection.Mocks
+            .When(cmd => cmd.CommandText == new MySqlDialect().ServerVersionQuery)
+            .ReturnsTable(MockTable.WithColumns("Variable_name", "Value").AddRow("version_comment", "Source distribution"));
+
+        this.mockConnection.Mocks
+            .When(cmd => cmd.CommandText == AuroraMySqlDialect.IsDialectQuery)
+            .ReturnsTable(MockTable.WithColumns("Variable_name", "Value").AddRow("aurora_version", "3.08.2"));
 
         var mysqlDialect = new MySqlDialect();
 
-        this.dialectProvider.UpdateDialect(this.mockConnection.Object, mysqlDialect);
-        var updatedDialect = this.dialectProvider.UpdateDialect(this.mockConnection.Object, mysqlDialect);
-
+        var updatedDialect = await this.dialectProvider.UpdateDialectAsync(this.mockConnection, mysqlDialect);
+        Assert.False(this.dialectProvider.CanUpdate);
         Assert.IsType<AuroraMySqlDialect>(updatedDialect);
-        this.mockConnection.Verify(c => c.CreateCommand(), Times.Exactly(2)); // Should only update one iteration
+
+        updatedDialect = await this.dialectProvider.UpdateDialectAsync(this.mockConnection, mysqlDialect);
+        Assert.IsType<AuroraMySqlDialect>(updatedDialect);
     }
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void UpdateDialect_WithMysqlDialect_ReturnsRdsMysqlDialect()
+    public async Task UpdateDialect_WithMysqlDialect_ReturnsRdsMysqlDialect()
     {
-        var returnSequence = new List<bool>([true, false]);
-        int returnIndex = 0;
-        string query = string.Empty;
-        this.mockCommand.SetupSet(c => c.CommandText = It.IsAny<string>()).Callback<string>(commandText => query = commandText);
-        this.mockReader.Setup(r => r.Read()).Returns(() =>
-        {
-            switch (query)
-            {
-                case "SHOW VARIABLES LIKE 'version_comment'":
-                    {
-                        var result = returnSequence[returnIndex];
-                        returnIndex = (returnIndex + 1) % returnSequence.Count;
-                        return result;
-                    }
-
-                default:
-                    return false;
-            }
-        });
-        this.mockReader.Setup(r => r.FieldCount).Returns(1);
-        this.mockReader.Setup(r => r.GetString(0)).Returns("Source distribution");
+        this.mockConnection.Mocks
+            .When(cmd => cmd.CommandText == new MySqlDialect().ServerVersionQuery)
+            .ReturnsTable(MockTable.WithColumns("Variable_name", "Value").AddRow("version_comment", "Source distribution"));
 
         var mysqlDialect = new MySqlDialect();
 
-        var dialectProvider = new DialectProvider(this.mockPluginService.Object, this.defaultProps);
-        var updatedDialect = dialectProvider.UpdateDialect(this.mockConnection.Object, mysqlDialect);
+        var updatedDialect = await this.dialectProvider.UpdateDialectAsync(this.mockConnection, mysqlDialect);
 
         Assert.IsType<RdsMySqlDialect>(updatedDialect);
-        this.mockConnection.Verify(c => c.CreateCommand(), Times.Exactly(4));
     }
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void UpdateDialect_CannotUpdate_ReturnsSameDialect()
+    public async Task UpdateDialect_CannotUpdate_ReturnsSameDialect()
     {
-        this.mockCommand.Setup(c => c.ExecuteReader()).Throws(new MockDbException());
+        this.mockConnection.Mocks.WhenAny().ThrowsException(new MockDbException());
 
         var mysqlDialect = new MySqlDialect();
-        var dialectProvider = new DialectProvider(this.mockPluginService.Object, this.defaultProps);
-        var updatedDialect = dialectProvider.UpdateDialect(this.mockConnection.Object, mysqlDialect);
+        var updatedDialect = await this.dialectProvider.UpdateDialectAsync(this.mockConnection, mysqlDialect);
         Assert.IsType<MySqlDialect>(updatedDialect);
-        this.mockConnection.Verify(c => c.CreateCommand(), Times.AtLeastOnce);
     }
 
     // Custom dialect class for testing
@@ -292,7 +234,7 @@ public class DialectProviderTests
 
         public IExceptionHandler ExceptionHandler => new GenericExceptionHandler();
 
-        public bool IsDialect(IDbConnection conn) => true;
+        public Task<bool> IsDialect(DbConnection conn) => Task.FromResult(true);
 
         public void PrepareConnectionProperties(Dictionary<string, string> props, HostSpec hostSpec)
         {

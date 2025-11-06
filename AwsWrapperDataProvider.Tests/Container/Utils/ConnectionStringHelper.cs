@@ -49,6 +49,7 @@ public class ConnectionStringHelper
 
                 mySqlConnectionStringBuilder.DefaultCommandTimeout = (uint)commandTimeout;
                 mySqlConnectionStringBuilder.ConnectionTimeout = (uint)connectionTimeout;
+
                 url = mySqlConnectionStringBuilder.ConnectionString;
                 break;
             case DatabaseEngine.PG:

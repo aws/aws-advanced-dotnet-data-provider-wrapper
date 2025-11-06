@@ -18,7 +18,6 @@ using System.Data.Common;
 using System.Diagnostics;
 using System.Globalization;
 using System.Net;
-using System.Net.NetworkInformation;
 using Amazon;
 using Amazon.RDS;
 using Amazon.RDS.Model;
@@ -171,7 +170,7 @@ public class AuroraTestUtils
         }
 
         var tasks = new List<Task>();
-        var cts = new CancellationTokenSource(timeout);
+        using var cts = new CancellationTokenSource(timeout);
 
         foreach (var instance in instances)
         {
@@ -185,7 +184,7 @@ public class AuroraTestUtils
                 {
                     try
                     {
-                        using var connection = DriverHelper.CreateUnopenedConnection(engine, url);
+                        await using var connection = DriverHelper.CreateUnopenedConnection(engine, url);
                         await connection.OpenAsync(cts.Token);
                         if (connection.State == ConnectionState.Open)
                         {
@@ -796,11 +795,20 @@ public class AuroraTestUtils
         };
     }
 
-    public string ExecuteQuery(IDbConnection connection, DatabaseEngine engine, DatabaseEngineDeployment deployment, string query)
+    public async Task<string> ExecuteQuery(DbConnection connection, DatabaseEngine engine, DatabaseEngineDeployment deployment, string query, bool async)
     {
-        using var command = connection.CreateCommand();
+        await using var command = connection.CreateCommand();
         command.CommandText = query;
-        var result = Convert.ToString(command.ExecuteScalar());
+        string? result;
+        if (async)
+        {
+            result = Convert.ToString(await command.ExecuteScalarAsync(TestContext.Current.CancellationToken));
+        }
+        else
+        {
+            result = Convert.ToString(command.ExecuteScalar());
+        }
+
         if (result == null)
         {
             throw new InvalidOperationException("Failed to retrieve instance ID.");
@@ -810,17 +818,50 @@ public class AuroraTestUtils
         return result;
     }
 
-    public string ExecuteInstanceIdQuery(IDbConnection connection, DatabaseEngine engine, DatabaseEngineDeployment deployment)
+    public async Task<string?> ExecuteInstanceIdQuery(DbConnection connection, DatabaseEngine engine, DatabaseEngineDeployment deployment, bool async)
     {
-        return this.ExecuteQuery(connection, engine, deployment, this.GetInstanceIdSql(engine, deployment));
+        try
+        {
+            return await this.ExecuteQuery(connection, engine, deployment, this.GetInstanceIdSql(engine, deployment), async);
+        }
+        catch (NotSupportedException ex)
+        {
+            Console.WriteLine("[Warning] error thrown when executing instance id query: ", ex);
+            return await Task.FromResult<string?>(null);
+        }
     }
 
-    public string? QueryInstanceId(IDbConnection connection)
+    public async Task OpenDbConnection(DbConnection connection, bool async)
+    {
+        if (async)
+        {
+            await connection.OpenAsync(TestContext.Current.CancellationToken);
+        }
+        else
+        {
+            connection.Open();
+        }
+    }
+
+    public async Task<object?> ExecuteScalar(DbCommand command, bool async)
+    {
+        if (async)
+        {
+            return await command.ExecuteScalarAsync(TestContext.Current.CancellationToken);
+        }
+        else
+        {
+            return command.ExecuteScalar();
+        }
+    }
+
+    public string? QueryInstanceId(DbConnection connection)
     {
         return this.ExecuteInstanceIdQuery(
             connection,
             TestEnvironment.Env.Info.Request.Engine,
-            TestEnvironment.Env.Info.Request.Deployment);
+            TestEnvironment.Env.Info.Request.Deployment,
+            async: false).GetAwaiter().GetResult();
     }
 
     public string GetSleepSql(DatabaseEngine engine, int seconds)

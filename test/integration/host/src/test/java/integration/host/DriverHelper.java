@@ -24,7 +24,7 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import org.postgresql.PGProperty;
-import org.testcontainers.shaded.org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 
 public class DriverHelper {
 

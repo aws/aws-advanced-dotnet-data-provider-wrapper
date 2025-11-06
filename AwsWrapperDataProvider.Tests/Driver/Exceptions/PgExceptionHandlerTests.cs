@@ -12,10 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 using AwsWrapperDataProvider.Driver.Exceptions;
 using Npgsql;
-using Xunit;
 
 namespace AwsWrapperDataProvider.Tests.Driver.Exceptions
 {

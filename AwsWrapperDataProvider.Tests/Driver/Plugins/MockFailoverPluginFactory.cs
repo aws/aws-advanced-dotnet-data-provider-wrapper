@@ -28,8 +28,8 @@ internal class MockFailoverPluginFactory : IConnectionPluginFactory
     public IConnectionPlugin GetInstance(IPluginService pluginService, Dictionary<string, string> props)
     {
         var mock = new Mock<FailoverPlugin>(pluginService, props) { CallBase = true };
-        mock.Setup(m => m.OpenConnection(It.IsAny<HostSpec>(), It.IsAny<Dictionary<string, string>>(), It.IsAny<bool>(), It.IsAny<ADONetDelegate<DbConnection>>()))
-            .Returns(new MySqlConnection());
+        mock.Setup(m => m.OpenConnection(It.IsAny<HostSpec>(), It.IsAny<Dictionary<string, string>>(), It.IsAny<bool>(), It.IsAny<ADONetDelegate<DbConnection>>(), It.IsAny<bool>()))
+            .ReturnsAsync(new MySqlConnection());
         return mock.Object;
     }
 }

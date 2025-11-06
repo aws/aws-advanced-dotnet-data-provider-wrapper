@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data;
+using System.Data.Common;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using AwsWrapperDataProvider.Driver.HostInfo;
@@ -53,7 +53,7 @@ public class RdsMultiAzDbClusterPgDialect : PgDialect
     private static readonly string IsReaderQuery =
         "SELECT pg_catalog.pg_is_in_recovery()";
 
-    public override bool IsDialect(IDbConnection connection)
+    public override async Task<bool> IsDialect(DbConnection connection)
     {
         Logger.LogDebug("RdsMultiAzDbClusterPgDialect.IsDialect() called with connection state = {State}, type = {Type}@{Id}, Database = {Database}",
             connection.State,
@@ -67,7 +67,7 @@ public class RdsMultiAzDbClusterPgDialect : PgDialect
             using (var command = connection.CreateCommand())
             {
                 command.CommandText = HasRdsToolsExtensionQuery;
-                var existsObject = command.ExecuteScalar();
+                var existsObject = await command.ExecuteScalarAsync();
                 var hasRdsTools = existsObject is bool b ? b : Convert.ToBoolean(existsObject, CultureInfo.InvariantCulture);
                 if (!hasRdsTools)
                 {
@@ -80,8 +80,8 @@ public class RdsMultiAzDbClusterPgDialect : PgDialect
             using (var command = connection.CreateCommand())
             {
                 command.CommandText = IsRdsClusterQuery;
-                using var reader = command.ExecuteReader();
-                return reader.Read() && !reader.IsDBNull(0);
+                await using var reader = await command.ExecuteReaderAsync();
+                return await reader.ReadAsync() && !(await reader.IsDBNullAsync(0));
             }
         }
         catch (Exception ex)
