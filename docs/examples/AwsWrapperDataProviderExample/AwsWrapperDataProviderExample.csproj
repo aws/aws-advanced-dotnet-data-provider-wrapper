@@ -16,6 +16,8 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\..\AwsWrapperDataProvider.Plugin.FederatedAuth\AwsWrapperDataProvider.Plugin.FederatedAuth.csproj" />
+      <ProjectReference Include="..\..\..\AwsWrapperDataProvider.Plugin.Iam\AwsWrapperDataProvider.Plugin.Iam.csproj" />
       <ProjectReference Include="..\..\..\AwsWrapperDataProvider\AwsWrapperDataProvider.csproj" />
     </ItemGroup>
 

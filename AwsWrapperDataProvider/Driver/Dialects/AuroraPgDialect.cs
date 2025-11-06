@@ -91,7 +91,7 @@ public class AuroraPgDialect : PgDialect
     private HostListProviderSupplier GetHostListProviderSupplier()
     {
         return (props, hostListProviderService, pluginService) =>
-            PropertyDefinition.Plugins.GetString(props)!.Contains("failover") ?
+            (PropertyDefinition.Plugins.GetString(props) ?? DefaultPluginCodes).Contains("failover") ?
                 new MonitoringRdsHostListProvider(
                     props,
                     hostListProviderService,
