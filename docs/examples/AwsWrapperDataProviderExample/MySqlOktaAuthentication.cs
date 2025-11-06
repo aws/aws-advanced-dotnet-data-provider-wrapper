@@ -14,6 +14,8 @@
 
 using System.Data;
 using AwsWrapperDataProvider;
+using AwsWrapperDataProvider.Driver.Plugins;
+using AwsWrapperDataProvider.Plugin.FederatedAuth.FederatedAuth;
 using Npgsql;
 
 namespace AwsWrapperDataProviderExample;
@@ -22,6 +24,8 @@ public static class MySqlOktaAuthentication
 {
     public static async Task Main(string[] args)
     {
+        ConnectionPluginChainBuilder.RegisterPluginFactory<OktaAuthPluginFactory>(PluginCodes.Okta);
+
         const string connectionString =
             "Server=<host>;Database=<database>;DbUser=<db user>;Plugins=okta;IamRoleArn=<iam role arn>;IamIdpArn=<iam saml arn>;IdpEndpoint=<idp endpoint>;IdpPort=<idp port>;IdpUsername=<username>;IdpPassword=<password>;AppId=<app id>;";
         const string query = "select aurora_db_instance_identifier()";
