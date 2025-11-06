@@ -20,7 +20,7 @@ namespace AwsWrapperDataProvider.Driver.Utils;
 
 public class WrapperUtils
 {
-    public static T ExecuteWithPlugins<T>(
+    public static Task<T> ExecuteWithPlugins<T>(
         ConnectionPluginManager connectionPluginManager,
         object methodInvokeOn,
         string methodName,
@@ -34,7 +34,7 @@ public class WrapperUtils
             methodArgs);
     }
 
-    public static void RunWithPlugins(
+    public static Task RunWithPlugins(
         ConnectionPluginManager connectionPluginManager,
         object methodInvokeOn,
         string methodName,
@@ -42,34 +42,36 @@ public class WrapperUtils
         params object[] methodArgs)
     {
         // Type object does not mean anything since it's void return type
-        ExecuteWithPlugins<object>(
+        return ExecuteWithPlugins<object>(
             connectionPluginManager,
             methodInvokeOn,
             methodName,
-            () =>
+            async () =>
             {
-                methodFunc();
+                await methodFunc();
                 return default!;
             },
             methodArgs);
     }
 
-    public static DbConnection OpenWithPlugins(
-        ConnectionPluginManager connectionPluginManager,
-        HostSpec? hostSpec,
-        Dictionary<string, string> props,
-        bool isInitialConnection)
-    {
-        return connectionPluginManager.Open(hostSpec, props, isInitialConnection, null);
-    }
-
-    public static DbConnection ForceOpenWithPlugins(
+    public static Task<DbConnection> OpenWithPlugins(
         ConnectionPluginManager connectionPluginManager,
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
-        ADONetDelegate openFunc)
+        bool async)
     {
-        return connectionPluginManager.ForceOpen(hostSpec, props, isInitialConnection, null);
+        return connectionPluginManager.Open(hostSpec, props, isInitialConnection, null, async);
+    }
+
+    public static Task<DbConnection> ForceOpenWithPlugins(
+        ConnectionPluginManager connectionPluginManager,
+        HostSpec? hostSpec,
+        Dictionary<string, string> props,
+        bool isInitialConnection,
+        ADONetDelegate openFunc,
+        bool async)
+    {
+        return connectionPluginManager.ForceOpen(hostSpec, props, isInitialConnection, null, async);
     }
 }

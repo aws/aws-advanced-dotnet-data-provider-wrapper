@@ -22,7 +22,7 @@ public abstract class AbstractConnectionPlugin : IConnectionPlugin
 {
     public abstract IReadOnlySet<string> SubscribedMethods { get; }
 
-    public virtual T Execute<T>(object methodInvokedOn,
+    public virtual Task<T> Execute<T>(object methodInvokedOn,
         string methodName,
         ADONetDelegate<T> methodFunc,
         params object[] methodArgs)
@@ -30,30 +30,32 @@ public abstract class AbstractConnectionPlugin : IConnectionPlugin
         return methodFunc();
     }
 
-    public virtual DbConnection OpenConnection(
+    public virtual Task<DbConnection> OpenConnection(
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
-        ADONetDelegate<DbConnection> methodFunc)
+        ADONetDelegate<DbConnection> methodFunc,
+        bool async)
     {
         return methodFunc();
     }
 
-    public virtual DbConnection ForceOpenConnection(
+    public virtual Task<DbConnection> ForceOpenConnection(
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
-        ADONetDelegate<DbConnection> methodFunc)
+        ADONetDelegate<DbConnection> methodFunc,
+        bool async)
     {
         return methodFunc();
     }
 
-    public virtual void InitHostProvider(
+    public virtual Task InitHostProvider(
         string initialUrl,
         Dictionary<string, string> props,
         IHostListProviderService hostListProviderService,
         ADONetDelegate initHostProviderFunc)
     {
-        initHostProviderFunc();
+        return initHostProviderFunc();
     }
 }

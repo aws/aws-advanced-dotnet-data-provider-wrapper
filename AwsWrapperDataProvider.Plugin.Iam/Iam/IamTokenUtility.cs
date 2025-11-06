@@ -15,7 +15,6 @@
 using Amazon;
 using Amazon.RDS.Util;
 using Amazon.Runtime;
-using AwsWrapperDataProvider.Driver.Plugins.Efm;
 
 namespace AwsWrapperDataProvider.Plugin.Iam.Iam;
 
@@ -26,7 +25,7 @@ public class IamTokenUtility : IIamTokenUtility
         return user + ":" + hostname + ":" + port + ":" + region;
     }
 
-    public string GenerateAuthenticationToken(string region, string hostname, int port, string user, AWSCredentials? credentials)
+    public async Task<string> GenerateAuthenticationTokenAsync(string region, string hostname, int port, string user, AWSCredentials? credentials)
     {
         try
         {
@@ -34,7 +33,7 @@ public class IamTokenUtility : IIamTokenUtility
 
             if (credentials != null)
             {
-                return RDSAuthTokenGenerator.GenerateAuthToken(credentials, regionEndpoint, hostname, port, user);
+                return await RDSAuthTokenGenerator.GenerateAuthTokenAsync(credentials, regionEndpoint, hostname, port, user);
             }
             else
             {

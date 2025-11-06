@@ -62,6 +62,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
         "DbConnection.Open",
         "DbConnection.OpenAsync",
         "DbConnection.BeginDbTransaction",
+        "DbConnection.BeginDbTransactionAsync",
 
         "DbCommand.ExecuteNonQuery",
         "DbCommand.ExecuteNonQueryAsync",
@@ -79,10 +80,6 @@ public class FailoverPlugin : AbstractConnectionPlugin
         "DbTransaction.CommitAsync",
         "DbTransaction.Rollback",
         "DbTransaction.RollbackAsync",
-
-        // Connection management methods
-        MethodClose,
-        MethodDispose,
 
         // Special methods
         "DbConnection.ClearWarnings",
@@ -102,34 +99,34 @@ public class FailoverPlugin : AbstractConnectionPlugin
         this.auroraStaleDnsHelper = new AuroraStaleDnsHelper(pluginService);
     }
 
-    public override T Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, params object[] methodArgs)
+    public override async Task<T> Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, params object[] methodArgs)
     {
         if (this.pluginService.CurrentConnection != null
             && !this.CanDirectExecute(methodName)
             && !this.closedExplicitly
             && this.pluginService.CurrentConnection.State == ConnectionState.Closed)
         {
-            this.PickNewConnection();
+            await this.PickNewConnectionAsync();
         }
 
         if (this.CanDirectExecute(methodName))
         {
-            return methodFunc();
+            return await methodFunc();
         }
 
         if (this.isClosed && !this.AllowedOnClosedConnection(methodName))
         {
-            this.InvalidInvocationOnClosedConnection();
+            await this.InvalidInvocationOnClosedConnection();
         }
 
         try
         {
-            var result = methodFunc();
+            var result = await methodFunc();
             return result;
         }
         catch (Exception exception)
         {
-            this.DealWithOriginalException(exception);
+            await this.DealWithOriginalExceptionAsync(exception);
         }
 
         throw new UnreachableException("[FailoverPlugin] Should not reach here.");
@@ -160,7 +157,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
         }
     }
 
-    public override DbConnection OpenConnection(HostSpec? hostSpec, Dictionary<string, string> properties, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
+    public override async Task<DbConnection> OpenConnection(HostSpec? hostSpec, Dictionary<string, string> properties, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc, bool async)
     {
         this.InitFailoverMode();
 
@@ -168,7 +165,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
         if (!this.enableConnectFailover || hostSpec == null)
         {
-            return this.auroraStaleDnsHelper.OpenVerifiedConnection(
+            return await this.auroraStaleDnsHelper.OpenVerifiedConnectionAsync(
                 isInitialConnection,
                 this.hostListProviderService!,
                 hostSpec!,
@@ -183,7 +180,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
         {
             try
             {
-                connection = this.auroraStaleDnsHelper.OpenVerifiedConnection(
+                connection = await this.auroraStaleDnsHelper.OpenVerifiedConnectionAsync(
                     isInitialConnection,
                     this.hostListProviderService!,
                     hostSpec!,
@@ -201,7 +198,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
                 try
                 {
-                    this.Failover();
+                    await this.FailoverAsync();
                 }
                 catch (FailoverSuccessException)
                 {
@@ -213,8 +210,8 @@ public class FailoverPlugin : AbstractConnectionPlugin
         {
             try
             {
-                this.pluginService.RefreshHostList();
-                this.Failover();
+                await this.pluginService.RefreshHostListAsync();
+                await this.FailoverAsync();
             }
             catch (FailoverSuccessException)
             {
@@ -229,25 +226,26 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
         if (isInitialConnection)
         {
-            this.pluginService.RefreshHostList(connection);
+            await this.pluginService.RefreshHostListAsync(connection);
         }
 
         return connection;
     }
 
-    public override void InitHostProvider(string initialUrl, Dictionary<string, string> properties, IHostListProviderService initHostListProviderService, ADONetDelegate initHostProviderFunc)
+    public override Task InitHostProvider(string initialUrl, Dictionary<string, string> properties, IHostListProviderService initHostListProviderService, ADONetDelegate initHostProviderFunc)
     {
         this.hostListProviderService = initHostListProviderService;
         initHostProviderFunc();
+        return Task.CompletedTask;
     }
 
-    private void InvalidInvocationOnClosedConnection()
+    private async Task InvalidInvocationOnClosedConnection()
     {
         if (!this.closedExplicitly)
         {
             this.isClosed = false;
             Logger.LogWarning("Connection was closed but not explicitly. Attempting to pick a new connection.");
-            this.PickNewConnection();
+            await this.PickNewConnectionAsync();
             throw new FailoverSuccessException("The active connection has changed. Please re-configure session state if required.");
         }
 
@@ -259,20 +257,18 @@ public class FailoverPlugin : AbstractConnectionPlugin
         return this.pluginService.TargetConnectionDialect.GetAllowedOnConnectionMethodNames().Contains(methodName);
     }
 
-    private void DealWithOriginalException(Exception originalException)
+    private async Task DealWithOriginalExceptionAsync(Exception originalException)
     {
-        Logger.LogDebug("Processing exception: {ExceptionMessage}", originalException.Message);
+        Logger.LogDebug("Processing exception: {ExceptionMessage}", originalException.ToString());
 
         if (this.ShouldExceptionTriggerConnectionSwitch(originalException))
         {
-            Logger.LogDebug("Exception triggers failover: {ExceptionMessage}", originalException.Message);
-
             if (this.lastExceptionDealtWith == originalException)
             {
                 throw originalException;
             }
 
-            this.InvalidateCurrentConnection();
+            await this.InvalidateCurrentConnectionAsync();
 
             if (this.pluginService.CurrentHostSpec != null)
             {
@@ -280,48 +276,54 @@ public class FailoverPlugin : AbstractConnectionPlugin
                 this.pluginService.SetAvailability(this.pluginService.CurrentHostSpec.AsAliases(), HostAvailability.Unavailable);
             }
 
-            this.PickNewConnection();
+            await this.PickNewConnectionAsync();
             this.lastExceptionDealtWith = originalException;
         }
 
         throw originalException;
     }
 
-    private void Failover()
+    private async Task FailoverAsync()
     {
         Logger.LogInformation("Initiating failover in mode: {FailoverMode}.", this.failoverMode);
 
         if (this.failoverMode == FailoverMode.StrictWriter)
         {
-            this.FailoverWriter();
+            await this.FailoverWriterAsync();
         }
         else
         {
-            this.FailoverReader();
+            await this.FailoverReaderAsync();
         }
     }
 
-    private void FailoverReader()
+    private async Task FailoverReaderAsync()
     {
         Logger.LogInformation("Starting reader failover process.");
-        this.pluginService.ForceRefreshHostList(false, 0);
+        await this.pluginService.ForceRefreshHostListAsync(false, 0);
 
-        var result = this.GetReaderFailoverConnection(DateTime.UtcNow.AddMilliseconds(this.failoverTimeoutMs));
+        var result = await this.GetReaderFailoverConnectionAsync(DateTime.UtcNow.AddMilliseconds(this.failoverTimeoutMs));
         Logger.LogInformation("Reader failover successful. Switching to host: {Host}.", result.HostSpec.Host);
 
         this.pluginService.SetCurrentConnection(result.Connection, result.HostSpec);
         this.ThrowFailoverSuccessException();
     }
 
-    private ReaderFailoverResult GetReaderFailoverConnection(DateTime failoverEndTime)
+    private async Task<ReaderFailoverResult> GetReaderFailoverConnectionAsync(DateTime failoverEndTime)
     {
         var hosts = this.pluginService.GetHosts();
-        var readerCandidates = hosts.Where(h => h.Role == HostRole.Reader).ToHashSet();
+        Logger.LogDebug(LoggerUtils.LogTopology(hosts, $"All hosts: "));
         var originalWriter = hosts.FirstOrDefault(h => h.Role == HostRole.Writer);
         bool isOriginalWriterStillWriter = false;
 
         do
         {
+            // Update reader candidates, topology may have changed
+            await this.pluginService.ForceRefreshHostListAsync(false, 10000);
+            hosts = this.pluginService.GetHosts();
+            hosts.ToList().ForEach(hostSpec => this.pluginService.SetAvailability(hostSpec.AsAliases(), HostAvailability.Available));
+            var readerCandidates = hosts.Where(h => h.Role == HostRole.Reader).ToHashSet();
+
             // First, try all original readers
             var remainingReaders = new HashSet<HostSpec>(readerCandidates);
             while (remainingReaders.Count > 0 && DateTime.UtcNow < failoverEndTime)
@@ -345,8 +347,8 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
                 try
                 {
-                    DbConnection candidateConn = this.pluginService.OpenConnection(readerCandidate, this.props, this);
-                    var role = this.pluginService.GetHostRole(candidateConn);
+                    DbConnection candidateConn = await this.pluginService.OpenConnection(readerCandidate, this.props, this, true);
+                    var role = await this.pluginService.GetHostRole(candidateConn);
 
                     if (role == HostRole.Reader || this.failoverMode != FailoverMode.StrictReader)
                     {
@@ -356,10 +358,11 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
                     // The role is Writer or Unknown, and we are in StrictReader mode
                     remainingReaders.Remove(readerCandidate);
-                    candidateConn.Dispose();
+                    await candidateConn.DisposeAsync().ConfigureAwait(false);
 
                     if (role == HostRole.Writer)
                     {
+                        isOriginalWriterStillWriter = false;
                         readerCandidates.Remove(readerCandidate);
                     }
                     else
@@ -379,14 +382,15 @@ public class FailoverPlugin : AbstractConnectionPlugin
             {
                 if (this.failoverMode == FailoverMode.StrictReader && isOriginalWriterStillWriter)
                 {
+                    await Task.Delay(100);
                     continue;
                 }
 
                 try
                 {
-                    Logger.LogInformation("Trying the original writer which may have been demoted to a reader");
-                    DbConnection candidateConn = this.pluginService.OpenConnection(originalWriter, this.props, this);
-                    var role = this.pluginService.GetHostRole(candidateConn);
+                    Logger.LogInformation("Trying the original writer {hostSpec} which may have been demoted to a reader", originalWriter);
+                    DbConnection candidateConn = await this.pluginService.OpenConnection(originalWriter, this.props, this, true);
+                    var role = await this.pluginService.GetHostRole(candidateConn);
 
                     if (role == HostRole.Reader || this.failoverMode != FailoverMode.StrictReader)
                     {
@@ -394,7 +398,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
                         return new ReaderFailoverResult(candidateConn, updatedHostSpec);
                     }
 
-                    candidateConn.Dispose();
+                    await candidateConn.DisposeAsync().ConfigureAwait(false);
 
                     if (role == HostRole.Writer)
                     {
@@ -417,10 +421,10 @@ public class FailoverPlugin : AbstractConnectionPlugin
         throw new FailoverFailedException("Failover reader timeout");
     }
 
-    private void FailoverWriter()
+    private async Task FailoverWriterAsync()
     {
         // Force refresh host list and wait for topology to stabilize
-        this.pluginService.ForceRefreshHostList(true, this.failoverTimeoutMs);
+        await this.pluginService.ForceRefreshHostListAsync(true, this.failoverTimeoutMs);
 
         var updatedHosts = this.pluginService.AllHosts;
         var writerCandidate = updatedHosts.FirstOrDefault(x => x.Role == HostRole.Writer);
@@ -439,19 +443,19 @@ public class FailoverPlugin : AbstractConnectionPlugin
         DbConnection writerCandidateConn;
         try
         {
-            writerCandidateConn = this.pluginService.OpenConnection(writerCandidate, this.props, this);
+            writerCandidateConn = await this.pluginService.OpenConnection(writerCandidate, this.props, this, true);
         }
         catch (Exception ex)
         {
             throw new FailoverFailedException($"Exception connecting to writer {writerCandidate.Host}", ex);
         }
 
-        var role = this.pluginService.GetHostRole(writerCandidateConn);
+        var role = await this.pluginService.GetHostRole(writerCandidateConn);
         if (role != HostRole.Writer)
         {
             try
             {
-                writerCandidateConn.Dispose();
+                await writerCandidateConn.DisposeAsync().ConfigureAwait(false);
             }
             catch (Exception)
             {
@@ -478,7 +482,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
         throw new FailoverSuccessException("The active SQL connection has changed due to a connection failure. Please re-configure session state if required.");
     }
 
-    private void InvalidateCurrentConnection()
+    private async Task InvalidateCurrentConnectionAsync()
     {
         Logger.LogTrace("Invalidating current connection...");
         try
@@ -496,10 +500,13 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
         try
         {
-            this.pluginService.CurrentConnection?.Close();
-            Logger.LogTrace("Current connection {Type}@{Id} is closed.",
-                this.pluginService.CurrentConnection?.GetType().FullName,
-                RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection));
+            if (this.pluginService.CurrentConnection != null)
+            {
+                await this.pluginService.CurrentConnection.CloseAsync();
+                Logger.LogTrace("Current connection {Type}@{Id} is closed.",
+                    this.pluginService.CurrentConnection?.GetType().FullName,
+                    RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection));
+            }
         }
         catch (Exception ex)
         {
@@ -508,7 +515,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
         }
     }
 
-    private void PickNewConnection()
+    private async Task PickNewConnectionAsync()
     {
         Logger.LogInformation("Picking a new connection.");
         if (this.isClosed && this.closedExplicitly)
@@ -517,7 +524,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
             return;
         }
 
-        this.Failover();
+        await this.FailoverAsync();
     }
 
     private bool ShouldExceptionTriggerConnectionSwitch(Exception exception)

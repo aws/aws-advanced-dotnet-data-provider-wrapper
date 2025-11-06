@@ -39,6 +39,7 @@ dependencies {
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 
     testImplementation("org.apache.commons:commons-dbcp2:2.9.0")
+    testImplementation("org.apache.commons:commons-lang3:3.18.0")
     testImplementation("org.postgresql:postgresql:42.5.0")
     testImplementation("mysql:mysql-connector-java:8.0.30")
     testImplementation("org.mockito:mockito-inline:4.8.0")
@@ -53,12 +54,12 @@ dependencies {
     testImplementation("io.opentelemetry:opentelemetry-sdk-metrics:1.29.0")
     testImplementation("io.opentelemetry:opentelemetry-exporter-otlp:1.29.0")
     // Note: all org.testcontainers dependencies should have the same version
-    testImplementation("org.testcontainers:testcontainers:1.21.3")
-    testImplementation("org.testcontainers:mysql:1.21.3")
-    testImplementation("org.testcontainers:postgresql:1.21.3")
-    testImplementation("org.testcontainers:mariadb:1.21.3")
-    testImplementation("org.testcontainers:junit-jupiter:1.21.3")
-    testImplementation("org.testcontainers:toxiproxy:1.21.3")
+    testImplementation("org.testcontainers:testcontainers:2.0.1")
+    testImplementation("org.testcontainers:testcontainers-mysql:2.0.1")
+    testImplementation("org.testcontainers:testcontainers-postgresql:2.0.1")
+    testImplementation("org.testcontainers:testcontainers-mariadb:2.0.1")
+    testImplementation("org.testcontainers:testcontainers-junit-jupiter:2.0.1")
+    testImplementation("org.testcontainers:testcontainers-toxiproxy:2.0.1")
 }
 
 tasks.test {

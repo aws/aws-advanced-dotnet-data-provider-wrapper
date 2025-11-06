@@ -51,7 +51,7 @@ public interface IPluginService : IExceptionHandlerService
     /// </summary>
     /// <param name="connection">The database connection.</param>
     /// <param name="hostSpec">The host specification.</param>
-    void SetCurrentConnection(DbConnection connection, HostSpec? hostSpec);
+    void SetCurrentConnection(DbConnection? connection, HostSpec? hostSpec);
 
     /// <summary>
     /// Gets the currently active hosts.
@@ -64,7 +64,7 @@ public interface IPluginService : IExceptionHandlerService
     /// </summary>
     /// <param name="connection">The database connection.</param>
     /// <returns>The host role.</returns>
-    HostRole GetHostRole(DbConnection? connection);
+    Task<HostRole> GetHostRole(DbConnection? connection);
 
     /// <summary>
     /// Sets the availability of hosts.
@@ -76,24 +76,28 @@ public interface IPluginService : IExceptionHandlerService
     /// <summary>
     /// Refreshes the host list.
     /// </summary>
-    void RefreshHostList();
+    /// <returns>Refresh host list task.</returns>
+    Task RefreshHostListAsync();
 
     /// <summary>
     /// Refreshes the host list using the given connection.
     /// </summary>
     /// <param name="connection">The database connection.</param>
-    void RefreshHostList(DbConnection connection);
+    /// <returns>Refresh host list task.</returns>
+    Task RefreshHostListAsync(DbConnection connection);
 
     /// <summary>
     /// Forces a refresh of the host list.
     /// </summary>
-    void ForceRefreshHostList();
+    /// <returns>Force refresh host list task.</returns>
+    Task ForceRefreshHostListAsync();
 
     /// <summary>
     /// Forces a refresh of the host list using the given connection.
     /// </summary>
     /// <param name="connection">The database connection.</param>
-    void ForceRefreshHostList(DbConnection connection);
+    /// <returns>Force refresh host list task.</returns>
+    Task ForceRefreshHostListAsync(DbConnection connection);
 
     /// <summary>
     /// Forces a refresh of the host list with verification options.
@@ -101,7 +105,7 @@ public interface IPluginService : IExceptionHandlerService
     /// <param name="shouldVerifyWriter">Whether to verify the writer.</param>
     /// <param name="timeoutMs">Timeout in milliseconds.</param>
     /// <returns>Whether the operation was successful.</returns>
-    bool ForceRefreshHostList(bool shouldVerifyWriter, long timeoutMs);
+    Task<bool> ForceRefreshHostListAsync(bool shouldVerifyWriter, long timeoutMs);
 
     /// <summary>
     /// Connects to a host, skipping a specific plugin.
@@ -109,8 +113,9 @@ public interface IPluginService : IExceptionHandlerService
     /// <param name="hostSpec">The host specification.</param>
     /// <param name="props">Connection properties.</param>
     /// <param name="pluginToSkip">Plugin to skip.</param>
+    /// <param name="async">True if async open, failse otherwise.</param>
     /// <returns>The created database connection.</returns>
-    DbConnection OpenConnection(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin? pluginToSkip);
+    Task<DbConnection> OpenConnection(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin? pluginToSkip, bool async);
 
     /// <summary>
     /// Forces a connection to a host, bypassing certain plugins like failover to prevent cyclic dependencies.
@@ -119,22 +124,24 @@ public interface IPluginService : IExceptionHandlerService
     /// <param name="hostSpec">The host specification.</param>
     /// <param name="props">Connection properties.</param>
     /// <param name="pluginToSkip">Plugin to skip.</param>
+    /// <param name="async">True if async open, failse otherwise.</param>
     /// <returns>The created database connection.</returns>
-    DbConnection ForceOpenConnection(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin? pluginToSkip);
+    Task<DbConnection> ForceOpenConnection(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin? pluginToSkip, bool async);
 
     /// <summary>
     /// Updates the dialect based on the given connection.
     /// </summary>
     /// <param name="connection">The database connection.</param>
-    void UpdateDialect(DbConnection connection);
+    /// <returns>The task.</returns>
+    Task UpdateDialectAsync(DbConnection connection);
 
     /// <summary>
     /// Identifies the host associated with the given connection.
     /// </summary>
     /// <param name="connection">The database connection.</param>
     /// <param name="transaction">The database transaction.</param>
-    /// <returns>The host specification.</returns>
-    HostSpec? IdentifyConnection(DbConnection connection, DbTransaction? transaction = null);
+    /// <returns>The host specification task.</returns>
+    Task<HostSpec?> IdentifyConnectionAsync(DbConnection connection, DbTransaction? transaction = null);
 
     /// <summary>
     /// Fills in aliases for the given host specification using the connection.
@@ -142,7 +149,8 @@ public interface IPluginService : IExceptionHandlerService
     /// <param name="connection">The database connection.</param>
     /// <param name="hostSpec">The host specification.</param>
     /// <param name="transaction">The database transaction.</param>
-    void FillAliases(DbConnection connection, HostSpec hostSpec, DbTransaction? transaction = null);
+    /// <returns>The task.</returns>
+    Task FillAliasesAsync(DbConnection connection, HostSpec hostSpec, DbTransaction? transaction = null);
 
     /// <summary>
     /// Gets the connection provider.

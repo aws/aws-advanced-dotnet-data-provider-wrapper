@@ -51,7 +51,7 @@ public class AwsWrapperDataReaderTests
     public void Depth_DelegatesToTargetReader()
     {
         var result = this.wrapper.Depth;
-        TestUtils.VerifyDelegatesToExecutePipeline(this.mockPluginManager, this.mockTargetReader, r => r.Depth);
+        TestUtils.VerifyDelegatesToTargetObject(this.mockTargetReader, r => r.Depth);
     }
 
     [Fact]
@@ -59,7 +59,7 @@ public class AwsWrapperDataReaderTests
     public void IsClosed_DelegatesToTargetReader()
     {
         var result = this.wrapper.IsClosed;
-        TestUtils.VerifyDelegatesToExecutePipeline(this.mockPluginManager, this.mockTargetReader, r => r.IsClosed);
+        TestUtils.VerifyDelegatesToTargetObject(this.mockTargetReader, r => r.IsClosed);
     }
 
     [Fact]
@@ -67,7 +67,7 @@ public class AwsWrapperDataReaderTests
     public void RecordsAffected_DelegatesToTargetReader()
     {
         var result = this.wrapper.RecordsAffected;
-        TestUtils.VerifyDelegatesToExecutePipeline(this.mockPluginManager, this.mockTargetReader, r => r.RecordsAffected);
+        TestUtils.VerifyDelegatesToTargetObject(this.mockTargetReader, r => r.RecordsAffected);
     }
 
     [Fact]
@@ -83,7 +83,7 @@ public class AwsWrapperDataReaderTests
     public void GetSchemaTable_DelegatesToTargetReader()
     {
         this.wrapper.GetSchemaTable();
-        TestUtils.VerifyDelegatesToExecutePipeline(this.mockPluginManager, this.mockTargetReader, r => r.GetSchemaTable());
+        TestUtils.VerifyDelegatesToTargetObject(this.mockTargetReader, r => r.GetSchemaTable());
     }
 
     [Fact]
@@ -107,7 +107,7 @@ public class AwsWrapperDataReaderTests
     public void GetBoolean_DelegatesToTargetReader()
     {
         this.wrapper.GetBoolean(1);
-        TestUtils.VerifyDelegatesToExecutePipeline(this.mockPluginManager, this.mockTargetReader, r => r.GetBoolean(1));
+        TestUtils.VerifyDelegatesToTargetObject(this.mockTargetReader, r => r.GetBoolean(1));
     }
 
     [Fact]
@@ -115,7 +115,7 @@ public class AwsWrapperDataReaderTests
     public void GetByte_DelegatesToTargetReader()
     {
         this.wrapper.GetByte(1);
-        TestUtils.VerifyDelegatesToExecutePipeline(this.mockPluginManager, this.mockTargetReader, r => r.GetByte(1));
+        TestUtils.VerifyDelegatesToTargetObject(this.mockTargetReader, r => r.GetByte(1));
     }
 
     [Fact]
@@ -123,7 +123,7 @@ public class AwsWrapperDataReaderTests
     public void GetString_DelegatesToTargetReader()
     {
         this.wrapper.GetString(0);
-        TestUtils.VerifyDelegatesToExecutePipeline(this.mockPluginManager, this.mockTargetReader, r => r.GetString(0));
+        TestUtils.VerifyDelegatesToTargetObject(this.mockTargetReader, r => r.GetString(0));
     }
 
     [Fact]
@@ -131,7 +131,7 @@ public class AwsWrapperDataReaderTests
     public void Indexer_ByName_DelegatesToTargetReader()
     {
         var result = this.wrapper["foo"];
-        TestUtils.VerifyDelegatesToExecutePipeline(this.mockPluginManager, this.mockTargetReader, r => r["foo"]);
+        TestUtils.VerifyDelegatesToTargetObject(this.mockTargetReader, r => r["foo"]);
     }
 
     [Fact]
@@ -139,7 +139,7 @@ public class AwsWrapperDataReaderTests
     public void Indexer_ByIndex_DelegatesToTargetReader()
     {
         var result = this.wrapper[0];
-        TestUtils.VerifyDelegatesToExecutePipeline(this.mockPluginManager, this.mockTargetReader, r => r[0]);
+        TestUtils.VerifyDelegatesToTargetObject(this.mockTargetReader, r => r[0]);
     }
 
     [Fact]
@@ -147,6 +147,6 @@ public class AwsWrapperDataReaderTests
     public void GetEnumerator_DelegatesToTargetReader()
     {
         this.wrapper.GetEnumerator();
-        TestUtils.VerifyDelegatesToExecutePipeline(this.mockPluginManager, this.mockTargetReader, r => r.GetEnumerator());
+        TestUtils.VerifyDelegatesToTargetObject(this.mockTargetReader, r => r.GetEnumerator());
     }
 }

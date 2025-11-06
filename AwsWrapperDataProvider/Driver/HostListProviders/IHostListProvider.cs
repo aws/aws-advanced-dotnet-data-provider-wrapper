@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data;
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
 
@@ -20,17 +19,17 @@ namespace AwsWrapperDataProvider.Driver.HostListProviders;
 
 public interface IHostListProvider
 {
-    IList<HostSpec> Refresh();
+    Task<IList<HostSpec>> RefreshAsync();
 
-    IList<HostSpec> Refresh(IDbConnection connection);
+    Task<IList<HostSpec>> RefreshAsync(DbConnection? connection);
 
-    IList<HostSpec> ForceRefresh();
+    Task<IList<HostSpec>> ForceRefreshAsync();
 
-    IList<HostSpec> ForceRefresh(IDbConnection connection);
+    Task<IList<HostSpec>> ForceRefreshAsync(DbConnection? connection);
 
-    HostRole GetHostRole(IDbConnection connection);
+    Task<HostRole> GetHostRoleAsync(DbConnection connection);
 
     string GetClusterId();
 
-    HostSpec? IdentifyConnection(DbConnection connection, DbTransaction? transaction = null);
+    Task<HostSpec?> IdentifyConnectionAsync(DbConnection connection, DbTransaction? transaction = null);
 }

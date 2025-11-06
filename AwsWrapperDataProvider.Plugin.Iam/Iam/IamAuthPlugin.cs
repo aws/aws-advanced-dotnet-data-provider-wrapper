@@ -44,18 +44,18 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
         IamTokenCache.Clear();
     }
 
-    public override DbConnection OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
+    public override async Task<DbConnection> OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc, bool async)
     {
-        return this.ConnectInternal(hostSpec, props, methodFunc);
+        return await this.ConnectInternal(hostSpec, props, methodFunc);
     }
 
-    public override DbConnection ForceOpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc)
+    public override async Task<DbConnection> ForceOpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc, bool async)
     {
         // For ForceOpenConnection, we need to create a DbConnection-returning delegate from the void delegate
-        return this.ConnectInternal(hostSpec, props, methodFunc);
+        return await this.ConnectInternal(hostSpec, props, methodFunc);
     }
 
-    private DbConnection ConnectInternal(HostSpec? hostSpec, Dictionary<string, string> props, ADONetDelegate<DbConnection> methodFunc)
+    private async Task<DbConnection> ConnectInternal(HostSpec? hostSpec, Dictionary<string, string> props, ADONetDelegate<DbConnection> methodFunc)
     {
         string iamUser = PropertyDefinition.User.GetString(props) ?? PropertyDefinition.UserId.GetString(props) ??
             throw new Exception("Could not determine user for IAM authentication.");
@@ -77,7 +77,7 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
         {
             try
             {
-                token = this.iamTokenUtility.GenerateAuthenticationToken(iamRegion, iamHost, iamPort, iamUser, null);
+                token = await this.iamTokenUtility.GenerateAuthenticationTokenAsync(iamRegion, iamHost, iamPort, iamUser, null);
                 int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? DefaultIamExpirationSeconds;
                 IamTokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
                 isCachedToken = false;
@@ -98,7 +98,7 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
 
         try
         {
-            return methodFunc();
+            return await methodFunc();
         }
         catch (Exception ex)
         {
@@ -110,7 +110,7 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
             // should the token not work (login exception + is cached token), generate a new one and try again
             try
             {
-                token = this.iamTokenUtility.GenerateAuthenticationToken(iamRegion, iamHost, iamPort, iamUser, null);
+                token = await this.iamTokenUtility.GenerateAuthenticationTokenAsync(iamRegion, iamHost, iamPort, iamUser, null);
                 int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? DefaultIamExpirationSeconds;
                 IamTokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
                 Logger.LogTrace("Generated new authentication token");
@@ -123,7 +123,7 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
             // token is non-null here, as the above try-catch block must have succeeded
             PropertyDefinition.Password.Set(props, token);
 
-            return methodFunc();
+            return await methodFunc();
         }
     }
 }

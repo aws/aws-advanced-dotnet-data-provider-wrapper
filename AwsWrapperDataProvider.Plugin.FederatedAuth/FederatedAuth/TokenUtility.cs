@@ -15,7 +15,6 @@
 using Amazon;
 using Amazon.RDS.Util;
 using Amazon.Runtime;
-using AwsWrapperDataProvider.Driver.Plugins.Efm;
 
 namespace AwsWrapperDataProvider.Plugin.FederatedAuth.FederatedAuth;
 
@@ -26,7 +25,7 @@ public class TokenUtility : ITokenUtility
         return user + ":" + hostname + ":" + port + ":" + region;
     }
 
-    public string GenerateAuthenticationToken(string region, string hostname, int port, string user, AWSCredentials? credentials)
+    public async Task<string> GenerateAuthenticationTokenAsync(string region, string hostname, int port, string user, AWSCredentials? credentials)
     {
         try
         {
@@ -34,7 +33,7 @@ public class TokenUtility : ITokenUtility
 
             if (credentials != null)
             {
-                return RDSAuthTokenGenerator.GenerateAuthToken(credentials, regionEndpoint, hostname, port, user);
+                return await RDSAuthTokenGenerator.GenerateAuthTokenAsync(credentials, regionEndpoint, hostname, port, user);
             }
             else
             {

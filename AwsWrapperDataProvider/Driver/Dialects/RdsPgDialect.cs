@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data;
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Logging;
@@ -21,7 +20,7 @@ namespace AwsWrapperDataProvider.Driver.Dialects;
 
 public class RdsPgDialect : PgDialect
 {
-    private const string ExtensionsSql = "SELECT (setting LIKE '%rds_tools%') AS rds_tools, "
+    internal const string ExtensionsSql = "SELECT (setting LIKE '%rds_tools%') AS rds_tools, "
                                          + "(setting LIKE '%aurora_stat_utils%') AS aurora_stat_utils "
                                          + "FROM pg_catalog.pg_settings "
                                          + "WHERE name OPERATOR(pg_catalog.=) 'rds.extensions'";
@@ -34,19 +33,19 @@ public class RdsPgDialect : PgDialect
         typeof(AuroraPgDialect),
     ];
 
-    public override bool IsDialect(IDbConnection conn)
+    public override async Task<bool> IsDialect(DbConnection conn)
     {
-        if (!base.IsDialect(conn))
+        if (!(await base.IsDialect(conn)))
         {
             return false;
         }
 
         try
         {
-            using IDbCommand command = conn.CreateCommand();
+            await using var command = conn.CreateCommand();
             command.CommandText = ExtensionsSql;
-            using IDataReader reader = command.ExecuteReader();
-            while (reader.Read())
+            await using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
             {
                 bool rdsTools = reader.GetBoolean(reader.GetOrdinal("rds_tools"));
                 bool auroraUtils = reader.GetBoolean(reader.GetOrdinal("aurora_stat_utils"));

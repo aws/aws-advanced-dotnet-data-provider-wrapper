@@ -27,6 +27,18 @@ public class HostSpecBuilder
     private long weight = HostSpec.DefaultWeight;
     private DateTime lastUpateTime;
 
+    public HostSpecBuilder CopyFrom(HostSpec hostSpec)
+    {
+        this.host = hostSpec.Host;
+        this.port = hostSpec.Port;
+        this.hostId = hostSpec.HostId;
+        this.role = hostSpec.Role;
+        this.availability = hostSpec.Availability;
+        this.weight = hostSpec.Weight;
+        this.lastUpateTime = hostSpec.LastUpdateTime;
+        return this;
+    }
+
     public HostSpecBuilder WithHost(string host)
     {
         this.host = host;

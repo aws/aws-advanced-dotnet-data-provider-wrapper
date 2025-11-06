@@ -88,14 +88,24 @@ public class MySqlExceptionHandler : GenericExceptionHandler
         }
     }
 
+    private bool IsMySqlCommandTimeoutException(DbException exception)
+    {
+        if (IsMySqlException(exception))
+        {
+            // MySQL command timeout error code
+            return GetMySqlExceptionNumber(exception) == -1;
+        }
+
+        return false;
+    }
+
     public override bool IsNetworkException(Exception exception)
     {
         Exception? currException = exception;
 
-        while (currException is not null)
+        while (currException != null)
         {
-            Logger.LogDebug("Current exception {type}: {message}", currException.GetType().FullName, currException.Message);
-
+            Logger.LogDebug("Current exception {type}", currException.GetType().FullName);
             if (currException is SocketException or TimeoutException or EndOfStreamException || IsMySqlEndOfStreamException(currException))
             {
                 Logger.LogDebug("Current exception is a network exception: {type}", currException.GetType().FullName);
@@ -110,12 +120,12 @@ public class MySqlExceptionHandler : GenericExceptionHandler
                 log.AppendLine("=== DbException Details ===");
                 log.AppendLine($"Type: {dbException.GetType().FullName}");
                 log.AppendLine($"Message: {dbException.Message}");
-                log.AppendLine($"Sql State: {dbException.SqlState}");
                 log.AppendLine($"Error Code: {dbException.ErrorCode}");
+                log.AppendLine($"Sql State: {dbException.SqlState}");
                 log.AppendLine($"Source: {dbException.Source}");
                 Logger.LogDebug(log.ToString());
 
-                if (this.NetworkErrorStates.Contains(sqlState))
+                if (this.NetworkErrorStates.Contains(sqlState) || this.IsMySqlCommandTimeoutException(dbException))
                 {
                     Logger.LogDebug("Current exception is a network exception: {type}", currException.GetType().FullName);
                     return true;

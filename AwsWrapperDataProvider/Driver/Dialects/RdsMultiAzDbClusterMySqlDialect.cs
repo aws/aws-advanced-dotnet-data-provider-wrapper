@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data;
+using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
@@ -39,41 +40,43 @@ public class RdsMultiAzDbClusterMySqlDialect : MySqlDialect
 
     private static readonly ILogger<RdsMultiAzDbClusterMySqlDialect> Logger = LoggerUtils.GetLogger<RdsMultiAzDbClusterMySqlDialect>();
 
-    public override bool IsDialect(IDbConnection connection)
+    public override async Task<bool> IsDialect(DbConnection connection)
     {
         try
         {
-            using (IDbCommand topologyTableExistCommand = connection.CreateCommand())
+            await using (var topologyTableExistCommand = connection.CreateCommand())
             {
                 topologyTableExistCommand.CommandText = TopologyTableExistQuery;
-                using IDataReader topologyTableExistReader = topologyTableExistCommand.ExecuteReader();
-                if (!topologyTableExistReader.Read())
+                await using var topologyTableExistReader = await topologyTableExistCommand.ExecuteReaderAsync();
+                if (!(await topologyTableExistReader.ReadAsync()))
                 {
                     return false;
                 }
             }
 
-            using (IDbCommand topologyCommand = connection.CreateCommand())
+            await using (var topologyCommand = connection.CreateCommand())
             {
                 topologyCommand.CommandText = TopologyQuery;
-                using IDataReader topologyReader = topologyCommand.ExecuteReader();
-                if (!topologyReader.Read())
+                await using var topologyReader = await topologyCommand.ExecuteReaderAsync();
+                if (!(await topologyReader.ReadAsync()))
                 {
                     return false;
                 }
             }
 
-            using IDbCommand isDialectCommand = connection.CreateCommand();
-            isDialectCommand.CommandText = IsDialectQuery;
-
-            using var reader = isDialectCommand.ExecuteReader(CommandBehavior.SingleRow);
-            if (!reader.Read())
+            await using (var isDialectCommand = connection.CreateCommand())
             {
-                return false;
-            }
+                isDialectCommand.CommandText = IsDialectQuery;
 
-            string? reportHost = reader.IsDBNull(1) ? null : reader.GetString(1);
-            return !string.IsNullOrEmpty(reportHost);
+                await using var reader = await isDialectCommand.ExecuteReaderAsync(CommandBehavior.SingleRow);
+                if (!(await reader.ReadAsync()))
+                {
+                    return false;
+                }
+
+                string? reportHost = await reader.IsDBNullAsync(1) ? null : reader.GetString(1);
+                return !string.IsNullOrEmpty(reportHost);
+            }
         }
         catch (Exception ex)
         {

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 using System.Data;
-
+using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -84,7 +84,7 @@ public class DialectProvider
 
     private readonly PluginService pluginService;
     private IDialect? dialect = null;
-    private bool canUpdate = false;
+    internal bool CanUpdate = false;
 
     public DialectProvider(PluginService pluginService)
     {
@@ -99,7 +99,7 @@ public class DialectProvider
     public IDialect GuessDialect(Dictionary<string, string> props)
     {
         this.dialect = null;
-        this.canUpdate = false;
+        this.CanUpdate = false;
 
         // Check for custom dialect in properties
         if (PropertyDefinition.TargetDialect.GetString(props) is { } customDialectTypeName &&
@@ -124,6 +124,7 @@ public class DialectProvider
 
         if (KnownEndpointDialects.TryGetValue(host, out IDialect? cachedDialect) && cachedDialect != null)
         {
+            Logger.LogDebug("Dialect retrieved from cache: {dialect}", cachedDialect.GetType().FullName);
             this.dialect = cachedDialect;
             return this.dialect!;
         }
@@ -137,19 +138,18 @@ public class DialectProvider
         this.dialect = KnownDialectsByType[dialectType];
         Logger.LogDebug("Guessed dialect: {dialect}", this.dialect.GetType().FullName);
 
-        this.canUpdate = true;
+        this.CanUpdate = true;
         return this.dialect;
     }
 
-    public IDialect UpdateDialect(IDbConnection connection, IDialect currDialect)
+    public async Task<IDialect> UpdateDialectAsync(DbConnection connection, IDialect currDialect)
     {
         Logger.LogDebug("UpdateDialect called with current dialect: {currentDialect}", currDialect.GetType().FullName);
         Logger.LogDebug("Connection type: {connectionType}", connection.GetType().FullName);
-        Logger.LogDebug("Connection string: {connectionString}", connection.ConnectionString);
 
-        if (!this.canUpdate && this.dialect != null)
+        if (!this.CanUpdate && this.dialect != null)
         {
-            Logger.LogDebug("Current dialect: {dialect}, canUpdate: {canUpdate}", this.dialect.GetType().FullName, this.canUpdate);
+            Logger.LogDebug("Current dialect: {dialect}, canUpdate: {canUpdate}", this.dialect.GetType().FullName, this.CanUpdate);
             return this.dialect;
         }
 
@@ -163,13 +163,13 @@ public class DialectProvider
 
             try
             {
-                if (dialect.IsDialect(connection))
+                if (await dialect.IsDialect(connection))
                 {
                     Logger.LogDebug("Dialect match found: {dialect}", dialect.GetType().FullName);
                     this.dialect = dialect;
                     KnownEndpointDialects.Set(this.pluginService.InitialConnectionHostSpec!.Host, dialect, EndpointCacheExpiration);
                     KnownEndpointDialects.Set(connection.ConnectionString, dialect, EndpointCacheExpiration);
-                    this.canUpdate = false;
+                    this.CanUpdate = false;
                     return this.dialect;
                 }
                 else
@@ -186,10 +186,10 @@ public class DialectProvider
         Logger.LogDebug("Testing current dialect: {currentDialect}", currDialect.GetType().FullName);
         try
         {
-            if (currDialect.IsDialect(connection))
+            if (await currDialect.IsDialect(connection))
             {
                 Logger.LogDebug("Current dialect is valid: {currentDialect}", currDialect.GetType().FullName);
-                this.canUpdate = false;
+                this.CanUpdate = false;
                 return currDialect;
             }
         }
@@ -208,7 +208,7 @@ public class DialectProvider
             throw new ArgumentException(Properties.Resources.Error_UnableToFindValidDialectType);
         }
 
-        this.canUpdate = false;
+        this.CanUpdate = false;
         return currDialect;
     }
 

@@ -13,11 +13,10 @@
 // limitations under the License.
 
 using System.Data;
-using System.Data.Common;
+using Apps72.Dev.Data.DbMocker;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Utils;
-using AwsWrapperDataProvider.Tests.Driver.Dialects;
 using Microsoft.Extensions.Caching.Memory;
 using Moq;
 
@@ -40,9 +39,7 @@ public class RdsMultiAzDbClusterListProviderTest : IDisposable
 
     private readonly Dictionary<string, string> properties;
     private readonly Mock<IHostListProviderService> mockHostListProviderService;
-    private readonly Mock<IDbConnection> mockConnection;
-    private readonly Mock<IDbCommand> mockCommand;
-    private readonly Mock<IDataReader> mockReader;
+    private readonly MockDbConnection mockConnection;
 
     private readonly TimeSpan topologyRefreshRate = TimeSpan.FromSeconds(5);
 
@@ -56,13 +53,8 @@ public class RdsMultiAzDbClusterListProviderTest : IDisposable
         this.mockHostListProviderService = new Mock<IHostListProviderService>();
         this.mockHostListProviderService.Setup(s => s.HostSpecBuilder).Returns(new HostSpecBuilder());
 
-        this.mockConnection = new Mock<IDbConnection>();
-        this.mockCommand = new Mock<IDbCommand>();
-        this.mockReader = new Mock<IDataReader>();
-
-        this.mockConnection.Setup(c => c.State).Returns(ConnectionState.Open);
-        this.mockConnection.Setup(c => c.CreateCommand()).Returns(this.mockCommand.Object);
-        this.mockCommand.Setup(c => c.ExecuteReader()).Returns(this.mockReader.Object);
+        this.mockConnection = new MockDbConnection();
+        this.mockConnection.Open();
     }
 
     public void Dispose()
@@ -99,57 +91,20 @@ public class RdsMultiAzDbClusterListProviderTest : IDisposable
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void QueryForTopology_WithWriterNodeFromFetchQuery_ReturnsCorrectTopology()
+    public async Task QueryForTopology_WithWriterNodeFromFetchQuery_ReturnsCorrectTopology()
     {
         var multiAzProviderSpy = this.GetMultiAzRdsHostListProviderSpy();
 
-        // Mock the sequence of commands that will be created
-        var mockWriterNodeCommand = new Mock<IDbCommand>();
-        var mockTopologyCommand = new Mock<IDbCommand>();
-        var mockWriterNodeReader = new Mock<IDataReader>();
-        var mockTopologyReader = new Mock<IDataReader>();
+        this.mockConnection.Mocks.When(cmd => cmd.CommandText == FetchWriterNodeQuery)
+            .ReturnsTable(MockTable.WithColumns(FetchWriterNodeQueryHeader)
+            .AddRow(WriterNodeId));
+        this.mockConnection.Mocks.When(cmd => cmd.CommandText == TopologyQuery)
+            .ReturnsTable(MockTable.WithColumns("endpoint", "id", "port")
+            .AddRow(WriterEndpoint, WriterNodeId, 5432)
+            .AddRow(ReaderEndpoint1, ReaderNodeId1, 5432)
+            .AddRow(ReaderEndpoint2, ReaderNodeId2, 5432));
 
-        this.mockConnection.SetupSequence(c => c.CreateCommand())
-            .Returns(mockWriterNodeCommand.Object)
-            .Returns(mockTopologyCommand.Object);
-
-        mockWriterNodeCommand.Setup(c => c.ExecuteReader()).Returns(mockWriterNodeReader.Object);
-        mockTopologyCommand.Setup(c => c.ExecuteReader()).Returns(mockTopologyReader.Object);
-
-        // Setup writer node query to return writer node ID
-        mockWriterNodeReader.Setup(r => r.Read()).Returns(true);
-        mockWriterNodeReader.Setup(r => r.GetOrdinal(FetchWriterNodeQueryHeader)).Returns(0);
-        mockWriterNodeReader.Setup(r => r.IsDBNull(0)).Returns(false);
-        mockWriterNodeReader.Setup(r => r.GetValue(0)).Returns(WriterNodeId);
-
-        // Setup topology query results
-        mockTopologyReader.SetupSequence(r => r.Read())
-            .Returns(true) // Writer
-            .Returns(true) // Reader 1
-            .Returns(true) // Reader 2
-            .Returns(false); // End
-
-        mockTopologyReader.Setup(r => r.GetOrdinal("endpoint")).Returns(0);
-        mockTopologyReader.Setup(r => r.GetOrdinal("id")).Returns(1);
-        mockTopologyReader.Setup(r => r.GetOrdinal("port")).Returns(2);
-
-        mockTopologyReader.Setup(r => r.IsDBNull(0)).Returns(false);
-        mockTopologyReader.Setup(r => r.IsDBNull(1)).Returns(false);
-        mockTopologyReader.Setup(r => r.IsDBNull(2)).Returns(false);
-
-        mockTopologyReader.SetupSequence(r => r.GetString(0))
-            .Returns(WriterEndpoint)
-            .Returns(ReaderEndpoint1)
-            .Returns(ReaderEndpoint2);
-
-        mockTopologyReader.SetupSequence(r => r.GetValue(1))
-            .Returns(WriterNodeId)
-            .Returns(ReaderNodeId1)
-            .Returns(ReaderNodeId2);
-
-        mockTopologyReader.Setup(r => r.GetInt32(2)).Returns(5432);
-
-        var result = multiAzProviderSpy.Object.QueryForTopology(this.mockConnection.Object);
+        var result = await multiAzProviderSpy.Object.QueryForTopologyAsync(this.mockConnection);
 
         Assert.NotNull(result);
         Assert.Equal(3, result.Count);
@@ -166,31 +121,13 @@ public class RdsMultiAzDbClusterListProviderTest : IDisposable
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void QueryForTopology_WithNoWriterNodeFound_ReturnsEmptyList()
+    public async Task QueryForTopology_WithNoWriterNodeFound_ReturnsEmptyList()
     {
         var multiAzProviderSpy = this.GetMultiAzRdsHostListProviderSpy();
 
-        var mockWriterNodeCommand = new Mock<IDbCommand>();
-        var mockNodeIdCommand = new Mock<IDbCommand>();
-        var mockTopologyCommand = new Mock<IDbCommand>();
-        var mockWriterNodeReader = new Mock<IDataReader>();
-        var mockNodeIdReader = new Mock<IDataReader>();
-        var mockTopologyReader = new Mock<IDataReader>();
+        this.mockConnection.Mocks.WhenAny().ReturnsTable(MockTable.Empty());
 
-        this.mockConnection.SetupSequence(c => c.CreateCommand())
-            .Returns(mockWriterNodeCommand.Object)
-            .Returns(mockNodeIdCommand.Object)
-            .Returns(mockTopologyCommand.Object);
-
-        mockWriterNodeCommand.Setup(c => c.ExecuteReader()).Returns(mockWriterNodeReader.Object);
-        mockNodeIdCommand.Setup(c => c.ExecuteReader()).Returns(mockNodeIdReader.Object);
-        mockTopologyCommand.Setup(c => c.ExecuteReader()).Returns(mockTopologyReader.Object);
-
-        mockWriterNodeReader.Setup(r => r.Read()).Returns(false);
-        mockNodeIdReader.Setup(r => r.Read()).Returns(false);
-        mockTopologyReader.Setup(r => r.Read()).Returns(false);
-
-        var result = multiAzProviderSpy.Object.QueryForTopology(this.mockConnection.Object);
+        var result = await multiAzProviderSpy.Object.QueryForTopologyAsync(this.mockConnection);
 
         Assert.NotNull(result);
         Assert.Empty(result);
@@ -198,35 +135,16 @@ public class RdsMultiAzDbClusterListProviderTest : IDisposable
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void QueryForTopology_WithNullWriterNodeId_ReturnsEmptyList()
+    public async Task QueryForTopology_WithNullWriterNodeId_ReturnsEmptyList()
     {
         var multiAzProviderSpy = this.GetMultiAzRdsHostListProviderSpy();
 
-        var mockWriterNodeCommand = new Mock<IDbCommand>();
-        var mockNodeIdCommand = new Mock<IDbCommand>();
-        var mockTopologyCommand = new Mock<IDbCommand>();
-        var mockWriterNodeReader = new Mock<IDataReader>();
-        var mockNodeIdReader = new Mock<IDataReader>();
-        var mockTopologyReader = new Mock<IDataReader>();
+        this.mockConnection.Mocks.When(cmd => cmd.CommandText == FetchWriterNodeQuery)
+            .ReturnsTable(MockTable.WithColumns(FetchWriterNodeQueryHeader, "unrelated_column")
+            .AddRow(null, 1));
+        this.mockConnection.Mocks.WhenAny().ReturnsTable(MockTable.Empty());
 
-        this.mockConnection.SetupSequence(c => c.CreateCommand())
-            .Returns(mockWriterNodeCommand.Object)
-            .Returns(mockNodeIdCommand.Object)
-            .Returns(mockTopologyCommand.Object);
-
-        mockWriterNodeCommand.Setup(c => c.ExecuteReader()).Returns(mockWriterNodeReader.Object);
-        mockNodeIdCommand.Setup(c => c.ExecuteReader()).Returns(mockNodeIdReader.Object);
-        mockTopologyCommand.Setup(c => c.ExecuteReader()).Returns(mockTopologyReader.Object);
-
-        mockWriterNodeReader.Setup(r => r.Read()).Returns(true);
-        mockWriterNodeReader.Setup(r => r.GetOrdinal(FetchWriterNodeQueryHeader)).Returns(0);
-        mockWriterNodeReader.Setup(r => r.IsDBNull(0)).Returns(true);
-
-        mockNodeIdReader.Setup(r => r.Read()).Returns(false);
-
-        mockTopologyReader.Setup(r => r.Read()).Returns(false);
-
-        var result = multiAzProviderSpy.Object.QueryForTopology(this.mockConnection.Object);
+        var result = await multiAzProviderSpy.Object.QueryForTopologyAsync(this.mockConnection);
 
         Assert.NotNull(result);
         Assert.Empty(result);
@@ -234,85 +152,36 @@ public class RdsMultiAzDbClusterListProviderTest : IDisposable
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void QueryForTopology_WithMissingEndpoint_ThrowsDataException()
+    public async Task QueryForTopology_WithMissingEndpoint_ThrowsDataException()
     {
         var multiAzProviderSpy = this.GetMultiAzRdsHostListProviderSpy();
 
-        var mockWriterNodeCommand = new Mock<IDbCommand>();
-        var mockTopologyCommand = new Mock<IDbCommand>();
-        var mockWriterNodeReader = new Mock<IDataReader>();
-        var mockTopologyReader = new Mock<IDataReader>();
+        this.mockConnection.Mocks.When(cmd => cmd.CommandText == FetchWriterNodeQuery)
+            .ReturnsTable(MockTable.WithColumns(FetchWriterNodeQueryHeader)
+            .AddRow(WriterNodeId));
+        this.mockConnection.Mocks.When(cmd => cmd.CommandText == TopologyQuery)
+            .ReturnsTable(MockTable.WithColumns("endpoint", "id", "port")
+            .AddRow(null, WriterNodeId, 5432));
 
-        this.mockConnection.SetupSequence(c => c.CreateCommand())
-            .Returns(mockWriterNodeCommand.Object)
-            .Returns(mockTopologyCommand.Object);
-
-        mockWriterNodeCommand.Setup(c => c.ExecuteReader()).Returns(mockWriterNodeReader.Object);
-        mockTopologyCommand.Setup(c => c.ExecuteReader()).Returns(mockTopologyReader.Object);
-
-        mockWriterNodeReader.Setup(r => r.Read()).Returns(true);
-        mockWriterNodeReader.Setup(r => r.GetOrdinal(FetchWriterNodeQueryHeader)).Returns(0);
-        mockWriterNodeReader.Setup(r => r.IsDBNull(0)).Returns(false);
-        mockWriterNodeReader.Setup(r => r.GetValue(0)).Returns(WriterNodeId);
-
-        mockTopologyReader.Setup(r => r.Read()).Returns(true);
-        mockTopologyReader.Setup(r => r.GetOrdinal("endpoint")).Returns(0);
-        mockTopologyReader.Setup(r => r.GetOrdinal("id")).Returns(1);
-        mockTopologyReader.Setup(r => r.GetOrdinal("port")).Returns(2);
-        mockTopologyReader.Setup(r => r.IsDBNull(0)).Returns(true); // Missing endpoint
-
-        Assert.Throws<NullReferenceException>(() =>
-            multiAzProviderSpy.Object.QueryForTopology(this.mockConnection.Object));
+        await Assert.ThrowsAsync<NullReferenceException>(async () =>
+            await multiAzProviderSpy.Object.QueryForTopologyAsync(this.mockConnection));
     }
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void QueryForTopology_WithNoWriterInstance_ReturnsEmptyList()
+    public async Task QueryForTopology_WithNoWriterInstance_ReturnsEmptyList()
     {
         var multiAzProviderSpy = this.GetMultiAzRdsHostListProviderSpy();
 
-        var mockWriterNodeCommand = new Mock<IDbCommand>();
-        var mockTopologyCommand = new Mock<IDbCommand>();
-        var mockWriterNodeReader = new Mock<IDataReader>();
-        var mockTopologyReader = new Mock<IDataReader>();
+        this.mockConnection.Mocks.When(cmd => cmd.CommandText == FetchWriterNodeQuery)
+            .ReturnsTable(MockTable.WithColumns(FetchWriterNodeQueryHeader)
+            .AddRow("non-existent-writer"));
+        this.mockConnection.Mocks.When(cmd => cmd.CommandText == TopologyQuery)
+            .ReturnsTable(MockTable.WithColumns("endpoint", "id", "port")
+            .AddRow(ReaderEndpoint1, ReaderNodeId1, 5432)
+            .AddRow(ReaderEndpoint2, ReaderNodeId2, 5432));
 
-        this.mockConnection.SetupSequence(c => c.CreateCommand())
-            .Returns(mockWriterNodeCommand.Object)
-            .Returns(mockTopologyCommand.Object);
-
-        mockWriterNodeCommand.Setup(c => c.ExecuteReader()).Returns(mockWriterNodeReader.Object);
-        mockTopologyCommand.Setup(c => c.ExecuteReader()).Returns(mockTopologyReader.Object);
-
-        mockWriterNodeReader.Setup(r => r.Read()).Returns(true);
-        mockWriterNodeReader.Setup(r => r.GetOrdinal(FetchWriterNodeQueryHeader)).Returns(0);
-        mockWriterNodeReader.Setup(r => r.IsDBNull(0)).Returns(false);
-        mockWriterNodeReader.Setup(r => r.GetString(0)).Returns("non-existent-writer");
-
-        // Setup topology query with only readers (no matching writer)
-        mockTopologyReader.SetupSequence(r => r.Read())
-            .Returns(true) // Reader 1
-            .Returns(true) // Reader 2
-            .Returns(false); // End
-
-        mockTopologyReader.Setup(r => r.GetOrdinal("endpoint")).Returns(0);
-        mockTopologyReader.Setup(r => r.GetOrdinal("id")).Returns(1);
-        mockTopologyReader.Setup(r => r.GetOrdinal("port")).Returns(2);
-
-        mockTopologyReader.Setup(r => r.IsDBNull(0)).Returns(false);
-        mockTopologyReader.Setup(r => r.IsDBNull(1)).Returns(false);
-        mockTopologyReader.Setup(r => r.IsDBNull(2)).Returns(false);
-
-        mockTopologyReader.SetupSequence(r => r.GetString(0))
-            .Returns(ReaderEndpoint1)
-            .Returns(ReaderEndpoint2);
-
-        mockTopologyReader.SetupSequence(r => r.GetString(1))
-            .Returns(ReaderNodeId1)
-            .Returns(ReaderNodeId2);
-
-        mockTopologyReader.Setup(r => r.GetInt32(2)).Returns(5432);
-
-        var result = multiAzProviderSpy.Object.QueryForTopology(this.mockConnection.Object);
+        var result = await multiAzProviderSpy.Object.QueryForTopologyAsync(this.mockConnection);
 
         Assert.NotNull(result);
         Assert.Empty(result); // Should return empty list when no writer found
@@ -320,7 +189,7 @@ public class RdsMultiAzDbClusterListProviderTest : IDisposable
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void GetTopology_ReturnsCachedTopology()
+    public async Task GetTopology_ReturnsCachedTopology()
     {
         var multiAzProviderSpy = this.GetMultiAzRdsHostListProviderSpy();
         var cachedHosts = new List<HostSpec>
@@ -331,7 +200,7 @@ public class RdsMultiAzDbClusterListProviderTest : IDisposable
 
         RdsHostListProvider.TopologyCache.Set(multiAzProviderSpy.Object.ClusterId, cachedHosts, this.topologyRefreshRate);
 
-        var result = multiAzProviderSpy.Object.GetTopology(this.mockConnection.Object, false);
+        var result = await multiAzProviderSpy.Object.GetTopologyAsync(this.mockConnection, false);
 
         Assert.Equal(cachedHosts, result.Hosts);
         Assert.True(result.IsCachedData);
@@ -339,50 +208,29 @@ public class RdsMultiAzDbClusterListProviderTest : IDisposable
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void GetTopology_WithForceUpdate_ReturnsUpdatedTopology()
+    public async Task GetTopology_WithForceUpdate_ReturnsUpdatedTopology()
     {
         var multiAzProviderSpy = this.GetMultiAzRdsHostListProviderSpy();
         var cachedHosts = new List<HostSpec>
         {
             new HostSpecBuilder().WithHost("cached-writer").WithRole(HostRole.Writer).Build(),
         };
+        var expectedHost = "fresh-writer.cluster-xyz.us-east-2.rds.amazonaws.com";
 
         RdsHostListProvider.TopologyCache.Set(multiAzProviderSpy.Object.ClusterId, cachedHosts, this.topologyRefreshRate);
 
-        // Setup mock for QueryForTopology to return different results
-        var mockWriterNodeCommand = new Mock<IDbCommand>();
-        var mockTopologyCommand = new Mock<IDbCommand>();
-        var mockWriterNodeReader = new Mock<IDataReader>();
-        var mockTopologyReader = new Mock<IDataReader>();
+        this.mockConnection.Mocks.When(cmd => cmd.CommandText == FetchWriterNodeQuery)
+            .ReturnsTable(MockTable.WithColumns(FetchWriterNodeQueryHeader)
+            .AddRow(WriterNodeId));
+        this.mockConnection.Mocks.When(cmd => cmd.CommandText == TopologyQuery)
+            .ReturnsTable(MockTable.WithColumns("endpoint", "id", "port")
+            .AddRow(expectedHost, WriterNodeId, 5432));
 
-        this.mockConnection.SetupSequence(c => c.CreateCommand())
-            .Returns(mockWriterNodeCommand.Object)
-            .Returns(mockTopologyCommand.Object);
-
-        mockWriterNodeCommand.Setup(c => c.ExecuteReader()).Returns(mockWriterNodeReader.Object);
-        mockTopologyCommand.Setup(c => c.ExecuteReader()).Returns(mockTopologyReader.Object);
-
-        mockWriterNodeReader.Setup(r => r.Read()).Returns(true);
-        mockWriterNodeReader.Setup(r => r.GetOrdinal(FetchWriterNodeQueryHeader)).Returns(0);
-        mockWriterNodeReader.Setup(r => r.IsDBNull(0)).Returns(false);
-        mockWriterNodeReader.Setup(r => r.GetValue(0)).Returns(WriterNodeId);
-
-        mockTopologyReader.SetupSequence(r => r.Read()).Returns(true).Returns(false);
-        mockTopologyReader.Setup(r => r.GetOrdinal("endpoint")).Returns(0);
-        mockTopologyReader.Setup(r => r.GetOrdinal("id")).Returns(1);
-        mockTopologyReader.Setup(r => r.GetOrdinal("port")).Returns(2);
-        mockTopologyReader.Setup(r => r.IsDBNull(0)).Returns(false);
-        mockTopologyReader.Setup(r => r.IsDBNull(1)).Returns(false);
-        mockTopologyReader.Setup(r => r.IsDBNull(2)).Returns(false);
-        mockTopologyReader.Setup(r => r.GetString(0)).Returns("fresh-writer.xyz.us-east-2.rds.amazonaws.com");
-        mockTopologyReader.Setup(r => r.GetValue(1)).Returns(WriterNodeId);
-        mockTopologyReader.Setup(r => r.GetInt32(2)).Returns(5432);
-
-        var result = multiAzProviderSpy.Object.GetTopology(this.mockConnection.Object, true);
+        var result = await multiAzProviderSpy.Object.GetTopologyAsync(this.mockConnection, true);
 
         Assert.NotEqual(cachedHosts, result.Hosts);
         Assert.False(result.IsCachedData);
         Assert.Single(result.Hosts);
-        Assert.Equal("fresh-writer.cluster-xyz.us-east-2.rds.amazonaws.com", result.Hosts[0].Host);
+        Assert.Equal(expectedHost, result.Hosts[0].Host);
     }
 }

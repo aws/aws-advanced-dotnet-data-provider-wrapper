@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data;
+using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -49,9 +49,9 @@ public class AuroraPgDialect : PgDialect
         typeof(RdsMultiAzDbClusterPgDialect),
     ];
 
-    public override bool IsDialect(IDbConnection connection)
+    public override async Task<bool> IsDialect(DbConnection connection)
     {
-        if (!base.IsDialect(connection))
+        if (!(await base.IsDialect(connection)))
         {
             return false;
         }
@@ -61,10 +61,10 @@ public class AuroraPgDialect : PgDialect
 
         try
         {
-            using IDbCommand command = connection.CreateCommand();
+            await using var command = connection.CreateCommand();
             command.CommandText = $"{ExtensionsSql}; {TopologySql}";
-            using IDataReader reader = command.ExecuteReader();
-            if (reader.Read())
+            await using var reader = await command.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
             {
                 bool auroraUtils = reader.GetBoolean(reader.GetOrdinal("aurora_stat_utils"));
                 if (auroraUtils)
@@ -73,7 +73,7 @@ public class AuroraPgDialect : PgDialect
                 }
             }
 
-            if (reader.NextResult() && reader.Read())
+            if (await reader.NextResultAsync() && await reader.ReadAsync())
             {
                 hasTopology = true;
             }
