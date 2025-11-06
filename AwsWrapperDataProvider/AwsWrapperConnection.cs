@@ -108,10 +108,17 @@ public class AwsWrapperConnection : DbConnection
         this.targetType = targetType;
     }
 
-    public AwsWrapperConnection(Type? targetType, string connectionString, ConfigurationProfile? profile) : base()
+    public AwsWrapperConnection(Type? targetType, string? connectionString, ConfigurationProfile? profile) : base()
     {
-        this.connectionString = connectionString;
-        this.InitializeConnection(targetType, profile);
+        if (string.IsNullOrEmpty(connectionString))
+        {
+            this.deferredInitialization = true;
+        }
+        else
+        {
+            this.connectionString = connectionString;
+            this.InitializeConnection(targetType, profile);
+        }
     }
 
     private void InitializeConnection(Type? targetType, ConfigurationProfile? profile)
