@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Plugin.FederatedAuth.Utils;
 
 namespace AwsWrapperDataProvider.Tests.Driver.Utils;
 
