@@ -37,7 +37,6 @@ public static class PGFailover
     {
         const string connectionString =
             "Host=<host>;Database=<db_name>;Username=<username>;Password=<password>;Plugins=failover;";
-        const string query = "select 1";
 
         using AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
         connection.Open();

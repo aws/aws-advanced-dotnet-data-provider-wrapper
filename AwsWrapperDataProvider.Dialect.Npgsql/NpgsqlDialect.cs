@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
@@ -27,8 +28,35 @@ public class NpgsqlDialect : AbstractTargetConnectionDialect
     public override string PrepareConnectionString(
         IDialect dialect,
         HostSpec? hostSpec,
-        Dictionary<string, string> props)
+        Dictionary<string, string> props,
+        bool isForceOpen = false)
     {
-        return this.PrepareConnectionString(dialect, hostSpec, props, PropertyDefinition.Host);
+        Dictionary<string, string> copyOfProps = new(props);
+
+        if (isForceOpen)
+        {
+            copyOfProps[DefaultPoolingParameterName] = "false";
+        }
+
+        return this.PrepareConnectionString(dialect, hostSpec, copyOfProps, PropertyDefinition.Host);
+    }
+
+    public override (bool ConnectionAlive, Exception? ConnectionException) Ping(IDbConnection connection)
+    {
+        try
+        {
+            if (connection is NpgsqlConnection npgsqlConnection)
+            {
+                using var cmd = new NpgsqlCommand("SELECT 1", npgsqlConnection);
+                cmd.ExecuteScalar();
+                return (true, null);
+            }
+        }
+        catch (Exception ex)
+        {
+            return (false, ex);
+        }
+
+        return (false, null);
     }
 }

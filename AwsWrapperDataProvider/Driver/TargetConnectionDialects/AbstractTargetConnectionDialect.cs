@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -22,6 +23,8 @@ public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
 {
     private const string DefaultPluginCode = "initialConnection,efm,failover";
 
+    protected const string DefaultPoolingParameterName = "Pooling";
+
     public abstract Type DriverConnectionType { get; }
 
     public bool IsDialect(Type connectionType)
@@ -29,7 +32,7 @@ public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
         return connectionType == this.DriverConnectionType;
     }
 
-    public abstract string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props);
+    public abstract string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, bool isForcedOpen = false);
 
     public ISet<string> GetAllowedOnConnectionMethodNames()
     {
@@ -67,7 +70,9 @@ public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
         return PropertyDefinition.Plugins.GetString(props) ?? DefaultPluginCode;
     }
 
-    protected string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, AwsWrapperProperty hostProperty)
+    public abstract (bool ConnectionAlive, Exception? ConnectionException) Ping(IDbConnection connection);
+
+    protected virtual string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, AwsWrapperProperty hostProperty)
     {
         Dictionary<string, string> targetConnectionParameters = props.Where(x =>
             !PropertyDefinition.InternalWrapperProperties

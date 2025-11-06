@@ -36,7 +36,6 @@ public static class MySqlFailover
     {
         const string connectionString =
             "Server=<host>;Database=<db_name>;User Id=<user>;Password=<password>;Plugins=failover;";
-        const string query = "select 1";
 
         using AwsWrapperConnection<MySql.Data.MySqlClient.MySqlConnection> connection = new(connectionString);
         connection.Open();

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data;
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
@@ -42,14 +43,22 @@ public interface ITargetConnectionDialect
     /// <param name="dialect">The dialect of connection.</param>
     /// <param name="hostSpec">The host specification.</param>
     /// <param name="props">Connection properties.</param>
+    /// <param name="isForcedOpen">Is connection string for a forced open connection.</param>
     /// <returns>The prepared connection string.</returns>
-    string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props);
+    string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, bool isForcedOpen = false);
 
     /// <summary>
     /// Gets the set of method names that are allowed to be called on the connection.
     /// </summary>
     /// <returns>Set of allowed method names.</returns>
     ISet<string> GetAllowedOnConnectionMethodNames();
+
+    /// <summary>
+    /// Checks if the connection is alive.
+    /// </summary>
+    /// <param name="connection">Connection to ping.</param>
+    /// <returns>Tuple of bool that is True if connection alive, and Exception if ping throws an exception.</returns>
+    (bool ConnectionAlive, Exception? ConnectionException) Ping(IDbConnection connection);
 
     /// <summary>
     /// Prepares the plugin codes from the given props if specified.

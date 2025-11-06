@@ -15,6 +15,7 @@
 using System.Collections.Concurrent;
 using System.Data.Common;
 using System.Globalization;
+using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -288,6 +289,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             }
 
             Logger.LogTrace("Monitoring connection@{Id} is set to null", RuntimeHelpers.GetHashCode(this.monitoringConnection));
+
             var conn = Interlocked.Exchange(ref this.monitoringConnection, null);
             await this.DisposeConnectionAsync(conn);
 
@@ -430,7 +432,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                 // Don't close this connection - it's now the monitoring connection
                 newConnection = null;
             }
-            catch (DbException ex)
+            catch (Exception ex) when (ex is DbException or EndOfStreamException)
             {
                 // Suppress connection errors and continue
                 Logger.LogWarning(ex, "DbException thrown during finding a monitoring connection, and ignored.");
@@ -778,7 +780,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                             connection = await monitor.pluginService.ForceOpenConnection(hostSpec, monitor.properties, null, true);
                             monitor.pluginService.SetAvailability(hostSpec.AsAliases(), HostAvailability.Available);
                         }
-                        catch (DbException)
+                        catch (Exception ex) when (ex is DbException or EndOfStreamException)
                         {
                             monitor.pluginService.SetAvailability(hostSpec.AsAliases(), HostAvailability.Unavailable);
                             await monitor.DisposeConnectionAsync(connection);
@@ -793,7 +795,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                         {
                             writerId = await monitor.GetWriterNodeIdAsync(connection);
                         }
-                        catch (DbException)
+                        catch (Exception ex) when (ex is DbException or EndOfStreamException)
                         {
                             await monitor.DisposeConnectionAsync(connection);
                             connection = null;

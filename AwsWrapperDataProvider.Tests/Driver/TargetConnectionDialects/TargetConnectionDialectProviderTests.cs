@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data;
 using System.Data.Common;
 using AwsWrapperDataProvider.Dialect.MySqlClient;
 using AwsWrapperDataProvider.Dialect.MySqlConnector;
@@ -114,12 +115,17 @@ public class TargetConnectionDialectProviderTests
 
         public ISet<string> GetAllowedOnConnectionMethodNames() => new HashSet<string>();
 
+        public (bool ConnectionAlive, Exception? ConnectionException) Ping(IDbConnection connection)
+        {
+            return (true, null);
+        }
+
         public string GetPluginCodesOrDefault(Dictionary<string, string> props)
         {
             return "efm,failover";
         }
 
-        public string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props)
+        public string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, bool isForceOpen = false)
         {
             return "TestConnectionString";
         }

@@ -13,6 +13,8 @@
 // limitations under the License.
 
 using System.Data.Common;
+using System.Globalization;
+using System.Runtime.CompilerServices;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
@@ -36,6 +38,9 @@ public class RdsMultiAzDbClusterPgDialect : PgDialect
         + " WHERE multi_az_db_cluster_source_dbi_resource_id OPERATOR(pg_catalog.!=)"
         + " (SELECT dbi_resource_id FROM rds_tools.dbi_resource_id())";
 
+    private static readonly string HasRdsToolsExtensionQuery =
+        "SELECT EXISTS (SELECT 1 FROM pg_catalog.pg_extension WHERE extname OPERATOR(pg_catalog.=) 'rds_tools');";
+
     private static readonly string IsRdsClusterQuery =
         "SELECT multi_az_db_cluster_source_dbi_resource_id FROM rds_tools.multi_az_db_cluster_source_dbi_resource_id()";
 
@@ -50,16 +55,38 @@ public class RdsMultiAzDbClusterPgDialect : PgDialect
 
     public override async Task<bool> IsDialect(DbConnection connection)
     {
+        Logger.LogDebug("RdsMultiAzDbClusterPgDialect.IsDialect() called with connection state = {State}, type = {Type}@{Id}, Database = {Database}",
+            connection.State,
+            connection.GetType().FullName,
+            RuntimeHelpers.GetHashCode(connection),
+            connection.Database);
+
         try
         {
-            await using var isDialectCommand = connection.CreateCommand();
-            isDialectCommand.CommandText = IsRdsClusterQuery;
-            await using var isDialectReader = await isDialectCommand.ExecuteReaderAsync();
-            return await isDialectReader.ReadAsync() && !(await isDialectReader.IsDBNullAsync(0));
+            // check if rds_tools extension is installed
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = HasRdsToolsExtensionQuery;
+                var existsObject = await command.ExecuteScalarAsync();
+                var hasRdsTools = existsObject is bool b ? b : Convert.ToBoolean(existsObject, CultureInfo.InvariantCulture);
+                if (!hasRdsTools)
+                {
+                    Logger.LogTrace("rds_tools extension not installed; skipping dialect function call.");
+                    return false;
+                }
+            }
+
+            // check is rds multi az cluster
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = IsRdsClusterQuery;
+                await using var reader = await command.ExecuteReaderAsync();
+                return await reader.ReadAsync() && !(await reader.IsDBNullAsync(0));
+            }
         }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, "Error occurred when checking whether it's dialect");
+            Logger.LogWarning(ex, "Error occurred when checking whether it's dialect, connection state = {State}", connection.State);
         }
 
         return false;

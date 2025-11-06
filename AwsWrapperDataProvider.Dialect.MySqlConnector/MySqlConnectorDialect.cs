@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
@@ -30,10 +31,28 @@ public class MySqlConnectorDialect : AbstractTargetConnectionDialect
     public override string PrepareConnectionString(
         IDialect dialect,
         HostSpec? hostSpec,
-        Dictionary<string, string> props)
+        Dictionary<string, string> props,
+        bool isForceOpen = false)
     {
         PropertyDefinition.Port.GetInt(props);
-        return this.PrepareConnectionString(dialect, hostSpec, props, PropertyDefinition.Server);
+        Dictionary<string, string> copyOfProps = new(props);
+
+        if (isForceOpen)
+        {
+            copyOfProps[DefaultPoolingParameterName] = "false";
+        }
+
+        return this.PrepareConnectionString(dialect, hostSpec, copyOfProps, PropertyDefinition.Server);
+    }
+
+    public override (bool ConnectionAlive, Exception? ConnectionException) Ping(IDbConnection connection)
+    {
+        if (connection is MySqlConnection mySqlConnection)
+        {
+            return (mySqlConnection.Ping(), null);
+        }
+
+        return (false, null);
     }
 
     public override string GetPluginCodesOrDefault(Dictionary<string, string> props)

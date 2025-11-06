@@ -52,10 +52,9 @@ public class DialectProvider
     };
 
     public IDialect GuessDialect(
-        Dictionary<string, string> props,
         ConfigurationProfile? configurationProfile)
     {
-        return configurationProfile?.Dialect ?? this.GuessDialect(props);
+        return configurationProfile?.Dialect ?? this.GuessDialect();
     }
 
     private static readonly Dictionary<(RdsUrlType UrlType, string DatasourceType), Type> DialectTypeMap = new()
@@ -83,12 +82,14 @@ public class DialectProvider
     };
 
     private readonly PluginService pluginService;
-    private IDialect? dialect = null;
+    private readonly Dictionary<string, string> properties;
+    private IDialect? dialect;
     internal bool CanUpdate = false;
 
-    public DialectProvider(PluginService pluginService)
+    public DialectProvider(PluginService pluginService, Dictionary<string, string> props)
     {
         this.pluginService = pluginService;
+        this.properties = props;
     }
 
     public static void ResetEndpointCache()
@@ -96,13 +97,13 @@ public class DialectProvider
         KnownEndpointDialects.Clear();
     }
 
-    public IDialect GuessDialect(Dictionary<string, string> props)
+    public IDialect GuessDialect()
     {
         this.dialect = null;
         this.CanUpdate = false;
 
         // Check for custom dialect in properties
-        if (PropertyDefinition.TargetDialect.GetString(props) is { } customDialectTypeName &&
+        if (PropertyDefinition.TargetDialect.GetString(this.properties) is { } customDialectTypeName &&
             !string.IsNullOrEmpty(customDialectTypeName))
         {
             // Try to find and instantiate the custom dialect type
@@ -112,9 +113,9 @@ public class DialectProvider
                    throw new InvalidOperationException($"Failed to instantiate custom dialect type '{customDialectTypeName}'");
         }
 
-        string host = PropertyDefinition.GetConnectionUrl(props);
+        string host = PropertyDefinition.GetConnectionUrl(this.properties);
         IList<HostSpec> hosts = ConnectionPropertiesUtils.GetHostsFromProperties(
-            props,
+            this.properties,
             this.pluginService.HostSpecBuilder,
             true);
         if (hosts.Count != 0)
@@ -130,10 +131,11 @@ public class DialectProvider
         }
 
         RdsUrlType rdsUrlType = RdsUtils.IdentifyRdsType(host);
-        string targetConnectionType = PropertyDefinition.TargetConnectionType.GetString(props)! ?? throw new InvalidCastException("Target connection type not found.");
+        string targetConnectionType = PropertyDefinition.TargetConnectionType.GetString(this.properties)! ?? throw new InvalidCastException("Target connection type not found.");
         string targetDatasourceType = ConnectionToDatasourceMap
             .FirstOrDefault(kvp => targetConnectionType.Contains(kvp.Key))
             .Value ?? "unknown";
+
         Type dialectType = DialectTypeMap.GetValueOrDefault((rdsUrlType, targetDatasourceType), typeof(UnknownDialect));
         this.dialect = KnownDialectsByType[dialectType];
         Logger.LogDebug("Guessed dialect: {dialect}", this.dialect.GetType().FullName);
@@ -172,10 +174,8 @@ public class DialectProvider
                     this.CanUpdate = false;
                     return this.dialect;
                 }
-                else
-                {
-                    Logger.LogDebug("Not dialect: {dialect}", dialect.GetType().FullName);
-                }
+
+                Logger.LogDebug("Not dialect: {dialect}", dialect.GetType().FullName);
             }
             catch (Exception ex)
             {

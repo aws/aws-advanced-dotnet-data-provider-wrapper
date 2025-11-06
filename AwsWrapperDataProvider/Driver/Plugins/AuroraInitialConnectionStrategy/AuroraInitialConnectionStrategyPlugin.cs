@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data;
 using System.Data.Common;
+using AwsWrapperDataProvider.Driver.Exceptions;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -21,6 +23,8 @@ namespace AwsWrapperDataProvider.Driver.Plugins.AuroraInitialConnectionStrategy;
 
 public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
 {
+    private const int DnsRetries = 3;
+
     private readonly IPluginService pluginService;
     private readonly VerifyOpenedConnectionType? verifyOpenedConnectionType;
 
@@ -107,12 +111,25 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
 
             try
             {
-                await this.pluginService.ForceRefreshHostListAsync();
                 writerCandidate = this.GetWriter();
 
                 if (writerCandidate == null || RdsUtils.IsRdsClusterDns(writerCandidate.Host))
                 {
-                    writerConnectionCandidate = await methodFunc();
+                    try
+                    {
+                        writerConnectionCandidate = await methodFunc();
+                    }
+                    catch (InvalidOpenConnectionException)
+                    {
+                        writerConnectionCandidate?.Dispose();
+                        writerConnectionCandidate = await this.RetryInvalidOpenConnection(props);
+
+                        if (writerConnectionCandidate == null)
+                        {
+                            throw;
+                        }
+                    }
+
                     await this.pluginService.ForceRefreshHostListAsync(writerConnectionCandidate);
                     writerCandidate = await this.pluginService.IdentifyConnectionAsync(writerConnectionCandidate);
 
@@ -139,6 +156,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
                     await this.pluginService.ForceRefreshHostListAsync(writerConnectionCandidate);
                     this.DisposeConnection(writerConnectionCandidate);
                     await Task.Delay(retryDelay);
+                    continue;
                 }
 
                 if (isInitialConnection)
@@ -190,12 +208,25 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
 
             try
             {
-                await this.pluginService.ForceRefreshHostListAsync();
                 readerCandidate = this.GetReader(props);
 
                 if (readerCandidate == null || RdsUtils.IsRdsClusterDns(readerCandidate.Host))
                 {
-                    readerConnectionCandidate = await methodFunc();
+                    try
+                    {
+                        readerConnectionCandidate = await methodFunc();
+                    }
+                    catch (InvalidOpenConnectionException)
+                    {
+                        readerConnectionCandidate?.Dispose();
+                        readerConnectionCandidate = await this.RetryInvalidOpenConnection(props);
+
+                        if (readerConnectionCandidate == null)
+                        {
+                            throw;
+                        }
+                    }
+
                     await this.pluginService.ForceRefreshHostListAsync(readerConnectionCandidate);
                     readerCandidate = await this.pluginService.IdentifyConnectionAsync(readerConnectionCandidate);
 
@@ -339,4 +370,29 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
         { "writer", VerifyOpenedConnectionType.Writer },
         { "reader", VerifyOpenedConnectionType.Reader },
     };
+
+    private async Task<DbConnection?> RetryInvalidOpenConnection(Dictionary<string, string> props)
+    {
+        DbConnection? connection = null;
+
+        for (int attempt = 1; attempt <= DnsRetries; attempt++)
+        {
+            connection?.Dispose();
+            connection = await this.pluginService.ForceOpenConnection(this.pluginService.CurrentHostSpec!, props, this, true);
+
+            if (this.pluginService.TargetConnectionDialect.Ping(connection).ConnectionAlive)
+            {
+                return connection;
+            }
+
+            if (attempt == DnsRetries)
+            {
+                break;
+            }
+
+            Thread.Sleep(100);
+        }
+
+        return null;
+    }
 }

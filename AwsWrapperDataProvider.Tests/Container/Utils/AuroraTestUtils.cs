@@ -650,7 +650,7 @@ public class AuroraTestUtils
 
         if (deployment == DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER)
         {
-            var simulationTask = this.SimulateTemporaryFailureTask(instanceId, TimeSpan.Zero, TimeSpan.FromSeconds(12), tcs);
+            var simulationTask = this.SimulateTemporaryFailureTask(instanceId, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
         }
         else
         {

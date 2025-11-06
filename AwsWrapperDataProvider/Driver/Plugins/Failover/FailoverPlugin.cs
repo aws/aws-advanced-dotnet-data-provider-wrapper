@@ -101,10 +101,24 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
     public override async Task<T> Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, params object[] methodArgs)
     {
+        Logger.LogDebug("Execute called: method={MethodName}, isClosed={IsClosed}, closedExplicitly={ClosedExplicitly}",
+            methodName,
+            this.isClosed,
+            this.closedExplicitly);
+
+        if (this.pluginService.CurrentConnection != null)
+        {
+            Logger.LogDebug("Current connection state: {State}, Hash={Hash}, DataSource={DataSource}",
+                this.pluginService.CurrentConnection.State,
+                RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection),
+                this.pluginService.CurrentConnection.DataSource);
+        }
+
         if (this.pluginService.CurrentConnection != null
             && !this.CanDirectExecute(methodName)
             && !this.closedExplicitly
-            && this.pluginService.CurrentConnection.State == ConnectionState.Closed)
+            && (this.pluginService.CurrentConnection.State == ConnectionState.Closed
+            || this.pluginService.CurrentConnection.State == ConnectionState.Broken))
         {
             await this.PickNewConnectionAsync();
         }
@@ -170,7 +184,8 @@ public class FailoverPlugin : AbstractConnectionPlugin
                 this.hostListProviderService!,
                 hostSpec!,
                 properties,
-                methodFunc);
+                methodFunc,
+                this);
         }
 
         var hostSpecWithAvailability = this.pluginService.GetHosts()
@@ -185,7 +200,8 @@ public class FailoverPlugin : AbstractConnectionPlugin
                     this.hostListProviderService!,
                     hostSpec!,
                     properties,
-                    methodFunc);
+                    methodFunc,
+                    this);
             }
             catch (Exception e)
             {
@@ -226,8 +242,14 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
         if (isInitialConnection)
         {
-            await this.pluginService.RefreshHostListAsync(connection);
+            await this.pluginService.ForceRefreshHostListAsync(connection);
         }
+
+        Logger.LogDebug("FailoverPlugin.OpenConnection returning connection state = {State}, type = {Type}@{Id}, DataSource = {DataSource}",
+            connection.State,
+            connection.GetType().FullName,
+            RuntimeHelpers.GetHashCode(connection),
+            connection.DataSource);
 
         return connection;
     }
@@ -241,6 +263,18 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
     private async Task InvalidInvocationOnClosedConnection()
     {
+        Logger.LogWarning("InvalidInvocationOnClosedConnection called: closedExplicitly={ClosedExplicitly}, isClosed={IsClosed}",
+            this.closedExplicitly,
+            this.isClosed);
+
+        if (this.pluginService.CurrentConnection != null)
+        {
+            Logger.LogWarning("Current connection when invalid invocation: Hash={Hash}, State={State}, DataSource={DataSource}",
+                RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection),
+                this.pluginService.CurrentConnection.State,
+                this.pluginService.CurrentConnection.DataSource);
+        }
+
         if (!this.closedExplicitly)
         {
             this.isClosed = false;
@@ -306,6 +340,11 @@ public class FailoverPlugin : AbstractConnectionPlugin
         Logger.LogInformation("Reader failover successful. Switching to host: {Host}.", result.HostSpec.Host);
 
         this.pluginService.SetCurrentConnection(result.Connection, result.HostSpec);
+        Logger.LogInformation("Reader failover: Set new connection {Hash} with state {State}, DataSource {DataSource} to host {Host}",
+            RuntimeHelpers.GetHashCode(result.Connection),
+            result.Connection.State,
+            result.Connection.DataSource,
+            result.HostSpec.Host);
         this.ThrowFailoverSuccessException();
     }
 
@@ -336,12 +375,6 @@ public class FailoverPlugin : AbstractConnectionPlugin
                 catch (Exception ex)
                 {
                     Logger.LogInformation(ex, LoggerUtils.LogTopology([.. remainingReaders], $"An error occurred while attempting to select a reader host candidate {readerCandidate} from Candidates"));
-                    break;
-                }
-
-                if (readerCandidate is null)
-                {
-                    Logger.LogInformation(LoggerUtils.LogTopology([.. remainingReaders], "Unable to find reader in updated host list"));
                     break;
                 }
 
@@ -466,12 +499,24 @@ public class FailoverPlugin : AbstractConnectionPlugin
         }
 
         this.pluginService.SetCurrentConnection(writerCandidateConn, writerCandidate);
+        Logger.LogInformation("Writer failover: Set new connection {Hash} with state {State} to host {Host}",
+            RuntimeHelpers.GetHashCode(writerCandidateConn),
+            writerCandidateConn.State,
+            writerCandidate.Host);
         this.ThrowFailoverSuccessException();
     }
 
     private void ThrowFailoverSuccessException()
     {
         Logger.LogTrace("Failover succeeded");
+
+        if (this.pluginService.CurrentConnection != null)
+        {
+            Logger.LogDebug("Current connection after failover: Hash={Hash}, State={State}, DataSource={DataSource}",
+                RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection),
+                this.pluginService.CurrentConnection.State,
+                this.pluginService.CurrentConnection.DataSource);
+        }
 
         if (this.shouldThrowTransactionError)
         {

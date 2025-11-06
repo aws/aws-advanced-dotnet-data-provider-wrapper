@@ -49,13 +49,19 @@ If the environment variable `REUSE_RDS_DB` is set to true, the integration tests
 To run the integration tests, you can select from a number of tasks:
 - `test-all-mysql-aurora`: run all MySql Aurora tests
 - `test-all-mysql-aurora-ef`: run all MySql Aurora Entity Framework tests
+- `test-all-mysql-aurora-nh`: run all MySql Aurora NHibernate tests
 - `test-all-mysql-multi-az-cluster`: run all MySql multi-az cluster tests
 - `test-all-mysql-multi-az-cluster-ef`:run all MySql multi-az cluster Entity Framework tests
+- `test-all-mysql-multi-az-cluster-nh`: run all MySql multi-az cluster NHibernate tests
 - `test-all-mysql-multi-az-instance`: run all MySql multi-az instance tests
 - `test-all-mysql-multi-az-instance-ef`: run all MySql multi-az instance Entity Framework tests
+- `test-all-mysql-multi-az-instance-nh`: run all MySql multi-az instance NHibernate tests
 - `test-all-pg-aurora`: run all Postgres Aurora tests
+- `test-all-pg-aurora-nh`: run all Postgres Aurora NHibernate tests
 - `test-all-pg-multi-az-cluster`: run all Postgres Aurora multi-az cluster tests
-- `test-all-pg-multi-az-instance`: run all Postgres Aurora multi-az instance tests  
+- `test-all-pg-multi-az-cluster-nh`: run all Postgres Aurora multi-az cluster NHibernate tests
+- `test-all-pg-multi-az-instance`: run all Postgres Aurora multi-az instance tests
+- `test-all-pg-multi-az-instance-nh`: run all Postgres Aurora multi-az instance NHibernate tests  
 
 For example, to run all MySql Aurora integration tests, you can use the following commands:
 
