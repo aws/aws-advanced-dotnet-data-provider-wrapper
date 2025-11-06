@@ -292,12 +292,7 @@ public class AwsWrapperCommand : DbCommand
     protected override DbParameter CreateDbParameter()
     {
         this.EnsureTargetDbCommandCreated();
-        return WrapperUtils.ExecuteWithPlugins(
-            this.pluginManager!,
-            this.TargetDbCommand!,
-            "DbCommand.CreateParameter",
-            () => Task.FromResult(this.TargetDbCommand!.CreateParameter()))
-            .GetAwaiter().GetResult();
+        return this.TargetDbCommand!.CreateParameter();
     }
 
     protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior)
