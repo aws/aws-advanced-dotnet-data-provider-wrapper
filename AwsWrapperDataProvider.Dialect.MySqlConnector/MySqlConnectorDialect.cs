@@ -39,7 +39,7 @@ public class MySqlConnectorDialect : AbstractTargetConnectionDialect
 
         if (isForceOpen)
         {
-            copyOfProps["Pooling"] = "false";
+            copyOfProps[DefaultPoolingParameterName] = "false";
         }
 
         return this.PrepareConnectionString(dialect, hostSpec, copyOfProps, PropertyDefinition.Server);

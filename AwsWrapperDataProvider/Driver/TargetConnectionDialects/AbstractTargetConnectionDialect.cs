@@ -23,6 +23,8 @@ public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
 {
     private const string DefaultPluginCode = "initialConnection,efm,failover";
 
+    protected const string DefaultPoolingParameterName = "Pooling";
+
     public abstract Type DriverConnectionType { get; }
 
     public bool IsDialect(Type connectionType)

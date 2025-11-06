@@ -218,6 +218,72 @@ public class AwsWrapperConnection : DbConnection
         return this.OpenInternal(cancellationToken, true);
     }
 
+    public override DataTable GetSchema()
+    {
+        return WrapperUtils.ExecuteWithPlugins(
+            this.PluginManager!,
+            this.pluginService!.CurrentConnection!,
+            "DbConnection.GetSchema",
+            () => Task.FromResult(this.pluginService.CurrentConnection!.GetSchema()))
+            .GetAwaiter().GetResult();
+    }
+
+    public override DataTable GetSchema(string collectionName)
+    {
+        return WrapperUtils.ExecuteWithPlugins(
+                this.PluginManager!,
+                this.pluginService!.CurrentConnection!,
+                "DbConnection.GetSchema",
+                () => Task.FromResult(this.pluginService.CurrentConnection!.GetSchema(collectionName)),
+                collectionName)
+            .GetAwaiter().GetResult();
+    }
+
+    public override DataTable GetSchema(string collectionName, string?[] restrictionValues)
+    {
+        return WrapperUtils.ExecuteWithPlugins(
+                this.PluginManager!,
+                this.pluginService!.CurrentConnection!,
+                "DbConnection.GetSchema",
+                () => Task.FromResult(this.pluginService.CurrentConnection!.GetSchema(collectionName, restrictionValues)),
+                collectionName,
+                restrictionValues)
+            .GetAwaiter().GetResult();
+    }
+
+    public override Task<DataTable> GetSchemaAsync(CancellationToken cancellationToken = default)
+    {
+        return WrapperUtils.ExecuteWithPlugins(
+            this.PluginManager!,
+            this.pluginService!.CurrentConnection!,
+            "DbConnection.GetSchema",
+            () => this.pluginService.CurrentConnection!.GetSchemaAsync(cancellationToken),
+            cancellationToken);
+    }
+
+    public override Task<DataTable> GetSchemaAsync(string collectionName, CancellationToken cancellationToken = default)
+    {
+        return WrapperUtils.ExecuteWithPlugins(
+                this.PluginManager!,
+                this.pluginService!.CurrentConnection!,
+                "DbConnection.GetSchema",
+                () => this.pluginService.CurrentConnection!.GetSchemaAsync(collectionName, cancellationToken),
+                collectionName,
+                cancellationToken);
+    }
+
+    public override Task<DataTable> GetSchemaAsync(string collectionName, string?[] restrictionValues, CancellationToken cancellationToken = default)
+    {
+        return WrapperUtils.ExecuteWithPlugins(
+            this.PluginManager!,
+            this.pluginService!.CurrentConnection!,
+            "DbConnection.GetSchema",
+            () => this.pluginService.CurrentConnection!.GetSchemaAsync(collectionName, restrictionValues, cancellationToken),
+            collectionName,
+            restrictionValues,
+            cancellationToken);
+    }
+
     private async Task OpenInternal(CancellationToken cancellationToken, bool async)
     {
         if (this.State != ConnectionState.Closed)
@@ -312,23 +378,18 @@ public class AwsWrapperConnection : DbConnection
 
     public new AwsWrapperBatch CreateBatch()
     {
-        DbBatch batch = this.TargetDbConnection!.CreateBatch();
+        DbBatch batch = WrapperUtils.ExecuteWithPlugins(
+                this.PluginManager!,
+                this.pluginService!.CurrentConnection!,
+                "DbConnection.GetSchema",
+                () => Task.FromResult(this.pluginService.CurrentConnection!.CreateBatch()))
+            .GetAwaiter().GetResult();
         return new AwsWrapperBatch(batch, this, this.PluginManager!);
-    }
-
-    protected override void Dispose(bool disposing)
-    {
-        if (disposing)
-        {
-            Logger.LogTrace("Disposing target db connection@{id}", RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection));
-            this.pluginService.CurrentConnection?.Dispose();
-            this.pluginService.SetCurrentConnection(null, null);
-        }
     }
 
     public override async ValueTask DisposeAsync()
     {
-        if (this.pluginService.CurrentConnection is not null)
+        if (this.pluginService?.CurrentConnection is not null)
         {
             Logger.LogTrace("Disposing target db connection@{id}", RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection));
             await this.pluginService.CurrentConnection.DisposeAsync().ConfigureAwait(false);

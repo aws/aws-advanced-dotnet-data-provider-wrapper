@@ -49,6 +49,7 @@ public class ConnectionStringHelper
 
                 mySqlConnectionStringBuilder.DefaultCommandTimeout = (uint)commandTimeout;
                 mySqlConnectionStringBuilder.ConnectionTimeout = (uint)connectionTimeout;
+                mySqlConnectionStringBuilder.Pooling = true;
 
                 url = mySqlConnectionStringBuilder.ConnectionString;
                 break;
@@ -77,6 +78,7 @@ public class ConnectionStringHelper
 
                 npgsqlConnectionStringBuilder.Timeout = connectionTimeout;
                 npgsqlConnectionStringBuilder.CommandTimeout = commandTimeout;
+                npgsqlConnectionStringBuilder.Pooling = true;
 
                 url = npgsqlConnectionStringBuilder.ConnectionString;
                 break;
