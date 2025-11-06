@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="NHibernate" Version="5.5.3" />
+        <PackageReference Include="MySqlConnector" Version="2.4.0" />
+        <PackageReference Include="NHibernate.Driver.MySqlConnector" Version="2.0.5" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\AwsWrapperDataProvider\AwsWrapperDataProvider.csproj" />
+        <ProjectReference Include="..\..\..\AwsWrapperDataProvider.NHibernate\AwsWrapperDataProvider.NHibernate.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="Product.hbm.xml" />
+    </ItemGroup>
+
+</Project>

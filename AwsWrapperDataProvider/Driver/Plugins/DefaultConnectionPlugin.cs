@@ -15,6 +15,7 @@
 using System.Data.Common;
 using System.Runtime.CompilerServices;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
+using AwsWrapperDataProvider.Driver.Exceptions;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -27,6 +28,8 @@ public class DefaultConnectionPlugin(
     IConnectionProvider defaultConnProvider,
     IConnectionProvider? effectiveConnProvider) : IConnectionPlugin
 {
+    private const int UpdateDialectMaxRetries = 3;
+
     private static readonly ILogger<DefaultConnectionPlugin> Logger = LoggerUtils.GetLogger<DefaultConnectionPlugin>();
 
     public IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string> { "*" };
@@ -52,7 +55,7 @@ public class DefaultConnectionPlugin(
         ADONetDelegate<DbConnection> methodFunc,
         bool async)
     {
-        return this.OpenInternal(hostSpec, props, this.defaultConnProvider, isInitialConnection, async);
+        return this.OpenInternal(hostSpec, props, this.defaultConnProvider, isInitialConnection, false, async);
     }
 
     public Task<DbConnection> ForceOpenConnection(
@@ -62,7 +65,7 @@ public class DefaultConnectionPlugin(
         ADONetDelegate<DbConnection> methodFunc,
         bool async)
     {
-        return this.OpenInternal(hostSpec, props, this.defaultConnProvider, isInitialConnection, async);
+        return this.OpenInternal(hostSpec, props, this.defaultConnProvider, isInitialConnection, true, async);
     }
 
     /// <summary>
@@ -74,26 +77,11 @@ public class DefaultConnectionPlugin(
         Dictionary<string, string> props,
         IConnectionProvider connProvider,
         bool isInitialConnection,
+        bool isForceOpen,
         bool async)
     {
-        // Create a new connection if it's not the initial connection or CurrentConnection is not null
-        DbConnection? conn;
-        if (isInitialConnection && this.pluginService.CurrentConnection != null)
-        {
-            conn = this.pluginService.CurrentConnection;
-            Logger.LogTrace("Reusing existing connection {Type}@{Id}.", conn.GetType().FullName, RuntimeHelpers.GetHashCode(conn));
-        }
-        else
-        {
-            conn = connProvider.CreateDbConnection(
-                this.pluginService.Dialect,
-                this.pluginService.TargetConnectionDialect,
-                hostSpec,
-                props);
-        }
+        DbConnection conn = connProvider.CreateDbConnection(this.pluginService.Dialect, this.pluginService.TargetConnectionDialect, hostSpec, props);
 
-        // Update connection string that may have been modified by other plugins
-        conn.ConnectionString = this.pluginService.TargetConnectionDialect.PrepareConnectionString(this.pluginService.Dialect, hostSpec, props);
         if (async)
         {
             await conn.OpenAsync();
@@ -105,12 +93,38 @@ public class DefaultConnectionPlugin(
 
         Logger.LogTrace("Connection {Type}@{Id} is opened with data source {ds}.", conn.GetType().FullName, RuntimeHelpers.GetHashCode(conn), conn.DataSource);
 
-        // Set availability and update dialect
-        this.pluginService.SetAvailability(hostSpec!.AsAliases(), HostAvailability.Available);
+        // TODO: Add configuration to skip ping check. (Not urgent)
+        // Ping to check if connection is actually alive.
+        // Due to connection pooling, the Open() call may succeed with Open status even if the database is not reachable.
+        if (!isForceOpen)
+        {
+            for (int attempt = 1; attempt <= UpdateDialectMaxRetries; attempt++)
+            {
+                (bool pingSuccess, Exception? pingException) = this.pluginService.TargetConnectionDialect.Ping(conn);
+                if (!pingSuccess)
+                {
+                    await conn.DisposeAsync();
+                    conn = connProvider.CreateDbConnection(this.pluginService.Dialect, this.pluginService.TargetConnectionDialect, hostSpec, props);
+                    await conn.OpenAsync();
+
+                    if (attempt == UpdateDialectMaxRetries)
+                    {
+                        throw new InvalidOpenConnectionException("Unable to establish a valid connection after multiple attempts.", pingException);
+                    }
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+
         if (isInitialConnection)
         {
             await this.pluginService.UpdateDialectAsync(conn);
         }
+
+        this.pluginService.SetAvailability(hostSpec!.AsAliases(), HostAvailability.Available);
 
         return conn;
     }

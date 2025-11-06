@@ -23,7 +23,7 @@ public class AwsWrapperDataAdapter : DbDataAdapter
 {
     protected DbDataAdapter targetDataAdapter;
 
-    private readonly ConnectionPluginManager connectionPluginManager;
+    private readonly ConnectionPluginManager? connectionPluginManager;
 
     internal AwsWrapperDataAdapter(DbDataAdapter targetDataAdapter, ConnectionPluginManager connectionPluginManager)
     {
@@ -34,7 +34,7 @@ public class AwsWrapperDataAdapter : DbDataAdapter
     public AwsWrapperDataAdapter(DbDataAdapter targetDataAdapter, AwsWrapperConnection connection)
     {
         this.targetDataAdapter = targetDataAdapter;
-        this.connectionPluginManager = connection.PluginManager;
+        this.connectionPluginManager = connection.PluginManager!;
     }
 
     internal DbDataAdapter TargetDbDataAdapter => this.targetDataAdapter;
@@ -120,7 +120,7 @@ public class AwsWrapperDataAdapter : DbDataAdapter
     public override int Update(DataSet dataSet)
     {
         return WrapperUtils.ExecuteWithPlugins<int>(
-            this.connectionPluginManager,
+            this.connectionPluginManager!,
             this.targetDataAdapter,
             "DbDataAdapter.Update",
             () => Task.FromResult(this.targetDataAdapter.Update(dataSet))).GetAwaiter().GetResult();
@@ -129,7 +129,7 @@ public class AwsWrapperDataAdapter : DbDataAdapter
     public new int Update(DataRow[] dataRows)
     {
         return WrapperUtils.ExecuteWithPlugins<int>(
-            this.connectionPluginManager,
+            this.connectionPluginManager!,
             this.targetDataAdapter,
             "DbDataAdapter.Update",
             () => Task.FromResult(this.targetDataAdapter.Update(dataRows))).GetAwaiter().GetResult();
@@ -138,7 +138,7 @@ public class AwsWrapperDataAdapter : DbDataAdapter
     public new int Update(DataTable dataTable)
     {
         return WrapperUtils.ExecuteWithPlugins<int>(
-            this.connectionPluginManager,
+            this.connectionPluginManager!,
             this.targetDataAdapter,
             "DbDataAdapter.Update",
             () => Task.FromResult(this.targetDataAdapter.Update(dataTable))).GetAwaiter().GetResult();
@@ -147,7 +147,7 @@ public class AwsWrapperDataAdapter : DbDataAdapter
     public new int Update(DataSet dataSet, string srcTable)
     {
         return WrapperUtils.ExecuteWithPlugins<int>(
-            this.connectionPluginManager,
+            this.connectionPluginManager!,
             this.targetDataAdapter,
             "DbDataAdapter.Update",
             () => Task.FromResult(this.targetDataAdapter.Update(dataSet, srcTable))).GetAwaiter().GetResult();
@@ -156,7 +156,7 @@ public class AwsWrapperDataAdapter : DbDataAdapter
     protected override int Fill(DataSet dataSet, int startRecord, int maxRecords, string srcTable, IDbCommand command, CommandBehavior behavior)
     {
         return WrapperUtils.ExecuteWithPlugins(
-            this.connectionPluginManager,
+            this.connectionPluginManager!,
             this.targetDataAdapter,
             "DbDataAdapter.Fill",
             () => Task.FromResult(this.targetDataAdapter.Fill(dataSet, startRecord, maxRecords, srcTable))).GetAwaiter().GetResult();
@@ -165,7 +165,7 @@ public class AwsWrapperDataAdapter : DbDataAdapter
     protected override int Fill(DataTable[] dataTables, int startRecord, int maxRecords, IDbCommand command, CommandBehavior behavior)
     {
         return WrapperUtils.ExecuteWithPlugins(
-            this.connectionPluginManager,
+            this.connectionPluginManager!,
             this.targetDataAdapter,
             "DbDataAdapter.Fill",
             () => Task.FromResult(this.targetDataAdapter.Fill(startRecord, maxRecords, dataTables))).GetAwaiter().GetResult();
@@ -174,7 +174,7 @@ public class AwsWrapperDataAdapter : DbDataAdapter
     protected override int Fill(DataTable dataTable, IDbCommand command, CommandBehavior behavior)
     {
         return WrapperUtils.ExecuteWithPlugins(
-            this.connectionPluginManager,
+            this.connectionPluginManager!,
             this.targetDataAdapter,
             "DbDataAdapter.Fill",
             () => Task.FromResult(this.targetDataAdapter.Fill(dataTable))).GetAwaiter().GetResult();
@@ -183,7 +183,7 @@ public class AwsWrapperDataAdapter : DbDataAdapter
     protected override DataTable[] FillSchema(DataSet dataSet, SchemaType schemaType, IDbCommand command, string srcTable, CommandBehavior behavior)
     {
         return WrapperUtils.ExecuteWithPlugins<DataTable[]>(
-            this.connectionPluginManager,
+            this.connectionPluginManager!,
             this.targetDataAdapter,
             "DbDataAdapter.FillSchema",
             () => Task.FromResult(this.targetDataAdapter.FillSchema(dataSet, schemaType, srcTable))).GetAwaiter().GetResult();
@@ -192,7 +192,7 @@ public class AwsWrapperDataAdapter : DbDataAdapter
     protected override DataTable? FillSchema(DataTable dataTable, SchemaType schemaType, IDbCommand command, CommandBehavior behavior)
     {
         return WrapperUtils.ExecuteWithPlugins<DataTable?>(
-            this.connectionPluginManager,
+            this.connectionPluginManager!,
             this.targetDataAdapter,
             "DbDataAdapter.FillSchema",
             () => Task.FromResult(this.targetDataAdapter.FillSchema(dataTable, schemaType))).GetAwaiter().GetResult();
@@ -201,7 +201,7 @@ public class AwsWrapperDataAdapter : DbDataAdapter
     protected override int Update(DataRow[] dataRows, DataTableMapping tableMapping)
     {
         return WrapperUtils.ExecuteWithPlugins<int>(
-            this.connectionPluginManager,
+            this.connectionPluginManager!,
             this.targetDataAdapter,
             "DbDataAdapter.Update",
             () => Task.FromResult(this.targetDataAdapter.Update(dataRows))).GetAwaiter().GetResult();

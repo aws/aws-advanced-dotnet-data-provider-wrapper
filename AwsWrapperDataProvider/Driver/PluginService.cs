@@ -89,8 +89,8 @@ public class PluginService : IPluginService, IHostListProviderService
         this.pluginManager = pluginManager;
         this.props = props;
         this.TargetConnectionDialect = configurationProfile?.TargetConnectionDialect ?? targetConnectionDialect ?? throw new ArgumentNullException(nameof(targetConnectionDialect));
-        this.dialectProvider = new(this);
-        this.Dialect = configurationProfile?.Dialect ?? this.dialectProvider.GuessDialect(this.props);
+        this.dialectProvider = new(this, this.props);
+        this.Dialect = configurationProfile?.Dialect ?? this.dialectProvider.GuessDialect();
 
         this.hostListProvider =
             this.Dialect.HostListProviderSupplier(this.props, this, this)
@@ -123,10 +123,9 @@ public class PluginService : IPluginService, IHostListProviderService
         lock (this.connectionSwitchLock)
         {
             DbConnection? oldConnection = this.CurrentConnection;
-
             this.CurrentConnection = connection;
             this.currentHostSpec = hostSpec;
-            Logger.LogTrace("New connection {Type}@{Id} is set.", connection?.GetType().FullName, RuntimeHelpers.GetHashCode(connection));
+            Logger.LogTrace("New connection is set DataSource={DataSource} ", connection?.DataSource);
 
             try
             {
@@ -138,13 +137,22 @@ public class PluginService : IPluginService, IHostListProviderService
                     }
 
                     oldConnection?.Dispose();
-                    Logger.LogTrace("Old connection {Type}@{Id} is disposed.", oldConnection?.GetType().FullName, RuntimeHelpers.GetHashCode(oldConnection));
+                    Logger.LogTrace("Old connection is disposed.");
+                    Logger.LogTrace("New connection DataSource={DataSource} State={DataSource}", connection?.DataSource, connection?.State);
+                }
+                else
+                {
+                    Logger.LogDebug("New connection is same reference as old connection - not disposing");
                 }
             }
             catch (DbException exception)
             {
                 Logger.LogTrace(string.Format(Resources.PluginService_ErrorClosingOldConnection, exception.Message));
             }
+
+            Logger.LogDebug("SetCurrentConnection completed: Current connection Hash={Hash} State={State}",
+                RuntimeHelpers.GetHashCode(this.CurrentConnection),
+                this.CurrentConnection?.State);
         }
     }
 
@@ -220,6 +228,8 @@ public class PluginService : IPluginService, IHostListProviderService
             this.NotifyNodeChangeList(this.AllHosts, updateHostList);
             this.AllHosts = updateHostList;
         }
+
+        Logger.LogDebug("PluginService.RefreshHostList() completed with AllHost = {AllHosts}", LoggerUtils.LogTopology(this.AllHosts, "All Hosts"));
     }
 
     public async Task RefreshHostListAsync(DbConnection connection)
@@ -228,6 +238,8 @@ public class PluginService : IPluginService, IHostListProviderService
         this.UpdateHostAvailability(updateHostList);
         this.NotifyNodeChangeList(this.AllHosts, updateHostList);
         this.AllHosts = updateHostList;
+
+        Logger.LogDebug("PluginService.RefreshHostList() completed with connection state = {State}, AllHost = {AllHosts}", connection.State, LoggerUtils.LogTopology(this.AllHosts, "All Hosts"));
     }
 
     public async Task ForceRefreshHostListAsync()
@@ -236,6 +248,8 @@ public class PluginService : IPluginService, IHostListProviderService
         this.UpdateHostAvailability(updateHostList);
         this.NotifyNodeChangeList(this.AllHosts, updateHostList);
         this.AllHosts = updateHostList;
+
+        Logger.LogDebug("PluginService.ForceRefreshHostList() completed with AllHost = {AllHosts}", LoggerUtils.LogTopology(this.AllHosts, "All Hosts"));
     }
 
     public async Task ForceRefreshHostListAsync(DbConnection connection)
@@ -244,6 +258,8 @@ public class PluginService : IPluginService, IHostListProviderService
         this.UpdateHostAvailability(updateHostList);
         this.NotifyNodeChangeList(this.AllHosts, updateHostList);
         this.AllHosts = updateHostList;
+
+        Logger.LogDebug("PluginService.ForceRefreshHostList() completed with connection state = {State}, AllHost = {AllHosts}", connection.State, LoggerUtils.LogTopology(this.AllHosts, "All Hosts"));
     }
 
     public async Task<bool> ForceRefreshHostListAsync(bool shouldVerifyWriter, long timeoutMs)

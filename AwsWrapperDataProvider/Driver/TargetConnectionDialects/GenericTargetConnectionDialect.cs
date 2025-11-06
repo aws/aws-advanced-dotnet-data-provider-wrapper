@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -27,8 +28,52 @@ public class GenericTargetConnectionDialect : AbstractTargetConnectionDialect
         this.DriverConnectionType = connectionType;
     }
 
-    public override string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props)
+    public override string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, bool isForceOpen = false)
     {
         return this.PrepareConnectionString(dialect, hostSpec, props, PropertyDefinition.Host);
+    }
+
+    public override (bool ConnectionAlive, Exception? ConnectionException) Ping(IDbConnection connection)
+    {
+        try
+        {
+            if (connection.State != ConnectionState.Open)
+            {
+                connection.Open();
+            }
+
+            using (IDbCommand command = connection.CreateCommand())
+            {
+                command.CommandText = "SELECT 1";
+                command.CommandType = CommandType.Text;
+                command.ExecuteScalar();
+            }
+
+            return (true, null);
+        }
+        catch (Exception ex)
+        {
+            return (false, ex);
+        }
+    }
+
+    protected override string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, AwsWrapperProperty hostProperty)
+    {
+        Dictionary<string, string> targetConnectionParameters = props.Where(x =>
+            !PropertyDefinition.InternalWrapperProperties
+                .Select(prop => prop.Name)
+                .Contains(x.Key)).ToDictionary();
+
+        if (hostSpec != null)
+        {
+            dialect.PrepareConnectionProperties(targetConnectionParameters, hostSpec);
+            hostProperty.Set(targetConnectionParameters, hostSpec.Host);
+            if (hostSpec.IsPortSpecified)
+            {
+                PropertyDefinition.Port.Set(targetConnectionParameters, hostSpec.Port.ToString());
+            }
+        }
+
+        return string.Join("; ", targetConnectionParameters.Select(x => $"{x.Key}={x.Value}"));
     }
 }

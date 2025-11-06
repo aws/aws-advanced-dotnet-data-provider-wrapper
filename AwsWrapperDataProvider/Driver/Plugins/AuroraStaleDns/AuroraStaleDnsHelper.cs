@@ -14,6 +14,7 @@
 
 using System.Data.Common;
 using System.Net;
+using AwsWrapperDataProvider.Driver.Exceptions;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -46,7 +47,8 @@ public class AuroraStaleDnsHelper
         IHostListProviderService hostListProviderService,
         HostSpec hostSpec,
         Dictionary<string, string> props,
-        ADONetDelegate<DbConnection> openFunc)
+        ADONetDelegate<DbConnection> openFunc,
+        IConnectionPlugin? pluginToSkip = null)
     {
         // If this is not a writer cluster DNS, no verification needed
         if (!RdsUtils.IsWriterClusterDns(hostSpec.Host))
@@ -54,9 +56,24 @@ public class AuroraStaleDnsHelper
             return await openFunc();
         }
 
-        DbConnection connection = await openFunc();
+        DbConnection connection;
 
-        // Get the IP address that the cluster endpoint resolved to
+        try
+        {
+            connection = await openFunc();
+        }
+        catch (InvalidOpenConnectionException)
+        {
+            DbConnection? retryConnection = await this.RetryInvalidOpenConnection(hostSpec, props);
+
+            if (retryConnection == null)
+            {
+                throw;
+            }
+
+            connection = retryConnection;
+        }
+
         string? clusterInetAddress = GetHostIpAddress(hostSpec.Host);
         Logger.LogTrace(
             "Cluster endpoint {host} resolved to IP address {ipAddress}",
@@ -102,6 +119,7 @@ public class AuroraStaleDnsHelper
             var allowedHosts = this.pluginService.GetHosts();
             if (!ContainsHostUrl(allowedHosts, this.writerHostSpec.Host))
             {
+                // TODO: Check do we need to retry when throw errors?
                 throw new InvalidOperationException(
                     $"Current writer {this.writerHostSpec.Host} is not in the allowed hosts list. " +
                     $"Allowed hosts: {string.Join(", ", allowedHosts.Select(h => h.Host))}");
@@ -161,5 +179,27 @@ public class AuroraStaleDnsHelper
     private IList<HostSpec>? GetReaders()
     {
         return [.. this.pluginService.AllHosts.Where(host => host.Role != HostRole.Writer)];
+    }
+
+    private async Task<DbConnection?> RetryInvalidOpenConnection(HostSpec hostSpec, Dictionary<string, string> props)
+    {
+        for (int attempt = 1; attempt <= DnsRetries; attempt++)
+        {
+            DbConnection connection = await this.pluginService.ForceOpenConnection(hostSpec, props, null, true);
+
+            if (this.pluginService.TargetConnectionDialect.Ping(connection).ConnectionAlive)
+            {
+                return connection;
+            }
+
+            if (attempt == DnsRetries)
+            {
+                return null;
+            }
+
+            Thread.Sleep(100);
+        }
+
+        return null;
     }
 }
