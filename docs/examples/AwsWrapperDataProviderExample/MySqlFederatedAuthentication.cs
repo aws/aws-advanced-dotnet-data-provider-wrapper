@@ -14,6 +14,8 @@
 
 using System.Data;
 using AwsWrapperDataProvider;
+using AwsWrapperDataProvider.Driver.Plugins;
+using AwsWrapperDataProvider.Plugin.FederatedAuth.FederatedAuth;
 
 namespace AwsWrapperDataProviderExample;
 
@@ -21,6 +23,8 @@ public static class MySqlFederatedAuthentication
 {
     public static async Task Main(string[] args)
     {
+        ConnectionPluginChainBuilder.RegisterPluginFactory<FederatedAuthPluginFactory>(PluginCodes.FederatedAuth);
+
         const string connectionString =
             "Server=<insert_rds_instance_here>;" +
             "Initial Catalog=mysql" +

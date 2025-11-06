@@ -14,6 +14,8 @@
 
 using System.Data;
 using AwsWrapperDataProvider;
+using AwsWrapperDataProvider.Driver.Plugins;
+using AwsWrapperDataProvider.Plugin.Iam.Iam;
 
 namespace AwsWrapperDataProviderExample;
 
@@ -21,6 +23,8 @@ public static class MySqlIamAuthentication
 {
     public static async Task Main(string[] args)
     {
+        ConnectionPluginChainBuilder.RegisterPluginFactory<IamAuthPluginFactory>(PluginCodes.Iam);
+
         const string connectionString = "Server=<insert_rds_instance_here>;Initial Catalog=mysql;Database=<database_name_here>;User Id=<iam username>;IamRegion=<iam region>;Plugins=iam;";
         const string query = "select * from test";
 

@@ -14,6 +14,8 @@
 
 using System.Data;
 using AwsWrapperDataProvider;
+using AwsWrapperDataProvider.Driver.Plugins;
+using AwsWrapperDataProvider.Plugin.Iam.Iam;
 using Npgsql;
 
 namespace AwsWrapperDataProviderExample;
@@ -22,6 +24,8 @@ public static class PGIamAuthentication
 {
     public static async Task Main(string[] args)
     {
+        ConnectionPluginChainBuilder.RegisterPluginFactory<IamAuthPluginFactory>(PluginCodes.Iam);
+
         const string connectionString =
             "Host=<insert_rds_instance_here>;" +
             "Initial Catalog=mysql;" +

@@ -14,6 +14,8 @@
 
 using System.Data;
 using AwsWrapperDataProvider;
+using AwsWrapperDataProvider.Driver.Plugins;
+using AwsWrapperDataProvider.Plugin.FederatedAuth.FederatedAuth;
 using Npgsql;
 
 namespace AwsWrapperDataProviderExample;
@@ -22,6 +24,8 @@ public static class PGFederatedAuthentication
 {
     public static async Task Main(string[] args)
     {
+        ConnectionPluginChainBuilder.RegisterPluginFactory<FederatedAuthPluginFactory>(PluginCodes.FederatedAuth);
+
         const string connectionString =
             "Host=<insert_rds_instance_here>;" +
             "Database=<database_name_here>;" +
