@@ -12,9 +12,16 @@ This project depends on:
 
 ## Usage
 
-Enable the federated authentication plugin in your connection string:
+Register the Federated Authentication plugin before using it:
 
 ```csharp
+using AwsWrapperDataProvider.Driver.Plugins;
+using AwsWrapperDataProvider.Plugin.FederatedAuth;
+
+// Register the Federated Auth plugin
+ConnectionPluginChainBuilder.RegisterPluginFactory<FederatedAuthPluginFactory>(PluginCodes.FederatedAuth);
+
+// Use in connection string
 var connectionString = "Server=your-rds-instance.amazonaws.com;" +
                        "Database=mydb;" +
                        "User Id=db-user;" +

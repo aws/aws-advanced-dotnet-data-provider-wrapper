@@ -11,7 +11,17 @@ This project depends on:
 
 ## Usage
 
-This dialect is automatically loaded when using Npgsql with the AWS Wrapper. No direct usage is required - it's used internally by the wrapper when Npgsql is detected.
+The dialect must be explicitly loaded before using Npgsql with the AWS Wrapper:
+
+```csharp
+using AwsWrapperDataProvider.Npgsql;
+
+// Register the Npgsql dialect
+NpgsqlDialectLoader.Load();
+
+// Now you can use Npgsql with the AWS Wrapper
+var connection = new AwsWrapperConnection(connectionString);
+```
 
 The dialect enables support for:
 - Aurora PostgreSQL clusters

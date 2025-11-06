@@ -11,7 +11,17 @@ This project depends on:
 
 ## Usage
 
-This dialect is automatically loaded when using MySqlConnector with the AWS Wrapper. No direct usage is required - it's used internally by the wrapper when MySqlConnector is detected.
+The dialect must be explicitly loaded before using MySqlConnector with the AWS Wrapper:
+
+```csharp
+using AwsWrapperDataProvider.MySqlConnector;
+
+// Register the MySqlConnector dialect
+MySqlConnectorDialectLoader.Load();
+
+// Now you can use MySqlConnector with the AWS Wrapper
+var connection = new AwsWrapperConnection(connectionString);
+```
 
 The dialect enables support for:
 - Aurora MySQL clusters

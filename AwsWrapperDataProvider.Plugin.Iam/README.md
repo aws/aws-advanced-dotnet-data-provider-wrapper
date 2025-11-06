@@ -11,9 +11,16 @@ This project depends on:
 
 ## Usage
 
-Enable the IAM plugin in your connection string:
+Register the IAM plugin before using it:
 
 ```csharp
+using AwsWrapperDataProvider.Driver.Plugins;
+using AwsWrapperDataProvider.Plugin.Iam;
+
+// Register the IAM plugin
+ConnectionPluginChainBuilder.RegisterPluginFactory<IamAuthPluginFactory>(PluginCodes.Iam);
+
+// Use in connection string
 var connectionString = "Server=your-rds-instance.amazonaws.com;" +
                        "Database=mydb;" +
                        "User Id=db-user;" +
