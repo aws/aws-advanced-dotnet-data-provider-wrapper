@@ -80,18 +80,7 @@ public class DefaultConnectionPlugin(
         bool isForceOpen,
         bool async)
     {
-        DbConnection? conn;
-
-        if (isInitialConnection && this.pluginService.CurrentConnection != null)
-        {
-            conn = this.pluginService.CurrentConnection;
-            conn.ConnectionString = this.pluginService.TargetConnectionDialect.PrepareConnectionString(this.pluginService.Dialect, hostSpec, props);
-            Logger.LogTrace("Reusing existing connection {Type}@{Id}.", conn.GetType().FullName, RuntimeHelpers.GetHashCode(conn));
-        }
-        else
-        {
-            conn = connProvider.CreateDbConnection(this.pluginService.Dialect, this.pluginService.TargetConnectionDialect, hostSpec, props);
-        }
+        DbConnection conn = connProvider.CreateDbConnection(this.pluginService.Dialect, this.pluginService.TargetConnectionDialect, hostSpec, props);
 
         if (async)
         {
