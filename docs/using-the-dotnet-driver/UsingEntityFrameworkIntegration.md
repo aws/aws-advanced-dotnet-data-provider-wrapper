@@ -11,7 +11,6 @@ The AWS Advanced .NET Data Provider Wrapper works with Entity Framework through 
 
 | Database Provider | Entity Framework Package                | Minimum Version |
 |-------------------|-----------------------------------------|-----------------|
-| PostgreSQL        | `Npgsql.EntityFrameworkCore.PostgreSQL` | 9.0.0+          |
 | MySQL (Oracle)    | `MySql.EntityFrameworkCore`             | 9.0.0+          |
 
 ### Example
