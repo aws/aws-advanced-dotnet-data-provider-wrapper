@@ -42,17 +42,15 @@ public class NHibernateExample
                 i++;
             }
         }
-        catch (FailoverSuccessException ex)
+        catch (HibernateException ex) when (ex.InnerException is FailoverSuccessException)
         {
-            // Exception should be a FailoverSuccessException if failover occurred.
-            // For more information regarding FailoverSuccessException please visit the driver's documentation.
-            Console.WriteLine($"Failover completed successfully: {ex.Message}");
+            // NHibernate wraps FailoverSuccessException in HibernateException
+            Console.WriteLine($"Failover completed successfully: {ex.InnerException.Message}");
         }
-        catch (TransactionStateUnknownException ex)
+        catch (HibernateException ex) when (ex.InnerException is TransactionStateUnknownException)
         {
-            // Exception should be a TransactionStateUnknownException if the transaction state is unknown after failover.
-            // For more information regarding TransactionStateUnknownException please visit the driver's documentation.
-            Console.WriteLine($"Transaction state is unknown after failover: {ex.Message}");
+            // NHibernate wraps TransactionStateUnknownException in HibernateException
+            Console.WriteLine($"Transaction state is unknown after failover: {ex.InnerException.Message}");
         }
         catch (Exception ex)
         {
