@@ -123,16 +123,6 @@ public class PluginService : IPluginService, IHostListProviderService
         lock (this.connectionSwitchLock)
         {
             DbConnection? oldConnection = this.CurrentConnection;
-
-            Logger.LogInformation("SetCurrentConnection: Old connection Hash={OldHash} DataSource={OldDataSource} State={OldState}, New connection Hash={NewHash} DataSource={NewDataSource} State={NewState}, Host={Host}",
-                oldConnection != null ? RuntimeHelpers.GetHashCode(oldConnection) : 0,
-                oldConnection?.DataSource,
-                oldConnection?.State,
-                RuntimeHelpers.GetHashCode(connection),
-                connection.DataSource,
-                connection.State,
-                hostSpec?.Host ?? "null");
-
             this.CurrentConnection = connection;
             this.currentHostSpec = hostSpec;
             Logger.LogTrace("New connection is set DataSource={DataSource} ", connection?.DataSource);
