@@ -111,7 +111,6 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
 
             try
             {
-                await this.pluginService.ForceRefreshHostListAsync();
                 writerCandidate = this.GetWriter();
 
                 if (writerCandidate == null || RdsUtils.IsRdsClusterDns(writerCandidate.Host))
@@ -157,6 +156,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
                     await this.pluginService.ForceRefreshHostListAsync(writerConnectionCandidate);
                     this.DisposeConnection(writerConnectionCandidate);
                     await Task.Delay(retryDelay);
+                    continue;
                 }
 
                 if (isInitialConnection)
@@ -208,7 +208,6 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
 
             try
             {
-                await this.pluginService.ForceRefreshHostListAsync();
                 readerCandidate = this.GetReader(props);
 
                 if (readerCandidate == null || RdsUtils.IsRdsClusterDns(readerCandidate.Host))

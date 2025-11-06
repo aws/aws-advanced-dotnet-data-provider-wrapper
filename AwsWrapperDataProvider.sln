@@ -30,9 +30,12 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AwsWrapperDataProvider.NHibernate", "AwsWrapperDataProvider.NHibernate\AwsWrapperDataProvider.NHibernate.csproj", "{241EB8CE-5C2B-44B6-9054-27BA4948BAF0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AwsWrapperDataProvider.NHibernate.Tests", "AwsWrapperDataProvider.NHibernate.Tests\AwsWrapperDataProvider.NHibernate.Tests.csproj", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MySqlEntityFrameworkExample", "docs\examples\MySqlEntityFrameworkExample\MySqlEntityFrameworkExample.csproj", "{BC7CAF4A-F541-4975-BF06-B053C4E1DB41}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AwsWrapperDataProviderExample", "docs\examples\AwsWrapperDataProviderExample\AwsWrapperDataProviderExample.csproj", "{D87E38B7-7E97-4439-8BD6-915B3DB4178B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NHibernateExample", "docs\examples\NHibernateExample\NHibernateExample.csproj", "{7B6B4485-4D33-4208-B3F4-68B14F9B71F7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -96,6 +99,10 @@ Global
 		{D87E0507-5E62-4852-BDFC-CB9E167A85FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D87E0507-5E62-4852-BDFC-CB9E167A85FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D87E0507-5E62-4852-BDFC-CB9E167A85FB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7B6B4485-4D33-4208-B3F4-68B14F9B71F7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7B6B4485-4D33-4208-B3F4-68B14F9B71F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7B6B4485-4D33-4208-B3F4-68B14F9B71F7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7B6B4485-4D33-4208-B3F4-68B14F9B71F7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
