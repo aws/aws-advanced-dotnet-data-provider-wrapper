@@ -7,7 +7,7 @@ This project provides Entity Framework Core integration for MySQL databases usin
 ## Dependencies
 
 This project depends on:
-- **MySql.Data**: MySQL .NET Connector for database connectivity
+- **MySql.Data**: MySQL Connector/NET for database connectivity
 - **Microsoft.EntityFrameworkCore**: Entity Framework Core framework
 
 ## Usage
