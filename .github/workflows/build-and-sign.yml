@@ -79,9 +79,9 @@ jobs:
       - name: 'Set Version Env Variable'
         shell: pwsh
         run: |
-          $ref = $env:GITHUB_REF -replace '^refs/.*/', ''
-          if ($ref -like 'release/*') {
-            $ref = $ref -replace 'release/', ''
+          $version  = $env:GITHUB_REF -replace '^refs/.*/', ''
+          if ($version -like 'release/*') {
+            $version = $version -replace 'release/', ''
           }
           echo "RELEASE_VERSION=$version" >> $env:GITHUB_ENV
 
