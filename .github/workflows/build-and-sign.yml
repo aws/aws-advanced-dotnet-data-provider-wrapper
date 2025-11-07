@@ -98,15 +98,15 @@ jobs:
         with:
           name: nuget-packages
           path: .\packages\*.nupkg
-#
-#      - name: Configure NuGet credential
-#        uses: aws-actions/configure-aws-credentials@v5.1.0
-#        with:
-#          role-to-assume: ${{ secrets.NUGET_ACCESS_ROLE_ARN }}
-#          aws-region: ${{ secrets.AWS_SIGNER_REGION }}
-#
-#      - name: Publish to NuGet
-#        shell: pwsh
-#        run: |
-#          $nugetKey = aws secretsmanager get-secret-value --secret-id ${{ secrets.NUGET_SECRETS_ID }} --region ${{ secrets.AWS_SIGNER_REGION }} --output text --query SecretString | ConvertFrom-Json
-#          dotnet nuget push .\packages\*.nupkg --source https://api.nuget.org/v3/index.json --api-key $nugetKey.Key
+
+      - name: Configure NuGet credential
+        uses: aws-actions/configure-aws-credentials@v5.1.0
+        with:
+          role-to-assume: ${{ secrets.NUGET_ACCESS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_SIGNER_REGION }}
+
+      - name: Publish to NuGet
+        shell: pwsh
+        run: |
+          $nugetKey = aws secretsmanager get-secret-value --secret-id ${{ secrets.NUGET_SECRETS_ID }} --region ${{ secrets.AWS_SIGNER_REGION }} --output text --query SecretString | ConvertFrom-Json
+          dotnet nuget push .\packages\*.nupkg --source https://api.nuget.org/v3/index.json --api-key $nugetKey.Key
