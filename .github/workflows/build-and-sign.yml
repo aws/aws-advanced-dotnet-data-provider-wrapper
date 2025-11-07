@@ -48,7 +48,7 @@ jobs:
           dotnet build AwsWrapperDataProvider.NHibernate\AwsWrapperDataProvider.NHibernate.csproj --configuration Release --no-restore
 
       - name: Configure A AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5.1.0
         with:
           role-skip-session-tagging: true
           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
@@ -79,7 +79,10 @@ jobs:
       - name: 'Set Version Env Variable'
         shell: pwsh
         run: |
-          $version = $env:GITHUB_REF -replace '^refs/.*/', ''
+          $ref = $env:GITHUB_REF -replace '^refs/.*/', ''
+          if ($ref -like 'release/*') {
+            $ref = $ref -replace 'release/', ''
+          }
           echo "RELEASE_VERSION=$version" >> $env:GITHUB_ENV
 
       - name: Pack NuGet packages
