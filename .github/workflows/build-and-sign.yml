@@ -1,0 +1,112 @@
+name: Build, Sign and Publish .NET Wrapper
+
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  id-token: write   # This is required for requesting the JWT
+  contents: read    # This is required for actions/checkout
+
+jobs:
+  build-sign-publish:
+    name: Build, Sign and Publish
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: |
+          dotnet restore AwsWrapperDataProvider\AwsWrapperDataProvider.csproj /p:_IsPacking=true
+          dotnet restore AwsWrapperDataProvider.Plugin.FederatedAuth\AwsWrapperDataProvider.Plugin.FederatedAuth.csproj /p:_IsPacking=true
+          dotnet restore AwsWrapperDataProvider.Plugin.Iam\AwsWrapperDataProvider.Plugin.Iam.csproj /p:_IsPacking=true
+          dotnet restore AwsWrapperDataProvider.Plugin.SecretsManager\AwsWrapperDataProvider.Plugin.SecretsManager.csproj /p:_IsPacking=true
+          dotnet restore AwsWrapperDataProvider.Dialect.MySqlClient\AwsWrapperDataProvider.Dialect.MySqlClient.csproj /p:_IsPacking=true
+          dotnet restore AwsWrapperDataProvider.Dialect.MySqlConnector\AwsWrapperDataProvider.Dialect.MySqlConnector.csproj /p:_IsPacking=true
+          dotnet restore AwsWrapperDataProvider.Dialect.Npgsql\AwsWrapperDataProvider.Dialect.Npgsql.csproj /p:_IsPacking=true
+          dotnet restore AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector\AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector.csproj /p:_IsPacking=true
+          dotnet restore AwsWrapperDataProvider.NHibernate\AwsWrapperDataProvider.NHibernate.csproj /p:_IsPacking=true
+
+      - name: Build projects
+        run: |
+          dotnet build AwsWrapperDataProvider\AwsWrapperDataProvider.csproj --configuration Release --no-restore
+          dotnet build AwsWrapperDataProvider.Plugin.FederatedAuth\AwsWrapperDataProvider.Plugin.FederatedAuth.csproj --configuration Release --no-restore
+          dotnet build AwsWrapperDataProvider.Plugin.Iam\AwsWrapperDataProvider.Plugin.Iam.csproj --configuration Release --no-restore
+          dotnet build AwsWrapperDataProvider.Plugin.SecretsManager\AwsWrapperDataProvider.Plugin.SecretsManager.csproj --configuration Release --no-restore
+          dotnet build AwsWrapperDataProvider.Dialect.MySqlClient\AwsWrapperDataProvider.Dialect.MySqlClient.csproj --configuration Release --no-restore
+          dotnet build AwsWrapperDataProvider.Dialect.MySqlConnector\AwsWrapperDataProvider.Dialect.MySqlConnector.csproj --configuration Release --no-restore
+          dotnet build AwsWrapperDataProvider.Dialect.Npgsql\AwsWrapperDataProvider.Dialect.Npgsql.csproj --configuration Release --no-restore
+          dotnet build AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector\AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector.csproj --configuration Release --no-restore
+          dotnet build AwsWrapperDataProvider.NHibernate\AwsWrapperDataProvider.NHibernate.csproj --configuration Release --no-restore
+
+      - name: Configure A AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-skip-session-tagging: true
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+          role-duration-seconds: 21600
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ secrets.AWS_DEPLOY_ROLE }}
+          role-session-name: aws-dotnet-win-signer
+
+      - name: Configure Signer AWS credentials
+        uses: aws-actions/configure-aws-credentials@v5.1.0
+        with:
+          role-skip-session-tagging: true
+          role-chaining: true
+          aws-region: ${{ secrets.AWS_SIGNER_REGION }}
+          role-to-assume: ${{ secrets.AWS_SIGNER_ROLE }}
+          role-external-id: ${{ secrets.AWS_SIGNER_ROLE_ID }}
+
+      - name: Sign DLL files
+        shell: pwsh
+        working-directory: ./scripts
+        run: |
+          . ".\sign_artifacts_win.ps1"
+          Invoke-SignDlls `
+            -BuildPath ".." `
+            -AwsUnsignedBucket "${{ secrets.AWS_UNSIGNED_BUCKET }}" `
+            -AwsSignedBucket "${{ secrets.AWS_SIGNED_BUCKET }}" `
+            -AwsBucketKeyPrefix "${{ secrets.AWS_S3_BUCKET_KEY_PREFIX }}"
+
+      - name: 'Set Version Env Variable'
+        shell: pwsh
+        run: |
+          $version = $env:GITHUB_REF -replace '^refs/.*/', ''
+          echo "RELEASE_VERSION=$version" >> $env:GITHUB_ENV
+
+      - name: Pack NuGet packages
+        run: |
+          dotnet pack AwsWrapperDataProvider\AwsWrapperDataProvider.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
+          dotnet pack AwsWrapperDataProvider.Plugin.FederatedAuth\AwsWrapperDataProvider.Plugin.FederatedAuth.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
+          dotnet pack AwsWrapperDataProvider.Plugin.Iam\AwsWrapperDataProvider.Plugin.Iam.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
+          dotnet pack AwsWrapperDataProvider.Plugin.SecretsManager\AwsWrapperDataProvider.Plugin.SecretsManager.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
+          dotnet pack AwsWrapperDataProvider.Dialect.MySqlClient\AwsWrapperDataProvider.Dialect.MySqlClient.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
+          dotnet pack AwsWrapperDataProvider.Dialect.MySqlConnector\AwsWrapperDataProvider.Dialect.MySqlConnector.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
+          dotnet pack AwsWrapperDataProvider.Dialect.Npgsql\AwsWrapperDataProvider.Dialect.Npgsql.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
+          dotnet pack AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector\AwsWrapperDataProvider.EntityFrameworkCore.MySQLConnector.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
+          dotnet pack AwsWrapperDataProvider.NHibernate\AwsWrapperDataProvider.NHibernate.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
+
+      - name: Upload packages as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages
+          path: .\packages\*.nupkg
+
+      - name: Configure NuGet credential
+        uses: aws-actions/configure-aws-credentials@v5.1.0
+        with:
+          role-to-assume: ${{ secrets.NUGET_ACCESS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_SIGNER_REGION }}
+
+      - name: Publish to NuGet
+        shell: pwsh
+        run: |
+          $nugetKey = aws secretsmanager get-secret-value --secret-id ${{ secrets.NUGET_SECRETS_ID }} --region ${{ secrets.AWS_SIGNER_REGION }} --output text --query SecretString | ConvertFrom-Json
+          dotnet nuget push .\packages\*.nupkg --source https://api.nuget.org/v3/index.json --api-key $nugetKey.Key

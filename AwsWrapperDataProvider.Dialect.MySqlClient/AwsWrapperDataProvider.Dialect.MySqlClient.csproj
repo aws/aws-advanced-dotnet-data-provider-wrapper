@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MySql.Data" Version="9.4.0" />
+    <PackageReference Include="MySql.Data" Version="9.5.0" />
   </ItemGroup>
 
     <ItemGroup>
@@ -27,6 +27,24 @@
   <ItemGroup>
     <ProjectReference Include="..\AwsWrapperDataProvider.Dialect.Npgsql\AwsWrapperDataProvider.Dialect.Npgsql.csproj" />
     <ProjectReference Include="..\AwsWrapperDataProvider\AwsWrapperDataProvider.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup Condition=" '$(_IsPacking)' == 'true' ">
+    <!-- NuGet packages -->
+    <IsPackable>true</IsPackable>
+    <PackageId>AWS.AdvancedDotnetDataProviderWrapper.Dialect.MySqlClient</PackageId>
+    <PackageProjectUrl>https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/</PackageProjectUrl>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReleaseNotes>See release notes at https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/releases</PackageReleaseNotes>
+    <PackageTags>AWS;ADO.NET;database;MySql</PackageTags>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper.git</RepositoryUrl>
+  </PropertyGroup>
+
+  <!-- Items that are only added when building the NuGet package -->
+  <ItemGroup Condition=" '$(_IsPacking)' == 'true' ">
+    <None Include=".\README.md" Pack="true" PackagePath="README.md" />
   </ItemGroup>
 
 </Project>

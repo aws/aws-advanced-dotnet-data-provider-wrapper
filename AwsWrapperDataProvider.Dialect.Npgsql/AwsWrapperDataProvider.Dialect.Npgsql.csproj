@@ -21,11 +21,29 @@
     </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Npgsql" Version="9.0.3" />
+    <PackageReference Include="Npgsql" Version="9.0.4" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\AwsWrapperDataProvider\AwsWrapperDataProvider.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup Condition=" '$(_IsPacking)' == 'true' ">
+    <!-- NuGet packages -->
+    <IsPackable>true</IsPackable>
+    <PackageId>AWS.AdvancedDotnetDataProviderWrapper.Dialect.Npgsql</PackageId>
+    <PackageProjectUrl>https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/</PackageProjectUrl>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReleaseNotes>See release notes at https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/releases</PackageReleaseNotes>
+    <PackageTags>AWS;ADO.NET;database;npgsql;postgresql;postgres</PackageTags>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper.git</RepositoryUrl>
+  </PropertyGroup>
+
+  <!-- Items that are only added when building the NuGet package -->
+  <ItemGroup Condition=" '$(_IsPacking)' == 'true' ">
+    <None Include=".\README.md" Pack="true" PackagePath="README.md" />
   </ItemGroup>
 
 </Project>
