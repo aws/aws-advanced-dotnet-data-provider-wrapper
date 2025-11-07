@@ -53,13 +53,13 @@
     <PackageTags>AWS;ADO.NET;database</PackageTags>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper.git</RepositoryUrl>
-    <PackageIcon>AwsIcon.ico</PackageIcon>
+    <PackageIcon>AwsIcon.png</PackageIcon>
   </PropertyGroup>
 
   <!-- Items that are only added when building the NuGet package -->
   <ItemGroup Condition=" '$(_IsPacking)' == 'true' ">
     <None Include="..\README.md" Pack="true" PackagePath="README.md" />
-    <None Include="AwsIcon.ico" Pack="true" PackagePath="\" />
+    <None Include="..\AwsIcon.png" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>
