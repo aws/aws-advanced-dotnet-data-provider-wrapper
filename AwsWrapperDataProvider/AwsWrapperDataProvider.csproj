@@ -44,7 +44,7 @@
   <PropertyGroup Condition=" '$(_IsPacking)' == 'true' ">
     <!-- NuGet packages -->
     <IsPackable>true</IsPackable>
-    <PackageId>AWS.AdvancedDotnetDataProviderWrapper</PackageId>
+    <PackageId>AWS.AdvancedDotnetDataProviderWrapper.Core</PackageId>
     <PackageProjectUrl>https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/</PackageProjectUrl>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>

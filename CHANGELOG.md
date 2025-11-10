@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/#semantic-versioning-200).
 
+## [1.0.1] - 2025-11-07
+
+### :bug: Fixed
+- AWS.AdvancedDotnetDataProviderWrapper.Dialect.MySqlClient depends on AWS.AdvancedDotnetDataProviderWrapper.Dialect.Npgsql
+
 ## [1.0.0] - 2025-11-06
 The AWS Advanced .NET Data Provider Wrapper is complementary to existing .NET database drivers and aims to extend their functionality to enable applications to take full advantage of the features of clustered databases such as Amazon Aurora. The AWS Advanced .NET Data Provider Wrapper does not connect directly to any database, but enables support of AWS and Aurora functionalities on top of an underlying .NET driver of the user's choice.
 
