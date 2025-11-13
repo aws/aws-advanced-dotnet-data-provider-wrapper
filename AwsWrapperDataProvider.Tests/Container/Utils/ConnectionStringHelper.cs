@@ -19,7 +19,7 @@ namespace AwsWrapperDataProvider.Tests.Container.Utils;
 
 public class ConnectionStringHelper
 {
-    public static string GetUrl(DatabaseEngine engine, string host, int? port, string? username, string? password, string? dbName, int commandTimeout = 30, int connectionTimeout = 30, string? plugins = null)
+    public static string GetUrl(DatabaseEngine engine, string host, int? port, string? username, string? password, string? dbName, int commandTimeout = 30, int connectionTimeout = 30, string? plugins = null, bool enablePooling = true)
     {
         string url;
         switch (engine)
@@ -49,7 +49,7 @@ public class ConnectionStringHelper
 
                 mySqlConnectionStringBuilder.DefaultCommandTimeout = (uint)commandTimeout;
                 mySqlConnectionStringBuilder.ConnectionTimeout = (uint)connectionTimeout;
-                mySqlConnectionStringBuilder.Pooling = true;
+                mySqlConnectionStringBuilder.Pooling = enablePooling;
 
                 url = mySqlConnectionStringBuilder.ConnectionString;
                 break;
@@ -78,7 +78,7 @@ public class ConnectionStringHelper
 
                 npgsqlConnectionStringBuilder.Timeout = connectionTimeout;
                 npgsqlConnectionStringBuilder.CommandTimeout = commandTimeout;
-                npgsqlConnectionStringBuilder.Pooling = true;
+                npgsqlConnectionStringBuilder.Pooling = enablePooling;
 
                 url = npgsqlConnectionStringBuilder.ConnectionString;
                 break;
