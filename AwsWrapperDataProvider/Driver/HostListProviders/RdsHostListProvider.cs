@@ -17,6 +17,7 @@ using System.Data.Common;
 using System.Globalization;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
@@ -92,13 +93,13 @@ public class RdsHostListProvider : IDynamicHostListProvider
         if (this.initialHostList.Count == 0)
         {
             // TODO: move error string to resx file.
-            throw new InvalidOperationException("No primaryClusterHosts found in connection string");
+            throw new InvalidOperationException(string.Format(Resources.Error_NotFoundInConnectionString, "primaryClusterHosts"));
         }
 
-        Logger.LogDebug("Initial host list populated with {Count} hosts", this.initialHostList.Count);
+        Logger.LogDebug(Resources.RdsHostListProvider_Init_InitialHostCount, this.initialHostList.Count);
         foreach (var host in this.initialHostList)
         {
-            Logger.LogTrace("Initial host: {Host}, IsCluster={IsCluster}", host.Host, RdsUtils.IsRdsClusterDns(host.Host));
+            Logger.LogTrace(Resources.RdsHostListProvider_Init_InitialHostsAndCluster, host.Host, RdsUtils.IsRdsClusterDns(host.Host));
         }
 
         this.initialHostSpec = this.initialHostList[0];
@@ -116,7 +117,7 @@ public class RdsHostListProvider : IDynamicHostListProvider
                 .WithPort(this.initialHostSpec.Port)
                 .WithHostId(this.initialHostSpec.HostId)
                 .Build();
-        Logger.LogDebug("Cluster instance template: {Template} (from initial host: {InitialHost})", this.clusterInstanceTemplate.Host, this.initialHostSpec.Host);
+        Logger.LogDebug(Resources.RdsHostListProvider_Init_ClusterInstanceTemplate, this.clusterInstanceTemplate.Host, this.initialHostSpec.Host);
         this.ValidateHostPattern(this.clusterInstanceTemplate.Host);
         this.rdsUrlType = RdsUtils.IdentifyRdsType(this.initialHostSpec.Host);
         string clusterIdSetting = PropertyDefinition.ClusterId.GetString(this.properties) ?? string.Empty;
@@ -188,21 +189,18 @@ public class RdsHostListProvider : IDynamicHostListProvider
     {
         if (!RdsUtils.IsDnsPatternValid(hostPattern))
         {
-            // TODO : move error string to resx file.
-            throw new InvalidOperationException($"Invalid host pattern: {hostPattern}");
+            throw new InvalidOperationException(string.Format(Resources.Error_InvalidHostPattern, hostPattern));
         }
 
         RdsUrlType rdsUrlType = RdsUtils.IdentifyRdsType(hostPattern);
         if (rdsUrlType == RdsUrlType.RdsProxy)
         {
-            // TODO : move error string to resx file.
-            throw new InvalidOperationException("An RDS Proxy url can't be used as the 'clusterInstanceHostPattern' configuration setting.");
+            throw new InvalidOperationException(Resources.Error_InvalidRdsProxyUrl);
         }
 
         if (rdsUrlType == RdsUrlType.RdsCustomCluster)
         {
-            // TODO : move error string to resx file.
-            throw new InvalidOperationException("An RDS Custom Cluster endpoint can't be used as the 'clusterInstanceHostPattern' configuration setting.");
+            throw new InvalidOperationException(Resources.Error_InvalidCustomRdsProxyUrl);
         }
     }
 
@@ -262,9 +260,7 @@ public class RdsHostListProvider : IDynamicHostListProvider
                 }
             }
 
-            HostSpec? foundHost = topology
-                .Where(host => host.HostId == instanceName)
-                .FirstOrDefault();
+            HostSpec? foundHost = topology.FirstOrDefault(host => host.HostId == instanceName);
 
             if (foundHost == null && !isForcedRefresh)
             {
@@ -274,20 +270,16 @@ public class RdsHostListProvider : IDynamicHostListProvider
                     return null;
                 }
 
-                foundHost = topology
-                    .Where(host => host.HostId == instanceName)
-                    .FirstOrDefault();
+                foundHost = topology.FirstOrDefault(host => host.HostId == instanceName);
             }
 
             return foundHost;
         }
         catch (DbException ex)
         {
-            Logger.LogError(ex, "An error occurred while obtaining the connection's host ID.");
+            Logger.LogError(ex, Resources.Error_ObtainingConnectionHostId);
             throw;
         }
-
-        throw new InvalidOperationException("An error occurred while obtaining the connection's host ID.");
     }
 
     public virtual async Task<HostRole> GetHostRoleAsync(DbConnection connection)
@@ -302,8 +294,7 @@ public class RdsHostListProvider : IDynamicHostListProvider
             return isReader ? HostRole.Reader : HostRole.Writer;
         }
 
-        // TODO : move error string to resx file.
-        throw new InvalidOperationException("Failed to determine host role from the database.");
+        throw new InvalidOperationException(Resources.Error_InvalidHostRole);
     }
 
     public virtual async Task<IList<HostSpec>> RefreshAsync()
@@ -328,17 +319,17 @@ public class RdsHostListProvider : IDynamicHostListProvider
         string? suggestedPrimaryClusterId = SuggestedPrimaryClusterIdCache.Get<string>(this.ClusterId);
         if (!string.IsNullOrEmpty(suggestedPrimaryClusterId) && !this.ClusterId.Equals(suggestedPrimaryClusterId))
         {
-            Logger.LogDebug("ClusterId changed: {OldClusterId} -> {NewClusterId}", this.ClusterId, suggestedPrimaryClusterId);
+            Logger.LogDebug(Resources.RdsHostListProvider_GetTopologyAsync_ClusterIdChanged, this.ClusterId, suggestedPrimaryClusterId);
             this.ClusterIdChanged(this.ClusterId);
             this.ClusterId = suggestedPrimaryClusterId;
             this.IsPrimaryClusterId = true;
         }
 
         List<HostSpec>? cachedHosts = TopologyCache.Get<List<HostSpec>>(this.ClusterId);
-        Logger.LogTrace("Topology cache lookup: ClusterId={ClusterId}, Found={Found}, ForceUpdate={ForceUpdate}", this.ClusterId, cachedHosts != null, forceUpdate);
+        Logger.LogTrace(Resources.RdsHostListProvider_GetTopologyAsync_CacheLookup, this.ClusterId, cachedHosts != null, forceUpdate);
         if (cachedHosts != null)
         {
-            Logger.LogTrace("Cached topology: {Topology}", LoggerUtils.LogTopology(cachedHosts, "From cache"));
+            Logger.LogTrace(Resources.RdsHostListProvider_GetTopologyAsync_CachedTopology, LoggerUtils.LogTopology(cachedHosts, "From cache"));
         }
 
         bool needToSuggest = cachedHosts == null && this.IsPrimaryClusterId;
@@ -346,16 +337,16 @@ public class RdsHostListProvider : IDynamicHostListProvider
         {
             if (connection == null || connection.State != ConnectionState.Open)
             {
-                Logger.LogDebug("Connection unavailable (State={State}), falling back to initial hosts", connection?.State);
-                Logger.LogTrace("Fallback topology: {Topology}", LoggerUtils.LogTopology(this.initialHostList, "Fallback"));
+                Logger.LogDebug(Resources.RdsHostListProvider_GetTopologyAsync_ConnectionUnavailable, connection?.State);
+                Logger.LogTrace(Resources.RdsHostListProvider_GetTopologyAsync_FallbackTopology, LoggerUtils.LogTopology(this.initialHostList, "Fallback"));
                 return new FetchTopologyResult(false, this.initialHostList);
             }
 
             List<HostSpec>? hosts = await this.QueryForTopologyAsync(connection);
             if (hosts != null && hosts.Count > 0)
             {
-                Logger.LogDebug("Caching new topology: ClusterId={ClusterId}, HostCount={Count}", this.ClusterId, hosts.Count);
-                Logger.LogTrace("New topology: {Topology}", LoggerUtils.LogTopology(hosts, "New"));
+                Logger.LogDebug(Resources.RdsHostListProvider_GetTopologyAsync_CachedNewTopology, this.ClusterId, hosts.Count);
+                Logger.LogTrace(Resources.RdsHostListProvider_GetTopologyAsync_NewTopology, LoggerUtils.LogTopology(hosts, "New"));
                 TopologyCache.Set(this.ClusterId, hosts, this.topologyRefreshRate);
                 if (needToSuggest)
                 {
@@ -366,8 +357,9 @@ public class RdsHostListProvider : IDynamicHostListProvider
             }
             else
             {
-                Logger.LogWarning("QueryForTopology returned empty/null, falling back to initial hosts");
-                Logger.LogTrace("Fallback topology: {Topology}", LoggerUtils.LogTopology(this.initialHostList, "Query failed fallback"));
+                Logger.LogWarning(Resources.RdsHostListProvider_GetTopologyAsync_FallingBackToInitialHost);
+                Logger.LogTrace(Resources.RdsHostListProvider_GetTopologyAsync_FallbackTopology,
+                    LoggerUtils.LogTopology(this.initialHostList, "Query failed fallback"));
             }
         }
 
@@ -438,7 +430,7 @@ public class RdsHostListProvider : IDynamicHostListProvider
 
             long weight = (long)((Math.Round(nodeLag) * 100L) + Math.Round(cpuUtilization));
             string endpoint = this.clusterInstanceTemplate!.Host.Replace("?", hostName);
-            Logger.LogTrace("QueryForTopology: hostName={HostName}, template={Template}, endpoint={Endpoint}", hostName, this.clusterInstanceTemplate.Host, endpoint);
+            Logger.LogTrace(Resources.RdsHostListProvider_QueryForTopologyAsync, hostName, this.clusterInstanceTemplate.Host, endpoint);
             int port = this.clusterInstanceTemplate.IsPortSpecified
                 ? this.clusterInstanceTemplate.Port
                 : this.initialHostSpec!.Port;

@@ -15,6 +15,7 @@
 using System.Runtime.CompilerServices;
 using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 
 namespace AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 
@@ -52,7 +53,8 @@ public static class TargetConnectionDialectProvider
                 return customDialect;
             }
 
-            throw new InvalidOperationException($"Failed to instantiate custom dialect type '{customDialectTypeName}'");
+            throw new InvalidOperationException(string.Format(Resources.Error_FailedToInstantiateCustomDialectType,
+                customDialectTypeName));
         }
 
         string connectionTypeName = connectionType.FullName!;

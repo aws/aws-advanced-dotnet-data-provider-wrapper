@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data;
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
@@ -26,6 +26,7 @@ public class DialectProvider
 {
     private const string MySqlDataSource = "mysql";
     private const string PgDataSource = "postgres";
+    private const string UnknownDataSource = "unknown";
 
     private static readonly ILogger<DialectProvider> Logger = LoggerUtils.GetLogger<DialectProvider>();
     private static readonly MemoryCache KnownEndpointDialects = new(new MemoryCacheOptions());
@@ -102,15 +103,12 @@ public class DialectProvider
         this.dialect = null;
         this.CanUpdate = false;
 
-        // Check for custom dialect in properties
         if (PropertyDefinition.TargetDialect.GetString(this.properties) is { } customDialectTypeName &&
             !string.IsNullOrEmpty(customDialectTypeName))
         {
-            // Try to find and instantiate the custom dialect type
             Type? customDialectType = Type.GetType(customDialectTypeName);
-
             return GetDialectFromType(customDialectType) ??
-                   throw new InvalidOperationException($"Failed to instantiate custom dialect type '{customDialectTypeName}'");
+                   throw new InvalidOperationException(string.Format(Resources.Error_FailedToInstantiateDialect, customDialectTypeName));
         }
 
         string host = PropertyDefinition.GetConnectionUrl(this.properties);
@@ -125,7 +123,7 @@ public class DialectProvider
 
         if (KnownEndpointDialects.TryGetValue(host, out IDialect? cachedDialect) && cachedDialect != null)
         {
-            Logger.LogDebug("Dialect retrieved from cache: {dialect}", cachedDialect.GetType().FullName);
+            Logger.LogDebug(Resources.DialectProvider_GuessDialect_CacheDialect, cachedDialect.GetType().FullName);
             this.dialect = cachedDialect;
             return this.dialect!;
         }
@@ -134,11 +132,11 @@ public class DialectProvider
         string targetConnectionType = PropertyDefinition.TargetConnectionType.GetString(this.properties)! ?? throw new InvalidCastException("Target connection type not found.");
         string targetDatasourceType = ConnectionToDatasourceMap
             .FirstOrDefault(kvp => targetConnectionType.Contains(kvp.Key))
-            .Value ?? "unknown";
+            .Value ?? UnknownDataSource;
 
         Type dialectType = DialectTypeMap.GetValueOrDefault((rdsUrlType, targetDatasourceType), typeof(UnknownDialect));
         this.dialect = KnownDialectsByType[dialectType];
-        Logger.LogDebug("Guessed dialect: {dialect}", this.dialect.GetType().FullName);
+        Logger.LogDebug(Resources.DialectProvider_GuessDialect_ResultDialect, this.dialect.GetType().FullName);
 
         this.CanUpdate = true;
         return this.dialect;
@@ -146,28 +144,27 @@ public class DialectProvider
 
     public async Task<IDialect> UpdateDialectAsync(DbConnection connection, IDialect currDialect)
     {
-        Logger.LogDebug("UpdateDialect called with current dialect: {currentDialect}", currDialect.GetType().FullName);
-        Logger.LogDebug("Connection type: {connectionType}", connection.GetType().FullName);
+        Logger.LogDebug(Resources.DialectProvider_UpdateDialectAsync_CurrentDialectConnectionType, currDialect.GetType().FullName, connection.GetType().FullName);
 
         if (!this.CanUpdate && this.dialect != null)
         {
-            Logger.LogDebug("Current dialect: {dialect}, canUpdate: {canUpdate}", this.dialect.GetType().FullName, this.CanUpdate);
+            Logger.LogDebug(Resources.DialectProvider_UpdateDialectAsync_ExistingDialect, this.dialect.GetType().FullName, this.CanUpdate);
             return this.dialect;
         }
 
         IList<Type> dialectCandidates = currDialect.DialectUpdateCandidates;
-        Logger.LogDebug("Testing {count} dialect candidates", dialectCandidates.Count);
+        Logger.LogDebug(Resources.DialectProvider_UpdateDialectAsync_TestingDialects, dialectCandidates.Count);
 
         foreach (Type dialectCandidate in dialectCandidates)
         {
-            Logger.LogDebug("Testing dialect candidate: {dialectCandidate}", dialectCandidate.FullName);
+            Logger.LogDebug(Resources.DialectProvider_UpdateDialectAsync_TestingDialectCandidate, dialectCandidate.FullName);
             IDialect dialect = KnownDialectsByType[dialectCandidate];
 
             try
             {
                 if (await dialect.IsDialect(connection))
                 {
-                    Logger.LogDebug("Dialect match found: {dialect}", dialect.GetType().FullName);
+                    Logger.LogDebug(Resources.DialectProvider_UpdateDialectAsync_DialectMatch, dialect.GetType().FullName);
                     this.dialect = dialect;
                     KnownEndpointDialects.Set(this.pluginService.InitialConnectionHostSpec!.Host, dialect, EndpointCacheExpiration);
                     KnownEndpointDialects.Set(connection.ConnectionString, dialect, EndpointCacheExpiration);
@@ -175,37 +172,37 @@ public class DialectProvider
                     return this.dialect;
                 }
 
-                Logger.LogDebug("Not dialect: {dialect}", dialect.GetType().FullName);
+                Logger.LogDebug(Resources.DialectProvider_UpdateDialectAsync_NoMatchingDialect, dialect.GetType().FullName);
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Error testing dialect candidate {dialectCandidate}: {message}", dialectCandidate.FullName, ex.Message);
+                Logger.LogError(ex, Resources.Error_TestingDialectCandidates, dialectCandidate.FullName, ex.Message);
             }
         }
 
-        Logger.LogDebug("Testing current dialect: {currentDialect}", currDialect.GetType().FullName);
+        Logger.LogDebug(Resources.DialectProvider_UpdateDialectAsync_TestingCurrentDialect, currDialect.GetType().FullName);
         try
         {
             if (await currDialect.IsDialect(connection))
             {
-                Logger.LogDebug("Current dialect is valid: {currentDialect}", currDialect.GetType().FullName);
+                Logger.LogDebug(Resources.DialectProvider_UpdateDialectAsync_CurrentDialectValid, currDialect.GetType().FullName);
                 this.CanUpdate = false;
                 return currDialect;
             }
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error testing current dialect {currentDialect}: {message}", currDialect.GetType().FullName, ex.Message);
+            Logger.LogError(ex, Resources.Error_TestingCurrentDialect, currDialect.GetType().FullName, ex.Message);
         }
 
-        Logger.LogWarning("Unable to find valid dialect type for connection. Connection type: {connectionType}, Current dialect: {currentDialect}, Candidates tested: {candidates}",
+        Logger.LogWarning(Resources.DialectProvider_UpdateDialectAsync_InvalidDialectTypes,
             connection.GetType().FullName,
             currDialect.GetType().FullName,
             string.Join(", ", dialectCandidates.Select(d => d.FullName)));
 
         if (currDialect is UnknownDialect)
         {
-            throw new ArgumentException(Properties.Resources.Error_UnableToFindValidDialectType);
+            throw new ArgumentException(Resources.Error_UnableToFindValidDialectType);
         }
 
         this.CanUpdate = false;
@@ -224,9 +221,11 @@ public class DialectProvider
                 KnownDialectsByType[dialectType] = dialect;
             }
 
+            Logger.LogDebug(Resources.DialectProvider_GetDialectFromType_KnownDialect, nameof(dialect));
             return dialect;
         }
 
+        Logger.LogDebug(Resources.DialectProvider_GetDialectFromType_UnknownDialect);
         return null;
     }
 }

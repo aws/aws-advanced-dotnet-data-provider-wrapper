@@ -20,6 +20,7 @@ using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostInfo.HostSelectors;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.ConnectionProviders;
@@ -61,11 +62,11 @@ public class DbConnectionProvider() : IConnectionProvider
 
         if (targetConnection == null)
         {
-            throw new InvalidCastException("Unable to create connection.");
+            throw new InvalidCastException(Resources.Error_InvalidConnection);
         }
 
         Logger.LogTrace(
-            "Connection created: {ConnectionType}@{Id} with data source {ds},",
+            Resources.DbConnectionProvider_CreateDbConnection,
             targetConnection.GetType().FullName,
             RuntimeHelpers.GetHashCode(targetConnection),
             targetConnection.DataSource);
@@ -84,6 +85,7 @@ public class DbConnectionProvider() : IConnectionProvider
         string strategy,
         Dictionary<string, string> props)
     {
+        Logger.LogDebug(Resources.DbConnectionProvider_GetHostSpecByStrategy_SelectedStrategy, strategy);
         IHostSelector hostSelector = AcceptedStrategies.GetValueOrDefault(strategy, AcceptedStrategies[RandomHostSelector.StrategyName]);
         return hostSelector.GetHost(hosts, hostRole, props);
     }
