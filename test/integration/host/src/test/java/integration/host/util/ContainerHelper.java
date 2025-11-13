@@ -201,7 +201,7 @@ public class ContainerHelper {
                 builder -> appendExtraCommandsToBuilder.apply(
                     builder
                         .from(testContainerImageName)
-                        .run("dotnet tool install --global dotnet-ef --version 9.0.10")
+                        .run("dotnet tool install --global dotnet-ef")
                         .env("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/.dotnet/tools")
                         .run("mkdir", "app")
                         .workDir("/app")

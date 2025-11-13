@@ -2,9 +2,6 @@ name: Integration Tests Default
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - test/long-pg-integration-tests
 
 permissions:
   id-token: write   # This is required for requesting the JWT
@@ -17,8 +14,8 @@ jobs:
     strategy: 
       fail-fast: false
       matrix:
-        dbEngine: ["pg"]
-        deployment: ["aurora"]
+        dbEngine: ["mysql", "pg"]
+        deployment: ["aurora", "multi-az-cluster", "multi-az-instance"]
     steps:
       - name: 'Clone repository'
         uses: actions/checkout@v4
