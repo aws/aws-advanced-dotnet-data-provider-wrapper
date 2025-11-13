@@ -16,6 +16,7 @@ using System.Data;
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 
 namespace AwsWrapperDataProvider;
 
@@ -51,7 +52,7 @@ public class AwsWrapperDataAdapter : DbDataAdapter
 
             if (value is not AwsWrapperCommand)
             {
-                throw new InvalidOperationException("Provided command is not of type AwsWrapperCommand.");
+                throw new InvalidOperationException(Resources.Error_ProvidedCommandNotAwsWrapperCommand);
             }
 
             this.targetDataAdapter.DeleteCommand = value;
@@ -70,7 +71,7 @@ public class AwsWrapperDataAdapter : DbDataAdapter
 
             if (value is not AwsWrapperCommand)
             {
-                throw new InvalidOperationException("Provided command is not of type AwsWrapperCommand.");
+                throw new InvalidOperationException(Resources.Error_ProvidedCommandNotAwsWrapperCommand);
             }
 
             this.targetDataAdapter.InsertCommand = value;
@@ -89,7 +90,7 @@ public class AwsWrapperDataAdapter : DbDataAdapter
 
             if (value is not AwsWrapperCommand)
             {
-                throw new InvalidOperationException("Provided command is not of type AwsWrapperCommand.");
+                throw new InvalidOperationException(Resources.Error_ProvidedCommandNotAwsWrapperCommand);
             }
 
             this.targetDataAdapter.SelectCommand = value;
@@ -110,7 +111,7 @@ public class AwsWrapperDataAdapter : DbDataAdapter
 
             if (value is not AwsWrapperCommand)
             {
-                throw new InvalidOperationException("Provided command is not of type AwsWrapperCommand.");
+                throw new InvalidOperationException(Resources.Error_ProvidedCommandNotAwsWrapperCommand);
             }
 
             this.targetDataAdapter.UpdateCommand = value;

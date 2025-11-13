@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data.Common;
+using System.Resources;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
 using AwsWrapperDataProvider.Properties;
@@ -67,7 +68,7 @@ public class HostMonitorService : IHostMonitorService
             failureDetectionCount);
 
         HostMonitorConnectionContext context = new(connectionToAbort);
-        Logger.LogTrace("New monitoring context created for host: {host}", hostSpec.Host);
+        Logger.LogTrace(Resources.EfmHostMonitorService_StartMonitoring_NewContextCreated, hostSpec.Host);
         monitor.StartMonitoring(context);
 
         return context;
@@ -80,7 +81,7 @@ public class HostMonitorService : IHostMonitorService
             context.SetInactive();
             try
             {
-                Logger.LogTrace("Aborting unhealthy connection.");
+                Logger.LogTrace(Resources.EfmHostMonitorService_StopMonitoring_AbortingUnhealthyConnection);
                 connectionToAbort.Close();
             }
             catch (DbException ex)
@@ -121,7 +122,7 @@ public class HostMonitorService : IHostMonitorService
             Monitors.Set(monitorKey, monitor, this.CreateCacheEntryOptions());
         }
 
-        return monitor ?? throw new Exception("Could not create or get monitor.");
+        return monitor ?? throw new Exception(Resources.Error_CouldNotCreateOrGetMonitor);
     }
 
     private void OnMonitorEvicted(object key, object? value, EvictionReason reason, object? state)
@@ -130,12 +131,12 @@ public class HostMonitorService : IHostMonitorService
         {
             try
             {
-                Logger.LogTrace("Disposing host monitor for monitor key: {key} due to eviction reason: {reason}", key, reason);
+                Logger.LogTrace(Resources.EfmHostMonitorService_OnMonitorEvicted_DisposingHostMonitor, key, reason);
                 evictedMonitor.Dispose();
             }
             catch (Exception ex)
             {
-                Logger.LogWarning("Error disposing host monitor: {message} ", ex.Message);
+                Logger.LogWarning(Resources.Error_DisposingHostMonitor, ex.Message);
             }
         }
     }

@@ -17,6 +17,7 @@ using System.Data.Common;
 using System.Globalization;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.HostListProviders;
@@ -87,8 +88,7 @@ public class RdsMultiAzDbClusterListProvider : RdsHostListProvider
             }
         }
 
-        Logger.LogWarning("No writer node found in the result of the fetchWriterNodeQuery. " +
-                          "Ensure that the query is correct and that the database is configured properly.");
+        Logger.LogWarning(Resources.RdsMultiAzDbClusterListProvider_ProcessWriterNodeId_NoWriterNodesFound);
         return null;
     }
 
@@ -119,7 +119,7 @@ public class RdsMultiAzDbClusterListProvider : RdsHostListProvider
 
         if (writers.Count == 0)
         {
-            Logger.LogError("Invalid topology: no writer instance found.");
+            Logger.LogError(Resources.Error_InvalidTopology_NoWriterInstance);
             hosts.Clear();
         }
         else

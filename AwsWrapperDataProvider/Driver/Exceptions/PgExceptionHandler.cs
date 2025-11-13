@@ -16,6 +16,7 @@ using System.Data.Common;
 using System.Net.Sockets;
 using System.Text;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Exceptions;
@@ -52,11 +53,11 @@ public class PgExceptionHandler : GenericExceptionHandler
 
         while (currException is not null)
         {
-            Logger.LogDebug("Current exception {type}: {message}", currException.GetType().FullName, currException.Message);
+            Logger.LogDebug(Resources.MySqlExceptionHandler_IsNetworkException_CurrentException, currException.GetType().FullName, currException.Message);
 
             if (currException is SocketException or TimeoutException or EndOfStreamException)
             {
-                Logger.LogDebug("Current exception is a network exception: {type}", currException.GetType().FullName);
+                Logger.LogDebug(Resources.MySqlExceptionHandler_IsNetworkException_CurrentNetworkException, currException.GetType().FullName);
                 return true;
             }
 
@@ -75,16 +76,16 @@ public class PgExceptionHandler : GenericExceptionHandler
 
                 if (this.NetworkErrorStates.Any(prefix => sqlState.StartsWith(prefix)))
                 {
-                    Logger.LogDebug("Current exception is a network exception: {type}", currException.GetType().FullName);
+                    Logger.LogDebug(Resources.MySqlExceptionHandler_IsNetworkException_CurrentNetworkException, currException.GetType().FullName);
                     return true;
                 }
             }
 
             currException = currException.InnerException;
-            Logger.LogDebug("Checking innner exception");
+            Logger.LogDebug(Resources.MySqlExceptionHandler_IsNetworkException_InnerException);
         }
 
-        Logger.LogDebug("Current exception is not a network exception");
+        Logger.LogDebug(Resources.MySqlExceptionHandler_IsNetworkException_InvalidNetworkException);
         return false;
     }
 }

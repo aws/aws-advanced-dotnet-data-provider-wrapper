@@ -22,6 +22,7 @@ using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider;
@@ -125,7 +126,7 @@ public class AwsWrapperConnection : DbConnection
     {
         if (string.IsNullOrEmpty(this.connectionString))
         {
-            throw new InvalidOperationException("Connection string must be set before initialization.");
+            throw new InvalidOperationException(Resources.Error_ConnectionStringMustBeSetBeforeInitialization);
         }
 
         this.ConnectionProperties = profile?.Properties ?? ConnectionPropertiesUtils.ParseConnectionStringParameters(this.connectionString);
@@ -322,7 +323,7 @@ public class AwsWrapperConnection : DbConnection
         ArgumentNullException.ThrowIfNull(this.pluginService.CurrentConnection);
         ArgumentNullException.ThrowIfNull(this.PluginManager);
 
-        Logger.LogDebug("AwsWrapperConnection.BeginDbTransaction() called with wrapper state = {WrapperState}, current connection state = {CurrentState}, type = {Type}@{Id}, DataSource = {DataSource}",
+        Logger.LogDebug(Resources.AwsWrapperConnection_BeginDbTransaction_Called,
             this.State,
             this.pluginService.CurrentConnection.State,
             this.pluginService.CurrentConnection.GetType().FullName,
@@ -373,7 +374,7 @@ public class AwsWrapperConnection : DbConnection
             "DbConnection.CreateCommand",
             () => Task.FromResult((TCommand)this.pluginService.CurrentConnection.CreateCommand()))
             .GetAwaiter().GetResult();
-        Logger.LogDebug("DbCommand created for DbConnection@{Id}", RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection));
+        Logger.LogDebug(Resources.AwsWrapperConnection_CreateCommand_DbCommandCreated, RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection));
 
         this.ConnectionProperties![PropertyDefinition.TargetCommandType.Name] = typeof(TCommand).AssemblyQualifiedName!;
         var wrapperCommand = new AwsWrapperCommand<TCommand>(command, this, this.PluginManager);
@@ -398,7 +399,7 @@ public class AwsWrapperConnection : DbConnection
     {
         if (disposing && this.pluginService?.CurrentConnection is not null)
         {
-            Logger.LogTrace("Disposing target db connection@{id}", RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection));
+            Logger.LogTrace(Resources.AwsWrapperConnection_Dispose_DisposingTargetConnection, RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection));
             this.pluginService.CurrentConnection?.Dispose();
             this.pluginService.SetCurrentConnection(null, null);
         }
@@ -408,7 +409,7 @@ public class AwsWrapperConnection : DbConnection
     {
         if (this.pluginService?.CurrentConnection is not null)
         {
-            Logger.LogTrace("Disposing target db connection@{id}", RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection));
+            Logger.LogTrace(Resources.AwsWrapperConnection_Dispose_DisposingTargetConnection, RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection));
             await this.pluginService.CurrentConnection.DisposeAsync().ConfigureAwait(false);
             this.pluginService.SetCurrentConnection(null, null);
         }

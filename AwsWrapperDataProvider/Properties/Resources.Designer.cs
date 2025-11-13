@@ -60,6 +60,114 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Invalid host selection strategy: {0}..
+        /// </summary>
+        internal static string AuroraInitialConnectionStrategyPlugin_GetReader_InvalidHostSelectionStrategy {
+            get {
+                return ResourceManager.GetString("AuroraInitialConnectionStrategyPlugin_GetReader_InvalidHostSelectionStrategy", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to AuroraInitialConnectionStrategyPlugin requires dynamic provider..
+        /// </summary>
+        internal static string AuroraInitialConnectionStrategyPlugin_InitHostProvider_RequiresDynamicProvider {
+            get {
+                return ResourceManager.GetString("AuroraInitialConnectionStrategyPlugin_InitHostProvider_RequiresDynamicProvider", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cluster endpoint {0} resolved to IP address {1}..
+        /// </summary>
+        internal static string AuroraStaleDnsHelper_OpenVerifiedConnectionAsync_ClusterEndpointResolved {
+            get {
+                return ResourceManager.GetString("AuroraStaleDnsHelper_OpenVerifiedConnectionAsync_ClusterEndpointResolved", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Current connection role: {0}..
+        /// </summary>
+        internal static string AuroraStaleDnsHelper_OpenVerifiedConnectionAsync_CurrentConnectionRole {
+            get {
+                return ResourceManager.GetString("AuroraStaleDnsHelper_OpenVerifiedConnectionAsync_CurrentConnectionRole", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Stale DNS data detected. Opening a connection to {0}..
+        /// </summary>
+        internal static string AuroraStaleDnsHelper_OpenVerifiedConnectionAsync_StaleDnsDetected {
+            get {
+                return ResourceManager.GetString("AuroraStaleDnsHelper_OpenVerifiedConnectionAsync_StaleDnsDetected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Writer host address: {0}..
+        /// </summary>
+        internal static string AuroraStaleDnsHelper_OpenVerifiedConnectionAsync_WriterHostAddress {
+            get {
+                return ResourceManager.GetString("AuroraStaleDnsHelper_OpenVerifiedConnectionAsync_WriterHostAddress", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Writer host spec: {0}..
+        /// </summary>
+        internal static string AuroraStaleDnsHelper_OpenVerifiedConnectionAsync_WriterHostSpec {
+            get {
+                return ResourceManager.GetString("AuroraStaleDnsHelper_OpenVerifiedConnectionAsync_WriterHostSpec", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Current writer {0} is not in the allowed hosts list. Allowed hosts: {1}..
+        /// </summary>
+        internal static string AuroraStaleDnsHelper_OpenVerifiedConnectionAsync_WriterNotInAllowedHosts {
+            get {
+                return ResourceManager.GetString("AuroraStaleDnsHelper_OpenVerifiedConnectionAsync_WriterNotInAllowedHosts", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Target connection is updating to {0}@{1} from {2} for AwsWrapperCommand@{3}.
+        /// </summary>
+        internal static string AwsWrapperCommand_SetCurrentConnection_TargetConnectionUpdating {
+            get {
+                return ResourceManager.GetString("AwsWrapperCommand_SetCurrentConnection_TargetConnectionUpdating", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to AwsWrapperConnection.BeginDbTransaction() called with wrapper state = {0}, current connection state = {1}, type = {2}@{3}, DataSource = {4}.
+        /// </summary>
+        internal static string AwsWrapperConnection_BeginDbTransaction_Called {
+            get {
+                return ResourceManager.GetString("AwsWrapperConnection_BeginDbTransaction_Called", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to DbCommand created for DbConnection@{0}.
+        /// </summary>
+        internal static string AwsWrapperConnection_CreateCommand_DbCommandCreated {
+            get {
+                return ResourceManager.GetString("AwsWrapperConnection_CreateCommand_DbCommandCreated", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Disposing target db connection@{0}.
+        /// </summary>
+        internal static string AwsWrapperConnection_Dispose_DisposingTargetConnection {
+            get {
+                return ResourceManager.GetString("AwsWrapperConnection_Dispose_DisposingTargetConnection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to SSL validation is disabled (sslInsecure=true). This configuration can pose a significant security risks and should not be used in production environments..
         /// </summary>
         internal static string AwsWrapperProperty_SslValidationIsDisabled {
@@ -69,7 +177,34 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to An error occurred while querying for topology: {0}.
+        ///   Looks up a localized string similar to Disposing cluster topology monitor for host {0}..
+        /// </summary>
+        internal static string ClusterTopologyMonitor_Dispose_DisposingClusterTopologyMonitor {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor_Dispose_DisposingClusterTopologyMonitor", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error occurred when waiting on node monitoring thread to finish: {0}..
+        /// </summary>
+        internal static string ClusterTopologyMonitor_Dispose_ErrorOccured {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor_Dispose_ErrorOccured", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Connection {0}@{1} is being disposed..
+        /// </summary>
+        internal static string ClusterTopologyMonitor_DisposeConnectionAsync_ConnectionDisposed {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor_DisposeConnectionAsync_ConnectionDisposed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to An error occurred while querying for topology: {0}..
         /// </summary>
         internal static string ClusterTopologyMonitor_ErrorFetchingTopology {
             get {
@@ -78,7 +213,7 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to An error occurred while getting the connection network timeout: {0}.
+        ///   Looks up a localized string similar to An error occurred while getting the connection network timeout: {0}..
         /// </summary>
         internal static string ClusterTopologyMonitor_ErrorGettingNetworkTimeout {
             get {
@@ -101,6 +236,15 @@ namespace AwsWrapperDataProvider.Properties {
         internal static string ClusterTopologyMonitor_ExceptionDuringMonitoringStop {
             get {
                 return ResourceManager.GetString("ClusterTopologyMonitor.ExceptionDuringMonitoringStop", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Exception thrown during getting the writer node Id for topology monitoring connection@{0} and ignored..
+        /// </summary>
+        internal static string ClusterTopologyMonitor_ExceptionIgnoredTopologyMonitoringConnection {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor_ExceptionIgnoredTopologyMonitoringConnection", resourceCulture);
             }
         }
         
@@ -146,6 +290,195 @@ namespace AwsWrapperDataProvider.Properties {
         internal static string ClusterTopologyMonitor_OpenedMonitoringConnection {
             get {
                 return ResourceManager.GetString("ClusterTopologyMonitor.OpenedMonitoringConnection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Command timeout for querying topology: {0} seconds..
+        /// </summary>
+        internal static string ClusterTopologyMonitor_QueryForTopologyAsync {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor_QueryForTopologyAsync", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Exception caught but ignored: {0}..
+        /// </summary>
+        internal static string ClusterTopologyMonitor_ReaderThreadFetchTopologyAsync_ExceptionIgnored {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor_ReaderThreadFetchTopologyAsync_ExceptionIgnored", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cancelling all node monitoring tasks from topology monitor connection@{0}..
+        /// </summary>
+        internal static string ClusterTopologyMonitor_RunMonitoringLoop_CancellingMonitoringNodes {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor_RunMonitoringLoop_CancellingMonitoringNodes", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Clearing node threads....
+        /// </summary>
+        internal static string ClusterTopologyMonitor_RunMonitoringLoop_Clearing {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor_RunMonitoringLoop_Clearing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Wait until current topology is updated:.
+        /// </summary>
+        internal static string ClusterTopologyMonitor_RunMonitoringLoop_CurrentTopology {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor_RunMonitoringLoop_CurrentTopology", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Running Monitoring Loop. Found {0} hosts..
+        /// </summary>
+        internal static string ClusterTopologyMonitor_RunMonitoringLoop_FoundHosts {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor_RunMonitoringLoop_FoundHosts", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0} IS NOT a rds instance..
+        /// </summary>
+        internal static string ClusterTopologyMonitor_RunMonitoringLoop_IsNotRdsInstance {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor_RunMonitoringLoop_IsNotRdsInstance", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0} IS a rds instance..
+        /// </summary>
+        internal static string ClusterTopologyMonitor_RunMonitoringLoop_IsRdsInstance {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor_RunMonitoringLoop_IsRdsInstance", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Node Monitoring Task@{0} created for host {1}..
+        /// </summary>
+        internal static string ClusterTopologyMonitor_RunMonitoringLoop_MonitoringTask {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor_RunMonitoringLoop_MonitoringTask", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Ignoring topology request until {0}..
+        /// </summary>
+        internal static string ClusterTopologyMonitor_RunMonitoringLoop_MonitoringTime {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor_RunMonitoringLoop_MonitoringTime", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to One or more node monitoring tasks failed during shutdown..
+        /// </summary>
+        internal static string ClusterTopologyMonitor_RunMonitoringLoop_NodeFailedShutdown {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor_RunMonitoringLoop_NodeFailedShutdown", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Monitoring connection@{0} is set to null..
+        /// </summary>
+        internal static string ClusterTopologyMonitor_RunMonitoringLoop_NullConnection {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor_RunMonitoringLoop_NullConnection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to In regular mode..
+        /// </summary>
+        internal static string ClusterTopologyMonitor_RunMonitoringLoop_RegularMode {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor_RunMonitoringLoop_RegularMode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Restarting cancellation token for node monitoring tasks..
+        /// </summary>
+        internal static string ClusterTopologyMonitor_RunMonitoringLoop_RestartCancellationToken {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor_RunMonitoringLoop_RestartCancellationToken", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Topology is still not updated:.
+        /// </summary>
+        internal static string ClusterTopologyMonitor_RunMonitoringLoop_TopologyNotUpdated {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor_RunMonitoringLoop_TopologyNotUpdated", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Topology is updated:.
+        /// </summary>
+        internal static string ClusterTopologyMonitor_RunMonitoringLoop_TopologyUpdated {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor_RunMonitoringLoop_TopologyUpdated", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Waiting on topologyUpdatedLock....
+        /// </summary>
+        internal static string ClusterTopologyMonitor_RunMonitoringLoop_WaitingUpdatedLock {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor_RunMonitoringLoop_WaitingUpdatedLock", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Woke up from Monitor. Wait due to {0}, rechecking condition....
+        /// </summary>
+        internal static string ClusterTopologyMonitor_RunMonitoringLoop_WokeUpMonitorWaiting {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor_RunMonitoringLoop_WokeUpMonitorWaiting", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Operation cancelled: {0}..
+        /// </summary>
+        internal static string ClusterTopologyMonitor_RunNodeMonitoringAsync_OperationCancelled {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor_RunNodeMonitoringAsync_OperationCancelled", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Start running node monitoring task..
+        /// </summary>
+        internal static string ClusterTopologyMonitor_RunNodeMonitoringAsync_StartNode {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor_RunNodeMonitoringAsync_StartNode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to &quot;Unknown exception thrown: {0}&quot;..
+        /// </summary>
+        internal static string ClusterTopologyMonitor_RunNodeMonitoringAsync_UnknownException {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor_RunNodeMonitoringAsync_UnknownException", resourceCulture);
             }
         }
         
@@ -204,6 +537,24 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Notifying topologyUpdatedLock....
+        /// </summary>
+        internal static string ClusterTopologyMonitor_UpdateTopologyCache_NotifyingLock {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor_UpdateTopologyCache_NotifyingLock", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to UpdateTopologyCache:.
+        /// </summary>
+        internal static string ClusterTopologyMonitor_UpdateTopologyCache_TopologyUpdate {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor_UpdateTopologyCache_TopologyUpdate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The monitoring connection is connected to a writer: {0}..
         /// </summary>
         internal static string ClusterTopologyMonitor_WriterMonitoringConnection {
@@ -222,6 +573,177 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Connection created: {0}@{1} with data source {2}..
+        /// </summary>
+        internal static string DbConnectionProvider_CreateDbConnection {
+            get {
+                return ResourceManager.GetString("DbConnectionProvider_CreateDbConnection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Selected {0} strategy..
+        /// </summary>
+        internal static string DbConnectionProvider_GetHostSpecByStrategy_SelectedStrategy {
+            get {
+                return ResourceManager.GetString("DbConnectionProvider_GetHostSpecByStrategy_SelectedStrategy", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Executing method {0} on {1} with args: {2}.
+        /// </summary>
+        internal static string DefaultConnectionPlugin_Execute_ExecutingMethod {
+            get {
+                return ResourceManager.GetString("DefaultConnectionPlugin_Execute_ExecutingMethod", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Connection {0}@{1} is opened with data source {2}..
+        /// </summary>
+        internal static string DefaultConnectionPlugin_OpenInternal_ConnectionOpened {
+            get {
+                return ResourceManager.GetString("DefaultConnectionPlugin_OpenInternal_ConnectionOpened", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Guessed Known dialect: {0}..
+        /// </summary>
+        internal static string DialectProvider_GetDialectFromType_KnownDialect {
+            get {
+                return ResourceManager.GetString("DialectProvider_GetDialectFromType_KnownDialect", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unknown dialect..
+        /// </summary>
+        internal static string DialectProvider_GetDialectFromType_UnknownDialect {
+            get {
+                return ResourceManager.GetString("DialectProvider_GetDialectFromType_UnknownDialect", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Dialect retrieved from cache: {0}..
+        /// </summary>
+        internal static string DialectProvider_GuessDialect_CacheDialect {
+            get {
+                return ResourceManager.GetString("DialectProvider_GuessDialect_CacheDialect", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Guessed dialect: {0}..
+        /// </summary>
+        internal static string DialectProvider_GuessDialect_ResultDialect {
+            get {
+                return ResourceManager.GetString("DialectProvider_GuessDialect_ResultDialect", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to UpdateDialect called with Current Dialect: {0}, Connection Type: {1}..
+        /// </summary>
+        internal static string DialectProvider_UpdateDialectAsync_CurrentDialectConnectionType {
+            get {
+                return ResourceManager.GetString("DialectProvider_UpdateDialectAsync_CurrentDialectConnectionType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Current dialect is valid: {0}..
+        /// </summary>
+        internal static string DialectProvider_UpdateDialectAsync_CurrentDialectValid {
+            get {
+                return ResourceManager.GetString("DialectProvider_UpdateDialectAsync_CurrentDialectValid", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Dialect match found: {0}..
+        /// </summary>
+        internal static string DialectProvider_UpdateDialectAsync_DialectMatch {
+            get {
+                return ResourceManager.GetString("DialectProvider_UpdateDialectAsync_DialectMatch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Current dialect: {0}, canUpdate: {1}..
+        /// </summary>
+        internal static string DialectProvider_UpdateDialectAsync_ExistingDialect {
+            get {
+                return ResourceManager.GetString("DialectProvider_UpdateDialectAsync_ExistingDialect", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unable to find valid dialect type for connection. Connection type: {0}, Current dialect: {1}, Candidates tested: {2}..
+        /// </summary>
+        internal static string DialectProvider_UpdateDialectAsync_InvalidDialectTypes {
+            get {
+                return ResourceManager.GetString("DialectProvider_UpdateDialectAsync_InvalidDialectTypes", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Not matching dialect: {0}..
+        /// </summary>
+        internal static string DialectProvider_UpdateDialectAsync_NoMatchingDialect {
+            get {
+                return ResourceManager.GetString("DialectProvider_UpdateDialectAsync_NoMatchingDialect", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Testing current dialect: {0}..
+        /// </summary>
+        internal static string DialectProvider_UpdateDialectAsync_TestingCurrentDialect {
+            get {
+                return ResourceManager.GetString("DialectProvider_UpdateDialectAsync_TestingCurrentDialect", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Testing dialect candidate: {0}..
+        /// </summary>
+        internal static string DialectProvider_UpdateDialectAsync_TestingDialectCandidate {
+            get {
+                return ResourceManager.GetString("DialectProvider_UpdateDialectAsync_TestingDialectCandidate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Testing {0} dialect candidates..
+        /// </summary>
+        internal static string DialectProvider_UpdateDialectAsync_TestingDialects {
+            get {
+                return ResourceManager.GetString("DialectProvider_UpdateDialectAsync_TestingDialects", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Finished aborting unhealthy connection..
+        /// </summary>
+        internal static string EfmHostMonitor_AbortConnection_Finished {
+            get {
+                return ResourceManager.GetString("EfmHostMonitor_AbortConnection_Finished", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Aborting unhealthy connection..
+        /// </summary>
+        internal static string EfmHostMonitor_AbortConnection_Starting {
+            get {
+                return ResourceManager.GetString("EfmHostMonitor_AbortConnection_Starting", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Activated monitoring..
         /// </summary>
         internal static string EfmHostMonitor_ActivatedMonitoring {
@@ -236,6 +758,24 @@ namespace AwsWrapperDataProvider.Properties {
         internal static string EfmHostMonitor_ActiveContextsException {
             get {
                 return ResourceManager.GetString("EfmHostMonitor_ActiveContextsException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Command timeout for ping is {0} seconds..
+        /// </summary>
+        internal static string EfmHostMonitor_CheckConnectionStatusAsync_CommandTimeout {
+            get {
+                return ResourceManager.GetString("EfmHostMonitor_CheckConnectionStatusAsync_CommandTimeout", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Disposing invalid monitoring connection..
+        /// </summary>
+        internal static string EfmHostMonitor_CheckConnectionStatusAsync_DisposingInvalidConnection {
+            get {
+                return ResourceManager.GetString("EfmHostMonitor_CheckConnectionStatusAsync_DisposingInvalidConnection", resourceCulture);
             }
         }
         
@@ -294,6 +834,15 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Adding active monitoring context to poll..
+        /// </summary>
+        internal static string EfmHostMonitor_NewContextRun_AddingActiveContext {
+            get {
+                return ResourceManager.GetString("EfmHostMonitor_NewContextRun_AddingActiveContext", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Encountered exception while polling new contexts for host {0}: {1}, stack trace: {2}..
         /// </summary>
         internal static string EfmHostMonitor_NewContextsException {
@@ -317,6 +866,51 @@ namespace AwsWrapperDataProvider.Properties {
         internal static string EfmHostMonitor_OpeningMonitoringConnection {
             get {
                 return ResourceManager.GetString("EfmHostMonitor_OpeningMonitoringConnection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Adding context back to activeContexts..
+        /// </summary>
+        internal static string EfmHostMonitor_Run_AddingContextBack {
+            get {
+                return ResourceManager.GetString("EfmHostMonitor_Run_AddingContextBack", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Adding context to tmpActiveContexts..
+        /// </summary>
+        internal static string EfmHostMonitor_Run_AddingContextToTemp {
+            get {
+                return ResourceManager.GetString("EfmHostMonitor_Run_AddingContextToTemp", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Current active contexts count: {0}..
+        /// </summary>
+        internal static string EfmHostMonitor_Run_CurrentActiveContextsCount {
+            get {
+                return ResourceManager.GetString("EfmHostMonitor_Run_CurrentActiveContextsCount", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Dequeued a context from activeContexts..
+        /// </summary>
+        internal static string EfmHostMonitor_Run_DequeuedContext {
+            get {
+                return ResourceManager.GetString("EfmHostMonitor_Run_DequeuedContext", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to No active contexts and node is healthy, skipping status check..
+        /// </summary>
+        internal static string EfmHostMonitor_Run_NoActiveContextsSkipping {
+            get {
+                return ResourceManager.GetString("EfmHostMonitor_Run_NoActiveContextsSkipping", resourceCulture);
             }
         }
         
@@ -375,6 +969,78 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Setting context inactive..
+        /// </summary>
+        internal static string EfmHostMonitorConnectionContext_SetInactive_SettingContextInactive {
+            get {
+                return ResourceManager.GetString("EfmHostMonitorConnectionContext_SetInactive_SettingContextInactive", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Deactivating monitoring for current context..
+        /// </summary>
+        internal static string EfmHostMonitoringPlugin_Execute_DeactivatingMonitoring {
+            get {
+                return ResourceManager.GetString("EfmHostMonitoringPlugin_Execute_DeactivatingMonitoring", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Monitoring HostSpec is associated with a cluster endpoint, plugin needs to identify the cluster connection..
+        /// </summary>
+        internal static string EfmHostMonitoringPlugin_GetMonitoringHostSpec_ClusterEndpointIdentification {
+            get {
+                return ResourceManager.GetString("EfmHostMonitoringPlugin_GetMonitoringHostSpec_ClusterEndpointIdentification", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Disposing host monitor for monitor key: {0} due to eviction reason: {1}.
+        /// </summary>
+        internal static string EfmHostMonitorService_OnMonitorEvicted_DisposingHostMonitor {
+            get {
+                return ResourceManager.GetString("EfmHostMonitorService_OnMonitorEvicted_DisposingHostMonitor", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to New monitoring context created for host: {0}.
+        /// </summary>
+        internal static string EfmHostMonitorService_StartMonitoring_NewContextCreated {
+            get {
+                return ResourceManager.GetString("EfmHostMonitorService_StartMonitoring_NewContextCreated", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Aborting unhealthy connection..
+        /// </summary>
+        internal static string EfmHostMonitorService_StopMonitoring_AbortingUnhealthyConnection {
+            get {
+                return ResourceManager.GetString("EfmHostMonitorService_StopMonitoring_AbortingUnhealthyConnection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error occurred when checking {0}..
+        /// </summary>
+        internal static string Error_CantCheckDialect {
+            get {
+                return ResourceManager.GetString("Error_CantCheckDialect", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error occurred when checking {0}, connection state: {1}..
+        /// </summary>
+        internal static string Error_CantCheckDialect_ConnectionState {
+            get {
+                return ResourceManager.GetString("Error_CantCheckDialect_ConnectionState", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Can&apos;t load target connection type {0}.
         /// </summary>
         internal static string Error_CantLoadTargetConnectionType {
@@ -389,6 +1055,42 @@ namespace AwsWrapperDataProvider.Properties {
         internal static string Error_ConnectionAlreadyOpen {
             get {
                 return ResourceManager.GetString("Error_ConnectionAlreadyOpen", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Connection is closed..
+        /// </summary>
+        internal static string Error_ConnectionIsClosed {
+            get {
+                return ResourceManager.GetString("Error_ConnectionIsClosed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Connection is not open while checking weather {0}..
+        /// </summary>
+        internal static string Error_ConnectionNotOpenWhenChecking {
+            get {
+                return ResourceManager.GetString("Error_ConnectionNotOpenWhenChecking", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to ConnectionStringHostListProvider does not support GetClusterId..
+        /// </summary>
+        internal static string Error_ConnectionStringHostListProvider_GetClusterId {
+            get {
+                return ResourceManager.GetString("Error_ConnectionStringHostListProvider_GetClusterId", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to ConnectionStringHostListProvider does not support GetHostRole..
+        /// </summary>
+        internal static string Error_ConnectionStringHostListProvider_GetHostRoleAsync {
+            get {
+                return ResourceManager.GetString("Error_ConnectionStringHostListProvider_GetHostRoleAsync", resourceCulture);
             }
         }
         
@@ -411,11 +1113,83 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Connection string must be set before initialization..
+        /// </summary>
+        internal static string Error_ConnectionStringMustBeSetBeforeInitialization {
+            get {
+                return ResourceManager.GetString("Error_ConnectionStringMustBeSetBeforeInitialization", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Connection url is missing..
         /// </summary>
         internal static string Error_ConnectionUrlMissing {
             get {
                 return ResourceManager.GetString("Error_ConnectionUrlMissing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Could not create or get monitor..
+        /// </summary>
+        internal static string Error_CouldNotCreateOrGetMonitor {
+            get {
+                return ResourceManager.GetString("Error_CouldNotCreateOrGetMonitor", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Couldn&apos;t identify connection..
+        /// </summary>
+        internal static string Error_CouldntIdentifyConnection {
+            get {
+                return ResourceManager.GetString("Error_CouldntIdentifyConnection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error disposing host monitor: {0}.
+        /// </summary>
+        internal static string Error_DisposingHostMonitor {
+            get {
+                return ResourceManager.GetString("Error_DisposingHostMonitor", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The driver does not support the requested host selection strategy: {0}.
+        /// </summary>
+        internal static string Error_DriverDoesNotSupportRequestedHostSelectionStrategy {
+            get {
+                return ResourceManager.GetString("Error_DriverDoesNotSupportRequestedHostSelectionStrategy", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Exception connecting to writer {0}..
+        /// </summary>
+        internal static string Error_ExceptionConnectingToWriter {
+            get {
+                return ResourceManager.GetString("Error_ExceptionConnectingToWriter", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Exception caught during method execution: {0}..
+        /// </summary>
+        internal static string Error_ExceptionDuringMethodExecution {
+            get {
+                return ResourceManager.GetString("Error_ExceptionDuringMethodExecution", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unable to establish connection..
+        /// </summary>
+        internal static string Error_FailedConnection {
+            get {
+                return ResourceManager.GetString("Error_FailedConnection", resourceCulture);
             }
         }
         
@@ -429,6 +1203,15 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Failed to instantiate custom dialect type {0}..
+        /// </summary>
+        internal static string Error_FailedToInstantiateDialect {
+            get {
+                return ResourceManager.GetString("Error_FailedToInstantiateDialect", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Failed to instantiate dialect type {0}.
         /// </summary>
         internal static string Error_FailedToInstantiateDialectType {
@@ -438,11 +1221,65 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Host cannot be null or empty.
+        ///   Looks up a localized string similar to [FailoverPlugin] Should not reach here..
         /// </summary>
-        internal static string Error_HostCannotBeNullOrEmpty {
+        internal static string Error_FailoverPluginShouldNotReachHere {
             get {
-                return ResourceManager.GetString("Error_HostCannotBeNullOrEmpty", resourceCulture);
+                return ResourceManager.GetString("Error_FailoverPluginShouldNotReachHere", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failover reader timeout..
+        /// </summary>
+        internal static string Error_FailoverReaderTimeout {
+            get {
+                return ResourceManager.GetString("Error_FailoverReaderTimeout", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The active SQL connection has changed due to a connection failure. Please re-configure session state if required..
+        /// </summary>
+        internal static string Error_FailoverSuccessActiveConnectionChanged {
+            get {
+                return ResourceManager.GetString("Error_FailoverSuccessActiveConnectionChanged", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Function should not be called..
+        /// </summary>
+        internal static string Error_FunctionShouldNotBeCalled {
+            get {
+                return ResourceManager.GetString("Error_FunctionShouldNotBeCalled", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Host cannot be null or empty..
+        /// </summary>
+        internal static string Error_HostNullEmpty {
+            get {
+                return ResourceManager.GetString("Error_HostNullEmpty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unable to create connection..
+        /// </summary>
+        internal static string Error_InvalidConnection {
+            get {
+                return ResourceManager.GetString("Error_InvalidConnection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to An RDS Custom Cluster endpoint can&apos;t be used as the &apos;clusterInstanceHostPattern&apos; configuration setting..
+        /// </summary>
+        internal static string Error_InvalidCustomRdsProxyUrl {
+            get {
+                return ResourceManager.GetString("Error_InvalidCustomRdsProxyUrl", resourceCulture);
             }
         }
         
@@ -456,11 +1293,92 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Invalid host pattern: {0}..
+        /// </summary>
+        internal static string Error_InvalidHostPattern {
+            get {
+                return ResourceManager.GetString("Error_InvalidHostPattern", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failed to determine host role from the database..
+        /// </summary>
+        internal static string Error_InvalidHostRole {
+            get {
+                return ResourceManager.GetString("Error_InvalidHostRole", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Connection is out of date and invalid..
+        /// </summary>
+        internal static string Error_InvalidOpenConnectionException {
+            get {
+                return ResourceManager.GetString("Error_InvalidOpenConnectionException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Invalid operation..
         /// </summary>
         internal static string Error_InvalidOperation {
             get {
                 return ResourceManager.GetString("Error_InvalidOperation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to An RDS Proxy url can&apos;t be used as the &apos;clusterInstanceHostPattern&apos; configuration setting..
+        /// </summary>
+        internal static string Error_InvalidRdsProxyUrl {
+            get {
+                return ResourceManager.GetString("Error_InvalidRdsProxyUrl", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Invalid round robin host weight pairs format. Host name and weight cannot be empty..
+        /// </summary>
+        internal static string Error_InvalidRoundRobinPairEmpty {
+            get {
+                return ResourceManager.GetString("Error_InvalidRoundRobinPairEmpty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Invalid round robin host weight pairs format. Expected format: host1:weight1,host2:weight2..
+        /// </summary>
+        internal static string Error_InvalidRoundRobinPairFormat {
+            get {
+                return ResourceManager.GetString("Error_InvalidRoundRobinPairFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Invalid round robin default weight. Weight must be a positive integer..
+        /// </summary>
+        internal static string Error_InvalidRoundRobinValue {
+            get {
+                return ResourceManager.GetString("Error_InvalidRoundRobinValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Invalid topology: no writer instance found..
+        /// </summary>
+        internal static string Error_InvalidTopology_NoWriterInstance {
+            get {
+                return ResourceManager.GetString("Error_InvalidTopology_NoWriterInstance", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to New writer {0}:{1} is not in allowed hosts list..
+        /// </summary>
+        internal static string Error_NewWriterNotInAllowedHostsList {
+            get {
+                return ResourceManager.GetString("Error_NewWriterNotInAllowedHostsList", resourceCulture);
             }
         }
         
@@ -474,11 +1392,29 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to No hosts found matching role: {0}..
+        /// </summary>
+        internal static string Error_NoHostsMatching {
+            get {
+                return ResourceManager.GetString("Error_NoHostsMatching", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Provided connection is not of type AwsWrapperConnection..
         /// </summary>
         internal static string Error_NotAwsWrapperConnection {
             get {
                 return ResourceManager.GetString("Error_NotAwsWrapperConnection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to No {0} found in connection string..
+        /// </summary>
+        internal static string Error_NotFoundInConnectionString {
+            get {
+                return ResourceManager.GetString("Error_NotFoundInConnectionString", resourceCulture);
             }
         }
         
@@ -492,11 +1428,101 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to No writer host found in updated topology..
+        /// </summary>
+        internal static string Error_NoWriterHostFoundInUpdatedTopology {
+            get {
+                return ResourceManager.GetString("Error_NoWriterHostFoundInUpdatedTopology", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to An error occurred while obtaining the connection&apos;s host ID..
+        /// </summary>
+        internal static string Error_ObtainingConnectionHostId {
+            get {
+                return ResourceManager.GetString("Error_ObtainingConnectionHostId", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Error processing this ADO.NET call..
         /// </summary>
         internal static string Error_ProcessingAdoNetCall {
             get {
                 return ResourceManager.GetString("Error_ProcessingAdoNetCall", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Provided command is not of type AwsWrapperCommand..
+        /// </summary>
+        internal static string Error_ProvidedCommandNotAwsWrapperCommand {
+            get {
+                return ResourceManager.GetString("Error_ProvidedCommandNotAwsWrapperCommand", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Provided connection is not of type AwsWrapperConnection..
+        /// </summary>
+        internal static string Error_ProvidedConnectionNotAwsWrapperConnection {
+            get {
+                return ResourceManager.GetString("Error_ProvidedConnectionNotAwsWrapperConnection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Provided DbTransaction is not of type AwsWrapperTransaction..
+        /// </summary>
+        internal static string Error_ProvidedDbTransactionNotAwsWrapperTransaction {
+            get {
+                return ResourceManager.GetString("Error_ProvidedDbTransactionNotAwsWrapperTransaction", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Provided transaction is not of type AwsWrapperTransaction..
+        /// </summary>
+        internal static string Error_ProvidedTransactionNotAwsWrapperTransaction {
+            get {
+                return ResourceManager.GetString("Error_ProvidedTransactionNotAwsWrapperTransaction", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Provided type doesn&apos;t implement IDbCommand..
+        /// </summary>
+        internal static string Error_ProvidedTypeDoesntImplementIDbCommand {
+            get {
+                return ResourceManager.GetString("Error_ProvidedTypeDoesntImplementIDbCommand", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to [PluginService] Required IBlockingHostListProvider..
+        /// </summary>
+        internal static string Error_RequiredIBlockingHostListProvider {
+            get {
+                return ResourceManager.GetString("Error_RequiredIBlockingHostListProvider", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Should not be called.
+        /// </summary>
+        internal static string Error_ShouldNotBeCalled {
+            get {
+                return ResourceManager.GetString("Error_ShouldNotBeCalled", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Should not get here..
+        /// </summary>
+        internal static string Error_ShouldNotGetHere {
+            get {
+                return ResourceManager.GetString("Error_ShouldNotGetHere", resourceCulture);
             }
         }
         
@@ -510,6 +1536,42 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Error testing current dialect {0}: {1}..
+        /// </summary>
+        internal static string Error_TestingCurrentDialect {
+            get {
+                return ResourceManager.GetString("Error_TestingCurrentDialect", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error testing dialect candidate {0}: {1}..
+        /// </summary>
+        internal static string Error_TestingDialectCandidates {
+            get {
+                return ResourceManager.GetString("Error_TestingDialectCandidates", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0} thrown during finding a monitoring connection, and ignored..
+        /// </summary>
+        internal static string Error_ThrownErrorIgnoredFindingMonitoringConnection {
+            get {
+                return ResourceManager.GetString("Error_ThrownErrorIgnoredFindingMonitoringConnection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Transaction resolution unknown. Please re-configure session state if required and try restarting transaction..
+        /// </summary>
+        internal static string Error_TransactionResolutionUnknown {
+            get {
+                return ResourceManager.GetString("Error_TransactionResolutionUnknown", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Unable to create connection..
         /// </summary>
         internal static string Error_UnableToCreateConnection {
@@ -519,11 +1581,38 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Unable to establish connection..
+        /// </summary>
+        internal static string Error_UnableToEstablishConnection {
+            get {
+                return ResourceManager.GetString("Error_UnableToEstablishConnection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unable to establish a valid connection after multiple attempts..
+        /// </summary>
+        internal static string Error_UnableToEstablishValidConnectionAfterMultipleAttempts {
+            get {
+                return ResourceManager.GetString("Error_UnableToEstablishValidConnectionAfterMultipleAttempts", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Unable to find valid dialect type for connection..
         /// </summary>
         internal static string Error_UnableToFindValidDialectType {
             get {
                 return ResourceManager.GetString("Error_UnableToFindValidDialectType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unable to identify connection and gather monitoring host spec..
+        /// </summary>
+        internal static string Error_UnableToIdentifyConnectionAndGatherMonitoringHostSpec {
+            get {
+                return ResourceManager.GetString("Error_UnableToIdentifyConnectionAndGatherMonitoringHostSpec", resourceCulture);
             }
         }
         
@@ -546,6 +1635,15 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Unexpected role {0} for writer candidate {1}..
+        /// </summary>
+        internal static string Error_UnexpectedRoleForWriterCandidate {
+            get {
+                return ResourceManager.GetString("Error_UnexpectedRoleForWriterCandidate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Unknown Aws plugin code: {0}.
         /// </summary>
         internal static string Error_UnknownAwsPluginCode {
@@ -560,6 +1658,385 @@ namespace AwsWrapperDataProvider.Properties {
         internal static string Error_UnknownPluginCode {
             get {
                 return ResourceManager.GetString("Error_UnknownPluginCode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Execution time: {0}ms, {1}ns..
+        /// </summary>
+        internal static string ExecutionTimePlugin_Execute_ExecutionTime {
+            get {
+                return ResourceManager.GetString("ExecutionTimePlugin_Execute_ExecutionTime", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Marking host {0} as unavailable..
+        /// </summary>
+        internal static string FailoverPlugin_DealWithOriginalExceptionAsync_MarkingHostUnavailable {
+            get {
+                return ResourceManager.GetString("FailoverPlugin_DealWithOriginalExceptionAsync_MarkingHostUnavailable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Processing exception: {0}..
+        /// </summary>
+        internal static string FailoverPlugin_DealWithOriginalExceptionAsync_ProcessingException {
+            get {
+                return ResourceManager.GetString("FailoverPlugin_DealWithOriginalExceptionAsync_ProcessingException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Current connection state: {0}, Hash={1}, DataSource={2}..
+        /// </summary>
+        internal static string FailoverPlugin_Execute_CurrentConnectionState {
+            get {
+                return ResourceManager.GetString("FailoverPlugin_Execute_CurrentConnectionState", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Execute called: method={0}, isClosed={1}, closedExplicitly={2}..
+        /// </summary>
+        internal static string FailoverPlugin_Execute_ExecuteCalled {
+            get {
+                return ResourceManager.GetString("FailoverPlugin_Execute_ExecuteCalled", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Initiating failover in mode: {0}..
+        /// </summary>
+        internal static string FailoverPlugin_FailoverAsync_InitiatingFailover {
+            get {
+                return ResourceManager.GetString("FailoverPlugin_FailoverAsync_InitiatingFailover", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Reader failover successful. Switching to host: {0}..
+        /// </summary>
+        internal static string FailoverPlugin_FailoverReaderAsync_ReaderFailoverSuccessful {
+            get {
+                return ResourceManager.GetString("FailoverPlugin_FailoverReaderAsync_ReaderFailoverSuccessful", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Reader failover: Set new connection {0} with state {1}, DataSource {2} to host {3}..
+        /// </summary>
+        internal static string FailoverPlugin_FailoverReaderAsync_SetNewConnection {
+            get {
+                return ResourceManager.GetString("FailoverPlugin_FailoverReaderAsync_SetNewConnection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Starting reader failover process..
+        /// </summary>
+        internal static string FailoverPlugin_FailoverReaderAsync_StartingReaderFailover {
+            get {
+                return ResourceManager.GetString("FailoverPlugin_FailoverReaderAsync_StartingReaderFailover", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Writer failover: Set new connection {0} with state {1} to host {2}..
+        /// </summary>
+        internal static string FailoverPlugin_FailoverWriterAsync_SetNewConnection {
+            get {
+                return ResourceManager.GetString("FailoverPlugin_FailoverWriterAsync_SetNewConnection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to An error occurred while attempting to select a reader host candidate {0} from Candidates..
+        /// </summary>
+        internal static string FailoverPlugin_GetReaderFailoverConnectionAsync_ErrorSelectingReaderHost {
+            get {
+                return ResourceManager.GetString("FailoverPlugin_GetReaderFailoverConnectionAsync_ErrorSelectingReaderHost", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Exception thrown when getting a reader candidate..
+        /// </summary>
+        internal static string FailoverPlugin_GetReaderFailoverConnectionAsync_ExceptionGettingReaderCandidate {
+            get {
+                return ResourceManager.GetString("FailoverPlugin_GetReaderFailoverConnectionAsync_ExceptionGettingReaderCandidate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to [Reader Failover] Failed to connect to host: {0}..
+        /// </summary>
+        internal static string FailoverPlugin_GetReaderFailoverConnectionAsync_FailedToConnectToHost {
+            get {
+                return ResourceManager.GetString("FailoverPlugin_GetReaderFailoverConnectionAsync_FailedToConnectToHost", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Trying the original writer {0} which may have been demoted to a reader..
+        /// </summary>
+        internal static string FailoverPlugin_GetReaderFailoverConnectionAsync_TryingOriginalWriter {
+            get {
+                return ResourceManager.GetString("FailoverPlugin_GetReaderFailoverConnectionAsync_TryingOriginalWriter", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unable to determine host role for {0}. Since failover mode is set to STRICT_READER and the host may be a writer, it will not be selected for reader failover..
+        /// </summary>
+        internal static string FailoverPlugin_GetReaderFailoverConnectionAsync_UnableToDetermineHostRole {
+            get {
+                return ResourceManager.GetString("FailoverPlugin_GetReaderFailoverConnectionAsync_UnableToDetermineHostRole", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unable to determine host role for {0}. Since failover mode is set to STRICT_READER and the host may be a writer, it will not be selected for reader failover..
+        /// </summary>
+        internal static string FailoverPlugin_GetReaderFailoverConnectionAsync_UnableToDetermineOriginalWriterRole {
+            get {
+                return ResourceManager.GetString("FailoverPlugin_GetReaderFailoverConnectionAsync_UnableToDetermineOriginalWriterRo" +
+                        "le", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Current connection {0}@{1} is closed..
+        /// </summary>
+        internal static string FailoverPlugin_InvalidateCurrentConnectionAsync_ConnectionClosed {
+            get {
+                return ResourceManager.GetString("FailoverPlugin_InvalidateCurrentConnectionAsync_ConnectionClosed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error occurred when disposing current connection: {0}..
+        /// </summary>
+        internal static string FailoverPlugin_InvalidateCurrentConnectionAsync_ErrorDisposingConnection {
+            get {
+                return ResourceManager.GetString("FailoverPlugin_InvalidateCurrentConnectionAsync_ErrorDisposingConnection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Invalidating current connection....
+        /// </summary>
+        internal static string FailoverPlugin_InvalidateCurrentConnectionAsync_InvalidatingConnection {
+            get {
+                return ResourceManager.GetString("FailoverPlugin_InvalidateCurrentConnectionAsync_InvalidatingConnection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Connection was closed but not explicitly. Attempting to pick a new connection..
+        /// </summary>
+        internal static string FailoverPlugin_InvalidInvocationOnClosedConnection_AttemptingNewConnection {
+            get {
+                return ResourceManager.GetString("FailoverPlugin_InvalidInvocationOnClosedConnection_AttemptingNewConnection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to InvalidInvocationOnClosedConnection called: closedExplicitly={0}, isClosed={1}..
+        /// </summary>
+        internal static string FailoverPlugin_InvalidInvocationOnClosedConnection_Called {
+            get {
+                return ResourceManager.GetString("FailoverPlugin_InvalidInvocationOnClosedConnection_Called", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Current connection when invalid invocation: Hash={0}, State={1}, DataSource={2}..
+        /// </summary>
+        internal static string FailoverPlugin_InvalidInvocationOnClosedConnection_CurrentConnection {
+            get {
+                return ResourceManager.GetString("FailoverPlugin_InvalidInvocationOnClosedConnection_CurrentConnection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to FailoverPlugin.OpenConnection returning connection state = {0}, type = {1}@{2}, DataSource = {3}..
+        /// </summary>
+        internal static string FailoverPlugin_OpenConnection_ReturningConnection {
+            get {
+                return ResourceManager.GetString("FailoverPlugin_OpenConnection_ReturningConnection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Connection was closed explicitly. No failover will be performed..
+        /// </summary>
+        internal static string FailoverPlugin_PickNewConnectionAsync_ConnectionClosedExplicitly {
+            get {
+                return ResourceManager.GetString("FailoverPlugin_PickNewConnectionAsync_ConnectionClosedExplicitly", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Picking a new connection..
+        /// </summary>
+        internal static string FailoverPlugin_PickNewConnectionAsync_PickingNewConnection {
+            get {
+                return ResourceManager.GetString("FailoverPlugin_PickNewConnectionAsync_PickingNewConnection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cluster-aware failover is disabled..
+        /// </summary>
+        internal static string FailoverPlugin_ShouldExceptionTriggerConnectionSwitch_FailoverDisabled {
+            get {
+                return ResourceManager.GetString("FailoverPlugin_ShouldExceptionTriggerConnectionSwitch_FailoverDisabled", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Do not start failover since the current thread is interrupted..
+        /// </summary>
+        internal static string FailoverPlugin_ShouldExceptionTriggerConnectionSwitch_ThreadInterrupted {
+            get {
+                return ResourceManager.GetString("FailoverPlugin_ShouldExceptionTriggerConnectionSwitch_ThreadInterrupted", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Current connection after failover: Hash={0}, State={1}, DataSource={2}..
+        /// </summary>
+        internal static string FailoverPlugin_ThrowFailoverSuccessException_CurrentConnectionAfterFailover {
+            get {
+                return ResourceManager.GetString("FailoverPlugin_ThrowFailoverSuccessException_CurrentConnectionAfterFailover", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failover succeeded..
+        /// </summary>
+        internal static string FailoverPlugin_ThrowFailoverSuccessException_FailoverSucceeded {
+            get {
+                return ResourceManager.GetString("FailoverPlugin_ThrowFailoverSuccessException_FailoverSucceeded", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cluster Id changed, old cluster id: {0}..
+        /// </summary>
+        internal static string MonitoringRdsHostListProvider_ClusterIdChanged {
+            get {
+                return ResourceManager.GetString("MonitoringRdsHostListProvider_ClusterIdChanged", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Initializing new cluster topology monitor for clusterId: {0}..
+        /// </summary>
+        internal static string MonitoringRdsHostListProvider_InitMonitor {
+            get {
+                return ResourceManager.GetString("MonitoringRdsHostListProvider_InitMonitor", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Disposing cluster topology monitor for clusterId: {0} due to eviction reason: {1}..
+        /// </summary>
+        internal static string MonitoringRdsHostListProvider_OnMonitorEvicted_Disposing {
+            get {
+                return ResourceManager.GetString("MonitoringRdsHostListProvider_OnMonitorEvicted_Disposing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error disposing cluster topology monitor: {message}..
+        /// </summary>
+        internal static string MonitoringRdsHostListProvider_OnMonitorEvicted_Error {
+            get {
+                return ResourceManager.GetString("MonitoringRdsHostListProvider_OnMonitorEvicted_Error", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Query for topology async for MonitoringRdsHostListProvider timed out for connection: {0}..
+        /// </summary>
+        internal static string MonitoringRdsHostListProvider_QueryForTopologyAsync_TimedOut {
+            get {
+                return ResourceManager.GetString("MonitoringRdsHostListProvider_QueryForTopologyAsync_TimedOut", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cluster Id transferred cache topology, old cluster id: {0}..
+        /// </summary>
+        internal static string MonitoringRdsHostListProvider_TransferCachedTopology {
+            get {
+                return ResourceManager.GetString("MonitoringRdsHostListProvider_TransferCachedTopology", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cluster Id transferred, old cluster id: {0}..
+        /// </summary>
+        internal static string MonitoringRdsHostListProvider_TransferExistingMonitor {
+            get {
+                return ResourceManager.GetString("MonitoringRdsHostListProvider_TransferExistingMonitor", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error getting suggested writer node ID: {0}..
+        /// </summary>
+        internal static string MultiAzClusterTopologyMonitor_GetSuggestedWriterNodeIdAsync_Error {
+            get {
+                return ResourceManager.GetString("MultiAzClusterTopologyMonitor_GetSuggestedWriterNodeIdAsync_Error", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error getting writer node ID: {0}..
+        /// </summary>
+        internal static string MultiAzClusterTopologyMonitor_GetWriterNodeIdAsync_Error {
+            get {
+                return ResourceManager.GetString("MultiAzClusterTopologyMonitor_GetWriterNodeIdAsync_Error", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Current exception {0}: {1}..
+        /// </summary>
+        internal static string MySqlExceptionHandler_IsNetworkException_CurrentException {
+            get {
+                return ResourceManager.GetString("MySqlExceptionHandler_IsNetworkException_CurrentException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to &quot;Current exception is a network exception: {0}..
+        /// </summary>
+        internal static string MySqlExceptionHandler_IsNetworkException_CurrentNetworkException {
+            get {
+                return ResourceManager.GetString("MySqlExceptionHandler_IsNetworkException_CurrentNetworkException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to &quot;Checking inner exception..
+        /// </summary>
+        internal static string MySqlExceptionHandler_IsNetworkException_InnerException {
+            get {
+                return ResourceManager.GetString("MySqlExceptionHandler_IsNetworkException_InnerException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to &quot;Current exception is not a network exception..
+        /// </summary>
+        internal static string MySqlExceptionHandler_IsNetworkException_InvalidNetworkException {
+            get {
+                return ResourceManager.GetString("MySqlExceptionHandler_IsNetworkException_InvalidNetworkException", resourceCulture);
             }
         }
         
@@ -596,6 +2073,267 @@ namespace AwsWrapperDataProvider.Properties {
         internal static string PluginService_ErrorClosingOldConnection {
             get {
                 return ResourceManager.GetString("PluginService.ErrorClosingOldConnection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to PluginService.ForceRefreshHostList() completed with AllHost = {0}..
+        /// </summary>
+        internal static string PluginService_ForceRefreshHostListAsync_Completed {
+            get {
+                return ResourceManager.GetString("PluginService_ForceRefreshHostListAsync_Completed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to PluginService.ForceRefreshHostList() completed with connection state = {0}, AllHost = {1}..
+        /// </summary>
+        internal static string PluginService_ForceRefreshHostListAsync_CompletedWithConnection {
+            get {
+                return ResourceManager.GetString("PluginService_ForceRefreshHostListAsync_CompletedWithConnection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to A timeout exception occurred after waiting {0} ms for refreshed topology..
+        /// </summary>
+        internal static string PluginService_ForceRefreshHostListAsync_TimeoutException {
+            get {
+                return ResourceManager.GetString("PluginService_ForceRefreshHostListAsync_TimeoutException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to PluginService.RefreshHostList() completed with AllHost = {0}..
+        /// </summary>
+        internal static string PluginService_RefreshHostListAsync_Completed {
+            get {
+                return ResourceManager.GetString("PluginService_RefreshHostListAsync_Completed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to PluginService.RefreshHostList() completed with connection state = {0}, AllHost = {1}..
+        /// </summary>
+        internal static string PluginService_RefreshHostListAsync_CompletedWithConnection {
+            get {
+                return ResourceManager.GetString("PluginService_RefreshHostListAsync_CompletedWithConnection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Host {0} availability changed from {1} to {2}..
+        /// </summary>
+        internal static string PluginService_SetAvailability_HostAvailabilityChanged {
+            get {
+                return ResourceManager.GetString("PluginService_SetAvailability_HostAvailabilityChanged", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to There are no changes in the hosts&apos; availability..
+        /// </summary>
+        internal static string PluginService_SetAvailability_NoChanges {
+            get {
+                return ResourceManager.GetString("PluginService_SetAvailability_NoChanges", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to SetCurrentConnection completed: Current connection Hash={0} State={1}.
+        /// </summary>
+        internal static string PluginService_SetCurrentConnection_Completed {
+            get {
+                return ResourceManager.GetString("PluginService_SetCurrentConnection_Completed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to New connection DataSource={0} State={1}..
+        /// </summary>
+        internal static string PluginService_SetCurrentConnection_NewConnectionDetails {
+            get {
+                return ResourceManager.GetString("PluginService_SetCurrentConnection_NewConnectionDetails", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to New connection is set DataSource={0}..
+        /// </summary>
+        internal static string PluginService_SetCurrentConnection_NewConnectionSet {
+            get {
+                return ResourceManager.GetString("PluginService_SetCurrentConnection_NewConnectionSet", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Old connection is disposed..
+        /// </summary>
+        internal static string PluginService_SetCurrentConnection_OldConnectionDisposed {
+            get {
+                return ResourceManager.GetString("PluginService_SetCurrentConnection_OldConnectionDisposed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to New connection is same reference as old connection - not disposing..
+        /// </summary>
+        internal static string PluginService_SetCurrentConnection_SameReference {
+            get {
+                return ResourceManager.GetString("PluginService_SetCurrentConnection_SameReference", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Dialect updated to: {0}..
+        /// </summary>
+        internal static string PluginService_UpdateDialectAsync_DialectUpdated {
+            get {
+                return ResourceManager.GetString("PluginService_UpdateDialectAsync_DialectUpdated", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Caching new topology: ClusterId={0}, HostCount={1}..
+        /// </summary>
+        internal static string RdsHostListProvider_GetTopologyAsync_CachedNewTopology {
+            get {
+                return ResourceManager.GetString("RdsHostListProvider_GetTopologyAsync_CachedNewTopology", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cached topology: {0}..
+        /// </summary>
+        internal static string RdsHostListProvider_GetTopologyAsync_CachedTopology {
+            get {
+                return ResourceManager.GetString("RdsHostListProvider_GetTopologyAsync_CachedTopology", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Topology cache lookup: ClusterId={0}, Found={1}, ForceUpdate={2}..
+        /// </summary>
+        internal static string RdsHostListProvider_GetTopologyAsync_CacheLookup {
+            get {
+                return ResourceManager.GetString("RdsHostListProvider_GetTopologyAsync_CacheLookup", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to ClusterId changed: {0} -&gt; {1}..
+        /// </summary>
+        internal static string RdsHostListProvider_GetTopologyAsync_ClusterIdChanged {
+            get {
+                return ResourceManager.GetString("RdsHostListProvider_GetTopologyAsync_ClusterIdChanged", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Connection unavailable (State={0}), falling back to initial hosts..
+        /// </summary>
+        internal static string RdsHostListProvider_GetTopologyAsync_ConnectionUnavailable {
+            get {
+                return ResourceManager.GetString("RdsHostListProvider_GetTopologyAsync_ConnectionUnavailable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Fallback topology: {0}..
+        /// </summary>
+        internal static string RdsHostListProvider_GetTopologyAsync_FallbackTopology {
+            get {
+                return ResourceManager.GetString("RdsHostListProvider_GetTopologyAsync_FallbackTopology", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to QueryForTopology returned empty/null, falling back to initial hosts..
+        /// </summary>
+        internal static string RdsHostListProvider_GetTopologyAsync_FallingBackToInitialHost {
+            get {
+                return ResourceManager.GetString("RdsHostListProvider_GetTopologyAsync_FallingBackToInitialHost", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to New topology: {0}..
+        /// </summary>
+        internal static string RdsHostListProvider_GetTopologyAsync_NewTopology {
+            get {
+                return ResourceManager.GetString("RdsHostListProvider_GetTopologyAsync_NewTopology", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cluster instance template: {0} (from initial host: {1})..
+        /// </summary>
+        internal static string RdsHostListProvider_Init_ClusterInstanceTemplate {
+            get {
+                return ResourceManager.GetString("RdsHostListProvider_Init_ClusterInstanceTemplate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Initial host list populated with {0} hosts..
+        /// </summary>
+        internal static string RdsHostListProvider_Init_InitialHostCount {
+            get {
+                return ResourceManager.GetString("RdsHostListProvider_Init_InitialHostCount", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Initial host: {0}, IsCluster={1}..
+        /// </summary>
+        internal static string RdsHostListProvider_Init_InitialHostsAndCluster {
+            get {
+                return ResourceManager.GetString("RdsHostListProvider_Init_InitialHostsAndCluster", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to QueryForTopology: hostName={0}, template={1}, endpoint={2}..
+        /// </summary>
+        internal static string RdsHostListProvider_QueryForTopologyAsync {
+            get {
+                return ResourceManager.GetString("RdsHostListProvider_QueryForTopologyAsync", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to No writer node found in the result of the fetchWriterNodeQuery. Ensure that the query is correct and that the database is configured properly..
+        /// </summary>
+        internal static string RdsMultiAzDbClusterListProvider_ProcessWriterNodeId_NoWriterNodesFound {
+            get {
+                return ResourceManager.GetString("RdsMultiAzDbClusterListProvider_ProcessWriterNodeId_NoWriterNodesFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Reader no result set left in {0}..
+        /// </summary>
+        internal static string RdsMultiAzDbClusterMySqlDialect_IsDialect_AsyncReader {
+            get {
+                return ResourceManager.GetString("RdsMultiAzDbClusterMySqlDialect_IsDialect_AsyncReader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to RdsMultiAzDbClusterPgDialect.IsDialect() called with connection state = {0}, type = {1}@{2}, Database = {3}..
+        /// </summary>
+        internal static string RdsMultiAzDbClusterPgDialect_IsDialect {
+            get {
+                return ResourceManager.GetString("RdsMultiAzDbClusterPgDialect_IsDialect", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The rds_tools extension not installed; skipping dialect function call..
+        /// </summary>
+        internal static string RdsMultiAzDbClusterPgDialect_IsDialect_InvalidRdsTools {
+            get {
+                return ResourceManager.GetString("RdsMultiAzDbClusterPgDialect_IsDialect_InvalidRdsTools", resourceCulture);
             }
         }
     }
