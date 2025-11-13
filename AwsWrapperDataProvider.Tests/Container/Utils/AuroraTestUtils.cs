@@ -399,7 +399,7 @@ public class AuroraTestUtils
         var password = TestEnvironment.Env.Info.DatabaseInfo.Password;
         var host = TestEnvironment.Env.Info.DatabaseInfo.Instances[0].Host;
         var port = TestEnvironment.Env.Info.DatabaseInfo.Instances[0].Port;
-        var connectionUrl = ConnectionStringHelper.GetUrl(databaseEngine, host, port, username, password, dbName);
+        var connectionUrl = ConnectionStringHelper.GetUrl(databaseEngine, host, port, username, password, dbName, 30, 30, null, false);
 
         using var connection = DriverHelper.CreateUnopenedConnection(databaseEngine, connectionUrl);
         connection.Open();
