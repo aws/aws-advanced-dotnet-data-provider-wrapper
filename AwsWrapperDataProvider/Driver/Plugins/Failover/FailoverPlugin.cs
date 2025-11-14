@@ -20,6 +20,7 @@ using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Plugins.AuroraStaleDns;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 using ThreadState = System.Threading.ThreadState;
 
@@ -101,14 +102,14 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
     public override async Task<T> Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, params object[] methodArgs)
     {
-        Logger.LogDebug("Execute called: method={MethodName}, isClosed={IsClosed}, closedExplicitly={ClosedExplicitly}",
+        Logger.LogDebug(Resources.FailoverPlugin_Execute_ExecuteCalled,
             methodName,
             this.isClosed,
             this.closedExplicitly);
 
         if (this.pluginService.CurrentConnection != null)
         {
-            Logger.LogDebug("Current connection state: {State}, Hash={Hash}, DataSource={DataSource}",
+            Logger.LogDebug(Resources.FailoverPlugin_Execute_CurrentConnectionState,
                 this.pluginService.CurrentConnection.State,
                 RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection),
                 this.pluginService.CurrentConnection.DataSource);
@@ -143,7 +144,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
             await this.DealWithOriginalExceptionAsync(exception);
         }
 
-        throw new UnreachableException("[FailoverPlugin] Should not reach here.");
+        throw new UnreachableException(Resources.Error_FailoverPluginShouldNotReachHere);
     }
 
     private void InitFailoverMode()
@@ -237,7 +238,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
         if (connection == null)
         {
-            throw new InvalidOperationException("Unable to establish connection");
+            throw new InvalidOperationException(Resources.Error_FailedConnection);
         }
 
         if (isInitialConnection)
@@ -245,7 +246,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
             await this.pluginService.ForceRefreshHostListAsync(connection);
         }
 
-        Logger.LogDebug("FailoverPlugin.OpenConnection returning connection state = {State}, type = {Type}@{Id}, DataSource = {DataSource}",
+        Logger.LogDebug(Resources.FailoverPlugin_OpenConnection_ReturningConnection,
             connection.State,
             connection.GetType().FullName,
             RuntimeHelpers.GetHashCode(connection),
@@ -263,13 +264,13 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
     private async Task InvalidInvocationOnClosedConnection()
     {
-        Logger.LogWarning("InvalidInvocationOnClosedConnection called: closedExplicitly={ClosedExplicitly}, isClosed={IsClosed}",
+        Logger.LogWarning(Resources.FailoverPlugin_InvalidInvocationOnClosedConnection_Called,
             this.closedExplicitly,
             this.isClosed);
 
         if (this.pluginService.CurrentConnection != null)
         {
-            Logger.LogWarning("Current connection when invalid invocation: Hash={Hash}, State={State}, DataSource={DataSource}",
+            Logger.LogWarning(Resources.FailoverPlugin_InvalidInvocationOnClosedConnection_CurrentConnection,
                 RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection),
                 this.pluginService.CurrentConnection.State,
                 this.pluginService.CurrentConnection.DataSource);
@@ -278,12 +279,12 @@ public class FailoverPlugin : AbstractConnectionPlugin
         if (!this.closedExplicitly)
         {
             this.isClosed = false;
-            Logger.LogWarning("Connection was closed but not explicitly. Attempting to pick a new connection.");
+            Logger.LogWarning(Resources.FailoverPlugin_InvalidInvocationOnClosedConnection_AttemptingNewConnection);
             await this.PickNewConnectionAsync();
-            throw new FailoverSuccessException("The active connection has changed. Please re-configure session state if required.");
+            throw new FailoverSuccessException(Resources.Error_FailoverSuccessActiveConnectionChanged);
         }
 
-        throw new InvalidOperationException("Connection is closed");
+        throw new InvalidOperationException(Resources.Error_ConnectionIsClosed);
     }
 
     private bool AllowedOnClosedConnection(string methodName)
@@ -293,7 +294,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
     private async Task DealWithOriginalExceptionAsync(Exception originalException)
     {
-        Logger.LogDebug("Processing exception: {ExceptionMessage}", originalException.ToString());
+        Logger.LogDebug(Resources.FailoverPlugin_DealWithOriginalExceptionAsync_ProcessingException, originalException.ToString());
 
         if (this.ShouldExceptionTriggerConnectionSwitch(originalException))
         {
@@ -306,7 +307,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
             if (this.pluginService.CurrentHostSpec != null)
             {
-                Logger.LogInformation("Marking host {Host} as unavailable.", this.pluginService.CurrentHostSpec.Host);
+                Logger.LogInformation(Resources.FailoverPlugin_DealWithOriginalExceptionAsync_MarkingHostUnavailable, this.pluginService.CurrentHostSpec.Host);
                 this.pluginService.SetAvailability(this.pluginService.CurrentHostSpec.AsAliases(), HostAvailability.Unavailable);
             }
 
@@ -319,7 +320,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
     private async Task FailoverAsync()
     {
-        Logger.LogInformation("Initiating failover in mode: {FailoverMode}.", this.failoverMode);
+        Logger.LogInformation(Resources.FailoverPlugin_FailoverAsync_InitiatingFailover, this.failoverMode);
 
         if (this.failoverMode == FailoverMode.StrictWriter)
         {
@@ -333,14 +334,14 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
     private async Task FailoverReaderAsync()
     {
-        Logger.LogInformation("Starting reader failover process.");
+        Logger.LogInformation(Resources.FailoverPlugin_FailoverReaderAsync_StartingReaderFailover);
         await this.pluginService.ForceRefreshHostListAsync(false, 0);
 
         var result = await this.GetReaderFailoverConnectionAsync(DateTime.UtcNow.AddMilliseconds(this.failoverTimeoutMs));
-        Logger.LogInformation("Reader failover successful. Switching to host: {Host}.", result.HostSpec.Host);
+        Logger.LogInformation(Resources.FailoverPlugin_FailoverReaderAsync_ReaderFailoverSuccessful, result.HostSpec.Host);
 
         this.pluginService.SetCurrentConnection(result.Connection, result.HostSpec);
-        Logger.LogInformation("Reader failover: Set new connection {Hash} with state {State}, DataSource {DataSource} to host {Host}",
+        Logger.LogInformation(Resources.FailoverPlugin_FailoverReaderAsync_SetNewConnection,
             RuntimeHelpers.GetHashCode(result.Connection),
             result.Connection.State,
             result.Connection.DataSource,
@@ -374,7 +375,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogInformation(ex, LoggerUtils.LogTopology([.. remainingReaders], $"An error occurred while attempting to select a reader host candidate {readerCandidate} from Candidates"));
+                    Logger.LogInformation(ex, LoggerUtils.LogTopology([.. remainingReaders], string.Format(Resources.FailoverPlugin_GetReaderFailoverConnectionAsync_ErrorSelectingReaderHost, readerCandidate)));
                     break;
                 }
 
@@ -400,12 +401,12 @@ public class FailoverPlugin : AbstractConnectionPlugin
                     }
                     else
                     {
-                        Logger.LogInformation("Unable to determine host role for {readerCandidate}. Since failover mode is set to STRICT_READER and the host may be a writer, it will not be selected for reader failover.", readerCandidate.GetHostAndPort());
+                        Logger.LogInformation(Resources.FailoverPlugin_GetReaderFailoverConnectionAsync_UnableToDetermineHostRole, readerCandidate.GetHostAndPort());
                     }
                 }
                 catch (DbException ex)
                 {
-                    Logger.LogInformation(ex, "Exception thrown when getting a reader candidate");
+                    Logger.LogInformation(ex, Resources.FailoverPlugin_GetReaderFailoverConnectionAsync_ExceptionGettingReaderCandidate);
                     remainingReaders.Remove(readerCandidate);
                 }
             }
@@ -421,7 +422,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
                 try
                 {
-                    Logger.LogInformation("Trying the original writer {hostSpec} which may have been demoted to a reader", originalWriter);
+                    Logger.LogInformation(Resources.FailoverPlugin_GetReaderFailoverConnectionAsync_TryingOriginalWriter, originalWriter);
                     DbConnection candidateConn = await this.pluginService.OpenConnection(originalWriter, this.props, this, true);
                     var role = await this.pluginService.GetHostRole(candidateConn);
 
@@ -439,19 +440,19 @@ public class FailoverPlugin : AbstractConnectionPlugin
                     }
                     else
                     {
-                        Logger.LogInformation("Unable to determine host role for {originalWriter}. Since failover mode is set to STRICT_READER and the host may be a writer, it will not be selected for reader failover.", originalWriter.GetHostAndPort());
+                        Logger.LogInformation(Resources.FailoverPlugin_GetReaderFailoverConnectionAsync_UnableToDetermineOriginalWriterRole, originalWriter.GetHostAndPort());
                     }
                 }
                 catch (DbException ex)
                 {
                     // Continue to next iteration
-                    Logger.LogInformation(ex, $"[Reader Failover] Failed to connect to host: {originalWriter.GetHostAndPort()}");
+                    Logger.LogInformation(ex, Resources.FailoverPlugin_GetReaderFailoverConnectionAsync_FailedToConnectToHost, originalWriter.GetHostAndPort());
                 }
             }
         }
         while (DateTime.UtcNow < failoverEndTime);
 
-        throw new FailoverFailedException("Failover reader timeout");
+        throw new FailoverFailedException(Resources.Error_FailoverReaderTimeout);
     }
 
     private async Task FailoverWriterAsync()
@@ -464,13 +465,13 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
         if (writerCandidate == null)
         {
-            throw new FailoverFailedException("No writer host found in updated topology");
+            throw new FailoverFailedException(Resources.Error_NoWriterHostFoundInUpdatedTopology);
         }
 
         var allowedHosts = this.pluginService.GetHosts();
         if (!allowedHosts.Any(h => h.Host == writerCandidate.Host && h.Port == writerCandidate.Port))
         {
-            throw new FailoverFailedException($"New writer {writerCandidate.Host}:{writerCandidate.Port} is not in allowed hosts list");
+            throw new FailoverFailedException(string.Format(Resources.Error_NewWriterNotInAllowedHostsList, writerCandidate.Host, writerCandidate.Port));
         }
 
         DbConnection writerCandidateConn;
@@ -480,7 +481,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
         }
         catch (Exception ex)
         {
-            throw new FailoverFailedException($"Exception connecting to writer {writerCandidate.Host}", ex);
+            throw new FailoverFailedException(string.Format(Resources.Error_ExceptionConnectingToWriter, writerCandidate.Host), ex);
         }
 
         var role = await this.pluginService.GetHostRole(writerCandidateConn);
@@ -495,11 +496,11 @@ public class FailoverPlugin : AbstractConnectionPlugin
                 // Ignore close exception
             }
 
-            throw new FailoverFailedException($"Unexpected role {role} for writer candidate {writerCandidate.Host}");
+            throw new FailoverFailedException(string.Format(Resources.Error_UnexpectedRoleForWriterCandidate, writerCandidate.Host));
         }
 
         this.pluginService.SetCurrentConnection(writerCandidateConn, writerCandidate);
-        Logger.LogInformation("Writer failover: Set new connection {Hash} with state {State} to host {Host}",
+        Logger.LogInformation(Resources.FailoverPlugin_FailoverWriterAsync_SetNewConnection,
             RuntimeHelpers.GetHashCode(writerCandidateConn),
             writerCandidateConn.State,
             writerCandidate.Host);
@@ -508,11 +509,11 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
     private void ThrowFailoverSuccessException()
     {
-        Logger.LogTrace("Failover succeeded");
+        Logger.LogTrace(Resources.FailoverPlugin_ThrowFailoverSuccessException_FailoverSucceeded);
 
         if (this.pluginService.CurrentConnection != null)
         {
-            Logger.LogDebug("Current connection after failover: Hash={Hash}, State={State}, DataSource={DataSource}",
+            Logger.LogDebug(Resources.FailoverPlugin_ThrowFailoverSuccessException_CurrentConnectionAfterFailover,
                 RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection),
                 this.pluginService.CurrentConnection.State,
                 this.pluginService.CurrentConnection.DataSource);
@@ -521,15 +522,15 @@ public class FailoverPlugin : AbstractConnectionPlugin
         if (this.shouldThrowTransactionError)
         {
             this.shouldThrowTransactionError = false;
-            throw new TransactionStateUnknownException("Transaction resolution unknown. Please re-configure session state if required and try restarting transaction.");
+            throw new TransactionStateUnknownException(Resources.Error_TransactionResolutionUnknown);
         }
 
-        throw new FailoverSuccessException("The active SQL connection has changed due to a connection failure. Please re-configure session state if required.");
+        throw new FailoverSuccessException(Resources.Error_FailoverSuccessActiveConnectionChanged);
     }
 
     private async Task InvalidateCurrentConnectionAsync()
     {
-        Logger.LogTrace("Invalidating current connection...");
+        Logger.LogTrace(Resources.FailoverPlugin_InvalidateCurrentConnectionAsync_InvalidatingConnection);
         try
         {
             if (this.pluginService.CurrentTransaction != null)
@@ -548,7 +549,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
             if (this.pluginService.CurrentConnection != null)
             {
                 await this.pluginService.CurrentConnection.CloseAsync();
-                Logger.LogTrace("Current connection {Type}@{Id} is closed.",
+                Logger.LogTrace(Resources.FailoverPlugin_InvalidateCurrentConnectionAsync_ConnectionClosed,
                     this.pluginService.CurrentConnection?.GetType().FullName,
                     RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection));
             }
@@ -556,16 +557,16 @@ public class FailoverPlugin : AbstractConnectionPlugin
         catch (Exception ex)
         {
             // Swallow exception, current connection should be useless anyway.
-            Logger.LogTrace("Error occoured when disposing current connection: {message}", ex.Message);
+            Logger.LogTrace(Resources.FailoverPlugin_InvalidateCurrentConnectionAsync_ErrorDisposingConnection, ex.Message);
         }
     }
 
     private async Task PickNewConnectionAsync()
     {
-        Logger.LogInformation("Picking a new connection.");
+        Logger.LogInformation(Resources.FailoverPlugin_PickNewConnectionAsync_PickingNewConnection);
         if (this.isClosed && this.closedExplicitly)
         {
-            Logger.LogInformation("Connection was closed explicitly. No failover will be performed.");
+            Logger.LogInformation(Resources.FailoverPlugin_PickNewConnectionAsync_ConnectionClosedExplicitly);
             return;
         }
 
@@ -576,13 +577,13 @@ public class FailoverPlugin : AbstractConnectionPlugin
     {
         if (!this.IsFailoverEnabled())
         {
-            Logger.LogTrace("Cluster-aware failover is disabled.");
+            Logger.LogTrace(Resources.FailoverPlugin_ShouldExceptionTriggerConnectionSwitch_FailoverDisabled);
             return false;
         }
 
         if (this.skipFailoverOnInterruptedThread && Thread.CurrentThread.ThreadState == ThreadState.AbortRequested)
         {
-            Logger.LogTrace("Do not start failover since the current thread is interrupted.");
+            Logger.LogTrace(Resources.FailoverPlugin_ShouldExceptionTriggerConnectionSwitch_ThreadInterrupted);
             return false;
         }
 

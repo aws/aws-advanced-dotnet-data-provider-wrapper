@@ -125,7 +125,7 @@ public class PluginService : IPluginService, IHostListProviderService
             DbConnection? oldConnection = this.CurrentConnection;
             this.CurrentConnection = connection;
             this.currentHostSpec = hostSpec;
-            Logger.LogTrace("New connection is set DataSource={DataSource} ", connection?.DataSource);
+            Logger.LogTrace(Resources.PluginService_SetCurrentConnection_NewConnectionSet, connection?.DataSource);
 
             try
             {
@@ -137,12 +137,12 @@ public class PluginService : IPluginService, IHostListProviderService
                     }
 
                     oldConnection?.Dispose();
-                    Logger.LogTrace("Old connection is disposed.");
-                    Logger.LogTrace("New connection DataSource={DataSource} State={DataSource}", connection?.DataSource, connection?.State);
+                    Logger.LogTrace(Resources.PluginService_SetCurrentConnection_OldConnectionDisposed);
+                    Logger.LogTrace(Resources.PluginService_SetCurrentConnection_NewConnectionDetails, connection?.DataSource, connection?.State);
                 }
                 else
                 {
-                    Logger.LogDebug("New connection is same reference as old connection - not disposing");
+                    Logger.LogDebug(Resources.PluginService_SetCurrentConnection_SameReference);
                 }
             }
             catch (DbException exception)
@@ -150,7 +150,7 @@ public class PluginService : IPluginService, IHostListProviderService
                 Logger.LogTrace(string.Format(Resources.PluginService_ErrorClosingOldConnection, exception.Message));
             }
 
-            Logger.LogDebug("SetCurrentConnection completed: Current connection Hash={Hash} State={State}",
+            Logger.LogDebug(Resources.PluginService_SetCurrentConnection_Completed,
                 RuntimeHelpers.GetHashCode(this.CurrentConnection),
                 this.CurrentConnection?.State);
         }
@@ -182,7 +182,7 @@ public class PluginService : IPluginService, IHostListProviderService
 
         if (hostsToChange.Count == 0)
         {
-            Logger.LogTrace("There are no changes in the hosts' availability.");
+            Logger.LogTrace(Resources.PluginService_SetAvailability_NoChanges);
             return;
         }
 
@@ -196,7 +196,7 @@ public class PluginService : IPluginService, IHostListProviderService
 
             if (currentAvailability != availability)
             {
-                Logger.LogTrace("Host {host} availability changed from {old} to {new}", host, currentAvailability, availability);
+                Logger.LogTrace(Resources.PluginService_SetAvailability_HostAvailabilityChanged, host, currentAvailability, availability);
                 NodeChangeOptions hostChanges;
                 switch (availability)
                 {
@@ -229,7 +229,7 @@ public class PluginService : IPluginService, IHostListProviderService
             this.AllHosts = updateHostList;
         }
 
-        Logger.LogDebug("PluginService.RefreshHostList() completed with AllHost = {AllHosts}", LoggerUtils.LogTopology(this.AllHosts, "All Hosts"));
+        Logger.LogDebug(Resources.PluginService_RefreshHostListAsync_Completed, LoggerUtils.LogTopology(this.AllHosts, "All Hosts"));
     }
 
     public async Task RefreshHostListAsync(DbConnection connection)
@@ -239,7 +239,7 @@ public class PluginService : IPluginService, IHostListProviderService
         this.NotifyNodeChangeList(this.AllHosts, updateHostList);
         this.AllHosts = updateHostList;
 
-        Logger.LogDebug("PluginService.RefreshHostList() completed with connection state = {State}, AllHost = {AllHosts}", connection.State, LoggerUtils.LogTopology(this.AllHosts, "All Hosts"));
+        Logger.LogDebug(Resources.PluginService_RefreshHostListAsync_CompletedWithConnection, connection.State, LoggerUtils.LogTopology(this.AllHosts, "All Hosts"));
     }
 
     public async Task ForceRefreshHostListAsync()
@@ -249,7 +249,7 @@ public class PluginService : IPluginService, IHostListProviderService
         this.NotifyNodeChangeList(this.AllHosts, updateHostList);
         this.AllHosts = updateHostList;
 
-        Logger.LogDebug("PluginService.ForceRefreshHostList() completed with AllHost = {AllHosts}", LoggerUtils.LogTopology(this.AllHosts, "All Hosts"));
+        Logger.LogDebug(Resources.PluginService_ForceRefreshHostListAsync_Completed, LoggerUtils.LogTopology(this.AllHosts, "All Hosts"));
     }
 
     public async Task ForceRefreshHostListAsync(DbConnection connection)
@@ -259,7 +259,7 @@ public class PluginService : IPluginService, IHostListProviderService
         this.NotifyNodeChangeList(this.AllHosts, updateHostList);
         this.AllHosts = updateHostList;
 
-        Logger.LogDebug("PluginService.ForceRefreshHostList() completed with connection state = {State}, AllHost = {AllHosts}", connection.State, LoggerUtils.LogTopology(this.AllHosts, "All Hosts"));
+        Logger.LogDebug(Resources.PluginService_ForceRefreshHostListAsync_CompletedWithConnection, connection.State, LoggerUtils.LogTopology(this.AllHosts, "All Hosts"));
     }
 
     public async Task<bool> ForceRefreshHostListAsync(bool shouldVerifyWriter, long timeoutMs)
@@ -277,11 +277,11 @@ public class PluginService : IPluginService, IHostListProviderService
         }
         catch (TimeoutException)
         {
-            Logger.LogDebug("A timeout exception occurred after waiting {timeoutMs} ms for refreshed topology.", timeoutMs);
+            Logger.LogDebug(Resources.PluginService_ForceRefreshHostListAsync_TimeoutException, timeoutMs);
             return false;
         }
 
-        throw new InvalidOperationException("[PluginService] Required IBlockingHostListProvider");
+        throw new InvalidOperationException(Resources.Error_RequiredIBlockingHostListProvider);
     }
 
     public Task<DbConnection> OpenConnection(
@@ -302,7 +302,7 @@ public class PluginService : IPluginService, IHostListProviderService
     {
         IDialect dialect = this.Dialect;
         this.Dialect = await this.dialectProvider.UpdateDialectAsync(connection, this.Dialect);
-        Logger.LogDebug("Dialect updated to: {dialect}", this.Dialect.GetType().FullName);
+        Logger.LogDebug(Resources.PluginService_UpdateDialectAsync_DialectUpdated, this.Dialect.GetType().FullName);
 
         if (dialect != this.Dialect)
         {

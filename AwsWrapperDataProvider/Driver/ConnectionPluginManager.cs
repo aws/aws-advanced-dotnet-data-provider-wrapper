@@ -20,6 +20,7 @@ using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Plugins;
+using AwsWrapperDataProvider.Properties;
 
 namespace AwsWrapperDataProvider.Driver;
 
@@ -123,7 +124,7 @@ public class ConnectionPluginManager
             }
         }
 
-        throw new UnreachableException("Should not get here.");
+        throw new UnreachableException(Resources.Error_ShouldNotGetHere);
     }
 
     private PluginChainADONetDelegate<T> MakePluginChainDelegate<T>(string methodName)
@@ -183,7 +184,7 @@ public class ConnectionPluginManager
         return this.ExecuteWithSubscribedPlugins<DbConnection>(
             ConnectMethod,
             (plugin, methodFunc) => plugin.OpenConnection(hostSpec, props, isInitialConnection, methodFunc, async),
-            () => throw new UnreachableException("Function should not be called."),
+            () => throw new UnreachableException(Resources.Error_FunctionShouldNotBeCalled),
             pluginToSkip);
     }
 
@@ -198,7 +199,7 @@ public class ConnectionPluginManager
         return this.ExecuteWithSubscribedPlugins<DbConnection>(
             ForceConnectMethod,
             (plugin, methodFunc) => plugin.ForceOpenConnection(hostSpec, props, isInitialConnection, methodFunc, async),
-            () => throw new UnreachableException("Function should not be called."),
+            () => throw new UnreachableException(Resources.Error_ShouldNotBeCalled),
             pluginToSkip);
     }
 
@@ -218,7 +219,7 @@ public class ConnectionPluginManager
                     () => methodFunc());
                 return default!;
             },
-            () => throw new InvalidOperationException("Should not be called"),
+            () => throw new InvalidOperationException(Resources.Error_ShouldNotBeCalled),
             null);
     }
 
@@ -240,7 +241,7 @@ public class ConnectionPluginManager
             return hostSpec;
         }
 
-        throw new NotSupportedException($"The driver does not support the requested host selection strategy: {strategy}");
+        throw new NotSupportedException(string.Format(Resources.Error_DriverDoesNotSupportRequestedHostSelectionStrategy, strategy));
     }
 
     public virtual bool AcceptsStrategy(string strategy)

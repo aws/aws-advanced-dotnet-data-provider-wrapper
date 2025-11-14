@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
@@ -43,6 +44,7 @@ public class MonitoringRdsMultiAzHostListProvider : MonitoringRdsHostListProvide
 
     protected override IClusterTopologyMonitor InitMonitor()
     {
+        Logger.LogTrace(Resources.MonitoringRdsHostListProvider_InitMonitor, this.ClusterId);
         return Monitors.Set(
             this.ClusterId,
             new MultiAzClusterTopologyMonitor(

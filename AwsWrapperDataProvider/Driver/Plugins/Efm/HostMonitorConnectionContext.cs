@@ -14,6 +14,7 @@
 
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.Efm;
@@ -46,7 +47,7 @@ public class HostMonitorConnectionContext
 
     public void SetInactive()
     {
-        Logger.LogTrace("Setting context inactive");
+        Logger.LogTrace(Resources.EfmHostMonitorConnectionContext_SetInactive_SettingContextInactive);
         lock (this.contextLock)
         {
             this.connectionToAbort.SetTarget(null);

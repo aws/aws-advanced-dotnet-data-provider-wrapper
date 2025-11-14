@@ -18,6 +18,7 @@ using AwsWrapperDataProvider.Driver.Exceptions;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
@@ -56,7 +57,7 @@ public class PgDialect : IDialect
         {
             if (conn.State != ConnectionState.Open)
             {
-                Logger.LogWarning("Connection is not open while checking weather it's PG dialect");
+                Logger.LogWarning(Resources.Error_ConnectionNotOpenWhenChecking, nameof(PgDialect));
                 return false;
             }
 
@@ -71,7 +72,7 @@ public class PgDialect : IDialect
         }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, "Error occurred when checking whether it's PG dialect");
+            Logger.LogWarning(ex, Resources.Error_CantCheckDialect, nameof(PgDialect));
         }
 
         return false;

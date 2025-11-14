@@ -19,6 +19,7 @@ using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Plugins.AuroraInitialConnectionStrategy;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 using Moq;
 
 namespace AwsWrapperDataProvider.Tests.Driver.Plugins;
@@ -264,7 +265,8 @@ public class AuroraInitialConnectionStrategyPluginTests
         var readerHost = new HostSpec("test-cluster.cluster-ro-xyz.us-east-1.rds.amazonaws.com", 5432, null, HostRole.Reader, HostAvailability.Available);
 
         this.mockPluginService.Setup(x => x.AllHosts).Returns([readerHost]);
-        this.mockPluginService.Setup(x => x.AcceptsStrategy("invalid-strategy")).Returns(false);
+        const string invalidStrategy = "invalid-strategy";
+        this.mockPluginService.Setup(x => x.AcceptsStrategy(invalidStrategy)).Returns(false);
         this.mockHostListProviderService.Setup(x => x.IsStaticHostListProvider()).Returns(false);
 
         await this.plugin.InitHostProvider("test-url", props, this.mockHostListProviderService.Object, () => Task.CompletedTask);
@@ -272,7 +274,7 @@ public class AuroraInitialConnectionStrategyPluginTests
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             this.plugin.OpenConnection(readerHost, props, false, methodFunc.Object, true));
 
-        Assert.Equal("Invalid host selection strategy: invalid-strategy", exception.Message);
+        Assert.Equal(string.Format(Resources.AuroraInitialConnectionStrategyPlugin_GetReader_InvalidHostSelectionStrategy, invalidStrategy), exception.Message);
     }
 
     [Fact]

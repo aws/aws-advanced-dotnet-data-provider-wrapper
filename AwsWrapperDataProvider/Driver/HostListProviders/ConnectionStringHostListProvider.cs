@@ -16,6 +16,7 @@ using System.Data;
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 
 namespace AwsWrapperDataProvider.Driver.HostListProviders;
 
@@ -64,12 +65,12 @@ public class ConnectionStringHostListProvider : IStaticHostListProvider
 
     public Task<HostRole> GetHostRoleAsync(DbConnection connection)
     {
-        throw new NotSupportedException("ConnectionStringHostListProvider does not support GetHostRole.");
+        throw new NotSupportedException(Resources.Error_ConnectionStringHostListProvider_GetHostRoleAsync);
     }
 
     public string GetClusterId()
     {
-        throw new NotSupportedException("ConnectionStringHostListProvider does not support GetClusterId.");
+        throw new NotSupportedException(Resources.Error_ConnectionStringHostListProvider_GetClusterId);
     }
 
     public Task<HostSpec?> IdentifyConnectionAsync(DbConnection connection, DbTransaction? transaction = null)
@@ -91,8 +92,7 @@ public class ConnectionStringHostListProvider : IStaticHostListProvider
                 this.isSingleWriterConnectionString));
         if (this.hostList.Count == 0)
         {
-            // TODO: move error string to resx file.
-            throw new ArgumentException("Connection string is invalid.", nameof(this.properties));
+            throw new ArgumentException(Resources.Error_ConnectionStringInvalid, nameof(this.properties));
         }
 
         this.hostListProviderService.InitialConnectionHostSpec = this.hostList.First();
