@@ -81,7 +81,15 @@ The AWS Wrapper .NET Data Provider Wrapper uses Microsoft.Extensions.Logging for
 
 Logging output to a file `aws-dotnet-data-provider-wrapper-log.log` can be enabled and configured as shown below:
 
-| Environment Variable | Description                                            | Default Value |
-|----------------------|--------------------------------------------------------|---------------|
-| `ENABLED_FILE_LOG`   | Set to `true` to enable file logging otherwise `false` | `disabled`    |
-| `LOG_DIRECTORY_PATH` | Directory path for log files                           | `"./"`        |
+| Environment Variable | Description                                             | Default Value |
+|----------------------|---------------------------------------------------------|---------------|
+| `ENABLED_FILE_LOG`   | Set to `true` to enable file logging otherwise `false`. | `disabled`    |
+| `LOG_LEVEL`          | Minimum log level for a message to be logged.           | `"trace"`     |
+| `LOG_DIRECTORY_PATH` | Directory path for log files.                           | `"./"`        |
+
+A custom logger provider through the `ILoggerProvider` interface can be provided which will be used for logging throughout the wrapper. This can be utilized for custom output logging behavior or by implementing third-party logging providers such as `SerilogLoggerProvider`, `NLog.Extensions.Logging`, or `log4net.Provider`.
+
+The following example code displays how to use the `SerilogLoggerProvider` before wrapper usage in order to utilize the custom logger provider.
+```dotnet
+LoggerUtils.SetCustomLoggerProvider(new SerilogLoggerProvider(Log.Logger));
+```
