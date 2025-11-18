@@ -21,14 +21,14 @@ namespace AwsWrapperDataProvider.Driver.Utils;
 
 public static class LoggerUtils
 {
-    private static readonly ILoggerFactory LoggerFactory;
-
     private static readonly bool EnabledFileLog = Environment.GetEnvironmentVariable("ENABLED_FILE_LOG") == "false";
     private static readonly string LogPath = Environment.GetEnvironmentVariable("LOG_DIRECTORY_PATH") ?? "./";
+    private static ILoggerProvider loggerProvider = new FileLoggerProvider(LogPath);
+    private static ILoggerFactory loggerFactory = CreateLoggerFactory();
 
-    static LoggerUtils()
+    private static ILoggerFactory CreateLoggerFactory()
     {
-        LoggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
+        return Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
         {
             builder
                 .SetMinimumLevel(LogLevel.Trace)
@@ -45,12 +45,12 @@ public static class LoggerUtils
 
             if (EnabledFileLog)
             {
-                builder.AddProvider(new FileLoggerProvider(LogPath));
+                builder.AddProvider(loggerProvider);
             }
         });
     }
 
-    public static ILogger<T> GetLogger<T>() => LoggerFactory.CreateLogger<T>();
+    public static ILogger<T> GetLogger<T>() => loggerFactory.CreateLogger<T>();
 
     public static string LogTopology(IList<HostSpec>? hosts, string? messagePrefix)
     {
@@ -77,5 +77,12 @@ public static class LoggerUtils
         {
             logger.Log(level, ex, message, args);
         }
+    }
+
+    public static void SetCustomLoggerProvider<T>(T loggerProviderType) where T : ILoggerProvider
+    {
+        loggerProvider = loggerProviderType;
+        loggerFactory.Dispose();
+        loggerFactory = CreateLoggerFactory();
     }
 }
