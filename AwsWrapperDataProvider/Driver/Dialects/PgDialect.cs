@@ -88,13 +88,8 @@ public class PgDialect : IDialect
 
     public bool IsSyntaxError(Exception ex)
     {
-        if (ex is not DbException dbEx)
-        {
-            return false;
-        }
-
         // 42xxx = syntax/semantic errors
         // 3F000 = schema does not exist
-        return dbEx.SqlState?.StartsWith("42") == true || dbEx.SqlState == "3F000";
+        return ex is DbException dbEx && (dbEx.SqlState == "42000" || dbEx.SqlState == "3F000");
     }
 }

@@ -86,6 +86,8 @@ public class MySqlDialect : IDialect
 
     public bool IsSyntaxError(Exception ex)
     {
+        // 42xxx = syntax/semantic errors
+        // 3F000 = schema does not exist
         return ex is DbException dbEx && (dbEx.SqlState == "42000" || dbEx.SqlState == "3F000");
     }
 }
