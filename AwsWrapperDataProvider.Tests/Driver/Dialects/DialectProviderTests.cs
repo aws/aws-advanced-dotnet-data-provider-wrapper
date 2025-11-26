@@ -239,5 +239,10 @@ public class DialectProviderTests
         public void PrepareConnectionProperties(Dictionary<string, string> props, HostSpec hostSpec)
         {
         }
+
+        public bool IsSyntaxError(Exception ex)
+        {
+            return false;
+        }
     }
 }

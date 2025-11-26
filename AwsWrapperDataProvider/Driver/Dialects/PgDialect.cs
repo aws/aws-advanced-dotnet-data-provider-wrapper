@@ -69,9 +69,13 @@ public class PgDialect : IDialect
                 return true;
             }
         }
+        catch (Exception ex) when (this.IsSyntaxError(ex))
+        {
+            // Syntax error - expected when querying against incorrect dialect
+        }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, "Error occurred when checking whether it's PG dialect");
+            Logger.LogTrace(ex, "Error occurred when checking whether it's PG dialect");
         }
 
         return false;
@@ -80,5 +84,17 @@ public class PgDialect : IDialect
     public virtual void PrepareConnectionProperties(Dictionary<string, string> connectionpProps, HostSpec hostSpec)
     {
         // Do nothing.
+    }
+
+    public bool IsSyntaxError(Exception ex)
+    {
+        if (ex is not DbException dbEx)
+        {
+            return false;
+        }
+
+        // 42xxx = syntax/semantic errors
+        // 3F000 = schema does not exist
+        return dbEx.SqlState?.StartsWith("42") == true || dbEx.SqlState == "3F000";
     }
 }
