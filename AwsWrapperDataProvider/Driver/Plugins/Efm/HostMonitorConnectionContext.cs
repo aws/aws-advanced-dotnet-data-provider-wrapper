@@ -23,12 +23,12 @@ public class HostMonitorConnectionContext
     private static readonly ILogger<HostMonitorConnectionContext> Logger = LoggerUtils.GetLogger<HostMonitorConnectionContext>();
     private readonly WeakReference<DbConnection?> connectionToAbort = new(null);
     private readonly object contextLock = new();
-    private volatile bool nodeUnhealthy = false;
+    private int nodeUnhealthy = 0;
 
     public bool NodeUnhealthy
     {
-        get => this.nodeUnhealthy;
-        set => this.nodeUnhealthy = value;
+        get => Volatile.Read(ref this.nodeUnhealthy) == 1;
+        set => Interlocked.Exchange(ref this.nodeUnhealthy, value ? 1 : 0);
     }
 
     public HostMonitorConnectionContext(DbConnection connectionToAbort)
