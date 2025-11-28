@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using AwsWrapperDataProvider.Driver.HostInfo;
+using AwsWrapperDataProvider.Properties;
 
 namespace AwsWrapperDataProvider.Tests.Driver.HostInfo;
 
@@ -68,7 +69,7 @@ public class HostSpecBuilderTests
         var builder = new HostSpecBuilder();
 
         var exception = Assert.Throws<ArgumentException>(() => builder.Build());
-        Assert.Equal("Host cannot be null or empty (Parameter 'host')", exception.Message);
+        Assert.Equal($"{Resources.Error_HostNullEmpty} (Parameter 'host')", exception.Message);
     }
 
     [Fact]
@@ -79,7 +80,7 @@ public class HostSpecBuilderTests
             .WithHost(string.Empty);
 
         var exception = Assert.Throws<ArgumentException>(() => builder.Build());
-        Assert.Equal("Host cannot be null or empty (Parameter 'host')", exception.Message);
+        Assert.Equal($"{Resources.Error_HostNullEmpty} (Parameter 'host')", exception.Message);
     }
 
     [Fact]

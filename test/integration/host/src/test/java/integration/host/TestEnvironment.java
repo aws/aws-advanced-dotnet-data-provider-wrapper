@@ -127,7 +127,7 @@ public class TestEnvironment {
                 SdkMeterProvider.builder()
                     .setResource(Resource.getDefault()
                         .toBuilder()
-                        .put("service.name", "AWSJDBCWrapperIntegrationTests")
+                        .put("service.name", "AWSDotNetDataProviderWrapperIntegrationTests")
                         .build())
                     .registerMetricReader(metricReader)
                     .build())

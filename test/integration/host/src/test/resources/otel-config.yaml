@@ -22,7 +22,7 @@ processors:
 exporters:
   awsxray:
   awsemf:
-    log_group_name: "aws_advanced_jdbc_wrapper"
+    log_group_name: "aws_advanced_dotnet_data_provider_wrapper"
 
 service:
   pipelines:

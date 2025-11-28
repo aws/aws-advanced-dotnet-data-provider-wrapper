@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data.Common;
+using AwsWrapperDataProvider.Properties;
 
 namespace AwsWrapperDataProvider.Driver.Exceptions;
 
@@ -21,7 +22,7 @@ public class InvalidOpenConnectionException : DbException
     public override string? SqlState { get; }
 
     public InvalidOpenConnectionException()
-        : base("Connection is out of date and invalid.")
+        : base(Resources.Error_InvalidOpenConnectionException)
     {
     }
 

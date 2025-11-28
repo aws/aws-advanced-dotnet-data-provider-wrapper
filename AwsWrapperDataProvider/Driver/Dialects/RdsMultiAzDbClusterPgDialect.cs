@@ -18,7 +18,9 @@ using System.Runtime.CompilerServices;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
+using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
@@ -55,7 +57,7 @@ public class RdsMultiAzDbClusterPgDialect : PgDialect
 
     public override async Task<bool> IsDialect(DbConnection connection)
     {
-        Logger.LogDebug("RdsMultiAzDbClusterPgDialect.IsDialect() called with connection state = {State}, type = {Type}@{Id}, Database = {Database}",
+        Logger.LogDebug(Resources.RdsMultiAzDbClusterPgDialect_IsDialect,
             connection.State,
             connection.GetType().FullName,
             RuntimeHelpers.GetHashCode(connection),
@@ -71,7 +73,7 @@ public class RdsMultiAzDbClusterPgDialect : PgDialect
                 var hasRdsTools = existsObject is bool b ? b : Convert.ToBoolean(existsObject, CultureInfo.InvariantCulture);
                 if (!hasRdsTools)
                 {
-                    Logger.LogTrace("rds_tools extension not installed; skipping dialect function call.");
+                    Logger.LogTrace(Resources.RdsMultiAzDbClusterPgDialect_IsDialect_InvalidRdsTools);
                     return false;
                 }
             }
@@ -86,7 +88,7 @@ public class RdsMultiAzDbClusterPgDialect : PgDialect
         }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, "Error occurred when checking whether it's dialect, connection state = {State}", connection.State);
+            Logger.LogWarning(ex, Resources.Error_CantCheckDialect_ConnectionState, nameof(RdsMultiAzDbClusterPgDialect), connection.State);
         }
 
         return false;
@@ -99,7 +101,7 @@ public class RdsMultiAzDbClusterPgDialect : PgDialect
     private HostListProviderSupplier GetHostListProviderSupplier()
     {
         return (props, hostListProviderService, pluginService) =>
-            (PropertyDefinition.Plugins.GetString(props) ?? DefaultPluginCodes).Contains("failover") ?
+            (PropertyDefinition.Plugins.GetString(props) ?? DefaultPluginCodes).Contains(PluginCodes.Failover) ?
                 new MonitoringRdsMultiAzHostListProvider(
                     props,
                     hostListProviderService,

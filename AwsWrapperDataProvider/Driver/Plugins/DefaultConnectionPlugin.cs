@@ -19,6 +19,7 @@ using AwsWrapperDataProvider.Driver.Exceptions;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Plugins;
@@ -44,7 +45,7 @@ public class DefaultConnectionPlugin(
         ADONetDelegate<T> methodFunc,
         params object[] methodArgs)
     {
-        Logger.LogTrace("Executing method {MethodName} on {MethodInvokedOn} with args: {MethodArgs}", methodName, methodInvokedOn?.GetType().FullName, methodArgs);
+        Logger.LogTrace(Resources.DefaultConnectionPlugin_Execute_ExecutingMethod, methodName, methodInvokedOn?.GetType().FullName, methodArgs);
         return methodFunc();
     }
 
@@ -91,7 +92,7 @@ public class DefaultConnectionPlugin(
             conn.Open();
         }
 
-        Logger.LogTrace("Connection {Type}@{Id} is opened with data source {ds}.", conn.GetType().FullName, RuntimeHelpers.GetHashCode(conn), conn.DataSource);
+        Logger.LogTrace(Resources.DefaultConnectionPlugin_OpenInternal_ConnectionOpened, conn.GetType().FullName, RuntimeHelpers.GetHashCode(conn), conn.DataSource);
 
         // TODO: Add configuration to skip ping check. (Not urgent)
         // Ping to check if connection is actually alive.
@@ -109,7 +110,7 @@ public class DefaultConnectionPlugin(
 
                     if (attempt == UpdateDialectMaxRetries)
                     {
-                        throw new InvalidOpenConnectionException("Unable to establish a valid connection after multiple attempts.", pingException);
+                        throw new InvalidOpenConnectionException(Resources.Error_UnableToEstablishValidConnectionAfterMultipleAttempts, pingException);
                     }
                 }
                 else

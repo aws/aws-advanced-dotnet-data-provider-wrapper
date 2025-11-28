@@ -16,6 +16,7 @@ using System.Data.Common;
 using System.Globalization;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
@@ -103,7 +104,7 @@ public class MultiAzClusterTopologyMonitor : ClusterTopologyMonitor
         }
         catch (Exception ex)
         {
-            Logger.LogTrace("Error getting writer node ID: {Error}", ex.Message);
+            Logger.LogTrace(Resources.MultiAzClusterTopologyMonitor_GetWriterNodeIdAsync_Error, ex.Message);
             return null;
         }
         finally
@@ -151,7 +152,7 @@ public class MultiAzClusterTopologyMonitor : ClusterTopologyMonitor
         }
         catch (Exception ex)
         {
-            Logger.LogTrace("Error getting suggested writer node ID: {Error}", ex.Message);
+            Logger.LogTrace(Resources.MultiAzClusterTopologyMonitor_GetSuggestedWriterNodeIdAsync_Error, ex.Message);
             return null;
         }
     }
