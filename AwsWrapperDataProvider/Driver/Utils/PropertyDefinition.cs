@@ -16,20 +16,14 @@ namespace AwsWrapperDataProvider.Driver.Utils;
 
 public static class PropertyDefinition
 {
-    public static readonly AwsWrapperProperty Server =
-        new("Server", null, "MySql connection url.");
-
     public static readonly AwsWrapperProperty Host =
-        new("Host", null, "Postgres connection url.");
+        new("Host", null, "Connection url.");
 
     public static readonly AwsWrapperProperty Port =
         new("Port", null, "Connection port.");
 
     public static readonly AwsWrapperProperty User =
-        new("Username", null, "The user name that the driver will use to connect to database.");
-
-    public static readonly AwsWrapperProperty UserId =
-        new("User ID", null, "The user name and host name that the driver will use to connect to database.");
+        new("User", null, "The user name that the driver will use to connect to database.");
 
     public static readonly AwsWrapperProperty Password =
         new("Password", null, "The password that the driver will use to connect to database.");
@@ -155,13 +149,6 @@ public static class PropertyDefinition
     public static readonly AwsWrapperProperty ClusterTopologyHighRefreshRateMs = new(
         "ClusterTopologyHighRefreshRateMs", "100", "Cluster topology high refresh rate in milliseconds.");
 
-    // Connection Timeout Properties
-    public static readonly AwsWrapperProperty SocketTimeout = new(
-        "SocketTimeout", "5000", "The socket timeout value in milliseconds for database connections.");
-
-    public static readonly AwsWrapperProperty ConnectTimeout = new(
-        "ConnectTimeout", "5000", "The connection timeout value in milliseconds for establishing database connections.");
-
     // Host Selector Stratagy Properties
     public static readonly AwsWrapperProperty RoundRobinHostWeightPairs = new(
         "RoundRobinHostWeightPairs",
@@ -261,9 +248,4 @@ public static class PropertyDefinition
 
     // EFM specific monitoring property, not related to cluster monitoring
     public static readonly string MonitoringPropertyPrefix = "monitoring-";
-
-    public static string GetConnectionUrl(Dictionary<string, string> props)
-    {
-        return Server.GetString(props) ?? Host.GetString(props) ?? throw new ArgumentException("Connection url is missing.");
-    }
 }

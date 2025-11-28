@@ -31,6 +31,11 @@ public interface ITargetConnectionDialect
     Type DriverConnectionType { get; }
 
     /// <summary>
+    /// Gets Dictionary where the `key` is an AwsWrapperProperty name and the `value` is a list of aliases.
+    /// </summary>
+    Dictionary<string, string[]> AwsWrapperPropertyNameAliasesMap { get; }
+
+    /// <summary>
     /// Determines if the given connection type matches this dialect.
     /// </summary>
     /// <param name="connectionType">The connection type.</param>
@@ -67,4 +72,11 @@ public interface ITargetConnectionDialect
     /// <param name="props">Connection properties.</param>
     /// <returns>A string of plugin codes.</returns>
     string GetPluginCodesOrDefault(Dictionary<string, string> props);
+
+    /// <summary>
+    /// Get AwsWrapperProperty.Name for given property alias.
+    /// </summary>
+    /// <param name="propAlias">Alias to check.</param>
+    /// <returns>AwsWrapperProperty.Name of given alias if exists else returns null.</returns>
+    string? GetAliasAwsWrapperPropertyName(string propAlias);
 }

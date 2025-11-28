@@ -56,24 +56,4 @@ public class GenericTargetConnectionDialect : AbstractTargetConnectionDialect
             return (false, ex);
         }
     }
-
-    protected override string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, AwsWrapperProperty hostProperty)
-    {
-        Dictionary<string, string> targetConnectionParameters = props.Where(x =>
-            !PropertyDefinition.InternalWrapperProperties
-                .Select(prop => prop.Name)
-                .Contains(x.Key)).ToDictionary();
-
-        if (hostSpec != null)
-        {
-            dialect.PrepareConnectionProperties(targetConnectionParameters, hostSpec);
-            hostProperty.Set(targetConnectionParameters, hostSpec.Host);
-            if (hostSpec.IsPortSpecified)
-            {
-                PropertyDefinition.Port.Set(targetConnectionParameters, hostSpec.Port.ToString());
-            }
-        }
-
-        return string.Join("; ", targetConnectionParameters.Select(x => $"{x.Key}={x.Value}"));
-    }
 }
