@@ -128,11 +128,13 @@ public class AwsWrapperConnection : DbConnection
             throw new InvalidOperationException("Connection string must be set before initialization.");
         }
 
-        this.ConnectionProperties = profile?.Properties ?? ConnectionPropertiesUtils.ParseConnectionStringParameters(this.connectionString);
+        this.ConnectionProperties =
+            profile?.Properties ?? ConnectionPropertiesUtils.ParseConnectionStringParameters(this.connectionString);
         this.targetType = targetType ?? this.GetTargetType(this.ConnectionProperties);
         this.ConnectionProperties[PropertyDefinition.TargetConnectionType.Name] = this.targetType.AssemblyQualifiedName!;
 
         ITargetConnectionDialect connectionDialect = TargetConnectionDialectProvider.GetDialect(this.targetType, this.ConnectionProperties);
+        ConnectionPropertiesUtils.NormalizeConnectionPropertyKeys(connectionDialect, this.ConnectionProperties);
 
         DbConnectionProvider connectionProvider = new();
 

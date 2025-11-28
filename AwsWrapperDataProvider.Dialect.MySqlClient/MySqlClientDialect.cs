@@ -28,6 +28,12 @@ public class MySqlClientDialect : AbstractTargetConnectionDialect
 
     public override Type DriverConnectionType { get; } = typeof(MySqlConnection);
 
+    public override Dictionary<string, string[]> AwsWrapperPropertyNameAliasesMap { get; } = new()
+    {
+        { PropertyDefinition.Host.Name, ["Server"] },
+        { PropertyDefinition.User.Name, ["User ID", "Uid"] }
+    };
+
     public override string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, bool isForceOpen = false)
     {
         Dictionary<string, string> copyOfProps = new(props);
@@ -37,7 +43,7 @@ public class MySqlClientDialect : AbstractTargetConnectionDialect
             copyOfProps[DefaultPoolingParameterName] = "false";
         }
 
-        return this.PrepareConnectionString(dialect, hostSpec, copyOfProps, PropertyDefinition.Server);
+        return this.PrepareConnectionString(dialect, hostSpec, copyOfProps, PropertyDefinition.Host);
     }
 
     public override (bool ConnectionAlive, Exception? ConnectionException) Ping(IDbConnection connection)

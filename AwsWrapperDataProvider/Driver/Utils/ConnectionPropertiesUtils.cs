@@ -13,18 +13,19 @@
 // limitations under the License.
 
 using AwsWrapperDataProvider.Driver.HostInfo;
+using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Utils;
 
-public static class ConnectionPropertiesUtils
+internal static class ConnectionPropertiesUtils
 {
     private const string HostSeperator = ",";
     private const string HostPortSeperator = ":";
 
     private static readonly ILogger<AwsWrapperProperty> Logger = LoggerUtils.GetLogger<AwsWrapperProperty>();
 
-    public static Dictionary<string, string> ParseConnectionStringParameters(string connectionString)
+    internal static Dictionary<string, string> ParseConnectionStringParameters(string connectionString)
     {
         if (string.IsNullOrEmpty(connectionString))
         {
@@ -41,12 +42,38 @@ public static class ConnectionPropertiesUtils
         return props;
     }
 
-    public static IList<HostSpec> GetHostsFromProperties(Dictionary<string, string> props, HostSpecBuilder hostSpecBuilder, bool singleWriterConnectionString)
+    internal static void NormalizeConnectionPropertyKeys(ITargetConnectionDialect dialect,
+        Dictionary<string, string> props)
+    {
+        var propKeys = props.Keys.ToList();
+
+        foreach (var key in propKeys)
+        {
+            string? awsWrapperPropertyName = dialect.GetAliasAwsWrapperPropertyName(key);
+
+            if (string.IsNullOrEmpty(awsWrapperPropertyName) || props.Comparer.Equals(awsWrapperPropertyName, key))
+            {
+                continue;
+            }
+
+            if (props.ContainsKey(awsWrapperPropertyName))
+            {
+                props.Remove(key);
+                continue;
+            }
+
+            if (props.TryGetValue(key, out var value))
+            {
+                props.Remove(key);
+                props[awsWrapperPropertyName] = value;
+            }
+        }
+    }
+
+    internal static IList<HostSpec> GetHostsFromProperties(Dictionary<string, string> props, HostSpecBuilder hostSpecBuilder, bool singleWriterConnectionString)
     {
         List<HostSpec> hosts = [];
-        string hostsString = PropertyDefinition.Host.GetString(props)
-                      ?? PropertyDefinition.Server.GetString(props)
-                      ?? string.Empty;
+        string hostsString = PropertyDefinition.Host.GetString(props) ?? string.Empty;
         IList<string> hostStringList = hostsString.Split(HostSeperator, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
         int port = PropertyDefinition.Port.GetInt(props) ?? HostSpec.NoPort;
 
@@ -84,7 +111,7 @@ public static class ConnectionPropertiesUtils
         return hosts;
     }
 
-    public static HostSpec ParseHostPortPair(string url, HostSpecBuilder hostSpecBuilder)
+    internal static HostSpec ParseHostPortPair(string url, HostSpecBuilder hostSpecBuilder)
     {
         IList<string> hostPortPair = url.Split(
                 HostPortSeperator,

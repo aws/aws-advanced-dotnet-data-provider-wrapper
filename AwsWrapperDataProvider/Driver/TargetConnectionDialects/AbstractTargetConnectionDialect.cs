@@ -27,6 +27,8 @@ public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
 
     public abstract Type DriverConnectionType { get; }
 
+    public virtual Dictionary<string, string[]> AwsWrapperPropertyNameAliasesMap { get; } = new();
+
     public bool IsDialect(Type connectionType)
     {
         return connectionType == this.DriverConnectionType;
@@ -70,9 +72,22 @@ public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
         return PropertyDefinition.Plugins.GetString(props) ?? DefaultPluginCode;
     }
 
+    public string? GetAliasAwsWrapperPropertyName(string propAlias)
+    {
+        foreach (KeyValuePair<string, string[]> kvp in this.AwsWrapperPropertyNameAliasesMap)
+        {
+            if (kvp.Value.Any(s => string.Equals(s, propAlias, StringComparison.OrdinalIgnoreCase)))
+            {
+                return kvp.Key;
+            }
+        }
+
+        return null;
+    }
+
     public abstract (bool ConnectionAlive, Exception? ConnectionException) Ping(IDbConnection connection);
 
-    protected virtual string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, AwsWrapperProperty hostProperty)
+    protected string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, AwsWrapperProperty hostProperty)
     {
         Dictionary<string, string> targetConnectionParameters = props.Where(x =>
             !PropertyDefinition.InternalWrapperProperties
@@ -89,6 +104,29 @@ public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
             }
         }
 
+        this.NormalizePropertyKeys(targetConnectionParameters);
+
         return string.Join("; ", targetConnectionParameters.Select(x => $"{x.Key}={x.Value}"));
+    }
+
+    /// <summary>
+    /// Reverts AwsWrapperProperty names to default connection parameter names.
+    /// </summary>
+    /// <param name="props">Dictionary of wrapper properties.</param>
+    private void NormalizePropertyKeys(Dictionary<string, string> props)
+    {
+        foreach (var kvp in this.AwsWrapperPropertyNameAliasesMap)
+        {
+            var canonicalKey = kvp.Key;
+            var aliases = kvp.Value;
+
+            if (aliases.Length == 0 || !props.TryGetValue(canonicalKey, out var value))
+            {
+                continue;
+            }
+
+            props.Remove(canonicalKey);
+            props[aliases[0]] = value;
+        }
     }
 }

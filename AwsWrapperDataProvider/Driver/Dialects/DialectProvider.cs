@@ -113,7 +113,7 @@ public class DialectProvider
                    throw new InvalidOperationException($"Failed to instantiate custom dialect type '{customDialectTypeName}'");
         }
 
-        string host = PropertyDefinition.GetConnectionUrl(this.properties);
+        string host = PropertyDefinition.Host.GetString(this.properties) ?? throw new ArgumentException("Connection url is missing.");
         IList<HostSpec> hosts = ConnectionPropertiesUtils.GetHostsFromProperties(
             this.properties,
             this.pluginService.HostSpecBuilder,

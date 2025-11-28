@@ -25,6 +25,12 @@ public class NpgsqlDialect : AbstractTargetConnectionDialect
 {
     public override Type DriverConnectionType { get; } = typeof(NpgsqlConnection);
 
+    public override Dictionary<string, string[]> AwsWrapperPropertyNameAliasesMap { get; } = new()
+    {
+        { PropertyDefinition.Host.Name, ["Host", "Server"] },
+        { PropertyDefinition.User.Name, ["Username", "User ID", "Uid"] }
+    };
+
     public override string PrepareConnectionString(
         IDialect dialect,
         HostSpec? hostSpec,
