@@ -67,9 +67,13 @@ public class MySqlDialect : IDialect
                 }
             }
         }
+        catch (Exception ex) when (this.IsSyntaxError(ex))
+        {
+            // Syntax error - expected when querying against incorrect dialect
+        }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, "Error occurred when checking whether it's MySQL dialect");
+            Logger.LogTrace(ex, "Error occurred when checking whether it's MySQL dialect");
         }
 
         return false;
@@ -78,5 +82,12 @@ public class MySqlDialect : IDialect
     public virtual void PrepareConnectionProperties(Dictionary<string, string> props, HostSpec hostSpec)
     {
         // Do nothing.
+    }
+
+    public bool IsSyntaxError(Exception ex)
+    {
+        // 42xxx = syntax/semantic errors
+        // 3F000 = schema does not exist
+        return ex is DbException dbEx && (dbEx.SqlState == "42000" || dbEx.SqlState == "3F000");
     }
 }

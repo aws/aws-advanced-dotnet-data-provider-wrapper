@@ -55,4 +55,9 @@ public class UnknownDialect : IDialect
     {
         // Do nothing.
     }
+
+    public bool IsSyntaxError(Exception ex)
+    {
+        return false;
+    }
 }
