@@ -31,7 +31,7 @@ public class MySqlClientDialect : AbstractTargetConnectionDialect
     public override Dictionary<string, string[]> AwsWrapperPropertyNameAliasesMap { get; } = new()
     {
         { PropertyDefinition.Host.Name, ["Server"] },
-        { PropertyDefinition.User.Name, ["User ID", "Uid"] }
+        { PropertyDefinition.User.Name, ["User ID", "Uid"] },
     };
 
     public override string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, bool isForceOpen = false)

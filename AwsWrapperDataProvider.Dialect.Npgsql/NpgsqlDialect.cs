@@ -28,7 +28,7 @@ public class NpgsqlDialect : AbstractTargetConnectionDialect
     public override Dictionary<string, string[]> AwsWrapperPropertyNameAliasesMap { get; } = new()
     {
         { PropertyDefinition.Host.Name, ["Host", "Server"] },
-        { PropertyDefinition.User.Name, ["Username", "User ID", "Uid"] }
+        { PropertyDefinition.User.Name, ["Username", "User ID", "Uid"] },
     };
 
     public override string PrepareConnectionString(
