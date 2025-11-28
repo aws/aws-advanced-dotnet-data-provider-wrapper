@@ -15,7 +15,6 @@
 using System.Collections.Concurrent;
 using System.Data.Common;
 using System.Globalization;
-using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -62,14 +61,27 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
     protected DbConnection? monitoringConnection;
     protected bool isVerifiedWriterConnection;
     protected DateTime highRefreshRateEndTime = DateTime.MinValue;
-    protected volatile bool requestToUpdateTopology;
     protected long ignoreNewTopologyRequestsEndTime = -1;
-    protected volatile bool nodeThreadsStop;
     protected DbConnection? nodeThreadsWriterConnection;
     protected HostSpec? nodeThreadsWriterHostSpec;
     protected DbConnection? nodeThreadsReaderConnection;
     protected IList<HostSpec>? nodeThreadsLatestTopology;
     protected bool disposed = false;
+
+    private int requestToUpdateTopology = 0;
+    private int nodeThreadsStop = 0;
+
+    protected bool RequestToUpdateTopology
+    {
+        get => Volatile.Read(ref this.requestToUpdateTopology) == 1;
+        set => Interlocked.Exchange(ref this.requestToUpdateTopology, value ? 1 : 0);
+    }
+
+    protected bool NodeThreadsStop
+    {
+        get => Volatile.Read(ref this.nodeThreadsStop) == 1;
+        set => Interlocked.Exchange(ref this.nodeThreadsStop, value ? 1 : 0);
+    }
 
     public ClusterTopologyMonitor(
         string clusterId,
@@ -130,7 +142,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                         Logger.LogTrace(Resources.ClusterTopologyMonitor_StartingNodeMonitoringThreads);
 
                         // Start node threads
-                        this.nodeThreadsStop = false;
+                        this.NodeThreadsStop = false;
                         this.nodeThreadsWriterConnection = null;
                         this.nodeThreadsReaderConnection = null;
                         this.nodeThreadsWriterHostSpec = null;
@@ -188,7 +200,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                                 Logger.LogTrace("Ignoring topology request until {utcTime}", new DateTime(this.ignoreNewTopologyRequestsEndTime, DateTimeKind.Utc));
                             }
 
-                            this.nodeThreadsStop = true;
+                            this.NodeThreadsStop = true;
                             this.ctsNodeMonitoring.Cancel();
                             Logger.LogTrace($"Clearing node threads...");
                             this.nodeThreads.Clear();
@@ -197,7 +209,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
                         // Update node threads with new nodes in the topology
                         var hosts = this.nodeThreadsLatestTopology;
-                        if (hosts != null && !this.nodeThreadsStop)
+                        if (hosts != null && !this.NodeThreadsStop)
                         {
                             foreach (var hostSpec in hosts)
                             {
@@ -339,7 +351,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
         lock (this.topologyUpdatedLock)
         {
-            this.requestToUpdateTopology = true;
+            this.RequestToUpdateTopology = true;
         }
 
         if (timeoutMs == 0)
@@ -601,7 +613,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             useHighRefreshRate = true;
         }
 
-        if (this.requestToUpdateTopology)
+        if (this.RequestToUpdateTopology)
         {
             useHighRefreshRate = true;
         }
@@ -614,7 +626,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         {
             await Task.Delay(50, this.ctsTopologyMonitoring.Token);
         }
-        while (!this.requestToUpdateTopology && DateTime.UtcNow < end && !this.ctsTopologyMonitoring.Token.IsCancellationRequested);
+        while (!this.RequestToUpdateTopology && DateTime.UtcNow < end && !this.ctsTopologyMonitoring.Token.IsCancellationRequested);
     }
 
     protected async Task<IList<HostSpec>?> FetchTopologyAndUpdateCacheAsync(DbConnection? connection)
@@ -647,7 +659,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         {
             this.topologyMap.Set(this.clusterId, hosts, this.topologyCacheExpiration);
             Logger.LogTrace(LoggerUtils.LogTopology(hosts, $"UpdateTopologyCache:"));
-            this.requestToUpdateTopology = false;
+            this.RequestToUpdateTopology = false;
             Logger.LogTrace("Notifying topologyUpdatedLock...");
             Monitor.PulseAll(this.topologyUpdatedLock);
         }
@@ -729,7 +741,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             this.disposed = true;
         }
 
-        this.nodeThreadsStop = true;
+        this.NodeThreadsStop = true;
         this.ctsTopologyMonitoring.Cancel();
 
         try
@@ -771,7 +783,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             LoggerUtils.MonitoringLogWithHost(hostSpec, NodeMonitorLogger, LogLevel.Trace, "Start running node monitoring task");
             try
             {
-                while (!monitor.nodeThreadsStop && !token.IsCancellationRequested)
+                while (!monitor.NodeThreadsStop && !token.IsCancellationRequested)
                 {
                     if (connection == null)
                     {
@@ -808,7 +820,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                                 LoggerUtils.MonitoringLogWithHost(hostSpec, NodeMonitorLogger, LogLevel.Information, string.Format(Resources.NodeMonitoringTask_DetectedWriter, writerId));
                                 await monitor.FetchTopologyAndUpdateCacheAsync(connection);
                                 monitor.nodeThreadsWriterHostSpec = hostSpec;
-                                monitor.nodeThreadsStop = true;
+                                monitor.NodeThreadsStop = true;
                             }
                             else
                             {
