@@ -14,6 +14,7 @@
 
 using System.Text.RegularExpressions;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace AwsWrapperDataProvider.Driver.HostInfo.HostSelectors;
@@ -46,7 +47,7 @@ public partial class RoundRobinHostSelector : IHostSelector
 
             if (eligibleHosts.Count == 0)
             {
-                throw new InvalidOperationException($"No hosts found matching role: {hostRole}");
+                throw new InvalidOperationException(string.Format(Resources.Error_NoHostsMatching, hostRole));
             }
 
             // Create or update cache entries for provided hosts
@@ -178,7 +179,7 @@ public partial class RoundRobinHostSelector : IHostSelector
                 }
                 else
                 {
-                    throw new InvalidOperationException("Invalid round robin default weight. Weight must be a positive integer.");
+                    throw new InvalidOperationException(Resources.Error_InvalidRoundRobinValue);
                 }
             }
         }
@@ -211,7 +212,7 @@ public partial class RoundRobinHostSelector : IHostSelector
             Match match = HostWeightPairsPattern().Match(pair.Trim());
             if (!match.Success)
             {
-                throw new InvalidOperationException("Invalid round robin host weight pairs format. Expected format: host1:weight1,host2:weight2");
+                throw new InvalidOperationException(Resources.Error_InvalidRoundRobinPairFormat);
             }
 
             string hostName = match.Groups["host"].Value.Trim();
@@ -219,7 +220,7 @@ public partial class RoundRobinHostSelector : IHostSelector
 
             if (string.IsNullOrEmpty(hostName) || string.IsNullOrEmpty(hostWeight))
             {
-                throw new InvalidOperationException("Invalid round robin host weight pairs format. Host name and weight cannot be empty.");
+                throw new InvalidOperationException(Resources.Error_InvalidRoundRobinPairEmpty);
             }
 
             if (int.TryParse(hostWeight, out int weight) && weight >= DefaultWeight)
@@ -228,7 +229,7 @@ public partial class RoundRobinHostSelector : IHostSelector
             }
             else
             {
-                throw new InvalidOperationException("Invalid round robin host weight pairs format. Weight must be a positive integer.");
+                throw new InvalidOperationException(Resources.Error_InvalidRoundRobinValue);
             }
         }
 

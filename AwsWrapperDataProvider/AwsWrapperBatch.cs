@@ -16,6 +16,7 @@ using System.Data;
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 
 namespace AwsWrapperDataProvider;
 
@@ -74,7 +75,7 @@ public class AwsWrapperBatch : DbBatch
 
             if (value is not AwsWrapperConnection)
             {
-                throw new InvalidOperationException("Provided connection is not of type AwsWrapperConnection.");
+                throw new InvalidOperationException(Resources.Error_ProvidedConnectionNotAwsWrapperConnection);
             }
 
             this.targetBatch.Connection = value;
@@ -97,7 +98,7 @@ public class AwsWrapperBatch : DbBatch
 
             if (value is not AwsWrapperTransaction)
             {
-                throw new InvalidOperationException("Provided transaction is not of type AwsWrapperTransaction.");
+                throw new InvalidOperationException(Resources.Error_ProvidedTransactionNotAwsWrapperTransaction);
             }
 
             this.targetBatch.Transaction = value;

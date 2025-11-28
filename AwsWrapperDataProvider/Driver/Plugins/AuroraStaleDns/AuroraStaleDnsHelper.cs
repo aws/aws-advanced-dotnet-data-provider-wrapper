@@ -18,6 +18,7 @@ using AwsWrapperDataProvider.Driver.Exceptions;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.AuroraStaleDns;
@@ -76,7 +77,7 @@ public class AuroraStaleDnsHelper
 
         string? clusterInetAddress = GetHostIpAddress(hostSpec.Host);
         Logger.LogTrace(
-            "Cluster endpoint {host} resolved to IP address {ipAddress}",
+            Resources.AuroraStaleDnsHelper_OpenVerifiedConnectionAsync_ClusterEndpointResolved,
             hostSpec.Host,
             clusterInetAddress ?? "null");
         if (clusterInetAddress == null)
@@ -86,13 +87,13 @@ public class AuroraStaleDnsHelper
 
         // Check the role of the connection we actually got
         HostRole connectionRole = await this.pluginService.GetHostRole(connection);
-        Logger.LogTrace("Current connection role: {role}", connectionRole);
+        Logger.LogTrace(Resources.AuroraStaleDnsHelper_OpenVerifiedConnectionAsync_CurrentConnectionRole, connectionRole);
 
         await this.pluginService.ForceRefreshHostListAsync(connection);
         Logger.LogTrace(LoggerUtils.LogTopology(this.pluginService.AllHosts, null));
 
         this.writerHostSpec = this.GetWriter();
-        Logger.LogTrace("Writer host spec: {hostSpec}", this.writerHostSpec);
+        Logger.LogTrace(Resources.AuroraStaleDnsHelper_OpenVerifiedConnectionAsync_WriterHostSpec, this.writerHostSpec);
 
         if (this.writerHostSpec == null)
         {
@@ -101,7 +102,7 @@ public class AuroraStaleDnsHelper
         }
 
         this.writerHostAddress = GetHostIpAddress(this.writerHostSpec.Host);
-        Logger.LogTrace("Writer host address: {address}", this.writerHostAddress);
+        Logger.LogTrace(Resources.AuroraStaleDnsHelper_OpenVerifiedConnectionAsync_WriterHostAddress, this.writerHostAddress);
 
         if (this.writerHostAddress == null)
         {
@@ -113,16 +114,16 @@ public class AuroraStaleDnsHelper
         if (this.writerHostAddress != clusterInetAddress)
         {
             // Stale DNS detected! The cluster endpoint resolves to a different IP than the actual writer
-            Logger.LogTrace("Stale DNS data detected. Opening a connection to {host}", this.writerHostSpec);
+            Logger.LogTrace(Resources.AuroraStaleDnsHelper_OpenVerifiedConnectionAsync_StaleDnsDetected, this.writerHostSpec);
 
             // Verify the writer is in the allowed hosts list
             var allowedHosts = this.pluginService.GetHosts();
             if (!ContainsHostUrl(allowedHosts, this.writerHostSpec.Host))
             {
                 // TODO: Check do we need to retry when throw errors?
-                throw new InvalidOperationException(
-                    $"Current writer {this.writerHostSpec.Host} is not in the allowed hosts list. " +
-                    $"Allowed hosts: {string.Join(", ", allowedHosts.Select(h => h.Host))}");
+                throw new InvalidOperationException(string.Format(Resources.AuroraStaleDnsHelper_OpenVerifiedConnectionAsync_WriterNotInAllowedHosts,
+                    this.writerHostSpec.Host,
+                    string.Join(", ", allowedHosts.Select(h => h.Host))));
             }
 
             // Create a new connection to the correct writer instance

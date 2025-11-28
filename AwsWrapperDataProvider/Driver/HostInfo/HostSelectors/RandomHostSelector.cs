@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data.Common;
+using AwsWrapperDataProvider.Properties;
 
 namespace AwsWrapperDataProvider.Driver.HostInfo.HostSelectors;
 
@@ -32,7 +33,7 @@ public class RandomHostSelector : IHostSelector
 
         if (eligibleHosts.Count == 0)
         {
-            throw new InvalidOperationException($"No hosts found matching role: {hostRole}");
+            throw new InvalidOperationException(string.Format(Resources.Error_NoHostsMatching, hostRole));
         }
 
         int randomIndex = Random.Next(eligibleHosts.Count);

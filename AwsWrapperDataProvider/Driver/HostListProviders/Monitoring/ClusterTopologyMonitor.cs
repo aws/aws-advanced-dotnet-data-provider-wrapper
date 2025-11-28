@@ -152,7 +152,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                                     await this.OpenAnyConnectionAndUpdateTopologyAsync();
 
                         this.ctsNodeMonitoring.Cancel();
-                        Logger.LogTrace("Restarting cancellation token for node monitoring tasks");
+                        Logger.LogTrace(Resources.ClusterTopologyMonitor_RunMonitoringLoop_RestartCancellationToken);
                         this.ctsNodeMonitoring = CancellationTokenSource.CreateLinkedTokenSource(this.ctsTopologyMonitoring.Token);
 
                         if (hosts != null && !this.isVerifiedWriterConnection)
@@ -168,7 +168,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                                         () =>
                                         {
                                             var task = Task.Run(() => nodeMonitoringTask.RunNodeMonitoringAsync(this.ctsNodeMonitoring.Token), this.ctsNodeMonitoring.Token);
-                                            Logger.LogTrace($"Node Monitoring Task@{RuntimeHelpers.GetHashCode(nodeMonitoringTask)} created for host {hostSpec}");
+                                            Logger.LogTrace(Resources.ClusterTopologyMonitor_RunMonitoringLoop_MonitoringTask, RuntimeHelpers.GetHashCode(nodeMonitoringTask), hostSpec);
                                             return task;
                                         },
                                         LazyThreadSafetyMode.ExecutionAndPublication));
@@ -197,12 +197,12 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                             if (Interlocked.CompareExchange(ref this.ignoreNewTopologyRequestsEndTime, 0, -1) != -1)
                             {
                                 Interlocked.Exchange(ref this.ignoreNewTopologyRequestsEndTime, DateTime.UtcNow.Add(IgnoreTopologyRequestDuration).Ticks);
-                                Logger.LogTrace("Ignoring topology request until {utcTime}", new DateTime(this.ignoreNewTopologyRequestsEndTime, DateTimeKind.Utc));
+                                Logger.LogTrace(Resources.ClusterTopologyMonitor_RunMonitoringLoop_MonitoringTime, new DateTime(this.ignoreNewTopologyRequestsEndTime, DateTimeKind.Utc));
                             }
 
                             this.NodeThreadsStop = true;
                             this.ctsNodeMonitoring.Cancel();
-                            Logger.LogTrace($"Clearing node threads...");
+                            Logger.LogTrace(Resources.ClusterTopologyMonitor_RunMonitoringLoop_Clearing);
                             this.nodeThreads.Clear();
                             continue;
                         }
@@ -222,7 +222,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                                         () =>
                                         {
                                             var task = Task.Run(() => nodeMonitoringTask.RunNodeMonitoringAsync(this.ctsNodeMonitoring.Token), this.ctsNodeMonitoring.Token);
-                                            Logger.LogTrace($"Node Monitoring Task@{RuntimeHelpers.GetHashCode(task)} created for host {hostSpec}");
+                                            Logger.LogTrace(Resources.ClusterTopologyMonitor_RunMonitoringLoop_MonitoringTask, RuntimeHelpers.GetHashCode(task), hostSpec);
                                             return task;
                                         },
                                         LazyThreadSafetyMode.ExecutionAndPublication));
@@ -235,13 +235,13 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                 }
                 else
                 {
-                    Logger.LogTrace($"In regular mode");
+                    Logger.LogTrace(Resources.ClusterTopologyMonitor_RunMonitoringLoop_RegularMode);
 
                     // Regular mode (not panic mode)
                     if (!this.nodeThreads.IsEmpty)
                     {
                         this.ctsNodeMonitoring.Cancel();
-                        Logger.LogTrace($"Clearing node threads...");
+                        Logger.LogTrace(Resources.ClusterTopologyMonitor_RunMonitoringLoop_Clearing);
                         this.nodeThreads.Clear();
                     }
 
@@ -249,7 +249,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                     if (hosts == null)
                     {
                         // Can't get topology, switch to panic mode
-                        Logger.LogTrace("Monitoring connection@{Id} is set to null", RuntimeHelpers.GetHashCode(this.monitoringConnection));
+                        Logger.LogTrace(Resources.ClusterTopologyMonitor_RunMonitoringLoop_NullConnection, RuntimeHelpers.GetHashCode(this.monitoringConnection));
                         var conn = Interlocked.Exchange(ref this.monitoringConnection, null);
 
                         this.isVerifiedWriterConnection = false;
@@ -264,7 +264,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
                     if (this.highRefreshRateEndTime == DateTime.MinValue)
                     {
-                        Logger.LogTrace(LoggerUtils.LogTopology(hosts, $"Running Monitoring Loop. Found {hosts.Count} hosts"));
+                        Logger.LogTrace(LoggerUtils.LogTopology(hosts, string.Format(Resources.ClusterTopologyMonitor_RunMonitoringLoop_FoundHosts, hosts.Count)));
                     }
 
                     await this.DelayAsync(false);
@@ -287,7 +287,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         }
         finally
         {
-            Logger.LogTrace("Cancelling all node monitoring tasks from topology monitor connection@{Id}", RuntimeHelpers.GetHashCode(this.monitoringConnection));
+            Logger.LogTrace(Resources.ClusterTopologyMonitor_RunMonitoringLoop_CancellingMonitoringNodes, RuntimeHelpers.GetHashCode(this.monitoringConnection));
             this.ctsNodeMonitoring.Cancel();
 
             try
@@ -297,10 +297,10 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "One or more node monitoring tasks failed during shutdown.");
+                Logger.LogError(ex, Resources.ClusterTopologyMonitor_RunMonitoringLoop_NodeFailedShutdown);
             }
 
-            Logger.LogTrace("Monitoring connection@{Id} is set to null", RuntimeHelpers.GetHashCode(this.monitoringConnection));
+            Logger.LogTrace(Resources.ClusterTopologyMonitor_RunMonitoringLoop_NullConnection, RuntimeHelpers.GetHashCode(this.monitoringConnection));
 
             var conn = Interlocked.Exchange(ref this.monitoringConnection, null);
             await this.DisposeConnectionAsync(conn);
@@ -323,7 +323,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
         if (shouldVerifyWriter)
         {
-            Logger.LogTrace("Monitoring connection@{Id} is set to null", RuntimeHelpers.GetHashCode(this.monitoringConnection));
+            Logger.LogTrace(Resources.ClusterTopologyMonitor_RunMonitoringLoop_NullConnection, RuntimeHelpers.GetHashCode(this.monitoringConnection));
             var connectionToClose = Interlocked.Exchange(ref this.monitoringConnection, null);
             this.isVerifiedWriterConnection = false;
             await this.DisposeConnectionAsync(connectionToClose);
@@ -347,7 +347,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
     protected IList<HostSpec> WaitTillTopologyGetsUpdated(long timeoutMs)
     {
         this.topologyMap.TryGetValue(this.clusterId, out IList<HostSpec>? currentHosts);
-        Logger.LogTrace(LoggerUtils.LogTopology(currentHosts, $"Wait until current topology is updated:"));
+        Logger.LogTrace(LoggerUtils.LogTopology(currentHosts, Resources.ClusterTopologyMonitor_RunMonitoringLoop_CurrentTopology));
 
         lock (this.topologyUpdatedLock)
         {
@@ -367,24 +367,24 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             while (this.topologyMap.TryGetValue(this.clusterId, out latestHosts) &&
                 ReferenceEquals(currentHosts, latestHosts) && DateTime.UtcNow < endTime)
             {
-                Logger.LogTrace("Waiting on topologyUpdatedLock...");
+                Logger.LogTrace(Resources.ClusterTopologyMonitor_RunMonitoringLoop_WaitingUpdatedLock);
                 if (Monitor.Wait(this.topologyUpdatedLock, 1000))
                 {
-                    Logger.LogTrace("Woke up from Monitor. Wait due to Pulse, rechecking condition...");
+                    Logger.LogTrace(Resources.ClusterTopologyMonitor_RunMonitoringLoop_WokeUpMonitorWaiting, "Pulse");
                     if (this.topologyMap.TryGetValue(this.clusterId, out latestHosts) &&
                         !ReferenceEquals(currentHosts, latestHosts))
                     {
-                        Logger.LogTrace(LoggerUtils.LogTopology(latestHosts, $"Topology is updated:"));
+                        Logger.LogTrace(LoggerUtils.LogTopology(latestHosts, Resources.ClusterTopologyMonitor_RunMonitoringLoop_TopologyUpdated));
                         return latestHosts ?? [];
                     }
                     else
                     {
-                        Logger.LogTrace(LoggerUtils.LogTopology(latestHosts, $"Topology is still not updated:"));
+                        Logger.LogTrace(LoggerUtils.LogTopology(latestHosts, Resources.ClusterTopologyMonitor_RunMonitoringLoop_TopologyNotUpdated));
                     }
                 }
                 else
                 {
-                    Logger.LogTrace("Woke up from Monitor. Wait due to timeout, rechecking condition...");
+                    Logger.LogTrace(Resources.ClusterTopologyMonitor_RunMonitoringLoop_WokeUpMonitorWaiting, "Timeout");
                 }
             }
         }
@@ -394,7 +394,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             throw new TimeoutException(string.Format(Resources.ClusterTopologyMonitor_TopologyNotUpdated, timeoutMs));
         }
 
-        Logger.LogTrace(LoggerUtils.LogTopology(latestHosts, $"Topology is updated:"));
+        Logger.LogTrace(LoggerUtils.LogTopology(latestHosts, Resources.ClusterTopologyMonitor_RunMonitoringLoop_TopologyUpdated));
         return latestHosts ?? [];
     }
 
@@ -424,13 +424,13 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                         writerVerifiedByThisThread = true;
                         if (RdsUtils.IsRdsInstance(this.initialHostSpec.Host))
                         {
-                            Logger.LogTrace("{host} IS a rds instance", this.initialHostSpec.Host);
+                            Logger.LogTrace(Resources.ClusterTopologyMonitor_RunMonitoringLoop_IsRdsInstance, this.initialHostSpec.Host);
                             this.writerHostSpec = this.initialHostSpec;
                             Logger.LogTrace(string.Format(Resources.ClusterTopologyMonitor_WriterMonitoringConnection, this.writerHostSpec));
                         }
                         else
                         {
-                            Logger.LogTrace("{host} IS NOT a rds instance", this.initialHostSpec.Host);
+                            Logger.LogTrace(Resources.ClusterTopologyMonitor_RunMonitoringLoop_IsNotRdsInstance, this.initialHostSpec.Host);
                             var (nodeId, nodeName) = await this.GetNodeIdAsync(this.monitoringConnection);
                             if (!string.IsNullOrEmpty(nodeId) && !string.IsNullOrEmpty(nodeName))
                             {
@@ -447,7 +447,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             catch (Exception ex) when (ex is DbException or EndOfStreamException)
             {
                 // Suppress connection errors and continue
-                Logger.LogWarning(ex, "DbException thrown during finding a monitoring connection, and ignored.");
+                Logger.LogWarning(ex, Resources.Error_ThrownErrorIgnoredFindingMonitoringConnection, $"{nameof(ex)}");
             }
             finally
             {
@@ -475,13 +475,13 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             if (Interlocked.CompareExchange(ref this.ignoreNewTopologyRequestsEndTime, 0, -1) != -1)
             {
                 Interlocked.Exchange(ref this.ignoreNewTopologyRequestsEndTime, DateTime.UtcNow.Add(IgnoreTopologyRequestDuration).Ticks);
-                Logger.LogTrace("Ignoring topology request until {utcTime}", new DateTime(this.ignoreNewTopologyRequestsEndTime, DateTimeKind.Utc));
+                Logger.LogTrace(Resources.ClusterTopologyMonitor_RunMonitoringLoop_MonitoringTime, new DateTime(this.ignoreNewTopologyRequestsEndTime, DateTimeKind.Utc));
             }
         }
 
         if (hosts == null)
         {
-            Logger.LogTrace("Monitoring connection@{Id} is set to null", RuntimeHelpers.GetHashCode(this.monitoringConnection));
+            Logger.LogTrace(Resources.ClusterTopologyMonitor_RunMonitoringLoop_NullConnection, RuntimeHelpers.GetHashCode(this.monitoringConnection));
             var connToDispose = Interlocked.Exchange(ref this.monitoringConnection, null);
 
             this.isVerifiedWriterConnection = false;
@@ -550,7 +550,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         catch (Exception ex)
         {
             // Ignore
-            Logger.LogWarning(ex, "Exception thrown during getting the node Id for topology monitoring connection@{id}, and ignored.", RuntimeHelpers.GetHashCode(connection));
+            Logger.LogWarning(ex, Resources.ClusterTopologyMonitor_ExceptionIgnoredTopologyMonitoringConnection, RuntimeHelpers.GetHashCode(connection));
             throw;
         }
         finally
@@ -576,7 +576,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, "Exception thrown during getting the writer node Id for topology monitoring connection@{id}", RuntimeHelpers.GetHashCode(connection));
+            Logger.LogWarning(ex, Resources.ClusterTopologyMonitor_ExceptionIgnoredTopologyMonitoringConnection, RuntimeHelpers.GetHashCode(connection));
             throw;
         }
         finally
@@ -596,7 +596,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         {
             if (connection != null)
             {
-                Logger.LogTrace("Connection {Type}@{Id} is being disposed.", connection.GetType().FullName, RuntimeHelpers.GetHashCode(connection));
+                Logger.LogTrace(Resources.ClusterTopologyMonitor_DisposeConnectionAsync_ConnectionDisposed, connection.GetType().FullName, RuntimeHelpers.GetHashCode(connection));
                 await connection.DisposeAsync().ConfigureAwait(false);
             }
         }
@@ -658,9 +658,9 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         lock (this.topologyUpdatedLock)
         {
             this.topologyMap.Set(this.clusterId, hosts, this.topologyCacheExpiration);
-            Logger.LogTrace(LoggerUtils.LogTopology(hosts, $"UpdateTopologyCache:"));
+            Logger.LogTrace(LoggerUtils.LogTopology(hosts, Resources.ClusterTopologyMonitor_UpdateTopologyCache_TopologyUpdate));
             this.RequestToUpdateTopology = false;
-            Logger.LogTrace("Notifying topologyUpdatedLock...");
+            Logger.LogTrace(Resources.ClusterTopologyMonitor_UpdateTopologyCache_NotifyingLock);
             Monitor.PulseAll(this.topologyUpdatedLock);
         }
     }
@@ -678,7 +678,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                 command.CommandTimeout = DefaultTopologyQueryTimeoutSec;
             }
 
-            Logger.LogDebug("Command timeout for querying topology: {time} seconds", command.CommandTimeout);
+            Logger.LogDebug(Resources.ClusterTopologyMonitor_QueryForTopologyAsync, command.CommandTimeout);
 
             command.CommandText = this.topologyQuery;
             await using var reader = await command.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
@@ -730,7 +730,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
     public void Dispose()
     {
-        Logger.LogTrace("Disposing cluster topology monitor for host {host}", this.initialHostSpec.Host);
+        Logger.LogTrace(Resources.ClusterTopologyMonitor_Dispose_DisposingClusterTopologyMonitor, this.initialHostSpec.Host);
         lock (this.disposeLock)
         {
             if (this.disposed)
@@ -750,7 +750,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         }
         catch (Exception ex)
         {
-            Logger.LogWarning("Error occourred when waiting on node monitoring thread to finish: {message}", ex.Message);
+            Logger.LogWarning(Resources.ClusterTopologyMonitor_Dispose_ErrorOccured, ex.Message);
         }
 
         var conn = Interlocked.Exchange(ref this.monitoringConnection, null);
@@ -780,7 +780,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             bool updateTopology = false;
             DateTime start = DateTime.UtcNow;
 
-            LoggerUtils.MonitoringLogWithHost(hostSpec, NodeMonitorLogger, LogLevel.Trace, "Start running node monitoring task");
+            LoggerUtils.MonitoringLogWithHost(hostSpec, NodeMonitorLogger, LogLevel.Trace, Resources.ClusterTopologyMonitor_RunNodeMonitoringAsync_StartNode);
             try
             {
                 while (!monitor.NodeThreadsStop && !token.IsCancellationRequested)
@@ -854,11 +854,11 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             catch (OperationCanceledException ex)
             {
                 // Expected
-                LoggerUtils.MonitoringLogWithHost(hostSpec, NodeMonitorLogger, LogLevel.Trace, ex, "Operation canncelled: {message}", ex.Message);
+                LoggerUtils.MonitoringLogWithHost(hostSpec, NodeMonitorLogger, LogLevel.Trace, ex, Resources.ClusterTopologyMonitor_RunNodeMonitoringAsync_OperationCancelled, ex.Message);
             }
             catch (Exception ex)
             {
-                LoggerUtils.MonitoringLogWithHost(hostSpec, NodeMonitorLogger, LogLevel.Warning, ex, "Unknown exception thrown: {message}", ex.Message);
+                LoggerUtils.MonitoringLogWithHost(hostSpec, NodeMonitorLogger, LogLevel.Warning, ex, Resources.ClusterTopologyMonitor_RunNodeMonitoringAsync_UnknownException, ex.Message);
             }
             finally
             {
@@ -901,7 +901,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             catch (Exception ex)
             {
                 // Ignore errors
-                LoggerUtils.MonitoringLogWithHost(hostSpec, NodeMonitorLogger, LogLevel.Trace, ex, "Exception caught but ignored: {message}", ex.Message);
+                LoggerUtils.MonitoringLogWithHost(hostSpec, NodeMonitorLogger, LogLevel.Trace, ex, Resources.ClusterTopologyMonitor_ReaderThreadFetchTopologyAsync_ExceptionIgnored, ex.Message);
             }
         }
     }

@@ -14,6 +14,7 @@
 
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
@@ -55,7 +56,7 @@ public class RdsMySqlDialect : MySqlDialect
         }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, "Error occurred when checking whether it's dialect");
+            Logger.LogWarning(ex, Resources.Error_CantCheckDialect, nameof(RdsMySqlDialect));
         }
 
         return false;

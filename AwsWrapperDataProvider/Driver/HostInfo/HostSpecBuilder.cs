@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using AwsWrapperDataProvider.Properties;
+
 namespace AwsWrapperDataProvider.Driver.HostInfo;
 
 /// <summary>
@@ -90,7 +92,7 @@ public class HostSpecBuilder
     {
         if (string.IsNullOrEmpty(this.host))
         {
-            throw new ArgumentException("Host cannot be null or empty", nameof(this.host));
+            throw new ArgumentException(Resources.Error_HostNullEmpty, nameof(this.host));
         }
 
         return new HostSpec(

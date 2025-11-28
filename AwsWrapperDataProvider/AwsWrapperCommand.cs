@@ -18,6 +18,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider;
@@ -160,7 +161,7 @@ public class AwsWrapperCommand : DbCommand
 
             if (!IsTypeAwsWrapperConnection(value.GetType()))
             {
-                throw new InvalidOperationException("Provided connection is not of type AwsWrapperConnection.");
+                throw new InvalidOperationException(Resources.Error_ProvidedConnectionNotAwsWrapperConnection);
             }
 
             this.wrapperConnection = (AwsWrapperConnection)value;
@@ -202,7 +203,7 @@ public class AwsWrapperCommand : DbCommand
 
             if (value is not AwsWrapperTransaction)
             {
-                throw new InvalidOperationException("Provided DbTransaction is not of type AwsWrapperTransaction.");
+                throw new InvalidOperationException(Resources.Error_ProvidedDbTransactionNotAwsWrapperTransaction);
             }
 
             this.wrapperTransaction = (AwsWrapperTransaction)value;
@@ -349,7 +350,7 @@ public class AwsWrapperCommand : DbCommand
                 this.TargetDbCommand = Activator.CreateInstance(this.targetDbCommandType) as DbCommand;
                 if (this.TargetDbCommand == null)
                 {
-                    throw new Exception("Provided type doesn't implement IDbCommand.");
+                    throw new Exception(Resources.Error_ProvidedTypeDoesntImplementIDbCommand);
                 }
             }
             else if (this.TargetDbConnection != null)
@@ -385,7 +386,7 @@ public class AwsWrapperCommand : DbCommand
 
     internal void SetCurrentConnection(DbConnection? connection)
     {
-        Logger.LogTrace("Target connection is updating to {Type}@{Id} from {Id2} for AwsWrapperCommand@{Id3}",
+        Logger.LogTrace(Resources.AwsWrapperCommand_SetCurrentConnection_TargetConnectionUpdating,
             connection?.GetType().FullName,
             RuntimeHelpers.GetHashCode(connection),
             RuntimeHelpers.GetHashCode(this.TargetDbConnection),

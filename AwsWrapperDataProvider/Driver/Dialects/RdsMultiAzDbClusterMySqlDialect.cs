@@ -18,6 +18,7 @@ using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
@@ -50,6 +51,7 @@ public class RdsMultiAzDbClusterMySqlDialect : MySqlDialect
                 await using var topologyTableExistReader = await topologyTableExistCommand.ExecuteReaderAsync();
                 if (!(await topologyTableExistReader.ReadAsync()))
                 {
+                    Logger.LogDebug(Resources.RdsMultiAzDbClusterMySqlDialect_IsDialect_AsyncReader, nameof(topologyTableExistReader));
                     return false;
                 }
             }
@@ -60,6 +62,7 @@ public class RdsMultiAzDbClusterMySqlDialect : MySqlDialect
                 await using var topologyReader = await topologyCommand.ExecuteReaderAsync();
                 if (!(await topologyReader.ReadAsync()))
                 {
+                    Logger.LogDebug(Resources.RdsMultiAzDbClusterMySqlDialect_IsDialect_AsyncReader, nameof(topologyReader));
                     return false;
                 }
             }
@@ -71,6 +74,7 @@ public class RdsMultiAzDbClusterMySqlDialect : MySqlDialect
                 await using var reader = await isDialectCommand.ExecuteReaderAsync(CommandBehavior.SingleRow);
                 if (!(await reader.ReadAsync()))
                 {
+                    Logger.LogDebug(Resources.RdsMultiAzDbClusterMySqlDialect_IsDialect_AsyncReader, nameof(reader));
                     return false;
                 }
 
@@ -80,7 +84,7 @@ public class RdsMultiAzDbClusterMySqlDialect : MySqlDialect
         }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, "Error occurred when checking whether it's dialect");
+            Logger.LogWarning(ex, Resources.Error_CantCheckDialect, nameof(RdsMultiAzDbClusterMySqlDialect));
         }
 
         return false;

@@ -14,6 +14,7 @@
 
 using System.Diagnostics;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.ExecutionTime;
@@ -33,7 +34,7 @@ public class ExecutionTimePlugin : AbstractConnectionPlugin
         long ticks = sw.ElapsedTicks;
         double nanoseconds = (double)ticks / Stopwatch.Frequency * 1_000_000_000;
 
-        _logger.LogInformation($"Execution time: {ticks}ms, {nanoseconds}ns");
+        _logger.LogInformation(Resources.ExecutionTimePlugin_Execute_ExecutionTime, ticks, nanoseconds);
 
         return results;
     }

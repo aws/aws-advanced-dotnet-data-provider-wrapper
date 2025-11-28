@@ -16,12 +16,15 @@ using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
 public class AuroraPgDialect : PgDialect
 {
+    private const string ReaderOrdinal = "aurora_stat_utils";
+
     private static readonly ILogger<AuroraPgDialect> Logger = LoggerUtils.GetLogger<AuroraPgDialect>();
 
     private static readonly string ExtensionsSql = "SELECT (setting LIKE '%aurora_stat_utils%') AS aurora_stat_utils "
@@ -66,7 +69,7 @@ public class AuroraPgDialect : PgDialect
             await using var reader = await command.ExecuteReaderAsync();
             if (await reader.ReadAsync())
             {
-                bool auroraUtils = reader.GetBoolean(reader.GetOrdinal("aurora_stat_utils"));
+                bool auroraUtils = reader.GetBoolean(reader.GetOrdinal(ReaderOrdinal));
                 if (auroraUtils)
                 {
                     hasExtensions = true;
@@ -80,7 +83,7 @@ public class AuroraPgDialect : PgDialect
         }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, "Error occurred when checking whether it's Aurora PG dialect");
+            Logger.LogWarning(ex, Resources.Error_CantCheckDialect, nameof(AuroraPgDialect));
         }
 
         return hasExtensions && hasTopology;

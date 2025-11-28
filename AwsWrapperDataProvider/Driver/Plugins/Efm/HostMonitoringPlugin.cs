@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data.Common;
+using System.Runtime.Versioning;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
 using AwsWrapperDataProvider.Properties;
@@ -106,14 +107,14 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Exception caught during method execution: {methodName}", methodName);
+            Logger.LogError(ex, Resources.Error_ExceptionDuringMethodExecution, methodName);
             throw;
         }
         finally
         {
             if (monitorContext != null && this.monitorService != null && this.pluginService.CurrentConnection != null)
             {
-                Logger.LogTrace("Deactivating monitoring for current context");
+                Logger.LogTrace(Resources.EfmHostMonitoringPlugin_Execute_DeactivatingMonitoring);
                 this.monitorService.StopMonitoring(monitorContext, this.pluginService.CurrentConnection);
             }
 
@@ -167,11 +168,11 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
             {
                 if (rdsUrlType.IsRdsCluster)
                 {
-                    Logger.LogTrace("Monitoring HostSpec is associated with a cluster endpoint, plugin needs to identify the cluster connection.");
+                    Logger.LogTrace(Resources.EfmHostMonitoringPlugin_GetMonitoringHostSpec_ClusterEndpointIdentification);
                     this.monitoringHostSpec = await this.pluginService.IdentifyConnectionAsync(this.pluginService.CurrentConnection!, this.pluginService.CurrentTransaction);
                     if (this.monitoringHostSpec == null)
                     {
-                        throw new Exception("Unable to identify connection and gather monitoring host spec");
+                        throw new Exception(Resources.Error_UnableToIdentifyConnectionAndGatherMonitoringHostSpec);
                     }
 
                     await this.pluginService.FillAliasesAsync(this.pluginService.CurrentConnection!, this.monitoringHostSpec, this.pluginService.CurrentTransaction);
@@ -180,7 +181,7 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
             catch (Exception ex)
             {
                 Logger.LogError(string.Format(Resources.EfmHostMonitor_ErrorIdentifyingConnection, ex.Message));
-                throw new Exception("Couldn't identify connection", ex);
+                throw new Exception(Resources.Error_CouldntIdentifyConnection, ex);
             }
         }
 

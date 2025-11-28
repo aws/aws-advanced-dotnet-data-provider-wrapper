@@ -159,7 +159,7 @@ public class HostMonitor : IHostMonitor
                                 && context != null
                                 && context.IsActive())
                             {
-                                Logger.LogTrace("Adding active monitoring context to poll");
+                                Logger.LogTrace(Resources.EfmHostMonitor_NewContextRun_AddingActiveContext);
                                 this.activeContexts.Enqueue(contextRef);
                             }
                         }
@@ -202,11 +202,11 @@ public class HostMonitor : IHostMonitor
                 if (this.activeContexts.IsEmpty && !isNodeUnhealthy)
                 {
                     await Task.Delay(ThreadSleepMs, token);
-                    Logger.LogTrace("No active contexts and node is healthy, skipping status check");
+                    Logger.LogTrace(Resources.EfmHostMonitor_Run_NoActiveContextsSkipping);
                     continue;
                 }
 
-                Logger.LogTrace("Current active contexts count: {count}", this.activeContexts.Count);
+                Logger.LogTrace(Resources.EfmHostMonitor_Run_CurrentActiveContextsCount, this.activeContexts.Count);
                 DateTime statusCheckStartTime = DateTime.UtcNow;
                 bool isValid = await this.CheckConnectionStatusAsync();
                 DateTime statusCheckEndTime = DateTime.UtcNow;
@@ -219,7 +219,7 @@ public class HostMonitor : IHostMonitor
                 {
                     while (this.activeContexts.TryDequeue(out WeakReference<HostMonitorConnectionContext>? monitorContextRef))
                     {
-                        Logger.LogTrace("Dequeued a context from activeContexts");
+                        Logger.LogTrace(Resources.EfmHostMonitor_Run_DequeuedContext);
                         if (token.IsCancellationRequested)
                         {
                             break;
@@ -243,7 +243,7 @@ public class HostMonitor : IHostMonitor
                         }
                         else if (monitorContext.IsActive())
                         {
-                            Logger.LogTrace("Adding context to tmpActiveContexts");
+                            Logger.LogTrace(Resources.EfmHostMonitor_Run_AddingContextToTemp);
                             tmpActiveContexts.Add(monitorContextRef);
                         }
                     }
@@ -252,7 +252,7 @@ public class HostMonitor : IHostMonitor
                     // add those back into this.activeContexts
                     foreach (WeakReference<HostMonitorConnectionContext> contextRef in tmpActiveContexts)
                     {
-                        Logger.LogTrace("Adding context back to activeContexts");
+                        Logger.LogTrace(Resources.EfmHostMonitor_Run_AddingContextBack);
                         this.activeContexts.Enqueue(contextRef);
                     }
                 }
@@ -342,7 +342,7 @@ public class HostMonitor : IHostMonitor
             {
                 validityCheckCommand.CommandText = "SELECT 1";
                 int validTimeoutSeconds = Math.Max((this.failureDetectionIntervalMs - ThreadSleepMs) / 2000, 1);
-                Logger.LogDebug($"Command timeout for ping is {validTimeoutSeconds} seconds");
+                Logger.LogDebug(Resources.EfmHostMonitor_CheckConnectionStatusAsync_CommandTimeout, validTimeoutSeconds);
                 validityCheckCommand.CommandTimeout = validTimeoutSeconds;
                 await validityCheckCommand.ExecuteScalarAsync();
             }
@@ -351,7 +351,7 @@ public class HostMonitor : IHostMonitor
         }
         catch (DbException ex)
         {
-            Logger.LogWarning(ex, "Disposing invalid monitoring connection");
+            Logger.LogWarning(ex, Resources.EfmHostMonitor_CheckConnectionStatusAsync_DisposingInvalidConnection);
             this.monitoringConn?.Dispose();
             this.monitoringConn = null;
             return false;
@@ -413,11 +413,11 @@ public class HostMonitor : IHostMonitor
 
     private void AbortConnection(DbConnection connection)
     {
-        Logger.LogTrace("Aborting unhealthy connection.");
+        Logger.LogTrace(Resources.EfmHostMonitor_AbortConnection_Starting);
         try
         {
             connection.Close();
-            Logger.LogTrace("Finished aborting unhealthy connection.");
+            Logger.LogTrace(Resources.EfmHostMonitor_AbortConnection_Finished);
         }
         catch (Exception ex)
         {
