@@ -109,6 +109,8 @@ public class TargetConnectionDialectProviderTests
     {
         public Type DriverConnectionType => typeof(NpgsqlConnection);
 
+        public Dictionary<string, string[]> AwsWrapperPropertyNameAliasesMap { get; } = new();
+
         public bool IsDialect(Type connectionType) => connectionType == typeof(NpgsqlConnection);
 
         public string? GetSqlState(DbException exception) => string.Empty;
@@ -124,6 +126,8 @@ public class TargetConnectionDialectProviderTests
         {
             return "efm,failover";
         }
+
+        public string? GetAliasAwsWrapperPropertyName(string propAlias) => null;
 
         public string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, bool isForceOpen = false)
         {
