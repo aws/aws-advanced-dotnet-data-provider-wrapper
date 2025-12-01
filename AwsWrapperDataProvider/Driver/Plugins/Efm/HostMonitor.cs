@@ -41,13 +41,19 @@ public class HostMonitor : IHostMonitor
 
     private readonly object monitorLock = new();
     private DateTime? invalidNodeStartTime = null;
-    private volatile int failureCount = 0;
-    private volatile bool nodeUnhealthy = false;
+    private int failureCount = 0;
+    private int nodeUnhealthy = 0;
     private DbConnection? monitoringConn = null;
 
     internal volatile bool TestUnhealthyCluster = false;
 
-    public int FailureCount { get => this.failureCount; }
+    public int FailureCount { get => Interlocked.CompareExchange(ref this.failureCount, 0, 0); }
+
+    private bool NodeUnhealthy
+    {
+        get => Volatile.Read(ref this.nodeUnhealthy) == 1;
+        set => Interlocked.Exchange(ref this.nodeUnhealthy, value ? 1 : 0);
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="HostMonitor"/> class.
@@ -153,7 +159,7 @@ public class HostMonitor : IHostMonitor
                                 && context != null
                                 && context.IsActive())
                             {
-                                Logger.LogTrace("Adding active monitoring context to poll");
+                                Logger.LogTrace(Resources.EfmHostMonitor_NewContextRun_AddingActiveContext);
                                 this.activeContexts.Enqueue(contextRef);
                             }
                         }
@@ -190,17 +196,17 @@ public class HostMonitor : IHostMonitor
 
                 lock (this.monitorLock)
                 {
-                    isNodeUnhealthy = this.nodeUnhealthy;
+                    isNodeUnhealthy = this.NodeUnhealthy;
                 }
 
                 if (this.activeContexts.IsEmpty && !isNodeUnhealthy)
                 {
                     await Task.Delay(ThreadSleepMs, token);
-                    Logger.LogTrace("No active contexts and node is healthy, skipping status check");
+                    Logger.LogTrace(Resources.EfmHostMonitor_Run_NoActiveContextsSkipping);
                     continue;
                 }
 
-                Logger.LogTrace("Current active contexts count: {count}", this.activeContexts.Count);
+                Logger.LogTrace(Resources.EfmHostMonitor_Run_CurrentActiveContextsCount, this.activeContexts.Count);
                 DateTime statusCheckStartTime = DateTime.UtcNow;
                 bool isValid = await this.CheckConnectionStatusAsync();
                 DateTime statusCheckEndTime = DateTime.UtcNow;
@@ -213,7 +219,7 @@ public class HostMonitor : IHostMonitor
                 {
                     while (this.activeContexts.TryDequeue(out WeakReference<HostMonitorConnectionContext>? monitorContextRef))
                     {
-                        Logger.LogTrace("Dequeued a context from activeContexts");
+                        Logger.LogTrace(Resources.EfmHostMonitor_Run_DequeuedContext);
                         if (token.IsCancellationRequested)
                         {
                             break;
@@ -224,7 +230,7 @@ public class HostMonitor : IHostMonitor
                             continue;
                         }
 
-                        if (this.nodeUnhealthy)
+                        if (this.NodeUnhealthy)
                         {
                             monitorContext.NodeUnhealthy = true;
                             DbConnection? connectionToAbort = monitorContext.GetConnection();
@@ -237,7 +243,7 @@ public class HostMonitor : IHostMonitor
                         }
                         else if (monitorContext.IsActive())
                         {
-                            Logger.LogTrace("Adding context to tmpActiveContexts");
+                            Logger.LogTrace(Resources.EfmHostMonitor_Run_AddingContextToTemp);
                             tmpActiveContexts.Add(monitorContextRef);
                         }
                     }
@@ -246,7 +252,7 @@ public class HostMonitor : IHostMonitor
                     // add those back into this.activeContexts
                     foreach (WeakReference<HostMonitorConnectionContext> contextRef in tmpActiveContexts)
                     {
-                        Logger.LogTrace("Adding context back to activeContexts");
+                        Logger.LogTrace(Resources.EfmHostMonitor_Run_AddingContextBack);
                         this.activeContexts.Enqueue(contextRef);
                     }
                 }
@@ -336,7 +342,7 @@ public class HostMonitor : IHostMonitor
             {
                 validityCheckCommand.CommandText = "SELECT 1";
                 int validTimeoutSeconds = Math.Max((this.failureDetectionIntervalMs - ThreadSleepMs) / 2000, 1);
-                Logger.LogDebug($"Command timeout for ping is {validTimeoutSeconds} seconds");
+                Logger.LogDebug(Resources.EfmHostMonitor_CheckConnectionStatusAsync_CommandTimeout, validTimeoutSeconds);
                 validityCheckCommand.CommandTimeout = validTimeoutSeconds;
                 await validityCheckCommand.ExecuteScalarAsync();
             }
@@ -345,7 +351,7 @@ public class HostMonitor : IHostMonitor
         }
         catch (DbException ex)
         {
-            Logger.LogWarning(ex, "Disposing invalid monitoring connection");
+            Logger.LogWarning(ex, Resources.EfmHostMonitor_CheckConnectionStatusAsync_DisposingInvalidConnection);
             this.monitoringConn?.Dispose();
             this.monitoringConn = null;
             return false;
@@ -360,7 +366,7 @@ public class HostMonitor : IHostMonitor
 
             lock (this.monitorLock)
             {
-                this.failureCount++;
+                Interlocked.Increment(ref this.failureCount);
 
                 if (this.invalidNodeStartTime == null)
                 {
@@ -378,14 +384,14 @@ public class HostMonitor : IHostMonitor
                 Logger.LogTrace(string.Format(Resources.EfmHostMonitor_HostDead, this.hostSpec.Host));
                 lock (this.monitorLock)
                 {
-                    this.nodeUnhealthy = true;
+                    this.NodeUnhealthy = true;
                 }
             }
             else
             {
                 lock (this.monitorLock)
                 {
-                    Logger.LogTrace(string.Format(Resources.EfmHostMonitor_HostNotResponding, this.hostSpec.Host, this.failureCount));
+                    Logger.LogTrace(string.Format(Resources.EfmHostMonitor_HostNotResponding, this.hostSpec.Host, this.FailureCount));
                 }
             }
 
@@ -394,24 +400,24 @@ public class HostMonitor : IHostMonitor
 
         lock (this.monitorLock)
         {
-            if (this.failureCount > 0)
+            if (this.FailureCount > 0)
             {
                 Logger.LogTrace(string.Format(Resources.EfmHostMonitor_HostAlive, this.hostSpec.Host));
             }
 
-            this.failureCount = 0;
+            Interlocked.Exchange(ref this.failureCount, 0);
             this.invalidNodeStartTime = null;
-            this.nodeUnhealthy = false;
+            this.NodeUnhealthy = false;
         }
     }
 
     private void AbortConnection(DbConnection connection)
     {
-        Logger.LogTrace("Aborting unhealthy connection.");
+        Logger.LogTrace(Resources.EfmHostMonitor_AbortConnection_Starting);
         try
         {
             connection.Close();
-            Logger.LogTrace("Finished aborting unhealthy connection.");
+            Logger.LogTrace(Resources.EfmHostMonitor_AbortConnection_Finished);
         }
         catch (Exception ex)
         {

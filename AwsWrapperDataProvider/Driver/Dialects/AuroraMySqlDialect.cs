@@ -16,6 +16,7 @@ using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
@@ -57,7 +58,7 @@ public class AuroraMySqlDialect : MySqlDialect
         }
         catch (Exception ex)
         {
-            Logger.LogTrace(ex, "Error occurred when checking whether it's Aurora MySql dialect");
+            Logger.LogTrace(ex, Resources.Error_CantCheckDialect, nameof(AuroraMySqlDialect));
         }
 
         return false;

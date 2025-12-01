@@ -17,6 +17,7 @@ using AwsWrapperDataProvider.Driver.Exceptions;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
@@ -73,7 +74,7 @@ public class MySqlDialect : IDialect
         }
         catch (Exception ex)
         {
-            Logger.LogTrace(ex, "Error occurred when checking whether it's MySQL dialect");
+            Logger.LogTrace(ex, Resources.Error_CantCheckDialect, nameof(MySqlDialect));
         }
 
         return false;

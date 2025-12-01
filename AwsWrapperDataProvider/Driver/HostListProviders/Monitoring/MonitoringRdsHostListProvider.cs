@@ -15,6 +15,7 @@
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
@@ -74,7 +75,7 @@ public class MonitoringRdsHostListProvider : RdsHostListProvider, IBlockingHostL
 
     protected virtual IClusterTopologyMonitor InitMonitor()
     {
-        Logger.LogTrace("Initializing new cluster topology monitor for clusterId: {clusterId}", this.ClusterId);
+        Logger.LogTrace(Resources.MonitoringRdsHostListProvider_InitMonitor, this.ClusterId);
         return Monitors.Set(
             this.ClusterId,
             new ClusterTopologyMonitor(
@@ -103,21 +104,23 @@ public class MonitoringRdsHostListProvider : RdsHostListProvider, IBlockingHostL
             var topology = await monitor.ForceRefreshAsync(connection, DefaultTopologyQueryTimeoutSec * 1000);
             return [.. topology];
         }
-        catch (TimeoutException)
+        catch (TimeoutException ex)
         {
+            Logger.LogDebug(Resources.MonitoringRdsHostListProvider_QueryForTopologyAsync_TimedOut, ex.Message);
             return null;
         }
     }
 
     protected override void ClusterIdChanged(string oldClusterId)
     {
-        Logger.LogTrace("Cluster Id changed, old cluster id: {id}", oldClusterId);
+        Logger.LogTrace(Resources.MonitoringRdsHostListProvider_ClusterIdChanged, oldClusterId);
         this.TransferExistingMonitor(oldClusterId);
         this.TransferCachedTopology(oldClusterId);
     }
 
     private void TransferExistingMonitor(string oldClusterId)
     {
+        Logger.LogTrace(Resources.MonitoringRdsHostListProvider_TransferExistingMonitor, oldClusterId);
         var existingMonitor = Monitors.Get<IClusterTopologyMonitor>(oldClusterId);
         if (existingMonitor == null)
         {
@@ -132,6 +135,7 @@ public class MonitoringRdsHostListProvider : RdsHostListProvider, IBlockingHostL
 
     private void TransferCachedTopology(string oldClusterId)
     {
+        Logger.LogTrace(Resources.MonitoringRdsHostListProvider_TransferCachedTopology, oldClusterId);
         if (TopologyCache.TryGetValue(oldClusterId, out List<HostSpec>? existingHosts) && existingHosts != null)
         {
             TopologyCache.Set(this.ClusterId, existingHosts, TopologyCacheExpirationTime);
@@ -144,12 +148,12 @@ public class MonitoringRdsHostListProvider : RdsHostListProvider, IBlockingHostL
         {
             try
             {
-                Logger.LogTrace("Disposing cluster topology monitor for clusterId: {clusterId} due to eviction reason: {reason}", key, reason);
+                Logger.LogTrace(Resources.MonitoringRdsHostListProvider_OnMonitorEvicted_Disposing, key, reason);
                 evictedMonitor.Dispose();
             }
             catch (Exception ex)
             {
-                Logger.LogWarning("Error disposing clustor topology monitor: {message} ", ex.Message);
+                Logger.LogWarning(Resources.MonitoringRdsHostListProvider_OnMonitorEvicted_Error, ex.Message);
             }
         }
     }

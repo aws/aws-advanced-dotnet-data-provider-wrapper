@@ -14,6 +14,7 @@
 
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
@@ -61,7 +62,7 @@ public class RdsPgDialect : PgDialect
         }
         catch (Exception ex)
         {
-            Logger.LogTrace(ex, "Error occurred when checking whether it's dialect");
+            Logger.LogTrace(ex, Resources.Error_CantCheckDialect, nameof(RdsPgDialect));
         }
 
         return false;

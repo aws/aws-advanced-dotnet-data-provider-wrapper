@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data;
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Exceptions;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.AuroraInitialConnectionStrategy;
 
@@ -49,7 +49,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
 
         if (this.hostListProviderService.IsStaticHostListProvider())
         {
-            throw new Exception("AuroraInitialConnectionStrategyPlugin requires dynamic provider.");
+            throw new Exception(Resources.AuroraInitialConnectionStrategyPlugin_InitHostProvider_RequiresDynamicProvider);
         }
 
         await initHostProviderFunc.Invoke();
@@ -333,7 +333,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
             }
         }
 
-        throw new InvalidOperationException($"Invalid host selection strategy: {strategy}");
+        throw new InvalidOperationException(string.Format(Resources.AuroraInitialConnectionStrategyPlugin_GetReader_InvalidHostSelectionStrategy, strategy));
     }
 
     private bool HasNoReader()
