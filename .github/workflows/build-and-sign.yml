@@ -107,7 +107,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p release-assets
-          for pkg in ./artifacts/*.nupkg; do
+          for pkg in ./packages/*.nupkg; do
             unzip -j "$pkg" "lib/**/*.dll" -d release-assets
           done
       
