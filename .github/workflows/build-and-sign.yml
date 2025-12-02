@@ -112,6 +112,7 @@ jobs:
           done
       
       - name: 'Get Release Details'
+        shell: bash
         run: |
           export RELEASE_DETAILS="$(awk -vN=2 'n<N;/^## /{++n}' CHANGELOG.md)"
           export RELEASE_DETAILS="$(sed '${/^# /d;}' <<< "$RELEASE_DETAILS")"
