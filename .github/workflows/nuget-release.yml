@@ -1,0 +1,37 @@
+name: Publish to NuGet on Release
+
+on:
+  release:
+    types: [created]
+    #types: [published]
+
+permissions:
+  id-token: write   # This is required for requesting the JWT
+  contents: read    # This is required for actions/checkout
+
+jobs:
+  publish-nuget:
+    if: github.event.release.draft == true
+    runs-on: windows-latest
+    steps:
+      - name: Download NuGet package artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: nuget-package
+          path: .\packages
+
+      - name: Configure NuGet credential
+        uses: aws-actions/configure-aws-credentials@v5.1.0
+        with:
+          role-to-assume: ${{ secrets.NUGET_ACCESS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_NUGET_KEY_REGION }}
+
+      - name: List packages
+        shell: pwsh
+        run: ls .\packages
+
+      # - name: Publish to NuGet
+      #   shell: pwsh
+      #   run: |
+      #     $nugetKey = aws secretsmanager get-secret-value --secret-id ${{ secrets.NUGET_SECRETS_ID }} --region ${{ secrets.AWS_NUGET_KEY_REGION }} --output text --query SecretString | ConvertFrom-Json
+      #     dotnet nuget push .\packages\*.nupkg --source https://api.nuget.org/v3/index.json --api-key $nugetKey.Key

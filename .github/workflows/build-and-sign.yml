@@ -2,9 +2,6 @@ name: Build, Sign and Publish .NET Wrapper
 
 on:
   workflow_dispatch:
-  push:
-    tags:
-      - '[0-9]+.[0-9]+.[0-9]+'
 
 permissions:
   id-token: write   # This is required for requesting the JWT
@@ -75,6 +72,7 @@ jobs:
             -AwsUnsignedBucket "${{ secrets.AWS_UNSIGNED_BUCKET }}" `
             -AwsSignedBucket "${{ secrets.AWS_SIGNED_BUCKET }}" `
             -AwsBucketKeyPrefix "${{ secrets.AWS_S3_BUCKET_KEY_PREFIX }}"
+            -AsMockResponse $true
 
       - name: 'Set Version Env Variable'
         shell: pwsh
@@ -83,7 +81,8 @@ jobs:
           if ($version -like 'release/*') {
             $version = $version -replace 'release/', ''
           }
-          echo "RELEASE_VERSION=$version" >> $env:GITHUB_ENV
+          echo "RELEASE_VERSION=1.0.2" >> $env:GITHUB_ENV
+         # echo "RELEASE_VERSION=$version" >> $env:GITHUB_ENV
 
       - name: Pack NuGet packages
         run: |
@@ -103,14 +102,28 @@ jobs:
           name: nuget-packages
           path: .\packages\*.nupkg
 
-      - name: Configure NuGet credential
-        uses: aws-actions/configure-aws-credentials@v5.1.0
-        with:
-          role-to-assume: ${{ secrets.NUGET_ACCESS_ROLE_ARN }}
-          aws-region: ${{ secrets.AWS_NUGET_KEY_REGION }}
-
-      - name: Publish to NuGet
-        shell: pwsh
+      
+      - name: Extract DLLs from NuGet package
+        shell: bash
         run: |
-          $nugetKey = aws secretsmanager get-secret-value --secret-id ${{ secrets.NUGET_SECRETS_ID }} --region ${{ secrets.AWS_NUGET_KEY_REGION }} --output text --query SecretString | ConvertFrom-Json
-          dotnet nuget push .\packages\*.nupkg --source https://api.nuget.org/v3/index.json --api-key $nugetKey.Key
+          mkdir -p release-assets
+          for pkg in ./artifacts/*.nupkg; do
+            unzip -j "$pkg" "lib/**/*.dll" -d release-assets
+          done
+      
+      - name: 'Get Release Details'
+        run: |
+          export RELEASE_DETAILS="$(awk -vN=2 'n<N;/^## /{++n}' CHANGELOG.md)"
+          export RELEASE_DETAILS="$(sed '${/^# /d;}' <<< "$RELEASE_DETAILS")"
+          export RELEASE_DETAILS="$(sed '$d' <<< "$RELEASE_DETAILS")"
+          touch RELEASE_DETAILS.md
+          echo "$RELEASE_DETAILS" > RELEASE_DETAILS.md
+
+      - name: "Upload to Draft Release"
+        uses: ncipollo/release-action@v1
+        with:
+          draft: true
+          name: "AWS Advanced .NET Data Provider Wrapper - v${{ env.RELEASE_VERSION }}"
+          bodyFile: RELEASE_DETAILS.md
+          artifacts: ./release-assets/*
+          token: ${{ secrets.GITHUB_TOKEN }}
