@@ -128,3 +128,4 @@ jobs:
           bodyFile: RELEASE_DETAILS.md
           artifacts: ./release-assets/*
           token: ${{ secrets.GITHUB_TOKEN }}
+          tag: 1.0.0
