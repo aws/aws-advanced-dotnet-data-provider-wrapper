@@ -71,7 +71,7 @@ jobs:
             -BuildPath ".." `
             -AwsUnsignedBucket "${{ secrets.AWS_UNSIGNED_BUCKET }}" `
             -AwsSignedBucket "${{ secrets.AWS_SIGNED_BUCKET }}" `
-            -AwsBucketKeyPrefix "${{ secrets.AWS_S3_BUCKET_KEY_PREFIX }}"
+            -AwsBucketKeyPrefix "${{ secrets.AWS_S3_BUCKET_KEY_PREFIX }}" `
             -AsMockResponse $true
 
       - name: 'Set Version Env Variable'
