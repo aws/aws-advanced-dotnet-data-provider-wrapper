@@ -1,4 +1,4 @@
-name: Build, Sign and Publish .NET Wrapper
+name: Build, Sign and Draft Release .NET Wrapper
 
 on:
   workflow_dispatch:
@@ -71,8 +71,7 @@ jobs:
             -BuildPath ".." `
             -AwsUnsignedBucket "${{ secrets.AWS_UNSIGNED_BUCKET }}" `
             -AwsSignedBucket "${{ secrets.AWS_SIGNED_BUCKET }}" `
-            -AwsBucketKeyPrefix "${{ secrets.AWS_S3_BUCKET_KEY_PREFIX }}" `
-            -AsMockResponse $true
+            -AwsBucketKeyPrefix "${{ secrets.AWS_S3_BUCKET_KEY_PREFIX }}"
 
       - name: 'Set Version Env Variable'
         shell: pwsh
@@ -81,8 +80,7 @@ jobs:
           if ($version -like 'release/*') {
             $version = $version -replace 'release/', ''
           }
-          echo "RELEASE_VERSION=1.0.2" >> $env:GITHUB_ENV
-         # echo "RELEASE_VERSION=$version" >> $env:GITHUB_ENV
+          echo "RELEASE_VERSION=$version" >> $env:GITHUB_ENV
 
       - name: Pack NuGet packages
         run: |
@@ -128,4 +126,5 @@ jobs:
           bodyFile: RELEASE_DETAILS.md
           artifacts: ./release-assets/*
           token: ${{ secrets.GITHUB_TOKEN }}
-          tag: 1.0.0
+          tag: ${{ env.RELEASE_VERSION }}
+          commit:  ${{ github.ref_name }}
