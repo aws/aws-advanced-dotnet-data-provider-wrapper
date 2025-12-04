@@ -22,6 +22,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.TargetConnectionDialects;
 public class ConnectionPropertyAliasTests
 {
     [Theory]
+    [Trait("Category", "Unit")]
     [InlineData("Server", "Host")]
     [InlineData("User ID", "User")]
     [InlineData("user id", "User")]
@@ -35,6 +36,7 @@ public class ConnectionPropertyAliasTests
     }
 
     [Theory]
+    [Trait("Category", "Unit")]
     [InlineData("Server", "Host")]
     [InlineData("User ID", "User")]
     [InlineData("Uid", "User")]
@@ -46,6 +48,7 @@ public class ConnectionPropertyAliasTests
     }
 
     [Theory]
+    [Trait("Category", "Unit")]
     [InlineData("Host", "Host")]
     [InlineData("Server", "Host")]
     [InlineData("Username", "User")]
@@ -59,6 +62,7 @@ public class ConnectionPropertyAliasTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void NormalizeConnectionPropertyKeys_Aliases_Normalizes()
     {
         var props = new Dictionary<string, string>
@@ -80,6 +84,7 @@ public class ConnectionPropertyAliasTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public void NormalizeConnectionPropertyKeys_CanonicalKeyExists_PrefersCanonical()
     {
         var props = new Dictionary<string, string>
