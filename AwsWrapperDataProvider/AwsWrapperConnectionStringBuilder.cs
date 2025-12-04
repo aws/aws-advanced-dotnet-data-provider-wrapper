@@ -31,7 +31,7 @@ public class AwsWrapperConnectionStringBuilder : DbConnectionStringBuilder
         set => this.SetValue(PropertyDefinition.Port.Name, value?.ToString());
     }
 
-    public string? User
+    public string? Username
     {
         get => this.GetValue(PropertyDefinition.User.Name);
         set => this.SetValue(PropertyDefinition.User.Name, value);

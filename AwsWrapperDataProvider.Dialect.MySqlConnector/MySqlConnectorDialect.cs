@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data;
+using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
@@ -28,11 +29,30 @@ public class MySqlConnectorDialect : AbstractTargetConnectionDialect
 
     public override Type DriverConnectionType { get; } = typeof(MySqlConnection);
 
-    public override Dictionary<string, string[]> AwsWrapperPropertyNameAliasesMap { get; } = new()
+    protected override DbConnectionStringBuilder CreateConnectionStringBuilder()
     {
-        { PropertyDefinition.Host.Name, ["Server"] },
-        { PropertyDefinition.User.Name, ["User ID", "Uid"] },
-    };
+        return new MySqlConnectionStringBuilder();
+    }
+
+    protected override string? MapDriverPropertyToWrapperProperty(string driverProperty, DbConnectionStringBuilder builder)
+    {
+        var canonicalKey = builder.Keys.Cast<string>().FirstOrDefault(k =>
+            string.Equals(k, driverProperty, StringComparison.OrdinalIgnoreCase));
+
+        if (canonicalKey == null)
+        {
+            return null;
+        }
+
+        return canonicalKey.ToLowerInvariant() switch
+        {
+            "server" => PropertyDefinition.Host.Name,
+            "port" => PropertyDefinition.Port.Name,
+            "user id" => PropertyDefinition.User.Name,
+            "password" => PropertyDefinition.Password.Name,
+            _ => null,
+        };
+    }
 
     public override string PrepareConnectionString(
         IDialect dialect,

@@ -69,12 +69,12 @@ public class AwsWrapperConnectionStringBuilderTests
     {
         var builder = new AwsWrapperConnectionStringBuilder
         {
-            ConnectionString = "Host=test.rds.amazonaws.com;Port=3306;User=admin;Password=secret;Plugins=failover",
+            ConnectionString = "Host=test.rds.amazonaws.com;Port=3306;Username=admin;Password=secret;Plugins=failover",
         };
 
         Assert.Equal("test.rds.amazonaws.com", builder.Host);
         Assert.Equal(3306, builder.Port);
-        Assert.Equal("admin", builder.User);
+        Assert.Equal("admin", builder.Username);
         Assert.Equal("secret", builder.Password);
         Assert.Equal("failover", builder.Plugins);
     }

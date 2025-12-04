@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data;
+using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -26,6 +27,32 @@ public class GenericTargetConnectionDialect : AbstractTargetConnectionDialect
     public GenericTargetConnectionDialect(Type connectionType)
     {
         this.DriverConnectionType = connectionType;
+    }
+
+    protected override DbConnectionStringBuilder CreateConnectionStringBuilder()
+    {
+        return new DbConnectionStringBuilder();
+    }
+
+    protected override string? MapDriverPropertyToWrapperProperty(string driverProperty, DbConnectionStringBuilder builder)
+    {
+        // Generic dialect uses basic mapping
+        var canonicalKey = builder.Keys.Cast<string>().FirstOrDefault(k =>
+            string.Equals(k, driverProperty, StringComparison.OrdinalIgnoreCase));
+
+        if (canonicalKey == null)
+        {
+            return null;
+        }
+
+        return canonicalKey.ToLowerInvariant() switch
+        {
+            "host" => PropertyDefinition.Host.Name,
+            "port" => PropertyDefinition.Port.Name,
+            "username" => PropertyDefinition.User.Name,
+            "password" => PropertyDefinition.Password.Name,
+            _ => null,
+        };
     }
 
     public override string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, bool isForceOpen = false)

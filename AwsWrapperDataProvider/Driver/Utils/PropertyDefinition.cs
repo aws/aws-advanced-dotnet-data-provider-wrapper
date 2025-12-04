@@ -23,7 +23,7 @@ public static class PropertyDefinition
         new("Port", null, "Connection port.");
 
     public static readonly AwsWrapperProperty User =
-        new("User", null, "The user name that the driver will use to connect to database.");
+        new("Username", null, "The user name that the driver will use to connect to database.");
 
     public static readonly AwsWrapperProperty Password =
         new("Password", null, "The password that the driver will use to connect to database.");

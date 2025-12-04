@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data;
+using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -28,6 +29,8 @@ public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
     public abstract Type DriverConnectionType { get; }
 
     public virtual Dictionary<string, string[]> AwsWrapperPropertyNameAliasesMap { get; } = new();
+
+    protected abstract DbConnectionStringBuilder CreateConnectionStringBuilder();
 
     public bool IsDialect(Type connectionType)
     {
@@ -74,16 +77,29 @@ public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
 
     public string? GetAliasAwsWrapperPropertyName(string propAlias)
     {
-        foreach (KeyValuePair<string, string[]> kvp in this.AwsWrapperPropertyNameAliasesMap)
+        var builder = this.CreateConnectionStringBuilder();
+        var tempProps = new Dictionary<string, string> { { propAlias, "dummy" }, };
+
+        try
         {
-            if (kvp.Value.Any(s => string.Equals(s, propAlias, StringComparison.OrdinalIgnoreCase)))
+            builder.ConnectionString = string.Join("; ", tempProps.Select(x => $"{x.Key}={x.Value}"));
+
+            // Check if the property was accepted by the builder
+            if (builder.ContainsKey(propAlias))
             {
-                return kvp.Key;
+                // Map known driver properties to AwsWrapperProperty names
+                return this.MapDriverPropertyToWrapperProperty(propAlias, builder);
             }
+        }
+        catch
+        {
+            // Property not recognized by driver
         }
 
         return null;
     }
+
+    protected abstract string? MapDriverPropertyToWrapperProperty(string driverProperty, DbConnectionStringBuilder builder);
 
     public abstract (bool ConnectionAlive, Exception? ConnectionException) Ping(IDbConnection connection);
 
@@ -104,29 +120,25 @@ public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
             }
         }
 
-        this.NormalizePropertyKeys(targetConnectionParameters);
-
-        return string.Join("; ", targetConnectionParameters.Select(x => $"{x.Key}={x.Value}"));
+        return this.NormalizeConnectionString(targetConnectionParameters);
     }
 
-    /// <summary>
-    /// Reverts AwsWrapperProperty names to default connection parameter names.
-    /// </summary>
-    /// <param name="props">Dictionary of wrapper properties.</param>
-    private void NormalizePropertyKeys(Dictionary<string, string> props)
+    protected string NormalizeConnectionString(Dictionary<string, string> props)
     {
-        foreach (var kvp in this.AwsWrapperPropertyNameAliasesMap)
+        var builder = this.CreateConnectionStringBuilder();
+
+        foreach (var kvp in props)
         {
-            var canonicalKey = kvp.Key;
-            var aliases = kvp.Value;
-
-            if (aliases.Length == 0 || !props.TryGetValue(canonicalKey, out var value))
+            try
             {
-                continue;
+                builder[kvp.Key] = kvp.Value;
             }
-
-            props.Remove(canonicalKey);
-            props[aliases[0]] = value;
+            catch
+            {
+                // Property not supported by driver, skip it
+            }
         }
+
+        return builder.ConnectionString;
     }
 }
