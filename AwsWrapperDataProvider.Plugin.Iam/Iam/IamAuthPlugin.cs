@@ -57,7 +57,7 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
 
     private async Task<DbConnection> ConnectInternal(HostSpec? hostSpec, Dictionary<string, string> props, ADONetDelegate<DbConnection> methodFunc)
     {
-        string iamUser = PropertyDefinition.User.GetString(props) ?? PropertyDefinition.UserId.GetString(props) ??
+        string iamUser = PropertyDefinition.User.GetString(props) ??
             throw new Exception("Could not determine user for IAM authentication.");
         string iamHost = PropertyDefinition.IamHost.GetString(props) ?? hostSpec?.Host ?? throw new Exception("Could not determine host for IAM authentication provider.");
 

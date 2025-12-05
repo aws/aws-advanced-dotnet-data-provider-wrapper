@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data;
+using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -26,6 +27,10 @@ public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
     protected const string DefaultPoolingParameterName = "Pooling";
 
     public abstract Type DriverConnectionType { get; }
+
+    public virtual Dictionary<string, string[]> AwsWrapperPropertyNameAliasesMap { get; } = new();
+
+    protected abstract DbConnectionStringBuilder CreateConnectionStringBuilder();
 
     public bool IsDialect(Type connectionType)
     {
@@ -70,9 +75,39 @@ public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
         return PropertyDefinition.Plugins.GetString(props) ?? DefaultPluginCode;
     }
 
+    public string? GetAliasAwsWrapperPropertyName(string propAlias)
+    {
+        var builder = this.CreateConnectionStringBuilder();
+        var tempProps = new Dictionary<string, string> { { propAlias, "dummy" }, };
+
+        try
+        {
+            builder.ConnectionString = string.Join("; ", tempProps.Select(x => $"{x.Key}={x.Value}"));
+
+            // Check if the property was accepted by the builder
+            if (builder.ContainsKey(propAlias))
+            {
+                // Get the canonical key and map it to AwsWrapperProperty name
+                var canonicalKey = builder.Keys.Cast<string>().FirstOrDefault();
+                if (canonicalKey != null)
+                {
+                    return this.MapCanonicalKeyToWrapperProperty(canonicalKey);
+                }
+            }
+        }
+        catch
+        {
+            // Property not recognized by driver
+        }
+
+        return null;
+    }
+
+    protected abstract string? MapCanonicalKeyToWrapperProperty(string canonicalKey);
+
     public abstract (bool ConnectionAlive, Exception? ConnectionException) Ping(IDbConnection connection);
 
-    protected virtual string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, AwsWrapperProperty hostProperty)
+    protected string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, AwsWrapperProperty hostProperty)
     {
         Dictionary<string, string> targetConnectionParameters = props.Where(x =>
             !PropertyDefinition.InternalWrapperProperties
@@ -89,6 +124,25 @@ public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
             }
         }
 
-        return string.Join("; ", targetConnectionParameters.Select(x => $"{x.Key}={x.Value}"));
+        return this.NormalizeConnectionString(targetConnectionParameters);
+    }
+
+    protected string NormalizeConnectionString(Dictionary<string, string> props)
+    {
+        var builder = this.CreateConnectionStringBuilder();
+
+        foreach (var kvp in props)
+        {
+            try
+            {
+                builder[kvp.Key] = kvp.Value;
+            }
+            catch
+            {
+                // Property not supported by driver, skip it
+            }
+        }
+
+        return builder.ConnectionString;
     }
 }

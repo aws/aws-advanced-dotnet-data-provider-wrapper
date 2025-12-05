@@ -60,7 +60,7 @@ public class AwsWrapperConnectionTest
         Dictionary<string, string> props = new()
         {
             { "TargetConnectionType", "MySqlConnector.MySqlConnection,MySqlConnector" },
-            { "Server", "<insert_rds_instance_here>" },
+            { "Host", "<insert_rds_instance_here>" },
         };
 
         // Using the mock failover plugin that always returns a new connection to simulate stale DNS
@@ -93,7 +93,7 @@ public class AwsWrapperConnectionTest
         Dictionary<string, string> props = new()
         {
             { "TargetConnectionType", "MySqlConnector.MySqlConnection,MySqlConnector" },
-            { "Server", "<insert_rds_instance_here>" },
+            { "Host", "<insert_rds_instance_here>" },
         };
 
         // Using the mock failover plugin that always returns a new connection to simulate stale DNS

@@ -179,7 +179,7 @@ public class ConnectionPropertiesUtilsTests
     {
         var props = new Dictionary<string, string>
         {
-            { "Server", "mydb.123456789012.us-east-1.rds.amazonaws.com" },
+            { "Host", "mydb.123456789012.us-east-1.rds.amazonaws.com" },
             { "Port", "3306" },
         };
 
