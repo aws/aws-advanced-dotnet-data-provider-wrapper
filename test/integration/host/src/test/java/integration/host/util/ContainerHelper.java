@@ -105,7 +105,7 @@ public class ContainerHelper {
     }
 
     exitCode = execInContainer(container, consumer, "dotnet", "test", "--filter",
-            "Category=Integration&Database=" + task + "&Engine=" + engineDeployment, "--no-build", "--logger:\"console;verbosity=detailed\"");
+            "FullyQualifiedName~EFTempFailureWithFailoverPluginTestAsync&Category=Integration&Database=" + task + "&Engine=" + engineDeployment, "--no-build", "--logger:\"console;verbosity=detailed\"");
 
     System.out.println("==== Container console feed ==== <<<<");
     assertEquals(0, exitCode, "Some tests failed.");

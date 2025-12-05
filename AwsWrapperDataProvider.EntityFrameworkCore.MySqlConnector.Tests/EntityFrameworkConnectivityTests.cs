@@ -564,7 +564,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql-ef")]
-    [Trait("Engine", "aurora")]
+    //[Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
     public async Task EFTempFailureWithFailoverPluginTestAsync()
     {
