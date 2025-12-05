@@ -87,8 +87,12 @@ public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
             // Check if the property was accepted by the builder
             if (builder.ContainsKey(propAlias))
             {
-                // Map known driver properties to AwsWrapperProperty names
-                return this.MapDriverPropertyToWrapperProperty(propAlias, builder);
+                // Get the canonical key and map it to AwsWrapperProperty name
+                var canonicalKey = builder.Keys.Cast<string>().FirstOrDefault();
+                if (canonicalKey != null)
+                {
+                    return this.MapCanonicalKeyToWrapperProperty(canonicalKey);
+                }
             }
         }
         catch
@@ -99,7 +103,7 @@ public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
         return null;
     }
 
-    protected abstract string? MapDriverPropertyToWrapperProperty(string driverProperty, DbConnectionStringBuilder builder);
+    protected abstract string? MapCanonicalKeyToWrapperProperty(string canonicalKey);
 
     public abstract (bool ConnectionAlive, Exception? ConnectionException) Ping(IDbConnection connection);
 

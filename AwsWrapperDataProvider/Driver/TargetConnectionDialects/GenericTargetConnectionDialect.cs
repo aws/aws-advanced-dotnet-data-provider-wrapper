@@ -34,17 +34,8 @@ public class GenericTargetConnectionDialect : AbstractTargetConnectionDialect
         return new DbConnectionStringBuilder();
     }
 
-    protected override string? MapDriverPropertyToWrapperProperty(string driverProperty, DbConnectionStringBuilder builder)
+    protected override string? MapCanonicalKeyToWrapperProperty(string canonicalKey)
     {
-        // Generic dialect uses basic mapping
-        var canonicalKey = builder.Keys.Cast<string>().FirstOrDefault(k =>
-            string.Equals(k, driverProperty, StringComparison.OrdinalIgnoreCase));
-
-        if (canonicalKey == null)
-        {
-            return null;
-        }
-
         return canonicalKey.ToLowerInvariant() switch
         {
             "host" => PropertyDefinition.Host.Name,

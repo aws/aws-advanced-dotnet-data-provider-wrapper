@@ -24,10 +24,10 @@ public class ConnectionPropertyAliasTests
     [Theory]
     [Trait("Category", "Unit")]
     [InlineData("Server", "Host")]
-    [InlineData("User ID", "User")]
-    [InlineData("user id", "User")]
-    [InlineData("Uid", "User")]
-    [InlineData("uid", "User")]
+    [InlineData("User ID", "Username")]
+    [InlineData("user id", "Username")]
+    [InlineData("Uid", "Username")]
+    [InlineData("uid", "Username")]
     public void MySqlClientDialect_AliasesMapToPropertyName(string alias, string expected)
     {
         var dialect = new MySqlClientDialect();
@@ -38,8 +38,8 @@ public class ConnectionPropertyAliasTests
     [Theory]
     [Trait("Category", "Unit")]
     [InlineData("Server", "Host")]
-    [InlineData("User ID", "User")]
-    [InlineData("Uid", "User")]
+    [InlineData("User ID", "Username")]
+    [InlineData("Uid", "Username")]
     public void MySqlConnectorDialect_AliasesMapToPropertyName(string alias, string expected)
     {
         var dialect = new MySqlConnectorDialect();
@@ -51,9 +51,9 @@ public class ConnectionPropertyAliasTests
     [Trait("Category", "Unit")]
     [InlineData("Host", "Host")]
     [InlineData("Server", "Host")]
-    [InlineData("Username", "User")]
-    [InlineData("User ID", "User")]
-    [InlineData("Uid", "User")]
+    [InlineData("Username", "Username")]
+    [InlineData("User ID", "Username")]
+    [InlineData("Uid", "Username")]
     public void NpgsqlDialect_AliasesMapToPropertyName(string alias, string expected)
     {
         var dialect = new NpgsqlDialect();
@@ -77,8 +77,8 @@ public class ConnectionPropertyAliasTests
 
         Assert.True(props.ContainsKey("Host"));
         Assert.Equal("localhost", props["Host"]);
-        Assert.True(props.ContainsKey("User"));
-        Assert.Equal("testuser", props["User"]);
+        Assert.True(props.ContainsKey("Username"));
+        Assert.Equal("testuser", props["Username"]);
         Assert.False(props.ContainsKey("Server"));
         Assert.False(props.ContainsKey("Uid"));
     }
