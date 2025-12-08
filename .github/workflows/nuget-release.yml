@@ -21,7 +21,7 @@ jobs:
       - name: Download NuGet package artifact
         uses: dawidd6/action-download-artifact@v11
         with:
-          name: nuget-package
+          name: nuget-packages
           run_id: 19877265090
           path: .\packages
 
@@ -30,6 +30,9 @@ jobs:
         with:
           role-to-assume: ${{ secrets.NUGET_ACCESS_ROLE_ARN }}
           aws-region: ${{ secrets.AWS_NUGET_KEY_REGION }}
+      
+      - run:
+          ls .\packages
 
       # - name: Publish to NuGet
       #   shell: pwsh
