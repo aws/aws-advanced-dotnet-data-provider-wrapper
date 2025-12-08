@@ -1,18 +1,15 @@
-name: Publish to NuGet on Release
+name: Publish to NuGet
 
 on:
-  push:
-    branches:
-      - chore/draft-release
   workflow_dispatch:
     inputs:
       run_id:
-        description: "Run ID of Workflow A"
+        description: "Run ID of draft release workflow"
         required: true
 
 permissions:
   id-token: write   # This is required for requesting the JWT
-  contents: read    # This is required for actions/checkout
+  contents: read    # This is required for dawidd6/action-download-artifact
 
 jobs:
   publish-nuget:
@@ -22,7 +19,7 @@ jobs:
         uses: dawidd6/action-download-artifact@v11
         with:
           name: nuget-packages
-          run_id: 19877265090
+          run_id: ${{ github.event.inputs.run_id }}
           path: .\packages
 
       - name: Configure NuGet credential
@@ -30,12 +27,9 @@ jobs:
         with:
           role-to-assume: ${{ secrets.NUGET_ACCESS_ROLE_ARN }}
           aws-region: ${{ secrets.AWS_NUGET_KEY_REGION }}
-      
-      - run:
-          ls .\packages
 
-      # - name: Publish to NuGet
-      #   shell: pwsh
-      #   run: |
-      #     $nugetKey = aws secretsmanager get-secret-value --secret-id ${{ secrets.NUGET_SECRETS_ID }} --region ${{ secrets.AWS_NUGET_KEY_REGION }} --output text --query SecretString | ConvertFrom-Json
-      #     dotnet nuget push .\packages\*.nupkg --source https://api.nuget.org/v3/index.json --api-key $nugetKey.Key
+      - name: Publish to NuGet
+        shell: pwsh
+        run: |
+          $nugetKey = aws secretsmanager get-secret-value --secret-id ${{ secrets.NUGET_SECRETS_ID }} --region ${{ secrets.AWS_NUGET_KEY_REGION }} --output text --query SecretString | ConvertFrom-Json
+          dotnet nuget push .\packages\*.nupkg --source https://api.nuget.org/v3/index.json --api-key $nugetKey.Key
