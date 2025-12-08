@@ -1,6 +1,9 @@
 name: Publish to NuGet on Release
 
 on:
+  push:
+    branches:
+      - chore/draft-release
   workflow_dispatch:
     inputs:
       run_id:
@@ -19,7 +22,7 @@ jobs:
         uses: dawidd6/action-download-artifact@v11
         with:
           name: nuget-package
-          run_id: ${{ github.event.inputs.run_id }}
+          run_id: 19877265090
           path: .\packages
 
       - name: Configure NuGet credential
