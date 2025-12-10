@@ -73,7 +73,7 @@ jobs:
             -AwsSignedBucket "${{ secrets.AWS_SIGNED_BUCKET }}" `
             -AwsBucketKeyPrefix "${{ secrets.AWS_S3_BUCKET_KEY_PREFIX }}"
 
-      - name: 'Set Version Env Variable'
+      - name: Set Version Env Variable
         shell: pwsh
         run: |
           $version  = $env:GITHUB_REF -replace '^refs/.*/', ''
@@ -109,7 +109,7 @@ jobs:
             unzip -j "$pkg" "lib/**/*.dll" -d release-assets
           done
       
-      - name: 'Get Release Details'
+      - name: Get Release Details
         shell: bash
         run: |
           export RELEASE_DETAILS="$(awk -vN=2 'n<N;/^## /{++n}' CHANGELOG.md)"
@@ -118,7 +118,7 @@ jobs:
           touch RELEASE_DETAILS.md
           echo "$RELEASE_DETAILS" > RELEASE_DETAILS.md
 
-      - name: "Upload to Draft Release"
+      - name: Upload to Draft Release
         uses: ncipollo/release-action@v1
         with:
           draft: true
