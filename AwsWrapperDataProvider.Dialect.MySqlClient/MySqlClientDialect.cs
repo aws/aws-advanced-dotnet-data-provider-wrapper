@@ -29,12 +29,12 @@ public class MySqlClientDialect : AbstractTargetConnectionDialect
 
     public override Type DriverConnectionType { get; } = typeof(MySqlConnection);
 
-    protected override DbConnectionStringBuilder CreateConnectionStringBuilder()
+    public override DbConnectionStringBuilder CreateConnectionStringBuilder()
     {
         return new MySqlConnectionStringBuilder();
     }
 
-    protected override string? MapCanonicalKeyToWrapperProperty(string canonicalKey)
+    public override string? MapCanonicalKeyToWrapperProperty(string canonicalKey)
     {
         return canonicalKey.ToLowerInvariant() switch
         {

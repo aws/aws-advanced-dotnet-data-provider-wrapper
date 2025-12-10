@@ -29,12 +29,12 @@ public class GenericTargetConnectionDialect : AbstractTargetConnectionDialect
         this.DriverConnectionType = connectionType;
     }
 
-    protected override DbConnectionStringBuilder CreateConnectionStringBuilder()
+    public override DbConnectionStringBuilder CreateConnectionStringBuilder()
     {
         return new DbConnectionStringBuilder();
     }
 
-    protected override string? MapCanonicalKeyToWrapperProperty(string canonicalKey)
+    public override string? MapCanonicalKeyToWrapperProperty(string canonicalKey)
     {
         return canonicalKey.ToLowerInvariant() switch
         {

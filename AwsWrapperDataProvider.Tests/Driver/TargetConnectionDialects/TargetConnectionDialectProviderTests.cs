@@ -127,11 +127,19 @@ public class TargetConnectionDialectProviderTests
             return "efm,failover";
         }
 
-        public string? GetAliasAwsWrapperPropertyName(string propAlias) => null;
-
         public string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, bool isForceOpen = false)
         {
             return "TestConnectionString";
+        }
+
+        public DbConnectionStringBuilder CreateConnectionStringBuilder()
+        {
+            return new DbConnectionStringBuilder();
+        }
+
+        public string? MapCanonicalKeyToWrapperProperty(string canonicalKey)
+        {
+            throw new NotImplementedException();
         }
     }
 }

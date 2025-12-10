@@ -17,6 +17,7 @@ using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
@@ -113,7 +114,7 @@ public class DialectProvider
                    throw new InvalidOperationException($"Failed to instantiate custom dialect type '{customDialectTypeName}'");
         }
 
-        string host = PropertyDefinition.Host.GetString(this.properties) ?? throw new ArgumentException("Connection url is missing.");
+        string host = PropertyDefinition.Host.GetString(this.properties) ?? throw new ArgumentException(Resources.Error_ConnectionUrlMissing);
         IList<HostSpec> hosts = ConnectionPropertiesUtils.GetHostsFromProperties(
             this.properties,
             this.pluginService.HostSpecBuilder,

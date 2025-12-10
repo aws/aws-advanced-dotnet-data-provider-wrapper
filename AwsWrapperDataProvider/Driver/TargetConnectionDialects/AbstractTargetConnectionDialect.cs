@@ -28,10 +28,6 @@ public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
 
     public abstract Type DriverConnectionType { get; }
 
-    public virtual Dictionary<string, string[]> AwsWrapperPropertyNameAliasesMap { get; } = new();
-
-    protected abstract DbConnectionStringBuilder CreateConnectionStringBuilder();
-
     public bool IsDialect(Type connectionType)
     {
         return connectionType == this.DriverConnectionType;
@@ -75,35 +71,7 @@ public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
         return PropertyDefinition.Plugins.GetString(props) ?? DefaultPluginCode;
     }
 
-    public string? GetAliasAwsWrapperPropertyName(string propAlias)
-    {
-        var builder = this.CreateConnectionStringBuilder();
-        var tempProps = new Dictionary<string, string> { { propAlias, "dummy" }, };
-
-        try
-        {
-            builder.ConnectionString = string.Join("; ", tempProps.Select(x => $"{x.Key}={x.Value}"));
-
-            // Check if the property was accepted by the builder
-            if (builder.ContainsKey(propAlias))
-            {
-                // Get the canonical key and map it to AwsWrapperProperty name
-                var canonicalKey = builder.Keys.Cast<string>().FirstOrDefault();
-                if (canonicalKey != null)
-                {
-                    return this.MapCanonicalKeyToWrapperProperty(canonicalKey);
-                }
-            }
-        }
-        catch
-        {
-            // Property not recognized by driver
-        }
-
-        return null;
-    }
-
-    protected abstract string? MapCanonicalKeyToWrapperProperty(string canonicalKey);
+    public abstract string? MapCanonicalKeyToWrapperProperty(string canonicalKey);
 
     public abstract (bool ConnectionAlive, Exception? ConnectionException) Ping(IDbConnection connection);
 
@@ -133,16 +101,14 @@ public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
 
         foreach (var kvp in props)
         {
-            try
-            {
-                builder[kvp.Key] = kvp.Value;
-            }
-            catch
-            {
-                // Property not supported by driver, skip it
-            }
+            builder[kvp.Key] = kvp.Value;
         }
 
         return builder.ConnectionString;
+    }
+
+    public virtual DbConnectionStringBuilder CreateConnectionStringBuilder()
+    {
+        return new DbConnectionStringBuilder();
     }
 }

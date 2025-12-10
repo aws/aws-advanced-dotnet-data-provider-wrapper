@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using AwsWrapperDataProvider.Dialect.MySqlClient;
 using AwsWrapperDataProvider.Dialect.MySqlConnector;
+using AwsWrapperDataProvider.Dialect.Npgsql;
 using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.Dialects;
@@ -24,6 +26,11 @@ namespace AwsWrapperDataProvider.Tests;
 
 public class AwsWrapperConnectionTest
 {
+    static AwsWrapperConnectionTest()
+    {
+        MySqlConnectorDialectLoader.Load();
+    }
+
     [Fact]
     [Trait("Category", "Unit")]
     public void Constructor_WithTypeArgument_SetsTargetConnectionTypeInProperties()

@@ -26,12 +26,12 @@ public class NpgsqlDialect : AbstractTargetConnectionDialect
 {
     public override Type DriverConnectionType { get; } = typeof(NpgsqlConnection);
 
-    protected override DbConnectionStringBuilder CreateConnectionStringBuilder()
+    public override DbConnectionStringBuilder CreateConnectionStringBuilder()
     {
         return new NpgsqlConnectionStringBuilder();
     }
 
-    protected override string? MapCanonicalKeyToWrapperProperty(string canonicalKey)
+    public override string? MapCanonicalKeyToWrapperProperty(string canonicalKey)
     {
         return canonicalKey.ToLowerInvariant() switch
         {

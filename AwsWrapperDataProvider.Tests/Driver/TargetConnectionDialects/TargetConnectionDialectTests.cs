@@ -40,19 +40,12 @@ public class TargetConnectionDialectTests
     private static readonly Dictionary<string, string> ConnectionProps = new()
     {
         { "Database", "testdb" },
-        { "Username", "testuser" },
-        { "Password", "testpass" },
+        { "uid", "testuser" },
+        { "pwd", "testpass" },
     };
 
     private static readonly Dictionary<string, string> BasicDatabaseProps = new()
     {
-        { "Database", "testdb" },
-    };
-
-    private static readonly Dictionary<string, string> PropertiesWithHost = new()
-    {
-        { "Host", "original-host" },
-        { "Port", "5432" },
         { "Database", "testdb" },
     };
 
@@ -103,7 +96,7 @@ public class TargetConnectionDialectTests
     {
         var connectionDialect = new NpgsqlDialect();
         var dialect = new PgDialect();
-        var connectionString = connectionDialect.PrepareConnectionString(dialect, null, PropertiesWithHost);
+        var connectionString = connectionDialect.PrepareConnectionString(dialect, null, PropertiesWithServer);
 
         Assert.Contains("Host=original-host", connectionString);
         Assert.Contains("Port=5432", connectionString);

@@ -42,30 +42,33 @@ internal static class ConnectionPropertiesUtils
         return props;
     }
 
-    internal static void NormalizeConnectionPropertyKeys(ITargetConnectionDialect dialect,
-        Dictionary<string, string> props)
+    internal static void NormalizeConnectionPropertyKeys(ITargetConnectionDialect dialect, Dictionary<string, string> props)
     {
-        var propKeys = props.Keys.ToList();
-
-        foreach (var key in propKeys)
+        var builder = dialect.CreateConnectionStringBuilder();
+        foreach (var kv in props)
         {
-            string? awsWrapperPropertyName = dialect.GetAliasAwsWrapperPropertyName(key);
-
-            if (string.IsNullOrEmpty(awsWrapperPropertyName) || props.Comparer.Equals(awsWrapperPropertyName, key))
+            try
             {
-                continue;
+                builder[kv.Key] = kv.Value;
+                props.Remove(kv.Key);
             }
-
-            if (props.ContainsKey(awsWrapperPropertyName))
+            catch
             {
-                props.Remove(key);
-                continue;
+                // not recognized by builder, but could be wrapper property
             }
+        }
 
-            if (props.TryGetValue(key, out var value))
+        foreach (string key in builder.Keys)
+        {
+            var wrapperPropertyName = dialect.MapCanonicalKeyToWrapperProperty(key);
+            var value = builder[key]?.ToString() ?? string.Empty;
+            if (!string.IsNullOrEmpty(wrapperPropertyName))
             {
-                props.Remove(key);
-                props[awsWrapperPropertyName] = value;
+                props[wrapperPropertyName] = value;
+            }
+            else
+            {
+                props[key] = value;
             }
         }
     }

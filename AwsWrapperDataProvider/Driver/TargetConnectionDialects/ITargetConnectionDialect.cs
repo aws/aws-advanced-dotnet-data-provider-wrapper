@@ -16,7 +16,6 @@ using System.Data;
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
-using AwsWrapperDataProvider.Driver.Utils;
 
 namespace AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 
@@ -29,11 +28,6 @@ public interface ITargetConnectionDialect
     /// Gets DbConnection type associated with this dialect.
     /// </summary>
     Type DriverConnectionType { get; }
-
-    /// <summary>
-    /// Gets Dictionary where the `key` is an AwsWrapperProperty name and the `value` is a list of aliases.
-    /// </summary>
-    Dictionary<string, string[]> AwsWrapperPropertyNameAliasesMap { get; }
 
     /// <summary>
     /// Determines if the given connection type matches this dialect.
@@ -73,10 +67,7 @@ public interface ITargetConnectionDialect
     /// <returns>A string of plugin codes.</returns>
     string GetPluginCodesOrDefault(Dictionary<string, string> props);
 
-    /// <summary>
-    /// Get AwsWrapperProperty.Name for given property alias.
-    /// </summary>
-    /// <param name="propAlias">Alias to check.</param>
-    /// <returns>AwsWrapperProperty.Name of given alias if exists else returns null.</returns>
-    string? GetAliasAwsWrapperPropertyName(string propAlias);
+    DbConnectionStringBuilder CreateConnectionStringBuilder();
+
+    string? MapCanonicalKeyToWrapperProperty(string canonicalKey);
 }
