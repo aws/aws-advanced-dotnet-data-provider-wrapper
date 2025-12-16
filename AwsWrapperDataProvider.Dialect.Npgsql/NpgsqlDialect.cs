@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data;
+using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
@@ -24,6 +25,23 @@ namespace AwsWrapperDataProvider.Dialect.Npgsql;
 public class NpgsqlDialect : AbstractTargetConnectionDialect
 {
     public override Type DriverConnectionType { get; } = typeof(NpgsqlConnection);
+
+    public override DbConnectionStringBuilder CreateConnectionStringBuilder()
+    {
+        return new NpgsqlConnectionStringBuilder();
+    }
+
+    public override string? MapCanonicalKeyToWrapperProperty(string canonicalKey)
+    {
+        return canonicalKey.ToLowerInvariant() switch
+        {
+            "host" => PropertyDefinition.Host.Name,
+            "port" => PropertyDefinition.Port.Name,
+            "username" => PropertyDefinition.User.Name,
+            "password" => PropertyDefinition.Password.Name,
+            _ => null,
+        };
+    }
 
     public override string PrepareConnectionString(
         IDialect dialect,

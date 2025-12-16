@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data;
+using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
@@ -28,6 +29,23 @@ public class MySqlConnectorDialect : AbstractTargetConnectionDialect
 
     public override Type DriverConnectionType { get; } = typeof(MySqlConnection);
 
+    public override DbConnectionStringBuilder CreateConnectionStringBuilder()
+    {
+        return new MySqlConnectionStringBuilder();
+    }
+
+    public override string? MapCanonicalKeyToWrapperProperty(string canonicalKey)
+    {
+        return canonicalKey.ToLowerInvariant() switch
+        {
+            "server" => PropertyDefinition.Host.Name,
+            "port" => PropertyDefinition.Port.Name,
+            "user id" => PropertyDefinition.User.Name,
+            "password" => PropertyDefinition.Password.Name,
+            _ => null,
+        };
+    }
+
     public override string PrepareConnectionString(
         IDialect dialect,
         HostSpec? hostSpec,
@@ -42,7 +60,7 @@ public class MySqlConnectorDialect : AbstractTargetConnectionDialect
             copyOfProps[DefaultPoolingParameterName] = "false";
         }
 
-        return this.PrepareConnectionString(dialect, hostSpec, copyOfProps, PropertyDefinition.Server);
+        return this.PrepareConnectionString(dialect, hostSpec, copyOfProps, PropertyDefinition.Host);
     }
 
     public override (bool ConnectionAlive, Exception? ConnectionException) Ping(IDbConnection connection)

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data;
+using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -70,9 +71,11 @@ public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
         return PropertyDefinition.Plugins.GetString(props) ?? DefaultPluginCode;
     }
 
+    public abstract string? MapCanonicalKeyToWrapperProperty(string canonicalKey);
+
     public abstract (bool ConnectionAlive, Exception? ConnectionException) Ping(IDbConnection connection);
 
-    protected virtual string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, AwsWrapperProperty hostProperty)
+    protected string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, AwsWrapperProperty hostProperty)
     {
         Dictionary<string, string> targetConnectionParameters = props.Where(x =>
             !PropertyDefinition.InternalWrapperProperties
@@ -89,6 +92,23 @@ public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
             }
         }
 
-        return string.Join("; ", targetConnectionParameters.Select(x => $"{x.Key}={x.Value}"));
+        return this.NormalizeConnectionString(targetConnectionParameters);
+    }
+
+    protected string NormalizeConnectionString(Dictionary<string, string> props)
+    {
+        var builder = this.CreateConnectionStringBuilder();
+
+        foreach (var kvp in props)
+        {
+            builder[kvp.Key] = kvp.Value;
+        }
+
+        return builder.ConnectionString;
+    }
+
+    public virtual DbConnectionStringBuilder CreateConnectionStringBuilder()
+    {
+        return new DbConnectionStringBuilder();
     }
 }

@@ -16,7 +16,6 @@ using System.Data;
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
-using AwsWrapperDataProvider.Driver.Utils;
 
 namespace AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 
@@ -67,4 +66,8 @@ public interface ITargetConnectionDialect
     /// <param name="props">Connection properties.</param>
     /// <returns>A string of plugin codes.</returns>
     string GetPluginCodesOrDefault(Dictionary<string, string> props);
+
+    DbConnectionStringBuilder CreateConnectionStringBuilder();
+
+    string? MapCanonicalKeyToWrapperProperty(string canonicalKey);
 }
