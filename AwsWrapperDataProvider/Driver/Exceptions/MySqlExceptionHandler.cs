@@ -42,22 +42,30 @@ public class MySqlExceptionHandler : GenericExceptionHandler
     }
 
     // TODO: Check if we need to handle HikariMariaDb exception codes as well.
-    private readonly HashSet<string> networkErrorStates =
-    [
+    protected override IReadOnlySet<string> NetworkErrorStates { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
         "08000", // Connection Exception
         "08001", // SQL client unable to establish SQL connection
         "08004", // SQL server rejected SQL connection
         "08S01", // Communication link failure
-    ];
+    };
 
-    private readonly HashSet<string> loginErrorStates =
-    [
+    protected override IReadOnlySet<string> LoginErrorStates { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
         "28000", // Invalid authorization specification
-    ];
+    };
 
-    protected override HashSet<string> NetworkErrorStates => this.networkErrorStates;
+    protected override IReadOnlySet<string> SyntaxErrorStates { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
+        "42000", // Syntax error or access violation
+        "3F000", // Schema does not exist
+    };
 
-    protected override HashSet<string> LoginErrorStates => this.loginErrorStates;
+    private static IReadOnlySet<int> SyntaxErrorNumbers { get; } = new HashSet<int>()
+    {
+        1064, // ER_PARSE_ERROR
+        1049, // ER_BAD_DB_ERROR
+    };
 
     public override bool IsLoginException(Exception exception)
     {
@@ -80,7 +88,7 @@ public class MySqlExceptionHandler : GenericExceptionHandler
     {
         if (exception.SqlState == null && IsMySqlException(exception))
         {
-            // invalid username/password
+            // ER_ACCESS_DENIED_ERROR
             return GetMySqlExceptionNumber(exception) == 1045;
         }
         else
@@ -139,5 +147,15 @@ public class MySqlExceptionHandler : GenericExceptionHandler
 
         Logger.LogDebug(Resources.MySqlExceptionHandler_IsNetworkException_InvalidNetworkException);
         return false;
+    }
+
+    public override bool IsSyntaxError(Exception exception)
+    {
+        if (base.IsSyntaxError(exception))
+        {
+            return true;
+        }
+
+        return IsMySqlException(exception) && SyntaxErrorNumbers.Contains(GetMySqlExceptionNumber(exception));
     }
 }

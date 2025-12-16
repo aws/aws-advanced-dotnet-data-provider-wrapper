@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
-
 namespace AwsWrapperDataProvider.Driver.Exceptions;
 
 /// <summary>
@@ -48,4 +46,11 @@ public interface IExceptionHandler
     /// <param name="exception">The exception to check.</param>
     /// <returns>True if it's a login exception, false otherwise.</returns>
     bool IsLoginException(Exception exception);
+
+    /// <summary>
+    /// Determines if the given exception is a syntax exception.
+    /// </summary>
+    /// <param name="exception">The exception to check.</param>
+    /// <returns>True if it's a syntax exception, false otherwise.</returns>
+    bool IsSyntaxError(Exception exception);
 }

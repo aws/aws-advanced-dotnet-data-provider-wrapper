@@ -81,7 +81,7 @@ public class AuroraPgDialect : PgDialect
                 hasTopology = true;
             }
         }
-        catch (Exception ex) when (this.IsSyntaxError(ex))
+        catch (Exception ex) when (this.ExceptionHandler.IsSyntaxError(ex))
         {
             // Syntax error - expected when querying against incorrect dialect
         }

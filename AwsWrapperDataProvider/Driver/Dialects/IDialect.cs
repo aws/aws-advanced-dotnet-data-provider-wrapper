@@ -49,13 +49,6 @@ public interface IDialect
     /// <param name="props">Connection properties.</param>
     /// <param name="hostSpec">HostSpec containing current host information.</param>
     void PrepareConnectionProperties(Dictionary<string, string> props, HostSpec hostSpec);
-
-    /// <summary>
-    /// Determines if the given exception is a syntax error.
-    /// </summary>
-    /// <param name="ex">The exception to check.</param>
-    /// <returns>True if it's a syntax error, false otherwise.</returns>
-    bool IsSyntaxError(Exception ex);
 }
 
 /// <summary>

@@ -86,7 +86,7 @@ public class RdsMultiAzDbClusterPgDialect : PgDialect
                 return await reader.ReadAsync() && !(await reader.IsDBNullAsync(0));
             }
         }
-        catch (Exception ex) when (this.IsSyntaxError(ex))
+        catch (Exception ex) when (this.ExceptionHandler.IsSyntaxError(ex))
         {
             // Syntax error - expected when querying against incorrect dialect
         }
