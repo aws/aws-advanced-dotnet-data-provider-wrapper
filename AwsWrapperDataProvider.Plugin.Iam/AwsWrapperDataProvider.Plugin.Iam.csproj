@@ -8,7 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AWSSDK.RDS" Version="4.0.10" />
+        <PackageReference Include="AWSSDK.RDS" Version="4.0.15.2" />
     </ItemGroup>
 
     <ItemGroup>
