@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data.Common;
+using AwsWrapperDataProvider.Dialect.Npgsql;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.Plugins;
@@ -34,6 +35,7 @@ public class AwsWrapperTransactionTests
 
     public AwsWrapperTransactionTests()
     {
+        NpgsqlDialectLoader.Load();
         AwsWrapperConnection<NpgsqlConnection> connection = new("Server=192.0.0.1;Database=test;User Id=user;Password=password;");
 
         this.mockTargetTransaction = new Mock<DbTransaction>();
