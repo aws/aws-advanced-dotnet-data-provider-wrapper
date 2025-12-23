@@ -82,9 +82,13 @@ public class RdsMultiAzDbClusterMySqlDialect : MySqlDialect
                 return !string.IsNullOrEmpty(reportHost);
             }
         }
+        catch (Exception ex) when (this.ExceptionHandler.IsSyntaxError(ex))
+        {
+            // Syntax error - expected when querying against incorrect dialect
+        }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, Resources.Error_CantCheckDialect, nameof(RdsMultiAzDbClusterMySqlDialect));
+            Logger.LogTrace(ex, Resources.Error_CantCheckDialect, nameof(RdsMultiAzDbClusterMySqlDialect));
         }
 
         return false;

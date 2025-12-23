@@ -23,10 +23,13 @@ namespace AwsWrapperDataProvider.Driver.Exceptions;
 public class GenericExceptionHandler : IExceptionHandler
 {
     // Common SQL states for network-related issues across different databases
-    protected virtual HashSet<string> NetworkErrorStates => new(StringComparer.OrdinalIgnoreCase);
+    protected virtual IReadOnlySet<string> NetworkErrorStates { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
     // Common SQL states for authentication-related issues across different databases
-    protected virtual HashSet<string> LoginErrorStates => new(StringComparer.OrdinalIgnoreCase);
+    protected virtual IReadOnlySet<string> LoginErrorStates { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+    // Common SQL states for syntax issues across different databases
+    protected virtual IReadOnlySet<string> SyntaxErrorStates { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
     public virtual bool IsNetworkException(string sqlState) => this.NetworkErrorStates.Contains(sqlState);
 
@@ -36,7 +39,7 @@ public class GenericExceptionHandler : IExceptionHandler
 
     public virtual bool IsLoginException(Exception exception) => this.ExceptionHasSqlState(exception, this.LoginErrorStates);
 
-    protected bool ExceptionHasSqlState(Exception exception, HashSet<string> sqlStates)
+    protected bool ExceptionHasSqlState(Exception exception, IEnumerable<string> sqlStates)
     {
         Exception? currException = exception;
 
@@ -53,5 +56,21 @@ public class GenericExceptionHandler : IExceptionHandler
         }
 
         return false;
+    }
+
+    public virtual bool IsSyntaxError(Exception exception)
+    {
+        if (exception is not DbException dbEx)
+        {
+            return false;
+        }
+
+        var state = dbEx.SqlState;
+        if (string.IsNullOrEmpty(state))
+        {
+            return false;
+        }
+
+        return this.SyntaxErrorStates.Any(state.StartsWith);
     }
 }

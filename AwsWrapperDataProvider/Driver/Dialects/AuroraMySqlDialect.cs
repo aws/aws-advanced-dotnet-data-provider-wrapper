@@ -52,9 +52,13 @@ public class AuroraMySqlDialect : MySqlDialect
             await using var reader = await command.ExecuteReaderAsync();
             return await reader.ReadAsync();
         }
+        catch (Exception ex) when (this.ExceptionHandler.IsSyntaxError(ex))
+        {
+            // Syntax error - expected when querying against incorrect dialect
+        }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, Resources.Error_CantCheckDialect, nameof(AuroraMySqlDialect));
+            Logger.LogTrace(ex, Resources.Error_CantCheckDialect, nameof(AuroraMySqlDialect));
         }
 
         return false;
