@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using AwsWrapperDataProvider.Dialect.MySqlClient;
+using AwsWrapperDataProvider.Dialect.MySqlConnector;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.HostInfo;
@@ -31,6 +32,8 @@ public class ConnectionPluginManagerTests
 
     public ConnectionPluginManagerTests()
     {
+        MySqlConnectorDialectLoader.Load();
+        MySqlClientDialectLoader.Load();
         this.mockConnectionProvider = Mock.Of<IConnectionProvider>();
         this.mockWrapperConnection = new Mock<AwsWrapperConnection<MySqlConnection>>(
             "Server=<insert_rds_instance_here>;User ID=admin;Password=<password>;Initial Catalog=test;").Object;
