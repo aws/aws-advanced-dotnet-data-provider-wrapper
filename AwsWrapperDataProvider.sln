@@ -37,6 +37,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NHibernateExample", "docs\e
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AwsWrapperDataProviderExample", "docs\examples\AwsWrapperDataProviderExample\AwsWrapperDataProviderExample.csproj", "{D87E38B7-7E97-4439-8BD6-915B3DB4178B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AwsWrapperDataProvider.Performance.Tests", "AwsWrapperDataProvider.Performance.Tests\AwsWrapperDataProvider.Performance.Tests.csproj", "{1A00C448-9549-4995-9180-C70C908963A5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -95,6 +97,10 @@ Global
 		{D87E0507-5E62-4852-BDFC-CB9E167A85FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D87E0507-5E62-4852-BDFC-CB9E167A85FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D87E0507-5E62-4852-BDFC-CB9E167A85FB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1A00C448-9549-4995-9180-C70C908963A5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A00C448-9549-4995-9180-C70C908963A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A00C448-9549-4995-9180-C70C908963A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A00C448-9549-4995-9180-C70C908963A5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
