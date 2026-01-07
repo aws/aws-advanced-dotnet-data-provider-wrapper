@@ -1,0 +1,58 @@
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// 
+// Licensed under the Apache License, Version 2.0 (the "License").
+// You may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+// http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+namespace AwsWrapperDataProvider.Performance.Tests;
+using NPOI.SS.UserModel;
+
+public class AdvancedPerformanceStatistics : IPerformanceStatistics
+{
+    public string ParameterDriverName { get; set; }
+
+    public int ParameterFailoverDelayMs { get; set; }
+
+    public long FailureDetectionTimeMs { get; set; }
+
+    public long ReconnectTimeMs { get; set ; }
+
+    public long DnsUpdateTimeMs { get; set; }
+
+    public void WriteHeader(IRow row)
+    {
+        row.CreateCell(0).SetCellValue("Driver Configuration");
+        row.CreateCell(1).SetCellValue("Failover Delay Ms");
+        row.CreateCell(2).SetCellValue("Failure Detection Time Ms");
+        row.CreateCell(3).SetCellValue("Reconnect Time Ms");
+        row.CreateCell(4).SetCellValue("DNS Update Time Ms");
+    }
+
+    public void WriteData(IRow row)
+    {
+        row.CreateCell(0).SetCellValue(this.ParameterDriverName);
+        row.CreateCell(1).SetCellValue(this.ParameterFailoverDelayMs);
+        row.CreateCell(2).SetCellValue(this.FailureDetectionTimeMs);
+        row.CreateCell(3).SetCellValue(this.ReconnectTimeMs);
+        row.CreateCell(4).SetCellValue(this.DnsUpdateTimeMs);
+    }
+
+    public override string ToString()
+    {
+        return
+            $"{base.ToString()} " +
+            $"[\nParamDriverName={this.ParameterDriverName}," +
+            $"\nParamFailoverDelayMs={this.ParameterFailoverDelayMs}," +
+            $"\nFailureDetectionTimeMs={this.FailureDetectionTimeMs}," +
+            $"\nReconnectTimeMs={this.ReconnectTimeMs}," +
+            $"\nDnsUpdateTimeMs={this.DnsUpdateTimeMs} ]";
+    }
+}
