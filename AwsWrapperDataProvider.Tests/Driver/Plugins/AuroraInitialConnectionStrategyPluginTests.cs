@@ -63,19 +63,6 @@ public class AuroraInitialConnectionStrategyPluginTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task InitHostProvider_WithStaticProvider_ThrowsException()
-    {
-        this.mockHostListProviderService.Setup(x => x.IsStaticHostListProvider()).Returns(true);
-        var initFunc = new Mock<ADONetDelegate>();
-
-        var exception = await Assert.ThrowsAsync<Exception>(() =>
-            this.plugin.InitHostProvider("test-url", this.defaultProps, this.mockHostListProviderService.Object, initFunc.Object));
-
-        Assert.Equal("AuroraInitialConnectionStrategyPlugin requires dynamic provider.", exception.Message);
-    }
-
-    [Fact]
-    [Trait("Category", "Unit")]
     public async Task InitHostProvider_WithDynamicProvider_CallsInitFunction()
     {
         this.mockHostListProviderService.Setup(x => x.IsStaticHostListProvider()).Returns(false);

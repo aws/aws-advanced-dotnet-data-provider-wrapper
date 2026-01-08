@@ -54,9 +54,13 @@ public class RdsMySqlDialect : MySqlDialect
                 }
             }
         }
+        catch (Exception ex) when (this.ExceptionHandler.IsSyntaxError(ex))
+        {
+            // Syntax error - expected when querying against incorrect dialect
+        }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, Resources.Error_CantCheckDialect, nameof(RdsMySqlDialect));
+            Logger.LogTrace(ex, Resources.Error_CantCheckDialect, nameof(RdsMySqlDialect));
         }
 
         return false;

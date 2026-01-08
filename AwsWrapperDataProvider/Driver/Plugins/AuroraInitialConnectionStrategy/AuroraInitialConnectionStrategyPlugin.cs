@@ -47,11 +47,6 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
     {
         this.hostListProviderService = hostListProviderService;
 
-        if (this.hostListProviderService.IsStaticHostListProvider())
-        {
-            throw new Exception(Resources.AuroraInitialConnectionStrategyPlugin_InitHostProvider_RequiresDynamicProvider);
-        }
-
         await initHostProviderFunc.Invoke();
     }
 

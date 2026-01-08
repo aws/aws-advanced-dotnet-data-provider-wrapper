@@ -109,6 +109,8 @@ public class TargetConnectionDialectProviderTests
     {
         public Type DriverConnectionType => typeof(NpgsqlConnection);
 
+        public Dictionary<string, string[]> AwsWrapperPropertyNameAliasesMap { get; } = new();
+
         public bool IsDialect(Type connectionType) => connectionType == typeof(NpgsqlConnection);
 
         public string? GetSqlState(DbException exception) => string.Empty;
@@ -128,6 +130,16 @@ public class TargetConnectionDialectProviderTests
         public string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, bool isForceOpen = false)
         {
             return "TestConnectionString";
+        }
+
+        public DbConnectionStringBuilder CreateConnectionStringBuilder()
+        {
+            return new DbConnectionStringBuilder();
+        }
+
+        public string? MapCanonicalKeyToWrapperProperty(string canonicalKey)
+        {
+            throw new NotImplementedException();
         }
     }
 }

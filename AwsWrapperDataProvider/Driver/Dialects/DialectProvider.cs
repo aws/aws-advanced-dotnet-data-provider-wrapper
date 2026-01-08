@@ -111,7 +111,7 @@ public class DialectProvider
                    throw new InvalidOperationException(string.Format(Resources.Error_FailedToInstantiateDialect, customDialectTypeName));
         }
 
-        string host = PropertyDefinition.GetConnectionUrl(this.properties);
+        string host = PropertyDefinition.Host.GetString(this.properties) ?? throw new ArgumentException(Resources.Error_ConnectionUrlMissing);
         IList<HostSpec> hosts = ConnectionPropertiesUtils.GetHostsFromProperties(
             this.properties,
             this.pluginService.HostSpecBuilder,

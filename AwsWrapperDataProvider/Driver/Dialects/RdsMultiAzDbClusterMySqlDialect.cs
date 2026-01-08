@@ -25,9 +25,9 @@ namespace AwsWrapperDataProvider.Driver.Dialects;
 
 public class RdsMultiAzDbClusterMySqlDialect : MySqlDialect
 {
-    private const string TopologyQuery = "SELECT id, endpoint, port FROM mysql.rds_topology";
+    internal const string TopologyQuery = "SELECT id, endpoint, port FROM mysql.rds_topology";
 
-    private const string TopologyTableExistQuery =
+    internal const string TopologyTableExistQuery =
         "SELECT 1 AS tmp FROM information_schema.tables WHERE"
         + " table_schema = 'mysql' AND table_name = 'rds_topology'";
 
@@ -37,7 +37,7 @@ public class RdsMultiAzDbClusterMySqlDialect : MySqlDialect
     private const string NodeIdQuery = "SELECT id, SUBSTRING_INDEX(endpoint, '.', 1) FROM mysql.rds_topology WHERE id = @@server_id";
     private const string IsReaderQuery = "SELECT @@read_only";
 
-    private const string IsDialectQuery = "SHOW VARIABLES LIKE 'report_host'";
+    internal const string IsDialectQuery = "SHOW VARIABLES LIKE 'report_host'";
 
     private static readonly ILogger<RdsMultiAzDbClusterMySqlDialect> Logger = LoggerUtils.GetLogger<RdsMultiAzDbClusterMySqlDialect>();
 
@@ -82,9 +82,13 @@ public class RdsMultiAzDbClusterMySqlDialect : MySqlDialect
                 return !string.IsNullOrEmpty(reportHost);
             }
         }
+        catch (Exception ex) when (this.ExceptionHandler.IsSyntaxError(ex))
+        {
+            // Syntax error - expected when querying against incorrect dialect
+        }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, Resources.Error_CantCheckDialect, nameof(RdsMultiAzDbClusterMySqlDialect));
+            Logger.LogTrace(ex, Resources.Error_CantCheckDialect, nameof(RdsMultiAzDbClusterMySqlDialect));
         }
 
         return false;

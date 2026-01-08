@@ -25,8 +25,8 @@ public class PgExceptionHandler : GenericExceptionHandler
 {
     private static readonly ILogger<PgExceptionHandler> Logger = LoggerUtils.GetLogger<PgExceptionHandler>();
 
-    private readonly HashSet<string> networkErrorStates =
-    [
+    protected override IReadOnlySet<string> NetworkErrorStates { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
         "53", // insufficient resources
         "57P01", // admin shutdown
         "57P02", // crash shutdown
@@ -35,17 +35,18 @@ public class PgExceptionHandler : GenericExceptionHandler
         "08", // connection error
         "99", // unexpected error
         "F0", // configuration file error (backend)
-    ];
+    };
 
-    private readonly HashSet<string> loginErrorStates =
-    [
+    protected override IReadOnlySet<string> LoginErrorStates { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
         "28000", // Invalid authorization specification
         "28P01", // Wrong password
-    ];
-
-    protected override HashSet<string> NetworkErrorStates => this.networkErrorStates;
-
-    protected override HashSet<string> LoginErrorStates => this.loginErrorStates;
+    };
+    protected override IReadOnlySet<string> SyntaxErrorStates { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
+        "42", // Syntax error or access violation
+        "3F000", // Schema does not exist
+    };
 
     public override bool IsNetworkException(Exception exception)
     {

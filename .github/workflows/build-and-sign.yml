@@ -1,14 +1,11 @@
-name: Build, Sign and Publish .NET Wrapper
+name: Build, Sign and Draft Release .NET Wrapper
 
 on:
   workflow_dispatch:
-  push:
-    tags:
-      - '[0-9]+.[0-9]+.[0-9]+'
 
 permissions:
   id-token: write   # This is required for requesting the JWT
-  contents: read    # This is required for actions/checkout
+  contents: write    # This is required for ncipollo/release-action
 
 jobs:
   build-sign-publish:
@@ -76,7 +73,7 @@ jobs:
             -AwsSignedBucket "${{ secrets.AWS_SIGNED_BUCKET }}" `
             -AwsBucketKeyPrefix "${{ secrets.AWS_S3_BUCKET_KEY_PREFIX }}"
 
-      - name: 'Set Version Env Variable'
+      - name: Set Version Env Variable
         shell: pwsh
         run: |
           $version  = $env:GITHUB_REF -replace '^refs/.*/', ''
@@ -103,14 +100,31 @@ jobs:
           name: nuget-packages
           path: .\packages\*.nupkg
 
-      - name: Configure NuGet credential
-        uses: aws-actions/configure-aws-credentials@v5.1.0
-        with:
-          role-to-assume: ${{ secrets.NUGET_ACCESS_ROLE_ARN }}
-          aws-region: ${{ secrets.AWS_NUGET_KEY_REGION }}
-
-      - name: Publish to NuGet
-        shell: pwsh
+      
+      - name: Extract DLLs from NuGet package
+        shell: bash
         run: |
-          $nugetKey = aws secretsmanager get-secret-value --secret-id ${{ secrets.NUGET_SECRETS_ID }} --region ${{ secrets.AWS_NUGET_KEY_REGION }} --output text --query SecretString | ConvertFrom-Json
-          dotnet nuget push .\packages\*.nupkg --source https://api.nuget.org/v3/index.json --api-key $nugetKey.Key
+          mkdir -p release-assets
+          for pkg in ./packages/*.nupkg; do
+            unzip -j "$pkg" "lib/**/*.dll" -d release-assets
+          done
+      
+      - name: Get Release Details
+        shell: bash
+        run: |
+          export RELEASE_DETAILS="$(awk -vN=2 'n<N;/^## /{++n}' CHANGELOG.md)"
+          export RELEASE_DETAILS="$(sed '${/^# /d;}' <<< "$RELEASE_DETAILS")"
+          export RELEASE_DETAILS="$(sed '$d' <<< "$RELEASE_DETAILS")"
+          touch RELEASE_DETAILS.md
+          echo "$RELEASE_DETAILS" > RELEASE_DETAILS.md
+
+      - name: Upload to Draft Release
+        uses: ncipollo/release-action@v1
+        with:
+          draft: true
+          name: "AWS Advanced .NET Data Provider Wrapper - v${{ env.RELEASE_VERSION }}"
+          bodyFile: RELEASE_DETAILS.md
+          artifacts: ./release-assets/*
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ env.RELEASE_VERSION }}
+          commit:  ${{ github.ref_name }}

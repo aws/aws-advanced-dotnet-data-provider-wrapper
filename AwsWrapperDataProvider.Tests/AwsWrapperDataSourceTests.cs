@@ -13,6 +13,9 @@
 // limitations under the License.
 
 using System.Data.Common;
+using AwsWrapperDataProvider.Dialect.MySqlClient;
+using AwsWrapperDataProvider.Dialect.MySqlConnector;
+using AwsWrapperDataProvider.Dialect.Npgsql;
 using MySqlConnector;
 using Npgsql;
 
@@ -20,6 +23,13 @@ namespace AwsWrapperDataProvider.Tests;
 
 public class AwsWrapperDataSourceTests
 {
+    static AwsWrapperDataSourceTests()
+    {
+        MySqlClientDialectLoader.Load();
+        MySqlConnectorDialectLoader.Load();
+        NpgsqlDialectLoader.Load();
+    }
+
     [Fact]
     [Trait("Category", "Unit")]
     public void Constructor_WithMySqlDataSource_CreatesWrappedConnection()

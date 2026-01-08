@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data;
+using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -26,6 +27,23 @@ public class GenericTargetConnectionDialect : AbstractTargetConnectionDialect
     public GenericTargetConnectionDialect(Type connectionType)
     {
         this.DriverConnectionType = connectionType;
+    }
+
+    public override DbConnectionStringBuilder CreateConnectionStringBuilder()
+    {
+        return new DbConnectionStringBuilder();
+    }
+
+    public override string? MapCanonicalKeyToWrapperProperty(string canonicalKey)
+    {
+        return canonicalKey.ToLowerInvariant() switch
+        {
+            "host" => PropertyDefinition.Host.Name,
+            "port" => PropertyDefinition.Port.Name,
+            "username" => PropertyDefinition.User.Name,
+            "password" => PropertyDefinition.Password.Name,
+            _ => null,
+        };
     }
 
     public override string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, bool isForceOpen = false)
@@ -55,25 +73,5 @@ public class GenericTargetConnectionDialect : AbstractTargetConnectionDialect
         {
             return (false, ex);
         }
-    }
-
-    protected override string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, AwsWrapperProperty hostProperty)
-    {
-        Dictionary<string, string> targetConnectionParameters = props.Where(x =>
-            !PropertyDefinition.InternalWrapperProperties
-                .Select(prop => prop.Name)
-                .Contains(x.Key)).ToDictionary();
-
-        if (hostSpec != null)
-        {
-            dialect.PrepareConnectionProperties(targetConnectionParameters, hostSpec);
-            hostProperty.Set(targetConnectionParameters, hostSpec.Host);
-            if (hostSpec.IsPortSpecified)
-            {
-                PropertyDefinition.Port.Set(targetConnectionParameters, hostSpec.Port.ToString());
-            }
-        }
-
-        return string.Join("; ", targetConnectionParameters.Select(x => $"{x.Key}={x.Value}"));
     }
 }

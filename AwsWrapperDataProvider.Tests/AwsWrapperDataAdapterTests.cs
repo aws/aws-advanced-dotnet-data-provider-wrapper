@@ -14,6 +14,7 @@
 
 using System.Data;
 using System.Data.Common;
+using AwsWrapperDataProvider.Dialect.Npgsql;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.Plugins;
@@ -32,6 +33,7 @@ public class AwsWrapperDataAdapterTests
 
     public AwsWrapperDataAdapterTests()
     {
+        NpgsqlDialectLoader.Load();
         AwsWrapperConnection<NpgsqlConnection> connection = new("Server=192.0.0.1;Database=test;User Id=user;Password=password;");
 
         this.mockTargetDataAdapter = new Mock<DbDataAdapter>();
