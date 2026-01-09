@@ -265,6 +265,48 @@ public class AwsWrapperConnectionStringBuilder : DbConnectionStringBuilder
         set => this.SetValue(PropertyDefinition.RoundRobinHostWeightPairs.Name, value);
     }
 
+    public string? WeightedRandomHostWeightPairs
+    {
+        get => this.GetValue(PropertyDefinition.WeightedRandomHostWeightPairs.Name);
+        set => this.SetValue(PropertyDefinition.WeightedRandomHostWeightPairs.Name, value);
+    }
+
+    public string? LimitlessWaitForRouterInfo
+    {
+        get => this.GetValue(PropertyDefinition.LimitlessWaitForRouterInfo.Name);
+        set => this.SetValue(PropertyDefinition.LimitlessWaitForRouterInfo.Name, value);
+    }
+
+    public string? LimitlessGetRouterRetryIntervalMs
+    {
+        get => this.GetValue(PropertyDefinition.LimitlessGetRouterRetryIntervalMs.Name);
+        set => this.SetValue(PropertyDefinition.LimitlessGetRouterRetryIntervalMs.Name, value);
+    }
+
+    public string? LimitlessGetRouterMaxRetries
+    {
+        get => this.GetValue(PropertyDefinition.LimitlessGetRouterMaxRetries.Name);
+        set => this.SetValue(PropertyDefinition.LimitlessGetRouterMaxRetries.Name, value);
+    }
+
+    public string? LimitlessIntervalMs
+    {
+        get => this.GetValue(PropertyDefinition.LimitlessIntervalMs.Name);
+        set => this.SetValue(PropertyDefinition.LimitlessIntervalMs.Name, value);
+    }
+
+    public string? LimitlessMaxRetries
+    {
+        get => this.GetValue(PropertyDefinition.LimitlessMaxRetries.Name);
+        set => this.SetValue(PropertyDefinition.LimitlessMaxRetries.Name, value);
+    }
+
+    public string? LimitlessMonitorDisposalTimeMs
+    {
+        get => this.GetValue(PropertyDefinition.LimitlessMonitorDisposalTimeMs.Name);
+        set => this.SetValue(PropertyDefinition.LimitlessMonitorDisposalTimeMs.Name, value);
+    }
+
     public int? RoundRobinDefaultWeight
     {
         get => this.GetIntValue(PropertyDefinition.RoundRobinDefaultWeight.Name);

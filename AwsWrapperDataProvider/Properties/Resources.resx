@@ -535,6 +535,21 @@
     <data name="Error_NoHostsMatching" xml:space="preserve">
         <value>No hosts found matching role: {0}.</value>
     </data>
+    <data name="Error_WeightedRandomInvalidHostWeightPairs" xml:space="preserve">
+        <value>Invalid host-weight pairs format. Expected format: host1:weight1,host2:weight2</value>
+    </data>
+    <data name="Error_WeightedRandomUnableToGetHost" xml:space="preserve">
+        <value>Unable to get host with role {0} using weighted random selection.</value>
+    </data>
+    <data name="Error_UnsupportedDialectOrDatabase" xml:space="preserve">
+        <value>Unsupported dialect or database: {0}</value>
+    </data>
+    <data name="Error_InvalidQuery" xml:space="preserve">
+        <value>Invalid query syntax</value>
+    </data>
+    <data name="Error_FailedToConnectToHost" xml:space="preserve">
+        <value>Failed to connect to host: {0}</value>
+    </data>
     <data name="Error_NoWriterHostFoundInUpdatedTopology" xml:space="preserve">
         <value>No writer host found in updated topology.</value>
     </data>

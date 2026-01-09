@@ -21,7 +21,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
-public class AuroraPgDialect : PgDialect
+public class AuroraPgDialect : PgDialect, IAuroraLimitlessDialect
 {
     private const string ReaderOrdinal = "aurora_stat_utils";
 
@@ -47,6 +47,7 @@ public class AuroraPgDialect : PgDialect
 
     private static readonly string IsWriterQuery = "SELECT SERVER_ID FROM pg_catalog.aurora_replica_status() "
         + "WHERE SESSION_ID OPERATOR(pg_catalog.=) 'MASTER_SESSION_ID' AND SERVER_ID OPERATOR(pg_catalog.=) aurora_db_instance_identifier()";
+
 
     public override IList<Type> DialectUpdateCandidates { get; } = [
         typeof(RdsMultiAzDbClusterPgDialect),
@@ -114,4 +115,6 @@ public class AuroraPgDialect : PgDialect
                     NodeIdQuery,
                     IsReaderQuery);
     }
+
+    public string LimitlessRouterEndpointQuery { get => "SELECT router_endpoint, load from aurora_limitless_router_endpoints()"; }
 }

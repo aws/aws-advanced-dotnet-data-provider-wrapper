@@ -1401,6 +1401,51 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Invalid host-weight pairs format. Expected format: host1:weight1,host2:weight2.
+        /// </summary>
+        internal static string Error_WeightedRandomInvalidHostWeightPairs {
+            get {
+                return ResourceManager.GetString("Error_WeightedRandomInvalidHostWeightPairs", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unable to get host with role {0} using weighted random selection..
+        /// </summary>
+        internal static string Error_WeightedRandomUnableToGetHost {
+            get {
+                return ResourceManager.GetString("Error_WeightedRandomUnableToGetHost", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unsupported dialect or database: {0}.
+        /// </summary>
+        internal static string Error_UnsupportedDialectOrDatabase {
+            get {
+                return ResourceManager.GetString("Error_UnsupportedDialectOrDatabase", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Invalid query syntax.
+        /// </summary>
+        internal static string Error_InvalidQuery {
+            get {
+                return ResourceManager.GetString("Error_InvalidQuery", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failed to connect to host: {0}.
+        /// </summary>
+        internal static string Error_FailedToConnectToHost {
+            get {
+                return ResourceManager.GetString("Error_FailedToConnectToHost", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Provided connection is not of type AwsWrapperConnection..
         /// </summary>
         internal static string Error_NotAwsWrapperConnection {
