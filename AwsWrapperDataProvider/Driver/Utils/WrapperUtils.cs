@@ -13,12 +13,14 @@
 // limitations under the License.
 
 using System.Data.Common;
+using System.Text.RegularExpressions;
+using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
 
 namespace AwsWrapperDataProvider.Driver.Utils;
 
-public class WrapperUtils
+public partial class WrapperUtils
 {
     public static Task<T> ExecuteWithPlugins<T>(
         ConnectionPluginManager connectionPluginManager,
@@ -74,4 +76,84 @@ public class WrapperUtils
     {
         return connectionPluginManager.ForceOpen(hostSpec, props, isInitialConnection, null, async);
     }
+
+    public static string GetQueryFromSqlObject(object sqlObject)
+    {
+        string query = string.Empty;
+        if (sqlObject is DbCommand command)
+        {
+            query = command.CommandText;
+        }
+
+        return query;
+    }
+
+    public static (bool ReadOnly, bool Found) DoesSetReadOnly(string query, IDialect dialect)
+    {
+        if (query == null)
+        {
+            return (false, false);
+        }
+
+        foreach (var statement in ParseMultiStatementQueries(query))
+        {
+            // Remove block comments and trim
+            var cleanStmt = BlockCommentsRegex().Replace(statement, " ").Trim();
+            if (cleanStmt.Length == 0)
+            {
+                continue;
+            }
+
+            var (readOnly, found) = dialect.DoesStatementSetReadOnly(cleanStmt);
+            if (found)
+            {
+                return (readOnly, true);
+            }
+        }
+
+        return (false, false);
+    }
+
+    public static List<string> ParseMultiStatementQueries(string query)
+    {
+        var result = new List<string>();
+
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return result;
+        }
+
+        // Normalize whitespace: collapse multiple spaces/newlines into a single space
+        var normalized = WhitespaceRegex().Replace(query, " ").Trim();
+        if (normalized.Length == 0)
+        {
+            return result;
+        }
+
+        foreach (var stmt in normalized.Split(';'))
+        {
+            if (!string.IsNullOrWhiteSpace(stmt))
+            {
+                result.Add(stmt);
+            }
+        }
+
+        return result;
+    }
+
+    public static HostSpec? GetWriter(IList<HostSpec> hosts)
+    {
+        return hosts.FirstOrDefault(host => host.Role == HostRole.Writer);
+    }
+
+    public static bool ContainsHostUrl(IList<HostSpec> hosts, string hostAndPort)
+    {
+        return hosts.Any(host => string.Equals(host.GetHostAndPort(), hostAndPort, StringComparison.OrdinalIgnoreCase));
+    }
+
+    [GeneratedRegex(@"\s+")]
+    private static partial Regex WhitespaceRegex();
+
+    [GeneratedRegex(@"\s*/\*(.*?)\*/\s*", RegexOptions.Singleline)]
+    private static partial Regex BlockCommentsRegex();
 }

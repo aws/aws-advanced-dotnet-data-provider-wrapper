@@ -86,4 +86,26 @@ public class PgDialect : IDialect
     {
         // Do nothing.
     }
+
+    public (bool ReadOnly, bool Found) DoesStatementSetReadOnly(string query)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return (false, false);
+        }
+
+        var lowercaseQuery = query.Trim().ToLowerInvariant();
+
+        if (lowercaseQuery.StartsWith("set session characteristics as transaction read only"))
+        {
+            return (true, true);
+        }
+
+        if (lowercaseQuery.StartsWith("set session characteristics as transaction read write"))
+        {
+            return (false, true);
+        }
+
+        return (false, false);
+    }
 }
