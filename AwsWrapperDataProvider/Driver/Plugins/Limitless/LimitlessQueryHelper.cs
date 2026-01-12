@@ -33,7 +33,7 @@ public class LimitlessQueryHelper
         this._logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<LimitlessQueryHelper>();
     }
 
-    public async Task<IList<HostSpec>> QueryForLimitlessRouters(DbConnection conn, int hostPortToMap)
+    public virtual async Task<IList<HostSpec>> QueryForLimitlessRouters(DbConnection conn, int hostPortToMap)
     {
         var dialect = this._pluginService.Dialect;
         if (dialect is not IAuroraLimitlessDialect limitlessDialect)

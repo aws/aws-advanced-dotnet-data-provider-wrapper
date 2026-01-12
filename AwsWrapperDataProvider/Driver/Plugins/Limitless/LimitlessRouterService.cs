@@ -322,7 +322,7 @@ public class LimitlessRouterService : ILimitlessRouterService
             }
             else
             {
-                throw new InvalidOperationException("Fetched empty router list");
+                throw new AwsWrapperDbException("Fetched empty router list");
             }
         }
     }
