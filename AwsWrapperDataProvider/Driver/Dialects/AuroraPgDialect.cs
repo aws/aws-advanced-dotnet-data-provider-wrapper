@@ -48,7 +48,6 @@ public class AuroraPgDialect : PgDialect, IAuroraLimitlessDialect
     private static readonly string IsWriterQuery = "SELECT SERVER_ID FROM pg_catalog.aurora_replica_status() "
         + "WHERE SESSION_ID OPERATOR(pg_catalog.=) 'MASTER_SESSION_ID' AND SERVER_ID OPERATOR(pg_catalog.=) aurora_db_instance_identifier()";
 
-
     public override IList<Type> DialectUpdateCandidates { get; } = [
         typeof(RdsMultiAzDbClusterPgDialect),
     ];

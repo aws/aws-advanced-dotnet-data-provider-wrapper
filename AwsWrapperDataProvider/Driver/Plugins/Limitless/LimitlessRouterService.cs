@@ -352,10 +352,9 @@ public class LimitlessRouterService : ILimitlessRouterService
         }
         catch (DbException e)
         {
-            _logger.LogWarning("Error getting limitless routers: {Exception}", e);
+            this._logger.LogWarning("Error getting limitless routers: {Exception}", e);
             throw;
         }
-
     }
 }
 
@@ -364,5 +363,4 @@ public delegate LimitlessRouterMonitor LimitlessRouterMonitorInitializer(
     MemoryCache limitlessRouterCache,
     string limitlessRouterCacheKey,
     Dictionary<string, string> props,
-    int intervalMs
-);
+    int intervalMs);

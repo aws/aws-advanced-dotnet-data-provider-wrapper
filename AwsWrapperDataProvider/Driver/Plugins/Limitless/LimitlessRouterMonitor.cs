@@ -35,7 +35,7 @@ public class LimitlessRouterMonitor : IDisposable
     private readonly int _intervalMs;
     private readonly LimitlessQueryHelper _queryHelper;
     private readonly CancellationTokenSource _cancellationTokenSource;
-    private Task _monitoringTask;
+    private readonly Task _monitoringTask;
     private DbConnection? _monitoringConn;
 
     public LimitlessRouterMonitor(

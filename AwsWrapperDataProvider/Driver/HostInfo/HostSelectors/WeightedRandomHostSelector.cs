@@ -40,7 +40,6 @@ public partial class WeightedRandomHostSelector : IHostSelector
         props[PropertyDefinition.WeightedRandomHostWeightPairs.Name] = weightPairs;
     }
 
-
     public WeightedRandomHostSelector() : this(new Random()) { }
 
     public WeightedRandomHostSelector(Random random)

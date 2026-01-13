@@ -28,11 +28,10 @@ namespace AwsWrapperDataProvider.Tests.Driver.Plugins.Limitless;
 
 public class LimitlessConnectionPluginTests
 {
-    private const string DriverProtocol = "jdbc:postgresql:";
+    private const string ClusterId = "someClusterId";
     private static readonly HostSpec InputHostSpec = new HostSpecBuilder()
         .WithHost("pg.testdb.us-east-2.rds.amazonaws.com")
         .Build();
-    private const string ClusterId = "someClusterId";
 
     private static readonly HostSpec ExpectedSelectedHostSpec = new HostSpecBuilder()
         .WithHost("expected-selected-instance")
@@ -48,7 +47,7 @@ public class LimitlessConnectionPluginTests
     private readonly Mock<IHostListProvider> mockHostListProvider;
     private readonly Mock<ILimitlessRouterService> mockLimitlessRouterService;
     private readonly Dictionary<string, string> props;
-    private LimitlessConnectionPlugin plugin;
+    private readonly LimitlessConnectionPlugin plugin;
 
     public LimitlessConnectionPluginTests()
     {
