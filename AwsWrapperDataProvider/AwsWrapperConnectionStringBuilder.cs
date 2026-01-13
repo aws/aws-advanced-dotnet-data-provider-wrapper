@@ -271,40 +271,40 @@ public class AwsWrapperConnectionStringBuilder : DbConnectionStringBuilder
         set => this.SetValue(PropertyDefinition.WeightedRandomHostWeightPairs.Name, value);
     }
 
-    public string? LimitlessWaitForRouterInfo
+    public bool? LimitlessWaitForTransactionRouterInfo
     {
-        get => this.GetValue(PropertyDefinition.LimitlessWaitForRouterInfo.Name);
-        set => this.SetValue(PropertyDefinition.LimitlessWaitForRouterInfo.Name, value);
+        get => this.GetBoolValue(PropertyDefinition.LimitlessWaitForRouterInfo.Name);
+        set => this.SetValue(PropertyDefinition.LimitlessWaitForRouterInfo.Name, value?.ToString());
     }
 
-    public string? LimitlessGetRouterRetryIntervalMs
+    public int? LimitlessGetTransactionRouterInfoRetryIntervalMs
     {
-        get => this.GetValue(PropertyDefinition.LimitlessGetRouterRetryIntervalMs.Name);
-        set => this.SetValue(PropertyDefinition.LimitlessGetRouterRetryIntervalMs.Name, value);
+        get => this.GetIntValue(PropertyDefinition.LimitlessGetRouterRetryIntervalMs.Name);
+        set => this.SetValue(PropertyDefinition.LimitlessGetRouterRetryIntervalMs.Name, value?.ToString());
     }
 
-    public string? LimitlessGetRouterMaxRetries
+    public int? LimitlessGetTransactionRouterInfoMaxRetries
     {
-        get => this.GetValue(PropertyDefinition.LimitlessGetRouterMaxRetries.Name);
-        set => this.SetValue(PropertyDefinition.LimitlessGetRouterMaxRetries.Name, value);
+        get => this.GetIntValue(PropertyDefinition.LimitlessGetRouterMaxRetries.Name);
+        set => this.SetValue(PropertyDefinition.LimitlessGetRouterMaxRetries.Name, value?.ToString());
     }
 
-    public string? LimitlessIntervalMs
+    public int? LimitlessTransactionRouterMonitorIntervalMs
     {
-        get => this.GetValue(PropertyDefinition.LimitlessIntervalMs.Name);
-        set => this.SetValue(PropertyDefinition.LimitlessIntervalMs.Name, value);
+        get => this.GetIntValue(PropertyDefinition.LimitlessIntervalMs.Name);
+        set => this.SetValue(PropertyDefinition.LimitlessIntervalMs.Name, value?.ToString());
     }
 
-    public string? LimitlessMaxRetries
+    public int? LimitlessConnectMaxRetries
     {
-        get => this.GetValue(PropertyDefinition.LimitlessMaxRetries.Name);
-        set => this.SetValue(PropertyDefinition.LimitlessMaxRetries.Name, value);
+        get => this.GetIntValue(PropertyDefinition.LimitlessMaxRetries.Name);
+        set => this.SetValue(PropertyDefinition.LimitlessMaxRetries.Name, value?.ToString());
     }
 
-    public string? LimitlessMonitorDisposalTimeMs
+    public int? LimitlessTransactionRouterMonitorDisposalTimeMs
     {
-        get => this.GetValue(PropertyDefinition.LimitlessMonitorDisposalTimeMs.Name);
-        set => this.SetValue(PropertyDefinition.LimitlessMonitorDisposalTimeMs.Name, value);
+        get => this.GetIntValue(PropertyDefinition.LimitlessMonitorDisposalTimeMs.Name);
+        set => this.SetValue(PropertyDefinition.LimitlessMonitorDisposalTimeMs.Name, value?.ToString());
     }
 
     public int? RoundRobinDefaultWeight
