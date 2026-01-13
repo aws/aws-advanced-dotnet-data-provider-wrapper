@@ -33,6 +33,8 @@ The following properties are required for the AWS Secrets Manager Connection Plu
 
 ## Secret Data
 The secret stored in the AWS Secrets Manager should be a JSON object containing the properties `username` and `password`. If the secret contains different key names, you can specify them with the `SecretsManagerSecretUsernameProperty` and `SecretsManagerSecretPasswordProperty` parameters.
+> [!NOTE] \
+> Only un-nested JSON format is supported right now.
 
 ### Example
 

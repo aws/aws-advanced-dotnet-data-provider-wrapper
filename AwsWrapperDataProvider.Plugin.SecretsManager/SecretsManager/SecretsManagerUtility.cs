@@ -38,7 +38,7 @@ public static class SecretsManagerUtility
             string? password = doc.RootElement.TryGetProperty(passwordKey, out JsonElement passwordElement) ? passwordElement.GetString() : null;
 
             return username == null || password == null
-                ? throw new Exception("Username or password not found in RDS secret.")
+                ? throw new Exception($"Username or password not found in RDS secret. Please ensure the values specified in SecretsManagerSecretUsernameProperty ({usernameKey}) and SecretsManagerSecretPasswordProperty ({passwordKey}) matches the content of the Secret value.")
                 : new AwsRdsSecrets { Username = username, Password = password };
         }
         catch (Exception ex)

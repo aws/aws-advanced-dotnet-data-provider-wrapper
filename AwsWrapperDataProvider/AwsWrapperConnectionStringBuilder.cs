@@ -162,13 +162,13 @@ public class AwsWrapperConnectionStringBuilder : DbConnectionStringBuilder
         get => this.GetValue(PropertyDefinition.SecretsManagerEndpoint.Name);
         set => this.SetValue(PropertyDefinition.SecretsManagerEndpoint.Name, value);
     }
-    
+
     public string? SecretsManagerSecretUsernameProperty
     {
         get => this.GetValue(PropertyDefinition.SecretsManagerSecretUsernameProperty.Name);
         set => this.SetValue(PropertyDefinition.SecretsManagerSecretUsernameProperty.Name, value);
     }
-    
+
     public string? SecretsManagerSecretPasswordProperty
     {
         get => this.GetValue(PropertyDefinition.SecretsManagerSecretPasswordProperty.Name);

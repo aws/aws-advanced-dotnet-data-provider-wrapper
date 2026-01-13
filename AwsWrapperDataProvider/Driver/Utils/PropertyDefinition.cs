@@ -35,12 +35,10 @@ public static class PropertyDefinition
         new("TargetCommandType", null, "Driver target command type.");
 
     public static readonly AwsWrapperProperty TargetDialect =
-        new("CustomDialect", null,
-            "Custom dialect type. Should be AssemblyQualifiedName of class implementing IDialect.");
+        new("CustomDialect", null, "Custom dialect type. Should be AssemblyQualifiedName of class implementing IDialect.");
 
     public static readonly AwsWrapperProperty CustomTargetConnectionDialect =
-        new("CustomTargetConnectionDialect", null,
-            "Custom target connection dialect type. Should be AssemblyQualifiedName of class implementing ITargetConnectionDialect.");
+        new("CustomTargetConnectionDialect", null, "Custom target connection dialect type. Should be AssemblyQualifiedName of class implementing ITargetConnectionDialect.");
 
     public static readonly AwsWrapperProperty Plugins = new(
         "Plugins",
@@ -140,24 +138,20 @@ public static class PropertyDefinition
         "DbUser", null, "The database user used to access the database");
 
     public static readonly AwsWrapperProperty HttpClientConnectTimeout = new AwsWrapperProperty(
-        "HttpClientConnectTimeout", "10000",
-        "The connect timeout value in milliseconds for the HttpClient used by the federated auth and OKTA plugins.");
+        "HttpClientConnectTimeout", "10000", "The connect timeout value in milliseconds for the HttpClient used by the federated auth and OKTA plugins.");
 
     // Failover Plugin Properties
     public static readonly AwsWrapperProperty FailoverTimeoutMs = new(
         "FailoverTimeoutMs", "300000", "Maximum allowed time for the failover process in milliseconds.");
 
     public static readonly AwsWrapperProperty FailoverMode = new(
-        "FailoverMode", null,
-        "Set node role to follow during failover. Valid values: StrictWriter, StrictReader, ReaderOrWriter.");
+        "FailoverMode", null, "Set node role to follow during failover. Valid values: StrictWriter, StrictReader, ReaderOrWriter.");
 
     public static readonly AwsWrapperProperty ReaderHostSelectorStrategy = new(
-        "ReaderHostSelectorStrategy", "Random",
-        "The strategy that should be used to select a new reader host while opening a new connection.");
+        "ReaderHostSelectorStrategy", "Random", "The strategy that should be used to select a new reader host while opening a new connection.");
 
     public static readonly AwsWrapperProperty EnableConnectFailover = new(
-        "EnableConnectFailover", "false",
-        "Enable/disable cluster-aware failover if the initial connection to the database fails due to a network exception.");
+        "EnableConnectFailover", "false", "Enable/disable cluster-aware failover if the initial connection to the database fails due to a network exception.");
 
     public static readonly AwsWrapperProperty SkipFailoverOnInterruptedThread = new(
         "SkipFailoverOnInterruptedThread", "false", "Enable to skip failover if the current thread is interrupted.");
@@ -209,8 +203,7 @@ public static class PropertyDefinition
     /// <summary>
     /// A set of AwsWrapperProperties that is used by the wrapper and should not be passed to the target driver.
     /// </summary>
-    public static readonly HashSet<AwsWrapperProperty> InternalWrapperProperties =
-    [
+    public static readonly HashSet<AwsWrapperProperty> InternalWrapperProperties = [
         TargetConnectionType,
         TargetCommandType,
         CustomTargetConnectionDialect,
