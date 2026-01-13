@@ -30,6 +30,9 @@ public class SecretsManagerAuthPluginTests
     private static readonly string Host = $"fake.host.{Region}.rds.amazonaws.com";
     private static readonly int Port = 5432;
     private static readonly string SecretId = "test-secret-id";
+    private static readonly int ExpirationTime = 870;
+    private static readonly string DefaultUsernameKey = "username";
+    private static readonly string DefaultPasswordKey = "password";
 
     private readonly Mock<IPluginService> mockPluginService;
     private readonly Dictionary<string, string> props = new();
@@ -57,7 +60,9 @@ public class SecretsManagerAuthPluginTests
             this.props,
             SecretId,
             Region,
-            870, // default expiration
+            ExpirationTime,
+            DefaultUsernameKey,
+            DefaultPasswordKey,
             this.mockSecretsManagerClient.Object);
 
         this.methodFunc = () => Task.FromResult(new Mock<DbConnection>().Object);
@@ -100,7 +105,9 @@ public class SecretsManagerAuthPluginTests
             this.props,
             SecretId,
             Region,
-            870,
+            ExpirationTime,
+            DefaultUsernameKey,
+            DefaultPasswordKey,
             mockClient.Object);
 
         await Assert.ThrowsAsync<Exception>(() =>
@@ -121,7 +128,9 @@ public class SecretsManagerAuthPluginTests
             this.props,
             SecretId,
             Region,
-            870,
+            ExpirationTime,
+            DefaultUsernameKey,
+            DefaultPasswordKey,
             mockClient.Object);
 
         await Assert.ThrowsAsync<Exception>(() =>
@@ -138,5 +147,71 @@ public class SecretsManagerAuthPluginTests
 
         await Assert.ThrowsAsync<Exception>(() =>
             this.secretsManagerAuthPlugin.OpenConnection(new HostSpec(Host, Port, HostRole.Writer, HostAvailability.Available), this.props, true, failingMethodFunc, true));
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task OpenConnection_WithCustomKeys_FetchesCorrectCredentials()
+    {
+        var customSecretResponse = new GetSecretValueResponse
+        {
+            SecretString = "{\"db_user\":\"foo\",\"db_pass\":\"bar\"}",
+        };
+
+        var mockClient = new Mock<AmazonSecretsManagerClient>(Mock.Of<Amazon.Runtime.AWSCredentials>(),
+            new AmazonSecretsManagerConfig { RegionEndpoint = Amazon.RegionEndpoint.USEast1 });
+        mockClient.Setup(client =>
+                client.GetSecretValueAsync(It.IsAny<GetSecretValueRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(customSecretResponse);
+
+        var plugin = new SecretsManagerAuthPlugin(
+            this.mockPluginService.Object,
+            new Dictionary<string, string>(),
+            SecretId,
+            Region,
+            ExpirationTime,
+            "db_user",
+            "db_pass",
+            mockClient.Object);
+
+        var testProps = new Dictionary<string, string>();
+        _ = await plugin.OpenConnection(
+            new HostSpec(Host, Port, HostRole.Writer, HostAvailability.Available),
+            testProps,
+            true,
+            this.methodFunc,
+            true);
+
+        Assert.Equal("foo", testProps[PropertyDefinition.User.Name]);
+        Assert.Equal("bar", testProps[PropertyDefinition.Password.Name]);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task OpenConnection_WithMissingCustomKey_ThrowsException()
+    {
+        var incompleteSecretResponse = new GetSecretValueResponse
+        {
+            SecretString = "{\"db_user\":\"foo\"}",
+        };
+
+        var mockClient = new Mock<AmazonSecretsManagerClient>(Mock.Of<Amazon.Runtime.AWSCredentials>(),
+            new AmazonSecretsManagerConfig { RegionEndpoint = Amazon.RegionEndpoint.USEast1 });
+        mockClient.Setup(client =>
+                client.GetSecretValueAsync(It.IsAny<GetSecretValueRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(incompleteSecretResponse);
+
+        var plugin = new SecretsManagerAuthPlugin(
+            this.mockPluginService.Object,
+            new Dictionary<string, string>(),
+            SecretId,
+            Region,
+            ExpirationTime,
+            "db_user",
+            "db_pass",
+            mockClient.Object);
+
+        await Assert.ThrowsAsync<Exception>(() =>
+            plugin.OpenConnection(new HostSpec(Host, Port, HostRole.Writer, HostAvailability.Available), new Dictionary<string, string>(), true, this.methodFunc, true));
     }
 }

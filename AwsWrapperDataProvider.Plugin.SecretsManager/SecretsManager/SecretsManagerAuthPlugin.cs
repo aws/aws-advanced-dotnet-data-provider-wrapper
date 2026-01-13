@@ -22,7 +22,7 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace AwsWrapperDataProvider.Plugin.SecretsManager.SecretsManager;
 
-public class SecretsManagerAuthPlugin(IPluginService pluginService, Dictionary<string, string> props, string secretId, string region, int secretValueExpirySecs, AmazonSecretsManagerClient client) : AbstractConnectionPlugin
+public class SecretsManagerAuthPlugin(IPluginService pluginService, Dictionary<string, string> props, string secretId, string region, int secretValueExpirySecs, string usernameKey, string passwordKey, AmazonSecretsManagerClient client) : AbstractConnectionPlugin
 {
     public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string> { "DbConnection.Open", "DbConnection.OpenAsync", "DbConnection.ForceOpen" };
 
@@ -39,6 +39,10 @@ public class SecretsManagerAuthPlugin(IPluginService pluginService, Dictionary<s
     private readonly string cacheKey = GetCacheKey(secretId, region);
 
     private readonly int secretValueExpirySecs = secretValueExpirySecs;
+    
+    private readonly string usernameKey = usernameKey;
+    
+    private readonly string passwordKey = passwordKey;
 
     private readonly AmazonSecretsManagerClient client = client;
 
@@ -94,7 +98,7 @@ public class SecretsManagerAuthPlugin(IPluginService pluginService, Dictionary<s
 
         if (forceReFetch || !SecretValueCache.TryGetValue(this.cacheKey, out SecretsManagerUtility.AwsRdsSecrets? secret))
         {
-            secret = await SecretsManagerUtility.GetRdsSecretFromAwsSecretsManager(this.secretId, this.client);
+            secret = await SecretsManagerUtility.GetRdsSecretFromAwsSecretsManager(this.secretId, this.usernameKey, this.passwordKey, this.client);
             SecretValueCache.Set(this.cacheKey, secret, TimeSpan.FromSeconds(this.secretValueExpirySecs));
             secretsWasFetched = true;
         }

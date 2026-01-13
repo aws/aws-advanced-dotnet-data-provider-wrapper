@@ -27,18 +27,19 @@ public static class SecretsManagerUtility
         public string? Password { get; set; }
     }
 
-    private static readonly JsonSerializerOptions SerializerOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-
-    public static async Task<AwsRdsSecrets> GetRdsSecretFromAwsSecretsManager(string secretId, AmazonSecretsManagerClient client)
+    public static async Task<AwsRdsSecrets> GetRdsSecretFromAwsSecretsManager(string secretId, string usernameKey, string passwordKey, AmazonSecretsManagerClient client)
     {
         try
         {
             GetSecretValueResponse response = await client.GetSecretValueAsync(new GetSecretValueRequest { SecretId = secretId });
-            AwsRdsSecrets? secrets = JsonSerializer.Deserialize<AwsRdsSecrets>(response.SecretString, SerializerOptions);
+            using JsonDocument doc = JsonDocument.Parse(response.SecretString);
 
-            return secrets?.Username == null || secrets?.Password == null
+            string? username = doc.RootElement.TryGetProperty(usernameKey, out JsonElement usernameElement) ? usernameElement.GetString() : null;
+            string? password = doc.RootElement.TryGetProperty(passwordKey, out JsonElement passwordElement) ? passwordElement.GetString() : null;
+
+            return username == null || password == null
                 ? throw new Exception("Username or password not found in RDS secret.")
-                : secrets;
+                : new AwsRdsSecrets { Username = username, Password = password };
         }
         catch (Exception ex)
         {

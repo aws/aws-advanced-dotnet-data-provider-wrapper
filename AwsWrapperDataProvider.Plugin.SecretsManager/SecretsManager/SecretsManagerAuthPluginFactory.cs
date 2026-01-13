@@ -27,8 +27,15 @@ public class SecretsManagerAuthPluginFactory : IConnectionPluginFactory
 
     public IConnectionPlugin GetInstance(IPluginService pluginService, Dictionary<string, string> props)
     {
-        string secretId = PropertyDefinition.SecretsManagerSecretId.GetString(props) ?? throw new Exception("Secret ID not provided.");
-        string region = RegionUtils.GetRegionFromSecretId(secretId) ?? PropertyDefinition.SecretsManagerRegion.GetString(props) ?? throw new Exception("Can't determine secret region.");
+        string secretId = PropertyDefinition.SecretsManagerSecretId.GetString(props) ??
+                          throw new Exception("Secret ID not provided.");
+        string region = RegionUtils.GetRegionFromSecretId(secretId) ??
+                        PropertyDefinition.SecretsManagerRegion.GetString(props) ??
+                        throw new Exception("Can't determine secret region.");
+        string endpoint = PropertyDefinition.SecretsManagerEndpoint.GetString(props) ?? string.Empty;
+        string usernameKey = PropertyDefinition.SecretsManagerSecretUsernameProperty.GetString(props) ?? "username";
+        string passwordKey = PropertyDefinition.SecretsManagerSecretPasswordProperty.GetString(props) ?? "password";
+
         AmazonSecretsManagerClient? client;
 
         try
@@ -36,7 +43,15 @@ public class SecretsManagerAuthPluginFactory : IConnectionPluginFactory
             if (!Clients.TryGetValue(region, out client))
             {
                 RegionEndpoint regionEndpoint = RegionEndpoint.GetBySystemName(region);
-                client = new(regionEndpoint);
+                var config = new AmazonSecretsManagerConfig { RegionEndpoint = regionEndpoint };
+
+                if (endpoint != string.Empty)
+                {
+                    config.ServiceURL = endpoint;
+                }
+
+                client = new(config);
+
                 Clients[region] = client;
             }
         }
@@ -47,6 +62,6 @@ public class SecretsManagerAuthPluginFactory : IConnectionPluginFactory
 
         int secretValueExpirySecs = PropertyDefinition.SecretsManagerExpirationSecs.GetInt(props) ?? 870;
 
-        return new SecretsManagerAuthPlugin(pluginService, props, secretId, region, secretValueExpirySecs, client);
+        return new SecretsManagerAuthPlugin(pluginService, props, secretId, region, secretValueExpirySecs, usernameKey, passwordKey, client);
     }
 }
