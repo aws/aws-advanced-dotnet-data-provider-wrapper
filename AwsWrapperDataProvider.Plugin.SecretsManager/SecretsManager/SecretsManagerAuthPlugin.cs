@@ -13,38 +13,80 @@
 // limitations under the License.
 
 using System.Data.Common;
+using Amazon;
 using Amazon.SecretsManager;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Plugin.SecretsManager.Utils;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace AwsWrapperDataProvider.Plugin.SecretsManager.SecretsManager;
 
-public class SecretsManagerAuthPlugin(IPluginService pluginService, Dictionary<string, string> props, string secretId, string region, int secretValueExpirySecs, string usernameKey, string passwordKey, AmazonSecretsManagerClient client) : AbstractConnectionPlugin
+public class SecretsManagerAuthPlugin : AbstractConnectionPlugin
 {
     public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string> { "DbConnection.Open", "DbConnection.OpenAsync", "DbConnection.ForceOpen" };
 
     private static readonly MemoryCache SecretValueCache = new(new MemoryCacheOptions());
+    private static readonly Dictionary<string, AmazonSecretsManagerClient> Clients = new();
 
-    private readonly IPluginService pluginService = pluginService;
+    private readonly IPluginService pluginService;
+    private readonly Dictionary<string, string> props;
+    private readonly string secretId;
+    private readonly string region;
+    private readonly string cacheKey;
+    private readonly int secretValueExpirySecs;
+    private readonly string usernameKey;
+    private readonly string passwordKey;
+    private readonly AmazonSecretsManagerClient client;
 
-    private readonly Dictionary<string, string> props = props;
+    public SecretsManagerAuthPlugin(IPluginService pluginService, Dictionary<string, string> props) : this(pluginService, props, null)
+    { }
 
-    private readonly string secretId = secretId;
+    public SecretsManagerAuthPlugin(IPluginService pluginService, Dictionary<string, string> props, AmazonSecretsManagerClient? client)
+    {
+        this.pluginService = pluginService;
+        this.props = props;
 
-    private readonly string region = region;
+        this.secretId = PropertyDefinition.SecretsManagerSecretId.GetString(props) ??
+                        throw new ArgumentException("Secret ID not provided.");
+        this.region = RegionUtils.GetRegionFromSecretId(this.secretId) ??
+                      PropertyDefinition.SecretsManagerRegion.GetString(props) ??
+                      throw new ArgumentException("Can't determine secret region.");
+        this.usernameKey = PropertyDefinition.SecretsManagerSecretUsernameProperty.GetString(props) ?? "username";
+        this.passwordKey = PropertyDefinition.SecretsManagerSecretPasswordProperty.GetString(props) ?? "password";
+        this.secretValueExpirySecs = PropertyDefinition.SecretsManagerExpirationSecs.GetInt(props) ?? 870;
+        this.cacheKey = GetCacheKey(this.secretId, this.region);
 
-    private readonly string cacheKey = GetCacheKey(secretId, region);
+        this.client = client ?? CreateClient(this.region, PropertyDefinition.SecretsManagerEndpoint.GetString(props) ?? string.Empty);
+    }
 
-    private readonly int secretValueExpirySecs = secretValueExpirySecs;
-    
-    private readonly string usernameKey = usernameKey;
-    
-    private readonly string passwordKey = passwordKey;
+    private static AmazonSecretsManagerClient CreateClient(string region, string endpoint)
+    {
+        try
+        {
+            if (!Clients.TryGetValue(region, out var client))
+            {
+                RegionEndpoint regionEndpoint = RegionEndpoint.GetBySystemName(region);
+                var config = new AmazonSecretsManagerConfig { RegionEndpoint = regionEndpoint };
 
-    private readonly AmazonSecretsManagerClient client = client;
+                if (!string.IsNullOrEmpty(endpoint))
+                {
+                    config.ServiceURL = endpoint;
+                }
+
+                client = new AmazonSecretsManagerClient(config);
+                Clients[region] = client;
+            }
+
+            return client;
+        }
+        catch (Exception ex)
+        {
+            throw new Exception("Couldn't create AWS Secrets Manager client.", ex);
+        }
+    }
 
     private SecretsManagerUtility.AwsRdsSecrets? secret;
 

@@ -43,7 +43,8 @@ public class SecretsManagerAuthPluginTests
     public SecretsManagerAuthPluginTests()
     {
         this.mockPluginService = new Mock<IPluginService>();
-        this.mockSecretsManagerClient = new Mock<AmazonSecretsManagerClient>(Mock.Of<Amazon.Runtime.AWSCredentials>(), new AmazonSecretsManagerConfig { RegionEndpoint = Amazon.RegionEndpoint.USEast1 });
+        this.mockSecretsManagerClient = new Mock<AmazonSecretsManagerClient>(Mock.Of<Amazon.Runtime.AWSCredentials>(),
+            new AmazonSecretsManagerConfig { RegionEndpoint = Amazon.RegionEndpoint.USEast1 });
 
         // Setup default secret response
         var secretResponse = new GetSecretValueResponse
@@ -51,18 +52,16 @@ public class SecretsManagerAuthPluginTests
             SecretString = "{\"username\":\"test-user\",\"password\":\"test-password\"}",
         };
 
-        this.mockSecretsManagerClient.Setup(
-            client => client.GetSecretValueAsync(It.IsAny<GetSecretValueRequest>(), It.IsAny<CancellationToken>()))
+        this.mockSecretsManagerClient.Setup(client =>
+                client.GetSecretValueAsync(It.IsAny<GetSecretValueRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(secretResponse);
+
+        this.props[PropertyDefinition.SecretsManagerSecretId.Name] = SecretId;
+        this.props[PropertyDefinition.SecretsManagerRegion.Name] = Region;
 
         this.secretsManagerAuthPlugin = new(
             this.mockPluginService.Object,
             this.props,
-            SecretId,
-            Region,
-            ExpirationTime,
-            DefaultUsernameKey,
-            DefaultPasswordKey,
             this.mockSecretsManagerClient.Object);
 
         this.methodFunc = () => Task.FromResult(new Mock<DbConnection>().Object);
@@ -74,7 +73,9 @@ public class SecretsManagerAuthPluginTests
     [Trait("Category", "Unit")]
     public async Task OpenConnection_WithNoCachedSecret_FetchesSecret()
     {
-        _ = await this.secretsManagerAuthPlugin.OpenConnection(new HostSpec(Host, Port, HostRole.Writer, HostAvailability.Available), this.props, true, this.methodFunc, true);
+        _ = await this.secretsManagerAuthPlugin.OpenConnection(
+            new HostSpec(Host, Port, HostRole.Writer, HostAvailability.Available), this.props, true, this.methodFunc,
+            true);
 
         Assert.Equal("test-user", this.props[PropertyDefinition.User.Name]);
         Assert.Equal("test-password", this.props[PropertyDefinition.Password.Name]);
@@ -95,46 +96,40 @@ public class SecretsManagerAuthPluginTests
             SecretString = "{\"invalid\":\"json\"}",
         };
 
-        var mockClient = new Mock<AmazonSecretsManagerClient>(Mock.Of<Amazon.Runtime.AWSCredentials>(), new AmazonSecretsManagerConfig { RegionEndpoint = Amazon.RegionEndpoint.USEast1 });
-        mockClient.Setup(
-            client => client.GetSecretValueAsync(It.IsAny<GetSecretValueRequest>(), It.IsAny<CancellationToken>()))
+        var mockClient = new Mock<AmazonSecretsManagerClient>(Mock.Of<Amazon.Runtime.AWSCredentials>(),
+            new AmazonSecretsManagerConfig { RegionEndpoint = Amazon.RegionEndpoint.USEast1 });
+        mockClient.Setup(client =>
+                client.GetSecretValueAsync(It.IsAny<GetSecretValueRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(invalidSecretResponse);
 
         var plugin = new SecretsManagerAuthPlugin(
             this.mockPluginService.Object,
             this.props,
-            SecretId,
-            Region,
-            ExpirationTime,
-            DefaultUsernameKey,
-            DefaultPasswordKey,
             mockClient.Object);
 
         await Assert.ThrowsAsync<Exception>(() =>
-            plugin.OpenConnection(new HostSpec(Host, Port, HostRole.Writer, HostAvailability.Available), this.props, true, this.methodFunc, true));
+            plugin.OpenConnection(new HostSpec(Host, Port, HostRole.Writer, HostAvailability.Available), this.props,
+                true, this.methodFunc, true));
     }
 
     [Fact]
     [Trait("Category", "Unit")]
     public async Task OpenConnection_WithSecretsManagerException_ThrowsException()
     {
-        var mockClient = new Mock<AmazonSecretsManagerClient>(Mock.Of<Amazon.Runtime.AWSCredentials>(), new AmazonSecretsManagerConfig { RegionEndpoint = Amazon.RegionEndpoint.USEast1 });
-        mockClient.Setup(
-            client => client.GetSecretValueAsync(It.IsAny<GetSecretValueRequest>(), It.IsAny<CancellationToken>()))
+        var mockClient = new Mock<AmazonSecretsManagerClient>(Mock.Of<Amazon.Runtime.AWSCredentials>(),
+            new AmazonSecretsManagerConfig { RegionEndpoint = Amazon.RegionEndpoint.USEast1 });
+        mockClient.Setup(client =>
+                client.GetSecretValueAsync(It.IsAny<GetSecretValueRequest>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Secrets Manager error"));
 
         var plugin = new SecretsManagerAuthPlugin(
             this.mockPluginService.Object,
             this.props,
-            SecretId,
-            Region,
-            ExpirationTime,
-            DefaultUsernameKey,
-            DefaultPasswordKey,
             mockClient.Object);
 
         await Assert.ThrowsAsync<Exception>(() =>
-            plugin.OpenConnection(new HostSpec(Host, Port, HostRole.Writer, HostAvailability.Available), this.props, true, this.methodFunc, true));
+            plugin.OpenConnection(new HostSpec(Host, Port, HostRole.Writer, HostAvailability.Available), this.props,
+                true, this.methodFunc, true));
     }
 
     [Fact]
@@ -146,7 +141,9 @@ public class SecretsManagerAuthPluginTests
         this.mockPluginService.Setup(s => s.IsLoginException(It.IsAny<Exception>())).Returns(false);
 
         await Assert.ThrowsAsync<Exception>(() =>
-            this.secretsManagerAuthPlugin.OpenConnection(new HostSpec(Host, Port, HostRole.Writer, HostAvailability.Available), this.props, true, failingMethodFunc, true));
+            this.secretsManagerAuthPlugin.OpenConnection(
+                new HostSpec(Host, Port, HostRole.Writer, HostAvailability.Available), this.props, true,
+                failingMethodFunc, true));
     }
 
     [Fact]
@@ -164,14 +161,17 @@ public class SecretsManagerAuthPluginTests
                 client.GetSecretValueAsync(It.IsAny<GetSecretValueRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(customSecretResponse);
 
+        var customProps = new Dictionary<string, string>
+        {
+            [PropertyDefinition.SecretsManagerSecretId.Name] = SecretId,
+            [PropertyDefinition.SecretsManagerRegion.Name] = Region,
+            [PropertyDefinition.SecretsManagerSecretUsernameProperty.Name] = "db_user",
+            [PropertyDefinition.SecretsManagerSecretPasswordProperty.Name] = "db_pass"
+        };
+
         var plugin = new SecretsManagerAuthPlugin(
             this.mockPluginService.Object,
-            new Dictionary<string, string>(),
-            SecretId,
-            Region,
-            ExpirationTime,
-            "db_user",
-            "db_pass",
+            customProps,
             mockClient.Object);
 
         var testProps = new Dictionary<string, string>();
@@ -201,17 +201,60 @@ public class SecretsManagerAuthPluginTests
                 client.GetSecretValueAsync(It.IsAny<GetSecretValueRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(incompleteSecretResponse);
 
+        var customProps = new Dictionary<string, string>
+        {
+            [PropertyDefinition.SecretsManagerSecretId.Name] = SecretId,
+            [PropertyDefinition.SecretsManagerRegion.Name] = Region,
+            [PropertyDefinition.SecretsManagerSecretUsernameProperty.Name] = "db_user",
+            [PropertyDefinition.SecretsManagerSecretPasswordProperty.Name] = "db_pass"
+        };
+
         var plugin = new SecretsManagerAuthPlugin(
             this.mockPluginService.Object,
-            new Dictionary<string, string>(),
-            SecretId,
-            Region,
-            ExpirationTime,
-            "db_user",
-            "db_pass",
+            customProps,
             mockClient.Object);
 
         await Assert.ThrowsAsync<Exception>(() =>
-            plugin.OpenConnection(new HostSpec(Host, Port, HostRole.Writer, HostAvailability.Available), new Dictionary<string, string>(), true, this.methodFunc, true));
+            plugin.OpenConnection(new HostSpec(Host, Port, HostRole.Writer, HostAvailability.Available),
+                new Dictionary<string, string>(), true, this.methodFunc, true));
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task OpenConnection_WithoutUsernameProperty_FallsBackToDefaultUsername()
+    {
+        var secretResponse = new GetSecretValueResponse
+        {
+            SecretString = "{\"username\":\"foo\",\"db_password\":\"bar\"}",
+        };
+
+        var mockClient = new Mock<AmazonSecretsManagerClient>(Mock.Of<Amazon.Runtime.AWSCredentials>(),
+            new AmazonSecretsManagerConfig { RegionEndpoint = Amazon.RegionEndpoint.USEast1 });
+        mockClient.Setup(client =>
+                client.GetSecretValueAsync(It.IsAny<GetSecretValueRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(secretResponse);
+
+        var propsWithoutUsernameKey = new Dictionary<string, string>
+        {
+            [PropertyDefinition.SecretsManagerSecretId.Name] = SecretId,
+            [PropertyDefinition.SecretsManagerRegion.Name] = Region,
+            [PropertyDefinition.SecretsManagerSecretPasswordProperty.Name] = "db_password"
+        };
+
+        var plugin = new SecretsManagerAuthPlugin(
+            this.mockPluginService.Object,
+            propsWithoutUsernameKey,
+            mockClient.Object);
+
+        var testProps = new Dictionary<string, string>();
+        _ = await plugin.OpenConnection(
+            new HostSpec(Host, Port, HostRole.Writer, HostAvailability.Available),
+            testProps,
+            true,
+            this.methodFunc,
+            true);
+
+        Assert.Equal("foo", testProps[PropertyDefinition.User.Name]);
+        Assert.Equal("bar", testProps[PropertyDefinition.Password.Name]);
     }
 }

@@ -12,56 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Amazon;
 using Amazon.SecretsManager;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Plugins;
-using AwsWrapperDataProvider.Driver.Utils;
-using AwsWrapperDataProvider.Plugin.SecretsManager.Utils;
 
 namespace AwsWrapperDataProvider.Plugin.SecretsManager.SecretsManager;
 
 public class SecretsManagerAuthPluginFactory : IConnectionPluginFactory
 {
-    private static readonly Dictionary<string, AmazonSecretsManagerClient> Clients = new();
-
     public IConnectionPlugin GetInstance(IPluginService pluginService, Dictionary<string, string> props)
     {
-        string secretId = PropertyDefinition.SecretsManagerSecretId.GetString(props) ??
-                          throw new Exception("Secret ID not provided.");
-        string region = RegionUtils.GetRegionFromSecretId(secretId) ??
-                        PropertyDefinition.SecretsManagerRegion.GetString(props) ??
-                        throw new Exception("Can't determine secret region.");
-        string endpoint = PropertyDefinition.SecretsManagerEndpoint.GetString(props) ?? string.Empty;
-        string usernameKey = PropertyDefinition.SecretsManagerSecretUsernameProperty.GetString(props) ?? "username";
-        string passwordKey = PropertyDefinition.SecretsManagerSecretPasswordProperty.GetString(props) ?? "password";
-
-        AmazonSecretsManagerClient? client;
-
-        try
-        {
-            if (!Clients.TryGetValue(region, out client))
-            {
-                RegionEndpoint regionEndpoint = RegionEndpoint.GetBySystemName(region);
-                var config = new AmazonSecretsManagerConfig { RegionEndpoint = regionEndpoint };
-
-                if (endpoint != string.Empty)
-                {
-                    config.ServiceURL = endpoint;
-                }
-
-                client = new(config);
-
-                Clients[region] = client;
-            }
-        }
-        catch (Exception ex)
-        {
-            throw new Exception("Couldn't create AWS Secrets Manager client.", ex);
-        }
-
-        int secretValueExpirySecs = PropertyDefinition.SecretsManagerExpirationSecs.GetInt(props) ?? 870;
-
-        return new SecretsManagerAuthPlugin(pluginService, props, secretId, region, secretValueExpirySecs, usernameKey, passwordKey, client);
+        return new SecretsManagerAuthPlugin(pluginService, props);
     }
 }
