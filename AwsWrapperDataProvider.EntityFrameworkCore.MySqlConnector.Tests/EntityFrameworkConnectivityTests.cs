@@ -52,8 +52,6 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
                 options.ColorBehavior = LoggerColorBehavior.Enabled;
             });
         });
-
-        MySqlConnectorDialectLoader.Load();
     }
 
     [Fact]

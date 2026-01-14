@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using AwsWrapperDataProvider.Dialect.MySqlConnector;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
@@ -21,6 +22,8 @@ public class PersonDbContextFactory : IDesignTimeDbContextFactory<PersonDbContex
 {
     public PersonDbContext CreateDbContext(string[] args)
     {
+        MySqlConnectorDialectLoader.Load();
+
         var connectionString = EFUtils.GetMySqlConnectionString();
         var version = new MySqlServerVersion("8.0.32");
 

@@ -14,6 +14,9 @@
 
 using System.Diagnostics;
 using System.Text.Json;
+using AwsWrapperDataProvider.Dialect.MySqlClient;
+using AwsWrapperDataProvider.Dialect.MySqlConnector;
+using AwsWrapperDataProvider.Dialect.Npgsql;
 using Toxiproxy.Net;
 
 namespace AwsWrapperDataProvider.Tests.Container.Utils;

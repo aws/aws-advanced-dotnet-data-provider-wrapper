@@ -14,19 +14,14 @@
 
 using System.Data;
 using System.Reflection;
-using AwsWrapperDataProvider.Dialect.MySqlConnector;
-using AwsWrapperDataProvider.Dialect.Npgsql;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
 using AwsWrapperDataProvider.Tests;
 using AwsWrapperDataProvider.Tests.Container.Utils;
-using MySql.Data.MySqlClient;
 using NHibernate;
 using NHibernate.Cfg;
 using NHibernate.Criterion;
 using NHibernate.Driver;
 using NHibernate.Driver.MySqlConnector;
-using Npgsql;
-using Org.BouncyCastle.Pqc.Crypto.Crystals.Dilithium;
 
 [assembly: CollectionBehavior(DisableTestParallelization = true)]
 [assembly: CaptureConsole]
@@ -103,12 +98,6 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             }
 
             return cfg.AddProperties(properties);
-        }
-
-        public AwsWrapperDriverTests()
-        {
-            MySqlConnectorDialectLoader.Load();
-            NpgsqlDialectLoader.Load();
         }
 
         [Fact]
