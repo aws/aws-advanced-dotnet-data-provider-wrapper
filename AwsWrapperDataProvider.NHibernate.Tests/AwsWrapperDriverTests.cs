@@ -14,6 +14,8 @@
 
 using System.Data;
 using System.Reflection;
+using AwsWrapperDataProvider.Dialect.MySqlConnector;
+using AwsWrapperDataProvider.Dialect.Npgsql;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
 using AwsWrapperDataProvider.Tests;
 using AwsWrapperDataProvider.Tests.Container.Utils;
@@ -101,6 +103,12 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             }
 
             return cfg.AddProperties(properties);
+        }
+
+        public AwsWrapperDriverTests()
+        {
+            MySqlConnectorDialectLoader.Load();
+            NpgsqlDialectLoader.Load();
         }
 
         [Fact]

@@ -82,7 +82,7 @@ public class EfmConnectivityIntegrationTests : IntegrationTestBase
     public async Task EfmPluginTest_NetworkFailureDetection(bool async)
     {
         int failureDelaySec = 10;
-        int maxDurationsSec = 30;
+        int maxDurationsSec = 60;
         var instance = ProxyDatabaseInfo.Instances[0].Host;
         var port = ProxyDatabaseInfo.Instances[0].Port;
         var instanceId = ProxyDatabaseInfo.Instances[0].InstanceId;

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector\AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.csproj" />
+    <ProjectReference Include="..\AwsWrapperDataProvider.Dialect.MySqlConnector\AwsWrapperDataProvider.Dialect.MySqlConnector.csproj" />
     <ProjectReference Include="..\AwsWrapperDataProvider.Tests\AwsWrapperDataProvider.Tests.csproj" />
   </ItemGroup>
 
