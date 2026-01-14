@@ -14,6 +14,7 @@
 
 using System.Data;
 using AwsWrapperDataProvider;
+using AwsWrapperDataProvider.Dialect.Npgsql;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
 using Npgsql;
 
@@ -35,6 +36,9 @@ public static class PGFailover
 
     public static async Task Main(string[] args)
     {
+        // Load relevant DbConnection dialect
+        NpgsqlDialectLoader.Load();
+
         const string connectionString =
             "Host=<host>;Database=<db_name>;Username=<username>;Password=<password>;Plugins=failover;";
 

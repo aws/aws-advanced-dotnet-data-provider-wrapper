@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Reflection;
+using AwsWrapperDataProvider.Dialect.MySqlClient;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
 using AwsWrapperDataProvider.NHibernate;
 using NHibernate;
@@ -27,6 +28,9 @@ public class NHibernateExample
 
     public static async Task Main(string[] args)
     {
+        // Load relevant DbConnection dialect
+        MySqlClientDialectLoader.Load();
+
         var start = DateTime.UtcNow;
         var threshold = TimeSpan.FromMinutes(5);
 
