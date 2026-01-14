@@ -24,7 +24,7 @@ public class LimitlessConnectionContext
     public DbConnection? Connection { get; set; }
     public ADONetDelegate<DbConnection> ConnectFunc { get; set; }
     public IList<HostSpec>? LimitlessRouters { get; set; }
-    public IConnectionPlugin Plugin { get; set; }
+    public IConnectionPlugin? Plugin { get; set; }
 
     public LimitlessConnectionContext(
         HostSpec hostSpec,
@@ -32,7 +32,7 @@ public class LimitlessConnectionContext
         DbConnection? connection,
         ADONetDelegate<DbConnection> connectFunc,
         IList<HostSpec>? limitlessRouters,
-        IConnectionPlugin plugin)
+        IConnectionPlugin? plugin)
     {
         this.HostSpec = hostSpec;
         this.Props = props;

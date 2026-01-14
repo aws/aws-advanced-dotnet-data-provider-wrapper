@@ -402,7 +402,7 @@ public class LimitlessRouterServiceTests : IDisposable
         cache.Set(ClusterId, routerList, SomeExpiration);
         this.mockPluginService
             .SetupSequence(x => x.GetHostSpecByStrategy(It.IsAny<IList<HostSpec>>(), It.IsAny<HostRole>(), It.IsAny<string>()))
-            .Returns((HostSpec?)null)
+            .Returns(((HostSpec?)null)!)
             .Returns(selectedRouter);
         this.mockPluginService
             .Setup(x => x.OpenConnection(It.IsAny<HostSpec>(), It.IsAny<Dictionary<string, string>>(), It.IsAny<IConnectionPlugin>(), It.IsAny<bool>()))
