@@ -84,9 +84,11 @@ import software.amazon.awssdk.services.rds.model.CreateBlueGreenDeploymentReques
 import software.amazon.awssdk.services.rds.model.CreateBlueGreenDeploymentResponse;
 import software.amazon.awssdk.services.rds.model.CreateDbClusterParameterGroupRequest;
 import software.amazon.awssdk.services.rds.model.CreateDbClusterParameterGroupResponse;
+import software.amazon.awssdk.services.rds.model.ClusterScalabilityType;
 import software.amazon.awssdk.services.rds.model.CreateDbClusterRequest;
 import software.amazon.awssdk.services.rds.model.CreateDbInstanceRequest;
 import software.amazon.awssdk.services.rds.model.CreateDbInstanceResponse;
+import software.amazon.awssdk.services.rds.model.CreateDbShardGroupRequest;
 import software.amazon.awssdk.services.rds.model.DBCluster;
 import software.amazon.awssdk.services.rds.model.DBClusterMember;
 import software.amazon.awssdk.services.rds.model.DBEngineVersion;
@@ -249,6 +251,10 @@ public class AuroraTestUtility {
             username, password, dbName, identifier, region, engine, instanceClass,
             version, clusterParameterGroupName, numInstances);
         break;
+      case AURORA_LIMITLESS:
+        createAuroraLimitlessCluster(
+            username, password, identifier, region, engine, version);
+        break;
       case RDS_MULTI_AZ_CLUSTER:
         if (numInstances != MULTI_AZ_SIZE) {
           throw new RuntimeException(
@@ -408,6 +414,74 @@ public class AuroraTestUtility {
       throw new InterruptedException(
           "Unable to start AWS RDS Cluster & Instances after waiting for 30 minutes");
     }
+  }
+
+  /**
+   * Creates an RDS Aurora Limitless cluster based on the passed in details. After the cluster is created, this method
+   * will wait until it is available and creates a shard group.
+   *
+   * @param username   the master username for access to the database
+   * @param password   the master password for access to the database
+   * @param identifier the cluster identifier
+   * @param region     the region that the cluster should be created in
+   * @param engine     the engine to use (aurora-postgresql)
+   * @param version    the database engine's version
+   * @throws InterruptedException when clusters have not started after 30 minutes
+   */
+  public void createAuroraLimitlessCluster(
+      String username,
+      String password,
+      String identifier,
+      String region,
+      String engine,
+      String version)
+      throws InterruptedException {
+    final CreateDbClusterRequest dbClusterRequest =
+        CreateDbClusterRequest.builder()
+            .clusterScalabilityType(ClusterScalabilityType.LIMITLESS)
+            .databaseName(null)
+            .dbClusterIdentifier(identifier)
+            .enableCloudwatchLogsExports("postgresql")
+            .enableIAMDatabaseAuthentication(true)
+            .enablePerformanceInsights(true)
+            .engine(engine)
+            .engineVersion(version)
+            .masterUsername(username)
+            .masterUserPassword(password)
+            .monitoringInterval(5)
+            .performanceInsightsRetentionPeriod(31)
+            .storageType("aurora-iopt1")
+            .tags(this.getTag())
+            .build();
+
+    rdsClient.createDBCluster(dbClusterRequest);
+
+    // Wait for cluster to be available
+    final RdsWaiter waiter = rdsClient.waiter();
+    WaiterResponse<DescribeDbClustersResponse> clusterWaiterResponse =
+        waiter.waitUntilDBClusterAvailable(
+            (requestBuilder) ->
+                requestBuilder.filters(
+                    Filter.builder().name("db-cluster-id").values(identifier).build()),
+            (configurationBuilder) -> configurationBuilder.maxAttempts(480).waitTimeout(Duration.ofMinutes(240)));
+
+    if (clusterWaiterResponse.matched().exception().isPresent()) {
+      deleteCluster(identifier, DatabaseEngineDeployment.AURORA_LIMITLESS, false);
+      throw new InterruptedException(
+          "Unable to start AWS RDS Limitless Cluster after waiting for 240 minutes");
+    }
+
+    // Create shard group
+    final String shardGroupIdentifier = identifier + "-shard-group";
+    final CreateDbShardGroupRequest shardGroupRequest =
+        CreateDbShardGroupRequest.builder()
+            .dbClusterIdentifier(identifier)
+            .dbShardGroupIdentifier(shardGroupIdentifier)
+            .minACU(2)
+            .maxACU(128)
+            .publiclyAccessible(true)
+            .build();
+    rdsClient.createDBShardGroup(shardGroupRequest);
   }
 
   /**
@@ -718,6 +792,7 @@ public class AuroraTestUtility {
   public void deleteCluster(String identifier, DatabaseEngineDeployment deployment, boolean waitForCompletion) {
     switch (deployment) {
       case AURORA:
+      case AURORA_LIMITLESS:
         this.deleteAuroraCluster(identifier, waitForCompletion);
         break;
       case RDS_MULTI_AZ_CLUSTER:
@@ -1008,6 +1083,7 @@ public class AuroraTestUtility {
   public String getDbInstanceClass(TestEnvironmentRequest request) {
     switch (request.getDatabaseEngineDeployment()) {
       case AURORA:
+      case AURORA_LIMITLESS:
         return request.getFeatures().contains(TestEnvironmentFeatures.BLUE_GREEN_DEPLOYMENT)
             ? "db.r7g.2xlarge"
             : "db.r5.large";
@@ -1448,6 +1524,7 @@ public class AuroraTestUtility {
   protected String getInstanceIdSql(DatabaseEngine databaseEngine, DatabaseEngineDeployment deployment) {
     switch (deployment) {
       case AURORA:
+      case AURORA_LIMITLESS:
         switch (databaseEngine) {
           case MYSQL:
             return "SELECT @@aurora_server_id as id";

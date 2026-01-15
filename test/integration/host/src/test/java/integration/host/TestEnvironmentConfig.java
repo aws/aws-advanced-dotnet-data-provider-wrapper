@@ -132,6 +132,10 @@ public class TestEnvironmentConfig implements AutoCloseable {
               TestEnvironmentFeatures.BLUE_GREEN_DEPLOYMENT.toString());
         }
 
+        if (request.getFeatures().contains(TestEnvironmentFeatures.LIMITLESS_DEPLOYMENT)) {
+            throw new UnsupportedOperationException(
+                    TestEnvironmentFeatures.LIMITLESS_DEPLOYMENT.toString());
+        }
         break;
       case AURORA:
       case RDS_MULTI_AZ_CLUSTER:
@@ -144,7 +148,18 @@ public class TestEnvironmentConfig implements AutoCloseable {
         }
 
         break;
+      case AURORA_LIMITLESS:
+        env = new TestEnvironmentConfig(request);
 
+        initLimitlessDatabaseParams(env);
+        initAwsCredentials(env);
+        initEnv(env);
+        authorizeRunnerIpAddress(env);
+        createDbCluster(env);
+        if (request.getFeatures().contains(TestEnvironmentFeatures.IAM)) {
+          configureIamAccess(env);
+        }
+        break;
       default:
         throw new NotImplementedException(request.getDatabaseEngineDeployment().toString());
     }
@@ -174,7 +189,8 @@ public class TestEnvironmentConfig implements AutoCloseable {
     if (deployment == DatabaseEngineDeployment.AURORA
         || deployment == DatabaseEngineDeployment.RDS
         || deployment == DatabaseEngineDeployment.RDS_MULTI_AZ_INSTANCE
-        || deployment == DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER) {
+        || deployment == DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER
+        || deployment == DatabaseEngineDeployment.AURORA_LIMITLESS) {
       // These environment require creating external database cluster that should be publicly available.
       // Corresponding AWS Security Groups should be configured and the test task runner IP address
       // should be whitelisted.
@@ -466,7 +482,8 @@ public class TestEnvironmentConfig implements AutoCloseable {
         initAwsCredentials(env);
 
         env.numOfInstances = env.info.getRequest().getNumOfInstances();
-        if (env.info.getRequest().getDatabaseEngineDeployment() == DatabaseEngineDeployment.AURORA) {
+        if (env.info.getRequest().getDatabaseEngineDeployment() == DatabaseEngineDeployment.AURORA ||
+                env.info.getRequest().getDatabaseEngineDeployment() == DatabaseEngineDeployment.AURORA_LIMITLESS) {
           if (env.numOfInstances < 1 || env.numOfInstances > 15) {
             LOGGER.warning(
                 env.numOfInstances + " instances were requested but the requested number must be "
@@ -837,6 +854,7 @@ public class TestEnvironmentConfig implements AutoCloseable {
   private static String getDbEngine(TestEnvironmentRequest request) {
     switch (request.getDatabaseEngineDeployment()) {
       case AURORA:
+      case AURORA_LIMITLESS:
         return getAuroraDbEngine(request);
       case RDS:
       case RDS_MULTI_AZ_CLUSTER:
@@ -935,6 +953,27 @@ public class TestEnvironmentConfig implements AutoCloseable {
     env.info.getDatabaseInfo().setPassword(dbPassword);
     env.info.getDatabaseInfo().setDefaultDbName(dbName);
   }
+
+  private static void initLimitlessDatabaseParams(TestEnvironmentConfig env) {
+    final String dbName =
+      !StringUtils.isNullOrEmpty(System.getenv("DB_DATABASE_NAME"))
+        ? System.getenv("DB_DATABASE_NAME")
+        : "postgres_limitless";
+      final String dbUsername =
+        !StringUtils.isNullOrEmpty(System.getenv("DB_USERNAME"))
+          ? System.getenv("DB_USERNAME")
+          : "test_user";
+      final String dbPassword =
+        !StringUtils.isNullOrEmpty(System.getenv("DB_PASSWORD"))
+          ? System.getenv("DB_PASSWORD")
+          : "secret_password";
+
+      env.info.setDatabaseInfo(new TestDatabaseInfo());
+      env.info.getDatabaseInfo().setUsername(dbUsername);
+      env.info.getDatabaseInfo().setPassword(dbPassword);
+      env.info.getDatabaseInfo().setDefaultDbName(dbName);
+    }
+
 
   private static void initAwsCredentials(TestEnvironmentConfig env) {
     env.awsAccessKeyId = config.awsAccessKeyId;
@@ -1340,6 +1379,10 @@ public class TestEnvironmentConfig implements AutoCloseable {
         }
         deAuthorizeIP(this);
         break;
+      case AURORA_LIMITLESS:
+        deleteDbCluster(false);
+        deAuthorizeIP(this);
+        break;
       case RDS_MULTI_AZ_CLUSTER:
         deleteDbCluster(false);
         deAuthorizeIP(this);
@@ -1495,7 +1538,8 @@ public class TestEnvironmentConfig implements AutoCloseable {
       if (preCreateInfo.envPreCreateFuture == null
           && (preCreateInfo.request.getDatabaseEngineDeployment() == DatabaseEngineDeployment.AURORA
             || preCreateInfo.request.getDatabaseEngineDeployment() == DatabaseEngineDeployment.RDS
-            || preCreateInfo.request.getDatabaseEngineDeployment() == DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER)) {
+            || preCreateInfo.request.getDatabaseEngineDeployment() == DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER
+            || preCreateInfo.request.getDatabaseEngineDeployment() == DatabaseEngineDeployment.AURORA_LIMITLESS)) {
 
         // run environment creation in advance
         int finalIndex = index;
@@ -1533,6 +1577,15 @@ public class TestEnvironmentConfig implements AutoCloseable {
                 }
                 createDbCluster(env);
                 configureIamAccess(env);
+                break;
+              case AURORA_LIMITLESS:
+                initLimitlessDatabaseParams(env);
+                initEnv(env);
+                authorizeRunnerIpAddress(env);
+                createDbCluster(env);
+                if (env.info.getRequest().getFeatures().contains(TestEnvironmentFeatures.IAM)) {
+                  configureIamAccess(env);
+                }
                 break;
               default:
                 throw new NotImplementedException(env.info.getRequest().getDatabaseEngineDeployment().toString());

@@ -1,4 +1,4 @@
-﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -778,6 +778,12 @@ public class AuroraTestUtils
         return deployment switch
         {
             DatabaseEngineDeployment.AURORA => engine switch
+            {
+                DatabaseEngine.MYSQL => "SELECT @@aurora_server_id as id",
+                DatabaseEngine.PG => "SELECT pg_catalog.aurora_db_instance_identifier()",
+                _ => throw new NotSupportedException($"Unsupported database engine: {engine}"),
+            },
+            DatabaseEngineDeployment.AURORA_LIMITLESS => engine switch
             {
                 DatabaseEngine.MYSQL => "SELECT @@aurora_server_id as id",
                 DatabaseEngine.PG => "SELECT pg_catalog.aurora_db_instance_identifier()",
