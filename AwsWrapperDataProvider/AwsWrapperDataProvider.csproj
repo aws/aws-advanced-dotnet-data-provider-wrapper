@@ -61,5 +61,8 @@
     <None Include="..\README.md" Pack="true" PackagePath="README.md" />
     <None Include="..\AwsIcon.png" Pack="true" PackagePath="\" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Driver\Plugins\Limitless\" />
+  </ItemGroup>
 
 </Project>

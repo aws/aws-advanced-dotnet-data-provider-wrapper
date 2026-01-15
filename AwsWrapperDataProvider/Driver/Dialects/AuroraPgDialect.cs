@@ -21,7 +21,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
-public class AuroraPgDialect : PgDialect
+public class AuroraPgDialect : PgDialect, IAuroraLimitlessDialect
 {
     private const string ReaderOrdinal = "aurora_stat_utils";
 
@@ -114,4 +114,6 @@ public class AuroraPgDialect : PgDialect
                     NodeIdQuery,
                     IsReaderQuery);
     }
+
+    public string LimitlessRouterEndpointQuery { get => "SELECT router_endpoint, load from aurora_limitless_router_endpoints()"; }
 }

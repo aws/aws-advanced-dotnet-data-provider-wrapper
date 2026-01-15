@@ -73,6 +73,11 @@ public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
 
     public abstract string? MapCanonicalKeyToWrapperProperty(string canonicalKey);
 
+    public bool IsSyntaxError(DbException ex)
+    {
+        return ex.SqlState != null && ex.SqlState.StartsWith("42");
+    }
+
     public abstract (bool ConnectionAlive, Exception? ConnectionException) Ping(IDbConnection connection);
 
     protected string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, AwsWrapperProperty hostProperty)

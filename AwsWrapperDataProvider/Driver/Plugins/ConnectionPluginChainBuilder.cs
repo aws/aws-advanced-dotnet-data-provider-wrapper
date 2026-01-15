@@ -19,6 +19,7 @@ using AwsWrapperDataProvider.Driver.Plugins.AuroraInitialConnectionStrategy;
 using AwsWrapperDataProvider.Driver.Plugins.Efm;
 using AwsWrapperDataProvider.Driver.Plugins.ExecutionTime;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
+using AwsWrapperDataProvider.Driver.Plugins.Limitless;
 using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Logging;
 
@@ -36,6 +37,7 @@ public class ConnectionPluginChainBuilder
             { PluginCodes.Failover, new Lazy<IConnectionPluginFactory>(() => new FailoverPluginFactory()) },
             { PluginCodes.HostMonitoring, new Lazy<IConnectionPluginFactory>(() => new HostMonitoringPluginFactory()) },
             { PluginCodes.InitialConnection, new Lazy<IConnectionPluginFactory>(() => new AuroraInitialConnectionStrategyPluginFactory()) },
+            { PluginCodes.Limitless, new Lazy<IConnectionPluginFactory>(() => new LimitlessConnectionPluginFactory()) },
             { PluginCodes.Iam, null },
             { PluginCodes.SecretsManager, null },
             { PluginCodes.FederatedAuth, null },
@@ -47,6 +49,7 @@ public class ConnectionPluginChainBuilder
             { PluginCodes.InitialConnection, 390 },
             { PluginCodes.Failover, 700 },
             { PluginCodes.HostMonitoring, 800 },
+            { PluginCodes.Limitless, 950 },
             { PluginCodes.Iam, 1000 },
             { PluginCodes.SecretsManager, 1100 },
             { PluginCodes.FederatedAuth, 1200 },
