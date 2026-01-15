@@ -21,7 +21,7 @@ namespace AwsWrapperDataProvider.Driver.Plugins.ExecutionTime;
 
 public class ExecutionTimePlugin : AbstractConnectionPlugin
 {
-    private static readonly ILogger<ExecutionTimePlugin> _logger = LoggerUtils.GetLogger<ExecutionTimePlugin>();
+    private static readonly ILogger<ExecutionTimePlugin> Logger = LoggerUtils.GetLogger<ExecutionTimePlugin>();
 
     public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string>() { "*" };
 
@@ -34,7 +34,7 @@ public class ExecutionTimePlugin : AbstractConnectionPlugin
         long ticks = sw.ElapsedTicks;
         double nanoseconds = (double)ticks / Stopwatch.Frequency * 1_000_000_000;
 
-        _logger.LogInformation(Resources.ExecutionTimePlugin_Execute_ExecutionTime, ticks, nanoseconds);
+        Logger.LogInformation(Resources.ExecutionTimePlugin_Execute_ExecutionTime, ticks, nanoseconds);
 
         return results;
     }

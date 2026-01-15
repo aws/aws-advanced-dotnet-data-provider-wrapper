@@ -26,6 +26,8 @@ namespace AwsWrapperDataProvider.Driver.Plugins.Limitless;
 
 public class LimitlessRouterService : ILimitlessRouterService
 {
+    private static readonly ILogger<LimitlessRouterService> Logger = LoggerUtils.GetLogger<LimitlessRouterService>();
+
     private static readonly ConcurrentDictionary<string, object> ForceGetLimitlessRoutersLockMap = new();
     private static readonly MemoryCache LimitlessRouterCache = new(new MemoryCacheOptions());
     private static readonly MemoryCache MonitorCache = new(new MemoryCacheOptions());
@@ -33,7 +35,6 @@ public class LimitlessRouterService : ILimitlessRouterService
 
     private readonly IPluginService _pluginService;
     private readonly LimitlessQueryHelper _queryHelper;
-    private readonly ILogger<LimitlessRouterService> _logger;
     private readonly LimitlessRouterMonitorInitializer _limitlessRouterMonitorInitializer;
 
     public static void ClearCache()
@@ -68,7 +69,6 @@ public class LimitlessRouterService : ILimitlessRouterService
         this._pluginService = pluginService;
         this._queryHelper = queryHelper;
         this._limitlessRouterMonitorInitializer = limitlessRouterMonitorInitializer;
-        this._logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<LimitlessRouterService>();
     }
 
     public async Task EstablishConnection(LimitlessConnectionContext context)
@@ -77,7 +77,7 @@ public class LimitlessRouterService : ILimitlessRouterService
 
         if (context.LimitlessRouters == null || !context.LimitlessRouters.Any())
         {
-            this._logger.LogTrace("Limitless router cache is empty");
+            Logger.LogTrace("Limitless router cache is empty");
             bool waitForRouterInfo = PropertyDefinition.LimitlessWaitForRouterInfo.GetBoolean(context.Props);
             if (waitForRouterInfo)
             {
@@ -85,7 +85,7 @@ public class LimitlessRouterService : ILimitlessRouterService
             }
             else
             {
-                this._logger.LogTrace("Using provided connect URL");
+                Logger.LogTrace("Using provided connect URL");
                 if (context.Connection == null || context.Connection.State == ConnectionState.Closed)
                 {
                     context.SetConnection(await context.ConnectFunc());
@@ -97,7 +97,7 @@ public class LimitlessRouterService : ILimitlessRouterService
 
         if (context.LimitlessRouters!.Any(r => r.Host == context.HostSpec.Host && r.Port == context.HostSpec.Port))
         {
-            this._logger.LogTrace("Connecting with host: {Host}", context.HostSpec.Host);
+            Logger.LogTrace("Connecting with host: {Host}", context.HostSpec.Host);
             if (context.Connection == null || context.Connection.State == ConnectionState.Closed)
             {
                 try
@@ -126,7 +126,8 @@ public class LimitlessRouterService : ILimitlessRouterService
                 context.LimitlessRouters!,
                 HostRole.Writer,
                 WeightedRandomHostSelector.StrategyName);
-            this._logger.LogDebug("Selected host: {Host}", selectedHostSpec?.Host ?? "null");
+            Logger.LogDebug("Weighted RandomHostWeight Pairs: {HostPairs}", context.Props[PropertyDefinition.WeightedRandomHostWeightPairs.Name]);
+            Logger.LogDebug("Selected host: {Host}", selectedHostSpec?.Host ?? "null");
         }
         catch (Exception e)
         {
@@ -184,7 +185,7 @@ public class LimitlessRouterService : ILimitlessRouterService
 
                 if (context.LimitlessRouters == null || !context.LimitlessRouters.Any(h => h.Availability == HostAvailability.Available))
                 {
-                    this._logger.LogWarning("No routers available for retry");
+                    Logger.LogWarning("No routers available for retry");
                     if (context.Connection != null && context.Connection.State == ConnectionState.Closed)
                     {
                         return;
@@ -215,7 +216,7 @@ public class LimitlessRouterService : ILimitlessRouterService
                     context.LimitlessRouters!,
                     HostRole.Writer,
                     HighestWeightHostSelector.StrategyName);
-                this._logger.LogDebug("Selected host for retry: {Host}", selectedHostSpec?.Host ?? "null");
+                Logger.LogDebug("Selected host for retry: {Host}", selectedHostSpec?.Host ?? "null");
                 if (selectedHostSpec == null)
                 {
                     continue;
@@ -223,7 +224,7 @@ public class LimitlessRouterService : ILimitlessRouterService
             }
             catch (NotSupportedException)
             {
-                this._logger.LogError("Incorrect configuration");
+                Logger.LogError("Incorrect configuration");
                 throw;
             }
             catch (Exception)
@@ -248,7 +249,7 @@ public class LimitlessRouterService : ILimitlessRouterService
                 }
 
                 selectedHostSpec.Availability = HostAvailability.Unavailable;
-                this._logger.LogTrace("Failed to connect to host: {Host}", selectedHostSpec.Host);
+                Logger.LogTrace("Failed to connect to host: {Host}", selectedHostSpec.Host);
             }
         }
 
@@ -280,7 +281,7 @@ public class LimitlessRouterService : ILimitlessRouterService
                     throw;
                 }
 
-                this._logger.LogDebug("Exception getting limitless routers: {Exception}", e);
+                Logger.LogDebug("Exception getting limitless routers: {Exception}", e);
             }
             finally
             {
@@ -352,7 +353,7 @@ public class LimitlessRouterService : ILimitlessRouterService
         }
         catch (DbException e)
         {
-            this._logger.LogWarning("Error getting limitless routers: {Exception}", e);
+            Logger.LogWarning("Error getting limitless routers: {Exception}", e);
             throw;
         }
     }

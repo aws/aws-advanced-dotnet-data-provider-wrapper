@@ -24,12 +24,18 @@ namespace AwsWrapperDataProvider.Driver.Plugins.Limitless;
 
 public class LimitlessConnectionPlugin : AbstractConnectionPlugin
 {
-    private static readonly IReadOnlySet<string> SubscribedMethodsSet = new HashSet<string> { "OpenConnection" };
+    private static readonly ILogger<LimitlessConnectionPlugin> Logger = LoggerUtils.GetLogger<LimitlessConnectionPlugin>();
+
+    private static readonly IReadOnlySet<string> SubscribedMethodsSet = new HashSet<string>
+    {
+        "DbConnection.Open",
+        "DbConnection.OpenAsync",
+
+    };
 
     private readonly IPluginService _pluginService;
     private readonly Dictionary<string, string> _properties;
     private readonly Func<ILimitlessRouterService> _limitlessRouterServiceSupplier;
-    private readonly ILogger<LimitlessConnectionPlugin> _logger;
     private ILimitlessRouterService? _limitlessRouterService;
 
     public override IReadOnlySet<string> SubscribedMethods => SubscribedMethodsSet;
@@ -49,7 +55,6 @@ public class LimitlessConnectionPlugin : AbstractConnectionPlugin
         this._pluginService = pluginService;
         this._properties = properties;
         this._limitlessRouterServiceSupplier = limitlessRouterServiceSupplier;
-        this._logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<LimitlessConnectionPlugin>();
     }
 
     public override async Task<DbConnection> OpenConnection(

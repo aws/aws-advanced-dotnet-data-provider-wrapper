@@ -49,9 +49,9 @@ public partial class WeightedRandomHostSelector : IHostSelector
 
     public HostSpec GetHost(IList<HostSpec> hosts, HostRole hostRole, Dictionary<string, string> props)
     {
-        var hostWeightMap = this.GetHostWeightPairMap(PropertyDefinition.WeightedRandomHostWeightPairs.GetString(props));
+        Dictionary<string, int> hostWeightMap = this.GetHostWeightPairMap(PropertyDefinition.WeightedRandomHostWeightPairs.GetString(props));
 
-        var eligibleHosts = hosts
+        List<HostSpec> eligibleHosts = hosts
             .Where(hostSpec => hostRole == hostSpec.Role && hostSpec.Availability == HostAvailability.Available)
             .OrderBy(hostSpec => hostSpec.Host)
             .ToList();
@@ -61,10 +61,10 @@ public partial class WeightedRandomHostSelector : IHostSelector
             throw new InvalidOperationException(string.Format(Resources.Error_NoHostsMatching, hostRole));
         }
 
-        var hostWeightRangeMap = new Dictionary<string, NumberRange>();
+        Dictionary<string, NumberRange> hostWeightRangeMap = new();
         int counter = 1;
 
-        foreach (var host in eligibleHosts)
+        foreach (HostSpec host in eligibleHosts)
         {
             if (!hostWeightMap.ContainsKey(host.Host))
             {

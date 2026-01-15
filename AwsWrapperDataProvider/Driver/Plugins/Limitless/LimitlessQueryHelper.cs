@@ -16,6 +16,7 @@ using System.Data;
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
+using AwsWrapperDataProvider.Driver.Utils;
 using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
@@ -23,14 +24,14 @@ namespace AwsWrapperDataProvider.Driver.Plugins.Limitless;
 
 public class LimitlessQueryHelper
 {
+    private static readonly ILogger<LimitlessQueryHelper> Logger = LoggerUtils.GetLogger<LimitlessQueryHelper>();
+
     private const int DefaultQueryTimeoutMs = 5000;
     private readonly IPluginService _pluginService;
-    private readonly ILogger<LimitlessQueryHelper> _logger;
 
     public LimitlessQueryHelper(IPluginService pluginService)
     {
         this._pluginService = pluginService;
-        this._logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<LimitlessQueryHelper>();
     }
 
     public virtual async Task<IList<HostSpec>> QueryForLimitlessRouters(DbConnection conn, int hostPortToMap)
@@ -43,7 +44,7 @@ public class LimitlessQueryHelper
 
         try
         {
-            using var command = conn.CreateCommand();
+            using DbCommand command = conn.CreateCommand();
             command.CommandText = limitlessDialect.LimitlessRouterEndpointQuery;
             command.CommandTimeout =
                 command.CommandTimeout == 0
@@ -61,10 +62,10 @@ public class LimitlessQueryHelper
 
     private IList<HostSpec> MapResultSetToHostSpecList(DbDataReader reader, int hostPortToMap)
     {
-        var hosts = new List<HostSpec>();
+        List<HostSpec> hosts = new();
         while (reader.Read())
         {
-            var host = this.CreateHost(reader, hostPortToMap);
+            HostSpec host = this.CreateHost(reader, hostPortToMap);
             hosts.Add(host);
         }
 
@@ -73,15 +74,15 @@ public class LimitlessQueryHelper
 
     private HostSpec CreateHost(DbDataReader reader, int hostPortToMap)
     {
-        var hostName = reader.GetString(0);
-        var cpu = reader.GetFloat(1);
+        string hostName = reader.GetString(0);
+        float cpu = reader.GetFloat(1);
 
-        var weight = (long)(10 - Math.Floor(10 * cpu));
+        long weight = (long)(10 - Math.Floor(10 * cpu));
 
         if (weight < 1 || weight > 10)
         {
             weight = 1; // default to 1
-            this._logger.LogWarning("Invalid router load for host {HostName}: {Cpu}", hostName, cpu);
+            Logger.LogWarning("Invalid router load for host {HostName}: {Cpu}", hostName, cpu);
         }
 
         return this._pluginService.HostSpecBuilder
