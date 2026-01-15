@@ -14,6 +14,7 @@
 
 using System.Data;
 using AwsWrapperDataProvider;
+using AwsWrapperDataProvider.Dialect.MySqlClient;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Plugin.FederatedAuth.FederatedAuth;
 
@@ -23,6 +24,9 @@ public static class MySqlFederatedAuthentication
 {
     public static async Task Main(string[] args)
     {
+        // Load relevant DbConnection dialect
+        MySqlClientDialectLoader.Load();
+
         ConnectionPluginChainBuilder.RegisterPluginFactory<FederatedAuthPluginFactory>(PluginCodes.FederatedAuth);
 
         const string connectionString =

@@ -14,6 +14,7 @@
 
 using System.Data;
 using AwsWrapperDataProvider;
+using AwsWrapperDataProvider.Dialect.MySqlClient;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
 
 namespace AwsWrapperDataProviderExample;
@@ -36,6 +37,9 @@ public static class MySqlFailover
     {
         const string connectionString =
             "Server=<host>;Database=<db_name>;User Id=<user>;Password=<password>;Plugins=failover;";
+
+        // Load relevant DbConnection dialect
+        MySqlClientDialectLoader.Load();
 
         using AwsWrapperConnection<MySql.Data.MySqlClient.MySqlConnection> connection = new(connectionString);
         connection.Open();

@@ -11,10 +11,12 @@
 
     <ItemGroup>
         <PackageReference Include="MySql.Data" Version="9.5.0" />
-        <PackageReference Include="Npgsql" Version="10.0.1" />
+        <PackageReference Include="Npgsql" Version="9.0.4" />
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\..\AwsWrapperDataProvider.Dialect.MySqlClient\AwsWrapperDataProvider.Dialect.MySqlClient.csproj" />
+      <ProjectReference Include="..\..\..\AwsWrapperDataProvider.Dialect.Npgsql\AwsWrapperDataProvider.Dialect.Npgsql.csproj" />
       <ProjectReference Include="..\..\..\AwsWrapperDataProvider.Plugin.FederatedAuth\AwsWrapperDataProvider.Plugin.FederatedAuth.csproj" />
       <ProjectReference Include="..\..\..\AwsWrapperDataProvider.Plugin.Iam\AwsWrapperDataProvider.Plugin.Iam.csproj" />
       <ProjectReference Include="..\..\..\AwsWrapperDataProvider\AwsWrapperDataProvider.csproj" />

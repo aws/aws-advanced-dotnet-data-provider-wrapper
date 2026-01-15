@@ -14,6 +14,7 @@
 
 using System.Data;
 using AwsWrapperDataProvider;
+using AwsWrapperDataProvider.Dialect.Npgsql;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Plugin.FederatedAuth.FederatedAuth;
 using Npgsql;
@@ -24,6 +25,9 @@ public static class PGOktaAuthentication
 {
     public static async Task Main(string[] args)
     {
+        // Load relevant DbConnection dialect
+        NpgsqlDialectLoader.Load();
+
         ConnectionPluginChainBuilder.RegisterPluginFactory<OktaAuthPluginFactory>(PluginCodes.Okta);
 
         const string connectionString =
