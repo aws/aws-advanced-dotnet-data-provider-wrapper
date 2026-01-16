@@ -100,6 +100,16 @@ public static class PropertyDefinition
     public static readonly AwsWrapperProperty SecretsManagerEndpoint = new(
         "SecretsManagerEndpoint", null, "The endpoint of the secret to retrieve.");
 
+    public static readonly AwsWrapperProperty SecretsManagerSecretUsernameProperty = new(
+        "SecretsManagerSecretUsernameProperty",
+        "username",
+        "Set this value to be the key in the JSON secret that contains the username for database connection.");
+
+    public static readonly AwsWrapperProperty SecretsManagerSecretPasswordProperty = new(
+        "SecretsManagerSecretPasswordProperty",
+        "password",
+        "Set this value to be the key in the JSON secret that contains the password for database connection.");
+
     public static readonly AwsWrapperProperty OpenConnectionRetryTimeoutMs = new(
         "OpenConnectionRetryTimeoutMs", "30000", "Maximum allowed time for the retries opening a connection.");
 
@@ -219,6 +229,8 @@ public static class PropertyDefinition
         SecretsManagerRegion,
         SecretsManagerExpirationSecs,
         SecretsManagerEndpoint,
+        SecretsManagerSecretUsernameProperty,
+        SecretsManagerSecretPasswordProperty,
         IdpEndpoint,
         IdpPort,
         IdpUsername,

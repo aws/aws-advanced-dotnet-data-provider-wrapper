@@ -14,6 +14,7 @@
 
 using System.Data;
 using AwsWrapperDataProvider;
+using AwsWrapperDataProvider.Dialect.Npgsql;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Plugin.Iam.Iam;
 using Npgsql;
@@ -24,6 +25,9 @@ public static class PGIamAuthentication
 {
     public static async Task Main(string[] args)
     {
+        // Load relevant DbConnection dialect
+        NpgsqlDialectLoader.Load();
+
         ConnectionPluginChainBuilder.RegisterPluginFactory<IamAuthPluginFactory>(PluginCodes.Iam);
 
         const string connectionString =

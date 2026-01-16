@@ -1,6 +1,9 @@
 name: Entity Framework Integration Tests
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:

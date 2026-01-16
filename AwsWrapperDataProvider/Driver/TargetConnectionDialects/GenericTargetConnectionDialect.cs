@@ -38,6 +38,7 @@ public class GenericTargetConnectionDialect : AbstractTargetConnectionDialect
     {
         return canonicalKey.ToLowerInvariant() switch
         {
+            "server" => PropertyDefinition.Host.Name,
             "host" => PropertyDefinition.Host.Name,
             "port" => PropertyDefinition.Port.Name,
             "username" => PropertyDefinition.User.Name,
