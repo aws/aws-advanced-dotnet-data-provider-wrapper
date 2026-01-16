@@ -74,6 +74,7 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
     {
         var query = WrapperUtils.GetQueryFromSqlObject(methodInvokedOn);
         var (readOnly, found) = WrapperUtils.DoesSetReadOnly(query, this.pluginService.Dialect);
+        Logger.LogDebug("ReadOnly is " + (found ? "set to" + (readOnly ? "read only" : "read write") : "not set"));
         if (found)
         {
             await this.SwitchConnectionIfRequired(readOnly);
@@ -208,6 +209,7 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
     {
         var currentConnection = this.pluginService.CurrentConnection;
         var currentHost = this.pluginService.CurrentHostSpec!;
+        Logger.LogDebug(currentHost.ToString());
 
         if (currentHost.Role == HostRole.Writer && this.IsConnectionUsable(currentConnection))
         {

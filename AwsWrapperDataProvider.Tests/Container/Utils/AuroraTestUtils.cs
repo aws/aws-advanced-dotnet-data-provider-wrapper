@@ -895,7 +895,8 @@ public class AuroraTestUtils
             connection,
             TestEnvironment.Env.Info.Request.Engine,
             TestEnvironment.Env.Info.Request.Deployment,
-            async);
+            async,
+            tx);
     }
 
     public string GetSleepSql(DatabaseEngine engine, int seconds)
