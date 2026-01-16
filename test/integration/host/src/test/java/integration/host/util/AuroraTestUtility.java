@@ -767,7 +767,6 @@ public class AuroraTestUtility {
     }
   }
 
-
   /**
    * Deletes the specified Aurora cluster and removes the current IP address from the default security group.
    *
@@ -1633,6 +1632,15 @@ public class AuroraTestUtility {
       return versions.dbEngineVersions().get(0).engineVersion();
     }
     throw new RuntimeException("Failed to find default version");
+  }
+
+  public String getLimitlessVersion(String engine) {
+    final List<String> versions = getEngineVersions(engine);
+    // Find the latest version that contains "limitless"
+    return versions.stream()
+        .filter(version -> version.contains("limitless"))
+        .max(Comparator.naturalOrder())
+        .orElseThrow(() -> new RuntimeException("Failed to find Limitless version for engine: " + engine));
   }
 
   public static <T> T executeWithTimeout(final Callable<T> callable, long timeoutMs) throws Throwable {

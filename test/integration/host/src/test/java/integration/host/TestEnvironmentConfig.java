@@ -888,6 +888,11 @@ public class TestEnvironmentConfig implements AutoCloseable {
   }
 
   private static String getDbEngineVersion(String engineName, TestEnvironmentConfig env) {
+    // For Limitless, always use a Limitless-compatible version
+    if (env.info.getRequest().getDatabaseEngineDeployment() == DatabaseEngineDeployment.AURORA_LIMITLESS) {
+      return env.auroraUtil.getLimitlessVersion(engineName);
+    }
+
     String systemPropertyVersion;
     TestEnvironmentRequest request = env.info.getRequest();
     switch (request.getDatabaseEngine()) {
