@@ -153,7 +153,7 @@ public class AuroraTestUtils
     {
         var envInfo = TestEnvironment.Env.Info;
         var deployment = envInfo.Request.Deployment;
-        
+
         // Limitless clusters don't have traditional instances
         if (deployment == DatabaseEngineDeployment.AURORA_LIMITLESS)
         {

@@ -107,16 +107,16 @@ public class TestEnvironment
     public static async Task RebootAllClusterInstancesAsync()
     {
         var testInfo = Env.Info!;
+        var auroraUtil = AuroraTestUtils.GetUtility(testInfo);
 
         if (testInfo.Request.Deployment == DatabaseEngineDeployment.AURORA_LIMITLESS)
         {
-            var auroraUtil = AuroraTestUtils.GetUtility(testInfo);
             await auroraUtil.WaitUntilClusterHasRightStateAsync(testInfo.RdsDbName!);
+
             // For Limitless, we just verify cluster health - no instances to reboot
             return;
         }
 
-        var auroraUtil = AuroraTestUtils.GetUtility(testInfo);
         var instancesIDs = testInfo.DatabaseInfo!.Instances.Select(i => i.InstanceId);
 
         await auroraUtil.WaitUntilClusterHasRightStateAsync(testInfo.RdsDbName!);
