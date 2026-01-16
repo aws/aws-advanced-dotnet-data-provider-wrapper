@@ -245,6 +245,9 @@ public static class PropertyDefinition
         // InitialConnection Plugin Properties
         InitialConnectionReaderHostSelectorStrategy,
 
+        // Read Write Splitting Plugin Properties
+        RWSplittingReaderHostSelectorStrategy,
+
         // Host Selector Stratagy Properties
         RoundRobinHostWeightPairs,
         RoundRobinDefaultWeight,

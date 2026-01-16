@@ -184,6 +184,7 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
         }
         else
         {
+            // TODO: What if transaciton is started via raw SQL
             if (currentHost.Role != HostRole.Writer && this.pluginService.CurrentTransaction != null)
             {
                 throw new ReadWriteSplittingDbException(Resources.ReadWriteSplittingPlugin_SetReadOnlyFalseInTransaction);

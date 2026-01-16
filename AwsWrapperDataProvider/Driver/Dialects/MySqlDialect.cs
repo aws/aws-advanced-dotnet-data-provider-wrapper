@@ -36,6 +36,10 @@ public class MySqlDialect : IDialect
 
     public IExceptionHandler ExceptionHandler { get; } = new MySqlExceptionHandler();
 
+    internal static readonly string ReadOnlyQuery = "set session transaction read only";
+
+    internal static readonly string ReadWriteQuery = "set session transaction read write";
+
     public virtual IList<Type> DialectUpdateCandidates { get; } =
     [
         typeof(RdsMultiAzDbClusterMySqlDialect),
@@ -94,12 +98,12 @@ public class MySqlDialect : IDialect
 
         var lowercaseQuery = query.Trim().ToLowerInvariant();
 
-        if (lowercaseQuery.StartsWith("set session transaction read only"))
+        if (lowercaseQuery.StartsWith(ReadOnlyQuery))
         {
             return (true, true);
         }
 
-        if (lowercaseQuery.StartsWith("set session transaction read write"))
+        if (lowercaseQuery.StartsWith(ReadWriteQuery))
         {
             return (false, true);
         }

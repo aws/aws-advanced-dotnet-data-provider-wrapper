@@ -37,6 +37,10 @@ public class PgDialect : IDialect
 
     internal static readonly string PGSelect1Query = "SELECT 1 FROM pg_catalog.pg_proc LIMIT 1";
 
+    internal static readonly string ReadOnlyQuery = "set session characteristics as transaction read only";
+
+    internal static readonly string ReadWriteQuery = "set session characteristics as transaction read write";
+
     public IExceptionHandler ExceptionHandler { get; } = new PgExceptionHandler();
 
     public virtual IList<Type> DialectUpdateCandidates { get; } =
@@ -96,12 +100,12 @@ public class PgDialect : IDialect
 
         var lowercaseQuery = query.Trim().ToLowerInvariant();
 
-        if (lowercaseQuery.StartsWith("set session characteristics as transaction read only"))
+        if (lowercaseQuery.StartsWith(ReadOnlyQuery))
         {
             return (true, true);
         }
 
-        if (lowercaseQuery.StartsWith("set session characteristics as transaction read write"))
+        if (lowercaseQuery.StartsWith(ReadWriteQuery))
         {
             return (false, true);
         }
