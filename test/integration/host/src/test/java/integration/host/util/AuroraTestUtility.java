@@ -1636,7 +1636,6 @@ public class AuroraTestUtility {
 
   public String getLimitlessVersion(String engine) {
     final List<String> versions = getEngineVersions(engine);
-    // Find the latest version that contains "limitless"
     return versions.stream()
         .filter(version -> version.contains("limitless"))
         .max(Comparator.naturalOrder())
