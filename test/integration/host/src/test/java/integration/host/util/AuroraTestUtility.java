@@ -423,7 +423,7 @@ public class AuroraTestUtility {
         CreateDbShardGroupRequest.builder()
             .dbClusterIdentifier(identifier)
             .dbShardGroupIdentifier(shardGroupIdentifier)
-            .minACU(2.0)
+            .minACU(16.0)
             .maxACU(128.0)
             .publiclyAccessible(true)
             .build();
