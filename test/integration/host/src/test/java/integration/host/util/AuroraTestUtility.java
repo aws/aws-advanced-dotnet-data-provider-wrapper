@@ -62,11 +62,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.apache.commons.lang3.NotImplementedException;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
-import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.*;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.waiters.WaiterResponse;
 import software.amazon.awssdk.regions.Region;
@@ -77,55 +73,9 @@ import software.amazon.awssdk.services.ec2.model.IpPermission;
 import software.amazon.awssdk.services.ec2.model.IpRange;
 import software.amazon.awssdk.services.rds.RdsClient;
 import software.amazon.awssdk.services.rds.RdsClientBuilder;
-import software.amazon.awssdk.services.rds.model.ApplyMethod;
-import software.amazon.awssdk.services.rds.model.BlueGreenDeployment;
-import software.amazon.awssdk.services.rds.model.BlueGreenDeploymentNotFoundException;
-import software.amazon.awssdk.services.rds.model.CreateBlueGreenDeploymentRequest;
-import software.amazon.awssdk.services.rds.model.CreateBlueGreenDeploymentResponse;
-import software.amazon.awssdk.services.rds.model.CreateDbClusterParameterGroupRequest;
-import software.amazon.awssdk.services.rds.model.CreateDbClusterParameterGroupResponse;
-import software.amazon.awssdk.services.rds.model.ClusterScalabilityType;
-import software.amazon.awssdk.services.rds.model.CreateDbClusterRequest;
-import software.amazon.awssdk.services.rds.model.CreateDbInstanceRequest;
-import software.amazon.awssdk.services.rds.model.CreateDbInstanceResponse;
-import software.amazon.awssdk.services.rds.model.CreateDbShardGroupRequest;
-import software.amazon.awssdk.services.rds.model.DBCluster;
-import software.amazon.awssdk.services.rds.model.DBClusterMember;
-import software.amazon.awssdk.services.rds.model.DBEngineVersion;
-import software.amazon.awssdk.services.rds.model.DBInstance;
-import software.amazon.awssdk.services.rds.model.DbClusterNotFoundException;
-import software.amazon.awssdk.services.rds.model.DbInstanceNotFoundException;
-import software.amazon.awssdk.services.rds.model.DeleteBlueGreenDeploymentRequest;
-import software.amazon.awssdk.services.rds.model.DeleteBlueGreenDeploymentResponse;
-import software.amazon.awssdk.services.rds.model.DeleteDbClusterParameterGroupRequest;
-import software.amazon.awssdk.services.rds.model.DeleteDbClusterResponse;
-import software.amazon.awssdk.services.rds.model.DeleteDbInstanceRequest;
-import software.amazon.awssdk.services.rds.model.DeleteDbInstanceResponse;
-import software.amazon.awssdk.services.rds.model.DescribeBlueGreenDeploymentsResponse;
-import software.amazon.awssdk.services.rds.model.DescribeDbClustersRequest;
-import software.amazon.awssdk.services.rds.model.DescribeDbClustersResponse;
-import software.amazon.awssdk.services.rds.model.DescribeDbEngineVersionsRequest;
-import software.amazon.awssdk.services.rds.model.DescribeDbEngineVersionsResponse;
-import software.amazon.awssdk.services.rds.model.DescribeDbInstancesRequest;
-import software.amazon.awssdk.services.rds.model.DescribeDbInstancesResponse;
-import software.amazon.awssdk.services.rds.model.FailoverDbClusterResponse;
-import software.amazon.awssdk.services.rds.model.Filter;
-import software.amazon.awssdk.services.rds.model.InvalidDbClusterStateException;
-import software.amazon.awssdk.services.rds.model.InvalidDbInstanceStateException;
-import software.amazon.awssdk.services.rds.model.ModifyDbClusterParameterGroupRequest;
-import software.amazon.awssdk.services.rds.model.ModifyDbClusterParameterGroupResponse;
-import software.amazon.awssdk.services.rds.model.Parameter;
-import software.amazon.awssdk.services.rds.model.PromoteReadReplicaDbClusterRequest;
-import software.amazon.awssdk.services.rds.model.PromoteReadReplicaDbClusterResponse;
-import software.amazon.awssdk.services.rds.model.PromoteReadReplicaRequest;
-import software.amazon.awssdk.services.rds.model.PromoteReadReplicaResponse;
-import software.amazon.awssdk.services.rds.model.RdsException;
-import software.amazon.awssdk.services.rds.model.RebootDbClusterResponse;
-import software.amazon.awssdk.services.rds.model.RebootDbInstanceResponse;
-import software.amazon.awssdk.services.rds.model.SwitchoverBlueGreenDeploymentRequest;
-import software.amazon.awssdk.services.rds.model.SwitchoverBlueGreenDeploymentResponse;
-import software.amazon.awssdk.services.rds.model.Tag;
+import software.amazon.awssdk.services.rds.model.*;
 import software.amazon.awssdk.services.rds.waiters.RdsWaiter;
+import software.amazon.awssdk.core.waiters.WaiterOverrideConfiguration;
 
 /**
  * Provides useful functions for RDS integration testing. To use this functionality the following environment variables
@@ -141,6 +91,17 @@ public class AuroraTestUtility {
   private static final int DEFAULT_ALLOCATED_STORAGE = 400;
   private static final int MULTI_AZ_SIZE = 3;
   private static final Random rand = new Random();
+
+  // Instance variables for Limitless cluster creation
+  private String dbIdentifier;
+  private String dbEngine;
+  private String dbUsername;
+  private String dbPassword;
+  private String limitlessDbShardGroupIdentifier;
+  private static final String limitlessDbEngineVersion = "16.4-limitless";
+  private static final double minAcu = 2.0;
+  private static final double maxAcu = 128.0;
+  private final String monitoringRoleArn = System.getenv("AWS_RDS_MONITORING_ROLE_ARN");
 
   private final RdsClient rdsClient;
   private final Ec2Client ec2Client;
@@ -426,7 +387,7 @@ public class AuroraTestUtility {
    * @param region     the region that the cluster should be created in
    * @param engine     the engine to use (aurora-postgresql)
    * @param version    the database engine's version
-   * @throws InterruptedException when clusters have not started after 30 minutes
+   * @throws InterruptedException when clusters have not started after 90 minutes
    */
   public void createAuroraLimitlessCluster(
       String username,
@@ -436,6 +397,8 @@ public class AuroraTestUtility {
       String engine,
       String version)
       throws InterruptedException {
+    final String shardGroupIdentifier = identifier + "-shard-group";
+    final Tag testRunnerTag = Tag.builder().key("env").value("test-runner").build();
     final CreateDbClusterRequest dbClusterRequest =
         CreateDbClusterRequest.builder()
             .clusterScalabilityType(ClusterScalabilityType.LIMITLESS)
@@ -449,40 +412,41 @@ public class AuroraTestUtility {
             .masterUsername(username)
             .masterUserPassword(password)
             .monitoringInterval(5)
+            .monitoringRoleArn(monitoringRoleArn)
             .performanceInsightsRetentionPeriod(31)
             .storageType("aurora-iopt1")
-            .tags(this.getTag())
+            .tags(testRunnerTag)
             .build();
-
     rdsClient.createDBCluster(dbClusterRequest);
 
-    // Wait for cluster to be available
-    final RdsWaiter waiter = rdsClient.waiter();
-    WaiterResponse<DescribeDbClustersResponse> clusterWaiterResponse =
-        waiter.waitUntilDBClusterAvailable(
-            (requestBuilder) ->
-                requestBuilder.filters(
-                    Filter.builder().name("db-cluster-id").values(identifier).build()),
-            (configurationBuilder) -> configurationBuilder.maxAttempts(480).waitTimeout(Duration.ofMinutes(240)));
-
-    if (clusterWaiterResponse.matched().exception().isPresent()) {
-      deleteCluster(identifier, DatabaseEngineDeployment.AURORA_LIMITLESS, false);
-      throw new InterruptedException(
-          "Unable to start AWS RDS Limitless Cluster after waiting for 240 minutes");
-    }
-
-    // Create shard group
-    final String shardGroupIdentifier = identifier + "-shard-group";
     final CreateDbShardGroupRequest shardGroupRequest =
         CreateDbShardGroupRequest.builder()
             .dbClusterIdentifier(identifier)
             .dbShardGroupIdentifier(shardGroupIdentifier)
-            .minACU(2)
-            .maxACU(128)
+            .minACU(2.0)
+            .maxACU(128.0)
             .publiclyAccessible(true)
             .build();
     rdsClient.createDBShardGroup(shardGroupRequest);
+
+    DescribeDbClustersRequest describeDbClustersRequest = DescribeDbClustersRequest.builder()
+        .dbClusterIdentifier(identifier)
+        .build();
+
+    WaiterOverrideConfiguration waiterConfig = WaiterOverrideConfiguration.builder()
+        .maxAttempts(90)
+        .waitTimeout(Duration.ofMinutes(90))
+        .build();
+    final RdsWaiter waiter = rdsClient.waiter();
+    WaiterResponse<DescribeDbClustersResponse> waiterResponse = waiter.waitUntilDBClusterAvailable(describeDbClustersRequest, waiterConfig);
+
+    if (waiterResponse.matched().exception().isPresent()) {
+      deleteCluster(identifier, DatabaseEngineDeployment.AURORA_LIMITLESS, false);
+      throw new InterruptedException(
+          "Unable to start AWS RDS Cluster & Instances after waiting for 90 minutes");
+    }
   }
+
 
   /**
    * Creates an RDS multi-az cluster based on the passed in details. After the cluster is created, this method will wait
@@ -802,6 +766,7 @@ public class AuroraTestUtility {
         throw new UnsupportedOperationException(deployment.toString());
     }
   }
+
 
   /**
    * Deletes the specified Aurora cluster and removes the current IP address from the default security group.
