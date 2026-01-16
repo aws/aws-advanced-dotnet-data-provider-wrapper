@@ -16,6 +16,7 @@
 
 package integration.host;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -34,6 +35,13 @@ public class TestRunner {
   public void runPGAuroraTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
     try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
       env.runTests("pg", "aurora");
+    }
+  }
+
+  @TestTemplate
+  public void runPGAuroraLimitlessTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
+    try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
+      env.runTests("pg", "aurora-limitless");
     }
   }
 

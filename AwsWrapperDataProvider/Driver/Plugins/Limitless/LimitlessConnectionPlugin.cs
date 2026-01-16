@@ -30,7 +30,6 @@ public class LimitlessConnectionPlugin : AbstractConnectionPlugin
     {
         "DbConnection.Open",
         "DbConnection.OpenAsync",
-
     };
 
     private readonly IPluginService _pluginService;

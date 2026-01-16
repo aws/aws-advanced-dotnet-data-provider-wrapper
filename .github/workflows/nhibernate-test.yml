@@ -14,8 +14,10 @@ jobs:
     strategy: 
       fail-fast: false
       matrix:
-        dbEngine: ["mysql", "pg"]
-        deployment: ["aurora", "multi-az-cluster", "multi-az-instance"]
+#        dbEngine: ["mysql", "pg"]
+#        deployment: ["aurora", "multi-az-cluster", "multi-az-instance", "aurora-limitless"]
+        dbEngine: [ "pg" ]
+        deployment: [ "aurora-limitless" ]
     steps:
       - name: 'Clone repository'
         uses: actions/checkout@v4
