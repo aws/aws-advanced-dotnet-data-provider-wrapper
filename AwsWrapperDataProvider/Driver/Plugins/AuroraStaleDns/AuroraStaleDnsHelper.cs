@@ -92,7 +92,7 @@ public class AuroraStaleDnsHelper
         await this.pluginService.ForceRefreshHostListAsync(connection);
         Logger.LogTrace(LoggerUtils.LogTopology(this.pluginService.AllHosts, null));
 
-        this.writerHostSpec = this.GetWriter();
+        this.writerHostSpec = WrapperUtils.GetWriter(this.pluginService.AllHosts);
         Logger.LogTrace(Resources.AuroraStaleDnsHelper_OpenVerifiedConnectionAsync_WriterHostSpec, this.writerHostSpec);
 
         if (this.writerHostSpec == null)
@@ -118,7 +118,7 @@ public class AuroraStaleDnsHelper
 
             // Verify the writer is in the allowed hosts list
             var allowedHosts = this.pluginService.GetHosts();
-            if (!ContainsHostUrl(allowedHosts, this.writerHostSpec.Host))
+            if (!WrapperUtils.ContainsHostUrl(allowedHosts, this.writerHostSpec.GetHostAndPort()))
             {
                 // TODO: Check do we need to retry when throw errors?
                 throw new InvalidOperationException(string.Format(Resources.AuroraStaleDnsHelper_OpenVerifiedConnectionAsync_WriterNotInAllowedHosts,
@@ -165,21 +165,6 @@ public class AuroraStaleDnsHelper
         }
 
         return null;
-    }
-
-    private static bool ContainsHostUrl(IList<HostSpec> hosts, string hostUrl)
-    {
-        return hosts.Any(host => host.Host.Equals(hostUrl, StringComparison.OrdinalIgnoreCase));
-    }
-
-    private HostSpec? GetWriter()
-    {
-        return this.pluginService.AllHosts.FirstOrDefault(host => host.Role == HostRole.Writer);
-    }
-
-    private IList<HostSpec>? GetReaders()
-    {
-        return [.. this.pluginService.AllHosts.Where(host => host.Role != HostRole.Writer)];
     }
 
     private async Task<DbConnection?> RetryInvalidOpenConnection(HostSpec hostSpec, Dictionary<string, string> props)
