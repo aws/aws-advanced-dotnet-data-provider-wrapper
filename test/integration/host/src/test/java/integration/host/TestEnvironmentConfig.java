@@ -1232,6 +1232,7 @@ public class TestEnvironmentConfig implements AutoCloseable {
       String url;
       switch (deployment) {
         case AURORA:
+        case AURORA_LIMITLESS:
         case RDS_MULTI_AZ_CLUSTER:
           url = String.format(
               "%s%s:%d/%s",
