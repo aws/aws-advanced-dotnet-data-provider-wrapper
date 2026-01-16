@@ -1130,6 +1130,14 @@ public class AuroraTestUtility {
     return instancesInfo;
   }
 
+  public List<TestInstanceInfo> getTestInstancesInfo(final String clusterId, DatabaseEngineDeployment deployment) {
+    // Limitless clusters don't have traditional DB instances
+    if (deployment == DatabaseEngineDeployment.AURORA_LIMITLESS) {
+      return new ArrayList<>();
+    }
+    return getTestInstancesInfo(clusterId);
+  }
+
   public void waitUntilClusterHasRightState(String clusterId) throws InterruptedException {
     waitUntilClusterHasRightState(clusterId, "available");
   }
@@ -1671,6 +1679,20 @@ public class AuroraTestUtility {
         .filter(version -> version.contains("limitless"))
         .max(Comparator.naturalOrder())
         .orElseThrow(() -> new RuntimeException("Failed to find Limitless version for engine: " + engine));
+  }
+
+  public String getAuroraLimitlessClusterDomainSuffix(String clusterIdentifier) {
+    final DescribeDbShardGroupsResponse dbShardGroupsResponse = rdsClient.describeDBShardGroups(
+        (builder) ->
+            builder.filters(
+                Filter.builder().name("db-cluster-id").values(clusterIdentifier).build()));
+
+    if (dbShardGroupsResponse.dbShardGroups().isEmpty()) {
+      throw new RuntimeException("No shard groups found for cluster: " + clusterIdentifier);
+    }
+
+    final String endpoint = dbShardGroupsResponse.dbShardGroups().get(0).endpoint();
+    return endpoint.substring(endpoint.indexOf("shardgrp-") + 9);
   }
 
   public static <T> T executeWithTimeout(final Callable<T> callable, long timeoutMs) throws Throwable {

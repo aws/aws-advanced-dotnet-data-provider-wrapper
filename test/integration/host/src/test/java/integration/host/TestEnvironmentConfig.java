@@ -586,13 +586,17 @@ public class TestEnvironmentConfig implements AutoCloseable {
             env.info.getClusterParameterGroupName(),
             numOfInstances);
 
-        List<DBInstance> dbInstances = env.auroraUtil.getDBInstances(env.rdsDbName);
-        if (dbInstances.isEmpty()) {
-          throw new RuntimeException("Failed to get instance information for cluster " + env.rdsDbName);
-        }
+        if (env.info.getRequest().getDatabaseEngineDeployment() == DatabaseEngineDeployment.AURORA_LIMITLESS) {
+          env.rdsDbDomain = env.auroraUtil.getAuroraLimitlessClusterDomainSuffix(env.rdsDbName);
+        } else {
+          List<DBInstance> dbInstances = env.auroraUtil.getDBInstances(env.rdsDbName);
+          if (dbInstances.isEmpty()) {
+            throw new RuntimeException("Failed to get instance information for cluster " + env.rdsDbName);
+          }
 
-        final String instanceEndpoint = dbInstances.get(0).endpoint().address();
-        env.rdsDbDomain = instanceEndpoint.substring(instanceEndpoint.indexOf(".") + 1);
+          final String instanceEndpoint = dbInstances.get(0).endpoint().address();
+          env.rdsDbDomain = instanceEndpoint.substring(instanceEndpoint.indexOf(".") + 1);
+        }
         env.info.setDatabaseEngine(engine);
         env.info.setDatabaseEngineVersion(engineVersion);
         LOGGER.finer(
@@ -623,7 +627,7 @@ public class TestEnvironmentConfig implements AutoCloseable {
             env.rdsDbName + ".cluster-ro-" + env.rdsDbDomain, port);
     env.info.getDatabaseInfo().setInstanceEndpointSuffix(env.rdsDbDomain, port);
 
-    List<TestInstanceInfo> instances = env.auroraUtil.getTestInstancesInfo(env.rdsDbName);
+    List<TestInstanceInfo> instances = env.auroraUtil.getTestInstancesInfo(env.rdsDbName, env.info.getRequest().getDatabaseEngineDeployment());
     env.info.getDatabaseInfo().getInstances().clear();
     env.info.getDatabaseInfo().getInstances().addAll(instances);
 
