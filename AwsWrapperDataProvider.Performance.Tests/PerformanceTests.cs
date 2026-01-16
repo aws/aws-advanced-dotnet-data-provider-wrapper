@@ -1,0 +1,318 @@
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// 
+// Licensed under the Apache License, Version 2.0 (the "License").
+// You may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+// http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+using System.Collections.Concurrent;
+using System.Data;
+using System.Diagnostics;
+using AwsWrapperDataProvider.Driver.Plugins.Efm;
+using AwsWrapperDataProvider.Tests.Container.Utils;
+using MySql.Data.MySqlClient;
+using Npgsql;
+using Xunit;
+
+namespace AwsWrapperDataProvider.Performance.Tests;
+
+public class PerformanceTests
+{
+    private static readonly int RepeatTimes =
+        string.IsNullOrEmpty(Environment.GetEnvironmentVariable("REPEAT_TIMES"))
+            ? 5
+            : int.Parse(Environment.GetEnvironmentVariable("REPEAT_TIMES") ?? "5");
+
+    private static readonly ConcurrentQueue<PerformanceStatistics> EfmPerformanceDataList = new();
+    private static readonly ConcurrentQueue<PerformanceStatistics> FailoverAndEfmPerformanceDataList = new();
+
+    private static readonly string DefaultDbName = TestEnvironment.Env.Info.DatabaseInfo.DefaultDbName;
+    private static readonly string Username = TestEnvironment.Env.Info.DatabaseInfo.Username;
+    private static readonly string Password = TestEnvironment.Env.Info.DatabaseInfo.Password;
+    private static readonly DatabaseEngine Engine = TestEnvironment.Env.Info.Request.Engine;
+
+    [Fact]
+    [Trait("Category", "Performance")]
+    [Trait("Database", "pg")]
+    [Trait("Engine", "aurora")]
+    public async Task FailureDetectionTimeTest_EnhancedMonitoringEnabled_Efm()
+    {
+        await this.FailureDetectionTimeTest_EnhancedMonitoringEnabled("efm");
+    }
+
+    public async Task FailureDetectionTimeTest_EnhancedMonitoringEnabled(string efmPluginCode)
+    {
+        HostMonitorService.CloseAllMonitors();
+        EfmPerformanceDataList.Clear();
+
+        Console.WriteLine($@"Test round with plugin: {efmPluginCode}");
+
+        try
+        {
+            IEnumerable<int[]> parameters = GenerateFailureDetectionTimeParameters();
+            foreach (int[] args in parameters)
+            {
+                try
+                {
+                    await this.Execute_FailureDetectionTimeTest_EnhancedMonitoringEnabled(
+                        efmPluginCode, args[0], args[1], args[2], args[3]);
+                }
+                catch (Exception ex)
+                {
+                    throw new InvalidOperationException(ex.Message, ex);
+                }
+            }
+        }
+        finally
+        {
+            SheetsWriter.WritePerformanceDataToFile(@"./PerformanceResults.xlsx", EfmPerformanceDataList);
+            EfmPerformanceDataList.Clear();
+        }
+    }
+
+    private async Task Execute_FailureDetectionTimeTest_EnhancedMonitoringEnabled(
+        string pluginCode,
+        int detectionTimeMs,
+        int detectionIntervalMs,
+        int detectionCount,
+        int sleepDelayMs)
+    {
+        var instanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First();
+        var connectionString =
+            ConnectionStringHelper.GetUrl(Engine, instanceInfo.Host, instanceInfo.Port, Username, Password, DefaultDbName);
+        connectionString += $";Plugins={pluginCode}";
+        connectionString += $";FailureDetectionTime={detectionTimeMs}";
+        connectionString += $";FailureDetectionInterval={detectionIntervalMs}";
+        connectionString += $";FailureDetectionCount={detectionCount}";
+
+        PerformanceStatistics data = new();
+        await this.MeasurePerformance(sleepDelayMs, RepeatTimes, connectionString, data, instanceInfo.InstanceId);
+        data.ParameterDetectionTime = detectionTimeMs;
+        data.ParameterDetectionInterval = detectionIntervalMs;
+        data.ParameterDetectionCount = detectionCount;
+        EfmPerformanceDataList.Enqueue(data);
+    }
+
+    [Fact]
+    [Trait("Category", "Performance")]
+    [Trait("Database", "pg")]
+    [Trait("Engine", "aurora")]
+    public async Task FailureDetectionTimeTest_FailoverAndEnhancedMonitoringEnabled()
+    {
+        HostMonitorService.CloseAllMonitors();
+        FailoverAndEfmPerformanceDataList.Clear();
+
+        Console.WriteLine(@"Test round with plugin: efm,failover");
+
+        try
+        {
+            IEnumerable<int[]> parameters = GenerateFailureDetectionTimeParameters();
+            foreach (int[] args in parameters)
+            {
+                try
+                {
+                    await this.Execute_FailureDetectionTimeTest_FailoverAndEnhancedMonitoringEnabled(
+                        "efm,failover", args[0], args[1], args[2], args[3]);
+                }
+                catch (Exception ex)
+                {
+                    throw new InvalidOperationException(ex.Message, ex);
+                }
+            }
+        }
+        finally
+        {
+            SheetsWriter.WritePerformanceDataToFile(@"./FailoverAndEfmPerformanceResults.xlsx", FailoverAndEfmPerformanceDataList);
+            FailoverAndEfmPerformanceDataList.Clear();
+        }
+    }
+
+    private async Task Execute_FailureDetectionTimeTest_FailoverAndEnhancedMonitoringEnabled(
+        string pluginCode,
+        int detectionTimeMs,
+        int detectionIntervalMs,
+        int detectionCount,
+        int sleepDelayMs)
+    {
+        var instanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First();
+        var connectionString =
+            ConnectionStringHelper.GetUrl(Engine, instanceInfo.Host, instanceInfo.Port, Username, Password, DefaultDbName);
+        connectionString += $";Plugins={pluginCode}";
+        connectionString += $";FailureDetectionTime={detectionTimeMs}";
+        connectionString += $";FailureDetectionInterval={detectionIntervalMs}";
+        connectionString += $";FailureDetectionCount={detectionCount}";
+        connectionString += ";FailoverTimeoutMs=120000";
+        connectionString += ";FailoverMode=StrictWriter";
+
+        PerformanceStatistics data = new();
+        await this.MeasurePerformance(sleepDelayMs, RepeatTimes, connectionString, data, instanceInfo.InstanceId);
+        data.ParameterDetectionTime = detectionTimeMs;
+        data.ParameterDetectionInterval = detectionIntervalMs;
+        data.ParameterDetectionCount = detectionCount;
+        FailoverAndEfmPerformanceDataList.Enqueue(data);
+    }
+
+    private async Task MeasurePerformance(
+        int sleepDelayMs,
+        int repeatTimes,
+        string connectionString,
+        PerformanceStatistics data,
+        string instanceId)
+    {
+        await ProxyHelper.EnableAllConnectivityAsync();
+
+        AtomicLong downtimeNs = new();
+        long[] elapsedTimeMs = new long[repeatTimes];
+
+        for (int i = 0; i < repeatTimes; i++)
+        {
+            CancellationTokenSource cancellationToken = new();
+
+            try
+            {
+                Console.WriteLine("Resting 15s...");
+                await Task.Delay(15000, cancellationToken.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                Console.WriteLine("Interrupted");
+            }
+
+            Console.WriteLine(@$"Iteration: {i}");
+            downtimeNs.Value = 0;
+
+            try
+            {
+                IDbConnection connection = OpenConnectionWithRetry(connectionString);
+                Console.WriteLine(@"Connection is open.");
+                using var command = connection.CreateCommand();
+                command.CommandText = GetQuerySql(600);
+                command.CommandTimeout = 700;
+                Task.Run(async () =>
+                {
+                    try
+                    {
+                        await Task.Delay(sleepDelayMs, cancellationToken.Token);
+                        await ProxyHelper.DisableConnectivityAsync(instanceId);
+                        downtimeNs.Value = Stopwatch.GetTimestamp();
+                        Console.WriteLine(@"Network outage started");
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        Console.WriteLine("Interrupted disable connectivity");
+                    }
+                }, cancellationToken.Token);
+                var result = command.ExecuteScalar();
+                Assert.Fail("Sleep query finished, should not be possible with network downed.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($@"Exception caught: {ex}");
+                long downtime = downtimeNs.Value;
+                if (downtime == 0)
+                {
+                    Console.WriteLine("Network outages start time is undefined!");
+                    elapsedTimeMs[i] = 0;
+                }
+                else
+                {
+                    long failureTimeMs = (Stopwatch.GetTimestamp() - downtime) / TimeSpan.TicksPerMillisecond;
+                    elapsedTimeMs[i] = failureTimeMs;
+                    Console.WriteLine($"Elapsed: {failureTimeMs}");
+                }
+            }
+            finally
+            {
+                await cancellationToken.CancelAsync(); // Ensure task has stopped running
+                await ProxyHelper.EnableAllConnectivityAsync();
+            }
+        }
+
+        Console.WriteLine($@"Elapsed times: {string.Join(", ", elapsedTimeMs)}");
+        data.ParameterNetworkOutageDelayMs = sleepDelayMs;
+        data.MinFailureDetectionTimeMs = elapsedTimeMs.Min();
+        data.MaxFailureDetectionTimeMs = elapsedTimeMs.Max();
+        data.AvgFailureDetectionTimeMs = (long)Math.Round(elapsedTimeMs.Average());
+        Console.WriteLine($@"Colected data: {data}");
+    }
+
+    private static string GetQuerySql(int seconds)
+    {
+        return Engine switch
+        {
+            DatabaseEngine.PG => $"SELECT pg_sleep({seconds})",
+            DatabaseEngine.MYSQL or DatabaseEngine.MARIADB => $"SELECT SLEEP({seconds})",
+            _ => throw new NotSupportedException($"Unsupported engine: {Engine}"),
+        };
+    }
+
+    private static IDbConnection OpenConnectionWithRetry(string connectionString)
+    {
+        AwsWrapperConnection? connection = null;
+        int connectCount = 0;
+
+        while (connection == null && connectCount < 10)
+        {
+            try
+            {
+                connection = Engine switch
+                {
+                    DatabaseEngine.MYSQL => new AwsWrapperConnection<MySqlConnection>(connectionString),
+                    DatabaseEngine.PG => new AwsWrapperConnection<NpgsqlConnection>(connectionString),
+                    _ => throw new NotSupportedException($"Unsupported engine: {Engine}"),
+                };
+
+                connection.Open();
+                return connection;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($@"Connection attempt {connectCount + 1} failed: {ex.GetType().Name}: {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($@"Inner exception: {ex.InnerException.GetType().Name}: {ex.InnerException.Message}");
+                }
+                connection?.Dispose();
+                connection = null;
+                connectCount++;
+
+                if (connectCount < 10)
+                {
+                    Thread.Sleep(1000);
+                }
+            }
+        }
+
+        throw new Exception($@"Failed to establish connection after {connectCount} attempts");
+    }
+
+    private static IEnumerable<int[]> GenerateFailureDetectionTimeParameters()
+    {
+        return
+        [
+            [30000, 5000, 3, 10000],
+            [30000, 5000, 3, 20000],
+            [30000, 5000, 3, 30000],
+            [30000, 5000, 3, 40000],
+            [30000, 5000, 3, 50000],
+            [30000, 5000, 3, 60000],
+
+            [6000, 1000, 1, 1000],
+            [6000, 1000, 1, 2000],
+            [6000, 1000, 1, 3000],
+            [6000, 1000, 1, 4000],
+            [6000, 1000, 1, 5000],
+            [6000, 1000, 1, 6000],
+            [6000, 1000, 1, 7000],
+            [6000, 1000, 1, 8000],
+            [6000, 1000, 1, 9000]
+        ];
+    }
+}
