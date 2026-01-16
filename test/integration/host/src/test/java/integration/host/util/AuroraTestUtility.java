@@ -756,8 +756,10 @@ public class AuroraTestUtility {
   public void deleteCluster(String identifier, DatabaseEngineDeployment deployment, boolean waitForCompletion) {
     switch (deployment) {
       case AURORA:
-      case AURORA_LIMITLESS:
         this.deleteAuroraCluster(identifier, waitForCompletion);
+        break;
+      case AURORA_LIMITLESS:
+        this.deleteAuroraLimitlessCluster(identifier, waitForCompletion);
         break;
       case RDS_MULTI_AZ_CLUSTER:
         this.deleteMultiAzCluster(identifier, waitForCompletion);
@@ -765,6 +767,35 @@ public class AuroraTestUtility {
       default:
         throw new UnsupportedOperationException(deployment.toString());
     }
+  }
+
+  /**
+   * Deletes the specified Aurora Limitless cluster and removes the current IP address from the default security group.
+   * For Limitless clusters, the shard group must be deleted before the cluster.
+   *
+   * @param identifier the cluster identifier for the cluster to delete
+   * @param waitForCompletion if true, wait for cluster completely deleted
+   */
+  public void deleteAuroraLimitlessCluster(String identifier, boolean waitForCompletion) {
+    final String shardGroupIdentifier = identifier + "-shard-group";
+    int remainingAttempts = 5;
+
+    // Delete the shard group first
+    while (--remainingAttempts > 0) {
+      try {
+        DeleteDbShardGroupResponse response = rdsClient.deleteDBShardGroup(
+            (builder -> builder.dbShardGroupIdentifier(shardGroupIdentifier)));
+        if (response.sdkHttpResponse().isSuccessful()) {
+          break;
+        }
+        TimeUnit.SECONDS.sleep(30);
+      } catch (Exception ex) {
+        // ignore and continue - shard group might not exist or already deleted
+      }
+    }
+
+    // Then delete the cluster
+    deleteAuroraCluster(identifier, waitForCompletion);
   }
 
   /**
