@@ -39,7 +39,7 @@ public class TestEnvironment
         var auroraUtil = AuroraTestUtils.GetUtility(testInfo);
         await auroraUtil.WaitUntilClusterHasRightStateAsync(testInfo.RdsDbName!);
 
-\        if (testRequest.Deployment == DatabaseEngineDeployment.AURORA_LIMITLESS)
+        if (testRequest.Deployment == DatabaseEngineDeployment.AURORA_LIMITLESS)
         {
             // For Limitless, we just verify cluster health - no instances to check
             return;
