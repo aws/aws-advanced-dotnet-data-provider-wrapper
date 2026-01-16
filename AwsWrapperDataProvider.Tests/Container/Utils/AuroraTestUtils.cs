@@ -152,6 +152,16 @@ public class AuroraTestUtils
     public async Task MakeSureInstancesUpAsync(TimeSpan timeout)
     {
         var envInfo = TestEnvironment.Env.Info;
+        var deployment = envInfo.Request.Deployment;
+        
+        // Limitless clusters don't have traditional instances
+        if (deployment == DatabaseEngineDeployment.AURORA_LIMITLESS)
+        {
+            // For Limitless, we just verify cluster connectivity via the cluster endpoint
+            // No need to check individual instances
+            return;
+        }
+
         List<TestInstanceInfo> instances = [.. envInfo.DatabaseInfo.Instances, .. envInfo.ProxyDatabaseInfo!.Instances];
         await this.MakeSureInstancesUpAsync(instances, timeout);
     }

@@ -1,4 +1,4 @@
-﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -36,9 +36,14 @@ public class TestEnvironment
     {
         var testInfo = Env.Info!;
         var testRequest = testInfo.Request!;
-
         var auroraUtil = AuroraTestUtils.GetUtility(testInfo);
         await auroraUtil.WaitUntilClusterHasRightStateAsync(testInfo.RdsDbName!);
+
+\        if (testRequest.Deployment == DatabaseEngineDeployment.AURORA_LIMITLESS)
+        {
+            // For Limitless, we just verify cluster health - no instances to check
+            return;
+        }
 
         await auroraUtil.MakeSureInstancesUpAsync(TimeSpan.FromMinutes(3));
 
@@ -102,6 +107,15 @@ public class TestEnvironment
     public static async Task RebootAllClusterInstancesAsync()
     {
         var testInfo = Env.Info!;
+
+        if (testInfo.Request.Deployment == DatabaseEngineDeployment.AURORA_LIMITLESS)
+        {
+            var auroraUtil = AuroraTestUtils.GetUtility(testInfo);
+            await auroraUtil.WaitUntilClusterHasRightStateAsync(testInfo.RdsDbName!);
+            // For Limitless, we just verify cluster health - no instances to reboot
+            return;
+        }
+
         var auroraUtil = AuroraTestUtils.GetUtility(testInfo);
         var instancesIDs = testInfo.DatabaseInfo!.Instances.Select(i => i.InstanceId);
 
