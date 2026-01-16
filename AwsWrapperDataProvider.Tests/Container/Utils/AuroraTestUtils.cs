@@ -162,7 +162,12 @@ public class AuroraTestUtils
             return;
         }
 
-        List<TestInstanceInfo> instances = [.. envInfo.DatabaseInfo.Instances, .. envInfo.ProxyDatabaseInfo!.Instances];
+        List<TestInstanceInfo> instances = [.. envInfo.DatabaseInfo.Instances];
+        if (envInfo.ProxyDatabaseInfo != null)
+        {
+            instances.AddRange(envInfo.ProxyDatabaseInfo.Instances);
+        }
+
         await this.MakeSureInstancesUpAsync(instances, timeout);
     }
 
