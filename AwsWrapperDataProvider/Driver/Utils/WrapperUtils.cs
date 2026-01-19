@@ -141,6 +141,25 @@ public partial class WrapperUtils
         return result;
     }
 
+    public static List<string> GetSeparateSqlStatements(string query)
+    {
+        var result = new List<string>();
+
+        foreach (var statement in ParseMultiStatementQueries(query))
+        {
+            // Remove block comments and trim
+            var cleanStmt = BlockCommentsRegex().Replace(statement, " ").Trim();
+            if (cleanStmt.Length == 0)
+            {
+                continue;
+            }
+
+            result.Add(cleanStmt);
+        }
+
+        return result;
+    }
+
     public static HostSpec? GetWriter(IList<HostSpec> hosts)
     {
         return hosts.FirstOrDefault(host => host.Role == HostRole.Writer);

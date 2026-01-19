@@ -74,7 +74,7 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
     {
         var query = WrapperUtils.GetQueryFromSqlObject(methodInvokedOn);
         var (readOnly, found) = WrapperUtils.DoesSetReadOnly(query, this.pluginService.Dialect);
-        Logger.LogDebug("ReadOnly is " + (found ? "set to" + (readOnly ? "read only" : "read write") : "not set"));
+        Logger.LogDebug("ReadOnly is " + (found ? "set to " + (readOnly ? "read only" : "read write") : "not set"));
         if (found)
         {
             await this.SwitchConnectionIfRequired(readOnly);
@@ -162,6 +162,7 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
         }
 
         var currentHost = this.pluginService.CurrentHostSpec!;
+        Logger.LogDebug(currentHost.ToString());
         if (readOnly)
         {
             // Not in a transaction and currently not on a reader, try switch to reader
@@ -207,6 +208,7 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
 
     private async Task SwitchToWriterConnection(IList<HostSpec> hosts)
     {
+        Logger.LogDebug("Switching to writer connection");
         var currentConnection = this.pluginService.CurrentConnection;
         var currentHost = this.pluginService.CurrentHostSpec!;
         Logger.LogDebug(currentHost.ToString());
@@ -244,6 +246,7 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
 
     private async Task SwitchToReaderConnection(IList<HostSpec> hosts)
     {
+        Logger.LogDebug("Switching to reader connection");
         var currentConnection = this.pluginService.CurrentConnection;
         var currentHost = this.pluginService.CurrentHostSpec!;
         if (currentHost.Role == HostRole.Reader && this.IsConnectionUsable(currentConnection))
