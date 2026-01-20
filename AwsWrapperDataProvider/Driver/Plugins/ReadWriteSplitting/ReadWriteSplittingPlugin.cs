@@ -180,7 +180,7 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
                     }
 
                     // Failed to switch to a reader, fallback to the current writer
-                    Logger.LogInformation(Resources.ReadWriteSplittingPlugin_ErrorSwitchingToReader, ex.Message, this.pluginService.CurrentHostSpec!.GetHostAndPort());
+                    Logger.LogInformation(Resources.ReadWriteSplittingPlugin_ErrorSwitchingToReader, ex.Message, this.pluginService.CurrentHostSpec!.ToString());
                 }
             }
         }
@@ -208,7 +208,6 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
 
     private async Task SwitchToWriterConnection(IList<HostSpec> hosts)
     {
-        Logger.LogDebug("Switching to writer connection");
         var currentConnection = this.pluginService.CurrentConnection;
         var currentHost = this.pluginService.CurrentHostSpec!;
         Logger.LogDebug(currentHost.ToString());
@@ -223,7 +222,7 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
 
         await this.InitializeWriterConnection(writerHost);
 
-        Logger.LogTrace(Resources.ReadWriteSplittingPlugin_SwitchedFromReaderToWriter, writerHost.GetHostAndPort());
+        Logger.LogTrace(Resources.ReadWriteSplittingPlugin_SwitchedFromReaderToWriter, writerHost.ToString());
     }
 
     private void SwitchCurrentConnectionTo(DbConnection? newConnection, HostSpec newConnectionHost)
@@ -234,19 +233,18 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
         }
 
         this.pluginService.SetCurrentConnection(newConnection, newConnectionHost);
-        Logger.LogTrace(Resources.ReadWriteSplittingPlugin_SettingCurrentConnection, newConnectionHost.GetHostAndPort());
+        Logger.LogTrace(Resources.ReadWriteSplittingPlugin_SettingCurrentConnection, newConnectionHost.ToString());
     }
 
     private async Task InitializeWriterConnection(HostSpec writerHost)
     {
         var connection = await this.pluginService.OpenConnection(writerHost, this.props, this, true);
-        Logger.LogInformation(Resources.ReadWriteSplittingPlugin_SetWriterConnection, writerHost.GetHostAndPort());
+        Logger.LogInformation(Resources.ReadWriteSplittingPlugin_SetWriterConnection, writerHost.ToString());
         this.SwitchCurrentConnectionTo(connection, writerHost);
     }
 
     private async Task SwitchToReaderConnection(IList<HostSpec> hosts)
     {
-        Logger.LogDebug("Switching to reader connection");
         var currentConnection = this.pluginService.CurrentConnection;
         var currentHost = this.pluginService.CurrentHostSpec!;
         if (currentHost.Role == HostRole.Reader && this.IsConnectionUsable(currentConnection))
@@ -264,7 +262,7 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
         {
             HostSpec writerHost = WrapperUtils.GetWriter(hosts) ?? throw new ReadWriteSplittingDbException(Resources.ReadWriteSplittingPlugin_NoWriterFound);
             await this.InitializeWriterConnection(writerHost);
-            Logger.LogWarning(string.Format(Resources.ReadWriteSplittingPlugin_NoReadersFound), writerHost.GetHostAndPort());
+            Logger.LogWarning(string.Format(Resources.ReadWriteSplittingPlugin_NoReadersFound), writerHost.ToString());
         }
         else
         {
@@ -288,7 +286,7 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
             }
             catch (DbException ex)
             {
-                Logger.LogWarning(ex, string.Format(Resources.ReadWriteSplittingPlugin_FailedToConnectToReader, hostSpec.GetHostAndPort()));
+                Logger.LogWarning(ex, string.Format(Resources.ReadWriteSplittingPlugin_FailedToConnectToReader, hostSpec.ToString()));
             }
         }
 
@@ -297,7 +295,7 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
             throw new ReadWriteSplittingDbException(Resources.ReadWriteSplittingPlugin_NoReadersAvailable);
         }
 
-        Logger.LogTrace(string.Format(Resources.ReadWriteSplittingPlugin_SuccessfullyConnectedToReader, readerHost.GetHostAndPort()));
+        Logger.LogTrace(string.Format(Resources.ReadWriteSplittingPlugin_SuccessfullyConnectedToReader, readerHost.ToString()));
         this.SwitchCurrentConnectionTo(connection, readerHost);
     }
 
