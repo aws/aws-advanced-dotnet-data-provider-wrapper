@@ -162,7 +162,6 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
         }
 
         var currentHost = this.pluginService.CurrentHostSpec!;
-        Logger.LogDebug(currentHost.ToString());
         if (readOnly)
         {
             // Not in a transaction and currently not on a reader, try switch to reader

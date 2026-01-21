@@ -819,11 +819,32 @@ public class AuroraTestUtils
 
         if (result == null)
         {
-            throw new InvalidOperationException("Failed to retrieve instance ID.");
+            throw new InvalidOperationException("Failed to retrieve the result.");
         }
 
-        Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Finished ExecuteScalar with result: {result}");
+        Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Finished ExecuteScalar with result: {result}.");
         return result;
+    }
+
+    public async Task ExecuteNonQuery(DbConnection connection, string query, bool async, DbTransaction? tx = null)
+    {
+        await using var command = connection.CreateCommand();
+        if (tx != null)
+        {
+            command.Transaction = tx;
+        }
+
+        command.CommandText = query;
+        if (async)
+        {
+            await command.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
+        }
+        else
+        {
+            command.ExecuteNonQuery();
+        }
+
+        Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Finished ExecuteNonQuery.");
     }
 
     public async Task SetReadOnly(DbConnection connection, DatabaseEngine engine, bool readOnly, bool async, DbTransaction? tx = null)
@@ -839,7 +860,7 @@ public class AuroraTestUtils
             _ => throw new NotSupportedException($"Unsupported database engine: {engine}"),
         };
 
-        await this.ExecuteQuery(connection, sql, async, tx);
+        await this.ExecuteNonQuery(connection, sql, async, tx);
     }
 
     public async Task<string?> ExecuteInstanceIdQuery(DbConnection connection, DatabaseEngine engine, DatabaseEngineDeployment deployment, bool async, DbTransaction? tx = null)
