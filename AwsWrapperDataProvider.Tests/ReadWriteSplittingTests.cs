@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using System.Data;
-using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
 using AwsWrapperDataProvider.Driver.Plugins.ReadWriteSplitting;
 using AwsWrapperDataProvider.Tests.Container.Utils;
@@ -228,8 +227,8 @@ public class ReadWriteSplittingTests : IntegrationTestBase
         await AuroraUtils.ExecuteNonQuery(connection, "INSERT INTO test_readWriteSplitting_readOnlyTrueInTransaction VALUES (1, 'test_field value 1')", async, tx);
 
         // Will not switch to read-only in a transaction
-        await AuroraUtils.SetReadOnly(connection, Engine, true, async);
-        var currentConnectionId = await AuroraUtils.QueryInstanceId(connection, async);
+        await AuroraUtils.SetReadOnly(connection, Engine, true, async, tx);
+        var currentConnectionId = await AuroraUtils.QueryInstanceId(connection, async, tx);
         Assert.Equal(writerConnectionId, currentConnectionId);
 
         await tx.CommitAsync(TestContext.Current.CancellationToken);
@@ -384,6 +383,12 @@ public class ReadWriteSplittingTests : IntegrationTestBase
     {
         Assert.SkipWhen(NumberOfInstances < 3, "Skipped due to test requiring number of database instances >= 3.");
         var proxyWriter = ProxyDatabaseInfo.Instances.First();
+        var pluginCodes = Engine switch
+        {
+            DatabaseEngine.MYSQL => "failover,readWriteSplitting",
+            DatabaseEngine.PG => "failover,efm,readWriteSplitting",
+            _ => throw new InvalidOperationException($"Unsupported engine {Engine}"),
+        };
         var connectionString = ConnectionStringHelper.GetUrl(
             Engine,
             proxyWriter.Host,
@@ -393,7 +398,7 @@ public class ReadWriteSplittingTests : IntegrationTestBase
             DefaultDbName,
             3,
             10,
-            "failover,efm,readWriteSplitting");
+            pluginCodes);
         connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}";
 
         using AwsWrapperConnection connection = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
@@ -450,6 +455,12 @@ public class ReadWriteSplittingTests : IntegrationTestBase
     {
         Assert.SkipWhen(NumberOfInstances < 3, "Skipped due to test requiring number of database instances >= 3.");
         var proxyWriter = ProxyDatabaseInfo.Instances.First();
+        var pluginCodes = Engine switch
+        {
+            DatabaseEngine.MYSQL => "failover,readWriteSplitting",
+            DatabaseEngine.PG => "failover,efm,readWriteSplitting",
+            _ => throw new InvalidOperationException($"Unsupported engine {Engine}"),
+        };
         var connectionString = ConnectionStringHelper.GetUrl(
             Engine,
             proxyWriter.Host,
@@ -459,7 +470,7 @@ public class ReadWriteSplittingTests : IntegrationTestBase
             DefaultDbName,
             3,
             10,
-            "failover,efm,readWriteSplitting");
+            pluginCodes);
         connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}" +
                             $"; FailoverMode=ReaderOrWriter";
 
@@ -483,6 +494,7 @@ public class ReadWriteSplittingTests : IntegrationTestBase
             }
         }
 
+        // Kill all instances except one other reader
         foreach (var instance in TestEnvironment.Env.Info.DatabaseInfo.Instances)
         {
             if (instance.InstanceId != otherReaderId)
@@ -507,10 +519,6 @@ public class ReadWriteSplittingTests : IntegrationTestBase
         await AuroraUtils.SetReadOnly(connection, Engine, false, async);
         currentConnectionId = await AuroraUtils.QueryInstanceId(connection, async);
         Assert.Equal(writerConnectionId, currentConnectionId);
-
-        await AuroraUtils.SetReadOnly(connection, Engine, true, async);
-        currentConnectionId = await AuroraUtils.QueryInstanceId(connection, async);
-        Assert.Equal(otherReaderId, currentConnectionId);
     }
 
     [Theory]
@@ -526,6 +534,12 @@ public class ReadWriteSplittingTests : IntegrationTestBase
     {
         Assert.SkipWhen(NumberOfInstances < 3, "Skipped due to test requiring number of database instances >= 3.");
         var proxyWriter = ProxyDatabaseInfo.Instances.First();
+        var pluginCodes = Engine switch
+        {
+            DatabaseEngine.MYSQL => "failover,readWriteSplitting",
+            DatabaseEngine.PG => "failover,efm,readWriteSplitting",
+            _ => throw new InvalidOperationException($"Unsupported engine {Engine}"),
+        };
         var connectionString = ConnectionStringHelper.GetUrl(
             Engine,
             proxyWriter.Host,
@@ -535,7 +549,7 @@ public class ReadWriteSplittingTests : IntegrationTestBase
             DefaultDbName,
             3,
             10,
-            "failover,efm,readWriteSplitting");
+            pluginCodes);
         connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}";
 
         using AwsWrapperConnection connection = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);

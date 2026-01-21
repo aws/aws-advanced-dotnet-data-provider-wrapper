@@ -15,7 +15,6 @@
 using System.Data;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
 using AwsWrapperDataProvider.Tests.Container.Utils;
-using MySqlConnector;
 using Npgsql;
 
 namespace AwsWrapperDataProvider.Tests;
