@@ -1,6 +1,9 @@
 name: NHibernate Integration Tests
 
 on:
+  push:
+    branches:
+      - test/limitless-plugin-integration-tests
   workflow_dispatch:
 
 permissions:
