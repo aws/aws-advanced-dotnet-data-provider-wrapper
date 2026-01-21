@@ -275,7 +275,7 @@ public class ReadWriteSplittingTests : IntegrationTestBase
         await ProxyHelper.DisableConnectivityAsync(ProxyDatabaseInfo.ClusterReadOnlyEndpoint);
         foreach (var instance in ProxyDatabaseInfo.Instances.Skip(1))
         {
-            await ProxyHelper.DisableConnectivityAsync(ProxyDatabaseInfo.Instances[i].InstanceId);
+            await ProxyHelper.DisableConnectivityAsync(instance.InstanceId);
         }
 
         await AuroraUtils.SetReadOnly(connection, Engine, true, async);
@@ -405,7 +405,7 @@ public class ReadWriteSplittingTests : IntegrationTestBase
         await ProxyHelper.DisableConnectivityAsync(ProxyDatabaseInfo.ClusterReadOnlyEndpoint);
         foreach (var instance in ProxyDatabaseInfo.Instances.Skip(1))
         {
-            await ProxyHelper.DisableConnectivityAsync(ProxyDatabaseInfo.Instances[i].InstanceId);
+            await ProxyHelper.DisableConnectivityAsync(instance.InstanceId);
         }
 
         // Force internal reader connection to the writer instance
