@@ -1,9 +1,6 @@
 name: NHibernate Integration Tests
 
 on:
-  push:
-    branches:
-      - test/limitless-plugin-integration-tests
   workflow_dispatch:
 
 permissions:
@@ -17,10 +14,8 @@ jobs:
     strategy: 
       fail-fast: false
       matrix:
-#        dbEngine: ["mysql", "pg"]
-#        deployment: ["aurora", "multi-az-cluster", "multi-az-instance", "aurora-limitless"]
-        dbEngine: [ "pg" ]
-        deployment: [ "aurora-limitless" ]
+        dbEngine: ["mysql", "pg"]
+        deployment: ["aurora", "multi-az-cluster", "multi-az-instance", "aurora-limitless"]
     steps:
       - name: 'Clone repository'
         uses: actions/checkout@v4
