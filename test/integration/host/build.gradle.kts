@@ -349,7 +349,7 @@ tasks.register<Test>("test-all-pg-multi-az-instance-nh") {
 
 tasks.register<Test>("test-all-pg-aurora-limitless-nh") {
     group = "verification"
-    filter.includeTestsMatching("integration.host.TestRunner.runPGAuroraLimitlessTests")
+    filter.includeTestsMatching("integration.host.TestRunner.runPGNHAuroraLimitlessTests")
     doFirst {
         systemProperty("test-no-docker", "true")
         systemProperty("test-no-performance", "true")
