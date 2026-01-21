@@ -138,6 +138,13 @@ public class TestRunner {
   }
 
   @TestTemplate
+  public void runPGNHAuroraLimitlessTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
+    try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
+      env.runTests("pg-nh", "aurora-limitless");
+    }
+  }
+
+  @TestTemplate
   public void runPGNHMultiAzInstanceTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
 
     try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
