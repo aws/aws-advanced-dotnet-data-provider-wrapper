@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using AwsWrapperDataProvider.Dialect.MySqlConnector;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,6 +24,9 @@ public class MySqlEntityFrameworkExample
 
     public static async Task Main(string[] args)
     {
+        // Load relevant DbConnection dialect
+        MySqlConnectorDialectLoader.Load();
+
         var start = DateTime.UtcNow;
         var threshold = TimeSpan.FromMinutes(5);
 

@@ -14,6 +14,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\..\AwsWrapperDataProvider.Dialect.MySqlClient\AwsWrapperDataProvider.Dialect.MySqlClient.csproj" />
         <ProjectReference Include="..\..\..\AwsWrapperDataProvider\AwsWrapperDataProvider.csproj" />
         <ProjectReference Include="..\..\..\AwsWrapperDataProvider.NHibernate\AwsWrapperDataProvider.NHibernate.csproj" />
     </ItemGroup>

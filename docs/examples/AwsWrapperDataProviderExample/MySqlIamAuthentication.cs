@@ -14,6 +14,7 @@
 
 using System.Data;
 using AwsWrapperDataProvider;
+using AwsWrapperDataProvider.Dialect.MySqlClient;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Plugin.Iam.Iam;
 
@@ -23,6 +24,9 @@ public static class MySqlIamAuthentication
 {
     public static async Task Main(string[] args)
     {
+        // Load relevant DbConnection dialect
+        MySqlClientDialectLoader.Load();
+
         ConnectionPluginChainBuilder.RegisterPluginFactory<IamAuthPluginFactory>(PluginCodes.Iam);
 
         const string connectionString = "Server=<insert_rds_instance_here>;Initial Catalog=mysql;Database=<database_name_here>;User Id=<iam username>;IamRegion=<iam region>;Plugins=iam;";
