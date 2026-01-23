@@ -25,6 +25,7 @@ namespace AwsWrapperDataProvider.Driver.Plugins.Limitless;
 public class LimitlessQueryHelper
 {
     private const int DefaultQueryTimeoutMs = 5000;
+
     private static readonly ILogger<LimitlessQueryHelper> Logger = LoggerUtils.GetLogger<LimitlessQueryHelper>();
 
     private readonly IPluginService _pluginService;

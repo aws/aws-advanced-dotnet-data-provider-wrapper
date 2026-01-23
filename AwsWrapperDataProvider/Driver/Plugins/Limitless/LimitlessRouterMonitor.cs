@@ -27,6 +27,8 @@ public class LimitlessRouterMonitor : IDisposable
     private const string MonitoringPropertyPrefix = "limitless-router-monitor-";
     private static readonly ILogger<LimitlessRouterMonitor> Logger = LoggerUtils.GetLogger<LimitlessRouterMonitor>();
 
+    private static readonly ILogger<LimitlessRouterMonitor> Logger = LoggerUtils.GetLogger<LimitlessRouterMonitor>();
+
     private readonly IPluginService _pluginService;
     private readonly HostSpec _hostSpec;
     private readonly MemoryCache _limitlessRouterCache;
