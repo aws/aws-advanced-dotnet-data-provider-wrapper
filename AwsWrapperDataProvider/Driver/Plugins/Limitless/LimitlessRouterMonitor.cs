@@ -25,6 +25,7 @@ namespace AwsWrapperDataProvider.Driver.Plugins.Limitless;
 public class LimitlessRouterMonitor : IDisposable
 {
     private const string MonitoringPropertyPrefix = "limitless-router-monitor-";
+    private static readonly ILogger<LimitlessRouterMonitor> Logger = LoggerUtils.GetLogger<LimitlessRouterMonitor>();
 
     private static readonly ILogger<LimitlessRouterMonitor> Logger = LoggerUtils.GetLogger<LimitlessRouterMonitor>();
 

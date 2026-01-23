@@ -43,9 +43,9 @@ dependencies {
     testImplementation("org.postgresql:postgresql:42.5.0")
     testImplementation("mysql:mysql-connector-java:8.0.30")
     testImplementation("org.mockito:mockito-inline:4.8.0")
-    testImplementation("software.amazon.awssdk:rds:2.20.49")
-    testImplementation("software.amazon.awssdk:ec2:2.20.61")
-    testImplementation("software.amazon.awssdk:secretsmanager:2.20.49")
+    testImplementation("software.amazon.awssdk:rds:2.31.64")
+    testImplementation("software.amazon.awssdk:ec2:2.31.64")
+    testImplementation("software.amazon.awssdk:secretsmanager:2.31.64")
     testImplementation("org.apache.poi:poi-ooxml:5.2.2")
     testImplementation("org.slf4j:slf4j-simple:2.0.3")
     testImplementation("com.fasterxml.jackson.core:jackson-databind:2.14.2")
@@ -219,6 +219,27 @@ tasks.register<Test>("test-all-pg-aurora") {
     }
 }
 
+tasks.register<Test>("test-all-pg-aurora-limitless") {
+    group = "verification"
+    filter.includeTestsMatching("integration.host.TestRunner.runPGAuroraLimitlessTests")
+    doFirst {
+        systemProperty("test-no-docker", "true")
+        systemProperty("test-no-performance", "true")
+        systemProperty("test-no-failover", "true")
+        systemProperty("test-no-mysql-driver", "true")
+        systemProperty("test-no-mysql-engine", "true")
+        systemProperty("test-no-mariadb-driver", "true")
+        systemProperty("test-no-mariadb-engine", "true")
+        systemProperty("test-no-aurora", "true")
+        systemProperty("test-no-multi-az-cluster", "true")
+        systemProperty("test-no-multi-az-instance", "true")
+        systemProperty("test-no-bg", "true")
+        systemProperty("test-no-traces-telemetry", "true")
+        systemProperty("test-no-metrics-telemetry", "true")
+    }
+}
+
+
 tasks.register<Test>("test-all-pg-aurora-nh") {
     group = "verification"
     filter.includeTestsMatching("integration.host.TestRunner.runPGNHAuroraTests")
@@ -320,6 +341,26 @@ tasks.register<Test>("test-all-pg-multi-az-instance-nh") {
         systemProperty("test-no-mariadb-engine", "true")
         systemProperty("test-no-aurora", "true")
         systemProperty("test-no-multi-az-cluster", "true")
+        systemProperty("test-no-bg", "true")
+        systemProperty("test-no-traces-telemetry", "true")
+        systemProperty("test-no-metrics-telemetry", "true")
+    }
+}
+
+tasks.register<Test>("test-all-pg-aurora-limitless-nh") {
+    group = "verification"
+    filter.includeTestsMatching("integration.host.TestRunner.runPGNHAuroraLimitlessTests")
+    doFirst {
+        systemProperty("test-no-docker", "true")
+        systemProperty("test-no-performance", "true")
+        systemProperty("test-no-failover", "true")
+        systemProperty("test-no-mysql-driver", "true")
+        systemProperty("test-no-mysql-engine", "true")
+        systemProperty("test-no-mariadb-driver", "true")
+        systemProperty("test-no-mariadb-engine", "true")
+        systemProperty("test-no-aurora", "true")
+        systemProperty("test-no-multi-az-cluster", "true")
+        systemProperty("test-no-multi-az-instance", "true")
         systemProperty("test-no-bg", "true")
         systemProperty("test-no-traces-telemetry", "true")
         systemProperty("test-no-metrics-telemetry", "true")
