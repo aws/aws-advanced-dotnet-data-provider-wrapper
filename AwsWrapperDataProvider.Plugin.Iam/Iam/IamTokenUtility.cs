@@ -25,21 +25,12 @@ public class IamTokenUtility : IIamTokenUtility
         return user + ":" + hostname + ":" + port + ":" + region;
     }
 
-    public async Task<string> GenerateAuthenticationTokenAsync(string region, string hostname, int port, string user, AWSCredentials? credentials)
+    public async Task<string> GenerateAuthenticationTokenAsync(string region, string hostname, int port, string user)
     {
         try
         {
             RegionEndpoint regionEndpoint = RegionEndpoint.GetBySystemName(region);
-
-            if (credentials != null)
-            {
-                return await RDSAuthTokenGenerator.GenerateAuthTokenAsync(credentials, regionEndpoint, hostname, port, user);
-            }
-            else
-            {
-                // load aws credentials from system if possible
-                return RDSAuthTokenGenerator.GenerateAuthToken(regionEndpoint, hostname, port, user);
-            }
+            return RDSAuthTokenGenerator.GenerateAuthToken(regionEndpoint, hostname, port, user);
         }
         catch (Exception ex)
         {

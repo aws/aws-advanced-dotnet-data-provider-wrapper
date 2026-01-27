@@ -200,6 +200,32 @@ public static class PropertyDefinition
         null,
         "The ID of the AWS application configured on Okta");
 
+    // Custom Endpoint Plugin Properties
+    public static readonly AwsWrapperProperty CustomEndpointInfoRefreshRateMs = new(
+        "customEndpointInfoRefreshRateMs",
+        "30000",
+        "Controls how frequently custom endpoint monitors fetch custom endpoint info, in milliseconds.");
+
+    public static readonly AwsWrapperProperty WaitForCustomEndpointInfo = new(
+        "waitForCustomEndpointInfo",
+        "true",
+        "Controls whether to wait for custom endpoint info to become available before connecting or executing a method. Waiting is only necessary if a connection to a given custom endpoint has not been opened or used recently. Note that disabling this may result in occasional connections to instances outside of the custom endpoint.");
+
+    public static readonly AwsWrapperProperty WaitForCustomEndpointInfoTimeoutMs = new(
+        "waitForCustomEndpointInfoTimeoutMs",
+        "5000",
+        "Controls the maximum amount of time that the plugin will wait for custom endpoint info to be made available by the custom endpoint monitor, in milliseconds.");
+
+    public static readonly AwsWrapperProperty CustomEndpointMonitorIdleExpirationMs = new(
+        "customEndpointMonitorExpirationMs",
+        "900000", // 15 minutes
+        "Controls how long a monitor should run without use before expiring and being removed, in milliseconds.");
+
+    public static readonly AwsWrapperProperty CustomEndpointRegion = new(
+        "customEndpointRegion",
+        null,
+        "The region of the cluster's custom endpoints. If not specified, the region will be parsed from the URL.");
+
     /// <summary>
     /// A set of AwsWrapperProperties that is used by the wrapper and should not be passed to the target driver.
     /// </summary>
@@ -245,6 +271,13 @@ public static class PropertyDefinition
         EnableConnectFailover,
         SkipFailoverOnInterruptedThread,
         ClusterTopologyHighRefreshRateMs,
+
+        // Custom Endpoint Plugin Properties
+        CustomEndpointInfoRefreshRateMs,
+        WaitForCustomEndpointInfo,
+        WaitForCustomEndpointInfoTimeoutMs,
+        CustomEndpointMonitorIdleExpirationMs,
+        CustomEndpointRegion,
 
         // Host Selector Stratagy Properties
         RoundRobinHostWeightPairs,

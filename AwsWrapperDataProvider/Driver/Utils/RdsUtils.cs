@@ -250,4 +250,26 @@ public static partial class RdsUtils
     {
         return IpV6Pattern().IsMatch(host) || IpV6CompressedPattern().IsMatch(host);
     }
+
+    /// <summary>
+    /// Checks if the host is an RDS custom cluster DNS endpoint.
+    /// </summary>
+    /// <param name="host">The host to check.</param>
+    /// <returns>True if the host is an RDS custom cluster DNS endpoint, false otherwise.</returns>
+    public static bool IsRdsCustomClusterDns(string host)
+    {
+        string? dnsGroup = GetDnsGroup(host);
+        return dnsGroup != null && dnsGroup.StartsWith("cluster-custom-", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Gets the RDS cluster ID (endpoint identifier) from a custom endpoint host.
+    /// For custom endpoints, this returns the endpoint identifier (the instance part of the DNS).
+    /// </summary>
+    /// <param name="host">The custom endpoint host.</param>
+    /// <returns>The cluster ID (endpoint identifier) for custom endpoints, or null if not found.</returns>
+    public static string? GetRdsClusterId(string host)
+    {
+        return GetRdsInstanceId(host);
+    }
 }

@@ -869,4 +869,67 @@
     <data name="RdsMultiAzDbClusterPgDialect_IsDialect_InvalidRdsTools" xml:space="preserve">
         <value>The rds_tools extension not installed; skipping dialect function call.</value>
     </data>
+    <data name="CustomEndpointPlugin_ConnectionRequestToCustomEndpoint" xml:space="preserve">
+        <value>Connection request to custom endpoint: {0}.</value>
+    </data>
+    <data name="CustomEndpointPlugin_ErrorParsingEndpointIdentifier" xml:space="preserve">
+        <value>Error parsing endpoint identifier from custom endpoint URL: {0}.</value>
+    </data>
+    <data name="CustomEndpointPlugin_UnableToDetermineRegion" xml:space="preserve">
+        <value>Unable to determine region for custom endpoint. Please specify {0} property.</value>
+    </data>
+    <data name="CustomEndpointPlugin_OnMonitorEvicted_Disposing" xml:space="preserve">
+        <value>Disposing custom endpoint monitor for {0} due to eviction reason: {1}.</value>
+    </data>
+    <data name="Error_DisposingCustomEndpointMonitor" xml:space="preserve">
+        <value>Error disposing custom endpoint monitor: {0}</value>
+    </data>
+    <data name="CustomEndpointPlugin_WaitingForCustomEndpointInfo" xml:space="preserve">
+        <value>Waiting for custom endpoint info to become available for {0} (timeout: {1}ms).</value>
+    </data>
+    <data name="CustomEndpointPlugin_InterruptedThread" xml:space="preserve">
+        <value>Thread interrupted while waiting for custom endpoint info for {0}.</value>
+    </data>
+    <data name="CustomEndpointPlugin_TimedOutWaitingForCustomEndpointInfo" xml:space="preserve">
+        <value>Timed out waiting for custom endpoint info (timeout: {0}ms) for {1}.</value>
+    </data>
+    <data name="CustomEndpointPlugin_ErrorCreatingMonitor" xml:space="preserve">
+        <value>Error creating custom endpoint monitor.</value>
+    </data>
+    <data name="CustomEndpointPlugin_CloseMonitors" xml:space="preserve">
+        <value>Closing all custom endpoint monitors.</value>
+    </data>
+    <data name="CustomEndpointMonitorImpl_StartingMonitor" xml:space="preserve">
+        <value>Starting custom endpoint monitor for {0}.</value>
+    </data>
+    <data name="CustomEndpointMonitorImpl_UnexpectedNumberOfEndpoints" xml:space="preserve">
+        <value>Unexpected number of endpoints found for endpoint identifier {0} in region {1}. Expected 1, found {2}. Endpoints: {3}.</value>
+    </data>
+    <data name="CustomEndpointMonitorImpl_DetectedChangeInCustomEndpointInfo" xml:space="preserve">
+        <value>Detected change in custom endpoint info for {0}: {1}.</value>
+    </data>
+    <data name="CustomEndpointMonitorImpl_Exception" xml:space="preserve">
+        <value>Exception occurred while monitoring custom endpoint {0}.</value>
+    </data>
+    <data name="CustomEndpointMonitorImpl_Interrupted" xml:space="preserve">
+        <value>Custom endpoint monitor interrupted for {0}.</value>
+    </data>
+    <data name="CustomEndpointMonitorImpl_StoppedMonitor" xml:space="preserve">
+        <value>Stopped custom endpoint monitor for {0}.</value>
+    </data>
+    <data name="CustomEndpointMonitorImpl_StoppingMonitor" xml:space="preserve">
+        <value>Stopping custom endpoint monitor for {0}.</value>
+    </data>
+    <data name="CustomEndpointMonitorImpl_MonitorTerminationTimeout" xml:space="preserve">
+        <value>Custom endpoint monitor did not terminate within {0} seconds for {1}.</value>
+    </data>
+    <data name="CustomEndpointMonitorImpl_InterruptedWhileTerminating" xml:space="preserve">
+        <value>Interrupted while terminating custom endpoint monitor for {0}.</value>
+    </data>
+    <data name="CustomEndpointMonitorImpl_ClearCache" xml:space="preserve">
+        <value>Clearing custom endpoint information cache.</value>
+    </data>
+    <data name="CustomEndpointPluginFactory_AwsSdkNotInClasspath" xml:space="preserve">
+        <value>AWS SDK for RDS is not available in the classpath. Please add AWSSDK.RDS package reference.</value>
+    </data>
 </root>
