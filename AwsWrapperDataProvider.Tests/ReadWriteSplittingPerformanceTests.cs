@@ -20,9 +20,6 @@ using AwsWrapperDataProvider.Tests.Container.Utils;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 
-[assembly: CollectionBehavior(DisableTestParallelization = true)]
-[assembly: CaptureConsole]
-
 namespace AwsWrapperDataProvider.Tests;
 public class ReadWriteSplittingPerformanceTests : IntegrationTestBase
 {
