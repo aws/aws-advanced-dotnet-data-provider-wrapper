@@ -574,6 +574,15 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Connected in {0} nanos..
+        /// </summary>
+        internal static string ConnectTimePlugin_ConnectTime {
+            get {
+                return ResourceManager.GetString("ConnectTimePlugin_ConnectTime", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Connection created: {0}@{1} with data source {2}..
         /// </summary>
         internal static string DbConnectionProvider_CreateDbConnection {

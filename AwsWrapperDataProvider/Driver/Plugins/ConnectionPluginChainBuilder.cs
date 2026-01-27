@@ -15,6 +15,7 @@
 using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.Plugins.AuroraInitialConnectionStrategy;
+using AwsWrapperDataProvider.Driver.Plugins.ConnectTime;
 using AwsWrapperDataProvider.Driver.Plugins.Efm;
 using AwsWrapperDataProvider.Driver.Plugins.ExecutionTime;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
@@ -32,6 +33,7 @@ public class ConnectionPluginChainBuilder
 
     private static readonly Dictionary<string, Lazy<IConnectionPluginFactory>?> PluginFactoryTypesByCode = new()
     {
+            { PluginCodes.ConnectTime, new Lazy<IConnectionPluginFactory>(() => new ConnectTimePluginFactory()) },
             { PluginCodes.ExecutionTime, new Lazy<IConnectionPluginFactory>(() => new ExecutionTimePluginFactory()) },
             { PluginCodes.Failover, new Lazy<IConnectionPluginFactory>(() => new FailoverPluginFactory()) },
             { PluginCodes.HostMonitoring, new Lazy<IConnectionPluginFactory>(() => new HostMonitoringPluginFactory()) },
@@ -53,6 +55,7 @@ public class ConnectionPluginChainBuilder
             { PluginCodes.SecretsManager, 1100 },
             { PluginCodes.FederatedAuth, 1200 },
             { PluginCodes.Okta, 1300 },
+            { PluginCodes.ConnectTime, WeightRelativeToPriorPlugin },
             { PluginCodes.ExecutionTime, WeightRelativeToPriorPlugin },
     };
 

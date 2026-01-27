@@ -924,4 +924,7 @@
   <data name="ReadWriteSplittingPlugin_ExceptionWhileExecutingCommand" xml:space="preserve">
     <value>Detected an exception while executing a command: '{0}'</value>
   </data>
+  <data name="ConnectTimePlugin_ConnectTime" xml:space="preserve">
+    <value>Connected in {0} nanos.</value>
+  </data>
 </root>
