@@ -40,19 +40,12 @@ public class TargetConnectionDialectTests
     private static readonly Dictionary<string, string> ConnectionProps = new()
     {
         { "Database", "testdb" },
-        { "Username", "testuser" },
-        { "Password", "testpass" },
+        { "uid", "testuser" },
+        { "pwd", "testpass" },
     };
 
     private static readonly Dictionary<string, string> BasicDatabaseProps = new()
     {
-        { "Database", "testdb" },
-    };
-
-    private static readonly Dictionary<string, string> PropertiesWithHost = new()
-    {
-        { "Host", "original-host" },
-        { "Port", "5432" },
         { "Database", "testdb" },
     };
 
@@ -103,7 +96,7 @@ public class TargetConnectionDialectTests
     {
         var connectionDialect = new NpgsqlDialect();
         var dialect = new PgDialect();
-        var connectionString = connectionDialect.PrepareConnectionString(dialect, null, PropertiesWithHost);
+        var connectionString = connectionDialect.PrepareConnectionString(dialect, null, PropertiesWithServer);
 
         Assert.Contains("Host=original-host", connectionString);
         Assert.Contains("Port=5432", connectionString);
@@ -136,7 +129,7 @@ public class TargetConnectionDialectTests
         Assert.Contains("Server=test-host", connectionString);
         Assert.Contains("Port=5432", connectionString);
         Assert.Contains("Database=testdb", connectionString);
-        Assert.Contains("Username=testuser", connectionString);
+        Assert.Contains("User ID=testuser", connectionString);
         Assert.Contains("Password=testpass", connectionString);
     }
 
@@ -176,11 +169,11 @@ public class TargetConnectionDialectTests
         var dialect = new MySqlDialect();
         var connectionString = connectionDialect.PrepareConnectionString(dialect, HostWithPort, ConnectionProps);
 
-        Assert.Contains("Server=test-host", connectionString);
-        Assert.Contains("Port=5432", connectionString);
-        Assert.Contains("Database=testdb", connectionString);
-        Assert.Contains("Username=testuser", connectionString);
-        Assert.Contains("Password=testpass", connectionString);
+        Assert.Contains("server=test-host", connectionString);
+        Assert.Contains("port=5432", connectionString);
+        Assert.Contains("database=testdb", connectionString);
+        Assert.Contains("user id=testuser", connectionString);
+        Assert.Contains("password=testpass", connectionString);
     }
 
     [Fact]
@@ -191,9 +184,9 @@ public class TargetConnectionDialectTests
         var dialect = new MySqlDialect();
         var connectionString = connectionDialect.PrepareConnectionString(dialect, null, PropertiesWithServer);
 
-        Assert.Contains("Server=original-host", connectionString);
-        Assert.Contains("Port=5432", connectionString);
-        Assert.Contains("Database=testdb", connectionString);
+        Assert.Contains("server=original-host", connectionString);
+        Assert.Contains("port=5432", connectionString);
+        Assert.Contains("database=testdb", connectionString);
     }
 
     [Fact]
@@ -204,9 +197,9 @@ public class TargetConnectionDialectTests
         var dialect = new MySqlDialect();
         var connectionString = connectionDialect.PrepareConnectionString(dialect, HostWithPort, PropsWithInternalProperties);
 
-        Assert.Contains("Server=test-host", connectionString);
-        Assert.Contains("Port=5432", connectionString);
-        Assert.Contains("Database=testdb", connectionString);
+        Assert.Contains("server=test-host", connectionString);
+        Assert.Contains("port=5432", connectionString);
+        Assert.Contains("database=testdb", connectionString);
         Assert.DoesNotContain(PropertyDefinition.TargetConnectionType.Name, connectionString);
         Assert.DoesNotContain(PropertyDefinition.CustomTargetConnectionDialect.Name, connectionString);
     }

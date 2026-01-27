@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using AwsWrapperDataProvider.Dialect.MySqlClient;
 using AwsWrapperDataProvider.Dialect.MySqlConnector;
+using AwsWrapperDataProvider.Dialect.Npgsql;
 using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.Dialects;
@@ -24,6 +26,11 @@ namespace AwsWrapperDataProvider.Tests;
 
 public class AwsWrapperConnectionTest
 {
+    static AwsWrapperConnectionTest()
+    {
+        MySqlConnectorDialectLoader.Load();
+    }
+
     [Fact]
     [Trait("Category", "Unit")]
     public void Constructor_WithTypeArgument_SetsTargetConnectionTypeInProperties()
@@ -60,7 +67,7 @@ public class AwsWrapperConnectionTest
         Dictionary<string, string> props = new()
         {
             { "TargetConnectionType", "MySqlConnector.MySqlConnection,MySqlConnector" },
-            { "Server", "<insert_rds_instance_here>" },
+            { "Host", "<insert_rds_instance_here>" },
         };
 
         // Using the mock failover plugin that always returns a new connection to simulate stale DNS
@@ -93,7 +100,7 @@ public class AwsWrapperConnectionTest
         Dictionary<string, string> props = new()
         {
             { "TargetConnectionType", "MySqlConnector.MySqlConnection,MySqlConnector" },
-            { "Server", "<insert_rds_instance_here>" },
+            { "Host", "<insert_rds_instance_here>" },
         };
 
         // Using the mock failover plugin that always returns a new connection to simulate stale DNS

@@ -27,11 +27,11 @@ public class AuroraPgDialect : PgDialect
 
     private static readonly ILogger<AuroraPgDialect> Logger = LoggerUtils.GetLogger<AuroraPgDialect>();
 
-    private static readonly string ExtensionsSql = "SELECT (setting LIKE '%aurora_stat_utils%') AS aurora_stat_utils "
+    internal static readonly string ExtensionsSql = "SELECT (setting LIKE '%aurora_stat_utils%') AS aurora_stat_utils "
           + "FROM pg_catalog.pg_settings "
           + "WHERE name OPERATOR(pg_catalog.=) 'rds.extensions'";
 
-    private static readonly string TopologySql = "SELECT 1 FROM pg_catalog.aurora_replica_status() LIMIT 1";
+    internal static readonly string TopologySql = "SELECT 1 FROM pg_catalog.aurora_replica_status() LIMIT 1";
 
     private static readonly string TopologyQuery = "SELECT SERVER_ID, CASE WHEN SESSION_ID OPERATOR(pg_catalog.=) 'MASTER_SESSION_ID' THEN TRUE ELSE FALSE END, "
           + "CPU, COALESCE(REPLICA_LAG_IN_MSEC, 0), LAST_UPDATE_TIMESTAMP "
@@ -81,9 +81,13 @@ public class AuroraPgDialect : PgDialect
                 hasTopology = true;
             }
         }
+        catch (Exception ex) when (this.ExceptionHandler.IsSyntaxError(ex))
+        {
+            // Syntax error - expected when querying against incorrect dialect
+        }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, Resources.Error_CantCheckDialect, nameof(AuroraPgDialect));
+            Logger.LogTrace(ex, Resources.Error_CantCheckDialect, nameof(AuroraPgDialect));
         }
 
         return hasExtensions && hasTopology;

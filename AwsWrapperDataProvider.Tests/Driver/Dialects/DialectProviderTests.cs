@@ -62,21 +62,21 @@ public class DialectProviderTests
         {
             new Dictionary<string, string>
         {
-            { PropertyDefinition.Server.Name, "database-test-name.cluster-XYZ.us-east-2.rds.amazonaws.com" },
+            { PropertyDefinition.Host.Name, "database-test-name.cluster-XYZ.us-east-2.rds.amazonaws.com" },
             { PropertyDefinition.TargetConnectionType.Name, typeof(MySqlConnection).AssemblyQualifiedName! },
         }, typeof(AuroraMySqlDialect)
         },
         {
             new Dictionary<string, string>
             {
-                { PropertyDefinition.Server.Name, "some-unknown-host.com" },
+                { PropertyDefinition.Host.Name, "some-unknown-host.com" },
                 { PropertyDefinition.TargetConnectionType.Name, typeof(MySqlDataMySqlConnection).AssemblyQualifiedName! },
             }, typeof(MySqlDialect)
         },
         {
             new Dictionary<string, string>
         {
-            { PropertyDefinition.Server.Name, "some-unknown-host.com" },
+            { PropertyDefinition.Host.Name, "some-unknown-host.com" },
             { PropertyDefinition.TargetConnectionType.Name, typeof(DbConnection).AssemblyQualifiedName! },
         }, typeof(UnknownDialect)
         },

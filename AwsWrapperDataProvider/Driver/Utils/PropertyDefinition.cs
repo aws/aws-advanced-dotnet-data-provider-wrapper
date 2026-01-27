@@ -16,20 +16,14 @@ namespace AwsWrapperDataProvider.Driver.Utils;
 
 public static class PropertyDefinition
 {
-    public static readonly AwsWrapperProperty Server =
-        new("Server", null, "MySql connection url.");
-
     public static readonly AwsWrapperProperty Host =
-        new("Host", null, "Postgres connection url.");
+        new("Host", null, "Connection url.");
 
     public static readonly AwsWrapperProperty Port =
         new("Port", null, "Connection port.");
 
     public static readonly AwsWrapperProperty User =
         new("Username", null, "The user name that the driver will use to connect to database.");
-
-    public static readonly AwsWrapperProperty UserId =
-        new("User ID", null, "The user name and host name that the driver will use to connect to database.");
 
     public static readonly AwsWrapperProperty Password =
         new("Password", null, "The password that the driver will use to connect to database.");
@@ -106,6 +100,16 @@ public static class PropertyDefinition
     public static readonly AwsWrapperProperty SecretsManagerEndpoint = new(
         "SecretsManagerEndpoint", null, "The endpoint of the secret to retrieve.");
 
+    public static readonly AwsWrapperProperty SecretsManagerSecretUsernameProperty = new(
+        "SecretsManagerSecretUsernameProperty",
+        "username",
+        "Set this value to be the key in the JSON secret that contains the username for database connection.");
+
+    public static readonly AwsWrapperProperty SecretsManagerSecretPasswordProperty = new(
+        "SecretsManagerSecretPasswordProperty",
+        "password",
+        "Set this value to be the key in the JSON secret that contains the password for database connection.");
+
     public static readonly AwsWrapperProperty OpenConnectionRetryTimeoutMs = new(
         "OpenConnectionRetryTimeoutMs", "30000", "Maximum allowed time for the retries opening a connection.");
 
@@ -154,13 +158,6 @@ public static class PropertyDefinition
 
     public static readonly AwsWrapperProperty ClusterTopologyHighRefreshRateMs = new(
         "ClusterTopologyHighRefreshRateMs", "100", "Cluster topology high refresh rate in milliseconds.");
-
-    // Connection Timeout Properties
-    public static readonly AwsWrapperProperty SocketTimeout = new(
-        "SocketTimeout", "5000", "The socket timeout value in milliseconds for database connections.");
-
-    public static readonly AwsWrapperProperty ConnectTimeout = new(
-        "ConnectTimeout", "5000", "The connection timeout value in milliseconds for establishing database connections.");
 
     // Host Selector Stratagy Properties
     public static readonly AwsWrapperProperty RoundRobinHostWeightPairs = new(
@@ -224,6 +221,8 @@ public static class PropertyDefinition
         SecretsManagerRegion,
         SecretsManagerExpirationSecs,
         SecretsManagerEndpoint,
+        SecretsManagerSecretUsernameProperty,
+        SecretsManagerSecretPasswordProperty,
         IdpEndpoint,
         IdpPort,
         IdpUsername,
@@ -261,9 +260,4 @@ public static class PropertyDefinition
 
     // EFM specific monitoring property, not related to cluster monitoring
     public static readonly string MonitoringPropertyPrefix = "monitoring-";
-
-    public static string GetConnectionUrl(Dictionary<string, string> props)
-    {
-        return Server.GetString(props) ?? Host.GetString(props) ?? throw new ArgumentException("Connection url is missing.");
-    }
 }

@@ -13,6 +13,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\..\AwsWrapperDataProvider.Dialect.MySqlConnector\AwsWrapperDataProvider.Dialect.MySqlConnector.csproj" />
         <ProjectReference Include="..\..\..\AwsWrapperDataProvider\AwsWrapperDataProvider.csproj" />
         <ProjectReference Include="..\..\..\AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector\AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.csproj" />
     </ItemGroup>

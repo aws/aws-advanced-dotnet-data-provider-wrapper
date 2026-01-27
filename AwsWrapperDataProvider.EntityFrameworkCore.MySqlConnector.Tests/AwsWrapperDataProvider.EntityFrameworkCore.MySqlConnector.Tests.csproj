@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -17,13 +17,14 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.11" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
-    <PackageReference Include="xunit.v3" Version="3.2.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
+    <PackageReference Include="xunit.v3" Version="3.2.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector\AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.csproj" />
+    <ProjectReference Include="..\AwsWrapperDataProvider.Dialect.MySqlConnector\AwsWrapperDataProvider.Dialect.MySqlConnector.csproj" />
     <ProjectReference Include="..\AwsWrapperDataProvider.Tests\AwsWrapperDataProvider.Tests.csproj" />
   </ItemGroup>
 
