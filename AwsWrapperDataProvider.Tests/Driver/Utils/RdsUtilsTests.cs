@@ -31,6 +31,9 @@ public class RdsUtilsTests
     private const string UsEastRegionLimitlessDbShardGroup =
         "database-test-name.shardgrp-XYZ.us-east-2.rds.amazonaws.com";
 
+    private const string EuRedshift =
+        "redshift-test-name.XYZ.eusc-de-east-1.rds.amazonaws.eu";
+
     private const string ChinaRegionCluster =
         "database-test-name.cluster-XYZ.rds.cn-northwest-1.amazonaws.com.cn";
     private const string ChinaRegionClusterReadOnly =
@@ -95,6 +98,7 @@ public class RdsUtilsTests
     private const string UsIsoEastRegionHostPattern = "?.XYZ.rds.us-iso-east-1.c2s.ic.gov";
     private const string ChinaRegionHostPattern = "?.XYZ.rds.cn-northwest-1.amazonaws.com.cn";
     private const string OldChinaRegionHostPattern = "?.XYZ.cn-northwest-1.rds.amazonaws.com.cn";
+    private const string EuRedshiftHostPattern = "?.XYZ.eusc-de-east-1.rds.amazonaws.eu";
 
     public static IEnumerable<object?[]> IdentifyRdsTypeTestData()
     {
@@ -104,6 +108,7 @@ public class RdsUtilsTests
         yield return new object?[] { UsEastRegionProxy, RdsUrlType.RdsProxy };
         yield return new object?[] { UsEastRegionInstance, RdsUrlType.RdsInstance };
         yield return new object?[] { UsEastRegionLimitlessDbShardGroup, RdsUrlType.RdsAuroraLimitlessDbShardGroup };
+        yield return new object?[] { EuRedshift, RdsUrlType.RdsInstance };
         yield return new object?[] { "192.168.1.1", RdsUrlType.IpAddress };
         yield return new object?[] { "2001:0db8:85a3:0000:0000:8a2e:0370:7334", RdsUrlType.IpAddress };
         yield return new object?[] { "2001:db8::8a2e:370:7334", RdsUrlType.IpAddress };
@@ -167,6 +172,7 @@ public class RdsUtilsTests
     [InlineData(UsEastRegionProxy, "proxy-test-name")]
     [InlineData(UsEastRegionCustomDomain, "custom-test-name")]
     [InlineData(UsEastRegionLimitlessDbShardGroup, "database-test-name")]
+    [InlineData(EuRedshift, "redshift-test-name")]
     [InlineData("192.168.1.1", null)]
     [InlineData("example.com", null)]
     [InlineData("", null)]
@@ -232,6 +238,7 @@ public class RdsUtilsTests
     [InlineData(UsEastRegionHostPattern, UsEastRegionInstance)]
     [InlineData(UsEastRegionHostPattern, UsEastRegionLimitlessDbShardGroup)]
     [InlineData(UsEastRegionHostPattern, UsEastRegionProxy)]
+    [InlineData(EuRedshiftHostPattern, EuRedshift)]
 
     [InlineData(UsGovEastRegionHostPattern, UsGovEastRegionCluster)]
 
