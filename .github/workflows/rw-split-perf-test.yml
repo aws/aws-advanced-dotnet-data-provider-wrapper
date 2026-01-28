@@ -15,7 +15,7 @@ jobs:
     name: Run Read Write Splitting Performance Tests with Default
     runs-on: ubuntu-latest
     env:
-      PERF_RESULTS_DIR: ${{ github.workspace }}/artifacts/perf
+      PERF_RESULTS_DIR: ${{ github.workspace }}
 
     strategy: 
       fail-fast: false
@@ -54,11 +54,16 @@ jobs:
           MYSQL_VERSION: "default"
           PG_VERSION: "default"
           PERF_RESULTS_DIR: ${{ env.PERF_RESULTS_DIR }}
+
+      - run: |
+          echo "Performance results stored in directory: $PERF_RESULTS_DIR"
+          ls -la $PERF_RESULTS_DIR
+          find "$GITHUB_WORKSPACE" -maxdepth 4 -type f -name '*.xlsx' -print
       - name: Archive results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: read-write-splitting-plugin-performance-report-${{ matrix.dbEngine }}
-          path: ${{ env.PERF_RESULTS_DIR }}/
+          path: ${{ env.PERF_RESULTS_DIR }}/**/*.xlsx
           retention-days: 5
           if-no-files-found: warn

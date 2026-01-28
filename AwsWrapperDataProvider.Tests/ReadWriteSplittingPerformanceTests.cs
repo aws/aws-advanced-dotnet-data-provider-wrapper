@@ -159,6 +159,7 @@ public class ReadWriteSplittingPerformanceTests : IntegrationTestBase
         workbook.Write(fs);
         var fullPath = Path.GetFullPath(fileName);
         this.logger.WriteLine("Full path: {0}", fullPath);
+        this.logger.WriteLine("Full path from file stream: {0}", fs.Name);
     }
 
     private async Task<Result> GetSetReadOnlyResults(string plugins, bool async, bool connectionPool = true)
