@@ -78,7 +78,7 @@ public class ConnectionPluginChainBuilder
             string[] pluginsCodesArray = [.. pluginsCodes.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)];
             Logger.LogDebug("Current Plugins: " + string.Join(",", pluginsCodesArray));
 
-            Dictionary<int, IConnectionPluginFactory> pluginFactoriesByWeight = [];
+            Dictionary<IConnectionPluginFactory, int> pluginWeightByPluginFactory = [];
 
             foreach (string pluginCode in pluginsCodesArray)
             {
@@ -93,16 +93,16 @@ public class ConnectionPluginChainBuilder
                 }
 
                 int factoryWeight = PluginWeightByPluginFactoryType.GetValueOrDefault(pluginCode, WeightRelativeToPriorPlugin);
-                pluginFactoriesByWeight.Add(factoryWeight, factory.Value);
+                pluginWeightByPluginFactory.Add(factory.Value, factoryWeight);
             }
 
-            if (pluginFactoriesByWeight.Count > 1 && PropertyDefinition.AutoSortPluginOrder.GetBoolean(props))
+            if (pluginWeightByPluginFactory.Count > 1 && PropertyDefinition.AutoSortPluginOrder.GetBoolean(props))
             {
-                pluginFactories = this.SortPluginFactories(pluginFactoriesByWeight);
+                pluginFactories = this.SortPluginFactories(pluginWeightByPluginFactory);
             }
             else
             {
-                pluginFactories = pluginFactoriesByWeight.Values.ToList();
+                pluginFactories = [.. pluginWeightByPluginFactory.Keys];
             }
         }
 
@@ -114,12 +114,12 @@ public class ConnectionPluginChainBuilder
         return plugins;
     }
 
-    private List<IConnectionPluginFactory> SortPluginFactories(Dictionary<int, IConnectionPluginFactory> pluginFactoriesByWeight)
+    private List<IConnectionPluginFactory> SortPluginFactories(Dictionary<IConnectionPluginFactory, int> pluginWeightByPluginFactory)
     {
         int lastWeight = 0;
-        return pluginFactoriesByWeight.OrderBy(pluginWeightFactoryPair =>
+        return [.. pluginWeightByPluginFactory.OrderBy(pluginWeightFactoryPair =>
             {
-                int pluginWeight = pluginWeightFactoryPair.Key;
+                int pluginWeight = pluginWeightFactoryPair.Value;
 
                 if (pluginWeight == WeightRelativeToPriorPlugin)
                 {
@@ -130,8 +130,7 @@ public class ConnectionPluginChainBuilder
                 lastWeight = pluginWeight;
                 return pluginWeight;
             })
-            .Select(pluginWeightFactoryPair => pluginWeightFactoryPair.Value)
-            .ToList();
+            .Select(pluginWeightFactoryPair => pluginWeightFactoryPair.Key)];
     }
 
     public static void RegisterPluginFactory<T>(string pluginCode)
