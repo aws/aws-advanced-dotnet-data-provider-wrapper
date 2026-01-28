@@ -59,6 +59,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: read-write-splitting-plugin-performance-report-${{ matrix.dbEngine }}
-          path: ${{ env.PERF_RESULTS_DIR }}/*.xlsx
+          path: ${{ env.PERF_RESULTS_DIR }}/
           retention-days: 5
           if-no-files-found: warn
