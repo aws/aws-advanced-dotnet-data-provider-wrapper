@@ -1,9 +1,6 @@
 name: Read Write Splitting Performance Tests Default
 
 on:
-  push:
-    branches:
-      - feat/rw-split
   workflow_dispatch:
 
 permissions:
@@ -14,6 +11,9 @@ jobs:
   run-integration-tests:
     name: Run Read Write Splitting Performance Tests with Default
     runs-on: ubuntu-latest
+    env:
+      PERF_RESULTS_DIR: ${{ github.workspace }}/artifacts/perf
+
     strategy: 
       fail-fast: false
       matrix:
@@ -40,7 +40,7 @@ jobs:
           role-duration-seconds: 21600
           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
           output-credentials: true
-      - name: Run Integration Tests
+      - name: Run Read Write Splitting Performance Tests
         run: |
           cd test/integration/host && ./gradlew --no-parallel --no-daemon test-${{ matrix.deployment }}-${{ matrix.dbEngine }}-rw-splitting-performance --info
         env:
@@ -55,5 +55,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: read-write-splitting-plugin-performance-report-${{ matrix.dbEngine }}
-          path: ./test/integration/reports
+          path: ${{ env.PERF_RESULTS_DIR }}/*.xlsx
           retention-days: 5
+          if-no-files-found: warn

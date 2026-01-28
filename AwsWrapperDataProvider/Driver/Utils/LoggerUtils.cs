@@ -31,7 +31,7 @@ public static class LoggerUtils
         LoggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
         {
             builder
-                .SetMinimumLevel(LogLevel.Trace)
+                .SetMinimumLevel(LogLevel.None)
                 .AddDebug()
                 .AddConsole(options => options.FormatterName = "simple");
 
@@ -47,6 +47,8 @@ public static class LoggerUtils
             {
                 builder.AddProvider(new FileLoggerProvider(LogPath));
             }
+
+            builder.ClearProviders();
         });
     }
 
