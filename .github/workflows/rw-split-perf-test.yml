@@ -1,6 +1,9 @@
 name: Read Write Splitting Performance Tests Default
 
 on:
+  push:
+    branches:
+      - feat/rw-split
   workflow_dispatch:
 
 permissions:
