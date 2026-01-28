@@ -127,7 +127,7 @@ public class ReadWriteSplittingPerformanceTests : IntegrationTestBase
             return;
         }
 
-        this.logger.WriteLine("File name: {FileName}", fileName);
+        this.logger.WriteLine("File name: {0}", fileName);
 
         using IWorkbook workbook = new XSSFWorkbook();
         ISheet sheet = workbook.CreateSheet("PerformanceResults");
@@ -151,7 +151,7 @@ public class ReadWriteSplittingPerformanceTests : IntegrationTestBase
         using var fs = new FileStream(fileName, FileMode.Create);
         workbook.Write(fs);
         var fullPath = Path.GetFullPath(fileName);
-        this.logger.WriteLine("Full path: {path}", fullPath);
+        this.logger.WriteLine("Full path: {0}", fullPath);
     }
 
     private async Task<Result> GetSetReadOnlyResults(string plugins, bool async, bool connectionPool = true)
