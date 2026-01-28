@@ -149,6 +149,12 @@ public class ReadWriteSplittingPerformanceTests : IntegrationTestBase
             perfStat.WriteData(dataRow);
         }
 
+        string? dir = Path.GetDirectoryName(fileName);
+        if (!string.IsNullOrEmpty(dir))
+        {
+            Directory.CreateDirectory(dir);
+        }
+
         using var fs = new FileStream(fileName, FileMode.Create);
         workbook.Write(fs);
         var fullPath = Path.GetFullPath(fileName);
