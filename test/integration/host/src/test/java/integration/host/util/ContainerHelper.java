@@ -106,7 +106,7 @@ public class ContainerHelper {
 
     if (task.contains("perf")) {
       exitCode = execInContainer(container, consumer, "dotnet", "test", "--filter",
-              "Category=Integration&Database=" + task + "&Engine=" + engineDeployment, "--configuration Release", "--logger:\"console;verbosity=minimal\"");
+              "Category=Integration&Database=" + task + "&Engine=" + engineDeployment, "--configuration", "Release", "--logger:\"console;verbosity=minimal\"");
     } else {
       exitCode = execInContainer(container, consumer, "dotnet", "test", "--filter",
               "Category=Integration&Database=" + task + "&Engine=" + engineDeployment, "--no-build", "--logger:\"console;verbosity=detailed\"");
