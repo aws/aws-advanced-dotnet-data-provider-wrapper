@@ -53,6 +53,7 @@ jobs:
           AWS_SESSION_TOKEN: ${{ steps.creds.outputs.aws-session-token }}
           MYSQL_VERSION: "default"
           PG_VERSION: "default"
+          PERF_RESULTS_DIR: ${{ env.PERF_RESULTS_DIR }}
       - name: Archive results
         if: always()
         uses: actions/upload-artifact@v4

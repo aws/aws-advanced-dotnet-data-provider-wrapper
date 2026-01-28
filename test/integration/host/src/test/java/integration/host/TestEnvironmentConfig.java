@@ -1086,6 +1086,14 @@ public class TestEnvironmentConfig implements AutoCloseable {
           .withEnv("AWS_SESSION_TOKEN", env.awsSessionToken);
     }
 
+    if (env.info
+          .getRequest()
+          .getFeatures()
+          .contains(TestEnvironmentFeatures.PERFORMANCE)) {
+      env.testContainer
+          .withEnv("PERF_RESULTS_DIR", System.getenv("PERF_RESULTS_DIR"));
+    }
+
     env.testContainer.start();
   }
 
