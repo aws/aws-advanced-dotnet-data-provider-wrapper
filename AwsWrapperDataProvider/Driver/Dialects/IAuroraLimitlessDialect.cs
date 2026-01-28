@@ -12,26 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Text.Json.Serialization;
+namespace AwsWrapperDataProvider.Driver.Dialects;
 
-namespace AwsWrapperDataProvider.Tests.Container.Utils;
-
-[JsonConverter(typeof(JsonStringEnumConverter))]
-public enum TestEnvironmentFeatures
+public interface IAuroraLimitlessDialect : IDialect
 {
-    IAM,
-    SECRETS_MANAGER,
-    FAILOVER_SUPPORTED,
-    NETWORK_OUTAGES_ENABLED,
-    AWS_CREDENTIALS_ENABLED,
-    PERFORMANCE,
-    SKIP_MYSQL_DRIVER_TESTS,
-    SKIP_PG_DRIVER_TESTS,
-    SKIP_MARIADB_DRIVER_TESTS,
-    RUN_HIBERNATE_TESTS_ONLY,
-    RUN_AUTOSCALING_TESTS_ONLY,
-    TELEMETRY_TRACES_ENABLED,
-    TELEMETRY_METRICS_ENABLED,
-    BLUE_GREEN_DEPLOYMENT,
-    LIMITLESS_DEPLOYMENT,
+    string LimitlessRouterEndpointQuery { get; }
 }

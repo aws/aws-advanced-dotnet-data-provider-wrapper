@@ -35,6 +35,7 @@ public class DbConnectionProvider() : IConnectionProvider
             { HighestWeightHostSelector.StrategyName,  new HighestWeightHostSelector() },
             { RandomHostSelector.StrategyName, new RandomHostSelector() },
             { RoundRobinHostSelector.StrategyName, new RoundRobinHostSelector() },
+            { WeightedRandomHostSelector.StrategyName, new WeightedRandomHostSelector() },
         });
 
     public bool AcceptsUrl(string protocol, HostSpec hostSpec, Dictionary<string, string> props)
