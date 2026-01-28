@@ -90,12 +90,7 @@ public class EfmConnectivityIntegrationTests : IntegrationTestBase
         var connectionString = ConnectionStringHelper.GetUrl(Engine, instance, port, Username, Password, DefaultDbName, commandTimeout: maxDurationsSec, connectionTimeout: 10, plugins: "efm");
         connectionString += $";FailureDetectionTime={5000};FailureDetectionCount=1;";
 
-        using AwsWrapperConnection connection = Engine switch
-        {
-            DatabaseEngine.MYSQL => new AwsWrapperConnection<MySqlConnection>(connectionString),
-            DatabaseEngine.PG => new AwsWrapperConnection<NpgsqlConnection>(connectionString),
-            _ => throw new NotSupportedException($"Unsupported engine: {Engine}"),
-        };
+        using AwsWrapperConnection connection = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
         await AuroraUtils.OpenDbConnection(connection, async);
         Assert.Equal(ConnectionState.Open, connection.State);
 

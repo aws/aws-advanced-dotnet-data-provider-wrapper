@@ -14,12 +14,134 @@
 
 using Apps72.Dev.Data.DbMocker;
 using AwsWrapperDataProvider.Driver.Dialects;
+using AwsWrapperDataProvider.Driver.Utils;
 
 namespace AwsWrapperDataProvider.Tests.Driver.Dialects;
 
 public class DialectTests
 {
     private readonly MockDbConnection mockConnection;
+
+    public static IEnumerable<object[]> DoesStatementSetReadOnly_MySQLData()
+    {
+        yield return new object[] { " select 1 ", new[] { (false, false) } };
+        yield return new object[] { " select /* COMMENT */ 1 ", new[] { (false, false) } };
+        yield return new object[] { " SET session transaction read only ", new[] { (true, true) } };
+        yield return new object[] { " set session transaction read /* COMMENT */ only ", new[] { (true, true) } };
+        yield return new object[] { " /* COMMENT */ set session transaction read /* COMMENT */ only ", new[] { (true, true) } };
+        yield return new object[] { " set session transaction read write ", new[] { (false, true) } };
+        yield return new object[] { " /* COMMENT */ set session transaction /* COMMENT */ read write ", new[] { (false, true) } };
+        yield return new object[] { " set session transaction /* COMMENT */ read write ", new[] { (false, true) } };
+        yield return new object[]
+        {
+            " set SESSION TRANSACTION read only; set session transaction read write",
+            new[] { (true, true), (false, true) },
+        };
+        yield return new object[]
+        {
+            " set session transaction read only;,  select 1",
+            new[] { (true, true), (false, false) },
+        };
+        yield return new object[]
+        {
+            " set session  /* COMMENT */transaction read only/* COMMENT */; select 1",
+            new[] { (true, true), (false, false) },
+        };
+        yield return new object[]
+        {
+            " select 1; set session transaction read only; ",
+            new[] { (false, false), (true, true) },
+        };
+        yield return new object[]
+        {
+            " set session transaction READ ONLY; set session transaction read write; ",
+            new[] { (true, true), (false, true) },
+        };
+        yield return new object[]
+        {
+            " set session transaction read write; set session transaction read only; ",
+            new[] { (false, true), (true, true) },
+        };
+        yield return new object[]
+        {
+            " set session transaction read write; select 1",
+            new[] { (false, true), (false, false) },
+        };
+        yield return new object[]
+        {
+            " select 1; set session transaction read write; select 1",
+            new[] { (false, false), (false, true), (false, false) },
+        };
+    }
+
+    public static IEnumerable<object[]> DoesStatementSetReadOnly_PGData()
+    {
+        yield return new object[] { " select 1 ", new[] { (false, false) } };
+        yield return new object[] { " select /* COMMENT */ 1 ", new[] { (false, false) } };
+        yield return new object[] { " /* COMMENT */ select /* COMMENT */ 1 ", new[] { (false, false) } };
+
+        yield return new object[] { " SET SESSION characteristics as transaction READ ONLY", new[] { (true, true) } };
+        yield return new object[] { " set session characteristics as transaction read /* COMMENT */ only ", new[] { (true, true) } };
+        yield return new object[] { " /* COMMENT */ set session characteristics as transaction read /* COMMENT */ only ", new[] { (true, true) } };
+
+        yield return new object[] { " set session characteristics as transaction read write ", new[] { (false, true) } };
+        yield return new object[] { " /* COMMENT */ set session characteristics as transaction /* COMMENT */ read write ", new[] { (false, true) } };
+        yield return new object[] { " set session characteristics as transaction /* COMMENT */ read write ", new[] { (false, true) } };
+
+        yield return new object[]
+        {
+                " set session characteristics as transaction read only; set session characteristics as transaction read write",
+                new[] { (true, true), (false, true) },
+        };
+
+        yield return new object[]
+        {
+                " set session characteristics as transaction read only; select 1",
+                new[] { (true, true), (false, false) },
+        };
+
+        yield return new object[]
+        {
+                " set session characteristics as  /* COMMENT */transaction read only/* COMMENT */; select 1",
+                new[] { (true, true), (false, false) },
+        };
+
+        yield return new object[]
+        {
+                " select 1; set session characteristics as transaction read only; ",
+                new[] { (false, false), (true, true) },
+        };
+
+        yield return new object[]
+        {
+                " set session characteristics as transaction read write; set session characteristics as transaction read only; ",
+                new[] { (false, true), (true, true) },
+        };
+
+        yield return new object[]
+        {
+                " set session characteristics as transaction read only; set session characteristics as TRANSACTION READ WRITE; ",
+                new[] { (true, true), (false, true) },
+        };
+
+        yield return new object[]
+        {
+                " select 1; set session characteristics as transaction read only; ",
+                new[] { (false, false), (true, true) },
+        };
+
+        yield return new object[]
+        {
+                " set session characteristics as transaction read write; select 1",
+                new[] { (false, true), (false, false) },
+        };
+
+        yield return new object[]
+        {
+                " select 1; set session characteristics as transaction read write; select 1",
+                new[] { (false, false), (false, true), (false, false) },
+        };
+    }
 
     public DialectTests()
     {
@@ -351,5 +473,41 @@ public class DialectTests
         IDialect pgDialect = new RdsMultiAzDbClusterPgDialect();
         this.mockConnection.Mocks.WhenAny().ReturnsTable(MockTable.Empty());
         Assert.False(await pgDialect.IsDialect(this.mockConnection));
+    }
+
+    [Theory]
+    [Trait("Category", "Unit")]
+    [MemberData(nameof(DoesStatementSetReadOnly_MySQLData))]
+    public void DoesStatementSetReadOnly_MySQL(string query, (bool ReadOnly, bool Found)[] expected)
+    {
+        var dialect = new MySqlDialect();
+        var statements = WrapperUtils.GetSeparateSqlStatements(query);
+
+        Assert.Equal(expected.Length, statements.Count);
+
+        for (int i = 0; i < statements.Count; i++)
+        {
+            var (actualReadOnly, actualFound) = dialect.DoesStatementSetReadOnly(statements[i]);
+            Assert.Equal(expected[i].ReadOnly, actualReadOnly);
+            Assert.Equal(expected[i].Found, actualFound);
+        }
+    }
+
+    [Theory]
+    [Trait("Category", "Unit")]
+    [MemberData(nameof(DoesStatementSetReadOnly_PGData))]
+    public void DoesStatementSetReadOnly_PG(string query, (bool ReadOnly, bool Found)[] expected)
+    {
+        var dialect = new PgDialect();
+        var statements = WrapperUtils.GetSeparateSqlStatements(query);
+
+        Assert.Equal(expected.Length, statements.Count);
+
+        for (int i = 0; i < statements.Count; i++)
+        {
+            var (actualReadOnly, actualFound) = dialect.DoesStatementSetReadOnly(statements[i]);
+            Assert.Equal(expected[i].ReadOnly, actualReadOnly);
+            Assert.Equal(expected[i].Found, actualFound);
+        }
     }
 }

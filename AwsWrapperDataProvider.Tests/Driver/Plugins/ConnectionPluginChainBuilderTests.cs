@@ -18,7 +18,9 @@ using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Plugins.AuroraInitialConnectionStrategy;
+using AwsWrapperDataProvider.Driver.Plugins.ConnectTime;
 using AwsWrapperDataProvider.Driver.Plugins.Efm;
+using AwsWrapperDataProvider.Driver.Plugins.ExecutionTime;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -261,5 +263,26 @@ public class ConnectionPluginChainBuilderTests
                 null,
                 props,
                 null));
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void TestPluginCodesWithTwoRelativeWeight()
+    {
+        Dictionary<string, string> props = new() { { PropertyDefinition.Plugins.Name, "connectTime,executionTime" } };
+        ConnectionPluginChainBuilder pluginChainBuilder = new();
+
+        IList<IConnectionPlugin> plugins = pluginChainBuilder.GetPlugins(
+            this.pluginServiceMock.Object,
+            this.connectionProviderMock.Object,
+            null,
+            props,
+            null);
+
+        Assert.NotNull(plugins);
+        Assert.Equal(3, plugins.Count);
+        Assert.IsType<ConnectTimePlugin>(plugins[0]);
+        Assert.IsType<ExecutionTimePlugin>(plugins[1]);
+        Assert.IsType<DefaultConnectionPlugin>(plugins[2]);
     }
 }

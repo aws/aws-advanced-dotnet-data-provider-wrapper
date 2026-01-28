@@ -12,18 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace AwsWrapperDataProvider.Driver.Plugins;
+using System.Data.Common;
 
-public static class PluginCodes
+namespace AwsWrapperDataProvider.Driver.Plugins.ReadWriteSplitting;
+public class ReadWriteSplittingDbException : DbException
 {
-    public const string ConnectTime = "connectTime";
-    public const string ExecutionTime = "executionTime";
-    public const string Failover = "failover";
-    public const string HostMonitoring = "efm";
-    public const string ReadWriteSplitting = "readWriteSplitting";
-    public const string Iam = "iam";
-    public const string SecretsManager = "awsSecretsManager";
-    public const string InitialConnection = "initialConnection";
-    public const string FederatedAuth = "federatedAuth";
-    public const string Okta = "okta";
+    public ReadWriteSplittingDbException(string message) : base(message)
+    {
+    }
+
+    public ReadWriteSplittingDbException(string message, Exception innerException) : base(message, innerException)
+    {
+    }
 }

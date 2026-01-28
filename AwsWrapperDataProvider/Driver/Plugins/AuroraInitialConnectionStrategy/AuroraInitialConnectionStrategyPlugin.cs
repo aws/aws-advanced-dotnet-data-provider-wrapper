@@ -106,7 +106,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
 
             try
             {
-                writerCandidate = this.GetWriter();
+                writerCandidate = WrapperUtils.GetWriter(this.pluginService.AllHosts);
 
                 if (writerCandidate == null || RdsUtils.IsRdsClusterDns(writerCandidate.Host))
                 {
@@ -308,14 +308,9 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
         return null;
     }
 
-    private HostSpec? GetWriter()
-    {
-        return this.pluginService.AllHosts.FirstOrDefault(host => host.Role == HostRole.Writer);
-    }
-
     private HostSpec? GetReader(Dictionary<string, string> props)
     {
-        string strategy = PropertyDefinition.ReaderHostSelectorStrategy.GetString(props)!;
+        string strategy = PropertyDefinition.InitialConnectionReaderHostSelectorStrategy.GetString(props)!;
         if (this.pluginService.AcceptsStrategy(strategy))
         {
             try

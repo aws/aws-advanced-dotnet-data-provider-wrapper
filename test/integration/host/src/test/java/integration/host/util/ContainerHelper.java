@@ -104,8 +104,14 @@ public class ContainerHelper {
         assertEquals(0, exitCode, "Failed to update database with migration");
     }
 
-    exitCode = execInContainer(container, consumer, "dotnet", "test", "--filter",
-            "Category=Integration&Database=" + task + "&Engine=" + engineDeployment, "--no-build", "--logger:\"console;verbosity=detailed\"");
+    if (task.contains("perf")) {
+      exitCode = execInContainer(container, consumer, "dotnet", "test", "--filter",
+              "Category=Integration&Database=" + task + "&Engine=" + engineDeployment, "--configuration", "Release", "--logger:\"console;verbosity=detailed\"");
+    } else {
+      exitCode = execInContainer(container, consumer, "dotnet", "test", "--filter",
+              "Category=Integration&Database=" + task + "&Engine=" + engineDeployment, "--no-build", "--logger:\"console;verbosity=detailed\"");
+    }
+
 
     System.out.println("==== Container console feed ==== <<<<");
     assertEquals(0, exitCode, "Some tests failed.");

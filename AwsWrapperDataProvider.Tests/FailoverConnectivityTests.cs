@@ -15,7 +15,6 @@
 using System.Data;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
 using AwsWrapperDataProvider.Tests.Container.Utils;
-using MySqlConnector;
 using Npgsql;
 
 namespace AwsWrapperDataProvider.Tests;
@@ -62,12 +61,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
             "failover");
         connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}; Pooling=false";
 
-        using AwsWrapperConnection connection = Engine switch
-        {
-            DatabaseEngine.MYSQL => new AwsWrapperConnection<MySqlConnection>(connectionString),
-            DatabaseEngine.PG => new AwsWrapperConnection<NpgsqlConnection>(connectionString),
-            _ => throw new NotSupportedException($"Unsupported engine: {Engine}"),
-        };
+        using AwsWrapperConnection connection = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
         await AuroraUtils.OpenDbConnection(connection, async);
         Assert.Equal(ConnectionState.Open, connection.State);
 
@@ -116,12 +110,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
             "failover");
         connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}; Pooling=true";
 
-        using AwsWrapperConnection connection = Engine switch
-        {
-            DatabaseEngine.MYSQL => new AwsWrapperConnection<MySqlConnection>(connectionString),
-            DatabaseEngine.PG => new AwsWrapperConnection<NpgsqlConnection>(connectionString),
-            _ => throw new NotSupportedException($"Unsupported engine: {Engine}"),
-        };
+        using AwsWrapperConnection connection = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
         connection.Open();
         Assert.Equal(ConnectionState.Open, connection.State);
 
@@ -175,12 +164,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
             "failover");
         connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}";
 
-        using AwsWrapperConnection connection = Engine switch
-        {
-            DatabaseEngine.MYSQL => new AwsWrapperConnection<MySqlConnection>(connectionString),
-            DatabaseEngine.PG => new AwsWrapperConnection<NpgsqlConnection>(connectionString),
-            _ => throw new NotSupportedException($"Unsupported engine: {Engine}"),
-        };
+        using AwsWrapperConnection connection = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
         await AuroraUtils.OpenDbConnection(connection, async);
         Assert.Equal(ConnectionState.Open, connection.State);
 
@@ -226,12 +210,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
             "failover");
         connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}";
 
-        using AwsWrapperConnection connection = Engine switch
-        {
-            DatabaseEngine.MYSQL => new AwsWrapperConnection<MySqlConnection>(connectionString),
-            DatabaseEngine.PG => new AwsWrapperConnection<NpgsqlConnection>(connectionString),
-            _ => throw new NotSupportedException($"Unsupported engine: {Engine}"),
-        };
+        using AwsWrapperConnection connection = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
         await AuroraUtils.OpenDbConnection(connection, async);
         Assert.Equal(ConnectionState.Open, connection.State);
 
@@ -283,12 +262,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
         connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}" +
             $"; FailoverMode=ReaderOrWriter";
 
-        using AwsWrapperConnection connection = Engine switch
-        {
-            DatabaseEngine.MYSQL => new AwsWrapperConnection<MySqlConnection>(connectionString),
-            DatabaseEngine.PG => new AwsWrapperConnection<NpgsqlConnection>(connectionString),
-            _ => throw new NotSupportedException($"Unsupported engine: {Engine}"),
-        };
+        using AwsWrapperConnection connection = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
         await AuroraUtils.OpenDbConnection(connection, async);
         Assert.Equal(ConnectionState.Open, connection.State);
 
@@ -330,12 +304,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
             $"; FailoverMode=StrictReader" +
             $"; FailoverTimeoutMs=120000";
 
-        using AwsWrapperConnection connection = Engine switch
-        {
-            DatabaseEngine.MYSQL => new AwsWrapperConnection<MySqlConnection>(connectionString),
-            DatabaseEngine.PG => new AwsWrapperConnection<NpgsqlConnection>(connectionString),
-            _ => throw new NotSupportedException($"Unsupported engine: {Engine}"),
-        };
+        using AwsWrapperConnection connection = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
         await AuroraUtils.OpenDbConnection(connection, async);
         Assert.Equal(ConnectionState.Open, connection.State);
 
@@ -389,12 +358,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
         connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}" +
             $"; FailoverMode=ReaderOrWriter";
 
-        using AwsWrapperConnection connection = Engine switch
-        {
-            DatabaseEngine.MYSQL => new AwsWrapperConnection<MySqlConnection>(connectionString),
-            DatabaseEngine.PG => new AwsWrapperConnection<NpgsqlConnection>(connectionString),
-            _ => throw new NotSupportedException($"Unsupported engine: {Engine}"),
-        };
+        using AwsWrapperConnection connection = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
         await AuroraUtils.OpenDbConnection(connection, async);
         Assert.Equal(ConnectionState.Open, connection.State);
 

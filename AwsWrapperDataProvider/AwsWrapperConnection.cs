@@ -307,15 +307,13 @@ public class AwsWrapperConnection : DbConnection
 
         await this.PluginManager.InitHostProvider(this.connectionString!, this.ConnectionProperties!, this.hostListProviderService);
 
-        var currentHostSpec = this.pluginService.CurrentHostSpec;
-
         DbConnection connection = await WrapperUtils.OpenWithPlugins(
             this.PluginManager,
-            currentHostSpec,
+            this.pluginService.InitialConnectionHostSpec,
             this.ConnectionProperties!,
             true,
             async);
-        this.pluginService.SetCurrentConnection(connection, currentHostSpec);
+        this.pluginService.SetCurrentConnection(connection, this.pluginService.InitialConnectionHostSpec);
         await this.pluginService.RefreshHostListAsync();
     }
 

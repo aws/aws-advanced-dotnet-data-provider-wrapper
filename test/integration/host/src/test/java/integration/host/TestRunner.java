@@ -138,6 +138,22 @@ public class TestRunner {
   }
 
   @TestTemplate
+  public void runMySQLRWSplittingPerfTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
+
+    try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
+        env.runTests("mysql-rw-split-perf", "aurora");
+    }
+  }
+
+  @TestTemplate
+  public void runPGRWSplittingPerfTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
+
+    try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
+        env.runTests("pg-rw-split-perf", "aurora");
+    }
+  }
+
+  @TestTemplate
   public void debugTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
 
     try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
