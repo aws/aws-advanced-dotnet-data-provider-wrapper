@@ -843,8 +843,6 @@ public class AuroraTestUtils
         {
             command.ExecuteNonQuery();
         }
-
-        Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Finished ExecuteNonQuery.");
     }
 
     public async Task SetReadOnly(DbConnection connection, DatabaseEngine engine, bool readOnly, bool async, DbTransaction? tx = null)

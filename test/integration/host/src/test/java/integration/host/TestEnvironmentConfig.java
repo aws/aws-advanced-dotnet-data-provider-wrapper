@@ -1091,7 +1091,8 @@ public class TestEnvironmentConfig implements AutoCloseable {
           .getFeatures()
           .contains(TestEnvironmentFeatures.PERFORMANCE)) {
       env.testContainer
-          .withEnv("PERF_RESULTS_DIR", System.getenv("PERF_RESULTS_DIR"));
+          .withEnv("PERF_RESULTS_DIR", System.getenv("PERF_RESULTS_DIR"))
+          .withEnv("LOG_LEVEL", System.getenv("LOG_LEVEL"));
     }
 
     env.testContainer.start();

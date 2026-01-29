@@ -53,9 +53,18 @@ public class ReadWriteSplittingPerformanceTests : IntegrationTestBase
 
         var resultsWithoutPlugin = await this.GetSetReadOnlyResults("connectTime,executionTime", async, true);
 
+        this.logger.WriteLine("Results without readWriteSplitting plugin:");
+        this.LogResult(resultsWithoutPlugin);
+
         var resultsWithPluginWithConnectionPool = await this.GetSetReadOnlyResults("readWriteSplitting,connectTime,executionTime", async, true);
 
+        this.logger.WriteLine("Results with readWriteSplitting plugin and with connection pool:");
+        this.LogResult(resultsWithPluginWithConnectionPool);
+
         var resultsWithPluginWithoutConnectionPool = await this.GetSetReadOnlyResults("readWriteSplitting,connectTime,executionTime", async, false);
+
+        this.logger.WriteLine("Results with readWriteSplitting plugin and without connection pool:");
+        this.LogResult(resultsWithPluginWithoutConnectionPool);
 
         long switchToReaderMinOverhead = resultsWithPluginWithConnectionPool.SwitchToReaderMin - resultsWithoutPlugin.SwitchToReaderMin;
         long switchToReaderMaxOverhead = resultsWithPluginWithConnectionPool.SwitchToReaderMax - resultsWithoutPlugin.SwitchToReaderMax;
@@ -202,10 +211,12 @@ public class ReadWriteSplittingPerformanceTests : IntegrationTestBase
             await AuroraUtils.SetReadOnly(connection, Engine, true, async);
             var connectTimeNs = ConnectTimePlugin.GetTotalConnectTime();
             var executionTimeNs = ExecutionTimePlugin.GetTotalExecutionTime();
+            this.logger.WriteLine($"Iteration {i}: connectTimeNs={connectTimeNs}, executionTimeNs={executionTimeNs}");
 
             sw.Stop();
             long ticks = sw.ElapsedTicks;
             double elapsedReaderNs = (double)ticks * 1_000_000_000.0 / Stopwatch.Frequency;
+            this.logger.WriteLine($"Iteration {i}: elapsedReaderNs={elapsedReaderNs}");
             elapsedSwitchToReaderTimes.Add(elapsedReaderNs - connectTimeNs - executionTimeNs);
 
             // Measure switch to writer
@@ -243,6 +254,17 @@ public class ReadWriteSplittingPerformanceTests : IntegrationTestBase
         public long SwitchToWriterMin { get; set; }
         public long SwitchToWriterMax { get; set; }
         public long SwitchToWriterAvg { get; set; }
+    }
+
+    private void LogResult(Result r)
+    {
+        this.logger.WriteLine("=== Result ===");
+        this.logger.WriteLine($"SwitchToReaderMin = {r.SwitchToReaderMin}");
+        this.logger.WriteLine($"SwitchToReaderMax = {r.SwitchToReaderMax}");
+        this.logger.WriteLine($"SwitchToReaderAvg = {r.SwitchToReaderAvg}");
+        this.logger.WriteLine($"SwitchToWriterMin = {r.SwitchToWriterMin}");
+        this.logger.WriteLine($"SwitchToWriterMax = {r.SwitchToWriterMax}");
+        this.logger.WriteLine($"SwitchToWriterAvg = {r.SwitchToWriterAvg}");
     }
 
     private abstract class PerfStatBase

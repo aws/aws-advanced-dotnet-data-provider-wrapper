@@ -54,6 +54,7 @@ jobs:
           MYSQL_VERSION: "default"
           PG_VERSION: "default"
           PERF_RESULTS_DIR: ${{ env.PERF_RESULTS_DIR }}
+          LOG_LEVEL: None
 
       - name: Archive results
         if: always()
