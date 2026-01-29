@@ -21,7 +21,7 @@ public class FileLogger : ILogger
     private readonly string categoryName;
     private readonly string filePath;
     private readonly object lockObject;
-    private readonly string logFileName = "aws-dotnet-data-provider-wrapper-log.log";
+    private readonly string logFileName = $"aws-dotnet-data-provider-wrapper-log-{DateTime.Now.ToString("yyyyMMdd-HHmmss")}.log";
 
     public FileLogger(string categoryName, string directory, object lockObject)
     {
