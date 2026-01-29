@@ -79,17 +79,19 @@ public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
     {
         Dictionary<string, string> targetConnectionParameters = props
             .Where(x => !PropertyDefinition.InternalWrapperProperties.Select(prop => prop.Name).Contains(x.Key)
-                        && !x.Key.StartsWith(PropertyDefinition.MonitoringPropertyPrefix))
+                        && !PropertyDefinition.MonitoringPropertyPrefixes.Any(prefix => x.Key.StartsWith(prefix)))
             .ToDictionary(x => x.Key, x => x.Value);
 
-        if (hostSpec != null)
+        if (hostSpec == null)
         {
-            dialect.PrepareConnectionProperties(targetConnectionParameters, hostSpec);
-            hostProperty.Set(targetConnectionParameters, hostSpec.Host);
-            if (hostSpec.IsPortSpecified)
-            {
-                PropertyDefinition.Port.Set(targetConnectionParameters, hostSpec.Port.ToString());
-            }
+            return this.NormalizeConnectionString(targetConnectionParameters);
+        }
+
+        dialect.PrepareConnectionProperties(targetConnectionParameters, hostSpec);
+        hostProperty.Set(targetConnectionParameters, hostSpec.Host);
+        if (hostSpec.IsPortSpecified)
+        {
+            PropertyDefinition.Port.Set(targetConnectionParameters, hostSpec.Port.ToString());
         }
 
         return this.NormalizeConnectionString(targetConnectionParameters);

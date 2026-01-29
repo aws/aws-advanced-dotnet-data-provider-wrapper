@@ -272,6 +272,11 @@ public static class PropertyDefinition
         FailureDetectionCount,
     ];
 
-    // EFM specific monitoring property, not related to cluster monitoring
-    public static readonly string MonitoringPropertyPrefix = "monitoring-";
+    public static readonly string EfmMonitoringPropertyPrefix = "monitoring-";
+    public static readonly string ClusterTopologyMonitoringPropertyPrefix = "topology-monitoring-";
+
+    public static readonly List<string> MonitoringPropertyPrefixes = [
+        EfmMonitoringPropertyPrefix,
+        ClusterTopologyMonitoringPropertyPrefix
+    ];
 }
