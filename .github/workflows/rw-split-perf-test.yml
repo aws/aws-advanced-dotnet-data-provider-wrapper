@@ -55,10 +55,6 @@ jobs:
           PG_VERSION: "default"
           PERF_RESULTS_DIR: ${{ env.PERF_RESULTS_DIR }}
 
-      - run: |
-          echo "Performance results stored in directory: $PERF_RESULTS_DIR"
-          ls -la $PERF_RESULTS_DIR
-          find "$GITHUB_WORKSPACE" -maxdepth 4 -type f -name '*.xlsx' -print
       - name: Archive results
         if: always()
         uses: actions/upload-artifact@v4

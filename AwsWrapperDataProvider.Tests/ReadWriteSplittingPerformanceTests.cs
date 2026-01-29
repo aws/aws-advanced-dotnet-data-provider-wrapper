@@ -14,7 +14,6 @@
 
 using System.Data;
 using System.Diagnostics;
-using System.IO;
 using AwsWrapperDataProvider.Driver.Plugins.ConnectTime;
 using AwsWrapperDataProvider.Driver.Plugins.ExecutionTime;
 using AwsWrapperDataProvider.Tests.Container.Utils;
@@ -28,7 +27,6 @@ public class ReadWriteSplittingPerformanceTests : IntegrationTestBase
         int.TryParse(Environment.GetEnvironmentVariable("REPEAT_TIMES"), out var value)
                 ? value
                 : 10;
-    private static readonly string PerfResultPath = Environment.GetEnvironmentVariable("PERF_RESULTS_DIR") ?? ".";
     private static readonly int TimeoutSec = 5;
     private static readonly int ConnectTimeoutSec = 5;
     private static readonly List<PerfStatSwitchConnection> SetReadOnlyPerfDataList = [];
@@ -86,7 +84,7 @@ public class ReadWriteSplittingPerformanceTests : IntegrationTestBase
         SetReadOnlyPerfDataList.Add(connectWriterData);
 
         var sync = async ? "Async" : "Sync";
-        string fileWithConnectionPool = $@"{PerfResultPath}/{Engine}_{sync}_WithConnectionPool_ReadWriteSplittingPerformanceResults_{DateTime.Now:yyyyMMdd-HHmmss}.xlsx";
+        string fileWithConnectionPool = $@"./{Engine}_{sync}_WithConnectionPool_ReadWriteSplittingPerformanceResults_{DateTime.Now:yyyyMMdd-HHmmss}.xlsx";
         this.WritePerfDataToFile(fileWithConnectionPool);
 
         SetReadOnlyPerfDataList.Clear();
@@ -160,7 +158,6 @@ public class ReadWriteSplittingPerformanceTests : IntegrationTestBase
         workbook.Write(fs);
         var fullPath = Path.GetFullPath(fileName);
         this.logger.WriteLine("Full path: {0}", fullPath);
-        this.logger.WriteLine("Full path from file stream: {0}", fs.Name);
 
         if (!File.Exists(fileName))
         {
