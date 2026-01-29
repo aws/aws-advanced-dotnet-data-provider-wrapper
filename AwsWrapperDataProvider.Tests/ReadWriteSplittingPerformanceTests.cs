@@ -207,6 +207,7 @@ public class ReadWriteSplittingPerformanceTests : IntegrationTestBase
             // Measure switch to reader
             ConnectTimePlugin.ReseConnectTime();
             ExecutionTimePlugin.ResetExecutionTime();
+
             var sw = Stopwatch.StartNew();
             await AuroraUtils.SetReadOnly(connection, Engine, true, async);
             var connectTimeNs = ConnectTimePlugin.GetTotalConnectTime();
@@ -230,7 +231,7 @@ public class ReadWriteSplittingPerformanceTests : IntegrationTestBase
             sw.Stop();
             ticks = sw.ElapsedTicks;
             double elapsedWriterNs = (double)ticks * 1_000_000_000.0 / Stopwatch.Frequency;
-            elapsedSwitchToWriterTimes.Add(elapsedWriterNs);
+            elapsedSwitchToWriterTimes.Add(elapsedWriterNs - connectTimeNs - executionTimeNs);
         }
 
         // Summary stats for reader

@@ -55,8 +55,8 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
 
         "DbBatch.ExecuteNonQuery",
         "DbBatch.ExecuteNonQueryAsync",
-        "DbBatch.ExecuteNonQuery",
-        "DbBatch.ExecuteNonQueryAsync",
+        "DbBatch.ExecuteReader",
+        "DbBatch.ExecuteReaderAsync",
         "DbBatch.ExecuteScalar",
         "DbBatch.ExecuteScalarAsync",
 

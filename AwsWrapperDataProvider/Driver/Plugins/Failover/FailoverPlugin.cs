@@ -74,8 +74,8 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
         "DbBatch.ExecuteNonQuery",
         "DbBatch.ExecuteNonQueryAsync",
-        "DbBatch.ExecuteNonQuery",
-        "DbBatch.ExecuteNonQueryAsync",
+        "DbBatch.ExecuteReaderA",
+        "DbBatch.ExecuteReaderAsync",
         "DbBatch.ExecuteScalar",
         "DbBatch.ExecuteScalarAsync",
 
