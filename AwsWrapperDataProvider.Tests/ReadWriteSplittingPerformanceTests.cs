@@ -14,6 +14,7 @@
 
 using System.Data;
 using System.Diagnostics;
+using System.IO;
 using AwsWrapperDataProvider.Driver.Plugins.ConnectTime;
 using AwsWrapperDataProvider.Driver.Plugins.ExecutionTime;
 using AwsWrapperDataProvider.Tests.Container.Utils;
@@ -117,7 +118,7 @@ public class ReadWriteSplittingPerformanceTests : IntegrationTestBase
         };
         SetReadOnlyPerfDataList.Add(noConnPoolsConnectWriterData);
 
-        string fileWithoutConnectionPool = $@"{PerfResultPath}/{Engine}_{sync}_WithoutConnectionPool_ReadWriteSplittingPerformanceResults_{DateTime.Now:yyyyMMdd-HHmmss}.xlsx";
+        string fileWithoutConnectionPool = $@"./{Engine}_{sync}_WithoutConnectionPool_ReadWriteSplittingPerformanceResults_{DateTime.Now:yyyyMMdd-HHmmss}.xlsx";
         this.WritePerfDataToFile(fileWithoutConnectionPool);
     }
 
@@ -160,6 +161,17 @@ public class ReadWriteSplittingPerformanceTests : IntegrationTestBase
         var fullPath = Path.GetFullPath(fileName);
         this.logger.WriteLine("Full path: {0}", fullPath);
         this.logger.WriteLine("Full path from file stream: {0}", fs.Name);
+
+        if (!File.Exists(fileName))
+        {
+            throw new Exception($"Performance result file {fileName} was not created.");
+        }
+
+        var fi = new FileInfo(fileName);
+        if (fi.Length == 0)
+        {
+            throw new Exception($"Performance result file {fileName} is empty.");
+        }
     }
 
     private async Task<Result> GetSetReadOnlyResults(string plugins, bool async, bool connectionPool = true)

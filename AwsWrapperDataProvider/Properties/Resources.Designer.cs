@@ -1672,7 +1672,7 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Execution time: {0}ms, {1}ns..
+        ///   Looks up a localized string similar to Execution time: {0}ns..
         /// </summary>
         internal static string ExecutionTimePlugin_Execute_ExecutionTime {
             get {

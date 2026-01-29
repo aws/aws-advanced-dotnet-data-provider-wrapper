@@ -652,7 +652,7 @@
     <value>Unknown plugin code: {0}</value>
   </data>
   <data name="ExecutionTimePlugin_Execute_ExecutionTime" xml:space="preserve">
-    <value>Execution time: {0}ms, {1}ns.</value>
+    <value>Execution time: {0}ns.</value>
   </data>
   <data name="FailoverPlugin_DealWithOriginalExceptionAsync_MarkingHostUnavailable" xml:space="preserve">
     <value>Marking host {0} as unavailable.</value>
