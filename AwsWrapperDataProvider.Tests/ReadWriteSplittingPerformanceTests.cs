@@ -51,15 +51,15 @@ public class ReadWriteSplittingPerformanceTests : IntegrationTestBase
 
         SetReadOnlyPerfDataList.Clear();
 
-        var resultsWithoutPlugin = await this.GetSetReadOnlyResults("connectTime,executionTime", async, true);
-
-        this.logger.WriteLine("Results without readWriteSplitting plugin:");
-        this.LogResult(resultsWithoutPlugin);
-
         var resultsWithPluginWithConnectionPool = await this.GetSetReadOnlyResults("readWriteSplitting,connectTime,executionTime", async, true);
 
         this.logger.WriteLine("Results with readWriteSplitting plugin and with connection pool:");
         this.LogResult(resultsWithPluginWithConnectionPool);
+
+        var resultsWithoutPlugin = await this.GetSetReadOnlyResults("connectTime,executionTime", async, true);
+
+        this.logger.WriteLine("Results without readWriteSplitting plugin:");
+        this.LogResult(resultsWithoutPlugin);
 
         var resultsWithPluginWithoutConnectionPool = await this.GetSetReadOnlyResults("readWriteSplitting,connectTime,executionTime", async, false);
 
