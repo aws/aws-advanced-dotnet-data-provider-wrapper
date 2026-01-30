@@ -26,31 +26,31 @@ public static partial class RdsUtils
     private const string RegionGroup = "region";
 
     // Regular expression patterns for different AWS RDS endpoint types
-    [GeneratedRegex(@"^(?<instance>.+)\.(?<dns>proxy-|cluster-|cluster-ro-|cluster-custom-|shardgrp-)?(?<domain>[a-zA-Z0-9]+\.(?<region>[a-zA-Z0-9\-]+)\.rds\.amazonaws\.com\.?)$", RegexOptions.IgnoreCase, "en-CA")]
+    [GeneratedRegex(@"^(?<instance>.+)\.(?<dns>proxy-|cluster-|cluster-ro-|cluster-custom-|shardgrp-)?(?<domain>[a-zA-Z0-9]+\.(?<region>[a-zA-Z0-9\-]+)\.(rds|rds-fips)\.amazonaws\.(com|au|eu|uk)\.?)$", RegexOptions.IgnoreCase, "en-CA")]
     private static partial Regex AuroraDnsPattern();
 
-    [GeneratedRegex(@"^(?<instance>.+)\.(?<dns>cluster-|cluster-ro-)(?<domain>[a-zA-Z0-9]+\.(?<region>[a-zA-Z0-9\-]+)\.rds\.amazonaws\.com\.?)$", RegexOptions.IgnoreCase, "en-CA")]
+    [GeneratedRegex(@"^(?<instance>.+)\.(?<dns>cluster-|cluster-ro-)(?<domain>[a-zA-Z0-9]+\.(?<region>[a-zA-Z0-9\-]+)\.(rds|rds-fips)\.amazonaws\.(com|au|eu|uk)\.?)$", RegexOptions.IgnoreCase, "en-CA")]
     private static partial Regex AuroraClusterPattern();
 
-    [GeneratedRegex(@"(?<instance>.+)\.(?<dns>shardgrp-)+(?<domain>[a-zA-Z0-9]+\.(?<region>[a-zA-Z0-9\-]+)\.rds\.(amazonaws\.com\.?|amazonaws\.com\.cn\.?|sc2s\.sgov\.gov\.?|c2s\.ic\.gov\.?))$", RegexOptions.IgnoreCase, "en-CA")]
+    [GeneratedRegex(@"(?<instance>.+)\.(?<dns>shardgrp-)+(?<domain>[a-zA-Z0-9]+\.(?<region>[a-zA-Z0-9\-]+)\.(rds|rds-fips)\.(amazonaws\.(com|au|eu|uk)\.?|amazonaws\.com\.cn\.?|sc2s\.sgov\.gov\.?|c2s\.ic\.gov\.?))$", RegexOptions.IgnoreCase, "en-CA")]
     private static partial Regex AuroraLimitlessClusterPattern();
 
-    [GeneratedRegex(@"^(?<instance>.+)\.(?<dns>proxy-|cluster-|cluster-ro-|cluster-custom-|shardgrp-)?(?<domain>[a-zA-Z0-9]+\.rds\.(?<region>[a-zA-Z0-9\-]+)\.amazonaws\.com\.cn\.?)$", RegexOptions.IgnoreCase, "en-CA")]
+    [GeneratedRegex(@"^(?<instance>.+)\.(?<dns>proxy-|cluster-|cluster-ro-|cluster-custom-|shardgrp-)?(?<domain>[a-zA-Z0-9]+\.(rds|rds-fips)\.(?<region>[a-zA-Z0-9\-]+)\.amazonaws\.com\.cn\.?)$", RegexOptions.IgnoreCase, "en-CA")]
     private static partial Regex AuroraChinaDnsPattern();
 
-    [GeneratedRegex(@"^(?<instance>.+)\.(?<dns>cluster-|cluster-ro-)(?<domain>[a-zA-Z0-9]+\.rds\.(?<region>[a-zA-Z0-9\-]+)\.amazonaws\.com\.cn\.?)$", RegexOptions.IgnoreCase, "en-CA")]
+    [GeneratedRegex(@"^(?<instance>.+)\.(?<dns>cluster-|cluster-ro-)(?<domain>[a-zA-Z0-9]+\.(rds|rds-fips)\.(?<region>[a-zA-Z0-9\-]+)\.amazonaws\.com\.cn\.?)$", RegexOptions.IgnoreCase, "en-CA")]
     private static partial Regex AuroraChinaClusterPattern();
 
-    [GeneratedRegex(@"^(?<instance>.+)\.(?<dns>proxy-|cluster-|cluster-ro-|cluster-custom-|shardgrp-)?(?<domain>[a-zA-Z0-9]+\.(?<region>[a-zA-Z0-9\-]+)\.rds\.amazonaws\.com\.cn\.?)$", RegexOptions.IgnoreCase, "en-CA")]
+    [GeneratedRegex(@"^(?<instance>.+)\.(?<dns>proxy-|cluster-|cluster-ro-|cluster-custom-|shardgrp-)?(?<domain>[a-zA-Z0-9]+\.(?<region>[a-zA-Z0-9\-]+)\.(rds|rds-fips)\.amazonaws\.com\.cn\.?)$", RegexOptions.IgnoreCase, "en-CA")]
     private static partial Regex AuroraOldChinaDnsPattern();
 
-    [GeneratedRegex(@"^(?<instance>.+)\.(?<dns>cluster-|cluster-ro-)(?<domain>[a-zA-Z0-9]+\.(?<region>[a-zA-Z0-9\-]+)\.rds\.amazonaws\.com\.cn\.?)$", RegexOptions.IgnoreCase, "en-CA")]
+    [GeneratedRegex(@"^(?<instance>.+)\.(?<dns>cluster-|cluster-ro-)(?<domain>[a-zA-Z0-9]+\.(?<region>[a-zA-Z0-9\-]+)\.(rds|rds-fips)\.amazonaws\.com\.cn\.?)$", RegexOptions.IgnoreCase, "en-CA")]
     private static partial Regex AuroraOldChinaClusterPattern();
 
-    [GeneratedRegex(@"^(?<instance>.+)\.(?<dns>proxy-|cluster-|cluster-ro-|cluster-custom-|shardgrp-)?(?<domain>[a-zA-Z0-9]+\.rds\.(?<region>[a-zA-Z0-9\-]+)\.(amazonaws\.com\.?|c2s\.ic\.gov\.?|sc2s\.sgov\.gov\.?))$", RegexOptions.IgnoreCase, "en-CA")]
+    [GeneratedRegex(@"^(?<instance>.+)\.(?<dns>proxy-|cluster-|cluster-ro-|cluster-custom-|shardgrp-)?(?<domain>[a-zA-Z0-9]+\.(rds|rds-fips)\.(?<region>[a-zA-Z0-9\-]+)\.(amazonaws\.com\.?|c2s\.ic\.gov\.?|sc2s\.sgov\.gov\.?))$", RegexOptions.IgnoreCase, "en-CA")]
     private static partial Regex AuroraGovDnsPattern();
 
-    [GeneratedRegex(@"^(?<instance>.+)\.(?<dns>cluster-|cluster-ro-)(?<domain>[a-zA-Z0-9]+\.rds\.(?<region>[a-zA-Z0-9\-]+)\.(amazonaws\.com\.?|c2s\.ic\.gov\.?|sc2s\.sgov\.gov\.?))$", RegexOptions.IgnoreCase, "en-CA")]
+    [GeneratedRegex(@"^(?<instance>.+)\.(?<dns>cluster-|cluster-ro-)(?<domain>[a-zA-Z0-9]+\.(rds|rds-fips)\.(?<region>[a-zA-Z0-9\-]+)\.(amazonaws\.com\.?|c2s\.ic\.gov\.?|sc2s\.sgov\.gov\.?))$", RegexOptions.IgnoreCase, "en-CA")]
     private static partial Regex AuroraGovClusterPattern();
 
     private static readonly Regex[] AuroraDnsPatterns = [AuroraDnsPattern(), AuroraChinaDnsPattern(), AuroraOldChinaDnsPattern(), AuroraGovDnsPattern()];
