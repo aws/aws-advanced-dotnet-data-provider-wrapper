@@ -40,7 +40,7 @@ public class ExecutionTimePlugin : AbstractConnectionPlugin
     public override async Task<T> Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, params object[] methodArgs)
     {
         var sw = Stopwatch.StartNew();
-        T results = await base.Execute(methodInvokedOn, methodName, methodFunc, methodArgs);
+        T results = await methodFunc();
         sw.Stop();
 
         long ticks = sw.ElapsedTicks;
