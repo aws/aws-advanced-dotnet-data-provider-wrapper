@@ -72,6 +72,13 @@ public class FailoverPlugin : AbstractConnectionPlugin
         "DbCommand.ExecuteScalar",
         "DbCommand.ExecuteScalarAsync",
 
+        "DbBatch.ExecuteNonQuery",
+        "DbBatch.ExecuteNonQueryAsync",
+        "DbBatch.ExecuteReaderA",
+        "DbBatch.ExecuteReaderAsync",
+        "DbBatch.ExecuteScalar",
+        "DbBatch.ExecuteScalarAsync",
+
         "DbDataReader.Read",
         "DbDataReader.ReadAsync",
         "DbDataReader.NextResult",
@@ -83,7 +90,6 @@ public class FailoverPlugin : AbstractConnectionPlugin
         "DbTransaction.RollbackAsync",
 
         // Special methods
-        "DbConnection.ClearWarnings",
         "initHostProvider",
     };
 
@@ -94,7 +100,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
         // Initialize configuration settings using PropertyDefinition
         this.failoverTimeoutMs = (int)PropertyDefinition.FailoverTimeoutMs.GetInt(props)!;
-        this.failoverReaderHostSelectorStrategy = PropertyDefinition.ReaderHostSelectorStrategy.GetString(props)!;
+        this.failoverReaderHostSelectorStrategy = PropertyDefinition.FailoverReaderHostSelectorStrategy.GetString(props)!;
         this.enableConnectFailover = PropertyDefinition.EnableConnectFailover.GetBoolean(props);
         this.skipFailoverOnInterruptedThread = PropertyDefinition.SkipFailoverOnInterruptedThread.GetBoolean(props);
         this.auroraStaleDnsHelper = new AuroraStaleDnsHelper(pluginService);
@@ -386,7 +392,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
                     if (role == HostRole.Reader || this.failoverMode != FailoverMode.StrictReader)
                     {
-                        var updatedHostSpec = new HostSpec(readerCandidate.Host, readerCandidate.Port, role, readerCandidate.Availability);
+                        var updatedHostSpec = new HostSpec(readerCandidate, role);
                         return new ReaderFailoverResult(candidateConn, updatedHostSpec);
                     }
 
@@ -428,7 +434,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
                     if (role == HostRole.Reader || this.failoverMode != FailoverMode.StrictReader)
                     {
-                        var updatedHostSpec = new HostSpec(originalWriter.Host, originalWriter.Port, role, originalWriter.Availability);
+                        var updatedHostSpec = new HostSpec(originalWriter, role);
                         return new ReaderFailoverResult(candidateConn, updatedHostSpec);
                     }
 
