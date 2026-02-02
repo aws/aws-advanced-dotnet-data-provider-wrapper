@@ -51,7 +51,7 @@ public class PluginService : IPluginService, IHostListProviderService
     public IDialect Dialect { get; private set; }
     public ITargetConnectionDialect TargetConnectionDialect { get; }
     public HostSpec? InitialConnectionHostSpec { get; set; }
-    public HostSpec? CurrentHostSpec { get => this.currentHostSpec ?? this.GetCurrentHostSpec(); set => this.currentHostSpec = value; }
+    public HostSpec? CurrentHostSpec { get => this.currentHostSpec ?? this.GetCurrentHostSpec(); }
     public IList<HostSpec> AllHosts { get; private set; } = [];
     public IHostListProvider? HostListProvider { get => this.hostListProvider; set => this.hostListProvider = value ?? throw new ArgumentNullException(nameof(value)); }
     public HostSpecBuilder HostSpecBuilder { get => new HostSpecBuilder(); }
@@ -125,7 +125,7 @@ public class PluginService : IPluginService, IHostListProviderService
             DbConnection? oldConnection = this.CurrentConnection;
             this.CurrentConnection = connection;
             this.currentHostSpec = hostSpec;
-            Logger.LogTrace(Resources.PluginService_SetCurrentConnection_NewConnectionSet, connection?.DataSource);
+            Logger.LogTrace(Resources.PluginService_SetCurrentConnection_NewConnectionSet, this.currentHostSpec?.ToString());
 
             try
             {

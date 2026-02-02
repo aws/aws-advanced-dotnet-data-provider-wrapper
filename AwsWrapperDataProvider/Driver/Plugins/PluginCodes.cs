@@ -16,9 +16,11 @@ namespace AwsWrapperDataProvider.Driver.Plugins;
 
 public static class PluginCodes
 {
+    public const string ConnectTime = "connectTime";
     public const string ExecutionTime = "executionTime";
     public const string Failover = "failover";
     public const string HostMonitoring = "efm";
+    public const string ReadWriteSplitting = "readWriteSplitting";
     public const string Iam = "iam";
     public const string SecretsManager = "awsSecretsManager";
     public const string InitialConnection = "initialConnection";

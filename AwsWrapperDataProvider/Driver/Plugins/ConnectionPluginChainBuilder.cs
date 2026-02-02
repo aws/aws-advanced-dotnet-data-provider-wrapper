@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Linq;
 using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.Plugins.AuroraInitialConnectionStrategy;
+using AwsWrapperDataProvider.Driver.Plugins.ConnectTime;
 using AwsWrapperDataProvider.Driver.Plugins.Efm;
 using AwsWrapperDataProvider.Driver.Plugins.ExecutionTime;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
+using AwsWrapperDataProvider.Driver.Plugins.ReadWriteSplitting;
 using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Logging;
 
@@ -32,11 +33,13 @@ public class ConnectionPluginChainBuilder
 
     private static readonly Dictionary<string, Lazy<IConnectionPluginFactory>?> PluginFactoryTypesByCode = new()
     {
+            { PluginCodes.ConnectTime, new Lazy<IConnectionPluginFactory>(() => new ConnectTimePluginFactory()) },
             { PluginCodes.ExecutionTime, new Lazy<IConnectionPluginFactory>(() => new ExecutionTimePluginFactory()) },
             { PluginCodes.Failover, new Lazy<IConnectionPluginFactory>(() => new FailoverPluginFactory()) },
             { PluginCodes.HostMonitoring, new Lazy<IConnectionPluginFactory>(() => new HostMonitoringPluginFactory()) },
             { PluginCodes.InitialConnection, new Lazy<IConnectionPluginFactory>(() => new AuroraInitialConnectionStrategyPluginFactory()) },
             { PluginCodes.CustomEndpoint, null },
+            { PluginCodes.ReadWriteSplitting, new Lazy<IConnectionPluginFactory>(() => new ReadWriteSplittingPluginFactory()) },
             { PluginCodes.Iam, null },
             { PluginCodes.SecretsManager, null },
             { PluginCodes.FederatedAuth, null },
@@ -47,12 +50,14 @@ public class ConnectionPluginChainBuilder
     {
             { PluginCodes.CustomEndpoint, 380 },
             { PluginCodes.InitialConnection, 390 },
+            { PluginCodes.ReadWriteSplitting, 600 },
             { PluginCodes.Failover, 700 },
             { PluginCodes.HostMonitoring, 800 },
             { PluginCodes.Iam, 1000 },
             { PluginCodes.SecretsManager, 1100 },
             { PluginCodes.FederatedAuth, 1200 },
             { PluginCodes.Okta, 1300 },
+            { PluginCodes.ConnectTime, WeightRelativeToPriorPlugin },
             { PluginCodes.ExecutionTime, WeightRelativeToPriorPlugin },
     };
 
@@ -75,7 +80,7 @@ public class ConnectionPluginChainBuilder
             string[] pluginsCodesArray = [.. pluginsCodes.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)];
             Logger.LogDebug("Current Plugins: " + string.Join(",", pluginsCodesArray));
 
-            Dictionary<int, IConnectionPluginFactory> pluginFactoriesByWeight = [];
+            Dictionary<IConnectionPluginFactory, int> pluginWeightByPluginFactory = [];
 
             foreach (string pluginCode in pluginsCodesArray)
             {
@@ -90,16 +95,16 @@ public class ConnectionPluginChainBuilder
                 }
 
                 int factoryWeight = PluginWeightByPluginFactoryType.GetValueOrDefault(pluginCode, WeightRelativeToPriorPlugin);
-                pluginFactoriesByWeight.Add(factoryWeight, factory.Value);
+                pluginWeightByPluginFactory.Add(factory.Value, factoryWeight);
             }
 
-            if (pluginFactoriesByWeight.Count > 1 && PropertyDefinition.AutoSortPluginOrder.GetBoolean(props))
+            if (pluginWeightByPluginFactory.Count > 1 && PropertyDefinition.AutoSortPluginOrder.GetBoolean(props))
             {
-                pluginFactories = this.SortPluginFactories(pluginFactoriesByWeight);
+                pluginFactories = this.SortPluginFactories(pluginWeightByPluginFactory);
             }
             else
             {
-                pluginFactories = pluginFactoriesByWeight.Values.ToList();
+                pluginFactories = [.. pluginWeightByPluginFactory.Keys];
             }
         }
 
@@ -111,12 +116,12 @@ public class ConnectionPluginChainBuilder
         return plugins;
     }
 
-    private List<IConnectionPluginFactory> SortPluginFactories(Dictionary<int, IConnectionPluginFactory> pluginFactoriesByWeight)
+    private List<IConnectionPluginFactory> SortPluginFactories(Dictionary<IConnectionPluginFactory, int> pluginWeightByPluginFactory)
     {
         int lastWeight = 0;
-        return pluginFactoriesByWeight.OrderBy(pluginWeightFactoryPair =>
+        return [.. pluginWeightByPluginFactory.OrderBy(pluginWeightFactoryPair =>
             {
-                int pluginWeight = pluginWeightFactoryPair.Key;
+                int pluginWeight = pluginWeightFactoryPair.Value;
 
                 if (pluginWeight == WeightRelativeToPriorPlugin)
                 {
@@ -127,8 +132,7 @@ public class ConnectionPluginChainBuilder
                 lastWeight = pluginWeight;
                 return pluginWeight;
             })
-            .Select(pluginWeightFactoryPair => pluginWeightFactoryPair.Value)
-            .ToList();
+            .Select(pluginWeightFactoryPair => pluginWeightFactoryPair.Key)];
     }
 
     public static void RegisterPluginFactory<T>(string pluginCode)
