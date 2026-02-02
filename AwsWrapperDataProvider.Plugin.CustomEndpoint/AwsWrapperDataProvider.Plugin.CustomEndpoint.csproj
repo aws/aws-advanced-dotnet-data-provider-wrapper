@@ -1,10 +1,10 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <OutputType>Exe</OutputType>
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <RootNamespace>AwsWrapperDataProvider.Plugin.CustomEndpoint</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
@@ -13,7 +13,40 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\AwsWrapperDataProvider\AwsWrapperDataProvider.csproj" />
+        <ProjectReference Include="..\AwsWrapperDataProvider\AwsWrapperDataProvider.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+            <_Parameter1>AwsWrapperDataProvider.Tests</_Parameter1>
+        </AssemblyAttribute>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+            <_Parameter1>AwsWrapperDataProvider.Benchmarks</_Parameter1>
+        </AssemblyAttribute>
+        <!-- Required for Moq to mock internal members -->
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+            <_Parameter1>DynamicProxyGenAssembly2</_Parameter1>
+        </AssemblyAttribute>
+    </ItemGroup>
+
+    <PropertyGroup Condition=" '$(_IsPacking)' == 'true' ">
+        <!-- NuGet packages -->
+        <IsPackable>true</IsPackable>
+        <PackageId>AWS.AdvancedDotnetDataProviderWrapper.Plugin.CustomEndpoint</PackageId>
+        <PackageProjectUrl>https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/</PackageProjectUrl>
+        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageReleaseNotes>See release notes at https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/releases</PackageReleaseNotes>
+        <PackageTags>AWS</PackageTags>
+        <RepositoryType>git</RepositoryType>
+        <RepositoryUrl>https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper.git</RepositoryUrl>
+        <PackageIcon>AwsIcon.png</PackageIcon>
+    </PropertyGroup>
+
+    <!-- Items that are only added when building the NuGet package -->
+    <ItemGroup Condition=" '$(_IsPacking)' == 'true' ">
+        <None Include=".\README.md" Pack="true" PackagePath="README.md" />
+        <None Include="..\AwsIcon.png" Pack="true" PackagePath="\" />
     </ItemGroup>
 
 </Project>

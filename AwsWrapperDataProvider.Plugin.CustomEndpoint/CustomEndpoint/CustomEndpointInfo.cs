@@ -1,11 +1,11 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 // http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -54,7 +54,7 @@ public class CustomEndpointInfo
     private HashSet<string> Members { get; }
 
     /// <summary>
-    /// Constructs a new CustomEndpointInfo instance with the specified details.
+    /// Initializes a new instance of the <see cref="CustomEndpointInfo"/> class.
     /// </summary>
     /// <param name="endpointIdentifier">The endpoint identifier for the custom endpoint.</param>
     /// <param name="clusterIdentifier">The cluster identifier for the cluster that the custom endpoint belongs to.</param>
@@ -110,8 +110,7 @@ public class CustomEndpointInfo
             responseEndpointInfo.Endpoint,
             roleType,
             new HashSet<string>(members),
-            memberListType
-        );
+            memberListType);
     }
 
     /// <summary>

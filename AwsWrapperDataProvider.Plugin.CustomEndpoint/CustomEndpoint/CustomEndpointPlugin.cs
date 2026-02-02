@@ -1,11 +1,11 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 // http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -40,11 +40,44 @@ public class CustomEndpointPlugin : AbstractConnectionPlugin
         SizeLimit = 100,
     });
 
-    public override IReadOnlySet<string> SubscribedMethods { get; }
+    public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string>
+    {
+        "DbConnection.Open",
+        "DbConnection.OpenAsync",
+        "DbConnection.BeginDbTransaction",
+        "DbConnection.BeginDbTransactionAsync",
+
+        "DbCommand.ExecuteNonQuery",
+        "DbCommand.ExecuteNonQueryAsync",
+        "DbCommand.ExecuteReader",
+        "DbCommand.ExecuteReaderAsync",
+        "DbCommand.ExecuteScalar",
+        "DbCommand.ExecuteScalarAsync",
+
+        "DbBatch.ExecuteNonQuery",
+        "DbBatch.ExecuteNonQueryAsync",
+        "DbBatch.ExecuteReader",
+        "DbBatch.ExecuteReaderAsync",
+        "DbBatch.ExecuteScalar",
+        "DbBatch.ExecuteScalarAsync",
+
+        "DbDataReader.Read",
+        "DbDataReader.ReadAsync",
+        "DbDataReader.NextResult",
+        "DbDataReader.NextResultAsync",
+
+        "DbTransaction.Commit",
+        "DbTransaction.CommitAsync",
+        "DbTransaction.Rollback",
+        "DbTransaction.RollbackAsync",
+
+        // Special methods
+        "DbConnection.ClearWarnings",
+    };
 
     protected readonly IPluginService pluginService;
     protected readonly Dictionary<string, string> props;
-    protected readonly Func<HostSpec, RegionEndpoint, AmazonRDSClient> rdsClientFunc;
+    protected readonly Func<RegionEndpoint, AmazonRDSClient> rdsClientFunc;
 
     protected readonly bool shouldWaitForInfo;
     protected readonly int waitOnCachedInfoDurationMs;
@@ -53,28 +86,17 @@ public class CustomEndpointPlugin : AbstractConnectionPlugin
     protected string? customEndpointId;
     protected RegionEndpoint? region;
 
-    /// <summary>
-    /// Constructs a new CustomEndpointPlugin instance.
-    /// </summary>
-    /// <param name="pluginService">The plugin service that the custom endpoint plugin should use.</param>
-    /// <param name="props">The properties that the custom endpoint plugin should use.</param>
     public CustomEndpointPlugin(IPluginService pluginService, Dictionary<string, string> props) : this(
         pluginService,
         props,
-        (hostSpec, region) => new AmazonRDSClient(region))
+        region => new AmazonRDSClient(region))
     {
     }
 
-    /// <summary>
-    /// Constructs a new CustomEndpointPlugin instance.
-    /// </summary>
-    /// <param name="pluginService">The plugin service that the custom endpoint plugin should use.</param>
-    /// <param name="props">The properties that the custom endpoint plugin should use.</param>
-    /// <param name="rdsClientFunc">The function to call to obtain an AmazonRDSClient instance.</param>
     public CustomEndpointPlugin(
         IPluginService pluginService,
         Dictionary<string, string> props,
-        Func<HostSpec, RegionEndpoint, AmazonRDSClient> rdsClientFunc)
+        Func<RegionEndpoint, AmazonRDSClient> rdsClientFunc)
     {
         this.pluginService = pluginService;
         this.props = props;
@@ -83,33 +105,6 @@ public class CustomEndpointPlugin : AbstractConnectionPlugin
         this.shouldWaitForInfo = PropertyDefinition.WaitForCustomEndpointInfo.GetBoolean(this.props);
         this.waitOnCachedInfoDurationMs = PropertyDefinition.WaitForCustomEndpointInfoTimeoutMs.GetInt(this.props) ?? 5000;
         this.idleMonitorExpirationMs = PropertyDefinition.CustomEndpointMonitorIdleExpirationMs.GetInt(this.props) ?? 900000;
-
-        var methods = new HashSet<string>
-        {
-            "DbConnection.Open",
-            "DbConnection.OpenAsync",
-        };
-
-        // Add network-bound methods that might need custom endpoint info
-        methods.Add("DbConnection.BeginDbTransaction");
-        methods.Add("DbConnection.BeginDbTransactionAsync");
-        methods.Add("DbCommand.ExecuteNonQuery");
-        methods.Add("DbCommand.ExecuteNonQueryAsync");
-        methods.Add("DbCommand.ExecuteReader");
-        methods.Add("DbCommand.ExecuteReaderAsync");
-        methods.Add("DbCommand.ExecuteScalar");
-        methods.Add("DbCommand.ExecuteScalarAsync");
-        methods.Add("DbDataReader.Read");
-        methods.Add("DbDataReader.ReadAsync");
-        methods.Add("DbDataReader.NextResult");
-        methods.Add("DbDataReader.NextResultAsync");
-        methods.Add("DbTransaction.Commit");
-        methods.Add("DbTransaction.CommitAsync");
-        methods.Add("DbTransaction.Rollback");
-        methods.Add("DbTransaction.RollbackAsync");
-        methods.Add("initHostProvider");
-
-        this.SubscribedMethods = methods;
     }
 
     public override async Task<DbConnection> OpenConnection(
@@ -125,9 +120,10 @@ public class CustomEndpointPlugin : AbstractConnectionPlugin
         }
 
         this.customEndpointHostSpec = hostSpec;
+
         // Logger.LogTrace(Resources.CustomEndpointPlugin_ConnectionRequestToCustomEndpoint, hostSpec.Host);
 
-        this.customEndpointId = RdsUtils.GetRdsClusterId(customEndpointHostSpec.Host);
+        this.customEndpointId = RdsUtils.GetRdsClusterId(this.customEndpointHostSpec.Host);
         if (string.IsNullOrEmpty(this.customEndpointId))
         {
             // throw new InvalidOperationException(
@@ -158,8 +154,8 @@ public class CustomEndpointPlugin : AbstractConnectionPlugin
     /// Creates a monitor for the custom endpoint if it does not already exist.
     /// </summary>
     /// <param name="props">The connection properties.</param>
-    /// <returns>ICustomEndpointMonitor</returns>
-    protected ICustomEndpointMonitor CreateMonitorIfAbsent(Dictionary<string, string> props)
+    /// <returns>ICustomEndpointMonitor.</returns>
+    protected virtual ICustomEndpointMonitor CreateMonitorIfAbsent(Dictionary<string, string> props)
     {
         if (this.customEndpointHostSpec == null || this.region == null || string.IsNullOrEmpty(this.customEndpointId))
         {
@@ -223,7 +219,8 @@ public class CustomEndpointPlugin : AbstractConnectionPlugin
     /// endpoint info. Since custom endpoint monitors and information are shared, we should not have to wait often.
     /// </summary>
     /// <param name="monitor">A ICustomEndpointMonitor monitor.</param>
-    /// <exception cref="InvalidOperationException">If there's an error getting custom endpoint, or if it takes longer time than anticipated</exception>
+    /// <exception cref="InvalidOperationException">If there's an error getting custom endpoint, or if it takes longer time than anticipated.</exception>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     protected async Task WaitForCustomEndpointInfoAsync(ICustomEndpointMonitor monitor)
     {
         bool hasCustomEndpointInfo = monitor.HasCustomEndpointInfo();

@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.12.35707.178
@@ -26,6 +26,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AwsWrapperDataProvider.Plugin.SecretsManager", "AwsWrapperDataProvider.Plugin.SecretsManager\AwsWrapperDataProvider.Plugin.SecretsManager.csproj", "{EE2FE7E6-6A6C-45E8-93C3-E47D2475DAEC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AwsWrapperDataProvider.Plugin.FederatedAuth", "AwsWrapperDataProvider.Plugin.FederatedAuth\AwsWrapperDataProvider.Plugin.FederatedAuth.csproj", "{D87E0507-5E62-4852-BDFC-CB9E167A85FB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AwsWrapperDataProvider.Plugin.CustomEndpoint", "AwsWrapperDataProvider.Plugin.CustomEndpoint\AwsWrapperDataProvider.Plugin.CustomEndpoint.csproj", "{C3E1A7B2-8D4F-4E90-B2A1-5F6E7D8C9B0A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AwsWrapperDataProvider.NHibernate", "AwsWrapperDataProvider.NHibernate\AwsWrapperDataProvider.NHibernate.csproj", "{241EB8CE-5C2B-44B6-9054-27BA4948BAF0}"
 EndProject
@@ -95,6 +97,10 @@ Global
 		{D87E0507-5E62-4852-BDFC-CB9E167A85FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D87E0507-5E62-4852-BDFC-CB9E167A85FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D87E0507-5E62-4852-BDFC-CB9E167A85FB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C3E1A7B2-8D4F-4E90-B2A1-5F6E7D8C9B0A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C3E1A7B2-8D4F-4E90-B2A1-5F6E7D8C9B0A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C3E1A7B2-8D4F-4E90-B2A1-5F6E7D8C9B0A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C3E1A7B2-8D4F-4E90-B2A1-5F6E7D8C9B0A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

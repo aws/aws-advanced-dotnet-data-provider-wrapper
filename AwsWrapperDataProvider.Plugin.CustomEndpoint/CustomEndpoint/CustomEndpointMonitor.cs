@@ -1,11 +1,11 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 // http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -30,10 +30,9 @@ namespace AwsWrapperDataProvider.Plugin.CustomEndpoint.CustomEndpoint;
 public class CustomEndpointMonitor : ICustomEndpointMonitor
 {
     private static readonly ILogger<CustomEndpointMonitor> Logger = LoggerUtils.GetLogger<CustomEndpointMonitor>();
-    private const string TelemetryEndpointInfoChanged = "customEndpoint.infoChanged.counter";
 
     // Keys are custom endpoint URLs, values are information objects for the associated custom endpoint.
-    protected static readonly ConcurrentDictionary<string, CustomEndpointInfo> CustomEndpointInfoCache = new();
+    internal static readonly ConcurrentDictionary<string, CustomEndpointInfo> CustomEndpointInfoCache = new();
     protected static readonly TimeSpan CustomEndpointInfoExpiration = TimeSpan.FromMinutes(5);
 
     protected readonly CancellationTokenSource cancellationTokenSource = new();
@@ -46,29 +45,20 @@ public class CustomEndpointMonitor : ICustomEndpointMonitor
     protected readonly IPluginService pluginService;
     protected readonly Task monitorTask;
 
-    /// <summary>
-    /// Constructs a CustomEndpointMonitor instance for the host specified by customEndpointHostSpec.
-    /// </summary>
-    /// <param name="pluginService">The plugin service to use to update the set of allowed/blocked hosts according to the custom endpoint info.</param>
-    /// <param name="customEndpointHostSpec">The host information for the custom endpoint to be monitored.</param>
-    /// <param name="endpointIdentifier">An endpoint identifier.</param>
-    /// <param name="region">The region of the custom endpoint to be monitored.</param>
-    /// <param name="refreshRate">Controls how often the custom endpoint information should be fetched and analyzed for changes.</param>
-    /// <param name="rdsClientFunc">The function to call to create the RDS client that will fetch custom endpoint information.</param>
     public CustomEndpointMonitor(
         IPluginService pluginService,
         HostSpec customEndpointHostSpec,
         string endpointIdentifier,
         RegionEndpoint region,
         TimeSpan refreshRate,
-        Func<HostSpec, RegionEndpoint, AmazonRDSClient> rdsClientFunc)
+        Func<RegionEndpoint, AmazonRDSClient> rdsClientFunc)
     {
         this.pluginService = pluginService;
         this.customEndpointHostSpec = customEndpointHostSpec;
         this.endpointIdentifier = endpointIdentifier;
         this.region = region;
         this.refreshRate = refreshRate;
-        this.rdsClient = rdsClientFunc(customEndpointHostSpec, this.region);
+        this.rdsClient = rdsClientFunc(this.region);
 
         this.monitorTask = Task.Run(this.RunAsync, this.cancellationTokenSource.Token);
     }
@@ -93,12 +83,12 @@ public class CustomEndpointMonitor : ICustomEndpointMonitor
                         DBClusterEndpointIdentifier = this.endpointIdentifier,
                         Filters = new List<Filter>
                         {
-                            new Filter
+                            new()
                             {
                                 Name = "db-cluster-endpoint-type",
-                                Values = new List<string> { "custom" }
-                            }
-                        }
+                                Values = new List<string> { "custom" },
+                            },
+                        },
                     };
 
                     DescribeDBClusterEndpointsResponse endpointsResponse = await this.rdsClient.DescribeDBClusterEndpointsAsync(request);
@@ -107,6 +97,7 @@ public class CustomEndpointMonitor : ICustomEndpointMonitor
                     if (endpoints.Count != 1)
                     {
                         List<string> endpointUrls = endpoints.Select(e => e.Endpoint).ToList();
+
                         // Logger.LogWarning(Resources.CustomEndpointMonitorImpl_UnexpectedNumberOfEndpoints,
                         //     this.endpointIdentifier,
                         //     this.region.SystemName,
@@ -127,6 +118,7 @@ public class CustomEndpointMonitor : ICustomEndpointMonitor
                         {
                             await Task.Delay(sleepDuration, this.cancellationTokenSource.Token);
                         }
+
                         continue;
                     }
 
@@ -183,6 +175,7 @@ public class CustomEndpointMonitor : ICustomEndpointMonitor
         {
             CustomEndpointInfoCache.TryRemove(this.customEndpointHostSpec.Host, out _);
             this.rdsClient.Dispose();
+
             // Logger.LogTrace(Resources.CustomEndpointMonitorImpl_StoppedMonitor, this.customEndpointHostSpec.Host);
         }
     }
@@ -257,7 +250,7 @@ public class CustomEndpointMonitor : ICustomEndpointMonitor
         catch (Exception e)
         {
             // Logger.LogInformation(e, Resources.CustomEndpointMonitorImpl_InterruptedWhileTerminating,
-                // this.customEndpointHostSpec.Host);
+            // this.customEndpointHostSpec.Host);
         }
         finally
         {

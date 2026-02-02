@@ -36,6 +36,7 @@ public class ConnectionPluginChainBuilder
             { PluginCodes.Failover, new Lazy<IConnectionPluginFactory>(() => new FailoverPluginFactory()) },
             { PluginCodes.HostMonitoring, new Lazy<IConnectionPluginFactory>(() => new HostMonitoringPluginFactory()) },
             { PluginCodes.InitialConnection, new Lazy<IConnectionPluginFactory>(() => new AuroraInitialConnectionStrategyPluginFactory()) },
+            { PluginCodes.CustomEndpoint, null },
             { PluginCodes.Iam, null },
             { PluginCodes.SecretsManager, null },
             { PluginCodes.FederatedAuth, null },
@@ -44,6 +45,7 @@ public class ConnectionPluginChainBuilder
 
     private static readonly Dictionary<string, int> PluginWeightByPluginFactoryType = new()
     {
+            { PluginCodes.CustomEndpoint, 380 },
             { PluginCodes.InitialConnection, 390 },
             { PluginCodes.Failover, 700 },
             { PluginCodes.HostMonitoring, 800 },
