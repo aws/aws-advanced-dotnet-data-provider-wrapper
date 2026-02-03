@@ -23,18 +23,31 @@ public class ExecutionTimePlugin : AbstractConnectionPlugin
 {
     private static readonly ILogger<ExecutionTimePlugin> Logger = LoggerUtils.GetLogger<ExecutionTimePlugin>();
 
+    private static double executionTime;
+
+    public static void ResetExecutionTime()
+    {
+        executionTime = 0;
+    }
+
+    public static double GetTotalExecutionTime()
+    {
+        return executionTime;
+    }
+
     public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string>() { "*" };
 
     public override async Task<T> Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, params object[] methodArgs)
     {
         var sw = Stopwatch.StartNew();
-        T results = await base.Execute(methodInvokedOn, methodName, methodFunc, methodArgs);
+        T results = await methodFunc();
         sw.Stop();
 
         long ticks = sw.ElapsedTicks;
-        double nanoseconds = (double)ticks / Stopwatch.Frequency * 1_000_000_000;
+        double nanoseconds = (double)ticks * 1_000_000_000.0 / Stopwatch.Frequency;
 
-        Logger.LogInformation(Resources.ExecutionTimePlugin_Execute_ExecutionTime, ticks, nanoseconds);
+        Logger.LogInformation(Resources.ExecutionTimePlugin_Execute_ExecutionTime, nanoseconds);
+        executionTime += nanoseconds;
 
         return results;
     }

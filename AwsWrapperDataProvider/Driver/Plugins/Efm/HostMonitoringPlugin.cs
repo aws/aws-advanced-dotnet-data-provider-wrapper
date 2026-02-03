@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using System.Data.Common;
-using System.Runtime.Versioning;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
 using AwsWrapperDataProvider.Properties;
@@ -51,6 +50,13 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
         "DbCommand.ExecuteScalar",
         "DbCommand.ExecuteScalarAsync",
 
+        "DbBatch.ExecuteNonQuery",
+        "DbBatch.ExecuteNonQueryAsync",
+        "DbBatch.ExecuteReaderA",
+        "DbBatch.ExecuteReaderAsync",
+        "DbBatch.ExecuteScalar",
+        "DbBatch.ExecuteScalarAsync",
+
         "DbDataReader.Read",
         "DbDataReader.ReadAsync",
         "DbDataReader.NextResult",
@@ -62,7 +68,6 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
         "DbTransaction.RollbackAsync",
 
         // Special methods
-        "DbConnection.ClearWarnings",
         "initHostProvider",
     };
 

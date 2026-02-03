@@ -46,6 +46,11 @@ public class UnknownDialect : IDialect
         IHostListProviderService hostListProviderService,
         IPluginService pluginService) => new ConnectionStringHostListProvider(props, hostListProviderService);
 
+    public (bool ReadOnly, bool Found) DoesStatementSetReadOnly(string query)
+    {
+        throw new InvalidOperationException();
+    }
+
     public Task<bool> IsDialect(DbConnection conn)
     {
         return Task.FromResult(false);

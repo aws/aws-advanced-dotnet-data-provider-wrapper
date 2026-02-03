@@ -147,8 +147,8 @@ public static class PropertyDefinition
     public static readonly AwsWrapperProperty FailoverMode = new(
         "FailoverMode", null, "Set node role to follow during failover. Valid values: StrictWriter, StrictReader, ReaderOrWriter.");
 
-    public static readonly AwsWrapperProperty ReaderHostSelectorStrategy = new(
-        "ReaderHostSelectorStrategy", "Random", "The strategy that should be used to select a new reader host while opening a new connection.");
+    public static readonly AwsWrapperProperty FailoverReaderHostSelectorStrategy = new(
+        "FailoverReaderHostSelectorStrategy", "Random", "The strategy that should be used to select a new reader host while opening a new connection.");
 
     public static readonly AwsWrapperProperty EnableConnectFailover = new(
         "EnableConnectFailover", "false", "Enable/disable cluster-aware failover if the initial connection to the database fails due to a network exception.");
@@ -158,6 +158,14 @@ public static class PropertyDefinition
 
     public static readonly AwsWrapperProperty ClusterTopologyHighRefreshRateMs = new(
         "ClusterTopologyHighRefreshRateMs", "100", "Cluster topology high refresh rate in milliseconds.");
+
+    // Read Write Splitting Plugin Properties
+    public static readonly AwsWrapperProperty RWSplittingReaderHostSelectorStrategy = new(
+        "RWSplittingReaderHostSelectorStrategy", "Random", "The strategy that should be used to select a new reader host while opening a new connection.");
+
+    // InitialConnection Plugin Properties
+    public static readonly AwsWrapperProperty InitialConnectionReaderHostSelectorStrategy = new(
+        "InitialConnectionReaderHostSelectorStrategy", "Random", "The strategy that should be used to select a new reader host while opening a new connection.");
 
     // Host Selector Stratagy Properties
     public static readonly AwsWrapperProperty RoundRobinHostWeightPairs = new(
@@ -276,10 +284,16 @@ public static class PropertyDefinition
         // Failover Plugin Properties
         FailoverTimeoutMs,
         FailoverMode,
-        ReaderHostSelectorStrategy,
+        FailoverReaderHostSelectorStrategy,
         EnableConnectFailover,
         SkipFailoverOnInterruptedThread,
         ClusterTopologyHighRefreshRateMs,
+
+        // InitialConnection Plugin Properties
+        InitialConnectionReaderHostSelectorStrategy,
+
+        // Read Write Splitting Plugin Properties
+        RWSplittingReaderHostSelectorStrategy,
 
         // Host Selector Stratagy Properties
         RoundRobinHostWeightPairs,
@@ -294,7 +308,7 @@ public static class PropertyDefinition
         LimitlessMaxRetries,
         LimitlessMonitorDisposalTimeMs,
 
-        // EFM2 Plugin Properties
+        // EFM Plugin Properties
         MonitorDisposalTimeMs,
         FailureDetectionEnabled,
         FailureDetectionTime,

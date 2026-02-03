@@ -90,6 +90,16 @@ public class HostSpec
         this.allAliases.TryAdd(this.AsAlias(), 0);
     }
 
+    public HostSpec(HostSpec copyHost, HostRole role)
+        : this(
+              copyHost.Host,
+              copyHost.Port,
+              copyHost.HostId,
+              role,
+              copyHost.RawAvailability)
+    {
+    }
+
     public string GetHostAndPort() => this.IsPortSpecified ? $"{this.Host}:{this.Port}" : this.Host;
 
     public string AsAlias()

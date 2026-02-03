@@ -247,10 +247,22 @@ public class AwsWrapperConnectionStringBuilder : DbConnectionStringBuilder
         set => this.SetValue(PropertyDefinition.FailoverMode.Name, value);
     }
 
-    public string? ReaderHostSelectorStrategy
+    public string? FailoverReaderHostSelectorStrategy
     {
-        get => this.GetValue(PropertyDefinition.ReaderHostSelectorStrategy.Name);
-        set => this.SetValue(PropertyDefinition.ReaderHostSelectorStrategy.Name, value);
+        get => this.GetValue(PropertyDefinition.FailoverReaderHostSelectorStrategy.Name);
+        set => this.SetValue(PropertyDefinition.FailoverReaderHostSelectorStrategy.Name, value);
+    }
+
+    public string? InitialConnectionReaderHostSelectorStrategy
+    {
+        get => this.GetValue(PropertyDefinition.InitialConnectionReaderHostSelectorStrategy.Name);
+        set => this.SetValue(PropertyDefinition.InitialConnectionReaderHostSelectorStrategy.Name, value);
+    }
+
+    public string? RWSplittingReaderHostSelectorStrategy
+    {
+        get => this.GetValue(PropertyDefinition.RWSplittingReaderHostSelectorStrategy.Name);
+        set => this.SetValue(PropertyDefinition.RWSplittingReaderHostSelectorStrategy.Name, value);
     }
 
     public bool? EnableConnectFailover

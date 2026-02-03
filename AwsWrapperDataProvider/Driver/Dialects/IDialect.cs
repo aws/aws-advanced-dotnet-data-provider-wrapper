@@ -49,6 +49,16 @@ public interface IDialect
     /// <param name="props">Connection properties.</param>
     /// <param name="hostSpec">HostSpec containing current host information.</param>
     void PrepareConnectionProperties(Dictionary<string, string> props, HostSpec hostSpec);
+
+    /// <summary>
+    /// Checks if the given SQL query sets the session transaction to read-only or read-write.
+    /// </summary>
+    /// <returns>(ReadOnly, Found) where:
+    /// - ReadOnly = true if statement sets read-only
+    /// - Found = true if statement matches either read-only or read-write.
+    /// </returns>
+    /// <param name="query">Query string.</param>
+    (bool ReadOnly, bool Found) DoesStatementSetReadOnly(string query);
 }
 
 /// <summary>

@@ -384,6 +384,46 @@ tasks.register<Test>("test-all-mysql-multi-az-instance") {
     }
 }
 
+tasks.register<Test>("test-aurora-mysql-rw-splitting-performance") {
+    group = "verification"
+    filter.includeTestsMatching("integration.host.TestRunner.runMySQLRWSplittingPerfTests")
+    doFirst {
+        systemProperty("test-no-docker", "true")
+        systemProperty("test-no-multi-az-cluster", "true")
+        systemProperty("test-no-multi-az-instance", "true")
+        systemProperty("test-no-iam", "true")
+        systemProperty("test-no-secrets-manager", "true")
+        systemProperty("test-no-pg-driver", "true")
+        systemProperty("test-no-pg-engine", "true")
+        systemProperty("test-no-mariadb-driver", "true")
+        systemProperty("test-no-mariadb-engine", "true")
+        systemProperty("test-no-instances-1", "true")
+        systemProperty("test-no-instances-2", "true")
+        systemProperty("test-no-instances-3", "true")
+        systemProperty("test-no-bg", "true")
+    }
+}
+
+tasks.register<Test>("test-aurora-pg-rw-splitting-performance") {
+    group = "verification"
+    filter.includeTestsMatching("integration.host.TestRunner.runPGRWSplittingPerfTests")
+    doFirst {
+        systemProperty("test-no-docker", "true")
+        systemProperty("test-no-multi-az-cluster", "true")
+        systemProperty("test-no-multi-az-instance", "true")
+        systemProperty("test-no-iam", "true")
+        systemProperty("test-no-secrets-manager", "true")
+        systemProperty("test-no-mysql-driver", "true")
+        systemProperty("test-no-mysql-engine", "true")
+        systemProperty("test-no-mariadb-driver", "true")
+        systemProperty("test-no-mariadb-engine", "true")
+        systemProperty("test-no-instances-1", "true")
+        systemProperty("test-no-instances-2", "true")
+        systemProperty("test-no-instances-3", "true")
+        systemProperty("test-no-bg", "true")
+    }
+}
+
 tasks.register<Test>("in-container") {
     filter.excludeTestsMatching("software.*") // exclude unit tests
 

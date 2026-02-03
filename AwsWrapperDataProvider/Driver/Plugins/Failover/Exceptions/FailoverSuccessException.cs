@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data.Common;
+using AwsWrapperDataProvider.Driver.Plugins.Failover.Exceptions;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.Failover;
 
@@ -21,7 +21,7 @@ namespace AwsWrapperDataProvider.Driver.Plugins.Failover;
 /// This exception is used to signal that the connection has changed and
 /// the application should re-configure session state if required.
 /// </summary>
-public class FailoverSuccessException : DbException
+public class FailoverSuccessException : FailoverException
 {
     public FailoverSuccessException() : base("Failover completed successfully")
     {
