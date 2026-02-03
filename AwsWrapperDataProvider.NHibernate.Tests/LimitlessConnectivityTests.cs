@@ -53,7 +53,7 @@ public class LimitlessConnectivityTests : IntegrationTestBase
     [Trait("Category", "Integration")]
     [Trait("Database", "pg-nh")]
     [Trait("Engine", "aurora-limitless")]
-    public void NHibernate_LimitlessValidConnectionProperties()
+    public async Task NHibernate_LimitlessValidConnectionProperties()
     {
         var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName, plugins: "limitless");
 
@@ -70,7 +70,7 @@ public class LimitlessConnectivityTests : IntegrationTestBase
                 var connection = session.Connection as DbConnection;
                 if (connection != null)
                 {
-                    var instanceId = this.auroraTestUtils.QueryInstanceId(connection);
+                    var instanceId = await this.auroraTestUtils.QueryInstanceId(connection, false);
                     Assert.NotNull(instanceId);
                     Assert.NotEmpty(instanceId);
                     Logger.LogInformation("   ✓ Instance ID: {InstanceId}", instanceId);
@@ -90,7 +90,7 @@ public class LimitlessConnectivityTests : IntegrationTestBase
     [Trait("Category", "Integration")]
     [Trait("Database", "pg-nh")]
     [Trait("Engine", "aurora-limitless")]
-    public void NHibernate_LimitlessAndIamPlugin()
+    public async Task NHibernate_LimitlessAndIamPlugin()
     {
         var iamUser = TestEnvironment.Env.Info.IamUsername;
         var iamRegion = TestEnvironment.Env.Info.Region;
@@ -110,7 +110,7 @@ public class LimitlessConnectivityTests : IntegrationTestBase
                 var connection = session.Connection as DbConnection;
                 if (connection != null)
                 {
-                    var instanceId = this.auroraTestUtils.QueryInstanceId(connection);
+                    var instanceId = await this.auroraTestUtils.QueryInstanceId(connection, false);
                     Assert.NotNull(instanceId);
                     Assert.NotEmpty(instanceId);
                     Logger.LogInformation("   ✓ Instance ID: {InstanceId}", instanceId);
@@ -130,7 +130,7 @@ public class LimitlessConnectivityTests : IntegrationTestBase
     [Trait("Category", "Integration")]
     [Trait("Database", "pg-nh")]
     [Trait("Engine", "aurora-limitless")]
-    public void NHibernate_LimitlessAndAwsSecretsManagerPlugin()
+    public async Task NHibernate_LimitlessAndAwsSecretsManagerPlugin()
     {
         var secretName = $"TestSecret-{Guid.NewGuid()}";
         _ = this.auroraTestUtils.CreateSecrets(secretName);
@@ -153,7 +153,7 @@ public class LimitlessConnectivityTests : IntegrationTestBase
                     var connection = session.Connection as DbConnection;
                     if (connection != null)
                     {
-                        var instanceId = this.auroraTestUtils.QueryInstanceId(connection);
+                        var instanceId = await this.auroraTestUtils.QueryInstanceId(connection, false);
                         Assert.NotNull(instanceId);
                         Assert.NotEmpty(instanceId);
                         Logger.LogInformation("   ✓ Instance ID: {InstanceId}", instanceId);
