@@ -87,7 +87,7 @@ public class LimitlessRouterMonitor : IDisposable
     private async Task Run(CancellationToken cancellationToken)
     {
         Logger.LogTrace(
-            "Limitless Router Monitor thread running on node {0}.",
+            Resources.LimitlessRouterMonitor_Run_ThreadRunning,
             this._hostSpec.Host);
 
         try
@@ -119,7 +119,7 @@ public class LimitlessRouterMonitor : IDisposable
                         cacheOptions);
 
                     Logger.LogTrace(
-                        LoggerUtils.LogTopology(newLimitlessRouters, "[limitlessRouterMonitor] Topology:"));
+                        LoggerUtils.LogTopology(newLimitlessRouters, Resources.LimitlessRouterMonitor_TopologyPrefix));
 
                     // Sleep between monitoring iterations (do not include this in telemetry)
                     await Task.Delay(this._intervalMs, cancellationToken);
@@ -133,7 +133,7 @@ public class LimitlessRouterMonitor : IDisposable
         catch (OperationCanceledException)
         {
             Logger.LogTrace(
-                "Limitless Router Monitoring thread for node {0} was interrupted.",
+                Resources.LimitlessRouterMonitor_Run_Interrupted,
                 this._hostSpec.Host);
         }
         catch (Exception ex)
@@ -141,7 +141,7 @@ public class LimitlessRouterMonitor : IDisposable
             // This should not be reached; log and exit thread
             Logger.LogTrace(
                 ex,
-                "Stopping monitoring after unhandled exception was thrown in Limitless Router Monitoring thread for node {0}.",
+                Resources.LimitlessRouterMonitor_Run_StoppingAfterException,
                 this._hostSpec.Host);
         }
         finally
@@ -157,7 +157,7 @@ public class LimitlessRouterMonitor : IDisposable
             if (this._monitoringConn == null || this._monitoringConn.State == ConnectionState.Closed)
             {
                 Logger.LogTrace(
-                    "Opening Limitless Router Monitor connection to ''{0}''.",
+                    Resources.LimitlessRouterMonitor_OpenConnection_Opening,
                     this._hostSpec.GetHostAndPort());
 
                 this._monitoringConn = await this._pluginService.ForceOpenConnection(
@@ -167,7 +167,7 @@ public class LimitlessRouterMonitor : IDisposable
                     true);
 
                 Logger.LogTrace(
-                    "Opened Limitless Router Monitor connection: {0}.",
+                    Resources.LimitlessRouterMonitor_OpenConnection_Opened,
                     this._monitoringConn);
             }
         }
@@ -180,19 +180,7 @@ public class LimitlessRouterMonitor : IDisposable
 
     private void CloseMonitoringConnection()
     {
-        this._cancellationTokenSource.Cancel();
-
-        if (this._monitoringConn != null && this._monitoringConn.State != ConnectionState.Closed)
-        {
-            try
-            {
-                this._monitoringConn.Close();
-            }
-            catch (Exception)
-            {
-                // Ignore errors during close
-            }
-        }
+        this._cancellationTokenSource.Dispose();
 
         if (this._monitoringConn != null)
         {
@@ -205,34 +193,23 @@ public class LimitlessRouterMonitor : IDisposable
     {
         try
         {
-            if (this._monitoringConn is not null && this._monitoringConn.State != ConnectionState.Closed)
-            {
-                this.CloseMonitoringConnection();
-            }
+            this.CloseMonitoringConnection();
         }
         catch (DbException e)
         {
-            Logger.LogTrace(e, "Error waiting for monitoring task to complete");
+            Logger.LogTrace(e, Resources.LimitlessRouterMonitor_Dispose_ErrorWaitingForTask);
         }
-        finally
-        {
-            this._monitoringConn = null;
-        }
-
-        this._cancellationTokenSource.Cancel();
 
         // Waiting for 5s gives a thread enough time to exit monitoring loop and close database connection.
         if (!this._monitoringTask.Wait(TimeSpan.FromSeconds(5)))
         {
             Logger.LogWarning(
-                "LimitlessRouterMonitor did not stop within 5 seconds for host {Host}",
+                Resources.LimitlessRouterMonitor_Dispose_DidNotStopWithinSeconds,
                 this._hostSpec.Host);
         }
 
-        this._cancellationTokenSource.Dispose();
-
         Logger.LogTrace(
-            "Limitless Router Monitor thread stopped on node {0}.",
+            Resources.LimitlessRouterMonitor_Dispose_ThreadStopped,
             this._hostSpec.Host);
     }
 }

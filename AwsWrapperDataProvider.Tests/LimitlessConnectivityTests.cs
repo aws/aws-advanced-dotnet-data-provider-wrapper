@@ -12,13 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using AwsWrapperDataProvider.Driver.Utils;
 using AwsWrapperDataProvider.Tests.Container.Utils;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 
 namespace AwsWrapperDataProvider.Tests;
 
 public class LimitlessConnectivityTests : IntegrationTestBase
 {
+    private static readonly ILogger<LimitlessConnectivityTests> Logger = LoggerUtils.GetLogger<LimitlessConnectivityTests>();
     private readonly AuroraTestUtils auroraTestUtils;
 
     public LimitlessConnectivityTests()
@@ -32,19 +35,18 @@ public class LimitlessConnectivityTests : IntegrationTestBase
     [Trait("Engine", "aurora-limitless")]
     public void PgWrapper_LimitlessValidConnectionProperties()
     {
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName);
-        connectionString += ";Plugins=limitless";
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName, plugins: "limitless");
 
         using AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
 
-        Console.WriteLine("1. Opening connection with limitless plugin...");
+        Logger.LogInformation("1. Opening connection with limitless plugin...");
         connection.Open();
-        Console.WriteLine("   ✓ Connected successfully");
+        Logger.LogInformation("   ✓ Connected successfully");
 
         var instanceId = this.auroraTestUtils.QueryInstanceId(connection);
         Assert.NotNull(instanceId);
         Assert.NotEmpty(instanceId);
-        Console.WriteLine($"   ✓ Instance ID: {instanceId}");
+        Logger.LogInformation("   ✓ Instance ID: {InstanceId}", instanceId);
     }
 
     [Fact]
@@ -55,19 +57,19 @@ public class LimitlessConnectivityTests : IntegrationTestBase
     {
         var iamUser = TestEnvironment.Env.Info.IamUsername;
         var iamRegion = TestEnvironment.Env.Info.Region;
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, iamUser, null, DefaultDbName);
-        connectionString += $";Plugins=iam,limitless;IamRegion={iamRegion}";
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, iamUser, null, DefaultDbName, plugins: "iam,limitless");
+        connectionString += $";IamRegion={iamRegion}";
 
         using AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
 
-        Console.WriteLine("1. Opening connection with limitless and IAM plugins...");
+        Logger.LogInformation("1. Opening connection with limitless and IAM plugins...");
         connection.Open();
-        Console.WriteLine("   ✓ Connected successfully");
+        Logger.LogInformation("   ✓ Connected successfully");
 
         var instanceId = this.auroraTestUtils.QueryInstanceId(connection);
         Assert.NotNull(instanceId);
         Assert.NotEmpty(instanceId);
-        Console.WriteLine($"   ✓ Instance ID: {instanceId}");
+        Logger.LogInformation("   ✓ Instance ID: {InstanceId}", instanceId);
     }
 
     [Fact]
@@ -81,19 +83,19 @@ public class LimitlessConnectivityTests : IntegrationTestBase
 
         try
         {
-            var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, null, null, DefaultDbName);
-            connectionString += $";Plugins=awsSecretsManager,limitless;SecretsManagerSecretId={secretName};SecretsManagerRegion={TestEnvironment.Env.Info.Region}";
+            var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, null, null, DefaultDbName, plugins: "awsSecretsManager,limitless");
+            connectionString += $";SecretsManagerSecretId={secretName};SecretsManagerRegion={TestEnvironment.Env.Info.Region}";
 
             using AwsWrapperConnection<NpgsqlConnection> connection = new(connectionString);
 
-            Console.WriteLine("1. Opening connection with limitless and Secrets Manager plugins...");
+            Logger.LogInformation("1. Opening connection with limitless and Secrets Manager plugins...");
             connection.Open();
-            Console.WriteLine("   ✓ Connected successfully");
+            Logger.LogInformation("   ✓ Connected successfully");
 
             var instanceId = this.auroraTestUtils.QueryInstanceId(connection);
             Assert.NotNull(instanceId);
             Assert.NotEmpty(instanceId);
-            Console.WriteLine($"   ✓ Instance ID: {instanceId}");
+            Logger.LogInformation("   ✓ Instance ID: {InstanceId}", instanceId);
         }
         finally
         {

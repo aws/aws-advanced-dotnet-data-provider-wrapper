@@ -83,9 +83,9 @@ public class EfmConnectivityIntegrationTests : IntegrationTestBase
     {
         int failureDelaySec = 10;
         int maxDurationsSec = 60;
-        var instance = ProxyDatabaseInfo.Instances[0].Host;
-        var port = ProxyDatabaseInfo.Instances[0].Port;
-        var instanceId = ProxyDatabaseInfo.Instances[0].InstanceId;
+        var instance = ProxyDatabaseInfo!.Instances[0].Host;
+        var port = ProxyDatabaseInfo!.Instances[0].Port;
+        var instanceId = ProxyDatabaseInfo!.Instances[0].InstanceId;
 
         var connectionString = ConnectionStringHelper.GetUrl(Engine, instance, port, Username, Password, DefaultDbName, commandTimeout: maxDurationsSec, connectionTimeout: 10, plugins: "efm");
         connectionString += $";FailureDetectionTime={5000};FailureDetectionCount=1;";

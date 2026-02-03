@@ -14,8 +14,10 @@
 
 using System.Data.Common;
 using System.Reflection;
+using AwsWrapperDataProvider.Driver.Utils;
 using AwsWrapperDataProvider.Tests;
 using AwsWrapperDataProvider.Tests.Container.Utils;
+using Microsoft.Extensions.Logging;
 using NHibernate;
 using NHibernate.Cfg;
 using NHibernate.Driver;
@@ -25,6 +27,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests;
 
 public class LimitlessConnectivityTests : IntegrationTestBase
 {
+    private static readonly ILogger<LimitlessConnectivityTests> Logger = LoggerUtils.GetLogger<LimitlessConnectivityTests>();
     private readonly AuroraTestUtils auroraTestUtils;
 
     public LimitlessConnectivityTests()
@@ -52,16 +55,15 @@ public class LimitlessConnectivityTests : IntegrationTestBase
     [Trait("Engine", "aurora-limitless")]
     public void NHibernate_LimitlessValidConnectionProperties()
     {
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName);
-        connectionString += ";Plugins=limitless";
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName, plugins: "limitless");
 
         var cfg = this.GetNHibernateConfiguration(connectionString);
         var sessionFactory = cfg.BuildSessionFactory();
 
-        Console.WriteLine("1. Opening NHibernate session with limitless plugin...");
+        Logger.LogInformation("1. Opening NHibernate session with limitless plugin...");
         using (var session = sessionFactory.OpenSession())
         {
-            Console.WriteLine("   ✓ Connected successfully");
+            Logger.LogInformation("   ✓ Connected successfully");
 
             using (var transaction = session.BeginTransaction())
             {
@@ -71,13 +73,13 @@ public class LimitlessConnectivityTests : IntegrationTestBase
                     var instanceId = this.auroraTestUtils.QueryInstanceId(connection);
                     Assert.NotNull(instanceId);
                     Assert.NotEmpty(instanceId);
-                    Console.WriteLine($"   ✓ Instance ID: {instanceId}");
+                    Logger.LogInformation("   ✓ Instance ID: {InstanceId}", instanceId);
                 }
 
                 // Verify we can execute a simple query
                 var result = session.CreateSQLQuery("SELECT 1").UniqueResult<int>();
                 Assert.Equal(1, result);
-                Console.WriteLine("   ✓ Query executed successfully");
+                Logger.LogInformation("   ✓ Query executed successfully");
 
                 transaction.Commit();
             }
@@ -92,16 +94,16 @@ public class LimitlessConnectivityTests : IntegrationTestBase
     {
         var iamUser = TestEnvironment.Env.Info.IamUsername;
         var iamRegion = TestEnvironment.Env.Info.Region;
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, iamUser, null, DefaultDbName);
-        connectionString += $";Plugins=iam,limitless;IamRegion={iamRegion}";
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, iamUser, null, DefaultDbName, plugins: "iam,limitless");
+        connectionString += $";IamRegion={iamRegion}";
 
         var cfg = this.GetNHibernateConfiguration(connectionString);
         var sessionFactory = cfg.BuildSessionFactory();
 
-        Console.WriteLine("1. Opening NHibernate session with limitless and IAM plugins...");
+        Logger.LogInformation("1. Opening NHibernate session with limitless and IAM plugins...");
         using (var session = sessionFactory.OpenSession())
         {
-            Console.WriteLine("   ✓ Connected successfully");
+            Logger.LogInformation("   ✓ Connected successfully");
 
             using (var transaction = session.BeginTransaction())
             {
@@ -111,13 +113,13 @@ public class LimitlessConnectivityTests : IntegrationTestBase
                     var instanceId = this.auroraTestUtils.QueryInstanceId(connection);
                     Assert.NotNull(instanceId);
                     Assert.NotEmpty(instanceId);
-                    Console.WriteLine($"   ✓ Instance ID: {instanceId}");
+                    Logger.LogInformation("   ✓ Instance ID: {InstanceId}", instanceId);
                 }
 
                 // Verify we can execute a simple query
                 var result = session.CreateSQLQuery("SELECT 1").UniqueResult<int>();
                 Assert.Equal(1, result);
-                Console.WriteLine("   ✓ Query executed successfully");
+                Logger.LogInformation("   ✓ Query executed successfully");
 
                 transaction.Commit();
             }
@@ -135,16 +137,16 @@ public class LimitlessConnectivityTests : IntegrationTestBase
 
         try
         {
-            var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, null, null, DefaultDbName);
-            connectionString += $";Plugins=awsSecretsManager,limitless;SecretsManagerSecretId={secretName};SecretsManagerRegion={TestEnvironment.Env.Info.Region}";
+            var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, null, null, DefaultDbName, plugins: "awsSecretsManager,limitless");
+            connectionString += $";SecretsManagerSecretId={secretName};SecretsManagerRegion={TestEnvironment.Env.Info.Region}";
 
             var cfg = this.GetNHibernateConfiguration(connectionString);
             var sessionFactory = cfg.BuildSessionFactory();
 
-            Console.WriteLine("1. Opening NHibernate session with limitless and Secrets Manager plugins...");
+            Logger.LogInformation("1. Opening NHibernate session with limitless and Secrets Manager plugins...");
             using (var session = sessionFactory.OpenSession())
             {
-                Console.WriteLine("   ✓ Connected successfully");
+                Logger.LogInformation("   ✓ Connected successfully");
 
                 using (var transaction = session.BeginTransaction())
                 {
@@ -154,13 +156,13 @@ public class LimitlessConnectivityTests : IntegrationTestBase
                         var instanceId = this.auroraTestUtils.QueryInstanceId(connection);
                         Assert.NotNull(instanceId);
                         Assert.NotEmpty(instanceId);
-                        Console.WriteLine($"   ✓ Instance ID: {instanceId}");
+                        Logger.LogInformation("   ✓ Instance ID: {InstanceId}", instanceId);
                     }
 
                     // Verify we can execute a simple query
                     var result = session.CreateSQLQuery("SELECT 1").UniqueResult<int>();
                     Assert.Equal(1, result);
-                    Console.WriteLine("   ✓ Query executed successfully");
+                    Logger.LogInformation("   ✓ Query executed successfully");
 
                     transaction.Commit();
                 }

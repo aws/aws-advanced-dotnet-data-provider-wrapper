@@ -56,11 +56,11 @@ public class FailoverConnectivityTests : IntegrationTestBase
             initialWriterInstanceInfo.Port,
             Username,
             Password,
-            ProxyDatabaseInfo.DefaultDbName,
+            ProxyDatabaseInfo!.DefaultDbName,
             2,
             10,
             "failover");
-        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}; Pooling=false";
+        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo!.InstanceEndpointSuffix}:{ProxyDatabaseInfo!.InstanceEndpointPort}; Pooling=false";
 
         using AwsWrapperConnection connection = Engine switch
         {
@@ -110,11 +110,11 @@ public class FailoverConnectivityTests : IntegrationTestBase
             initialWriterInstanceInfo.Port,
             Username,
             Password,
-            ProxyDatabaseInfo.DefaultDbName,
+            ProxyDatabaseInfo!.DefaultDbName,
             2,
             10,
             "failover");
-        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}; Pooling=true";
+        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo!.InstanceEndpointSuffix}:{ProxyDatabaseInfo!.InstanceEndpointPort}; Pooling=true";
 
         using AwsWrapperConnection connection = Engine switch
         {
@@ -169,11 +169,11 @@ public class FailoverConnectivityTests : IntegrationTestBase
             readerInstanceInfo.Port,
             Username,
             Password,
-            ProxyDatabaseInfo.DefaultDbName,
+            ProxyDatabaseInfo!.DefaultDbName,
             2,
             10,
             "failover");
-        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}";
+        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo!.InstanceEndpointSuffix}:{ProxyDatabaseInfo!.InstanceEndpointPort}";
 
         using AwsWrapperConnection connection = Engine switch
         {
@@ -220,11 +220,11 @@ public class FailoverConnectivityTests : IntegrationTestBase
             initialWriterInstanceInfo.Port,
             Username,
             Password,
-            ProxyDatabaseInfo.DefaultDbName,
+            ProxyDatabaseInfo!.DefaultDbName,
             2,
             10,
             "failover");
-        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}";
+        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo!.InstanceEndpointSuffix}:{ProxyDatabaseInfo!.InstanceEndpointPort}";
 
         using AwsWrapperConnection connection = Engine switch
         {
@@ -276,11 +276,11 @@ public class FailoverConnectivityTests : IntegrationTestBase
             initialWriterInstanceInfo.Port,
             Username,
             Password,
-            ProxyDatabaseInfo.DefaultDbName,
+            ProxyDatabaseInfo!.DefaultDbName,
             2,
             10,
             "failover");
-        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}" +
+        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo!.InstanceEndpointSuffix}:{ProxyDatabaseInfo!.InstanceEndpointPort}" +
             $"; FailoverMode=ReaderOrWriter";
 
         using AwsWrapperConnection connection = Engine switch
@@ -322,11 +322,11 @@ public class FailoverConnectivityTests : IntegrationTestBase
             initialWriterInstanceInfo.Port,
             Username,
             Password,
-            ProxyDatabaseInfo.DefaultDbName,
+            ProxyDatabaseInfo!.DefaultDbName,
             2,
             10,
             "failover");
-        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}" +
+        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo!.InstanceEndpointSuffix}:{ProxyDatabaseInfo!.InstanceEndpointPort}" +
             $"; FailoverMode=StrictReader" +
             $"; FailoverTimeoutMs=120000";
 
@@ -382,11 +382,11 @@ public class FailoverConnectivityTests : IntegrationTestBase
             initialWriterInstanceInfo.Port,
             Username,
             Password,
-            ProxyDatabaseInfo.DefaultDbName,
+            ProxyDatabaseInfo!.DefaultDbName,
             2,
             10,
             "failover");
-        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}" +
+        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo!.InstanceEndpointSuffix}:{ProxyDatabaseInfo!.InstanceEndpointPort}" +
             $"; FailoverMode=ReaderOrWriter";
 
         using AwsWrapperConnection connection = Engine switch

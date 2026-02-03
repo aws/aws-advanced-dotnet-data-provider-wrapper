@@ -83,7 +83,7 @@ public class LimitlessQueryHelper
         if (weight < 1 || weight > 10)
         {
             weight = 1; // default to 1
-            Logger.LogWarning("Invalid router load for host {HostName}: {Cpu}", hostName, cpu);
+            Logger.LogWarning(Resources.LimitlessQueryHelper_CreateHost_InvalidRouterLoad, hostName, cpu);
         }
 
         return this._pluginService.HostSpecBuilder

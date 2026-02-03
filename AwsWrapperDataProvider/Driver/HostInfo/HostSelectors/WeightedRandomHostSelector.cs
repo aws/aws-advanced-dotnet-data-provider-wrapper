@@ -86,7 +86,7 @@ public partial class WeightedRandomHostSelector : IHostSelector
             }
         }
 
-        int randomInt = this._random.Next(counter);
+        int randomInt = counter > 2 ? this._random.Next(1, counter) : 1;
 
         foreach (var host in eligibleHosts)
         {
