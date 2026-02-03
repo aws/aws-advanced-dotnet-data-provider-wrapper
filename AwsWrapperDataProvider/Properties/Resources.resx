@@ -495,6 +495,9 @@
   <data name="Error_FailedConnection" xml:space="preserve">
     <value>Unable to establish connection.</value>
   </data>
+  <data name="Error_FailedToConnectToHost" xml:space="preserve">
+    <value>Failed to connect to host: {0}.</value>
+  </data>
   <data name="Error_FailedToInstantiateCustomDialectType" xml:space="preserve">
     <value>Failed to instantiate custom dialect type '{0}'</value>
   </data>
@@ -620,6 +623,9 @@
   </data>
   <data name="Error_TransactionResolutionUnknown" xml:space="preserve">
     <value>Transaction resolution unknown. Please re-configure session state if required and try restarting transaction.</value>
+  </data>
+  <data name="Error_UnsupportedDialectOrDatabase" xml:space="preserve">
+    <value>Unsupported dialect or database: {0}.</value>
   </data>
   <data name="Error_UnableToCreateConnection" xml:space="preserve">
     <value>Unable to create connection.</value>
