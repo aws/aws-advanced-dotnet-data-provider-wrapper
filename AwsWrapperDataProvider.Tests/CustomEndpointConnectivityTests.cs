@@ -24,47 +24,6 @@ using Npgsql;
 namespace AwsWrapperDataProvider.Tests;
 
 /// <summary>
-/// Fixture that creates a custom DB cluster endpoint before tests and deletes it after.
-/// Used only for Aurora with 3+ instances (test is skipped otherwise).
-/// </summary>
-public class CustomEndpointTestFixture : IDisposable
-{
-    public CustomEndpointTestFixture()
-    {
-        EndpointId = "test-endpoint-1-" + Guid.NewGuid().ToString("N")[..8];
-        EndpointInfo = null;
-
-        var envInfo = TestEnvironment.Env.Info;
-        if (envInfo.Request.Deployment != DatabaseEngineDeployment.AURORA || envInfo.DatabaseInfo.Instances.Count < 3)
-        {
-            return;
-        }
-
-        var clusterId = envInfo.RdsDbName!;
-        var instances = envInfo.DatabaseInfo.Instances;
-        var staticMembers = instances.Take(1).Select(i => i.InstanceId).ToList();
-
-        var auroraUtilForCreate = AuroraTestUtils.GetUtility(envInfo);
-        auroraUtilForCreate.CreateDBClusterEndpointAsync(EndpointId, clusterId, staticMembers).GetAwaiter().GetResult();
-        EndpointInfo = auroraUtilForCreate.WaitUntilEndpointAvailableAsync(EndpointId).GetAwaiter().GetResult();
-    }
-
-    public string EndpointId { get; }
-    public DBClusterEndpoint? EndpointInfo { get; }
-
-    public void Dispose()
-    {
-        if (EndpointInfo == null)
-        {
-            return;
-        }
-
-        var auroraUtil = AuroraTestUtils.GetUtility();
-        auroraUtil.DeleteDBClusterEndpointAsync(EndpointId).GetAwaiter().GetResult();
-    }
-}
-
-/// <summary>
 /// Integration tests for the Custom Endpoint plugin, ported from the Java driver's CustomEndpointTest.
 /// Runs only on Aurora with at least 3 instances; requires first instance to be writer.
 /// </summary>
@@ -77,8 +36,8 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
 
     public CustomEndpointConnectivityTests(CustomEndpointTestFixture fixture, ITestOutputHelper output)
     {
-        _fixture = fixture;
-        _logger = output;
+        this._fixture = fixture;
+        this._logger = output;
     }
 
     public override async ValueTask InitializeAsync()
@@ -91,6 +50,7 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
     /// Connects to a custom endpoint with failover plugin, verifies connection is to an endpoint member,
     /// triggers failover, expects FailoverSuccessException, then verifies new connection is still to an endpoint member.
     /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
@@ -99,13 +59,13 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
     public async Task CustomEndpoint_Failover()
     {
         Assert.SkipWhen(NumberOfInstances < 3, "Skipped due to test requiring number of database instances >= 3.");
-        Assert.SkipWhen(_fixture.EndpointInfo == null, "Custom endpoint fixture not created (not Aurora or < 3 instances).");
+        Assert.SkipWhen(this._fixture.EndpointInfo == null, "Custom endpoint fixture not created (not Aurora or < 3 instances).");
 
         var dbInfo = TestEnvironment.Env.Info.DatabaseInfo;
         var port = Port;
         var connectionString = ConnectionStringHelper.GetUrl(
             Engine,
-            _fixture.EndpointInfo.Endpoint,
+            this._fixture.EndpointInfo.Endpoint,
             port,
             Username,
             Password,
@@ -127,8 +87,8 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
         await connection.OpenAsync(TestContext.Current.CancellationToken);
         Assert.Equal(ConnectionState.Open, connection.State);
 
-        var endpointMembers = _fixture.EndpointInfo.StaticMembers ?? new List<string>();
-        var instanceId = AuroraUtils.QueryInstanceId(connection);
+        var endpointMembers = this._fixture.EndpointInfo.StaticMembers ?? new List<string>();
+        var instanceId = await AuroraUtils.QueryInstanceId(connection, false);
         Assert.True(endpointMembers.Contains(instanceId!), $"Instance {instanceId} should be in endpoint members: [{string.Join(", ", endpointMembers)}]");
 
         var currentWriter = TestEnvironment.Env.Info.DatabaseInfo.Instances[0].InstanceId;
@@ -140,7 +100,7 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
             await tcs.Task;
             await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
             {
-                _logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Executing instance ID query to trigger failover...");
+                this._logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Executing instance ID query to trigger failover...");
                 await AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, true);
             });
             await crashTask;
@@ -153,12 +113,12 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
                 instanceId!);
             await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
             {
-                _logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Executing instance ID query to trigger failover...");
+                this._logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Executing instance ID query to trigger failover...");
                 await AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, true);
             });
         }
 
-        var newInstanceId = AuroraUtils.QueryInstanceId(connection);
+        var newInstanceId = await AuroraUtils.QueryInstanceId(connection, false);
         Assert.True(endpointMembers.Contains(newInstanceId!), $"New instance {newInstanceId} should be in endpoint members: [{string.Join(", ", endpointMembers)}]");
     }
 }

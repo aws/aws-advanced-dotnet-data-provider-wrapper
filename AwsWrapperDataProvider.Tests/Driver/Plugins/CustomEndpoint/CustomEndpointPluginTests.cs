@@ -169,13 +169,6 @@ public class CustomEndpointPluginTests : IDisposable
     [Trait("Category", "Unit")]
     public async Task Execute_CustomEndpointHost_CreatesMonitor()
     {
-        // Plugin must have customEndpointHostSpec set (as it would be after OpenConnection to custom endpoint).
-        // We use reflection or a test-only setter; the plugin sets it in OpenConnection. For Execute we need
-        // to simulate that we're in a context where custom endpoint was used. The plugin checks customEndpointHostSpec == null.
-        // So we need a way to set it. The plugin doesn't expose a setter. We have two options:
-        // 1) Add a test-only constructor or setter in a testable subclass that sets the field.
-        // 2) Call OpenConnection first with custom endpoint (with mock monitor), then call Execute - then both run with same plugin instance.
-        // Option 2 is cleaner: open connection to custom endpoint (with mock monitor), then execute.
         this.props[PropertyDefinition.CustomEndpointRegion.Name] = "us-east-1";
         var plugin = new TestableCustomEndpointPlugin(
             this.mockPluginService.Object,
@@ -191,14 +184,13 @@ public class CustomEndpointPluginTests : IDisposable
             "Connection.createStatement",
             this.mockJdbcMethodFunc.Object);
 
-        // Execute also calls CreateMonitorIfAbsent (same host, so may get cached monitor)
         Assert.True(plugin.CreateMonitorIfAbsentCallCount >= 1);
         this.mockJdbcMethodFunc.Verify(f => f(), Times.Once);
     }
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void CloseMonitors_DisposesRegisteredMonitors()
+    public async Task CloseMonitors_DisposesRegisteredMonitors()
     {
         this.props[PropertyDefinition.CustomEndpointRegion.Name] = "us-east-1";
         var plugin = new TestableCustomEndpointPlugin(
@@ -207,7 +199,7 @@ public class CustomEndpointPluginTests : IDisposable
             _ => new AmazonRDSClient(RegionEndpoint.USEast1),
             this.mockMonitor.Object);
 
-        _ = plugin.OpenConnection(this.customEndpointHost, this.props, true, this.mockConnectFunc.Object, true).GetAwaiter().GetResult();
+        await plugin.OpenConnection(this.customEndpointHost, this.props, true, this.mockConnectFunc.Object, true);
 
         CustomEndpointPlugin.CloseMonitors();
 

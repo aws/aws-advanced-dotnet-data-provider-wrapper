@@ -74,7 +74,7 @@ public class CustomEndpointMonitorTests : IDisposable
         };
         var oneEndpointList = new List<DBClusterEndpoint>
         {
-            CreateMockEndpoint(CustomEndpointUrl1, EndpointId, StaticMembersList , null),
+            CreateMockEndpoint(CustomEndpointUrl1, EndpointId, StaticMembersList, null),
         };
 
         var mockRds = new Mock<AmazonRDSClient>(RegionEndpoint.USEast1);

@@ -321,6 +321,7 @@ public static class PropertyDefinition
         WaitForCustomEndpointInfoTimeoutMs,
         CustomEndpointMonitorIdleExpirationMs,
         CustomEndpointRegion,
+
         // InitialConnection Plugin Properties
         InitialConnectionReaderHostSelectorStrategy,
 

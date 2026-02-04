@@ -25,12 +25,12 @@ public class IamTokenUtility : IIamTokenUtility
         return user + ":" + hostname + ":" + port + ":" + region;
     }
 
-    public async Task<string> GenerateAuthenticationTokenAsync(string region, string hostname, int port, string user)
+    public Task<string> GenerateAuthenticationTokenAsync(string region, string hostname, int port, string user)
     {
         try
         {
             RegionEndpoint regionEndpoint = RegionEndpoint.GetBySystemName(region);
-            return RDSAuthTokenGenerator.GenerateAuthToken(regionEndpoint, hostname, port, user);
+            return Task.FromResult(RDSAuthTokenGenerator.GenerateAuthToken(regionEndpoint, hostname, port, user));
         }
         catch (Exception ex)
         {

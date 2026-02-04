@@ -29,6 +29,7 @@ using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.Utils;
 using MySqlConnector;
 using Npgsql;
+using Filter = Amazon.RDS.Model.Filter;
 
 namespace AwsWrapperDataProvider.Tests.Container.Utils;
 
@@ -949,9 +950,6 @@ public class AuroraTestUtils
         };
     }
 
-    /// <summary>
-    /// Creates a custom DB cluster endpoint for the given cluster with the specified static members.
-    /// </summary>
     public async Task CreateDBClusterEndpointAsync(string endpointId, string clusterId, List<string> staticMemberInstanceIds)
     {
         var request = new CreateDBClusterEndpointRequest
@@ -964,9 +962,6 @@ public class AuroraTestUtils
         await this.rdsClient.CreateDBClusterEndpointAsync(request);
     }
 
-    /// <summary>
-    /// Waits until the custom DB cluster endpoint is available. Throws if the timeout is exceeded.
-    /// </summary>
     public async Task<DBClusterEndpoint> WaitUntilEndpointAvailableAsync(string endpointId)
     {
         var timeoutEnd = DateTime.UtcNow + TimeSpan.FromMinutes(5);
@@ -1005,9 +1000,6 @@ public class AuroraTestUtils
             $"The test setup step timed out while waiting for the custom endpoint to become available: '{endpointId}'.");
     }
 
-    /// <summary>
-    /// Deletes the custom DB cluster endpoint. Ignores if the endpoint does not exist.
-    /// </summary>
     public async Task DeleteDBClusterEndpointAsync(string endpointId)
     {
         try

@@ -75,6 +75,17 @@ public class CustomEndpointPlugin : AbstractConnectionPlugin
         "DbConnection.ClearWarnings",
     };
 
+    /// <summary>
+    /// Closes all active custom endpoint monitors.
+    /// </summary>
+    public static void CloseMonitors()
+    {
+        Logger.LogInformation(Resources.CustomEndpointPlugin_CloseMonitors);
+
+        // The clear call automatically calls Dispose() on all monitors via eviction callbacks.
+        Monitors.Clear();
+    }
+
     protected readonly IPluginService pluginService;
     protected readonly Dictionary<string, string> props;
     protected readonly Func<RegionEndpoint, AmazonRDSClient> rdsClientFunc;
@@ -121,20 +132,20 @@ public class CustomEndpointPlugin : AbstractConnectionPlugin
 
         this.customEndpointHostSpec = hostSpec;
 
-        // Logger.LogTrace(Resources.CustomEndpointPlugin_ConnectionRequestToCustomEndpoint, hostSpec.Host);
+        Logger.LogTrace(Resources.CustomEndpointPlugin_ConnectionRequestToCustomEndpoint, hostSpec.Host);
 
         this.customEndpointId = RdsUtils.GetRdsClusterId(this.customEndpointHostSpec.Host);
         if (string.IsNullOrEmpty(this.customEndpointId))
         {
-            // throw new InvalidOperationException(
-            //     string.Format(Resources.CustomEndpointPlugin_ErrorParsingEndpointIdentifier, this.customEndpointHostSpec.Host));
+            throw new InvalidOperationException(
+                string.Format(Resources.CustomEndpointPlugin_ErrorParsingEndpointIdentifier, this.customEndpointHostSpec.Host));
         }
 
         string? regionString = RegionUtils.GetRegion(this.customEndpointHostSpec.Host, props, PropertyDefinition.CustomEndpointRegion);
         if (string.IsNullOrEmpty(regionString) || !RegionUtils.IsValidRegion(regionString))
         {
-            // throw new InvalidOperationException(
-            //     string.Format(Resources.CustomEndpointPlugin_UnableToDetermineRegion, PropertyDefinition.CustomEndpointRegion.Name));
+            throw new InvalidOperationException(
+                string.Format(Resources.CustomEndpointPlugin_UnableToDetermineRegion, PropertyDefinition.CustomEndpointRegion.Name));
         }
 
         this.region = RegionEndpoint.GetBySystemName(regionString);
@@ -203,12 +214,12 @@ public class CustomEndpointPlugin : AbstractConnectionPlugin
         {
             try
             {
-                // Logger.LogTrace(Resources.CustomEndpointPlugin_OnMonitorEvicted_Disposing, key, reason);
+                Logger.LogTrace(Resources.CustomEndpointPlugin_OnMonitorEvicted_Disposing, key, reason);
                 evictedMonitor.Dispose();
             }
             catch (Exception ex)
             {
-                // Logger.LogWarning(Resources.Error_DisposingCustomEndpointMonitor, ex.Message);
+                Logger.LogWarning(Resources.Error_DisposingCustomEndpointMonitor, ex.Message);
             }
         }
     }
@@ -227,9 +238,9 @@ public class CustomEndpointPlugin : AbstractConnectionPlugin
 
         if (!hasCustomEndpointInfo)
         {
-            // Logger.LogTrace(Resources.CustomEndpointPlugin_WaitingForCustomEndpointInfo,
-            //     this.customEndpointHostSpec?.Host,
-            //     this.waitOnCachedInfoDurationMs);
+            Logger.LogTrace(Resources.CustomEndpointPlugin_WaitingForCustomEndpointInfo,
+                this.customEndpointHostSpec?.Host,
+                this.waitOnCachedInfoDurationMs);
 
             DateTime waitForEndpointInfoTimeout = DateTime.UtcNow.AddMilliseconds(this.waitOnCachedInfoDurationMs);
 
@@ -241,7 +252,7 @@ public class CustomEndpointPlugin : AbstractConnectionPlugin
                     hasCustomEndpointInfo = monitor.HasCustomEndpointInfo();
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 // throw new InvalidOperationException(
                 //     string.Format(Resources.CustomEndpointPlugin_InterruptedThread, this.customEndpointHostSpec?.Host), e);
@@ -289,20 +300,11 @@ public class CustomEndpointPlugin : AbstractConnectionPlugin
         }
         catch (Exception e)
         {
-            // Logger.LogWarning(e, Resources.CustomEndpointPlugin_ErrorCreatingMonitor);
+            Logger.LogWarning(e, Resources.CustomEndpointPlugin_ErrorCreatingMonitor);
+
             // Continue execution even if monitor creation fails
         }
 
         return await methodFunc();
-    }
-
-    /// <summary>
-    /// Closes all active custom endpoint monitors.
-    /// </summary>
-    public static void CloseMonitors()
-    {
-        // Logger.LogInformation(Resources.CustomEndpointPlugin_CloseMonitors);
-        // The clear call automatically calls Dispose() on all monitors via eviction callbacks.
-        Monitors.Clear();
     }
 }

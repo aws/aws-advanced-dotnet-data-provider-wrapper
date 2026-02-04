@@ -19,6 +19,7 @@ using Amazon.RDS.Model;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Plugin.CustomEndpoint.CustomEndpoint;
@@ -68,7 +69,7 @@ public class CustomEndpointMonitor : ICustomEndpointMonitor
     /// </summary>
     private async Task RunAsync()
     {
-        // Logger.LogTrace(Resources.CustomEndpointMonitorImpl_StartingMonitor, this.customEndpointHostSpec.Host);
+        Logger.LogTrace(Resources.CustomEndpointMonitorImpl_StartingMonitor, this.customEndpointHostSpec.Host);
 
         try
         {
@@ -98,11 +99,11 @@ public class CustomEndpointMonitor : ICustomEndpointMonitor
                     {
                         List<string> endpointUrls = endpoints.Select(e => e.Endpoint).ToList();
 
-                        // Logger.LogWarning(Resources.CustomEndpointMonitorImpl_UnexpectedNumberOfEndpoints,
-                        //     this.endpointIdentifier,
-                        //     this.region.SystemName,
-                        //     endpoints.Count,
-                        //     string.Join(", ", endpointUrls));
+                        Logger.LogWarning(Resources.CustomEndpointMonitorImpl_UnexpectedNumberOfEndpoints,
+                            this.endpointIdentifier,
+                            this.region.SystemName,
+                            endpoints.Count,
+                            string.Join(", ", endpointUrls));
 
                         await Task.Delay(this.refreshRate, this.cancellationTokenSource.Token);
                         continue;
@@ -122,9 +123,9 @@ public class CustomEndpointMonitor : ICustomEndpointMonitor
                         continue;
                     }
 
-                    // Logger.LogTrace(Resources.CustomEndpointMonitorImpl_DetectedChangeInCustomEndpointInfo,
-                    //     this.customEndpointHostSpec.Host,
-                    //     endpointInfo);
+                    Logger.LogTrace(Resources.CustomEndpointMonitorImpl_DetectedChangeInCustomEndpointInfo,
+                        this.customEndpointHostSpec.Host,
+                        endpointInfo);
 
                     // The custom endpoint info has changed, so we need to update the set of allowed/blocked hosts.
                     if (endpointInfo.MemberListType == MemberTypeList.StaticList)
@@ -162,21 +163,21 @@ public class CustomEndpointMonitor : ICustomEndpointMonitor
                 catch (Exception e)
                 {
                     // If the exception is not an OperationCanceledException, log it and continue monitoring.
-                    // Logger.LogError(e, Resources.CustomEndpointMonitorImpl_Exception, this.customEndpointHostSpec.Host);
+                    Logger.LogError(e, Resources.CustomEndpointMonitorImpl_Exception, this.customEndpointHostSpec.Host);
                     await Task.Delay(this.refreshRate, this.cancellationTokenSource.Token);
                 }
             }
         }
         catch (OperationCanceledException)
         {
-            // Logger.LogTrace(Resources.CustomEndpointMonitorImpl_Interrupted, this.customEndpointHostSpec.Host);
+            Logger.LogTrace(Resources.CustomEndpointMonitorImpl_Interrupted, this.customEndpointHostSpec.Host);
         }
         finally
         {
             CustomEndpointInfoCache.TryRemove(this.customEndpointHostSpec.Host, out _);
             this.rdsClient.Dispose();
 
-            // Logger.LogTrace(Resources.CustomEndpointMonitorImpl_StoppedMonitor, this.customEndpointHostSpec.Host);
+            Logger.LogTrace(Resources.CustomEndpointMonitorImpl_StoppedMonitor, this.customEndpointHostSpec.Host);
         }
     }
 
@@ -228,12 +229,15 @@ public class CustomEndpointMonitor : ICustomEndpointMonitor
         return true;
     }
 
-    /// <summary>
-    /// Stops the custom endpoint monitor.
-    /// </summary>
+    public static void ClearCache()
+    {
+        Logger.LogInformation(Resources.CustomEndpointMonitorImpl_ClearCache);
+        CustomEndpointInfoCache.Clear();
+    }
+
     public void Dispose()
     {
-        // Logger.LogTrace(Resources.CustomEndpointMonitorImpl_StoppingMonitor, this.customEndpointHostSpec.Host);
+        Logger.LogTrace(Resources.CustomEndpointMonitorImpl_StoppingMonitor, this.customEndpointHostSpec.Host);
 
         this.cancellationTokenSource.Cancel();
 
@@ -242,15 +246,18 @@ public class CustomEndpointMonitor : ICustomEndpointMonitor
             const int terminationTimeoutSec = 5;
             if (!this.monitorTask.Wait(TimeSpan.FromSeconds(terminationTimeoutSec)))
             {
-                // Logger.LogInformation(Resources.CustomEndpointMonitorImpl_MonitorTerminationTimeout,
-                //     terminationTimeoutSec,
-                //     this.customEndpointHostSpec.Host);
+                Logger.LogInformation(
+                    Resources.CustomEndpointMonitorImpl_MonitorTerminationTimeout,
+                    terminationTimeoutSec,
+                    this.customEndpointHostSpec.Host);
             }
         }
         catch (Exception e)
         {
-            // Logger.LogInformation(e, Resources.CustomEndpointMonitorImpl_InterruptedWhileTerminating,
-            // this.customEndpointHostSpec.Host);
+            Logger.LogInformation(
+                e,
+                Resources.CustomEndpointMonitorImpl_InterruptedWhileTerminating,
+                this.customEndpointHostSpec.Host);
         }
         finally
         {
@@ -258,14 +265,5 @@ public class CustomEndpointMonitor : ICustomEndpointMonitor
             CustomEndpointInfoCache.TryRemove(this.customEndpointHostSpec.Host, out _);
             this.rdsClient.Dispose();
         }
-    }
-
-    /// <summary>
-    /// Clears the shared custom endpoint information cache.
-    /// </summary>
-    public static void ClearCache()
-    {
-        // Logger.LogInformation(Resources.CustomEndpointMonitorImpl_ClearCache);
-        CustomEndpointInfoCache.Clear();
     }
 }
