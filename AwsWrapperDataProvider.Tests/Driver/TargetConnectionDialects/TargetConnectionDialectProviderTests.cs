@@ -141,5 +141,10 @@ public class TargetConnectionDialectProviderTests
         {
             throw new NotImplementedException();
         }
+
+        public bool IsSyntaxError(DbException ex)
+        {
+            return true;
+        }
     }
 }

@@ -70,4 +70,6 @@ public interface ITargetConnectionDialect
     DbConnectionStringBuilder CreateConnectionStringBuilder();
 
     string? MapCanonicalKeyToWrapperProperty(string canonicalKey);
+
+    bool IsSyntaxError(DbException ex);
 }
