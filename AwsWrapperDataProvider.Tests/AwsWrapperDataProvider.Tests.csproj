@@ -44,6 +44,7 @@
 
     <ItemGroup>
         <Folder Include="Driver\Plugins\Failover\" />
+        <Folder Include="Driver\Plugins\Limitless\" />
     </ItemGroup>
 
     <ItemGroup>

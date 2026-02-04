@@ -495,6 +495,9 @@
   <data name="Error_FailedConnection" xml:space="preserve">
     <value>Unable to establish connection.</value>
   </data>
+  <data name="Error_FailedToConnectToHost" xml:space="preserve">
+    <value>Failed to connect to host: {0}.</value>
+  </data>
   <data name="Error_FailedToInstantiateCustomDialectType" xml:space="preserve">
     <value>Failed to instantiate custom dialect type '{0}'</value>
   </data>
@@ -620,6 +623,9 @@
   </data>
   <data name="Error_TransactionResolutionUnknown" xml:space="preserve">
     <value>Transaction resolution unknown. Please re-configure session state if required and try restarting transaction.</value>
+  </data>
+  <data name="Error_UnsupportedDialectOrDatabase" xml:space="preserve">
+    <value>Unsupported dialect or database: {0}.</value>
   </data>
   <data name="Error_UnableToCreateConnection" xml:space="preserve">
     <value>Unable to create connection.</value>
@@ -926,5 +932,80 @@
   </data>
   <data name="ConnectTimePlugin_ConnectTime" xml:space="preserve">
     <value>Connected in {0} nanos.</value>
+  </data>
+  <data name="LimitlessRouterMonitor_Dispose_DidNotStopWithinSeconds" xml:space="preserve">
+      <value>LimitlessRouterMonitor did not stop within 5 seconds for host {0}.</value>
+  </data>
+  <data name="LimitlessRouterMonitor_Dispose_ErrorWaitingForTask" xml:space="preserve">
+      <value>Error waiting for monitoring task to complete.</value>
+  </data>
+  <data name="LimitlessRouterMonitor_Dispose_ThreadStopped" xml:space="preserve">
+      <value>Limitless Router Monitor thread stopped on node {0}.</value>
+  </data>
+  <data name="LimitlessRouterMonitor_OpenConnection_Opened" xml:space="preserve">
+      <value>Opened Limitless Router Monitor connection: {0}.</value>
+  </data>
+  <data name="LimitlessRouterMonitor_OpenConnection_Opening" xml:space="preserve">
+      <value>Opening Limitless Router Monitor connection to ''{0}''.</value>
+  </data>
+  <data name="LimitlessRouterMonitor_Run_Interrupted" xml:space="preserve">
+      <value>Limitless Router Monitoring thread for node {0} was interrupted.</value>
+  </data>
+  <data name="LimitlessRouterMonitor_Run_StoppingAfterException" xml:space="preserve">
+      <value>Stopping monitoring after unhandled exception was thrown in Limitless Router Monitoring thread for node {0}.</value>
+  </data>
+  <data name="LimitlessRouterMonitor_Run_ThreadRunning" xml:space="preserve">
+      <value>Limitless Router Monitor thread running on node {0}.</value>
+  </data>
+  <data name="LimitlessRouterMonitor_TopologyPrefix" xml:space="preserve">
+      <value>[limitlessRouterMonitor] Topology:</value>
+  </data>
+  <data name="LimitlessRouterService_EstablishConnection_ConnectingWithHost" xml:space="preserve">
+      <value>Connecting with host: {0}.</value>
+  </data>
+  <data name="LimitlessRouterService_EstablishConnection_RouterCacheEmpty" xml:space="preserve">
+      <value>Limitless router cache is empty.</value>
+  </data>
+  <data name="LimitlessRouterService_EstablishConnection_SelectedHost" xml:space="preserve">
+      <value>Selected host: {0}.</value>
+  </data>
+  <data name="LimitlessRouterService_EstablishConnection_UsingProvidedConnectUrl" xml:space="preserve">
+      <value>Using provided connect URL.</value>
+  </data>
+  <data name="LimitlessRouterService_EstablishConnection_WeightedRandomHostWeightPairs" xml:space="preserve">
+      <value>Weighted RandomHostWeight Pairs: {0}.</value>
+  </data>
+  <data name="LimitlessRouterService_RetryConnect_FailedToConnectToHost" xml:space="preserve">
+      <value>Failed to connect to host: {0}.</value>
+  </data>
+  <data name="LimitlessRouterService_RetryConnect_IncorrectConfiguration" xml:space="preserve">
+      <value>Incorrect configuration.</value>
+  </data>
+  <data name="LimitlessRouterService_RetryConnect_NoRoutersAvailable" xml:space="preserve">
+      <value>No routers available for retry.</value>
+  </data>
+  <data name="LimitlessRouterService_RetryConnect_SelectedHostForRetry" xml:space="preserve">
+      <value>Selected host for retry: {0}.</value>
+  </data>
+  <data name="LimitlessRouterService_StartMonitoring_ErrorGettingRouters" xml:space="preserve">
+      <value>Error getting limitless routers: {0}.</value>
+  </data>
+  <data name="LimitlessRouterService_SynchronouslyGetLimitlessRouters_ExceptionGettingRouters" xml:space="preserve">
+      <value>Exception getting limitless routers: {0}.</value>
+  </data>
+  <data name="Error_MaxRetriesExceeded" xml:space="preserve">
+      <value>Max retries exceeded.</value>
+  </data>
+  <data name="LimitlessQueryHelper_CreateHost_InvalidRouterLoad" xml:space="preserve">
+      <value>Invalid router load for host {0}: {1}.</value>
+  </data>
+  <data name="LimitlessRouterService_Error_FetchedEmptyRouterList" xml:space="preserve">
+      <value>Fetched empty router list.</value>
+  </data>
+  <data name="LimitlessRouterService_Error_NoRoutersAvailable" xml:space="preserve">
+      <value>No routers available.</value>
+  </data>
+  <data name="LimitlessRouterService_Error_UnableToConnectNoRoutersAvailable" xml:space="preserve">
+      <value>Unable to connect, no routers available: {0}.</value>
   </data>
 </root>
