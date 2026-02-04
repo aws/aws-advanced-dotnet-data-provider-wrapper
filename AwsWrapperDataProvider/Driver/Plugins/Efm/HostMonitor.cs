@@ -317,9 +317,9 @@ public class HostMonitor : IHostMonitor
 
                 foreach (string key in this.properties.Keys)
                 {
-                    if (key.StartsWith(PropertyDefinition.MonitoringPropertyPrefix))
+                    if (key.StartsWith(PropertyDefinition.EfmMonitoringPropertyPrefix))
                     {
-                        monitoringConnProperties[key[PropertyDefinition.MonitoringPropertyPrefix.Length..]] = this.properties[key];
+                        monitoringConnProperties[key[PropertyDefinition.EfmMonitoringPropertyPrefix.Length..]] = this.properties[key];
                         monitoringConnProperties.Remove(key);
                     }
                 }

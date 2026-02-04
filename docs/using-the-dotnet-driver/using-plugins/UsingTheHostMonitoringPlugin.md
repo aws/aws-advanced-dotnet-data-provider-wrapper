@@ -55,9 +55,9 @@ AwsWrapperConnection<NpgsqlConnection> connection = new(
         Username=admin;
         Password=pwd;
         Plugins=efm;
-        FailureDetectionTime=60000;
-        FailureDetectionInterval=5000;
-        FailureDetectionCount=3;"
+        monitoring-FailureDetectionTime=60000;
+        monitoring-FailureDetectionInterval=5000;
+        monitoring-FailureDetectionCount=3;"
 );
 ```
 
