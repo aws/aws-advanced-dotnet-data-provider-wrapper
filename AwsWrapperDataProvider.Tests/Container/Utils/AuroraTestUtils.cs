@@ -29,6 +29,7 @@ using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.Utils;
 using MySqlConnector;
 using Npgsql;
+using Filter = Amazon.RDS.Model.Filter;
 
 namespace AwsWrapperDataProvider.Tests.Container.Utils;
 
@@ -947,5 +948,68 @@ public class AuroraTestUtils
             DatabaseEngine.PG => $"SELECT pg_sleep({seconds})",
             _ => throw new NotSupportedException($"Unsupported database engine: {engine}"),
         };
+    }
+
+    public async Task CreateDBClusterEndpointAsync(string endpointId, string clusterId, List<string> staticMemberInstanceIds)
+    {
+        var request = new CreateDBClusterEndpointRequest
+        {
+            DBClusterEndpointIdentifier = endpointId,
+            DBClusterIdentifier = clusterId,
+            EndpointType = "ANY",
+            StaticMembers = staticMemberInstanceIds,
+        };
+        await this.rdsClient.CreateDBClusterEndpointAsync(request);
+    }
+
+    public async Task<DBClusterEndpoint> WaitUntilEndpointAvailableAsync(string endpointId)
+    {
+        var timeoutEnd = DateTime.UtcNow + TimeSpan.FromMinutes(5);
+        var customEndpointFilter = new Filter
+        {
+            Name = "db-cluster-endpoint-type",
+            Values = new List<string> { "custom" },
+        };
+
+        while (DateTime.UtcNow < timeoutEnd)
+        {
+            var request = new DescribeDBClusterEndpointsRequest
+            {
+                DBClusterEndpointIdentifier = endpointId,
+                Filters = new List<Filter> { customEndpointFilter },
+            };
+            var response = await this.rdsClient.DescribeDBClusterEndpointsAsync(request);
+            var endpoints = response.DBClusterEndpoints;
+
+            if (endpoints.Count != 1)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(3));
+                continue;
+            }
+
+            var endpoint = endpoints[0];
+            if (string.Equals(endpoint.Status, "available", StringComparison.OrdinalIgnoreCase))
+            {
+                return endpoint;
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(3));
+        }
+
+        throw new InvalidOperationException(
+            $"The test setup step timed out while waiting for the custom endpoint to become available: '{endpointId}'.");
+    }
+
+    public async Task DeleteDBClusterEndpointAsync(string endpointId)
+    {
+        try
+        {
+            await this.rdsClient.DeleteDBClusterEndpointAsync(
+                new DeleteDBClusterEndpointRequest { DBClusterEndpointIdentifier = endpointId });
+        }
+        catch (AmazonRDSException ex) when (ex.ErrorCode == "DBClusterEndpointNotFoundFault" || ex.ErrorCode == "DBClusterEndpointNotFound")
+        {
+            // Custom endpoint already does not exist - do nothing.
+        }
     }
 }
