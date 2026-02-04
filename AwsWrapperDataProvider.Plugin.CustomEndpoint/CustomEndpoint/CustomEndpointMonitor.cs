@@ -64,6 +64,12 @@ public class CustomEndpointMonitor : ICustomEndpointMonitor
         this.monitorTask = Task.Run(this.RunAsync, this.cancellationTokenSource.Token);
     }
 
+    public static void ClearCache()
+    {
+        Logger.LogInformation(Resources.CustomEndpointMonitorImpl_ClearCache);
+        CustomEndpointInfoCache.Clear();
+    }
+
     /// <summary>
     /// Analyzes a given custom endpoint for changes to custom endpoint information.
     /// </summary>
@@ -227,12 +233,6 @@ public class CustomEndpointMonitor : ICustomEndpointMonitor
     public bool ShouldDispose()
     {
         return true;
-    }
-
-    public static void ClearCache()
-    {
-        Logger.LogInformation(Resources.CustomEndpointMonitorImpl_ClearCache);
-        CustomEndpointInfoCache.Clear();
     }
 
     public void Dispose()
