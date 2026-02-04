@@ -12,26 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Text.Json.Serialization;
+using AwsWrapperDataProvider.Driver.HostInfo;
 
-namespace AwsWrapperDataProvider.Tests.Container.Utils;
+namespace AwsWrapperDataProvider.Driver.Plugins.Limitless;
 
-[JsonConverter(typeof(JsonStringEnumConverter))]
-public enum TestEnvironmentFeatures
+public interface ILimitlessRouterService
 {
-    IAM,
-    SECRETS_MANAGER,
-    FAILOVER_SUPPORTED,
-    NETWORK_OUTAGES_ENABLED,
-    AWS_CREDENTIALS_ENABLED,
-    PERFORMANCE,
-    SKIP_MYSQL_DRIVER_TESTS,
-    SKIP_PG_DRIVER_TESTS,
-    SKIP_MARIADB_DRIVER_TESTS,
-    RUN_HIBERNATE_TESTS_ONLY,
-    RUN_AUTOSCALING_TESTS_ONLY,
-    TELEMETRY_TRACES_ENABLED,
-    TELEMETRY_METRICS_ENABLED,
-    BLUE_GREEN_DEPLOYMENT,
-    LIMITLESS_DEPLOYMENT,
+    Task EstablishConnection(LimitlessConnectionContext context);
+    void StartMonitoring(HostSpec hostSpec, Dictionary<string, string> props, int intervalMs);
 }

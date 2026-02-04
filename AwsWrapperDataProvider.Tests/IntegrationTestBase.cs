@@ -1,4 +1,4 @@
-﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -41,14 +41,15 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     protected static readonly string Password = TestEnvironment.Env.Info.DatabaseInfo.Password;
     protected static readonly DatabaseEngine Engine = TestEnvironment.Env.Info.Request.Engine;
     protected static readonly DatabaseEngineDeployment Deployment = TestEnvironment.Env.Info.Request.Deployment;
-    protected static readonly TestProxyDatabaseInfo ProxyDatabaseInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!;
-    protected static readonly string ProxyClusterEndpoint = ProxyDatabaseInfo.ClusterEndpoint;
-    protected static readonly int ProxyPort = ProxyDatabaseInfo.ClusterEndpointPort;
+    protected static readonly TestProxyDatabaseInfo? ProxyDatabaseInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo;
+    protected static readonly string ProxyClusterEndpoint = ProxyDatabaseInfo?.ClusterEndpoint ?? string.Empty;
+    protected static readonly int ProxyPort = ProxyDatabaseInfo?.ClusterEndpointPort ?? 0;
     protected static readonly int NumberOfInstances = TestEnvironment.Env.Info.DatabaseInfo.Instances.Count;
 
     protected static readonly string Endpoint = Deployment switch
     {
         DatabaseEngineDeployment.AURORA => TestEnvironment.Env.Info.DatabaseInfo.ClusterEndpoint,
+        DatabaseEngineDeployment.AURORA_LIMITLESS => TestEnvironment.Env.Info.DatabaseInfo.ClusterEndpoint,
         DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER => TestEnvironment.Env.Info.DatabaseInfo.ClusterEndpoint,
         DatabaseEngineDeployment.RDS_MULTI_AZ_INSTANCE => TestEnvironment.Env.Info.DatabaseInfo.Instances[0].Host,
         _ => throw new InvalidOperationException($"Unsupported deployment {Deployment}"),
@@ -57,6 +58,7 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     protected static readonly int Port = Deployment switch
     {
         DatabaseEngineDeployment.AURORA => TestEnvironment.Env.Info.DatabaseInfo.ClusterEndpointPort,
+        DatabaseEngineDeployment.AURORA_LIMITLESS => TestEnvironment.Env.Info.DatabaseInfo.ClusterEndpointPort,
         DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER => TestEnvironment.Env.Info.DatabaseInfo.ClusterEndpointPort,
         DatabaseEngineDeployment.RDS_MULTI_AZ_INSTANCE => TestEnvironment.Env.Info.DatabaseInfo.Instances[0].Port,
         _ => throw new InvalidOperationException($"Unsupported deployment {Deployment}"),
@@ -83,7 +85,7 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         }
 
         var deployment = TestEnvironment.Env.Info.Request.Deployment;
-        if (deployment == DatabaseEngineDeployment.AURORA || deployment == DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER)
+        if (deployment == DatabaseEngineDeployment.AURORA || deployment == DatabaseEngineDeployment.AURORA_LIMITLESS || deployment == DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER)
         {
             int remainingTries = 3;
             bool success = false;
@@ -102,6 +104,7 @@ public abstract class IntegrationTestBase : IAsyncLifetime
                     switch (deployment)
                     {
                         case DatabaseEngineDeployment.AURORA:
+                        case DatabaseEngineDeployment.AURORA_LIMITLESS:
                             await TestEnvironment.RebootAllClusterInstancesAsync();
                             break;
                         case DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER:

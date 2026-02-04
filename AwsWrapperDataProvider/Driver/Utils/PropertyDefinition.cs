@@ -178,6 +178,41 @@ public static class PropertyDefinition
         "1",
         "The default weight for any hosts that have not been configured with the `roundRobinHostWeightPairs` parameter.");
 
+    public static readonly AwsWrapperProperty WeightedRandomHostWeightPairs = new(
+        "WeightedRandomHostWeightPairs",
+        null,
+        "Comma separated list of database host-weight pairs in the format of `<host>:<weight>`.");
+
+    public static readonly AwsWrapperProperty LimitlessWaitForRouterInfo = new(
+        "LimitlessWaitForTransactionRouterInfo",
+        "true",
+        "If the cache of transaction router info is empty and a new connection is made, this property toggles whether the plugin will wait and synchronously fetch transaction router info before selecting a transaction router to connect to, or to fall back to using the provided DB Shard Group endpoint URL.");
+
+    public static readonly AwsWrapperProperty LimitlessGetRouterRetryIntervalMs = new(
+        "LimitlessGetTransactionRouterInfoRetryIntervalMs",
+        "300",
+        "Interval in millis between retries fetching Limitless Transaction Router information.");
+
+    public static readonly AwsWrapperProperty LimitlessGetRouterMaxRetries = new(
+        "LimitlessGetTransactionRouterInfoMaxRetries",
+        "5",
+        "Max number of connection retries fetching Limitless Transaction Router information.");
+
+    public static readonly AwsWrapperProperty LimitlessIntervalMs = new(
+        "LimitlessTransactionRouterMonitorIntervalMs",
+        "7500",
+        "Interval in millis between polling for Limitless Transaction Routers to the database.");
+
+    public static readonly AwsWrapperProperty LimitlessMaxRetries = new(
+        "LimitlessConnectMaxRetries",
+        "5",
+        "Max number of connection retries the Limitless Connection Plugin will attempt.");
+
+    public static readonly AwsWrapperProperty LimitlessMonitorDisposalTimeMs = new(
+        "LimitlessTransactionRouterMonitorDisposalTimeMs",
+        "600000",
+        "Interval in milliseconds for a Limitless router monitor to be considered inactive and to be disposed.");
+
     public static readonly AwsWrapperProperty MonitorDisposalTimeMs = new(
         "MonitorDisposalTime",
         "600000", // 10min
@@ -295,6 +330,15 @@ public static class PropertyDefinition
         // Host Selector Stratagy Properties
         RoundRobinHostWeightPairs,
         RoundRobinDefaultWeight,
+        WeightedRandomHostWeightPairs,
+
+        // Limitless Plugin Properties
+        LimitlessWaitForRouterInfo,
+        LimitlessGetRouterRetryIntervalMs,
+        LimitlessGetRouterMaxRetries,
+        LimitlessIntervalMs,
+        LimitlessMaxRetries,
+        LimitlessMonitorDisposalTimeMs,
 
         // EFM Plugin Properties
         MonitorDisposalTimeMs,

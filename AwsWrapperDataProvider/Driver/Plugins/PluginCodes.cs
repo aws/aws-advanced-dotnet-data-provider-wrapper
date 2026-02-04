@@ -27,4 +27,5 @@ public static class PluginCodes
     public const string FederatedAuth = "federatedAuth";
     public const string Okta = "okta";
     public const string CustomEndpoint = "customEndpoint";
+    public const string Limitless = "limitless";
 }

@@ -155,7 +155,22 @@ public class AuroraTestUtils
     public async Task MakeSureInstancesUpAsync(TimeSpan timeout)
     {
         var envInfo = TestEnvironment.Env.Info;
-        List<TestInstanceInfo> instances = [.. envInfo.DatabaseInfo.Instances, .. envInfo.ProxyDatabaseInfo!.Instances];
+        var deployment = envInfo.Request.Deployment;
+
+        // Limitless clusters don't have traditional instances
+        if (deployment == DatabaseEngineDeployment.AURORA_LIMITLESS)
+        {
+            // For Limitless, we just verify cluster connectivity via the cluster endpoint
+            // No need to check individual instances
+            return;
+        }
+
+        List<TestInstanceInfo> instances = [.. envInfo.DatabaseInfo.Instances];
+        if (envInfo.ProxyDatabaseInfo != null)
+        {
+            instances.AddRange(envInfo.ProxyDatabaseInfo.Instances);
+        }
+
         await this.MakeSureInstancesUpAsync(instances, timeout);
     }
 
@@ -781,6 +796,12 @@ public class AuroraTestUtils
         return deployment switch
         {
             DatabaseEngineDeployment.AURORA => engine switch
+            {
+                DatabaseEngine.MYSQL => "SELECT @@aurora_server_id as id",
+                DatabaseEngine.PG => "SELECT pg_catalog.aurora_db_instance_identifier()",
+                _ => throw new NotSupportedException($"Unsupported database engine: {engine}"),
+            },
+            DatabaseEngineDeployment.AURORA_LIMITLESS => engine switch
             {
                 DatabaseEngine.MYSQL => "SELECT @@aurora_server_id as id",
                 DatabaseEngine.PG => "SELECT pg_catalog.aurora_db_instance_identifier()",
