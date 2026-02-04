@@ -1,872 +1,930 @@
 <?xml version="1.0" encoding="utf-8"?>
 <root>
-    <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema"
-        xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
-        <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
-        <xsd:element name="root" msdata:IsDataSet="true">
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
             <xsd:complexType>
-                <xsd:choice maxOccurs="unbounded">
-                    <xsd:element name="metadata">
-                        <xsd:complexType>
-                            <xsd:sequence>
-                                <xsd:element name="value" type="xsd:string" minOccurs="0" />
-                            </xsd:sequence>
-                            <xsd:attribute name="name" use="required" type="xsd:string" />
-                            <xsd:attribute name="type" type="xsd:string" />
-                            <xsd:attribute name="mimetype" type="xsd:string" />
-                            <xsd:attribute ref="xml:space" />
-                        </xsd:complexType>
-                    </xsd:element>
-                    <xsd:element name="assembly">
-                        <xsd:complexType>
-                            <xsd:attribute name="alias" type="xsd:string" />
-                            <xsd:attribute name="name" type="xsd:string" />
-                        </xsd:complexType>
-                    </xsd:element>
-                    <xsd:element name="data">
-                        <xsd:complexType>
-                            <xsd:sequence>
-                                <xsd:element name="value" type="xsd:string" minOccurs="0"
-                                    msdata:Ordinal="1" />
-                                <xsd:element name="comment" type="xsd:string" minOccurs="0"
-                                    msdata:Ordinal="2" />
-                            </xsd:sequence>
-                            <xsd:attribute name="name" use="required" type="xsd:string" />
-                            <xsd:attribute name="type" type="xsd:string" />
-                            <xsd:attribute name="mimetype" type="xsd:string" />
-                            <xsd:attribute ref="xml:space" />
-                        </xsd:complexType>
-                    </xsd:element>
-                    <xsd:element name="resheader">
-                        <xsd:complexType>
-                            <xsd:sequence>
-                                <xsd:element name="value" type="xsd:string" minOccurs="0"
-                                    msdata:Ordinal="1" />
-                            </xsd:sequence>
-                            <xsd:attribute name="name" use="required" type="xsd:string" />
-                        </xsd:complexType>
-                    </xsd:element>
-                </xsd:choice>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
             </xsd:complexType>
-        </xsd:element>
-    </xsd:schema>
-    <resheader name="resmimetype">
-        <value>text/microsoft-resx</value>
-    </resheader>
-    <resheader name="version">
-        <value>2.0</value>
-    </resheader>
-    <resheader name="reader">
-        <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0,
-            Culture=neutral,
-            PublicKeyToken=b77a5c561934e089
-        </value>
-    </resheader>
-    <resheader name="writer">
-        <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0,
-            Culture=neutral,
-            PublicKeyToken=b77a5c561934e089
-        </value>
-    </resheader>
-    <data name="AuroraInitialConnectionStrategyPlugin_GetReader_InvalidHostSelectionStrategy"
-        xml:space="preserve">
-        <value>Invalid host selection strategy: {0}.</value>
-    </data>
-    <data name="AuroraInitialConnectionStrategyPlugin_InitHostProvider_RequiresDynamicProvider"
-        xml:space="preserve">
-        <value>AuroraInitialConnectionStrategyPlugin requires dynamic provider.</value>
-    </data>
-    <data name="AuroraStaleDnsHelper_OpenVerifiedConnectionAsync_ClusterEndpointResolved"
-        xml:space="preserve">
-        <value>Cluster endpoint {0} resolved to IP address {1}.</value>
-    </data>
-    <data name="AuroraStaleDnsHelper_OpenVerifiedConnectionAsync_CurrentConnectionRole"
-        xml:space="preserve">
-        <value>Current connection role: {0}.</value>
-    </data>
-    <data name="AuroraStaleDnsHelper_OpenVerifiedConnectionAsync_StaleDnsDetected"
-        xml:space="preserve">
-        <value>Stale DNS data detected. Opening a connection to {0}.</value>
-    </data>
-    <data name="AuroraStaleDnsHelper_OpenVerifiedConnectionAsync_WriterHostAddress"
-        xml:space="preserve">
-        <value>Writer host address: {0}.</value>
-    </data>
-    <data name="AuroraStaleDnsHelper_OpenVerifiedConnectionAsync_WriterHostSpec"
-        xml:space="preserve">
-        <value>Writer host spec: {0}.</value>
-    </data>
-    <data name="AuroraStaleDnsHelper_OpenVerifiedConnectionAsync_WriterNotInAllowedHosts"
-        xml:space="preserve">
-        <value>Current writer {0} is not in the allowed hosts list. Allowed hosts: {1}.</value>
-    </data>
-    <data name="AwsWrapperCommand_SetCurrentConnection_TargetConnectionUpdating"
-        xml:space="preserve">
-        <value>Target connection is updating to {0}@{1} from {2} for AwsWrapperCommand@{3}</value>
-    </data>
-    <data name="AwsWrapperConnection_BeginDbTransaction_Called" xml:space="preserve">
-        <value>AwsWrapperConnection.BeginDbTransaction() called with wrapper state = {0}, current connection state = {1}, type = {2}@{3}, DataSource = {4}</value>
-    </data>
-    <data name="AwsWrapperConnection_CreateCommand_DbCommandCreated" xml:space="preserve">
-        <value>DbCommand created for DbConnection@{0}</value>
-    </data>
-    <data name="AwsWrapperConnection_Dispose_DisposingTargetConnection" xml:space="preserve">
-        <value>Disposing target db connection@{0}</value>
-    </data>
-    <data name="AwsWrapperProperty_SslValidationIsDisabled" xml:space="preserve">
-        <value>SSL validation is disabled (sslInsecure=true). This configuration can pose a significant security risks and should not be used in production environments.</value>
-    </data>
-    <data name="ClusterTopologyMonitor.ErrorFetchingTopology" xml:space="preserve">
-        <value>An error occurred while querying for topology: {0}.</value>
-    </data>
-    <data name="ClusterTopologyMonitor.ErrorGettingNetworkTimeout" xml:space="preserve">
-        <value>An error occurred while getting the connection network timeout: {0}.</value>
-    </data>
-    <data name="ClusterTopologyMonitor.ErrorProcessingQueryResults" xml:space="preserve">
-        <value>An error occurred while processing the results from the topology query: {0}</value>
-    </data>
-    <data name="ClusterTopologyMonitor.ExceptionDuringMonitoringStop" xml:space="preserve">
-        <value>Stopping cluster topology monitoring after unhandled exception was thrown in monitoring thread for node {0}.</value>
-    </data>
-    <data name="ClusterTopologyMonitor.IgnoringTopologyRequest" xml:space="preserve">
-        <value>A topology refresh was requested, but the topology was already updated recently. Returning cached hosts:</value>
-    </data>
-    <data name="ClusterTopologyMonitor.Interrupted" xml:space="preserve">
-        <value>The thread was interrupted while waiting for updated topology.</value>
-    </data>
-    <data name="ClusterTopologyMonitor.InvalidQuery" xml:space="preserve">
-        <value>An error occurred while attempting to obtain the topology because the topology query was invalid. Please ensure you are connecting to an Aurora or RDS Db cluster.</value>
-    </data>
-    <data name="ClusterTopologyMonitor.InvalidTopology" xml:space="preserve">
-        <value>The topology query returned an invalid topology - no writer instance detected.</value>
-    </data>
-    <data name="ClusterTopologyMonitor.OpenedMonitoringConnection" xml:space="preserve">
-        <value>New cluster topology monitoring connection@{0} opened for node {1}.</value>
-    </data>
-    <data name="ClusterTopologyMonitor.StartMonitoringThread" xml:space="preserve">
-        <value>Start cluster topology monitoring thread for {0}.</value>
-    </data>
-    <data name="ClusterTopologyMonitor.StartingNodeMonitoringThreads" xml:space="preserve">
-        <value>Starting node monitoring threads.</value>
-    </data>
-    <data name="ClusterTopologyMonitor.StopMonitoringThread" xml:space="preserve">
-        <value>Stop cluster topology monitoring thread for {0}.</value>
-    </data>
-    <data name="ClusterTopologyMonitor.TimeoutSetToZero" xml:space="preserve">
-        <value>A topology refresh was requested, but the given timeout for the request was 0ms. Returning cached hosts:</value>
-    </data>
-    <data name="ClusterTopologyMonitor.TopologyNotUpdated" xml:space="preserve">
-        <value>Topology hasn't been updated after {0} ms.</value>
-    </data>
-    <data name="ClusterTopologyMonitor.UnexpectedTopologyQueryColumnCount" xml:space="preserve">
-        <value>The topology query returned a result with 0 columns. This may occur if the topology query is executed when the server is failing over.</value>
-    </data>
-    <data name="ClusterTopologyMonitor.WriterMonitoringConnection" xml:space="preserve">
-        <value>The monitoring connection is connected to a writer: {0}.</value>
-    </data>
-    <data name="ClusterTopologyMonitor.WriterPickedUpFromNodeMonitors" xml:space="preserve">
-        <value>The writer host detected by the node monitors was picked up by the topology monitor: {0}.</value>
-    </data>
-    <data name="ClusterTopologyMonitor_DisposeConnectionAsync_ConnectionDisposed"
-        xml:space="preserve">
-        <value>Connection {0}@{1} is being disposed.</value>
-    </data>
-    <data name="ClusterTopologyMonitor_Dispose_DisposingClusterTopologyMonitor" xml:space="preserve">
-        <value>Disposing cluster topology monitor for host {0}.</value>
-    </data>
-    <data name="ClusterTopologyMonitor_Dispose_ErrorOccured" xml:space="preserve">
-        <value>Error occurred when waiting on node monitoring thread to finish: {0}.</value>
-    </data>
-    <data name="ClusterTopologyMonitor_ExceptionIgnoredTopologyMonitoringConnection"
-        xml:space="preserve">
-        <value>Exception thrown during getting the writer node Id for topology monitoring connection@{0} and ignored.</value>
-    </data>
-    <data name="ClusterTopologyMonitor_QueryForTopologyAsync" xml:space="preserve">
-        <value>Command timeout for querying topology: {0} seconds.</value>
-    </data>
-    <data name="ClusterTopologyMonitor_ReaderThreadFetchTopologyAsync_ExceptionIgnored"
-        xml:space="preserve">
-        <value>Exception caught but ignored: {0}.</value>
-    </data>
-    <data name="ClusterTopologyMonitor_RunMonitoringLoop_CancellingMonitoringNodes"
-        xml:space="preserve">
-        <value>Cancelling all node monitoring tasks from topology monitor connection@{0}.</value>
-    </data>
-    <data name="ClusterTopologyMonitor_RunMonitoringLoop_Clearing" xml:space="preserve">
-        <value>Clearing node threads...</value>
-    </data>
-    <data name="ClusterTopologyMonitor_RunMonitoringLoop_CurrentTopology" xml:space="preserve">
-        <value>Wait until current topology is updated:</value>
-    </data>
-    <data name="ClusterTopologyMonitor_RunMonitoringLoop_FoundHosts" xml:space="preserve">
-        <value>Running Monitoring Loop. Found {0} hosts.</value>
-    </data>
-    <data name="ClusterTopologyMonitor_RunMonitoringLoop_IsNotRdsInstance" xml:space="preserve">
-        <value>{0} IS NOT a rds instance.</value>
-    </data>
-    <data name="ClusterTopologyMonitor_RunMonitoringLoop_IsRdsInstance" xml:space="preserve">
-        <value>{0} IS a rds instance.</value>
-    </data>
-    <data name="ClusterTopologyMonitor_RunMonitoringLoop_MonitoringTask" xml:space="preserve">
-        <value>Node Monitoring Task@{0} created for host {1}.</value>
-    </data>
-    <data name="ClusterTopologyMonitor_RunMonitoringLoop_MonitoringTime" xml:space="preserve">
-        <value>Ignoring topology request until {0}.</value>
-    </data>
-    <data name="ClusterTopologyMonitor_RunMonitoringLoop_NodeFailedShutdown" xml:space="preserve">
-        <value>One or more node monitoring tasks failed during shutdown.</value>
-    </data>
-    <data name="ClusterTopologyMonitor_RunMonitoringLoop_NullConnection" xml:space="preserve">
-        <value>Monitoring connection@{0} is set to null.</value>
-    </data>
-    <data name="ClusterTopologyMonitor_RunMonitoringLoop_RegularMode" xml:space="preserve">
-        <value>In regular mode.</value>
-    </data>
-    <data name="ClusterTopologyMonitor_RunMonitoringLoop_RestartCancellationToken"
-        xml:space="preserve">
-        <value>Restarting cancellation token for node monitoring tasks.</value>
-    </data>
-    <data name="ClusterTopologyMonitor_RunMonitoringLoop_TopologyNotUpdated" xml:space="preserve">
-        <value>Topology is still not updated:</value>
-    </data>
-    <data name="ClusterTopologyMonitor_RunMonitoringLoop_TopologyUpdated" xml:space="preserve">
-        <value>Topology is updated:</value>
-    </data>
-    <data name="ClusterTopologyMonitor_RunMonitoringLoop_WaitingUpdatedLock" xml:space="preserve">
-        <value>Waiting on topologyUpdatedLock...</value>
-    </data>
-    <data name="ClusterTopologyMonitor_RunMonitoringLoop_WokeUpMonitorWaiting" xml:space="preserve">
-        <value>Woke up from Monitor. Wait due to {0}, rechecking condition...</value>
-    </data>
-    <data name="ClusterTopologyMonitor_RunNodeMonitoringAsync_OperationCancelled"
-        xml:space="preserve">
-        <value>Operation cancelled: {0}.</value>
-    </data>
-    <data name="ClusterTopologyMonitor_RunNodeMonitoringAsync_StartNode" xml:space="preserve">
-        <value>Start running node monitoring task.</value>
-    </data>
-    <data name="ClusterTopologyMonitor_RunNodeMonitoringAsync_UnknownException" xml:space="preserve">
-        <value>&quot;Unknown exception thrown: {0}&quot;.</value>
-    </data>
-    <data name="ClusterTopologyMonitor_UpdateTopologyCache_NotifyingLock" xml:space="preserve">
-        <value>Notifying topologyUpdatedLock...</value>
-    </data>
-    <data name="ClusterTopologyMonitor_UpdateTopologyCache_TopologyUpdate" xml:space="preserve">
-        <value>UpdateTopologyCache:</value>
-    </data>
-    <data name="DbConnectionProvider_CreateDbConnection" xml:space="preserve">
-        <value>Connection created: {0}@{1} with data source {2}.</value>
-    </data>
-    <data name="DbConnectionProvider_GetHostSpecByStrategy_SelectedStrategy" xml:space="preserve">
-        <value>Selected {0} strategy.</value>
-    </data>
-    <data name="DefaultConnectionPlugin_Execute_ExecutingMethod" xml:space="preserve">
-        <value>Executing method {0} on {1} with args: {2}</value>
-    </data>
-    <data name="DefaultConnectionPlugin_OpenInternal_ConnectionOpened" xml:space="preserve">
-        <value>Connection {0}@{1} is opened with data source {2}.</value>
-    </data>
-    <data name="DialectProvider_GetDialectFromType_KnownDialect" xml:space="preserve">
-        <value>Guessed Known dialect: {0}.</value>
-    </data>
-    <data name="DialectProvider_GetDialectFromType_UnknownDialect" xml:space="preserve">
-        <value>Unknown dialect.</value>
-    </data>
-    <data name="DialectProvider_GuessDialect_CacheDialect" xml:space="preserve">
-        <value>Dialect retrieved from cache: {0}.</value>
-    </data>
-    <data name="DialectProvider_GuessDialect_ResultDialect" xml:space="preserve">
-        <value>Guessed dialect: {0}.</value>
-    </data>
-    <data name="DialectProvider_UpdateDialectAsync_CurrentDialectConnectionType"
-        xml:space="preserve">
-        <value>UpdateDialect called with Current Dialect: {0}, Connection Type: {1}.</value>
-    </data>
-    <data name="DialectProvider_UpdateDialectAsync_CurrentDialectValid" xml:space="preserve">
-        <value>Current dialect is valid: {0}.</value>
-    </data>
-    <data name="DialectProvider_UpdateDialectAsync_DialectMatch" xml:space="preserve">
-        <value>Dialect match found: {0}.</value>
-    </data>
-    <data name="DialectProvider_UpdateDialectAsync_ExistingDialect" xml:space="preserve">
-        <value>Current dialect: {0}, canUpdate: {1}.</value>
-    </data>
-    <data name="DialectProvider_UpdateDialectAsync_InvalidDialectTypes" xml:space="preserve">
-        <value>Unable to find valid dialect type for connection. Connection type: {0}, Current dialect: {1}, Candidates tested: {2}.</value>
-    </data>
-    <data name="DialectProvider_UpdateDialectAsync_NoMatchingDialect" xml:space="preserve">
-        <value>Not matching dialect: {0}.</value>
-    </data>
-    <data name="DialectProvider_UpdateDialectAsync_TestingCurrentDialect" xml:space="preserve">
-        <value>Testing current dialect: {0}.</value>
-    </data>
-    <data name="DialectProvider_UpdateDialectAsync_TestingDialectCandidate" xml:space="preserve">
-        <value>Testing dialect candidate: {0}.</value>
-    </data>
-    <data name="DialectProvider_UpdateDialectAsync_TestingDialects" xml:space="preserve">
-        <value>Testing {0} dialect candidates.</value>
-    </data>
-    <data name="EfmHostMonitorConnectionContext_SetInactive_SettingContextInactive"
-        xml:space="preserve">
-        <value>Setting context inactive.</value>
-    </data>
-    <data name="EfmHostMonitorService_OnMonitorEvicted_DisposingHostMonitor" xml:space="preserve">
-        <value>Disposing host monitor for monitor key: {0} due to eviction reason: {1}</value>
-    </data>
-    <data name="EfmHostMonitorService_StartMonitoring_NewContextCreated" xml:space="preserve">
-        <value>New monitoring context created for host: {0}</value>
-    </data>
-    <data name="EfmHostMonitorService_StopMonitoring_AbortingUnhealthyConnection"
-        xml:space="preserve">
-        <value>Aborting unhealthy connection.</value>
-    </data>
-    <data name="EfmHostMonitor_AbortConnection_Finished" xml:space="preserve">
-        <value>Finished aborting unhealthy connection.</value>
-    </data>
-    <data name="EfmHostMonitor_AbortConnection_Starting" xml:space="preserve">
-        <value>Aborting unhealthy connection.</value>
-    </data>
-    <data name="EfmHostMonitor_ActivatedMonitoring" xml:space="preserve">
-        <value>Activated monitoring.</value>
-    </data>
-    <data name="EfmHostMonitor_ActiveContextsException" xml:space="preserve">
-        <value>Encountered exception while monitoring active contexts for host {0}: {1}, stack trace: {2}.</value>
-    </data>
-    <data name="EfmHostMonitor_CheckConnectionStatusAsync_CommandTimeout" xml:space="preserve">
-        <value>Command timeout for ping is {0} seconds.</value>
-    </data>
-    <data name="EfmHostMonitor_CheckConnectionStatusAsync_DisposingInvalidConnection"
-        xml:space="preserve">
-        <value>Disposing invalid monitoring connection.</value>
-    </data>
-    <data name="EfmHostMonitor_DeactivatedMonitoring" xml:space="preserve">
-        <value>Deactivated monitoring.</value>
-    </data>
-    <data name="EfmHostMonitor_ErrorIdentifyingConnection" xml:space="preserve">
-        <value>Encountered exception when identifying connection: {0}.</value>
-    </data>
-    <data name="EfmHostMonitor_ExceptionAbortingConnection" xml:space="preserve">
-        <value>Encountered exception while aborting connection: {0}.</value>
-    </data>
-    <data name="EfmHostMonitor_HostAlive" xml:space="preserve">
-        <value>Host is alive: {0}.</value>
-    </data>
-    <data name="EfmHostMonitor_HostDead" xml:space="preserve">
-        <value>Host is dead: {0}.</value>
-    </data>
-    <data name="EfmHostMonitor_HostNotResponding" xml:space="preserve">
-        <value>Host is not responding: {0}, failure count: {1}.</value>
-    </data>
-    <data name="EfmHostMonitor_NewContextRun_AddingActiveContext" xml:space="preserve">
-        <value>Adding active monitoring context to poll.</value>
-    </data>
-    <data name="EfmHostMonitor_NewContextsException" xml:space="preserve">
-        <value>Encountered exception while polling new contexts for host {0}: {1}, stack trace: {2}.</value>
-    </data>
-    <data name="EfmHostMonitor_OpenedMonitoringConnection" xml:space="preserve">
-        <value>Opened a new host monitoring connection for host {0}.</value>
-    </data>
-    <data name="EfmHostMonitor_OpeningMonitoringConnection" xml:space="preserve">
-        <value>Opening a new host monitoring connection for host {0}.</value>
-    </data>
-    <data name="EfmHostMonitor_Run_AddingContextBack" xml:space="preserve">
-        <value>Adding context back to activeContexts.</value>
-    </data>
-    <data name="EfmHostMonitor_Run_AddingContextToTemp" xml:space="preserve">
-        <value>Adding context to tmpActiveContexts.</value>
-    </data>
-    <data name="EfmHostMonitor_Run_CurrentActiveContextsCount" xml:space="preserve">
-        <value>Current active contexts count: {0}.</value>
-    </data>
-    <data name="EfmHostMonitor_Run_DequeuedContext" xml:space="preserve">
-        <value>Dequeued a context from activeContexts.</value>
-    </data>
-    <data name="EfmHostMonitor_Run_NoActiveContextsSkipping" xml:space="preserve">
-        <value>No active contexts and node is healthy, skipping status check.</value>
-    </data>
-    <data name="EfmHostMonitor_StartMonitoringWhenStopped" xml:space="preserve">
-        <value>Starting monitoring for a monitor that has stopped.</value>
-    </data>
-    <data name="EfmHostMonitor_StartedMonitoringActiveContexts" xml:space="preserve">
-        <value>Started thread to monitor active contexts for host {0}.</value>
-    </data>
-    <data name="EfmHostMonitor_StartedPollingNewContexts" xml:space="preserve">
-        <value>Started thread to poll new contexts for host {0}.</value>
-    </data>
-    <data name="EfmHostMonitor_StoppedMonitoring" xml:space="preserve">
-        <value>Stopped monitoring threads for host {0}.</value>
-    </data>
-    <data name="EfmHostMonitor_StoppedMonitoringActiveContexts" xml:space="preserve">
-        <value>Stopped thread to monitor active contexts for host {0}.</value>
-    </data>
-    <data name="EfmHostMonitor_StoppedPollingNewContexts" xml:space="preserve">
-        <value>Stopped thread to poll new contexts for host {0}.</value>
-    </data>
-    <data name="EfmHostMonitoringPlugin_Execute_DeactivatingMonitoring" xml:space="preserve">
-        <value>Deactivating monitoring for current context.</value>
-    </data>
-    <data name="EfmHostMonitoringPlugin_GetMonitoringHostSpec_ClusterEndpointIdentification"
-        xml:space="preserve">
-        <value>Monitoring HostSpec is associated with a cluster endpoint, plugin needs to identify the cluster connection.</value>
-    </data>
-    <data name="Error_CantCheckDialect" xml:space="preserve">
-        <value>Error occurred when checking {0}.</value>
-    </data>
-    <data name="Error_CantCheckDialect_ConnectionState" xml:space="preserve">
-        <value>Error occurred when checking {0}, connection state: {1}.</value>
-    </data>
-    <data name="Error_CantLoadTargetConnectionType" xml:space="preserve">
-        <value>Can't load target connection type {0}</value>
-    </data>
-    <data name="Error_ConnectionAlreadyOpen" xml:space="preserve">
-        <value>Connection is already open.</value>
-    </data>
-    <data name="Error_ConnectionIsClosed" xml:space="preserve">
-        <value>Connection is closed.</value>
-    </data>
-    <data name="Error_ConnectionNotOpenWhenChecking" xml:space="preserve">
-        <value>Connection is not open while checking weather {0}.</value>
-    </data>
-    <data name="Error_ConnectionStringHostListProviderNoSupport" xml:space="preserve">
-        <value>ConnectionStringHostListProvider does not support {0}.</value>
-    </data>
-    <data name="Error_ConnectionStringHostListProvider_GetClusterId" xml:space="preserve">
-        <value>ConnectionStringHostListProvider does not support GetClusterId.</value>
-    </data>
-    <data name="Error_ConnectionStringHostListProvider_GetHostRoleAsync" xml:space="preserve">
-        <value>ConnectionStringHostListProvider does not support GetHostRole.</value>
-    </data>
-    <data name="Error_ConnectionStringInvalid" xml:space="preserve">
-        <value>Connection string is invalid.</value>
-    </data>
-    <data name="Error_ConnectionStringMustBeSetBeforeInitialization" xml:space="preserve">
-        <value>Connection string must be set before initialization.</value>
-    </data>
-    <data name="Error_ConnectionUrlMissing" xml:space="preserve">
-        <value>Connection url is missing.</value>
-    </data>
-    <data name="Error_CouldNotCreateOrGetMonitor" xml:space="preserve">
-        <value>Could not create or get monitor.</value>
-    </data>
-    <data name="Error_CouldntIdentifyConnection" xml:space="preserve">
-        <value>Couldn't identify connection.</value>
-    </data>
-    <data name="Error_DisposingHostMonitor" xml:space="preserve">
-        <value>Error disposing host monitor: {0}</value>
-    </data>
-    <data name="Error_DriverDoesNotSupportRequestedHostSelectionStrategy" xml:space="preserve">
-        <value>The driver does not support the requested host selection strategy: {0}</value>
-    </data>
-    <data name="Error_ExceptionConnectingToWriter" xml:space="preserve">
-        <value>Exception connecting to writer {0}.</value>
-    </data>
-    <data name="Error_ExceptionDuringMethodExecution" xml:space="preserve">
-        <value>Exception caught during method execution: {0}.</value>
-    </data>
-    <data name="Error_FailedConnection" xml:space="preserve">
-        <value>Unable to establish connection.</value>
-    </data>
-    <data name="Error_FailedToInstantiateCustomDialectType" xml:space="preserve">
-        <value>Failed to instantiate custom dialect type '{0}'</value>
-    </data>
-    <data name="Error_FailedToInstantiateDialect" xml:space="preserve">
-        <value>Failed to instantiate custom dialect type {0}.</value>
-    </data>
-    <data name="Error_FailedToInstantiateDialectType" xml:space="preserve">
-        <value>Failed to instantiate dialect type {0}</value>
-    </data>
-    <data name="Error_FailoverPluginShouldNotReachHere" xml:space="preserve">
-        <value>[FailoverPlugin] Should not reach here.</value>
-    </data>
-    <data name="Error_FailoverReaderTimeout" xml:space="preserve">
-        <value>Failover reader timeout.</value>
-    </data>
-    <data name="Error_FailoverSuccessActiveConnectionChanged" xml:space="preserve">
-        <value>The active SQL connection has changed due to a connection failure. Please re-configure session state if required.</value>
-    </data>
-    <data name="Error_FunctionShouldNotBeCalled" xml:space="preserve">
-        <value>Function should not be called.</value>
-    </data>
-    <data name="Error_HostNullEmpty" xml:space="preserve">
-        <value>Host cannot be null or empty.</value>
-    </data>
-    <data name="Error_InvalidConnection" xml:space="preserve">
-        <value>Unable to create connection.</value>
-    </data>
-    <data name="Error_InvalidCustomRdsProxyUrl" xml:space="preserve">
-        <value>An RDS Custom Cluster endpoint can't be used as the 'clusterInstanceHostPattern' configuration setting.</value>
-    </data>
-    <data name="Error_InvalidDialectType" xml:space="preserve">
-        <value>Invalid dialect type provided.</value>
-    </data>
-    <data name="Error_InvalidHostPattern" xml:space="preserve">
-        <value>Invalid host pattern: {0}.</value>
-    </data>
-    <data name="Error_InvalidHostRole" xml:space="preserve">
-        <value>Failed to determine host role from the database.</value>
-    </data>
-    <data name="Error_InvalidOpenConnectionException" xml:space="preserve">
-        <value>Connection is out of date and invalid.</value>
-    </data>
-    <data name="Error_InvalidOperation" xml:space="preserve">
-        <value>Invalid operation.</value>
-    </data>
-    <data name="Error_InvalidRdsProxyUrl" xml:space="preserve">
-        <value>An RDS Proxy url can't be used as the 'clusterInstanceHostPattern' configuration setting.</value>
-    </data>
-    <data name="Error_InvalidRoundRobinPairEmpty" xml:space="preserve">
-        <value>Invalid round robin host weight pairs format. Host name and weight cannot be empty.</value>
-    </data>
-    <data name="Error_InvalidRoundRobinPairFormat" xml:space="preserve">
-        <value>Invalid round robin host weight pairs format. Expected format: host1:weight1,host2:weight2.</value>
-    </data>
-    <data name="Error_InvalidRoundRobinValue" xml:space="preserve">
-        <value>Invalid round robin default weight. Weight must be a positive integer.</value>
-    </data>
-    <data name="Error_InvalidTopology_NoWriterInstance" xml:space="preserve">
-        <value>Invalid topology: no writer instance found.</value>
-    </data>
-    <data name="Error_NewWriterNotInAllowedHostsList" xml:space="preserve">
-        <value>New writer {0}:{1} is not in allowed hosts list.</value>
-    </data>
-    <data name="Error_NoDialectFoundForConnectionType" xml:space="preserve">
-        <value>No dialect found for connection type {0}</value>
-    </data>
-    <data name="Error_NoHostsMatching" xml:space="preserve">
-        <value>No hosts found matching role: {0}.</value>
-    </data>
-    <data name="Error_NoWriterHostFoundInUpdatedTopology" xml:space="preserve">
-        <value>No writer host found in updated topology.</value>
-    </data>
-    <data name="Error_NotAwsWrapperConnection" xml:space="preserve">
-        <value>Provided connection is not of type AwsWrapperConnection.</value>
-    </data>
-    <data name="Error_NotFoundInConnectionString" xml:space="preserve">
-        <value>No {0} found in connection string.</value>
-    </data>
-    <data name="Error_NotImplementedDbCommand" xml:space="preserve">
-        <value>Provided type doesn't implement IDbCommand.</value>
-    </data>
-    <data name="Error_ObtainingConnectionHostId" xml:space="preserve">
-        <value>An error occurred while obtaining the connection's host ID.</value>
-    </data>
-    <data name="Error_ProcessingAdoNetCall" xml:space="preserve">
-        <value>Error processing this ADO.NET call.</value>
-    </data>
-    <data name="Error_ProvidedCommandNotAwsWrapperCommand" xml:space="preserve">
-        <value>Provided command is not of type AwsWrapperCommand.</value>
-    </data>
-    <data name="Error_ProvidedConnectionNotAwsWrapperConnection" xml:space="preserve">
-        <value>Provided connection is not of type AwsWrapperConnection.</value>
-    </data>
-    <data name="Error_ProvidedDbTransactionNotAwsWrapperTransaction" xml:space="preserve">
-        <value>Provided DbTransaction is not of type AwsWrapperTransaction.</value>
-    </data>
-    <data name="Error_ProvidedTransactionNotAwsWrapperTransaction" xml:space="preserve">
-        <value>Provided transaction is not of type AwsWrapperTransaction.</value>
-    </data>
-    <data name="Error_ProvidedTypeDoesntImplementIDbCommand" xml:space="preserve">
-        <value>Provided type doesn't implement IDbCommand.</value>
-    </data>
-    <data name="Error_RequiredIBlockingHostListProvider" xml:space="preserve">
-        <value>[PluginService] Required IBlockingHostListProvider.</value>
-    </data>
-    <data name="Error_ShouldNotBeCalled" xml:space="preserve">
-        <value>Should not be called</value>
-    </data>
-    <data name="Error_ShouldNotGetHere" xml:space="preserve">
-        <value>Should not get here.</value>
-    </data>
-    <data name="Error_TargetConnectionTypeNotFound" xml:space="preserve">
-        <value>Target connection type not found.</value>
-    </data>
-    <data name="Error_TestingCurrentDialect" xml:space="preserve">
-        <value>Error testing current dialect {0}: {1}.</value>
-    </data>
-    <data name="Error_TestingDialectCandidates" xml:space="preserve">
-        <value>Error testing dialect candidate {0}: {1}.</value>
-    </data>
-    <data name="Error_ThrownErrorIgnoredFindingMonitoringConnection" xml:space="preserve">
-        <value>{0} thrown during finding a monitoring connection, and ignored.</value>
-    </data>
-    <data name="Error_TransactionResolutionUnknown" xml:space="preserve">
-        <value>Transaction resolution unknown. Please re-configure session state if required and try restarting transaction.</value>
-    </data>
-    <data name="Error_UnableToCreateConnection" xml:space="preserve">
-        <value>Unable to create connection.</value>
-    </data>
-    <data name="Error_UnableToEstablishConnection" xml:space="preserve">
-        <value>Unable to establish connection.</value>
-    </data>
-    <data name="Error_UnableToEstablishValidConnectionAfterMultipleAttempts" xml:space="preserve">
-        <value>Unable to establish a valid connection after multiple attempts.</value>
-    </data>
-    <data name="Error_UnableToFindValidDialectType" xml:space="preserve">
-        <value>Unable to find valid dialect type for connection.</value>
-    </data>
-    <data name="Error_UnableToIdentifyConnectionAndGatherMonitoringHostSpec" xml:space="preserve">
-        <value>Unable to identify connection and gather monitoring host spec.</value>
-    </data>
-    <data name="Error_UnableToLoadAwsPluginFromAssembly" xml:space="preserve">
-        <value>Unable to load Aws plugin from assembly</value>
-    </data>
-    <data name="Error_UnableToLoadPlugin" xml:space="preserve">
-        <value>Unable to load plugin: {0}</value>
-    </data>
-    <data name="Error_UnexpectedRoleForWriterCandidate" xml:space="preserve">
-        <value>Unexpected role {0} for writer candidate {1}.</value>
-    </data>
-    <data name="Error_UnknownAwsPluginCode" xml:space="preserve">
-        <value>Unknown Aws plugin code: {0}</value>
-    </data>
-    <data name="Error_UnknownPluginCode" xml:space="preserve">
-        <value>Unknown plugin code: {0}</value>
-    </data>
-    <data name="ExecutionTimePlugin_Execute_ExecutionTime" xml:space="preserve">
-        <value>Execution time: {0}ms, {1}ns.</value>
-    </data>
-    <data name="FailoverPlugin_DealWithOriginalExceptionAsync_MarkingHostUnavailable"
-        xml:space="preserve">
-        <value>Marking host {0} as unavailable.</value>
-    </data>
-    <data name="FailoverPlugin_DealWithOriginalExceptionAsync_ProcessingException"
-        xml:space="preserve">
-        <value>Processing exception: {0}.</value>
-    </data>
-    <data name="FailoverPlugin_Execute_CurrentConnectionState" xml:space="preserve">
-        <value>Current connection state: {0}, Hash={1}, DataSource={2}.</value>
-    </data>
-    <data name="FailoverPlugin_Execute_ExecuteCalled" xml:space="preserve">
-        <value>Execute called: method={0}, isClosed={1}, closedExplicitly={2}.</value>
-    </data>
-    <data name="FailoverPlugin_FailoverAsync_InitiatingFailover" xml:space="preserve">
-        <value>Initiating failover in mode: {0}.</value>
-    </data>
-    <data name="FailoverPlugin_FailoverReaderAsync_ReaderFailoverSuccessful" xml:space="preserve">
-        <value>Reader failover successful. Switching to host: {0}.</value>
-    </data>
-    <data name="FailoverPlugin_FailoverReaderAsync_SetNewConnection" xml:space="preserve">
-        <value>Reader failover: Set new connection {0} with state {1}, DataSource {2} to host {3}.</value>
-    </data>
-    <data name="FailoverPlugin_FailoverReaderAsync_StartingReaderFailover" xml:space="preserve">
-        <value>Starting reader failover process.</value>
-    </data>
-    <data name="FailoverPlugin_FailoverWriterAsync_SetNewConnection" xml:space="preserve">
-        <value>Writer failover: Set new connection {0} with state {1} to host {2}.</value>
-    </data>
-    <data name="FailoverPlugin_GetReaderFailoverConnectionAsync_ErrorSelectingReaderHost"
-        xml:space="preserve">
-        <value>An error occurred while attempting to select a reader host candidate {0} from Candidates.</value>
-    </data>
-    <data name="FailoverPlugin_GetReaderFailoverConnectionAsync_ExceptionGettingReaderCandidate"
-        xml:space="preserve">
-        <value>Exception thrown when getting a reader candidate.</value>
-    </data>
-    <data name="FailoverPlugin_GetReaderFailoverConnectionAsync_FailedToConnectToHost"
-        xml:space="preserve">
-        <value>[Reader Failover] Failed to connect to host: {0}.</value>
-    </data>
-    <data name="FailoverPlugin_GetReaderFailoverConnectionAsync_TryingOriginalWriter"
-        xml:space="preserve">
-        <value>Trying the original writer {0} which may have been demoted to a reader.</value>
-    </data>
-    <data name="FailoverPlugin_GetReaderFailoverConnectionAsync_UnableToDetermineHostRole"
-        xml:space="preserve">
-        <value>Unable to determine host role for {0}. Since failover mode is set to STRICT_READER and the host may be a writer, it will not be selected for reader failover.</value>
-    </data>
-    <data name="FailoverPlugin_GetReaderFailoverConnectionAsync_UnableToDetermineOriginalWriterRole"
-        xml:space="preserve">
-        <value>Unable to determine host role for {0}. Since failover mode is set to STRICT_READER and the host may be a writer, it will not be selected for reader failover.</value>
-    </data>
-    <data name="FailoverPlugin_InvalidInvocationOnClosedConnection_AttemptingNewConnection"
-        xml:space="preserve">
-        <value>Connection was closed but not explicitly. Attempting to pick a new connection.</value>
-    </data>
-    <data name="FailoverPlugin_InvalidInvocationOnClosedConnection_Called" xml:space="preserve">
-        <value>InvalidInvocationOnClosedConnection called: closedExplicitly={0}, isClosed={1}.</value>
-    </data>
-    <data name="FailoverPlugin_InvalidInvocationOnClosedConnection_CurrentConnection"
-        xml:space="preserve">
-        <value>Current connection when invalid invocation: Hash={0}, State={1}, DataSource={2}.</value>
-    </data>
-    <data name="FailoverPlugin_InvalidateCurrentConnectionAsync_ConnectionClosed"
-        xml:space="preserve">
-        <value>Current connection {0}@{1} is closed.</value>
-    </data>
-    <data name="FailoverPlugin_InvalidateCurrentConnectionAsync_ErrorDisposingConnection"
-        xml:space="preserve">
-        <value>Error occurred when disposing current connection: {0}.</value>
-    </data>
-    <data name="FailoverPlugin_InvalidateCurrentConnectionAsync_InvalidatingConnection"
-        xml:space="preserve">
-        <value>Invalidating current connection...</value>
-    </data>
-    <data name="FailoverPlugin_OpenConnection_ReturningConnection" xml:space="preserve">
-        <value>FailoverPlugin.OpenConnection returning connection state = {0}, type = {1}@{2}, DataSource = {3}.</value>
-    </data>
-    <data name="FailoverPlugin_PickNewConnectionAsync_ConnectionClosedExplicitly"
-        xml:space="preserve">
-        <value>Connection was closed explicitly. No failover will be performed.</value>
-    </data>
-    <data name="FailoverPlugin_PickNewConnectionAsync_PickingNewConnection" xml:space="preserve">
-        <value>Picking a new connection.</value>
-    </data>
-    <data name="FailoverPlugin_ShouldExceptionTriggerConnectionSwitch_FailoverDisabled"
-        xml:space="preserve">
-        <value>Cluster-aware failover is disabled.</value>
-    </data>
-    <data name="FailoverPlugin_ShouldExceptionTriggerConnectionSwitch_ThreadInterrupted"
-        xml:space="preserve">
-        <value>Do not start failover since the current thread is interrupted.</value>
-    </data>
-    <data name="FailoverPlugin_ThrowFailoverSuccessException_CurrentConnectionAfterFailover"
-        xml:space="preserve">
-        <value>Current connection after failover: Hash={0}, State={1}, DataSource={2}.</value>
-    </data>
-    <data name="FailoverPlugin_ThrowFailoverSuccessException_FailoverSucceeded" xml:space="preserve">
-        <value>Failover succeeded.</value>
-    </data>
-    <data name="MonitoringRdsHostListProvider_ClusterIdChanged" xml:space="preserve">
-        <value>Cluster Id changed, old cluster id: {0}.</value>
-    </data>
-    <data name="MonitoringRdsHostListProvider_InitMonitor" xml:space="preserve">
-        <value>Initializing new cluster topology monitor for clusterId: {0}.</value>
-    </data>
-    <data name="MonitoringRdsHostListProvider_OnMonitorEvicted_Disposing" xml:space="preserve">
-        <value>Disposing cluster topology monitor for clusterId: {0} due to eviction reason: {1}.</value>
-    </data>
-    <data name="MonitoringRdsHostListProvider_OnMonitorEvicted_Error" xml:space="preserve">
-        <value>Error disposing cluster topology monitor: {message}.</value>
-    </data>
-    <data name="MonitoringRdsHostListProvider_QueryForTopologyAsync_TimedOut" xml:space="preserve">
-        <value>Query for topology async for MonitoringRdsHostListProvider timed out for connection: {0}.</value>
-    </data>
-    <data name="MonitoringRdsHostListProvider_TransferCachedTopology" xml:space="preserve">
-        <value>Cluster Id transferred cache topology, old cluster id: {0}.</value>
-    </data>
-    <data name="MonitoringRdsHostListProvider_TransferExistingMonitor" xml:space="preserve">
-        <value>Cluster Id transferred, old cluster id: {0}.</value>
-    </data>
-    <data name="MultiAzClusterTopologyMonitor_GetSuggestedWriterNodeIdAsync_Error"
-        xml:space="preserve">
-        <value>Error getting suggested writer node ID: {0}.</value>
-    </data>
-    <data name="MultiAzClusterTopologyMonitor_GetWriterNodeIdAsync_Error" xml:space="preserve">
-        <value>Error getting writer node ID: {0}.</value>
-    </data>
-    <data name="MySqlExceptionHandler_IsNetworkException_CurrentException" xml:space="preserve">
-        <value>Current exception {0}: {1}.</value>
-    </data>
-    <data name="MySqlExceptionHandler_IsNetworkException_CurrentNetworkException"
-        xml:space="preserve">
-        <value>&quot;Current exception is a network exception: {0}.</value>
-    </data>
-    <data name="MySqlExceptionHandler_IsNetworkException_InnerException" xml:space="preserve">
-        <value>&quot;Checking inner exception.</value>
-    </data>
-    <data name="MySqlExceptionHandler_IsNetworkException_InvalidNetworkException"
-        xml:space="preserve">
-        <value>&quot;Current exception is not a network exception.</value>
-    </data>
-    <data name="NodeMonitoringTask_DetectedWriter" xml:space="preserve">
-        <value>Writer detected by node monitoring thread: {0}.</value>
-    </data>
-    <data name="NodeMonitoringTask_ThreadCompleted" xml:space="preserve">
-        <value>Node monitoring task@{0} completed in {1} ms.</value>
-    </data>
-    <data name="NodeMonitoringTask_WriterNodeChanged" xml:space="preserve">
-        <value>Writer node changed from {0} to node {1}.</value>
-    </data>
-    <data name="PluginService.ErrorClosingOldConnection" xml:space="preserve">
-        <value>Error closing old connection: {0}</value>
-    </data>
-    <data name="PluginService_ForceRefreshHostListAsync_Completed" xml:space="preserve">
-        <value>PluginService.ForceRefreshHostList() completed with AllHost = {0}.</value>
-    </data>
-    <data name="PluginService_ForceRefreshHostListAsync_CompletedWithConnection"
-        xml:space="preserve">
-        <value>PluginService.ForceRefreshHostList() completed with connection state = {0}, AllHost = {1}.</value>
-    </data>
-    <data name="PluginService_ForceRefreshHostListAsync_TimeoutException" xml:space="preserve">
-        <value>A timeout exception occurred after waiting {0} ms for refreshed topology.</value>
-    </data>
-    <data name="PluginService_RefreshHostListAsync_Completed" xml:space="preserve">
-        <value>PluginService.RefreshHostList() completed with AllHost = {0}.</value>
-    </data>
-    <data name="PluginService_RefreshHostListAsync_CompletedWithConnection" xml:space="preserve">
-        <value>PluginService.RefreshHostList() completed with connection state = {0}, AllHost = {1}.</value>
-    </data>
-    <data name="PluginService_SetAvailability_HostAvailabilityChanged" xml:space="preserve">
-        <value>Host {0} availability changed from {1} to {2}.</value>
-    </data>
-    <data name="PluginService_SetAvailability_NoChanges" xml:space="preserve">
-        <value>There are no changes in the hosts' availability.</value>
-    </data>
-    <data name="PluginService_SetCurrentConnection_Completed" xml:space="preserve">
-        <value>SetCurrentConnection completed: Current connection Hash={0} State={1}</value>
-    </data>
-    <data name="PluginService_SetCurrentConnection_NewConnectionDetails" xml:space="preserve">
-        <value>New connection DataSource={0} State={1}.</value>
-    </data>
-    <data name="PluginService_SetCurrentConnection_NewConnectionSet" xml:space="preserve">
-        <value>New connection is set DataSource={0}.</value>
-    </data>
-    <data name="PluginService_SetCurrentConnection_OldConnectionDisposed" xml:space="preserve">
-        <value>Old connection is disposed.</value>
-    </data>
-    <data name="PluginService_SetCurrentConnection_SameReference" xml:space="preserve">
-        <value>New connection is same reference as old connection - not disposing.</value>
-    </data>
-    <data name="PluginService_UpdateDialectAsync_DialectUpdated" xml:space="preserve">
-        <value>Dialect updated to: {0}.</value>
-    </data>
-    <data name="RdsHostListProvider_GetTopologyAsync_CacheLookup" xml:space="preserve">
-        <value>Topology cache lookup: ClusterId={0}, Found={1}, ForceUpdate={2}.</value>
-    </data>
-    <data name="RdsHostListProvider_GetTopologyAsync_CachedNewTopology" xml:space="preserve">
-        <value>Caching new topology: ClusterId={0}, HostCount={1}.</value>
-    </data>
-    <data name="RdsHostListProvider_GetTopologyAsync_CachedTopology" xml:space="preserve">
-        <value>Cached topology: {0}.</value>
-    </data>
-    <data name="RdsHostListProvider_GetTopologyAsync_ClusterIdChanged" xml:space="preserve">
-        <value>ClusterId changed: {0} -&gt; {1}.</value>
-    </data>
-    <data name="RdsHostListProvider_GetTopologyAsync_ConnectionUnavailable" xml:space="preserve">
-        <value>Connection unavailable (State={0}), falling back to initial hosts.</value>
-    </data>
-    <data name="RdsHostListProvider_GetTopologyAsync_FallbackTopology" xml:space="preserve">
-        <value>Fallback topology: {0}.</value>
-    </data>
-    <data name="RdsHostListProvider_GetTopologyAsync_FallingBackToInitialHost" xml:space="preserve">
-        <value>QueryForTopology returned empty/null, falling back to initial hosts.</value>
-    </data>
-    <data name="RdsHostListProvider_GetTopologyAsync_NewTopology" xml:space="preserve">
-        <value>New topology: {0}.</value>
-    </data>
-    <data name="RdsHostListProvider_Init_ClusterInstanceTemplate" xml:space="preserve">
-        <value>Cluster instance template: {0} (from initial host: {1}).</value>
-    </data>
-    <data name="RdsHostListProvider_Init_InitialHostCount" xml:space="preserve">
-        <value>Initial host list populated with {0} hosts.</value>
-    </data>
-    <data name="RdsHostListProvider_Init_InitialHostsAndCluster" xml:space="preserve">
-        <value>Initial host: {0}, IsCluster={1}.</value>
-    </data>
-    <data name="RdsHostListProvider_QueryForTopologyAsync" xml:space="preserve">
-        <value>QueryForTopology: hostName={0}, template={1}, endpoint={2}.</value>
-    </data>
-    <data name="RdsMultiAzDbClusterListProvider_ProcessWriterNodeId_NoWriterNodesFound"
-        xml:space="preserve">
-        <value>No writer node found in the result of the fetchWriterNodeQuery. Ensure that the query is correct and that the database is configured properly.</value>
-    </data>
-    <data name="RdsMultiAzDbClusterMySqlDialect_IsDialect_AsyncReader" xml:space="preserve">
-        <value>Reader no result set left in {0}.</value>
-    </data>
-    <data name="RdsMultiAzDbClusterPgDialect_IsDialect" xml:space="preserve">
-        <value>RdsMultiAzDbClusterPgDialect.IsDialect() called with connection state = {0}, type = {1}@{2}, Database = {3}.</value>
-    </data>
-    <data name="RdsMultiAzDbClusterPgDialect_IsDialect_InvalidRdsTools" xml:space="preserve">
-        <value>The rds_tools extension not installed; skipping dialect function call.</value>
-    </data>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AuroraInitialConnectionStrategyPlugin_GetReader_InvalidHostSelectionStrategy" xml:space="preserve">
+    <value>Invalid host selection strategy: {0}.</value>
+  </data>
+  <data name="AuroraInitialConnectionStrategyPlugin_InitHostProvider_RequiresDynamicProvider" xml:space="preserve">
+    <value>AuroraInitialConnectionStrategyPlugin requires dynamic provider.</value>
+  </data>
+  <data name="AuroraStaleDnsHelper_OpenVerifiedConnectionAsync_ClusterEndpointResolved" xml:space="preserve">
+    <value>Cluster endpoint {0} resolved to IP address {1}.</value>
+  </data>
+  <data name="AuroraStaleDnsHelper_OpenVerifiedConnectionAsync_CurrentConnectionRole" xml:space="preserve">
+    <value>Current connection role: {0}.</value>
+  </data>
+  <data name="AuroraStaleDnsHelper_OpenVerifiedConnectionAsync_StaleDnsDetected" xml:space="preserve">
+    <value>Stale DNS data detected. Opening a connection to {0}.</value>
+  </data>
+  <data name="AuroraStaleDnsHelper_OpenVerifiedConnectionAsync_WriterHostAddress" xml:space="preserve">
+    <value>Writer host address: {0}.</value>
+  </data>
+  <data name="AuroraStaleDnsHelper_OpenVerifiedConnectionAsync_WriterHostSpec" xml:space="preserve">
+    <value>Writer host spec: {0}.</value>
+  </data>
+  <data name="AuroraStaleDnsHelper_OpenVerifiedConnectionAsync_WriterNotInAllowedHosts" xml:space="preserve">
+    <value>Current writer {0} is not in the allowed hosts list. Allowed hosts: {1}.</value>
+  </data>
+  <data name="AwsWrapperCommand_SetCurrentConnection_TargetConnectionUpdating" xml:space="preserve">
+    <value>Target connection is updating to {0}@{1} from {2} for AwsWrapperCommand@{3}</value>
+  </data>
+  <data name="AwsWrapperConnection_BeginDbTransaction_Called" xml:space="preserve">
+    <value>AwsWrapperConnection.BeginDbTransaction() called with wrapper state = {0}, current connection state = {1}, type = {2}@{3}, DataSource = {4}</value>
+  </data>
+  <data name="AwsWrapperConnection_CreateCommand_DbCommandCreated" xml:space="preserve">
+    <value>DbCommand created for DbConnection@{0}</value>
+  </data>
+  <data name="AwsWrapperConnection_Dispose_DisposingTargetConnection" xml:space="preserve">
+    <value>Disposing target db connection@{0}</value>
+  </data>
+  <data name="AwsWrapperProperty_SslValidationIsDisabled" xml:space="preserve">
+    <value>SSL validation is disabled (sslInsecure=true). This configuration can pose a significant security risks and should not be used in production environments.</value>
+  </data>
+  <data name="ClusterTopologyMonitor.ErrorFetchingTopology" xml:space="preserve">
+    <value>An error occurred while querying for topology: {0}.</value>
+  </data>
+  <data name="ClusterTopologyMonitor.ErrorGettingNetworkTimeout" xml:space="preserve">
+    <value>An error occurred while getting the connection network timeout: {0}.</value>
+  </data>
+  <data name="ClusterTopologyMonitor.ErrorProcessingQueryResults" xml:space="preserve">
+    <value>An error occurred while processing the results from the topology query: {0}</value>
+  </data>
+  <data name="ClusterTopologyMonitor.ExceptionDuringMonitoringStop" xml:space="preserve">
+    <value>Stopping cluster topology monitoring after unhandled exception was thrown in monitoring thread for node {0}.</value>
+  </data>
+  <data name="ClusterTopologyMonitor.IgnoringTopologyRequest" xml:space="preserve">
+    <value>A topology refresh was requested, but the topology was already updated recently. Returning cached hosts:</value>
+  </data>
+  <data name="ClusterTopologyMonitor.Interrupted" xml:space="preserve">
+    <value>The thread was interrupted while waiting for updated topology.</value>
+  </data>
+  <data name="ClusterTopologyMonitor.InvalidQuery" xml:space="preserve">
+    <value>An error occurred while attempting to obtain the topology because the topology query was invalid. Please ensure you are connecting to an Aurora or RDS Db cluster.</value>
+  </data>
+  <data name="ClusterTopologyMonitor.InvalidTopology" xml:space="preserve">
+    <value>The topology query returned an invalid topology - no writer instance detected.</value>
+  </data>
+  <data name="ClusterTopologyMonitor.OpenedMonitoringConnection" xml:space="preserve">
+    <value>New cluster topology monitoring connection@{0} opened for node {1}.</value>
+  </data>
+  <data name="ClusterTopologyMonitor.StartMonitoringThread" xml:space="preserve">
+    <value>Start cluster topology monitoring thread for {0}.</value>
+  </data>
+  <data name="ClusterTopologyMonitor.StartingNodeMonitoringThreads" xml:space="preserve">
+    <value>Starting node monitoring threads.</value>
+  </data>
+  <data name="ClusterTopologyMonitor.StopMonitoringThread" xml:space="preserve">
+    <value>Stop cluster topology monitoring thread for {0}.</value>
+  </data>
+  <data name="ClusterTopologyMonitor.TimeoutSetToZero" xml:space="preserve">
+    <value>A topology refresh was requested, but the given timeout for the request was 0ms. Returning cached hosts:</value>
+  </data>
+  <data name="ClusterTopologyMonitor.TopologyNotUpdated" xml:space="preserve">
+    <value>Topology hasn't been updated after {0} ms.</value>
+  </data>
+  <data name="ClusterTopologyMonitor.UnexpectedTopologyQueryColumnCount" xml:space="preserve">
+    <value>The topology query returned a result with 0 columns. This may occur if the topology query is executed when the server is failing over.</value>
+  </data>
+  <data name="ClusterTopologyMonitor.WriterMonitoringConnection" xml:space="preserve">
+    <value>The monitoring connection is connected to a writer: {0}.</value>
+  </data>
+  <data name="ClusterTopologyMonitor.WriterPickedUpFromNodeMonitors" xml:space="preserve">
+    <value>The writer host detected by the node monitors was picked up by the topology monitor: {0}.</value>
+  </data>
+  <data name="ClusterTopologyMonitor_DisposeConnectionAsync_ConnectionDisposed" xml:space="preserve">
+    <value>Connection {0}@{1} is being disposed.</value>
+  </data>
+  <data name="ClusterTopologyMonitor_Dispose_DisposingClusterTopologyMonitor" xml:space="preserve">
+    <value>Disposing cluster topology monitor for host {0}.</value>
+  </data>
+  <data name="ClusterTopologyMonitor_Dispose_ErrorOccured" xml:space="preserve">
+    <value>Error occurred when waiting on node monitoring thread to finish: {0}.</value>
+  </data>
+  <data name="ClusterTopologyMonitor_ExceptionIgnoredTopologyMonitoringConnection" xml:space="preserve">
+    <value>Exception thrown during getting the writer node Id for topology monitoring connection@{0} and ignored.</value>
+  </data>
+  <data name="ClusterTopologyMonitor_QueryForTopologyAsync" xml:space="preserve">
+    <value>Command timeout for querying topology: {0} seconds.</value>
+  </data>
+  <data name="ClusterTopologyMonitor_ReaderThreadFetchTopologyAsync_ExceptionIgnored" xml:space="preserve">
+    <value>Exception caught but ignored: {0}.</value>
+  </data>
+  <data name="ClusterTopologyMonitor_RunMonitoringLoop_CancellingMonitoringNodes" xml:space="preserve">
+    <value>Cancelling all node monitoring tasks from topology monitor connection@{0}.</value>
+  </data>
+  <data name="ClusterTopologyMonitor_RunMonitoringLoop_Clearing" xml:space="preserve">
+    <value>Clearing node threads...</value>
+  </data>
+  <data name="ClusterTopologyMonitor_RunMonitoringLoop_CurrentTopology" xml:space="preserve">
+    <value>Wait until current topology is updated:</value>
+  </data>
+  <data name="ClusterTopologyMonitor_RunMonitoringLoop_FoundHosts" xml:space="preserve">
+    <value>Running Monitoring Loop. Found {0} hosts.</value>
+  </data>
+  <data name="ClusterTopologyMonitor_RunMonitoringLoop_IsNotRdsInstance" xml:space="preserve">
+    <value>{0} IS NOT a rds instance.</value>
+  </data>
+  <data name="ClusterTopologyMonitor_RunMonitoringLoop_IsRdsInstance" xml:space="preserve">
+    <value>{0} IS a rds instance.</value>
+  </data>
+  <data name="ClusterTopologyMonitor_RunMonitoringLoop_MonitoringTask" xml:space="preserve">
+    <value>Node Monitoring Task@{0} created for host {1}.</value>
+  </data>
+  <data name="ClusterTopologyMonitor_RunMonitoringLoop_MonitoringTime" xml:space="preserve">
+    <value>Ignoring topology request until {0}.</value>
+  </data>
+  <data name="ClusterTopologyMonitor_RunMonitoringLoop_NodeFailedShutdown" xml:space="preserve">
+    <value>One or more node monitoring tasks failed during shutdown.</value>
+  </data>
+  <data name="ClusterTopologyMonitor_RunMonitoringLoop_NullConnection" xml:space="preserve">
+    <value>Monitoring connection@{0} is set to null.</value>
+  </data>
+  <data name="ClusterTopologyMonitor_RunMonitoringLoop_RegularMode" xml:space="preserve">
+    <value>In regular mode.</value>
+  </data>
+  <data name="ClusterTopologyMonitor_RunMonitoringLoop_RestartCancellationToken" xml:space="preserve">
+    <value>Restarting cancellation token for node monitoring tasks.</value>
+  </data>
+  <data name="ClusterTopologyMonitor_RunMonitoringLoop_TopologyNotUpdated" xml:space="preserve">
+    <value>Topology is still not updated:</value>
+  </data>
+  <data name="ClusterTopologyMonitor_RunMonitoringLoop_TopologyUpdated" xml:space="preserve">
+    <value>Topology is updated:</value>
+  </data>
+  <data name="ClusterTopologyMonitor_RunMonitoringLoop_WaitingUpdatedLock" xml:space="preserve">
+    <value>Waiting on topologyUpdatedLock...</value>
+  </data>
+  <data name="ClusterTopologyMonitor_RunMonitoringLoop_WokeUpMonitorWaiting" xml:space="preserve">
+    <value>Woke up from Monitor. Wait due to {0}, rechecking condition...</value>
+  </data>
+  <data name="ClusterTopologyMonitor_RunNodeMonitoringAsync_OperationCancelled" xml:space="preserve">
+    <value>Operation cancelled: {0}.</value>
+  </data>
+  <data name="ClusterTopologyMonitor_RunNodeMonitoringAsync_StartNode" xml:space="preserve">
+    <value>Start running node monitoring task.</value>
+  </data>
+  <data name="ClusterTopologyMonitor_RunNodeMonitoringAsync_UnknownException" xml:space="preserve">
+    <value>"Unknown exception thrown: {0}".</value>
+  </data>
+  <data name="ClusterTopologyMonitor_UpdateTopologyCache_NotifyingLock" xml:space="preserve">
+    <value>Notifying topologyUpdatedLock...</value>
+  </data>
+  <data name="ClusterTopologyMonitor_UpdateTopologyCache_TopologyUpdate" xml:space="preserve">
+    <value>UpdateTopologyCache:</value>
+  </data>
+  <data name="DbConnectionProvider_CreateDbConnection" xml:space="preserve">
+    <value>Connection created: {0}@{1} with data source {2}.</value>
+  </data>
+  <data name="DbConnectionProvider_GetHostSpecByStrategy_SelectedStrategy" xml:space="preserve">
+    <value>Selected {0} strategy.</value>
+  </data>
+  <data name="DefaultConnectionPlugin_Execute_ExecutingMethod" xml:space="preserve">
+    <value>Executing method {0} on {1} with args: {2}</value>
+  </data>
+  <data name="DefaultConnectionPlugin_OpenInternal_ConnectionOpened" xml:space="preserve">
+    <value>Connection {0}@{1} is opened with data source {2}.</value>
+  </data>
+  <data name="DialectProvider_GetDialectFromType_KnownDialect" xml:space="preserve">
+    <value>Guessed Known dialect: {0}.</value>
+  </data>
+  <data name="DialectProvider_GetDialectFromType_UnknownDialect" xml:space="preserve">
+    <value>Unknown dialect.</value>
+  </data>
+  <data name="DialectProvider_GuessDialect_CacheDialect" xml:space="preserve">
+    <value>Dialect retrieved from cache: {0}.</value>
+  </data>
+  <data name="DialectProvider_GuessDialect_ResultDialect" xml:space="preserve">
+    <value>Guessed dialect: {0}.</value>
+  </data>
+  <data name="DialectProvider_UpdateDialectAsync_CurrentDialectConnectionType" xml:space="preserve">
+    <value>UpdateDialect called with Current Dialect: {0}, Connection Type: {1}.</value>
+  </data>
+  <data name="DialectProvider_UpdateDialectAsync_CurrentDialectValid" xml:space="preserve">
+    <value>Current dialect is valid: {0}.</value>
+  </data>
+  <data name="DialectProvider_UpdateDialectAsync_DialectMatch" xml:space="preserve">
+    <value>Dialect match found: {0}.</value>
+  </data>
+  <data name="DialectProvider_UpdateDialectAsync_ExistingDialect" xml:space="preserve">
+    <value>Current dialect: {0}, canUpdate: {1}.</value>
+  </data>
+  <data name="DialectProvider_UpdateDialectAsync_InvalidDialectTypes" xml:space="preserve">
+    <value>Unable to find valid dialect type for connection. Connection type: {0}, Current dialect: {1}, Candidates tested: {2}.</value>
+  </data>
+  <data name="DialectProvider_UpdateDialectAsync_NoMatchingDialect" xml:space="preserve">
+    <value>Not matching dialect: {0}.</value>
+  </data>
+  <data name="DialectProvider_UpdateDialectAsync_TestingCurrentDialect" xml:space="preserve">
+    <value>Testing current dialect: {0}.</value>
+  </data>
+  <data name="DialectProvider_UpdateDialectAsync_TestingDialectCandidate" xml:space="preserve">
+    <value>Testing dialect candidate: {0}.</value>
+  </data>
+  <data name="DialectProvider_UpdateDialectAsync_TestingDialects" xml:space="preserve">
+    <value>Testing {0} dialect candidates.</value>
+  </data>
+  <data name="EfmHostMonitorConnectionContext_SetInactive_SettingContextInactive" xml:space="preserve">
+    <value>Setting context inactive.</value>
+  </data>
+  <data name="EfmHostMonitorService_OnMonitorEvicted_DisposingHostMonitor" xml:space="preserve">
+    <value>Disposing host monitor for monitor key: {0} due to eviction reason: {1}</value>
+  </data>
+  <data name="EfmHostMonitorService_StartMonitoring_NewContextCreated" xml:space="preserve">
+    <value>New monitoring context created for host: {0}</value>
+  </data>
+  <data name="EfmHostMonitorService_StopMonitoring_AbortingUnhealthyConnection" xml:space="preserve">
+    <value>Aborting unhealthy connection.</value>
+  </data>
+  <data name="EfmHostMonitor_AbortConnection_Finished" xml:space="preserve">
+    <value>Finished aborting unhealthy connection.</value>
+  </data>
+  <data name="EfmHostMonitor_AbortConnection_Starting" xml:space="preserve">
+    <value>Aborting unhealthy connection.</value>
+  </data>
+  <data name="EfmHostMonitor_ActivatedMonitoring" xml:space="preserve">
+    <value>Activated monitoring.</value>
+  </data>
+  <data name="EfmHostMonitor_ActiveContextsException" xml:space="preserve">
+    <value>Encountered exception while monitoring active contexts for host {0}: {1}, stack trace: {2}.</value>
+  </data>
+  <data name="EfmHostMonitor_CheckConnectionStatusAsync_CommandTimeout" xml:space="preserve">
+    <value>Command timeout for ping is {0} seconds.</value>
+  </data>
+  <data name="EfmHostMonitor_CheckConnectionStatusAsync_DisposingInvalidConnection" xml:space="preserve">
+    <value>Disposing invalid monitoring connection.</value>
+  </data>
+  <data name="EfmHostMonitor_DeactivatedMonitoring" xml:space="preserve">
+    <value>Deactivated monitoring.</value>
+  </data>
+  <data name="EfmHostMonitor_ErrorIdentifyingConnection" xml:space="preserve">
+    <value>Encountered exception when identifying connection: {0}.</value>
+  </data>
+  <data name="EfmHostMonitor_ExceptionAbortingConnection" xml:space="preserve">
+    <value>Encountered exception while aborting connection: {0}.</value>
+  </data>
+  <data name="EfmHostMonitor_HostAlive" xml:space="preserve">
+    <value>Host is alive: {0}.</value>
+  </data>
+  <data name="EfmHostMonitor_HostDead" xml:space="preserve">
+    <value>Host is dead: {0}.</value>
+  </data>
+  <data name="EfmHostMonitor_HostNotResponding" xml:space="preserve">
+    <value>Host is not responding: {0}, failure count: {1}.</value>
+  </data>
+  <data name="EfmHostMonitor_NewContextRun_AddingActiveContext" xml:space="preserve">
+    <value>Adding active monitoring context to poll.</value>
+  </data>
+  <data name="EfmHostMonitor_NewContextsException" xml:space="preserve">
+    <value>Encountered exception while polling new contexts for host {0}: {1}, stack trace: {2}.</value>
+  </data>
+  <data name="EfmHostMonitor_OpenedMonitoringConnection" xml:space="preserve">
+    <value>Opened a new host monitoring connection for host {0}.</value>
+  </data>
+  <data name="EfmHostMonitor_OpeningMonitoringConnection" xml:space="preserve">
+    <value>Opening a new host monitoring connection for host {0}.</value>
+  </data>
+  <data name="EfmHostMonitor_Run_AddingContextBack" xml:space="preserve">
+    <value>Adding context back to activeContexts.</value>
+  </data>
+  <data name="EfmHostMonitor_Run_AddingContextToTemp" xml:space="preserve">
+    <value>Adding context to tmpActiveContexts.</value>
+  </data>
+  <data name="EfmHostMonitor_Run_CurrentActiveContextsCount" xml:space="preserve">
+    <value>Current active contexts count: {0}.</value>
+  </data>
+  <data name="EfmHostMonitor_Run_DequeuedContext" xml:space="preserve">
+    <value>Dequeued a context from activeContexts.</value>
+  </data>
+  <data name="EfmHostMonitor_Run_NoActiveContextsSkipping" xml:space="preserve">
+    <value>No active contexts and node is healthy, skipping status check.</value>
+  </data>
+  <data name="EfmHostMonitor_StartMonitoringWhenStopped" xml:space="preserve">
+    <value>Starting monitoring for a monitor that has stopped.</value>
+  </data>
+  <data name="EfmHostMonitor_StartedMonitoringActiveContexts" xml:space="preserve">
+    <value>Started thread to monitor active contexts for host {0}.</value>
+  </data>
+  <data name="EfmHostMonitor_StartedPollingNewContexts" xml:space="preserve">
+    <value>Started thread to poll new contexts for host {0}.</value>
+  </data>
+  <data name="EfmHostMonitor_StoppedMonitoring" xml:space="preserve">
+    <value>Stopped monitoring threads for host {0}.</value>
+  </data>
+  <data name="EfmHostMonitor_StoppedMonitoringActiveContexts" xml:space="preserve">
+    <value>Stopped thread to monitor active contexts for host {0}.</value>
+  </data>
+  <data name="EfmHostMonitor_StoppedPollingNewContexts" xml:space="preserve">
+    <value>Stopped thread to poll new contexts for host {0}.</value>
+  </data>
+  <data name="EfmHostMonitoringPlugin_Execute_DeactivatingMonitoring" xml:space="preserve">
+    <value>Deactivating monitoring for current context.</value>
+  </data>
+  <data name="EfmHostMonitoringPlugin_GetMonitoringHostSpec_ClusterEndpointIdentification" xml:space="preserve">
+    <value>Monitoring HostSpec is associated with a cluster endpoint, plugin needs to identify the cluster connection.</value>
+  </data>
+  <data name="Error_CantCheckDialect" xml:space="preserve">
+    <value>Error occurred when checking {0}.</value>
+  </data>
+  <data name="Error_CantCheckDialect_ConnectionState" xml:space="preserve">
+    <value>Error occurred when checking {0}, connection state: {1}.</value>
+  </data>
+  <data name="Error_CantLoadTargetConnectionType" xml:space="preserve">
+    <value>Can't load target connection type {0}</value>
+  </data>
+  <data name="Error_ConnectionAlreadyOpen" xml:space="preserve">
+    <value>Connection is already open.</value>
+  </data>
+  <data name="Error_ConnectionIsClosed" xml:space="preserve">
+    <value>Connection is closed.</value>
+  </data>
+  <data name="Error_ConnectionNotOpenWhenChecking" xml:space="preserve">
+    <value>Connection is not open while checking weather {0}.</value>
+  </data>
+  <data name="Error_ConnectionStringHostListProviderNoSupport" xml:space="preserve">
+    <value>ConnectionStringHostListProvider does not support {0}.</value>
+  </data>
+  <data name="Error_ConnectionStringHostListProvider_GetClusterId" xml:space="preserve">
+    <value>ConnectionStringHostListProvider does not support GetClusterId.</value>
+  </data>
+  <data name="Error_ConnectionStringHostListProvider_GetHostRoleAsync" xml:space="preserve">
+    <value>ConnectionStringHostListProvider does not support GetHostRole.</value>
+  </data>
+  <data name="Error_ConnectionStringInvalid" xml:space="preserve">
+    <value>Connection string is invalid.</value>
+  </data>
+  <data name="Error_ConnectionStringMustBeSetBeforeInitialization" xml:space="preserve">
+    <value>Connection string must be set before initialization.</value>
+  </data>
+  <data name="Error_ConnectionUrlMissing" xml:space="preserve">
+    <value>Connection url is missing.</value>
+  </data>
+  <data name="Error_CouldNotCreateOrGetMonitor" xml:space="preserve">
+    <value>Could not create or get monitor.</value>
+  </data>
+  <data name="Error_CouldntIdentifyConnection" xml:space="preserve">
+    <value>Couldn't identify connection.</value>
+  </data>
+  <data name="Error_DisposingHostMonitor" xml:space="preserve">
+    <value>Error disposing host monitor: {0}</value>
+  </data>
+  <data name="Error_DriverDoesNotSupportRequestedHostSelectionStrategy" xml:space="preserve">
+    <value>The driver does not support the requested host selection strategy: {0}</value>
+  </data>
+  <data name="Error_ExceptionConnectingToWriter" xml:space="preserve">
+    <value>Exception connecting to writer {0}.</value>
+  </data>
+  <data name="Error_ExceptionDuringMethodExecution" xml:space="preserve">
+    <value>Exception caught during method execution: {0}.</value>
+  </data>
+  <data name="Error_FailedConnection" xml:space="preserve">
+    <value>Unable to establish connection.</value>
+  </data>
+  <data name="Error_FailedToInstantiateCustomDialectType" xml:space="preserve">
+    <value>Failed to instantiate custom dialect type '{0}'</value>
+  </data>
+  <data name="Error_FailedToInstantiateDialect" xml:space="preserve">
+    <value>Failed to instantiate custom dialect type {0}.</value>
+  </data>
+  <data name="Error_FailedToInstantiateDialectType" xml:space="preserve">
+    <value>Failed to instantiate dialect type {0}</value>
+  </data>
+  <data name="Error_FailoverPluginShouldNotReachHere" xml:space="preserve">
+    <value>[FailoverPlugin] Should not reach here.</value>
+  </data>
+  <data name="Error_FailoverReaderTimeout" xml:space="preserve">
+    <value>Failover reader timeout.</value>
+  </data>
+  <data name="Error_FailoverSuccessActiveConnectionChanged" xml:space="preserve">
+    <value>The active SQL connection has changed due to a connection failure. Please re-configure session state if required.</value>
+  </data>
+  <data name="Error_FunctionShouldNotBeCalled" xml:space="preserve">
+    <value>Function should not be called.</value>
+  </data>
+  <data name="Error_HostNullEmpty" xml:space="preserve">
+    <value>Host cannot be null or empty.</value>
+  </data>
+  <data name="Error_InvalidConnection" xml:space="preserve">
+    <value>Unable to create connection.</value>
+  </data>
+  <data name="Error_InvalidCustomRdsProxyUrl" xml:space="preserve">
+    <value>An RDS Custom Cluster endpoint can't be used as the 'clusterInstanceHostPattern' configuration setting.</value>
+  </data>
+  <data name="Error_InvalidDialectType" xml:space="preserve">
+    <value>Invalid dialect type provided.</value>
+  </data>
+  <data name="Error_InvalidHostPattern" xml:space="preserve">
+    <value>Invalid host pattern: {0}.</value>
+  </data>
+  <data name="Error_InvalidHostRole" xml:space="preserve">
+    <value>An error occurred while obtaining the connected host's role. This could occur if the connection is broken or if you are not connected to an Aurora database.</value>
+  </data>
+  <data name="Error_InvalidOpenConnectionException" xml:space="preserve">
+    <value>Connection is out of date and invalid.</value>
+  </data>
+  <data name="Error_InvalidOperation" xml:space="preserve">
+    <value>Invalid operation.</value>
+  </data>
+  <data name="Error_InvalidRdsProxyUrl" xml:space="preserve">
+    <value>An RDS Proxy url can't be used as the 'clusterInstanceHostPattern' configuration setting.</value>
+  </data>
+  <data name="Error_InvalidRoundRobinPairEmpty" xml:space="preserve">
+    <value>Invalid round robin host weight pairs format. Host name and weight cannot be empty.</value>
+  </data>
+  <data name="Error_InvalidRoundRobinPairFormat" xml:space="preserve">
+    <value>Invalid round robin host weight pairs format. Expected format: host1:weight1,host2:weight2.</value>
+  </data>
+  <data name="Error_InvalidRoundRobinValue" xml:space="preserve">
+    <value>Invalid round robin default weight. Weight must be a positive integer.</value>
+  </data>
+  <data name="Error_InvalidTopology_NoWriterInstance" xml:space="preserve">
+    <value>Invalid topology: no writer instance found.</value>
+  </data>
+  <data name="Error_NewWriterNotInAllowedHostsList" xml:space="preserve">
+    <value>New writer {0}:{1} is not in allowed hosts list.</value>
+  </data>
+  <data name="Error_NoDialectFoundForConnectionType" xml:space="preserve">
+    <value>No dialect found for connection type {0}</value>
+  </data>
+  <data name="Error_NoHostsMatching" xml:space="preserve">
+    <value>No hosts found matching role: {0}.</value>
+  </data>
+  <data name="Error_NoWriterHostFoundInUpdatedTopology" xml:space="preserve">
+    <value>No writer host found in updated topology.</value>
+  </data>
+  <data name="Error_NotAwsWrapperConnection" xml:space="preserve">
+    <value>Provided connection is not of type AwsWrapperConnection.</value>
+  </data>
+  <data name="Error_NotFoundInConnectionString" xml:space="preserve">
+    <value>No {0} found in connection string.</value>
+  </data>
+  <data name="Error_NotImplementedDbCommand" xml:space="preserve">
+    <value>Provided type doesn't implement IDbCommand.</value>
+  </data>
+  <data name="Error_ObtainingConnectionHostId" xml:space="preserve">
+    <value>An error occurred while obtaining the connection's host ID.</value>
+  </data>
+  <data name="Error_ProcessingAdoNetCall" xml:space="preserve">
+    <value>Error processing this ADO.NET call.</value>
+  </data>
+  <data name="Error_ProvidedCommandNotAwsWrapperCommand" xml:space="preserve">
+    <value>Provided command is not of type AwsWrapperCommand.</value>
+  </data>
+  <data name="Error_ProvidedConnectionNotAwsWrapperConnection" xml:space="preserve">
+    <value>Provided connection is not of type AwsWrapperConnection.</value>
+  </data>
+  <data name="Error_ProvidedDbTransactionNotAwsWrapperTransaction" xml:space="preserve">
+    <value>Provided DbTransaction is not of type AwsWrapperTransaction.</value>
+  </data>
+  <data name="Error_ProvidedTransactionNotAwsWrapperTransaction" xml:space="preserve">
+    <value>Provided transaction is not of type AwsWrapperTransaction.</value>
+  </data>
+  <data name="Error_ProvidedTypeDoesntImplementIDbCommand" xml:space="preserve">
+    <value>Provided type doesn't implement IDbCommand.</value>
+  </data>
+  <data name="Error_RequiredIBlockingHostListProvider" xml:space="preserve">
+    <value>[PluginService] Required IBlockingHostListProvider.</value>
+  </data>
+  <data name="Error_ShouldNotBeCalled" xml:space="preserve">
+    <value>Should not be called</value>
+  </data>
+  <data name="Error_ShouldNotGetHere" xml:space="preserve">
+    <value>Should not get here.</value>
+  </data>
+  <data name="Error_TargetConnectionTypeNotFound" xml:space="preserve">
+    <value>Target connection type not found.</value>
+  </data>
+  <data name="Error_TestingCurrentDialect" xml:space="preserve">
+    <value>Error testing current dialect {0}: {1}.</value>
+  </data>
+  <data name="Error_TestingDialectCandidates" xml:space="preserve">
+    <value>Error testing dialect candidate {0}: {1}.</value>
+  </data>
+  <data name="Error_ThrownErrorIgnoredFindingMonitoringConnection" xml:space="preserve">
+    <value>{0} thrown during finding a monitoring connection, and ignored.</value>
+  </data>
+  <data name="Error_TransactionResolutionUnknown" xml:space="preserve">
+    <value>Transaction resolution unknown. Please re-configure session state if required and try restarting transaction.</value>
+  </data>
+  <data name="Error_UnableToCreateConnection" xml:space="preserve">
+    <value>Unable to create connection.</value>
+  </data>
+  <data name="Error_UnableToEstablishConnection" xml:space="preserve">
+    <value>Unable to establish connection.</value>
+  </data>
+  <data name="Error_UnableToEstablishValidConnectionAfterMultipleAttempts" xml:space="preserve">
+    <value>Unable to establish a valid connection after multiple attempts.</value>
+  </data>
+  <data name="Error_UnableToFindValidDialectType" xml:space="preserve">
+    <value>Unable to find valid dialect type for connection.</value>
+  </data>
+  <data name="Error_UnableToIdentifyConnectionAndGatherMonitoringHostSpec" xml:space="preserve">
+    <value>Unable to identify connection and gather monitoring host spec.</value>
+  </data>
+  <data name="Error_UnableToLoadAwsPluginFromAssembly" xml:space="preserve">
+    <value>Unable to load Aws plugin from assembly</value>
+  </data>
+  <data name="Error_UnableToLoadPlugin" xml:space="preserve">
+    <value>Unable to load plugin: {0}</value>
+  </data>
+  <data name="Error_UnexpectedRoleForWriterCandidate" xml:space="preserve">
+    <value>Unexpected role {0} for writer candidate {1}.</value>
+  </data>
+  <data name="Error_UnknownAwsPluginCode" xml:space="preserve">
+    <value>Unknown Aws plugin code: {0}</value>
+  </data>
+  <data name="Error_UnknownPluginCode" xml:space="preserve">
+    <value>Unknown plugin code: {0}</value>
+  </data>
+  <data name="ExecutionTimePlugin_Execute_ExecutionTime" xml:space="preserve">
+    <value>Execution time: {0}ns.</value>
+  </data>
+  <data name="FailoverPlugin_DealWithOriginalExceptionAsync_MarkingHostUnavailable" xml:space="preserve">
+    <value>Marking host {0} as unavailable.</value>
+  </data>
+  <data name="FailoverPlugin_DealWithOriginalExceptionAsync_ProcessingException" xml:space="preserve">
+    <value>Processing exception: {0}.</value>
+  </data>
+  <data name="FailoverPlugin_Execute_CurrentConnectionState" xml:space="preserve">
+    <value>Current connection state: {0}, Hash={1}, DataSource={2}.</value>
+  </data>
+  <data name="FailoverPlugin_Execute_ExecuteCalled" xml:space="preserve">
+    <value>Execute called: method={0}, isClosed={1}, closedExplicitly={2}.</value>
+  </data>
+  <data name="FailoverPlugin_FailoverAsync_InitiatingFailover" xml:space="preserve">
+    <value>Initiating failover in mode: {0}.</value>
+  </data>
+  <data name="FailoverPlugin_FailoverReaderAsync_ReaderFailoverSuccessful" xml:space="preserve">
+    <value>Reader failover successful. Switching to host: {0}.</value>
+  </data>
+  <data name="FailoverPlugin_FailoverReaderAsync_SetNewConnection" xml:space="preserve">
+    <value>Reader failover: Set new connection {0} with state {1}, DataSource {2} to host {3}.</value>
+  </data>
+  <data name="FailoverPlugin_FailoverReaderAsync_StartingReaderFailover" xml:space="preserve">
+    <value>Starting reader failover process.</value>
+  </data>
+  <data name="FailoverPlugin_FailoverWriterAsync_SetNewConnection" xml:space="preserve">
+    <value>Writer failover: Set new connection {0} with state {1} to host {2}.</value>
+  </data>
+  <data name="FailoverPlugin_GetReaderFailoverConnectionAsync_ErrorSelectingReaderHost" xml:space="preserve">
+    <value>An error occurred while attempting to select a reader host candidate {0} from Candidates.</value>
+  </data>
+  <data name="FailoverPlugin_GetReaderFailoverConnectionAsync_ExceptionGettingReaderCandidate" xml:space="preserve">
+    <value>Exception thrown when getting a reader candidate.</value>
+  </data>
+  <data name="FailoverPlugin_GetReaderFailoverConnectionAsync_FailedToConnectToHost" xml:space="preserve">
+    <value>[Reader Failover] Failed to connect to host: {0}.</value>
+  </data>
+  <data name="FailoverPlugin_GetReaderFailoverConnectionAsync_TryingOriginalWriter" xml:space="preserve">
+    <value>Trying the original writer {0} which may have been demoted to a reader.</value>
+  </data>
+  <data name="FailoverPlugin_GetReaderFailoverConnectionAsync_UnableToDetermineHostRole" xml:space="preserve">
+    <value>Unable to determine host role for {0}. Since failover mode is set to STRICT_READER and the host may be a writer, it will not be selected for reader failover.</value>
+  </data>
+  <data name="FailoverPlugin_GetReaderFailoverConnectionAsync_UnableToDetermineOriginalWriterRole" xml:space="preserve">
+    <value>Unable to determine host role for {0}. Since failover mode is set to STRICT_READER and the host may be a writer, it will not be selected for reader failover.</value>
+  </data>
+  <data name="FailoverPlugin_InvalidInvocationOnClosedConnection_AttemptingNewConnection" xml:space="preserve">
+    <value>Connection was closed but not explicitly. Attempting to pick a new connection.</value>
+  </data>
+  <data name="FailoverPlugin_InvalidInvocationOnClosedConnection_Called" xml:space="preserve">
+    <value>InvalidInvocationOnClosedConnection called: closedExplicitly={0}, isClosed={1}.</value>
+  </data>
+  <data name="FailoverPlugin_InvalidInvocationOnClosedConnection_CurrentConnection" xml:space="preserve">
+    <value>Current connection when invalid invocation: Hash={0}, State={1}, DataSource={2}.</value>
+  </data>
+  <data name="FailoverPlugin_InvalidateCurrentConnectionAsync_ConnectionClosed" xml:space="preserve">
+    <value>Current connection {0}@{1} is closed.</value>
+  </data>
+  <data name="FailoverPlugin_InvalidateCurrentConnectionAsync_ErrorDisposingConnection" xml:space="preserve">
+    <value>Error occurred when disposing current connection: {0}.</value>
+  </data>
+  <data name="FailoverPlugin_InvalidateCurrentConnectionAsync_InvalidatingConnection" xml:space="preserve">
+    <value>Invalidating current connection...</value>
+  </data>
+  <data name="FailoverPlugin_OpenConnection_ReturningConnection" xml:space="preserve">
+    <value>FailoverPlugin.OpenConnection returning connection state = {0}, type = {1}@{2}, DataSource = {3}.</value>
+  </data>
+  <data name="FailoverPlugin_PickNewConnectionAsync_ConnectionClosedExplicitly" xml:space="preserve">
+    <value>Connection was closed explicitly. No failover will be performed.</value>
+  </data>
+  <data name="FailoverPlugin_PickNewConnectionAsync_PickingNewConnection" xml:space="preserve">
+    <value>Picking a new connection.</value>
+  </data>
+  <data name="FailoverPlugin_ShouldExceptionTriggerConnectionSwitch_FailoverDisabled" xml:space="preserve">
+    <value>Cluster-aware failover is disabled.</value>
+  </data>
+  <data name="FailoverPlugin_ShouldExceptionTriggerConnectionSwitch_ThreadInterrupted" xml:space="preserve">
+    <value>Do not start failover since the current thread is interrupted.</value>
+  </data>
+  <data name="FailoverPlugin_ThrowFailoverSuccessException_CurrentConnectionAfterFailover" xml:space="preserve">
+    <value>Current connection after failover: Hash={0}, State={1}, DataSource={2}.</value>
+  </data>
+  <data name="FailoverPlugin_ThrowFailoverSuccessException_FailoverSucceeded" xml:space="preserve">
+    <value>Failover succeeded.</value>
+  </data>
+  <data name="MonitoringRdsHostListProvider_ClusterIdChanged" xml:space="preserve">
+    <value>Cluster Id changed, old cluster id: {0}.</value>
+  </data>
+  <data name="MonitoringRdsHostListProvider_InitMonitor" xml:space="preserve">
+    <value>Initializing new cluster topology monitor for clusterId: {0}.</value>
+  </data>
+  <data name="MonitoringRdsHostListProvider_OnMonitorEvicted_Disposing" xml:space="preserve">
+    <value>Disposing cluster topology monitor for clusterId: {0} due to eviction reason: {1}.</value>
+  </data>
+  <data name="MonitoringRdsHostListProvider_OnMonitorEvicted_Error" xml:space="preserve">
+    <value>Error disposing cluster topology monitor: {message}.</value>
+  </data>
+  <data name="MonitoringRdsHostListProvider_QueryForTopologyAsync_TimedOut" xml:space="preserve">
+    <value>Query for topology async for MonitoringRdsHostListProvider timed out for connection: {0}.</value>
+  </data>
+  <data name="MonitoringRdsHostListProvider_TransferCachedTopology" xml:space="preserve">
+    <value>Cluster Id transferred cache topology, old cluster id: {0}.</value>
+  </data>
+  <data name="MonitoringRdsHostListProvider_TransferExistingMonitor" xml:space="preserve">
+    <value>Cluster Id transferred, old cluster id: {0}.</value>
+  </data>
+  <data name="MultiAzClusterTopologyMonitor_GetSuggestedWriterNodeIdAsync_Error" xml:space="preserve">
+    <value>Error getting suggested writer node ID: {0}.</value>
+  </data>
+  <data name="MultiAzClusterTopologyMonitor_GetWriterNodeIdAsync_Error" xml:space="preserve">
+    <value>Error getting writer node ID: {0}.</value>
+  </data>
+  <data name="MySqlExceptionHandler_IsNetworkException_CurrentException" xml:space="preserve">
+    <value>Current exception {0}: {1}.</value>
+  </data>
+  <data name="MySqlExceptionHandler_IsNetworkException_CurrentNetworkException" xml:space="preserve">
+    <value>"Current exception is a network exception: {0}.</value>
+  </data>
+  <data name="MySqlExceptionHandler_IsNetworkException_InnerException" xml:space="preserve">
+    <value>"Checking inner exception.</value>
+  </data>
+  <data name="MySqlExceptionHandler_IsNetworkException_InvalidNetworkException" xml:space="preserve">
+    <value>"Current exception is not a network exception.</value>
+  </data>
+  <data name="NodeMonitoringTask_DetectedWriter" xml:space="preserve">
+    <value>Writer detected by node monitoring thread: {0}.</value>
+  </data>
+  <data name="NodeMonitoringTask_ThreadCompleted" xml:space="preserve">
+    <value>Node monitoring task@{0} completed in {1} ms.</value>
+  </data>
+  <data name="NodeMonitoringTask_WriterNodeChanged" xml:space="preserve">
+    <value>Writer node changed from {0} to node {1}.</value>
+  </data>
+  <data name="PluginService.ErrorClosingOldConnection" xml:space="preserve">
+    <value>Error closing old connection: {0}</value>
+  </data>
+  <data name="PluginService_ForceRefreshHostListAsync_Completed" xml:space="preserve">
+    <value>PluginService.ForceRefreshHostList() completed with AllHost = {0}.</value>
+  </data>
+  <data name="PluginService_ForceRefreshHostListAsync_CompletedWithConnection" xml:space="preserve">
+    <value>PluginService.ForceRefreshHostList() completed with connection state = {0}, AllHost = {1}.</value>
+  </data>
+  <data name="PluginService_ForceRefreshHostListAsync_TimeoutException" xml:space="preserve">
+    <value>A timeout exception occurred after waiting {0} ms for refreshed topology.</value>
+  </data>
+  <data name="PluginService_RefreshHostListAsync_Completed" xml:space="preserve">
+    <value>PluginService.RefreshHostList() completed with AllHost = {0}.</value>
+  </data>
+  <data name="PluginService_RefreshHostListAsync_CompletedWithConnection" xml:space="preserve">
+    <value>PluginService.RefreshHostList() completed with connection state = {0}, AllHost = {1}.</value>
+  </data>
+  <data name="PluginService_SetAvailability_HostAvailabilityChanged" xml:space="preserve">
+    <value>Host {0} availability changed from {1} to {2}.</value>
+  </data>
+  <data name="PluginService_SetAvailability_NoChanges" xml:space="preserve">
+    <value>There are no changes in the hosts' availability.</value>
+  </data>
+  <data name="PluginService_SetCurrentConnection_Completed" xml:space="preserve">
+    <value>SetCurrentConnection completed: Current connection Hash={0} State={1}</value>
+  </data>
+  <data name="PluginService_SetCurrentConnection_NewConnectionDetails" xml:space="preserve">
+    <value>New connection DataSource={0} State={1}.</value>
+  </data>
+  <data name="PluginService_SetCurrentConnection_NewConnectionSet" xml:space="preserve">
+    <value>New connection is set DataSource={0}.</value>
+  </data>
+  <data name="PluginService_SetCurrentConnection_OldConnectionDisposed" xml:space="preserve">
+    <value>Old connection is disposed.</value>
+  </data>
+  <data name="PluginService_SetCurrentConnection_SameReference" xml:space="preserve">
+    <value>New connection is same reference as old connection - not disposing.</value>
+  </data>
+  <data name="PluginService_UpdateDialectAsync_DialectUpdated" xml:space="preserve">
+    <value>Dialect updated to: {0}.</value>
+  </data>
+  <data name="RdsHostListProvider_GetTopologyAsync_CacheLookup" xml:space="preserve">
+    <value>Topology cache lookup: ClusterId={0}, Found={1}, ForceUpdate={2}.</value>
+  </data>
+  <data name="RdsHostListProvider_GetTopologyAsync_CachedNewTopology" xml:space="preserve">
+    <value>Caching new topology: ClusterId={0}, HostCount={1}.</value>
+  </data>
+  <data name="RdsHostListProvider_GetTopologyAsync_CachedTopology" xml:space="preserve">
+    <value>Cached topology: {0}.</value>
+  </data>
+  <data name="RdsHostListProvider_GetTopologyAsync_ClusterIdChanged" xml:space="preserve">
+    <value>ClusterId changed: {0} -&gt; {1}.</value>
+  </data>
+  <data name="RdsHostListProvider_GetTopologyAsync_ConnectionUnavailable" xml:space="preserve">
+    <value>Connection unavailable (State={0}), falling back to initial hosts.</value>
+  </data>
+  <data name="RdsHostListProvider_GetTopologyAsync_FallbackTopology" xml:space="preserve">
+    <value>Fallback topology: {0}.</value>
+  </data>
+  <data name="RdsHostListProvider_GetTopologyAsync_FallingBackToInitialHost" xml:space="preserve">
+    <value>QueryForTopology returned empty/null, falling back to initial hosts.</value>
+  </data>
+  <data name="RdsHostListProvider_GetTopologyAsync_NewTopology" xml:space="preserve">
+    <value>New topology: {0}.</value>
+  </data>
+  <data name="RdsHostListProvider_Init_ClusterInstanceTemplate" xml:space="preserve">
+    <value>Cluster instance template: {0} (from initial host: {1}).</value>
+  </data>
+  <data name="RdsHostListProvider_Init_InitialHostCount" xml:space="preserve">
+    <value>Initial host list populated with {0} hosts.</value>
+  </data>
+  <data name="RdsHostListProvider_Init_InitialHostsAndCluster" xml:space="preserve">
+    <value>Initial host: {0}, IsCluster={1}.</value>
+  </data>
+  <data name="RdsHostListProvider_QueryForTopologyAsync" xml:space="preserve">
+    <value>QueryForTopology: hostName={0}, template={1}, endpoint={2}.</value>
+  </data>
+  <data name="RdsMultiAzDbClusterListProvider_ProcessWriterNodeId_NoWriterNodesFound" xml:space="preserve">
+    <value>No writer node found in the result of the fetchWriterNodeQuery. Ensure that the query is correct and that the database is configured properly.</value>
+  </data>
+  <data name="RdsMultiAzDbClusterMySqlDialect_IsDialect_AsyncReader" xml:space="preserve">
+    <value>Reader no result set left in {0}.</value>
+  </data>
+  <data name="RdsMultiAzDbClusterPgDialect_IsDialect" xml:space="preserve">
+    <value>RdsMultiAzDbClusterPgDialect.IsDialect() called with connection state = {0}, type = {1}@{2}, Database = {3}.</value>
+  </data>
+  <data name="RdsMultiAzDbClusterPgDialect_IsDialect_InvalidRdsTools" xml:space="preserve">
+    <value>The rds_tools extension not installed; skipping dialect function call.</value>
+  </data>
+  <data name="ReadWriteSplittingPlugin_SetReadOnlyOnClosedConnection" xml:space="preserve">
+    <value>Cannot set ReadOnly on closed connection</value>
+  </data>
+  <data name="ReadWriteSplittingPlugin_EmptyHostList" xml:space="preserve">
+    <value>Host list is empty.</value>
+  </data>
+  <data name="ReadWriteSplittingPlugin_ErrorSwitchingToReader" xml:space="preserve">
+    <value>An error occurred while trying to switch to a reader connection. {0}</value>
+  </data>
+  <data name="ReadWriteSplittingPlugin_FallbackToWriter" xml:space="preserve">
+    <value>Failed to switch to a reader. {0}. The current writer will be used as a fallback: '{1}'</value>
+  </data>
+  <data name="ReadWriteSplittingPlugin_SetReadOnlyFalseInTransaction" xml:space="preserve">
+    <value>readOnly was set to true during a transaction. Please complete the transaction before setting readOnly to true</value>
+  </data>
+  <data name="ReadWriteSplittingPlugin_ErrorSwitchingToWriter" xml:space="preserve">
+    <value>An error occurred while trying to switch to a writer connection.</value>
+  </data>
+  <data name="ReadWriteSplittingPlugin_NoWriterFound" xml:space="preserve">
+    <value>No writer was found in the current host list. This may occur if the writer is not in the list of allowed hosts</value>
+  </data>
+  <data name="ReadWriteSplittingPlugin_SwitchedFromReaderToWriter" xml:space="preserve">
+    <value>Switched from a reader to a writer host. New writer host: '{0}'</value>
+  </data>
+  <data name="ReadWriteSplittingPlugin_SetWriterConnection" xml:space="preserve">
+    <value>Writer connection set to '{0}'</value>
+  </data>
+  <data name="ReadWriteSplittingPlugin_SettingCurrentConnection" xml:space="preserve">
+    <value>Setting the current connection to '{0}'</value>
+  </data>
+  <data name="ReadWriteSplittingPlugin_PreviousReaderNotAllowed" xml:space="preserve">
+    <value>The previous reader connection cannot be used because it is no longer in the list of allowed hosts. Previous reader: {0}. Allowed hosts: {1}</value>
+  </data>
+  <data name="ReadWriteSplittingPlugin_NoReadersFound" xml:space="preserve">
+    <value>readOnly was set to true during a transaction, but there are no readers in the host list. The current writer will be used as a fallback: '{0}'</value>
+  </data>
+  <data name="ReadWriteSplittingPlugin_FailedToConnectToReader" xml:space="preserve">
+    <value>Failed to connect to reader host: '{0}'</value>
+  </data>
+  <data name="ReadWriteSplittingPlugin_NoReadersAvailable" xml:space="preserve">
+    <value>The plugin was unable to establish a reader connection to any reader instance.</value>
+  </data>
+  <data name="ReadWriteSplittingPlugin_SuccessfullyConnectedToReader" xml:space="preserve">
+    <value>Successfully connected to reader host: '{0}'</value>
+  </data>
+  <data name="ReadWriteSplittingPlugin_ExceptionWhileExecutingCommand" xml:space="preserve">
+    <value>Detected an exception while executing a command: '{0}'</value>
+  </data>
+  <data name="ConnectTimePlugin_ConnectTime" xml:space="preserve">
+    <value>Connected in {0} nanos.</value>
+  </data>
 </root>

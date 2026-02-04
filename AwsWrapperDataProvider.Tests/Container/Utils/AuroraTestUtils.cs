@@ -25,7 +25,10 @@ using Amazon.Runtime;
 using Amazon.Runtime.Credentials;
 using Amazon.SecretsManager;
 using Amazon.SecretsManager.Model;
+using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.Utils;
+using MySqlConnector;
+using Npgsql;
 
 namespace AwsWrapperDataProvider.Tests.Container.Utils;
 
@@ -795,9 +798,14 @@ public class AuroraTestUtils
         };
     }
 
-    public async Task<string> ExecuteQuery(DbConnection connection, DatabaseEngine engine, DatabaseEngineDeployment deployment, string query, bool async)
+    public async Task<string> ExecuteQuery(DbConnection connection, string query, bool async, DbTransaction? tx = null)
     {
         await using var command = connection.CreateCommand();
+        if (tx != null)
+        {
+            command.Transaction = tx;
+        }
+
         command.CommandText = query;
         string? result;
         if (async)
@@ -811,24 +819,69 @@ public class AuroraTestUtils
 
         if (result == null)
         {
-            throw new InvalidOperationException("Failed to retrieve instance ID.");
+            throw new InvalidOperationException("Failed to retrieve the result.");
         }
 
-        Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Finished ExecuteScalar with result: {result}");
+        Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Finished ExecuteScalar with result: {result}.");
         return result;
     }
 
-    public async Task<string?> ExecuteInstanceIdQuery(DbConnection connection, DatabaseEngine engine, DatabaseEngineDeployment deployment, bool async)
+    public async Task ExecuteNonQuery(DbConnection connection, string query, bool async, DbTransaction? tx = null)
+    {
+        await using var command = connection.CreateCommand();
+        if (tx != null)
+        {
+            command.Transaction = tx;
+        }
+
+        command.CommandText = query;
+        if (async)
+        {
+            await command.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
+        }
+        else
+        {
+            command.ExecuteNonQuery();
+        }
+    }
+
+    public async Task SetReadOnly(DbConnection connection, DatabaseEngine engine, bool readOnly, bool async, DbTransaction? tx = null)
+    {
+        string sql = (engine, readOnly) switch
+        {
+            (DatabaseEngine.MYSQL, true) => MySqlDialect.ReadOnlyQuery,
+            (DatabaseEngine.MYSQL, false) => MySqlDialect.ReadWriteQuery,
+
+            (DatabaseEngine.PG, true) => PgDialect.ReadOnlyQuery,
+            (DatabaseEngine.PG, false) => PgDialect.ReadWriteQuery,
+
+            _ => throw new NotSupportedException($"Unsupported database engine: {engine}"),
+        };
+
+        await this.ExecuteNonQuery(connection, sql, async, tx);
+    }
+
+    public async Task<string?> ExecuteInstanceIdQuery(DbConnection connection, DatabaseEngine engine, DatabaseEngineDeployment deployment, bool async, DbTransaction? tx = null)
     {
         try
         {
-            return await this.ExecuteQuery(connection, engine, deployment, this.GetInstanceIdSql(engine, deployment), async);
+            return await this.ExecuteQuery(connection, this.GetInstanceIdSql(engine, deployment), async, tx);
         }
         catch (NotSupportedException ex)
         {
             Console.WriteLine("[Warning] error thrown when executing instance id query: ", ex);
             return await Task.FromResult<string?>(null);
         }
+    }
+
+    public AwsWrapperConnection CreateAwsWrapperConnection(DatabaseEngine engine, string connectionString)
+    {
+        return engine switch
+        {
+            DatabaseEngine.MYSQL => new AwsWrapperConnection<MySqlConnection>(connectionString),
+            DatabaseEngine.PG => new AwsWrapperConnection<NpgsqlConnection>(connectionString),
+            _ => throw new NotSupportedException($"Unsupported engine: {engine}"),
+        };
     }
 
     public async Task OpenDbConnection(DbConnection connection, bool async)
@@ -855,13 +908,14 @@ public class AuroraTestUtils
         }
     }
 
-    public string? QueryInstanceId(DbConnection connection)
+    public async Task<string?> QueryInstanceId(DbConnection connection, bool async, DbTransaction? tx = null)
     {
-        return this.ExecuteInstanceIdQuery(
+        return await this.ExecuteInstanceIdQuery(
             connection,
             TestEnvironment.Env.Info.Request.Engine,
             TestEnvironment.Env.Info.Request.Deployment,
-            async: false).GetAwaiter().GetResult();
+            async,
+            tx);
     }
 
     public string GetSleepSql(DatabaseEngine engine, int seconds)

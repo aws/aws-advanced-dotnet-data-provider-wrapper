@@ -192,7 +192,7 @@ public class EfmConnectivityTests
 
     private static string GetConnectedHost(DbConnection connection, string initialHost)
     {
-        string? hostName = AuroraUtils.QueryInstanceId(connection);
+        string? hostName = AuroraUtils.QueryInstanceId(connection, false).GetAwaiter().GetResult();
         string clusterInstanceTemplate = RdsUtils.GetRdsInstanceHostPattern(initialHost);
         return clusterInstanceTemplate.Replace("?", hostName);
     }

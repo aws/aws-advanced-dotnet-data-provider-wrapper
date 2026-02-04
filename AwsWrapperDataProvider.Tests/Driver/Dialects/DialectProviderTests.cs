@@ -234,6 +234,11 @@ public class DialectProviderTests
 
         public IExceptionHandler ExceptionHandler => new GenericExceptionHandler();
 
+        public (bool ReadOnly, bool Found) DoesStatementSetReadOnly(string query)
+        {
+            return (false, false);
+        }
+
         public Task<bool> IsDialect(DbConnection conn) => Task.FromResult(true);
 
         public void PrepareConnectionProperties(Dictionary<string, string> props, HostSpec hostSpec)
