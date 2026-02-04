@@ -289,6 +289,48 @@ public class AwsWrapperConnectionStringBuilder : DbConnectionStringBuilder
         set => this.SetValue(PropertyDefinition.RoundRobinHostWeightPairs.Name, value);
     }
 
+    public string? WeightedRandomHostWeightPairs
+    {
+        get => this.GetValue(PropertyDefinition.WeightedRandomHostWeightPairs.Name);
+        set => this.SetValue(PropertyDefinition.WeightedRandomHostWeightPairs.Name, value);
+    }
+
+    public bool? LimitlessWaitForTransactionRouterInfo
+    {
+        get => this.GetBoolValue(PropertyDefinition.LimitlessWaitForRouterInfo.Name);
+        set => this.SetValue(PropertyDefinition.LimitlessWaitForRouterInfo.Name, value?.ToString());
+    }
+
+    public int? LimitlessGetTransactionRouterInfoRetryIntervalMs
+    {
+        get => this.GetIntValue(PropertyDefinition.LimitlessGetRouterRetryIntervalMs.Name);
+        set => this.SetValue(PropertyDefinition.LimitlessGetRouterRetryIntervalMs.Name, value?.ToString());
+    }
+
+    public int? LimitlessGetTransactionRouterInfoMaxRetries
+    {
+        get => this.GetIntValue(PropertyDefinition.LimitlessGetRouterMaxRetries.Name);
+        set => this.SetValue(PropertyDefinition.LimitlessGetRouterMaxRetries.Name, value?.ToString());
+    }
+
+    public int? LimitlessTransactionRouterMonitorIntervalMs
+    {
+        get => this.GetIntValue(PropertyDefinition.LimitlessIntervalMs.Name);
+        set => this.SetValue(PropertyDefinition.LimitlessIntervalMs.Name, value?.ToString());
+    }
+
+    public int? LimitlessConnectMaxRetries
+    {
+        get => this.GetIntValue(PropertyDefinition.LimitlessMaxRetries.Name);
+        set => this.SetValue(PropertyDefinition.LimitlessMaxRetries.Name, value?.ToString());
+    }
+
+    public int? LimitlessTransactionRouterMonitorDisposalTimeMs
+    {
+        get => this.GetIntValue(PropertyDefinition.LimitlessMonitorDisposalTimeMs.Name);
+        set => this.SetValue(PropertyDefinition.LimitlessMonitorDisposalTimeMs.Name, value?.ToString());
+    }
+
     public int? RoundRobinDefaultWeight
     {
         get => this.GetIntValue(PropertyDefinition.RoundRobinDefaultWeight.Name);

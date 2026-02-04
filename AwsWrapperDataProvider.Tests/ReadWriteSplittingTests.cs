@@ -1,4 +1,4 @@
-﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -252,7 +252,8 @@ public class ReadWriteSplittingTests : IntegrationTestBase
     public async Task ConnectToProxyWriter_SwitchToReadOnly_AllReadersDown(bool async)
     {
         Assert.SkipWhen(NumberOfInstances < 3, "Skipped due to test requiring number of database instances >= 3.");
-        var proxyWriter = ProxyDatabaseInfo.Instances.First();
+        var proxyDatabaseInfo = ProxyDatabaseInfo ?? throw new InvalidOperationException("Proxy database info must be configured for read/write splitting tests.");
+        var proxyWriter = proxyDatabaseInfo.Instances.First();
         var connectionString = ConnectionStringHelper.GetUrl(
             Engine,
             proxyWriter.Host,
@@ -263,7 +264,7 @@ public class ReadWriteSplittingTests : IntegrationTestBase
             3,
             10,
             "readWriteSplitting");
-        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}";
+        connectionString += $"; ClusterInstanceHostPattern=?.{proxyDatabaseInfo.InstanceEndpointSuffix}:{proxyDatabaseInfo.InstanceEndpointPort}";
 
         using AwsWrapperConnection connection = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
         await AuroraUtils.OpenDbConnection(connection, async);
@@ -271,8 +272,8 @@ public class ReadWriteSplittingTests : IntegrationTestBase
 
         var writerConnectionId = await AuroraUtils.QueryInstanceId(connection, async);
 
-        await ProxyHelper.DisableConnectivityAsync(ProxyDatabaseInfo.ClusterReadOnlyEndpoint);
-        foreach (var instance in ProxyDatabaseInfo.Instances.Skip(1))
+        await ProxyHelper.DisableConnectivityAsync(proxyDatabaseInfo.ClusterReadOnlyEndpoint);
+        foreach (var instance in proxyDatabaseInfo.Instances.Skip(1))
         {
             await ProxyHelper.DisableConnectivityAsync(instance.InstanceId);
         }
@@ -303,7 +304,8 @@ public class ReadWriteSplittingTests : IntegrationTestBase
     public async Task ConnectToProxyWriter_AllInstancesDown(bool async)
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
-        var proxyWriter = ProxyDatabaseInfo.Instances.First();
+        var proxyDatabaseInfo = ProxyDatabaseInfo ?? throw new InvalidOperationException("Proxy database info must be configured for read/write splitting tests.");
+        var proxyWriter = proxyDatabaseInfo.Instances.First();
         var connectionString = ConnectionStringHelper.GetUrl(
             Engine,
             proxyWriter.Host,
@@ -314,7 +316,7 @@ public class ReadWriteSplittingTests : IntegrationTestBase
             3,
             10,
             "readWriteSplitting");
-        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}";
+        connectionString += $"; ClusterInstanceHostPattern=?.{proxyDatabaseInfo.InstanceEndpointSuffix}:{proxyDatabaseInfo.InstanceEndpointPort}";
 
         using AwsWrapperConnection connection = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
         await AuroraUtils.OpenDbConnection(connection, async);
@@ -356,7 +358,8 @@ public class ReadWriteSplittingTests : IntegrationTestBase
             3,
             10,
             "readWriteSplitting");
-        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}";
+        var proxyDatabaseInfo = ProxyDatabaseInfo ?? throw new InvalidOperationException("Proxy database info must be configured for read/write splitting tests.");
+        connectionString += $"; ClusterInstanceHostPattern=?.{proxyDatabaseInfo.InstanceEndpointSuffix}:{proxyDatabaseInfo.InstanceEndpointPort}";
 
         using AwsWrapperConnection connection = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
         await AuroraUtils.OpenDbConnection(connection, async);
@@ -382,7 +385,8 @@ public class ReadWriteSplittingTests : IntegrationTestBase
     public async Task ConnectToProxyWriter_WriterFailover(bool async)
     {
         Assert.SkipWhen(NumberOfInstances < 3, "Skipped due to test requiring number of database instances >= 3.");
-        var proxyWriter = ProxyDatabaseInfo.Instances.First();
+        var proxyDatabaseInfo = ProxyDatabaseInfo ?? throw new InvalidOperationException("Proxy database info must be configured for read/write splitting tests.");
+        var proxyWriter = proxyDatabaseInfo.Instances.First();
         var pluginCodes = Engine switch
         {
             DatabaseEngine.MYSQL => "failover,readWriteSplitting",
@@ -399,7 +403,7 @@ public class ReadWriteSplittingTests : IntegrationTestBase
             3,
             10,
             pluginCodes);
-        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}";
+        connectionString += $"; ClusterInstanceHostPattern=?.{proxyDatabaseInfo.InstanceEndpointSuffix}:{proxyDatabaseInfo.InstanceEndpointPort}";
 
         using AwsWrapperConnection connection = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
         await AuroraUtils.OpenDbConnection(connection, async);
@@ -407,8 +411,8 @@ public class ReadWriteSplittingTests : IntegrationTestBase
 
         var originalWriterId = await AuroraUtils.QueryInstanceId(connection, async);
 
-        await ProxyHelper.DisableConnectivityAsync(ProxyDatabaseInfo.ClusterReadOnlyEndpoint);
-        foreach (var instance in ProxyDatabaseInfo.Instances.Skip(1))
+        await ProxyHelper.DisableConnectivityAsync(proxyDatabaseInfo.ClusterReadOnlyEndpoint);
+        foreach (var instance in proxyDatabaseInfo.Instances.Skip(1))
         {
             await ProxyHelper.DisableConnectivityAsync(instance.InstanceId);
         }
@@ -454,7 +458,8 @@ public class ReadWriteSplittingTests : IntegrationTestBase
     public async Task ConnectToProxyWriter_FailoverToNewReader(bool async)
     {
         Assert.SkipWhen(NumberOfInstances < 3, "Skipped due to test requiring number of database instances >= 3.");
-        var proxyWriter = ProxyDatabaseInfo.Instances.First();
+        var proxyDatabaseInfo = ProxyDatabaseInfo ?? throw new InvalidOperationException("Proxy database info must be configured for read/write splitting tests.");
+        var proxyWriter = proxyDatabaseInfo.Instances.First();
         var pluginCodes = Engine switch
         {
             DatabaseEngine.MYSQL => "failover,readWriteSplitting",
@@ -471,7 +476,7 @@ public class ReadWriteSplittingTests : IntegrationTestBase
             3,
             10,
             pluginCodes);
-        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}" +
+        connectionString += $"; ClusterInstanceHostPattern=?.{proxyDatabaseInfo.InstanceEndpointSuffix}:{proxyDatabaseInfo.InstanceEndpointPort}" +
                             $"; FailoverMode=ReaderOrWriter";
 
         using AwsWrapperConnection connection = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
@@ -533,7 +538,8 @@ public class ReadWriteSplittingTests : IntegrationTestBase
     public async Task ConnectToProxyWriter_FailoverReaderToWriter(bool async)
     {
         Assert.SkipWhen(NumberOfInstances < 3, "Skipped due to test requiring number of database instances >= 3.");
-        var proxyWriter = ProxyDatabaseInfo.Instances.First();
+        var proxyDatabaseInfo = ProxyDatabaseInfo ?? throw new InvalidOperationException("Proxy database info must be configured for read/write splitting tests.");
+        var proxyWriter = proxyDatabaseInfo.Instances.First();
         var pluginCodes = Engine switch
         {
             DatabaseEngine.MYSQL => "failover,readWriteSplitting",
@@ -550,7 +556,7 @@ public class ReadWriteSplittingTests : IntegrationTestBase
             3,
             10,
             pluginCodes);
-        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}";
+        connectionString += $"; ClusterInstanceHostPattern=?.{proxyDatabaseInfo.InstanceEndpointSuffix}:{proxyDatabaseInfo.InstanceEndpointPort}";
 
         using AwsWrapperConnection connection = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
         await AuroraUtils.OpenDbConnection(connection, async);
@@ -572,7 +578,7 @@ public class ReadWriteSplittingTests : IntegrationTestBase
             }
         }
 
-        await ProxyHelper.DisableConnectivityAsync(ProxyDatabaseInfo.ClusterReadOnlyEndpoint);
+        await ProxyHelper.DisableConnectivityAsync(proxyDatabaseInfo.ClusterReadOnlyEndpoint);
 
         await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
         {
