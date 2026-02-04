@@ -30,9 +30,6 @@ public class SecretsManagerAuthPluginTests
     private static readonly string Host = $"fake.host.{Region}.rds.amazonaws.com";
     private static readonly int Port = 5432;
     private static readonly string SecretId = "test-secret-id";
-    private static readonly int ExpirationTime = 870;
-    private static readonly string DefaultUsernameKey = "username";
-    private static readonly string DefaultPasswordKey = "password";
 
     private readonly Mock<IPluginService> mockPluginService;
     private readonly Dictionary<string, string> props = new();
