@@ -58,3 +58,11 @@ jobs:
           name: nhibernate-integration-report-${{ matrix.dbEngine }}-${{ matrix.deployment }}
           path: ./test/integration/container/reports
           retention-days: 5
+      - name: Get Github Action IP
+        if: always()
+        id: ip
+        uses: haythem/public-ip@v1.3
+      - name: Remove Github Action IP
+        if: always()
+        run: |
+          aws ec2 revoke-security-group-ingress --group-name default --protocol all --port 0-65535 --cidr ${{ steps.ip.outputs.ipv4 }}/32
