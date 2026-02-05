@@ -937,6 +937,7 @@
   </data>
   <data name="CustomEndpointPluginFactory_AwsSdkNotInClasspath" xml:space="preserve">
     <value>AWS SDK for RDS is not available in the classpath. Please add AWSSDK.RDS package reference.</value>
+  </data>
   <data name="LimitlessRouterMonitor_Dispose_DidNotStopWithinSeconds" xml:space="preserve">
       <value>LimitlessRouterMonitor did not stop within 5 seconds for host {0}.</value>
   </data>
