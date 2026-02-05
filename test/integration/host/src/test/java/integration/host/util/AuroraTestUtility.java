@@ -71,6 +71,7 @@ import software.amazon.awssdk.services.ec2.model.DescribeSecurityGroupsResponse;
 import software.amazon.awssdk.services.ec2.model.Ec2Exception;
 import software.amazon.awssdk.services.ec2.model.IpPermission;
 import software.amazon.awssdk.services.ec2.model.IpRange;
+import software.amazon.awssdk.services.ec2.model.SecurityGroup;
 import software.amazon.awssdk.services.rds.RdsClient;
 import software.amazon.awssdk.services.rds.RdsClientBuilder;
 import software.amazon.awssdk.services.rds.model.*;
@@ -86,6 +87,8 @@ public class AuroraTestUtility {
   private static final Logger LOGGER = Logger.getLogger(AuroraTestUtility.class.getName());
   private static final String DUPLICATE_IP_ERROR_CODE = "InvalidPermission.Duplicate";
   private static final String DEFAULT_SECURITY_GROUP = "default";
+  private static final String TEST_RULE_DESCRIPTION_PREFIX = "Test run at ";
+  private static final int MAX_RULES_CLEANUP_THRESHOLD = 50; // Clean up when approaching limit
   private static final String DEFAULT_STORAGE_TYPE = "gp3";
   private static final int DEFAULT_IOPS = 64000;
   private static final int DEFAULT_ALLOCATED_STORAGE = 400;
@@ -691,7 +694,7 @@ public class AuroraTestUtility {
     try {
       IpRange ipRange = IpRange.builder()
           .cidrIp(ipAddress + "/32")
-          .description("Test run at " + Instant.now())
+          .description(TEST_RULE_DESCRIPTION_PREFIX + Instant.now())
           .build();
       IpPermission ipPermission = IpPermission.builder()
           .ipRanges(ipRange)
@@ -702,9 +705,41 @@ public class AuroraTestUtility {
       ec2Client.authorizeSecurityGroupIngress(
           (builder) -> builder.groupName(DEFAULT_SECURITY_GROUP).ipPermissions(ipPermission));
     } catch (Ec2Exception exception) {
-      if (!DUPLICATE_IP_ERROR_CODE.equalsIgnoreCase(exception.awsErrorDetails().errorCode())) {
-        throw exception;
+      String errorCode = exception.awsErrorDetails().errorCode();
+      String errorMessage = exception.getMessage();
+      
+      if (DUPLICATE_IP_ERROR_CODE.equalsIgnoreCase(errorCode)) {
+        return;
       }
+      
+      // Handle rules limit exceeded error - clean up old rules and retry
+      if (errorMessage != null && errorMessage.contains("maximum number of rules")) {
+        LOGGER.warning("Security group rules limit reached. Cleaning up old test rules...");
+        cleanupOldTestRules();
+        
+        try {
+          IpRange ipRange = IpRange.builder()
+              .cidrIp(ipAddress + "/32")
+              .description(TEST_RULE_DESCRIPTION_PREFIX + Instant.now())
+              .build();
+          IpPermission ipPermission = IpPermission.builder()
+              .ipRanges(ipRange)
+              .ipProtocol("-1")
+              .fromPort(0)
+              .toPort(65535)
+              .build();
+          ec2Client.authorizeSecurityGroupIngress(
+              (builder) -> builder.groupName(DEFAULT_SECURITY_GROUP).ipPermissions(ipPermission));
+          LOGGER.info("Successfully added IP after cleanup");
+        } catch (Ec2Exception retryException) {
+          if (!DUPLICATE_IP_ERROR_CODE.equalsIgnoreCase(retryException.awsErrorDetails().errorCode())) {
+            throw retryException;
+          }
+        }
+        return;
+      }
+ 
+      throw exception;
     }
   }
 
@@ -721,6 +756,96 @@ public class AuroraTestUtility {
                             .build()));
 
     return response != null && !response.securityGroups().isEmpty();
+  }
+
+  /**
+   * Cleans up old test rules from the default security group to prevent hitting the rules limit.
+   * Keeps only the most recent MAX_RULES_CLEANUP_THRESHOLD test rules and removes the rest.
+   */
+  private void cleanupOldTestRules() {
+    try {
+      DescribeSecurityGroupsResponse response = ec2Client.describeSecurityGroups(
+          (builder) -> builder.groupNames(DEFAULT_SECURITY_GROUP));
+      
+      if (response.securityGroups().isEmpty()) {
+        return;
+      }
+      
+      SecurityGroup securityGroup = response.securityGroups().get(0);
+      List<IpPermission> allTestRules = new ArrayList<>();
+      
+      // Collect all test rules
+      for (IpPermission permission : securityGroup.ipPermissions()) {
+        if (permission.ipProtocol().equals("-1") 
+            && permission.fromPort() == 0 
+            && permission.toPort() == 65535) {
+          for (IpRange ipRange : permission.ipRanges()) {
+            if (ipRange.description() != null 
+                && ipRange.description().startsWith(TEST_RULE_DESCRIPTION_PREFIX)) {
+              IpPermission testRule = IpPermission.builder()
+                  .ipProtocol("-1")
+                  .fromPort(0)
+                  .toPort(65535)
+                  .ipRanges(IpRange.builder()
+                      .cidrIp(ipRange.cidrIp())
+                      .description(ipRange.description())
+                      .build())
+                  .build();
+              allTestRules.add(testRule);
+            }
+          }
+        }
+      }
+      
+      // If we have more test rules than threshold, remove the oldest ones
+      if (allTestRules.size() <= MAX_RULES_CLEANUP_THRESHOLD) {
+        return;
+      }
+      
+      // Sort by timestamp (oldest first)
+      allTestRules.sort((p1, p2) -> {
+        try {
+          String desc1 = p1.ipRanges().get(0).description();
+          String desc2 = p2.ipRanges().get(0).description();
+          if (desc1 == null || desc2 == null) {
+            return 0;
+          }
+          String timeStr1 = desc1.substring(TEST_RULE_DESCRIPTION_PREFIX.length()).trim();
+          String timeStr2 = desc2.substring(TEST_RULE_DESCRIPTION_PREFIX.length()).trim();
+          Instant time1 = Instant.parse(timeStr1);
+          Instant time2 = Instant.parse(timeStr2);
+          return time1.compareTo(time2);
+        } catch (Exception e) {
+          return 0;
+        }
+      });
+      
+      // Keep only the most recent rules, remove the rest
+      List<IpPermission> rulesToRemove = allTestRules.subList(0, 
+          allTestRules.size() - MAX_RULES_CLEANUP_THRESHOLD);
+      
+      // Remove the old rules
+      int removedCount = 0;
+      for (IpPermission ruleToRemove : rulesToRemove) {
+        try {
+          ec2Client.revokeSecurityGroupIngress(
+              (builder) -> builder
+                  .groupName(DEFAULT_SECURITY_GROUP)
+                  .ipPermissions(ruleToRemove));
+          removedCount++;
+          LOGGER.finest("Removed old test rule: " + ruleToRemove.ipRanges().get(0).cidrIp());
+        } catch (Ec2Exception e) {
+          LOGGER.finest("Error removing old test rule: " + e.getMessage());
+        }
+      }
+      
+      if (removedCount > 0) {
+        LOGGER.info("Cleaned up " + removedCount + " old test rules from security group");
+      }
+    } catch (Exception e) {
+      LOGGER.warning("Error cleaning up old test rules: " + e.getMessage());
+      // Don't throw - allow the test to continue even if cleanup fails
+    }
   }
 
   /**
