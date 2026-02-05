@@ -39,6 +39,13 @@ public class TestRunner {
   }
 
   @TestTemplate
+  public void runMySQLAuroraLimitlessTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
+    try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
+      env.runTests("mysql", "aurora-limitless");
+    }
+  }
+
+  @TestTemplate
   public void runPGAuroraLimitlessTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
     try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
       env.runTests("pg", "aurora-limitless");
