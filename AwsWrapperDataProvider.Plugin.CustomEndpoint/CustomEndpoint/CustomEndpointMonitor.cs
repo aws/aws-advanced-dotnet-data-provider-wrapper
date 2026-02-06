@@ -202,7 +202,7 @@ public class CustomEndpointMonitor : ICustomEndpointMonitor
 
         foreach (HostSpec host in hostsToChange)
         {
-            host.Availability = availability;
+            this.pluginService.SetAvailability(host.AsAliases(), availability);
         }
     }
 
@@ -210,18 +210,12 @@ public class CustomEndpointMonitor : ICustomEndpointMonitor
     {
         IList<HostSpec> allHosts = this.pluginService.AllHosts;
 
-        // Set static members as available
         foreach (HostSpec host in allHosts)
         {
-            if (staticMemberInstanceIds.Contains(host.HostId ?? string.Empty))
-            {
-                host.Availability = HostAvailability.Available;
-            }
-            else
-            {
-                // Set non-static members as unavailable
-                host.Availability = HostAvailability.Unavailable;
-            }
+            var availability = staticMemberInstanceIds.Contains(host.HostId ?? string.Empty)
+                ? HostAvailability.Available
+                : HostAvailability.Unavailable;
+            this.pluginService.SetAvailability(host.AsAliases(), availability);
         }
     }
 

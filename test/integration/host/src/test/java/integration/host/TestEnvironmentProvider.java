@@ -64,6 +64,9 @@ public class TestEnvironmentProvider implements TestTemplateInvocationContextPro
       if (deployment == DatabaseEngineDeployment.RDS_MULTI_AZ_INSTANCE && config.noMultiAzInstance) {
         continue;
       }
+      if (deployment == DatabaseEngineDeployment.AURORA_LIMITLESS && config.noAuroraLimitless) {
+        continue;
+      }
 
       for (DatabaseEngine engine : DatabaseEngine.values()) {
         if (engine == DatabaseEngine.PG && config.noPgEngine) {
