@@ -32,19 +32,26 @@ public class CustomEndpointMonitor : ICustomEndpointMonitor
 {
     private static readonly ILogger<CustomEndpointMonitor> Logger = LoggerUtils.GetLogger<CustomEndpointMonitor>();
 
+    protected readonly ManualResetEventSlim refreshRequiredEvent = new(false);
+
     // Keys are custom endpoint URLs, values are information objects for the associated custom endpoint.
     internal static readonly ConcurrentDictionary<string, CustomEndpointInfo> CustomEndpointInfoCache = new();
-    protected static readonly TimeSpan CustomEndpointInfoExpiration = TimeSpan.FromMinutes(5);
+
+    protected static readonly TimeSpan UnauthorizedSleepDuration = TimeSpan.FromMinutes(5);
 
     protected readonly CancellationTokenSource cancellationTokenSource = new();
     protected readonly AmazonRDSClient rdsClient;
     protected readonly HostSpec customEndpointHostSpec;
     protected readonly string endpointIdentifier;
     protected readonly RegionEndpoint region;
-    protected readonly TimeSpan refreshRate;
+    protected readonly TimeSpan minRefreshRate;
+    protected readonly TimeSpan maxRefreshRate;
+    protected readonly int refreshRateBackoffFactor;
 
     protected readonly IPluginService pluginService;
     protected readonly Task monitorTask;
+
+    protected TimeSpan currentRefreshRate;
 
     public CustomEndpointMonitor(
         IPluginService pluginService,
@@ -52,13 +59,18 @@ public class CustomEndpointMonitor : ICustomEndpointMonitor
         string endpointIdentifier,
         RegionEndpoint region,
         TimeSpan refreshRate,
+        int refreshRateBackoffFactor,
+        TimeSpan maxRefreshRate,
         Func<RegionEndpoint, AmazonRDSClient> rdsClientFunc)
     {
         this.pluginService = pluginService;
         this.customEndpointHostSpec = customEndpointHostSpec;
         this.endpointIdentifier = endpointIdentifier;
         this.region = region;
-        this.refreshRate = refreshRate;
+        this.minRefreshRate = refreshRate;
+        this.maxRefreshRate = maxRefreshRate;
+        this.refreshRateBackoffFactor = refreshRateBackoffFactor;
+        this.currentRefreshRate = refreshRate;
         this.rdsClient = rdsClientFunc(this.region);
 
         this.monitorTask = Task.Run(this.RunAsync, this.cancellationTokenSource.Token);
@@ -111,7 +123,7 @@ public class CustomEndpointMonitor : ICustomEndpointMonitor
                             endpoints.Count,
                             string.Join(", ", endpointUrls));
 
-                        await Task.Delay(this.refreshRate, this.cancellationTokenSource.Token);
+                        this.Sleep(this.currentRefreshRate);
                         continue;
                     }
 
@@ -120,10 +132,10 @@ public class CustomEndpointMonitor : ICustomEndpointMonitor
                     if (cachedEndpointInfo != null && cachedEndpointInfo.Equals(endpointInfo))
                     {
                         TimeSpan elapsedTime = DateTime.UtcNow - start;
-                        TimeSpan sleepDuration = this.refreshRate - elapsedTime;
+                        TimeSpan sleepDuration = this.currentRefreshRate - elapsedTime;
                         if (sleepDuration > TimeSpan.Zero)
                         {
-                            await Task.Delay(sleepDuration, this.cancellationTokenSource.Token);
+                            this.Sleep(sleepDuration);
                         }
 
                         continue;
@@ -134,43 +146,68 @@ public class CustomEndpointMonitor : ICustomEndpointMonitor
                         endpointInfo);
 
                     // The custom endpoint info has changed, so we need to update the set of allowed/blocked hosts.
+                    HashSet<string>? allowedHostIds = null;
+                    HashSet<string>? blockedHostIds = null;
+
                     if (endpointInfo.MemberListType == MemberTypeList.StaticList)
                     {
-                        HashSet<string>? staticMembers = endpointInfo.GetStaticMembers();
-                        if (staticMembers != null)
-                        {
-                            // Set availability for static members as available, others as unavailable
-                            this.UpdateHostAvailabilityForStaticList(staticMembers);
-                        }
+                        allowedHostIds = endpointInfo.GetStaticMembers();
                     }
                     else
                     {
-                        HashSet<string>? excludedMembers = endpointInfo.GetExcludedMembers();
-                        if (excludedMembers != null)
-                        {
-                            // Set availability for excluded members as unavailable
-                            this.UpdateHostAvailability(excludedMembers, HostAvailability.Unavailable);
-                        }
+                        blockedHostIds = endpointInfo.GetExcludedMembers();
                     }
 
+                    var allowedAndBlockedHosts = new AllowedAndBlockedHosts(
+                        allowedHostIds,
+                        blockedHostIds);
+
+                    this.pluginService.SetAllowedAndBlockedHosts(this.customEndpointHostSpec.Host, allowedAndBlockedHosts);
                     CustomEndpointInfoCache[this.customEndpointHostSpec.Host] = endpointInfo;
+                    this.refreshRequiredEvent.Reset();
+
+                    this.SpeedupRefreshRate();
 
                     TimeSpan elapsed = DateTime.UtcNow - start;
-                    TimeSpan sleep = this.refreshRate - elapsed;
+                    TimeSpan sleep = this.currentRefreshRate - elapsed;
                     if (sleep > TimeSpan.Zero)
                     {
-                        await Task.Delay(sleep, this.cancellationTokenSource.Token);
+                        this.Sleep(sleep);
                     }
                 }
                 catch (OperationCanceledException)
                 {
                     throw;
                 }
+                catch (AmazonRDSException rdsEx)
+                {
+                    // Handle AWS RDS exceptions with special logic
+                    Logger.LogError(rdsEx, Resources.CustomEndpointMonitorImpl_Exception, this.customEndpointHostSpec.Host);
+
+                    if (rdsEx.StatusCode == System.Net.HttpStatusCode.TooManyRequests ||
+                        rdsEx.ErrorCode?.Contains("Throttling") == true ||
+                        rdsEx.ErrorCode?.Contains("Throttled") == true)
+                    {
+                        // Throttling exception - slow down refresh rate
+                        this.SlowdownRefreshRate();
+                        this.Sleep(this.currentRefreshRate);
+                    }
+                    else if (rdsEx.StatusCode == System.Net.HttpStatusCode.Unauthorized ||
+                             rdsEx.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                    {
+                        // Unauthorized/Forbidden - sleep for longer duration
+                        this.Sleep(UnauthorizedSleepDuration);
+                    }
+                    else
+                    {
+                        this.Sleep(this.currentRefreshRate);
+                    }
+                }
                 catch (Exception e)
                 {
                     // If the exception is not an OperationCanceledException, log it and continue monitoring.
                     Logger.LogError(e, Resources.CustomEndpointMonitorImpl_Exception, this.customEndpointHostSpec.Host);
-                    await Task.Delay(this.refreshRate, this.cancellationTokenSource.Token);
+                    this.Sleep(this.currentRefreshRate);
                 }
             }
         }
@@ -180,6 +217,8 @@ public class CustomEndpointMonitor : ICustomEndpointMonitor
         }
         finally
         {
+            this.cancellationTokenSource.Dispose();
+            this.refreshRequiredEvent.Dispose();
             CustomEndpointInfoCache.TryRemove(this.customEndpointHostSpec.Host, out _);
             this.rdsClient.Dispose();
 
@@ -187,41 +226,77 @@ public class CustomEndpointMonitor : ICustomEndpointMonitor
         }
     }
 
-    private void UpdateHostAvailability(HashSet<string> instanceIds, HostAvailability availability = HostAvailability.Available)
+    protected void Sleep(TimeSpan duration)
     {
-        IList<HostSpec> allHosts = this.pluginService.AllHosts;
-        List<HostSpec> hostsToChange = allHosts
-            .Where(host => instanceIds.Contains(host.HostId ?? string.Empty))
-            .Distinct()
-            .ToList();
+        DateTime endTime = DateTime.UtcNow + duration;
+        TimeSpan waitDuration = duration < TimeSpan.FromMilliseconds(500) ? duration : TimeSpan.FromMilliseconds(500);
 
-        if (hostsToChange.Count == 0)
+        while (DateTime.UtcNow < endTime && !this.cancellationTokenSource.Token.IsCancellationRequested)
         {
-            return;
-        }
+            if (this.refreshRequiredEvent.IsSet)
+            {
+                this.refreshRequiredEvent.Reset();
+                break;
+            }
 
-        foreach (HostSpec host in hostsToChange)
-        {
-            this.pluginService.SetAvailability(host.AsAliases(), availability);
+            try
+            {
+                bool wasSignaled = this.refreshRequiredEvent.Wait(waitDuration, this.cancellationTokenSource.Token);
+                if (wasSignaled)
+                {
+                    this.refreshRequiredEvent.Reset();
+                    break;
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
         }
     }
 
-    private void UpdateHostAvailabilityForStaticList(HashSet<string> staticMemberInstanceIds)
+    /// <summary>
+    /// Speeds up the refresh rate after a successful call (moves toward minRefreshRate).
+    /// </summary>
+    protected void SpeedupRefreshRate()
     {
-        IList<HostSpec> allHosts = this.pluginService.AllHosts;
-
-        foreach (HostSpec host in allHosts)
+        if (this.currentRefreshRate > this.minRefreshRate)
         {
-            var availability = staticMemberInstanceIds.Contains(host.HostId ?? string.Empty)
-                ? HostAvailability.Available
-                : HostAvailability.Unavailable;
-            this.pluginService.SetAvailability(host.AsAliases(), availability);
+            this.currentRefreshRate = TimeSpan.FromMilliseconds(
+                this.currentRefreshRate.TotalMilliseconds / this.refreshRateBackoffFactor);
+            if (this.currentRefreshRate < this.minRefreshRate)
+            {
+                this.currentRefreshRate = this.minRefreshRate;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Slows down the refresh rate after a throttling exception (moves toward maxRefreshRate).
+    /// </summary>
+    protected void SlowdownRefreshRate()
+    {
+        if (this.currentRefreshRate < this.maxRefreshRate)
+        {
+            this.currentRefreshRate = TimeSpan.FromMilliseconds(
+                this.currentRefreshRate.TotalMilliseconds * this.refreshRateBackoffFactor);
+            if (this.currentRefreshRate > this.maxRefreshRate)
+            {
+                this.currentRefreshRate = this.maxRefreshRate;
+            }
         }
     }
 
     public bool HasCustomEndpointInfo()
     {
-        return CustomEndpointInfoCache.ContainsKey(this.customEndpointHostSpec.Host);
+        bool hasInfo = CustomEndpointInfoCache.ContainsKey(this.customEndpointHostSpec.Host);
+
+        if (!hasInfo && !this.refreshRequiredEvent.IsSet)
+        {
+            this.refreshRequiredEvent.Set();
+        }
+
+        return hasInfo;
     }
 
     public bool ShouldDispose()

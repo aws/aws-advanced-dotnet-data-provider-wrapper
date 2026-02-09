@@ -182,6 +182,9 @@ public class CustomEndpointPlugin : AbstractConnectionPlugin
 
         TimeSpan refreshRate = TimeSpan.FromMilliseconds(
             PropertyDefinition.CustomEndpointInfoRefreshRateMs.GetInt(props) ?? 30000);
+        int refreshRateBackoffFactor = PropertyDefinition.CustomEndpointInfoRefreshRateBackoffFactor.GetInt(props) ?? 2;
+        TimeSpan maxRefreshRate = TimeSpan.FromMilliseconds(
+            PropertyDefinition.CustomEndpointInfoMaxRefreshRateMs.GetInt(props) ?? 300000);
 
         var newMonitor = new CustomEndpointMonitor(
             this.pluginService,
@@ -189,6 +192,8 @@ public class CustomEndpointPlugin : AbstractConnectionPlugin
             this.customEndpointId,
             this.region,
             refreshRate,
+            refreshRateBackoffFactor,
+            maxRefreshRate,
             this.rdsClientFunc);
 
         var cacheOptions = new MemoryCacheEntryOptions

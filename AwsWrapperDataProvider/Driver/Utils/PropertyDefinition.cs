@@ -249,6 +249,16 @@ public static class PropertyDefinition
         "30000",
         "Controls how frequently custom endpoint monitors fetch custom endpoint info, in milliseconds.");
 
+    public static readonly AwsWrapperProperty CustomEndpointInfoRefreshRateBackoffFactor = new(
+        "customEndpointInfoRefreshRateBackoffFactor",
+        "2",
+        "Controls the exponential backoff factor for the custom endpoint monitor. In the event the custom endpoint monitor encounters a throttling exception from the AWS RDS SDK, the refresh time between fetches for custom endpoint info will increase by this factor. When a successful call is made, it will decrease by the same factor.");
+
+    public static readonly AwsWrapperProperty CustomEndpointInfoMaxRefreshRateMs = new(
+        "customEndpointInfoMaxRefreshRateMs",
+        "300000",
+        "Controls the maximum time the custom endpoint monitor will wait in between fetches for custom endpoint info, in milliseconds.");
+
     public static readonly AwsWrapperProperty WaitForCustomEndpointInfo = new(
         "waitForCustomEndpointInfo",
         "true",
@@ -317,6 +327,8 @@ public static class PropertyDefinition
 
         // Custom Endpoint Plugin Properties
         CustomEndpointInfoRefreshRateMs,
+        CustomEndpointInfoRefreshRateBackoffFactor,
+        CustomEndpointInfoMaxRefreshRateMs,
         WaitForCustomEndpointInfo,
         WaitForCustomEndpointInfoTimeoutMs,
         CustomEndpointMonitorIdleExpirationMs,

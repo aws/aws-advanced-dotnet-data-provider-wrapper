@@ -22,14 +22,13 @@ public class CustomEndpointPluginFactory : IConnectionPluginFactory
 {
     public IConnectionPlugin GetInstance(IPluginService pluginService, Dictionary<string, string> props)
     {
-        // Check if AWS SDK is available
         try
         {
             _ = typeof(Amazon.RDS.AmazonRDSClient);
         }
         catch (Exception)
         {
-            // throw new InvalidOperationException(Resources.CustomEndpointPluginFactory_AwsSdkNotInClasspath);
+            throw new InvalidOperationException(Resources.CustomEndpointPluginFactory_AwsSdkNotInClasspath);
         }
 
         return new CustomEndpointPlugin(pluginService, props);

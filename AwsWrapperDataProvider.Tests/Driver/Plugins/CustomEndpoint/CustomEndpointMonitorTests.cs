@@ -91,6 +91,8 @@ public class CustomEndpointMonitorTests : IDisposable
             EndpointId,
             RegionEndpoint.USEast1,
             TimeSpan.FromMilliseconds(50),
+            refreshRateBackoffFactor: 2,
+            maxRefreshRate: TimeSpan.FromMilliseconds(300000),
             rdsClientFunc);
 
         // Wait for 2 run cycles. The first returns unexpected number of endpoints, the second returns one.
@@ -107,9 +109,18 @@ public class CustomEndpointMonitorTests : IDisposable
 
         monitor.Dispose();
 
-        // Static list: member1 and member2 should be Available, others Unavailable
-        Assert.Equal(HostAvailability.Available, this.allHosts[0].Availability);
-        Assert.Equal(HostAvailability.Available, this.allHosts[1].Availability);
+        // Verify that SetAllowedAndBlockedHosts was called with the correct allowed host IDs
+        // The monitor should have stored AllowedAndBlockedHosts in PluginService cache
+        this.mockPluginService.Verify(
+            s => s.SetAllowedAndBlockedHosts(
+                It.Is<string>(key => key == this.host.Host),
+                It.Is<AllowedAndBlockedHosts>(hosts =>
+                    hosts.AllowedHostIds != null &&
+                    hosts.AllowedHostIds.Count == 2 &&
+                    hosts.AllowedHostIds.Contains("member1") &&
+                    hosts.AllowedHostIds.Contains("member2") &&
+                    hosts.BlockedHostIds == null)),
+            Times.AtLeastOnce);
 
         mockRds.Verify(x => x.DescribeDBClusterEndpointsAsync(It.IsAny<DescribeDBClusterEndpointsRequest>(), It.IsAny<CancellationToken>()), Times.AtLeast(2));
     }
