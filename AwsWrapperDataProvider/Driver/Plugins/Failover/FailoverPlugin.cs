@@ -465,9 +465,8 @@ public class FailoverPlugin : AbstractConnectionPlugin
     {
         // Force refresh host list and wait for topology to stabilize
         await this.pluginService.ForceRefreshHostListAsync(true, this.failoverTimeoutMs);
-        var updatedHosts = this.pluginService.GetHosts();
-        var writerCandidate = updatedHosts
-            .FirstOrDefault(x => x.Role == HostRole.Writer);
+        var updatedHosts = this.pluginService.AllHosts;
+        var writerCandidate = updatedHosts.FirstOrDefault(x => x.Role == HostRole.Writer);
 
         if (writerCandidate == null)
         {
