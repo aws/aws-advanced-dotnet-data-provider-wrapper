@@ -367,8 +367,10 @@ public class FailoverPlugin : AbstractConnectionPlugin
             // Update reader candidates, topology may have changed
             await this.pluginService.ForceRefreshHostListAsync(false, 10000);
             hosts = this.pluginService.GetHosts();
-            hosts.ToList().ForEach(hostSpec => this.pluginService.SetAvailability(hostSpec.AsAliases(), HostAvailability.Available));
-            var readerCandidates = hosts.Where(h => h.Role == HostRole.Reader).ToHashSet();
+
+            var readerCandidates = hosts
+                .Where(h => h.Role == HostRole.Reader && h.Availability == HostAvailability.Available)
+                .ToHashSet();
 
             // First, try all original readers
             var remainingReaders = new HashSet<HostSpec>(readerCandidates);
@@ -417,8 +419,9 @@ public class FailoverPlugin : AbstractConnectionPlugin
                 }
             }
 
-            // Try the original writer, which may have been demoted to a reader
-            if (originalWriter != null && DateTime.UtcNow <= failoverEndTime)
+            if (originalWriter != null
+                && originalWriter.Availability == HostAvailability.Available
+                && DateTime.UtcNow <= failoverEndTime)
             {
                 if (this.failoverMode == FailoverMode.StrictReader && isOriginalWriterStillWriter)
                 {
@@ -467,7 +470,8 @@ public class FailoverPlugin : AbstractConnectionPlugin
         await this.pluginService.ForceRefreshHostListAsync(true, this.failoverTimeoutMs);
 
         var updatedHosts = this.pluginService.AllHosts;
-        var writerCandidate = updatedHosts.FirstOrDefault(x => x.Role == HostRole.Writer);
+        var writerCandidate = updatedHosts
+            .FirstOrDefault(x => x.Role == HostRole.Writer && x.Availability == HostAvailability.Available);
 
         if (writerCandidate == null)
         {

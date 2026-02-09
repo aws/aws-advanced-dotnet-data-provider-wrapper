@@ -252,18 +252,18 @@ public class CustomEndpointPlugin : AbstractConnectionPlugin
                     hasCustomEndpointInfo = monitor.HasCustomEndpointInfo();
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // throw new InvalidOperationException(
-                //     string.Format(Resources.CustomEndpointPlugin_InterruptedThread, this.customEndpointHostSpec?.Host), e);
+                throw new InvalidOperationException(
+                    string.Format(Resources.CustomEndpointPlugin_InterruptedThread, this.customEndpointHostSpec?.Host), ex);
             }
 
             if (!hasCustomEndpointInfo)
             {
-                // throw new InvalidOperationException(
-                //     string.Format(Resources.CustomEndpointPlugin_TimedOutWaitingForCustomEndpointInfo,
-                //         this.waitOnCachedInfoDurationMs,
-                //         this.customEndpointHostSpec?.Host));
+                throw new InvalidOperationException(
+                    string.Format(Resources.CustomEndpointPlugin_TimedOutWaitingForCustomEndpointInfo,
+                        this.waitOnCachedInfoDurationMs,
+                        this.customEndpointHostSpec?.Host));
             }
         }
     }
