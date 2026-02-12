@@ -27,7 +27,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider;
 
-public class AwsWrapperConnection : DbConnection
+public class AwsWrapperConnection : DbConnection, IWrapper
 {
     private static readonly ILogger<AwsWrapperConnection> Logger = LoggerUtils.GetLogger<AwsWrapperConnection>();
 
@@ -442,6 +442,21 @@ public class AwsWrapperConnection : DbConnection
     internal void UnregisterWrapperCommand(AwsWrapperCommand command)
     {
         this.ActiveWrapperCommands.Remove(command);
+    }
+
+    public T Unwrap<T>() where T : class
+    {
+        if (this.pluginService?.CurrentConnection is T connectionAsT)
+        {
+            return connectionAsT;
+        }
+
+        throw new ArgumentException(string.Format(Resources.Error_CannotUnwrap, typeof(AwsWrapperConnection).Name, typeof(T).Name));
+    }
+
+    public bool IsWrapperFor<T>() where T : class
+    {
+        return this.pluginService?.CurrentConnection is T;
     }
 }
 

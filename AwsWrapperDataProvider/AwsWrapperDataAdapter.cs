@@ -20,7 +20,7 @@ using AwsWrapperDataProvider.Properties;
 
 namespace AwsWrapperDataProvider;
 
-public class AwsWrapperDataAdapter : DbDataAdapter
+public class AwsWrapperDataAdapter : DbDataAdapter, IWrapper
 {
     protected DbDataAdapter targetDataAdapter;
 
@@ -214,6 +214,21 @@ public class AwsWrapperDataAdapter : DbDataAdapter
         {
             this.targetDataAdapter?.Dispose();
         }
+    }
+
+    public T Unwrap<T>() where T : class
+    {
+        if (this.targetDataAdapter is T adapterAsT)
+        {
+            return adapterAsT;
+        }
+
+        throw new ArgumentException(string.Format(Resources.Error_CannotUnwrap, typeof(AwsWrapperDataAdapter).Name, typeof(T).Name));
+    }
+
+    public bool IsWrapperFor<T>() where T : class
+    {
+        return this.targetDataAdapter is T;
     }
 }
 
