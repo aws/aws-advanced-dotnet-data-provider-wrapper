@@ -16,12 +16,13 @@ using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Plugins.ReadWriteSplitting;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests;
 using AwsWrapperDataProvider.Plugin.CustomEndpoint.CustomEndpoint;
 using AwsWrapperDataProvider.Tests;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 using Microsoft.EntityFrameworkCore;
 
-namespace AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests;
+namespace AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.Tests;
 
 /// <summary>
 /// Entity Framework MySQL integration tests for Custom Endpoint plugin with read-write splitting.

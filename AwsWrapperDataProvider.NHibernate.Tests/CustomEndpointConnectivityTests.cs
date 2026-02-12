@@ -25,7 +25,6 @@ using NHibernate;
 using NHibernate.Cfg;
 using NHibernate.Driver;
 using NHibernate.Driver.MySqlConnector;
-using Npgsql;
 
 namespace AwsWrapperDataProvider.NHibernate.Tests;
 
@@ -44,6 +43,12 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
     {
         this._fixture = fixture;
         this._logger = output;
+    }
+
+    private static DbConnection GetConnection(ISession session)
+    {
+        var connection = session.Connection;
+        return connection ?? throw new InvalidOperationException("Could not get DbConnection from NHibernate session.");
     }
 
     public override async ValueTask InitializeAsync()
@@ -140,12 +145,6 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
         }
 
         this._logger.WriteLine($"Custom endpoint instance successfully set to role: {hostRole}");
-    }
-
-    private static DbConnection GetConnection(ISession session)
-    {
-        var connection = session.Connection as DbConnection;
-        return connection ?? throw new InvalidOperationException("Could not get DbConnection from NHibernate session.");
     }
 
     [Fact]

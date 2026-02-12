@@ -202,7 +202,7 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
     /// 4. Switch back to reader succeeds.
     /// 5. Remove writer from endpoint; switch to writer fails.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
@@ -280,7 +280,7 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
     /// 4. Switch back to writer succeeds.
     /// 5. Remove reader from endpoint; switch to reader falls back to writer.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
