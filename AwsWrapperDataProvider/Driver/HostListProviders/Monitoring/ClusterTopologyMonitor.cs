@@ -111,8 +111,19 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         this.writerTopologyQuery = writerTopologyQuery;
         this.nodeIdQuery = nodeIdQuery;
 
-        // Use original properties directly
-        this.properties = properties;
+        Dictionary<string, string> monitoringConnProperties = new(properties);
+
+        foreach (string key in properties.Keys)
+        {
+            if (key.StartsWith(PropertyDefinition.ClusterTopologyMonitoringPropertyPrefix))
+            {
+                monitoringConnProperties[key[PropertyDefinition.ClusterTopologyMonitoringPropertyPrefix.Length..]] =
+                    properties[key];
+                monitoringConnProperties.Remove(key);
+            }
+        }
+
+        this.properties = monitoringConnProperties;
 
         // Make sure node monitoring tasks are cancelled once topology monitoring task is cancelled
         this.ctsNodeMonitoring = CancellationTokenSource.CreateLinkedTokenSource(this.ctsTopologyMonitoring.Token);
@@ -673,6 +684,11 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             string? suggestedWriterNodeId = await this.GetSuggestedWriterNodeIdAsync(connection);
 
             await using var command = connection.CreateCommand();
+            if (this.properties.TryGetValue("CommandTimeout", out string? value))
+            {
+                command.CommandTimeout = int.Parse(value, CultureInfo.InvariantCulture);
+            }
+
             if (command.CommandTimeout == 0)
             {
                 command.CommandTimeout = DefaultTopologyQueryTimeoutSec;

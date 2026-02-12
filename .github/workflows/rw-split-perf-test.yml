@@ -52,7 +52,6 @@ jobs:
           PG_VERSION: "default"
           PERF_RESULTS_DIR: ${{ env.PERF_RESULTS_DIR }}
           LOG_LEVEL: None
-
       - name: Archive results
         if: always()
         uses: actions/upload-artifact@v4
@@ -61,3 +60,11 @@ jobs:
           path: ${{ env.PERF_RESULTS_DIR }}/**/*.xlsx
           retention-days: 5
           if-no-files-found: warn
+      - name: Get Github Action IP
+        if: always()
+        id: ip
+        uses: haythem/public-ip@v1.3
+      - name: Remove Github Action IP
+        if: always()
+        run: |
+          aws ec2 revoke-security-group-ingress --group-name default --protocol all --port 0-65535 --cidr ${{ steps.ip.outputs.ipv4 }}/32
