@@ -48,6 +48,8 @@ public class AllowedAndBlockedHosts
     /// <param name="blockedHostIds">The set of blocked host IDs for connections. If null or empty, all host IDs in
     /// <paramref name="allowedHostIds"/> are allowed. If <paramref name="allowedHostIds"/> is also null or empty, there
     /// are no restrictions on which hosts are allowed.</param>
+    /// <param name="requiredRole">The required role of allowed host. If <paramref name="requiredRole"/> is null, there
+    /// are no restrictions on which host roles are allowed.</param>
     public AllowedAndBlockedHosts(HashSet<string>? allowedHostIds, HashSet<string>? blockedHostIds, HostRole? requiredRole)
     {
         this.AllowedHostIds = allowedHostIds != null && allowedHostIds.Count > 0
