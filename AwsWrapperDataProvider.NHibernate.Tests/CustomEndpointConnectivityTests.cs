@@ -12,22 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data;
-using Amazon.RDS.Model;
+using System.Data.Common;
+using System.Reflection;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
-using AwsWrapperDataProvider.Driver.Plugins.Failover;
 using AwsWrapperDataProvider.Driver.Plugins.ReadWriteSplitting;
 using AwsWrapperDataProvider.Driver.Utils;
 using AwsWrapperDataProvider.Plugin.CustomEndpoint.CustomEndpoint;
+using AwsWrapperDataProvider.Tests;
 using AwsWrapperDataProvider.Tests.Container.Utils;
-using MySqlConnector;
+using NHibernate;
+using NHibernate.Cfg;
+using NHibernate.Driver;
+using NHibernate.Driver.MySqlConnector;
 using Npgsql;
 
-namespace AwsWrapperDataProvider.Tests;
+namespace AwsWrapperDataProvider.NHibernate.Tests;
 
 /// <summary>
-/// Integration tests for the Custom Endpoint plugin, ported from the Java driver's CustomEndpointTest.
+/// NHibernate integration tests for Custom Endpoint plugin with read-write splitting.
 /// Runs only on Aurora with at least 3 instances; requires first instance to be writer.
 /// </summary>
 public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixture<CustomEndpointTestFixture>
@@ -49,86 +52,31 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
         await base.InitializeAsync();
     }
 
-    /// <summary>
-    /// Connects to a custom endpoint with failover plugin, verifies connection is to an endpoint member,
-    /// triggers failover, expects FailoverSuccessException, then verifies new connection is still to an endpoint member.
-    /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Fact]
-    [Trait("Category", "Integration")]
-    [Trait("Database", "mysql")]
-    [Trait("Database", "pg")]
-    [Trait("Engine", "aurora")]
-    public async Task CustomEndpoint_Failover()
+    private Configuration GetNHibernateConfiguration(string connectionString)
     {
-        Assert.SkipWhen(NumberOfInstances < 3, "Skipped due to test requiring number of database instances >= 3.");
-        Assert.SkipWhen(this._fixture.EndpointInfo == null, "Custom endpoint fixture not created (not Aurora or < 3 instances).");
-
-        var dbInfo = TestEnvironment.Env.Info.DatabaseInfo;
-        var port = Port;
-        var connectionString = ConnectionStringHelper.GetUrl(
-            Engine,
-            this._fixture.EndpointInfo.Endpoint,
-            port,
-            Username,
-            Password,
-            DefaultDbName,
-            10,
-            10,
-            "customEndpoint,failover",
-            false);
-        connectionString += "; FailoverMode=ReaderOrWriter";
-        connectionString += $"; ClusterInstanceHostPattern=?.{dbInfo.InstanceEndpointSuffix}:{dbInfo.InstanceEndpointPort}";
-
-        using AwsWrapperConnection connection = Engine switch
+        var properties = new Dictionary<string, string>
         {
-            DatabaseEngine.MYSQL => new AwsWrapperConnection<MySqlConnection>(connectionString),
-            DatabaseEngine.PG => new AwsWrapperConnection<NpgsqlConnection>(connectionString),
-            _ => throw new NotSupportedException($"Unsupported engine: {Engine}"),
+            { "connection.connection_string", connectionString },
         };
 
-        await connection.OpenAsync(TestContext.Current.CancellationToken);
-        Assert.Equal(ConnectionState.Open, connection.State);
+        var cfg = new Configuration().AddAssembly(Assembly.GetExecutingAssembly());
 
-        var endpointMembers = this._fixture.EndpointInfo.StaticMembers ?? new List<string>();
-        var instanceId = await AuroraUtils.QueryInstanceId(connection, false);
-        Assert.True(endpointMembers.Contains(instanceId!), $"Instance {instanceId} should be in endpoint members: [{string.Join(", ", endpointMembers)}]");
-
-        var currentWriter = TestEnvironment.Env.Info.DatabaseInfo.Instances[0].InstanceId;
-        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-
-        if (instanceId == currentWriter)
+        switch (Engine)
         {
-            var crashTask = AuroraUtils.CrashInstance(currentWriter, tcs);
-            await tcs.Task;
-            await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
-            {
-                this._logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Executing instance ID query to trigger failover...");
-                await AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, true);
-            });
-            await crashTask;
-        }
-        else
-        {
-            await AuroraUtils.FailoverClusterToATargetAndWaitUntilWriterChanged(
-                TestEnvironment.Env.Info.RdsDbName!,
-                currentWriter,
-                instanceId!);
-            await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
-            {
-                this._logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Executing instance ID query to trigger failover...");
-                await AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, true);
-            });
+            case DatabaseEngine.PG:
+                properties.Add("dialect", "NHibernate.Dialect.PostgreSQLDialect");
+                cfg.DataBaseIntegration(c => c.UseAwsWrapperDriver<NpgsqlDriver>());
+                break;
+            case DatabaseEngine.MYSQL:
+            default:
+                properties.Add("dialect", "NHibernate.Dialect.MySQLDialect");
+                cfg.DataBaseIntegration(c => c.UseAwsWrapperDriver<MySqlConnectorDriver>());
+                break;
         }
 
-        var newInstanceId = await AuroraUtils.QueryInstanceId(connection, false);
-        Assert.True(endpointMembers.Contains(newInstanceId!), $"New instance {newInstanceId} should be in endpoint members: [{string.Join(", ", endpointMembers)}]");
+        return cfg.AddProperties(properties);
     }
 
-    /// <summary>
-    /// Ensures the custom endpoint's single instance has the specified role (writer or reader).
-    /// May trigger a failover to achieve the desired role.
-    /// </summary>
     private async Task SetupCustomEndpointRoleAsync(HostRole hostRole)
     {
         this._logger.WriteLine($"Setting up custom endpoint instance with role: {hostRole}");
@@ -194,21 +142,18 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
         this._logger.WriteLine($"Custom endpoint instance successfully set to role: {hostRole}");
     }
 
-    /// <summary>
-    /// Tests read-write splitting with custom endpoint changes when initial connection is to a reader:
-    /// 1. Connect to reader via custom endpoint (endpoint has only reader).
-    /// 2. Switch to writer fails (endpoint has no writer).
-    /// 3. Add writer to endpoint; switch to writer succeeds.
-    /// 4. Switch back to reader succeeds.
-    /// 5. Remove writer from endpoint; switch to writer fails.
-    /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    private static DbConnection GetConnection(ISession session)
+    {
+        var connection = session.Connection as DbConnection;
+        return connection ?? throw new InvalidOperationException("Could not get DbConnection from NHibernate session.");
+    }
+
     [Fact]
     [Trait("Category", "Integration")]
-    [Trait("Database", "mysql")]
-    [Trait("Database", "pg")]
+    [Trait("Database", "mysql-nh")]
+    [Trait("Database", "pg-nh")]
     [Trait("Engine", "aurora")]
-    public async Task CustomEndpoint_ReadWriteSplitting_WithCustomEndpointChanges_WithReaderAsInitConn()
+    public async Task NHibernate_CustomEndpoint_ReadWriteSplitting_WithCustomEndpointChanges_WithReaderAsInitConn()
     {
         Assert.SkipWhen(NumberOfInstances < 3, "Skipped due to test requiring number of database instances >= 3.");
         Assert.SkipWhen(this._fixture.EndpointInfo == null, "Custom endpoint fixture not created (not Aurora or < 3 instances).");
@@ -231,8 +176,11 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
         connectionString += $"; {PropertyDefinition.CustomEndpointMonitorIdleExpirationMs.Name}=30000";
         connectionString += $"; {PropertyDefinition.WaitForCustomEndpointInfoTimeoutMs.Name}=30000";
 
-        using var connection = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
-        await connection.OpenAsync(TestContext.Current.CancellationToken);
+        var cfg = this.GetNHibernateConfiguration(connectionString);
+        var sessionFactory = cfg.BuildSessionFactory();
+
+        using var session = sessionFactory.OpenSession();
+        var connection = GetConnection(session);
 
         var endpointMembers = this._fixture.EndpointInfo.StaticMembers ?? new List<string>();
         var originalReaderId = await AuroraUtils.QueryInstanceId(connection, true);
@@ -245,7 +193,7 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
         });
 
         var writerId = await AuroraUtils.GetDBClusterWriterInstanceIdAsync(TestEnvironment.Env.Info.RdsDbName!);
-        await AuroraUtils.ModifyDBClusterEndpointAsync(this._fixture.EndpointId, [originalReaderId!, writerId]);
+        await AuroraUtils.ModifyDBClusterEndpointAsync(this._fixture.EndpointId, new List<string> { originalReaderId!, writerId });
 
         try
         {
@@ -261,7 +209,7 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
         }
         finally
         {
-            await AuroraUtils.ModifyDBClusterEndpointAsync(this._fixture.EndpointId, [originalReaderId!]);
+            await AuroraUtils.ModifyDBClusterEndpointAsync(this._fixture.EndpointId, new List<string> { originalReaderId! });
             await AuroraUtils.WaitUntilEndpointHasMembersAsync(this._fixture.EndpointId, new HashSet<string> { originalReaderId! });
         }
 
@@ -272,27 +220,19 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
         });
     }
 
-    /// <summary>
-    /// Tests read-write splitting with custom endpoint changes when initial connection is to the writer:
-    /// 1. Connect to writer via custom endpoint (endpoint has only writer).
-    /// 2. Switch to reader does not throw but stays on writer (fallback).
-    /// 3. Add reader to endpoint; switch to reader succeeds.
-    /// 4. Switch back to writer succeeds.
-    /// 5. Remove reader from endpoint; switch to reader falls back to writer.
-    /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     [Trait("Category", "Integration")]
-    [Trait("Database", "mysql")]
-    [Trait("Database", "pg")]
+    [Trait("Database", "mysql-nh")]
+    [Trait("Database", "pg-nh")]
     [Trait("Engine", "aurora")]
-    public async Task CustomEndpoint_ReadWriteSplitting_WithCustomEndpointChanges_WithWriterAsInitConn()
+    public async Task NHibernate_CustomEndpoint_ReadWriteSplitting_WithCustomEndpointChanges_WithWriterAsInitConn()
     {
         Assert.SkipWhen(NumberOfInstances < 3, "Skipped due to test requiring number of database instances >= 3.");
         Assert.SkipWhen(this._fixture.EndpointInfo == null, "Custom endpoint fixture not created (not Aurora or < 3 instances).");
 
         await this.SetupCustomEndpointRoleAsync(HostRole.Writer);
 
+        var pluginCodes = Engine == DatabaseEngine.PG ? "customEndpoint,efm,readWriteSplitting,failover" : "customEndpoint,readWriteSplitting,failover";
         var connectionString = ConnectionStringHelper.GetUrl(
             Engine,
             this._fixture.EndpointInfo!.Endpoint,
@@ -302,14 +242,17 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
             DefaultDbName,
             3,
             10,
-            "customEndpoint,readWriteSplitting,failover",
+            pluginCodes,
             false);
         connectionString += $"; ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
         connectionString += $"; {PropertyDefinition.CustomEndpointMonitorIdleExpirationMs.Name}=30000";
         connectionString += $"; {PropertyDefinition.WaitForCustomEndpointInfoTimeoutMs.Name}=30000";
 
-        using var connection = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
-        await connection.OpenAsync(TestContext.Current.CancellationToken);
+        var cfg = this.GetNHibernateConfiguration(connectionString);
+        var sessionFactory = cfg.BuildSessionFactory();
+
+        using var session = sessionFactory.OpenSession();
+        var connection = GetConnection(session);
 
         var endpointMembers = this._fixture.EndpointInfo.StaticMembers ?? new List<string>();
         var originalWriterId = await AuroraUtils.QueryInstanceId(connection, true);
@@ -324,7 +267,7 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
         string readerIdToAdd = TestEnvironment.Env.Info.DatabaseInfo.Instances
             .First(i => i.InstanceId != writerId).InstanceId;
 
-        await AuroraUtils.ModifyDBClusterEndpointAsync(this._fixture.EndpointId, [originalWriterId!, readerIdToAdd]);
+        await AuroraUtils.ModifyDBClusterEndpointAsync(this._fixture.EndpointId, new List<string> { originalWriterId!, readerIdToAdd });
 
         try
         {
@@ -338,7 +281,7 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
         }
         finally
         {
-            await AuroraUtils.ModifyDBClusterEndpointAsync(this._fixture.EndpointId, [originalWriterId!]);
+            await AuroraUtils.ModifyDBClusterEndpointAsync(this._fixture.EndpointId, new List<string> { originalWriterId! });
             await AuroraUtils.WaitUntilEndpointHasMembersAsync(this._fixture.EndpointId, new HashSet<string> { originalWriterId! });
         }
 

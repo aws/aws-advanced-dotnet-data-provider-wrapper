@@ -55,7 +55,7 @@ public class CustomEndpointMonitor : ICustomEndpointMonitor
     protected readonly Task monitorTask;
 
     protected TimeSpan currentRefreshRate;
-    private bool _disposed;
+    private bool _disposed = false;
 
     public CustomEndpointMonitor(
         IPluginService pluginService,
@@ -407,5 +407,7 @@ public class CustomEndpointMonitor : ICustomEndpointMonitor
                 this.rdsClient.Dispose();
             }
         }
+
+        this._disposed = true;
     }
 }
