@@ -245,37 +245,37 @@ public static class PropertyDefinition
 
     // Custom Endpoint Plugin Properties
     public static readonly AwsWrapperProperty CustomEndpointInfoRefreshRateMs = new(
-        "customEndpointInfoRefreshRateMs",
+        "CustomEndpointInfoRefreshRateMs",
         "30000",
         "Controls how frequently custom endpoint monitors fetch custom endpoint info, in milliseconds.");
 
     public static readonly AwsWrapperProperty CustomEndpointInfoRefreshRateBackoffFactor = new(
-        "customEndpointInfoRefreshRateBackoffFactor",
+        "CustomEndpointInfoRefreshRateBackoffFactor",
         "2",
         "Controls the exponential backoff factor for the custom endpoint monitor. In the event the custom endpoint monitor encounters a throttling exception from the AWS RDS SDK, the refresh time between fetches for custom endpoint info will increase by this factor. When a successful call is made, it will decrease by the same factor.");
 
     public static readonly AwsWrapperProperty CustomEndpointInfoMaxRefreshRateMs = new(
-        "customEndpointInfoMaxRefreshRateMs",
+        "CustomEndpointInfoMaxRefreshRateMs",
         "300000",
         "Controls the maximum time the custom endpoint monitor will wait in between fetches for custom endpoint info, in milliseconds.");
 
     public static readonly AwsWrapperProperty WaitForCustomEndpointInfo = new(
-        "waitForCustomEndpointInfo",
+        "WaitForCustomEndpointInfo",
         "true",
         "Controls whether to wait for custom endpoint info to become available before connecting or executing a method. Waiting is only necessary if a connection to a given custom endpoint has not been opened or used recently. Note that disabling this may result in occasional connections to instances outside of the custom endpoint.");
 
     public static readonly AwsWrapperProperty WaitForCustomEndpointInfoTimeoutMs = new(
-        "waitForCustomEndpointInfoTimeoutMs",
+        "WaitForCustomEndpointInfoTimeoutMs",
         "5000",
         "Controls the maximum amount of time that the plugin will wait for custom endpoint info to be made available by the custom endpoint monitor, in milliseconds.");
 
     public static readonly AwsWrapperProperty CustomEndpointMonitorIdleExpirationMs = new(
-        "customEndpointMonitorExpirationMs",
+        "CustomEndpointMonitorExpirationMs",
         "900000", // 15 minutes
         "Controls how long a monitor should run without use before expiring and being removed, in milliseconds.");
 
     public static readonly AwsWrapperProperty CustomEndpointRegion = new(
-        "customEndpointRegion",
+        "CustomEndpointRegion",
         null,
         "The region of the cluster's custom endpoints. If not specified, the region will be parsed from the URL.");
 

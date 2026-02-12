@@ -182,12 +182,14 @@ public class PluginService : IPluginService, IHostListProviderService
         var filteredHosts = new List<HostSpec>(this.AllHosts);
         var allowedHostIds = hostPermissions.AllowedHostIds;
         var blockedHostIds = hostPermissions.BlockedHostIds;
+        var requiredRole = hostPermissions.RequiredRole;
 
         if (allowedHostIds != null && allowedHostIds.Count > 0)
         {
             // Only allow hosts that are in the allowed list
             filteredHosts = filteredHosts
                 .Where(host => !string.IsNullOrEmpty(host.HostId) && allowedHostIds.Contains(host.HostId))
+                .Where(host => requiredRole == null || host.Role == requiredRole)
                 .ToList();
         }
 
@@ -196,6 +198,7 @@ public class PluginService : IPluginService, IHostListProviderService
             // Exclude hosts that are in the blocked list
             filteredHosts = filteredHosts
                 .Where(host => string.IsNullOrEmpty(host.HostId) || !blockedHostIds.Contains(host.HostId))
+                .Where(host => requiredRole == null || host.Role == requiredRole)
                 .ToList();
         }
 

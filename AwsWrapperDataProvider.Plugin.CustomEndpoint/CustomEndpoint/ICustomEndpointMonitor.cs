@@ -32,4 +32,6 @@ public interface ICustomEndpointMonitor : IDisposable
     /// </summary>
     /// <returns>True if the monitor has info about the custom endpoint, otherwise returns false.</returns>
     bool HasCustomEndpointInfo();
+
+    void RequestCustomEndpointInfoUpdate();
 }

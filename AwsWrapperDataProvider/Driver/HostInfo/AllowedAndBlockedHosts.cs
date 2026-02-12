@@ -20,18 +20,25 @@ namespace AwsWrapperDataProvider.Driver.HostInfo;
 /// </summary>
 public class AllowedAndBlockedHosts
 {
-    /// <summary>
-    /// Gets the set of allowed host IDs for connections. If null or empty, all host IDs that are not in
-    /// <see cref="BlockedHostIds"/> are allowed.
-    /// </summary>
-    public HashSet<string>? AllowedHostIds { get; }
+    private readonly HostRole? _requiredRole;
 
     /// <summary>
     /// Gets the set of blocked host IDs for connections. If null or empty, all host IDs in
     /// <see cref="AllowedHostIds"/> are allowed. If <see cref="AllowedHostIds"/> is also null or empty, there
     /// are no restrictions on which hosts are allowed.
     /// </summary>
-    public HashSet<string>? BlockedHostIds { get; }
+    public IReadOnlySet<string>? AllowedHostIds { get; }
+
+    /// <summary>
+    /// Gets the set of allowed host IDs for connections. If null or empty, all host IDs that are not in
+    /// <see cref="BlockedHostIds"/> are allowed.
+    /// </summary>
+    public IReadOnlySet<string>? BlockedHostIds { get; }
+
+    /// <summary>
+    /// Gets the required role of instances in the custom endpoint, or null if there is no strict role requirement.
+    /// </summary>
+    public HostRole? RequiredRole { get => this._requiredRole; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AllowedAndBlockedHosts"/> class.
@@ -41,9 +48,14 @@ public class AllowedAndBlockedHosts
     /// <param name="blockedHostIds">The set of blocked host IDs for connections. If null or empty, all host IDs in
     /// <paramref name="allowedHostIds"/> are allowed. If <paramref name="allowedHostIds"/> is also null or empty, there
     /// are no restrictions on which hosts are allowed.</param>
-    public AllowedAndBlockedHosts(HashSet<string>? allowedHostIds, HashSet<string>? blockedHostIds)
+    public AllowedAndBlockedHosts(HashSet<string>? allowedHostIds, HashSet<string>? blockedHostIds, HostRole? requiredRole)
     {
-        this.AllowedHostIds = allowedHostIds != null && allowedHostIds.Count > 0 ? allowedHostIds : null;
-        this.BlockedHostIds = blockedHostIds != null && blockedHostIds.Count > 0 ? blockedHostIds : null;
+        this.AllowedHostIds = allowedHostIds != null && allowedHostIds.Count > 0
+            ? new HashSet<string>(allowedHostIds, StringComparer.Ordinal)
+            : null;
+        this.BlockedHostIds = blockedHostIds != null && blockedHostIds.Count > 0
+            ? new HashSet<string>(blockedHostIds, StringComparer.Ordinal)
+            : null;
+        this._requiredRole = requiredRole;
     }
 }

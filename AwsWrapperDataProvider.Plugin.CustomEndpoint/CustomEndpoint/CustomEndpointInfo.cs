@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using Amazon.RDS.Model;
+using AwsWrapperDataProvider.Driver.HostInfo;
 
 namespace AwsWrapperDataProvider.Plugin.CustomEndpoint.CustomEndpoint;
 
@@ -133,6 +134,20 @@ public class CustomEndpointInfo
         return this.MemberListType == MemberTypeList.ExclusionList ? this.Members : null;
     }
 
+    /// <summary>
+    /// Evaluates whether instances in the custom endpoint must match a particular role according to the custom endpoint
+    /// properties. Note that custom clusters with static member lists always route to all static members, even if the
+    /// member is a writer and the custom endpoint is of type is READER, so there are never role requirements for static
+    /// list custom clusters.
+    /// </summary>
+    /// <returns>The required role of instances in the custom endpoint, or null if there is no strict role requirement.</returns>
+    public HostRole? GetRequiredRole()
+    {
+        return this.MemberListType == MemberTypeList.ExclusionList && this.RoleType == CustomEndpointRoleType.Reader
+            ? HostRole.Reader
+            : null;
+    }
+
     public override bool Equals(object? obj)
     {
         if (this == obj)
@@ -161,8 +176,7 @@ public class CustomEndpointInfo
             this.ClusterIdentifier,
             this.Url,
             this.RoleType,
-            this.MemberListType,
-            this.Members);
+            this.MemberListType);
     }
 
     public override string ToString()

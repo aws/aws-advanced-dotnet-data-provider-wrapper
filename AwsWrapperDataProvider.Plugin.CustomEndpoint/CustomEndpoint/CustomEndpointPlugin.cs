@@ -34,11 +34,7 @@ public class CustomEndpointPlugin : AbstractConnectionPlugin
 {
     private static readonly ILogger<CustomEndpointPlugin> Logger = LoggerUtils.GetLogger<CustomEndpointPlugin>();
 
-    protected static readonly TimeSpan CacheCleanupRate = TimeSpan.FromMinutes(1);
-    protected static readonly MemoryCache Monitors = new(new MemoryCacheOptions
-    {
-        SizeLimit = 100,
-    });
+    protected static readonly MemoryCache Monitors = new(new MemoryCacheOptions { SizeLimit = 100 });
 
     public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string>
     {
@@ -174,7 +170,7 @@ public class CustomEndpointPlugin : AbstractConnectionPlugin
         }
 
         string cacheKey = this.customEndpointHostSpec.Host;
-        ICustomEndpointMonitor? existingMonitor = Monitors.Get<ICustomEndpointMonitor>(cacheKey);
+        ICustomEndpointMonitor? existingMonitor = Monitors.Get<Lazy<ICustomEndpointMonitor>>(cacheKey)?.Value;
         if (existingMonitor != null)
         {
             return existingMonitor;
@@ -186,34 +182,28 @@ public class CustomEndpointPlugin : AbstractConnectionPlugin
         TimeSpan maxRefreshRate = TimeSpan.FromMilliseconds(
             PropertyDefinition.CustomEndpointInfoMaxRefreshRateMs.GetInt(props) ?? 300000);
 
-        var newMonitor = new CustomEndpointMonitor(
-            this.pluginService,
-            this.customEndpointHostSpec,
-            this.customEndpointId,
-            this.region,
-            refreshRate,
-            refreshRateBackoffFactor,
-            maxRefreshRate,
-            this.rdsClientFunc);
-
-        var cacheOptions = new MemoryCacheEntryOptions
+        var newMonitor = Monitors.GetOrCreate(cacheKey, entry =>
         {
-            AbsoluteExpirationRelativeToNow = TimeSpan.FromMilliseconds(this.idleMonitorExpirationMs),
-            Size = 1,
-            PostEvictionCallbacks =
-            {
-                new PostEvictionCallbackRegistration
-                {
-                    EvictionCallback = this.OnMonitorEvicted,
-                },
-            },
-        };
+            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMilliseconds(this.idleMonitorExpirationMs);
+            entry.Size = 1;
+            entry.RegisterPostEvictionCallback(OnMonitorEvicted);
 
-        Monitors.Set(cacheKey, newMonitor, cacheOptions);
-        return newMonitor;
+            return new Lazy<CustomEndpointMonitor>(() =>
+                new CustomEndpointMonitor(
+                    this.pluginService,
+                    this.customEndpointHostSpec,
+                    this.customEndpointId,
+                    this.region,
+                    refreshRate,
+                    refreshRateBackoffFactor,
+                    maxRefreshRate,
+                    this.rdsClientFunc));
+        });
+
+        return newMonitor!.Value;
     }
 
-    private void OnMonitorEvicted(object key, object? value, EvictionReason reason, object? state)
+    private static void OnMonitorEvicted(object key, object? value, EvictionReason reason, object? state)
     {
         if (value is ICustomEndpointMonitor evictedMonitor)
         {
@@ -243,6 +233,8 @@ public class CustomEndpointPlugin : AbstractConnectionPlugin
 
         if (!hasCustomEndpointInfo)
         {
+            monitor.RequestCustomEndpointInfoUpdate();
+
             Logger.LogTrace(Resources.CustomEndpointPlugin_WaitingForCustomEndpointInfo,
                 this.customEndpointHostSpec?.Host,
                 this.waitOnCachedInfoDurationMs);

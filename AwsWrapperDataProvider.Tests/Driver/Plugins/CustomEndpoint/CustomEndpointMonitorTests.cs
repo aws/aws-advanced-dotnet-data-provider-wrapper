@@ -18,6 +18,7 @@ using Amazon.RDS.Model;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Plugin.CustomEndpoint.CustomEndpoint;
+using Microsoft.Extensions.Caching.Memory;
 using Moq;
 
 namespace AwsWrapperDataProvider.Tests.Driver.Plugins.CustomEndpoint;
@@ -98,7 +99,7 @@ public class CustomEndpointMonitorTests : IDisposable
         // Wait for 2 run cycles. The first returns unexpected number of endpoints, the second returns one.
         await Task.Delay(150, TestContext.Current.CancellationToken);
 
-        Assert.True(CustomEndpointMonitor.CustomEndpointInfoCache.TryGetValue(this.host.Host, out var cachedInfo));
+        var cachedInfo = CustomEndpointMonitor.CustomEndpointInfoCache.Get<CustomEndpointInfo>(this.host.Host);
         Assert.NotNull(cachedInfo);
         Assert.Equal(ExpectedInfo.EndpointIdentifier, cachedInfo.EndpointIdentifier);
         Assert.Equal(ExpectedInfo.ClusterIdentifier, cachedInfo.ClusterIdentifier);
@@ -129,11 +130,11 @@ public class CustomEndpointMonitorTests : IDisposable
     [Trait("Category", "Unit")]
     public void ClearCache_RemovesAllEntries()
     {
-        CustomEndpointMonitor.CustomEndpointInfoCache[CustomEndpointUrl1] = ExpectedInfo;
-        Assert.True(CustomEndpointMonitor.CustomEndpointInfoCache.ContainsKey(CustomEndpointUrl1));
+        CustomEndpointMonitor.CustomEndpointInfoCache.Set(CustomEndpointUrl1, ExpectedInfo, TimeSpan.FromMinutes(5));
+        Assert.NotNull(CustomEndpointMonitor.CustomEndpointInfoCache.Get<CustomEndpointInfo>(CustomEndpointUrl1));
 
         CustomEndpointMonitor.ClearCache();
-        Assert.False(CustomEndpointMonitor.CustomEndpointInfoCache.ContainsKey(CustomEndpointUrl1));
+        Assert.Null(CustomEndpointMonitor.CustomEndpointInfoCache.Get<CustomEndpointInfo>(CustomEndpointUrl1));
     }
 
     [Fact]
@@ -166,6 +167,20 @@ public class CustomEndpointMonitorTests : IDisposable
         Assert.NotNull(info.GetExcludedMembers());
         Assert.Single(info.GetExcludedMembers()!);
         Assert.Contains("excluded1", info.GetExcludedMembers()!);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void CustomEndpointInfo_GetHashCode_EqualForSameContentInDifferentHashSetInstances()
+    {
+        var members1 = new HashSet<string> { "member1", "member2" };
+        var members2 = new HashSet<string> { "member1", "member2" };
+
+        var info1 = new CustomEndpointInfo(EndpointId, ClusterId, CustomEndpointUrl1, CustomEndpointRoleType.Any, members1, MemberTypeList.StaticList);
+        var info2 = new CustomEndpointInfo(EndpointId, ClusterId, CustomEndpointUrl1, CustomEndpointRoleType.Any, members2, MemberTypeList.StaticList);
+
+        Assert.True(info1.Equals(info2), "Instances with same member content should be equal (Equals uses SetEquals).");
+        Assert.Equal(info1.GetHashCode(), info2.GetHashCode());
     }
 
     private static DBClusterEndpoint CreateMockEndpoint(string url, string endpointId, List<string>? staticMembers, List<string>? excludedMembers)
