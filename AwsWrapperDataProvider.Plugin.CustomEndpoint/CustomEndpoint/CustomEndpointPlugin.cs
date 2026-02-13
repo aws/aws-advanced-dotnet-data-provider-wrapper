@@ -203,14 +203,28 @@ public class CustomEndpointPlugin : AbstractConnectionPlugin
         return newMonitor!.Value;
     }
 
-    private static void OnMonitorEvicted(object key, object? value, EvictionReason reason, object? state)
+    internal static void OnMonitorEvicted(object key, object? value, EvictionReason reason, object? state)
     {
-        if (value is ICustomEndpointMonitor evictedMonitor)
+        ICustomEndpointMonitor? toDispose = null;
+        if (value is Lazy<CustomEndpointMonitor> lazyCustom && lazyCustom.IsValueCreated)
+        {
+            toDispose = lazyCustom.Value;
+        }
+        else if (value is Lazy<ICustomEndpointMonitor> lazyIf && lazyIf.IsValueCreated)
+        {
+            toDispose = lazyIf.Value;
+        }
+        else if (value is ICustomEndpointMonitor monitor)
+        {
+            toDispose = monitor;
+        }
+
+        if (toDispose != null)
         {
             try
             {
                 Logger.LogTrace(Resources.CustomEndpointPlugin_OnMonitorEvicted_Disposing, key, reason);
-                evictedMonitor.Dispose();
+                toDispose.Dispose();
             }
             catch (Exception ex)
             {

@@ -20,6 +20,7 @@ using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Utils;
 using AwsWrapperDataProvider.Plugin.CustomEndpoint.CustomEndpoint;
+using Microsoft.Extensions.Caching.Memory;
 using Moq;
 
 namespace AwsWrapperDataProvider.Tests.Driver.Plugins.CustomEndpoint;
@@ -82,6 +83,14 @@ public class CustomEndpointPluginTests : IDisposable
             this.CreateMonitorIfAbsentCallCount++;
             if (this.injectMonitor != null)
             {
+                var cacheKey = this.customEndpointHostSpec!.Host;
+                var options = new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMilliseconds(this.idleMonitorExpirationMs),
+                    Size = 1,
+                };
+                options.RegisterPostEvictionCallback(CustomEndpointPlugin.OnMonitorEvicted);
+                Monitors.Set(cacheKey, this.injectMonitor, options);
                 return this.injectMonitor;
             }
 
@@ -136,14 +145,12 @@ public class CustomEndpointPluginTests : IDisposable
             _ => new AmazonRDSClient(RegionEndpoint.USEast1),
             this.mockMonitor.Object);
 
-        // Current implementation may not throw (exceptions commented out). If timeout is re-enabled, this would throw.
-        _ = await plugin.OpenConnection(this.customEndpointHost, this.props, true, this.mockConnectFunc.Object, true);
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            plugin.OpenConnection(this.customEndpointHost, this.props, true, this.mockConnectFunc.Object, true));
 
+        Assert.Contains("Timed out waiting", ex.Message);
         Assert.Equal(1, plugin.CreateMonitorIfAbsentCallCount);
-
-        // If WaitForCustomEndpointInfoAsync threw on timeout: mockConnectFunc would not be called.
-        // As implemented (no throw): connect is still called.
-        this.mockConnectFunc.Verify(f => f(), Times.Once);
+        this.mockConnectFunc.Verify(f => f(), Times.Never);
     }
 
     [Fact]
