@@ -33,6 +33,12 @@ public class PluginService : IPluginService, IHostListProviderService
 {
     private static readonly TimeSpan DefaultHostAvailabilityCacheExpiration = TimeSpan.FromMinutes(5);
     internal static readonly MemoryCache HostAvailabilityExpiringCache = new(new MemoryCacheOptions());
+
+    // Cache for AllowedAndBlockedHosts (keyed by custom endpoint URL or connection URL)
+    // This allows plugins like CustomEndpoint to store host restrictions without PluginService
+    // depending on plugin-specific types. Similar to Java's StorageService pattern.
+    public static readonly MemoryCache AllowedAndBlockedHostsCache = new(new MemoryCacheOptions());
+
     private static readonly ILogger<PluginService> Logger = LoggerUtils.GetLogger<PluginService>();
 
     private readonly object connectionSwitchLock = new();
@@ -158,13 +164,55 @@ public class PluginService : IPluginService, IHostListProviderService
 
     public IList<HostSpec> GetHosts()
     {
-        // TODO: Handle AllowedAndBlockHosts
-        return this.AllHosts;
+        // Filter hosts based on AllowedAndBlockedHosts restrictions (like Java's approach)
+        // This allows plugins like CustomEndpoint to restrict hosts without PluginService
+        // depending on plugin-specific types.
+        if (this.InitialConnectionHostSpec == null)
+        {
+            return this.AllHosts;
+        }
+
+        // Get AllowedAndBlockedHosts from cache (stored by plugins like CustomEndpoint)
+        var hostPermissions = AllowedAndBlockedHostsCache.Get<AllowedAndBlockedHosts>(this.InitialConnectionHostSpec.Host);
+        if (hostPermissions == null)
+        {
+            return this.AllHosts;
+        }
+
+        var filteredHosts = new List<HostSpec>(this.AllHosts);
+        var allowedHostIds = hostPermissions.AllowedHostIds;
+        var blockedHostIds = hostPermissions.BlockedHostIds;
+        var requiredRole = hostPermissions.RequiredRole;
+
+        if (allowedHostIds != null && allowedHostIds.Count > 0)
+        {
+            // Only allow hosts that are in the allowed list
+            filteredHosts = filteredHosts
+                .Where(host => !string.IsNullOrEmpty(host.HostId) && allowedHostIds.Contains(host.HostId))
+                .Where(host => requiredRole == null || host.Role == requiredRole)
+                .ToList();
+        }
+
+        if (blockedHostIds != null && blockedHostIds.Count > 0)
+        {
+            // Exclude hosts that are in the blocked list
+            filteredHosts = filteredHosts
+                .Where(host => string.IsNullOrEmpty(host.HostId) || !blockedHostIds.Contains(host.HostId))
+                .Where(host => requiredRole == null || host.Role == requiredRole)
+                .ToList();
+        }
+
+        return filteredHosts;
     }
 
     public async Task<HostRole> GetHostRole(DbConnection? connection)
     {
         return await this.hostListProvider.GetHostRoleAsync(connection!);
+    }
+
+    public void SetAllowedAndBlockedHosts(string connectionUrl, AllowedAndBlockedHosts allowedAndBlockedHosts)
+    {
+        AllowedAndBlockedHostsCache.Set(connectionUrl, allowedAndBlockedHosts, DefaultHostAvailabilityCacheExpiration);
     }
 
     public void SetAvailability(ICollection<string> hostAliases, HostAvailability availability)
@@ -193,6 +241,13 @@ public class PluginService : IPluginService, IHostListProviderService
             var currentAvailability = host.Availability;
             host.Availability = availability;
             HostAvailabilityExpiringCache.Set(host.GetHostAndPort(), availability, DefaultHostAvailabilityCacheExpiration);
+
+            // Also store by HostId so availability can be restored when new HostSpec objects are created
+            // during topology refresh (e.g., for custom endpoint restrictions set before topology is populated)
+            if (!string.IsNullOrEmpty(host.HostId))
+            {
+                HostAvailabilityExpiringCache.Set(host.HostId, availability, DefaultHostAvailabilityCacheExpiration);
+            }
 
             if (currentAvailability != availability)
             {
@@ -389,7 +444,16 @@ public class PluginService : IPluginService, IHostListProviderService
     {
         foreach (HostSpec host in hosts)
         {
+            // First try to restore from cache by host:port (for existing hosts)
             HostAvailabilityExpiringCache.TryGetValue(host.GetHostAndPort(), out HostAvailability? availability);
+
+            // If not found and host has a HostId, try to restore by HostId (for custom endpoint restrictions
+            // that were set before the topology refresh created these HostSpec objects)
+            if (!availability.HasValue && !string.IsNullOrEmpty(host.HostId))
+            {
+                HostAvailabilityExpiringCache.TryGetValue(host.HostId, out availability);
+            }
+
             if (availability.HasValue)
             {
                 host.Availability = availability.Value;

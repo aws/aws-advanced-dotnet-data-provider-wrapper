@@ -14,11 +14,14 @@ jobs:
   run-integration-tests:
     name: Run Integration Tests with Default
     runs-on: ubuntu-latest
-    strategy: 
+    strategy:
       fail-fast: false
       matrix:
         dbEngine: ["mysql", "pg"]
         deployment: ["aurora", "multi-az-cluster", "multi-az-instance", "aurora-limitless"]
+        exclude:
+          - dbEngine: mysql
+            deployment: aurora-limitless
     steps:
       - name: 'Clone repository'
         uses: actions/checkout@v4
