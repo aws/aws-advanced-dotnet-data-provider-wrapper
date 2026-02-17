@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data.Common;
+using System.Linq;
 using Amazon;
 using Amazon.RDS;
 using AwsWrapperDataProvider.Driver;
@@ -78,7 +79,11 @@ public class CustomEndpointPlugin : AbstractConnectionPlugin
     {
         Logger.LogInformation(Resources.CustomEndpointPlugin_CloseMonitors);
 
-        // The clear call automatically calls Dispose() on all monitors via eviction callbacks.
+        foreach (var key in Monitors.Keys.ToList())
+        {
+            Monitors.Remove(key);
+        }
+
         Monitors.Clear();
     }
 
