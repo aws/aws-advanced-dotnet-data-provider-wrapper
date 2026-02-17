@@ -81,6 +81,19 @@ public class CustomEndpointPlugin : AbstractConnectionPlugin
 
         foreach (var key in Monitors.Keys.ToList())
         {
+            var lazyMonitor = Monitors.Get<Lazy<ICustomEndpointMonitor>>(key);
+            if (lazyMonitor != null && lazyMonitor.IsValueCreated)
+            {
+                try
+                {
+                    lazyMonitor.Value.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogWarning(Resources.Error_DisposingCustomEndpointMonitor, ex.Message);
+                }
+            }
+
             Monitors.Remove(key);
         }
 
@@ -175,10 +188,10 @@ public class CustomEndpointPlugin : AbstractConnectionPlugin
         }
 
         string cacheKey = this.customEndpointHostSpec.Host;
-        ICustomEndpointMonitor? existingMonitor = Monitors.Get<Lazy<ICustomEndpointMonitor>>(cacheKey)?.Value;
-        if (existingMonitor != null)
+        var lazyMonitor = Monitors.Get<Lazy<ICustomEndpointMonitor>>(cacheKey);
+        if (lazyMonitor != null)
         {
-            return existingMonitor;
+            return lazyMonitor.Value;
         }
 
         TimeSpan refreshRate = TimeSpan.FromMilliseconds(
@@ -187,13 +200,13 @@ public class CustomEndpointPlugin : AbstractConnectionPlugin
         TimeSpan maxRefreshRate = TimeSpan.FromMilliseconds(
             PropertyDefinition.CustomEndpointInfoMaxRefreshRateMs.GetInt(props) ?? 300000);
 
-        var newMonitor = Monitors.GetOrCreate(cacheKey, entry =>
+        var newLazyMonitor = Monitors.GetOrCreate(cacheKey, entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMilliseconds(this.idleMonitorExpirationMs);
             entry.Size = 1;
             entry.RegisterPostEvictionCallback(OnMonitorEvicted);
 
-            return new Lazy<CustomEndpointMonitor>(() =>
+            return new Lazy<ICustomEndpointMonitor>(() =>
                 new CustomEndpointMonitor(
                     this.pluginService,
                     this.customEndpointHostSpec,
@@ -205,31 +218,17 @@ public class CustomEndpointPlugin : AbstractConnectionPlugin
                     this.rdsClientFunc));
         });
 
-        return newMonitor!.Value;
+        return newLazyMonitor!.Value;
     }
 
     internal static void OnMonitorEvicted(object key, object? value, EvictionReason reason, object? state)
     {
-        ICustomEndpointMonitor? toDispose = null;
-        if (value is Lazy<CustomEndpointMonitor> lazyCustom && lazyCustom.IsValueCreated)
-        {
-            toDispose = lazyCustom.Value;
-        }
-        else if (value is Lazy<ICustomEndpointMonitor> lazyIf && lazyIf.IsValueCreated)
-        {
-            toDispose = lazyIf.Value;
-        }
-        else if (value is ICustomEndpointMonitor monitor)
-        {
-            toDispose = monitor;
-        }
-
-        if (toDispose != null)
+        if (value is Lazy<ICustomEndpointMonitor> lazyMonitor && lazyMonitor.IsValueCreated)
         {
             try
             {
                 Logger.LogTrace(Resources.CustomEndpointPlugin_OnMonitorEvicted_Disposing, key, reason);
-                toDispose.Dispose();
+                lazyMonitor.Value.Dispose();
             }
             catch (Exception ex)
             {

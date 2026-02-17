@@ -89,9 +89,10 @@ public class CustomEndpointPluginTests : IDisposable
                     AbsoluteExpirationRelativeToNow = TimeSpan.FromMilliseconds(this.idleMonitorExpirationMs),
                     Size = 1,
                 };
-                options.RegisterPostEvictionCallback(CustomEndpointPlugin.OnMonitorEvicted);
-                Monitors.Set(cacheKey, this.injectMonitor, options);
-                return this.injectMonitor;
+                options.RegisterPostEvictionCallback(OnMonitorEvicted);
+                var lazyMonitor = new Lazy<ICustomEndpointMonitor>(() => this.injectMonitor);
+                Monitors.Set(cacheKey, lazyMonitor, options);
+                return lazyMonitor.Value;
             }
 
             return base.CreateMonitorIfAbsent(props);
