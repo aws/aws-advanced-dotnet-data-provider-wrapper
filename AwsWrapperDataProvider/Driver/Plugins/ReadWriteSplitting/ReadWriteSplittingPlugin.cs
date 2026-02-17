@@ -261,7 +261,7 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
         {
             HostSpec writerHost = WrapperUtils.GetWriter(hosts) ?? throw new ReadWriteSplittingDbException(Resources.ReadWriteSplittingPlugin_NoWriterFound);
             await this.InitializeWriterConnection(writerHost);
-            Logger.LogWarning(string.Format(Resources.ReadWriteSplittingPlugin_NoReadersFound), writerHost.ToString());
+            Logger.LogWarning(string.Format(Resources.ReadWriteSplittingPlugin_NoReadersFound, writerHost));
         }
         else
         {
@@ -285,7 +285,7 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
             }
             catch (DbException ex)
             {
-                Logger.LogWarning(ex, string.Format(Resources.ReadWriteSplittingPlugin_FailedToConnectToReader, hostSpec.ToString()));
+                Logger.LogWarning(ex, string.Format(Resources.ReadWriteSplittingPlugin_FailedToConnectToReader, hostSpec));
             }
         }
 
@@ -294,7 +294,7 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
             throw new ReadWriteSplittingDbException(Resources.ReadWriteSplittingPlugin_NoReadersAvailable);
         }
 
-        Logger.LogTrace(string.Format(Resources.ReadWriteSplittingPlugin_SuccessfullyConnectedToReader, readerHost.ToString()));
+        Logger.LogTrace(string.Format(Resources.ReadWriteSplittingPlugin_SuccessfullyConnectedToReader, readerHost));
         this.SwitchCurrentConnectionTo(connection, readerHost);
     }
 
