@@ -1,4 +1,4 @@
-﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -49,17 +49,20 @@ public class ReadWriteSplittingPerformanceTests : IntegrationTestBase
     {
         Assert.SkipWhen(NumberOfInstances < 5, "Skipped due to test requiring number of database instances >= 5.");
 
+        ConnectTimePlugin.ResetConnectTime();
+        ExecutionTimePlugin.ResetExecutionTime();
+
         SetReadOnlyPerfDataList.Clear();
-
-        var resultsWithPluginWithConnectionPool = await this.GetSetReadOnlyResults("readWriteSplitting,connectTime,executionTime", async, true);
-
-        this.logger.WriteLine("Results with readWriteSplitting plugin and with connection pool:");
-        this.LogResult(resultsWithPluginWithConnectionPool);
 
         var resultsWithoutPlugin = await this.GetSetReadOnlyResults("connectTime,executionTime", async, true);
 
         this.logger.WriteLine("Results without readWriteSplitting plugin:");
         this.LogResult(resultsWithoutPlugin);
+
+        var resultsWithPluginWithConnectionPool = await this.GetSetReadOnlyResults("readWriteSplitting,connectTime,executionTime", async, true);
+
+        this.logger.WriteLine("Results with readWriteSplitting plugin and with connection pool:");
+        this.LogResult(resultsWithPluginWithConnectionPool);
 
         var resultsWithPluginWithoutConnectionPool = await this.GetSetReadOnlyResults("readWriteSplitting,connectTime,executionTime", async, false);
 
@@ -205,7 +208,7 @@ public class ReadWriteSplittingPerformanceTests : IntegrationTestBase
             Assert.Equal(ConnectionState.Open, connection.State);
 
             // Measure switch to reader
-            ConnectTimePlugin.ReseConnectTime();
+            ConnectTimePlugin.ResetConnectTime();
             ExecutionTimePlugin.ResetExecutionTime();
 
             var sw = Stopwatch.StartNew();
@@ -221,7 +224,7 @@ public class ReadWriteSplittingPerformanceTests : IntegrationTestBase
             elapsedSwitchToReaderTimes.Add(elapsedReaderNs - connectTimeNs - executionTimeNs);
 
             // Measure switch to writer
-            ConnectTimePlugin.ReseConnectTime();
+            ConnectTimePlugin.ResetConnectTime();
             ExecutionTimePlugin.ResetExecutionTime();
 
             sw = Stopwatch.StartNew();

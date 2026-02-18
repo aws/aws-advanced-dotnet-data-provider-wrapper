@@ -25,7 +25,7 @@ public class ConnectTimePlugin : AbstractConnectionPlugin
     private static readonly ILogger<ConnectTimePlugin> Logger = LoggerUtils.GetLogger<ConnectTimePlugin>();
 
     private static double connectTime;
-    public static void ReseConnectTime()
+    public static void ResetConnectTime()
     {
         connectTime = 0;
     }
