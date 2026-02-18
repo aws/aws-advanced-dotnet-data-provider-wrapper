@@ -24,15 +24,16 @@ public class ConnectTimePlugin : AbstractConnectionPlugin
 {
     private static readonly ILogger<ConnectTimePlugin> Logger = LoggerUtils.GetLogger<ConnectTimePlugin>();
 
-    private static double connectTime;
-    public static void ResetConnectTime()
+    private double connectTime;
+
+    public void ResetConnectTime()
     {
-        connectTime = 0;
+        this.connectTime = 0;
     }
 
-    public static double GetTotalConnectTime()
+    public double GetTotalConnectTime()
     {
-        return connectTime;
+        return this.connectTime;
     }
 
     public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string>()
@@ -56,7 +57,7 @@ public class ConnectTimePlugin : AbstractConnectionPlugin
         double nanoseconds = (double)ticks * 1_000_000_000.0 / Stopwatch.Frequency;
 
         Logger.LogInformation(Resources.ConnectTimePlugin_ConnectTime, nanoseconds);
-        connectTime += nanoseconds;
+        this.connectTime += nanoseconds;
 
         return results;
     }

@@ -14,6 +14,7 @@
 
 using System.Data;
 using System.Diagnostics;
+using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Plugins.ConnectTime;
 using AwsWrapperDataProvider.Driver.Plugins.ExecutionTime;
 using AwsWrapperDataProvider.Tests.Container.Utils;
@@ -48,9 +49,6 @@ public class ReadWriteSplittingPerformanceTests : IntegrationTestBase
     public async Task ConnectToWriter_SwitchReaderWriter(bool async)
     {
         Assert.SkipWhen(NumberOfInstances < 5, "Skipped due to test requiring number of database instances >= 5.");
-
-        ConnectTimePlugin.ResetConnectTime();
-        ExecutionTimePlugin.ResetExecutionTime();
 
         SetReadOnlyPerfDataList.Clear();
 
@@ -101,7 +99,7 @@ public class ReadWriteSplittingPerformanceTests : IntegrationTestBase
 
         SetReadOnlyPerfDataList.Clear();
 
-        // Without connecition pool
+        // Without connection pool
         long connPoolSwitchToReaderMinOverhead = resultsWithPluginWithoutConnectionPool.SwitchToReaderMin - resultsWithoutPlugin.SwitchToReaderMin;
         long connPoolSwitchToReaderMaxOverhead = resultsWithPluginWithoutConnectionPool.SwitchToReaderMax - resultsWithoutPlugin.SwitchToReaderMax;
         long connPoolSwitchToReaderAvgOverhead = resultsWithPluginWithoutConnectionPool.SwitchToReaderAvg - resultsWithoutPlugin.SwitchToReaderAvg;
@@ -207,14 +205,19 @@ public class ReadWriteSplittingPerformanceTests : IntegrationTestBase
             await AuroraUtils.OpenDbConnection(connection, async);
             Assert.Equal(ConnectionState.Open, connection.State);
 
+            var connectTimePlugin = connection.PluginManager!.GetPlugin<ConnectTimePlugin>();
+            var executionTimePlugin = connection.PluginManager!.GetPlugin<ExecutionTimePlugin>();
+            Assert.NotNull(connectTimePlugin);
+            Assert.NotNull(executionTimePlugin);
+
             // Measure switch to reader
-            ConnectTimePlugin.ResetConnectTime();
-            ExecutionTimePlugin.ResetExecutionTime();
+            connectTimePlugin.ResetConnectTime();
+            executionTimePlugin.ResetExecutionTime();
 
             var sw = Stopwatch.StartNew();
             await AuroraUtils.SetReadOnly(connection, Engine, true, async);
-            var connectTimeNs = ConnectTimePlugin.GetTotalConnectTime();
-            var executionTimeNs = ExecutionTimePlugin.GetTotalExecutionTime();
+            var connectTimeNs = connectTimePlugin.GetTotalConnectTime();
+            var executionTimeNs = executionTimePlugin.GetTotalExecutionTime();
             this.logger.WriteLine($"Iteration {i}: connectTimeNs={connectTimeNs}, executionTimeNs={executionTimeNs}");
 
             sw.Stop();
@@ -224,13 +227,13 @@ public class ReadWriteSplittingPerformanceTests : IntegrationTestBase
             elapsedSwitchToReaderTimes.Add(elapsedReaderNs - connectTimeNs - executionTimeNs);
 
             // Measure switch to writer
-            ConnectTimePlugin.ResetConnectTime();
-            ExecutionTimePlugin.ResetExecutionTime();
+            connectTimePlugin.ResetConnectTime();
+            executionTimePlugin.ResetExecutionTime();
 
             sw = Stopwatch.StartNew();
             await AuroraUtils.SetReadOnly(connection, Engine, false, async);
-            connectTimeNs = ConnectTimePlugin.GetTotalConnectTime();
-            executionTimeNs = ExecutionTimePlugin.GetTotalExecutionTime();
+            connectTimeNs = connectTimePlugin.GetTotalConnectTime();
+            executionTimeNs = executionTimePlugin.GetTotalExecutionTime();
             sw.Stop();
             ticks = sw.ElapsedTicks;
             double elapsedWriterNs = (double)ticks * 1_000_000_000.0 / Stopwatch.Frequency;

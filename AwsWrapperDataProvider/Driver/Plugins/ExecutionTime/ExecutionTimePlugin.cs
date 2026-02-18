@@ -23,16 +23,16 @@ public class ExecutionTimePlugin : AbstractConnectionPlugin
 {
     private static readonly ILogger<ExecutionTimePlugin> Logger = LoggerUtils.GetLogger<ExecutionTimePlugin>();
 
-    private static double executionTime;
+    private double executionTime;
 
-    public static void ResetExecutionTime()
+    public void ResetExecutionTime()
     {
-        executionTime = 0;
+        this.executionTime = 0;
     }
 
-    public static double GetTotalExecutionTime()
+    public double GetTotalExecutionTime()
     {
-        return executionTime;
+        return this.executionTime;
     }
 
     public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string>() { "*" };
@@ -47,7 +47,7 @@ public class ExecutionTimePlugin : AbstractConnectionPlugin
         double nanoseconds = (double)ticks * 1_000_000_000.0 / Stopwatch.Frequency;
 
         Logger.LogInformation(Resources.ExecutionTimePlugin_Execute_ExecutionTime, nanoseconds);
-        executionTime += nanoseconds;
+        this.executionTime += nanoseconds;
 
         return results;
     }
