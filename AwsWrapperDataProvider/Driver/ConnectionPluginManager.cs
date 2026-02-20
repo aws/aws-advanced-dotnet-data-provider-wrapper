@@ -248,17 +248,4 @@ public class ConnectionPluginManager
     {
         return this.defaultConnProvider.AcceptsStrategy(strategy);
     }
-
-    internal T? GetPlugin<T>() where T : class, IConnectionPlugin
-    {
-        foreach (var plugin in this.plugins)
-        {
-            if (plugin is T typed)
-            {
-                return typed;
-            }
-        }
-
-        return null;
-    }
 }
