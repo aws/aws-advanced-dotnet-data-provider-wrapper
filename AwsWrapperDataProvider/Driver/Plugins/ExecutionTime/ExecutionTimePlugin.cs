@@ -44,10 +44,10 @@ public class ExecutionTimePlugin : AbstractConnectionPlugin
         sw.Stop();
 
         long ticks = sw.ElapsedTicks;
-        double nanoseconds = (double)ticks * 1_000_000_000.0 / Stopwatch.Frequency;
+        double elapsedNs = (double)ticks * 1_000_000_000.0 / Stopwatch.Frequency;
 
-        Logger.LogInformation(Resources.ExecutionTimePlugin_Execute_ExecutionTime, nanoseconds);
-        executionTime += nanoseconds;
+        Logger.LogInformation(Resources.ExecutionTimePlugin_Execute_ExecutionTime, elapsedNs);
+        executionTime += elapsedNs;
 
         return results;
     }
