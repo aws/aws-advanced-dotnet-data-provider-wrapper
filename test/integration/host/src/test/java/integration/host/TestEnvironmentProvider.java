@@ -75,6 +75,10 @@ public class TestEnvironmentProvider implements TestTemplateInvocationContextPro
         if (engine == DatabaseEngine.MARIADB && config.noMariadbEngine) {
           continue;
         }
+        if (deployment == DatabaseEngineDeployment.AURORA_LIMITLESS && engine != DatabaseEngine.PG) {
+          // Limitless clusters only support PostgreSQL
+          continue;
+        }
 
         for (DatabaseInstances instances : DatabaseInstances.values()) {
           if (deployment == DatabaseEngineDeployment.DOCKER
@@ -115,6 +119,11 @@ public class TestEnvironmentProvider implements TestTemplateInvocationContextPro
               // Let's save some time and skip tests for this configuration
               continue;
             }
+            if (deployment == DatabaseEngineDeployment.AURORA_LIMITLESS
+                && (instances == DatabaseInstances.MULTI_INSTANCE || numOfInstances > 1)) {
+              // Limitless clusters only support 1 instance
+              continue;
+            }
 
             resultContextList.add(
                   getEnvironment(
@@ -123,7 +132,9 @@ public class TestEnvironmentProvider implements TestTemplateInvocationContextPro
                                   instances,
                                   instances == DatabaseInstances.SINGLE_INSTANCE ? 1 : numOfInstances,
                                   deployment,
-                                  TestEnvironmentFeatures.NETWORK_OUTAGES_ENABLED,
+                                  deployment == DatabaseEngineDeployment.AURORA_LIMITLESS
+                                          ? null
+                                          : TestEnvironmentFeatures.NETWORK_OUTAGES_ENABLED,
                                   deployment == DatabaseEngineDeployment.DOCKER
                                           && config.noTracesTelemetry
                                           && config.noMetricsTelemetry
@@ -145,7 +156,10 @@ public class TestEnvironmentProvider implements TestTemplateInvocationContextPro
                                   config.testHibernateOnly ? TestEnvironmentFeatures.RUN_HIBERNATE_TESTS_ONLY : null,
                                   config.testAutoscalingOnly ? TestEnvironmentFeatures.RUN_AUTOSCALING_TESTS_ONLY : null,
                                   config.noTracesTelemetry ? null : TestEnvironmentFeatures.TELEMETRY_TRACES_ENABLED,
-                                  config.noMetricsTelemetry ? null : TestEnvironmentFeatures.TELEMETRY_METRICS_ENABLED)));
+                                  config.noMetricsTelemetry ? null : TestEnvironmentFeatures.TELEMETRY_METRICS_ENABLED,
+                                  deployment == DatabaseEngineDeployment.AURORA_LIMITLESS
+                                          ? TestEnvironmentFeatures.LIMITLESS_DEPLOYMENT
+                                          : null)));
           }
         }
       }

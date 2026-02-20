@@ -55,11 +55,11 @@ public class FailoverConnectivityTests : IntegrationTestBase
             initialWriterInstanceInfo.Port,
             Username,
             Password,
-            ProxyDatabaseInfo.DefaultDbName,
+            ProxyDatabaseInfo!.DefaultDbName,
             2,
             10,
             "failover");
-        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}; Pooling=false";
+        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo!.InstanceEndpointSuffix}:{ProxyDatabaseInfo!.InstanceEndpointPort}; Pooling=false";
 
         using AwsWrapperConnection connection = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
         await AuroraUtils.OpenDbConnection(connection, async);
@@ -104,11 +104,11 @@ public class FailoverConnectivityTests : IntegrationTestBase
             initialWriterInstanceInfo.Port,
             Username,
             Password,
-            ProxyDatabaseInfo.DefaultDbName,
+            ProxyDatabaseInfo!.DefaultDbName,
             2,
             10,
             "failover");
-        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}; Pooling=true";
+        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo!.InstanceEndpointSuffix}:{ProxyDatabaseInfo!.InstanceEndpointPort}; Pooling=true";
 
         using AwsWrapperConnection connection = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
         connection.Open();
@@ -158,11 +158,11 @@ public class FailoverConnectivityTests : IntegrationTestBase
             readerInstanceInfo.Port,
             Username,
             Password,
-            ProxyDatabaseInfo.DefaultDbName,
+            ProxyDatabaseInfo!.DefaultDbName,
             2,
             10,
             "failover");
-        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}";
+        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo!.InstanceEndpointSuffix}:{ProxyDatabaseInfo!.InstanceEndpointPort}";
 
         using AwsWrapperConnection connection = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
         await AuroraUtils.OpenDbConnection(connection, async);
@@ -204,11 +204,11 @@ public class FailoverConnectivityTests : IntegrationTestBase
             initialWriterInstanceInfo.Port,
             Username,
             Password,
-            ProxyDatabaseInfo.DefaultDbName,
+            ProxyDatabaseInfo!.DefaultDbName,
             2,
             10,
             "failover");
-        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}";
+        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo!.InstanceEndpointSuffix}:{ProxyDatabaseInfo!.InstanceEndpointPort}";
 
         using AwsWrapperConnection connection = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
         await AuroraUtils.OpenDbConnection(connection, async);
@@ -255,11 +255,11 @@ public class FailoverConnectivityTests : IntegrationTestBase
             initialWriterInstanceInfo.Port,
             Username,
             Password,
-            ProxyDatabaseInfo.DefaultDbName,
+            ProxyDatabaseInfo!.DefaultDbName,
             2,
             10,
             "failover");
-        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}" +
+        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo!.InstanceEndpointSuffix}:{ProxyDatabaseInfo!.InstanceEndpointPort}" +
             $"; FailoverMode=ReaderOrWriter";
 
         using AwsWrapperConnection connection = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
@@ -296,11 +296,11 @@ public class FailoverConnectivityTests : IntegrationTestBase
             initialWriterInstanceInfo.Port,
             Username,
             Password,
-            ProxyDatabaseInfo.DefaultDbName,
+            ProxyDatabaseInfo!.DefaultDbName,
             2,
             10,
             "failover");
-        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}" +
+        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo!.InstanceEndpointSuffix}:{ProxyDatabaseInfo!.InstanceEndpointPort}" +
             $"; FailoverMode=StrictReader" +
             $"; FailoverTimeoutMs=120000";
 
@@ -351,11 +351,11 @@ public class FailoverConnectivityTests : IntegrationTestBase
             initialWriterInstanceInfo.Port,
             Username,
             Password,
-            ProxyDatabaseInfo.DefaultDbName,
+            ProxyDatabaseInfo!.DefaultDbName,
             2,
             10,
             "failover");
-        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo.InstanceEndpointSuffix}:{ProxyDatabaseInfo.InstanceEndpointPort}" +
+        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo!.InstanceEndpointSuffix}:{ProxyDatabaseInfo!.InstanceEndpointPort}" +
             $"; FailoverMode=ReaderOrWriter";
 
         using AwsWrapperConnection connection = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
