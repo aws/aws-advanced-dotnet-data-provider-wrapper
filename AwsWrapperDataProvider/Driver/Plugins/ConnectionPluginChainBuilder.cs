@@ -36,6 +36,7 @@ public class ConnectionPluginChainBuilder
     {
             { PluginCodes.ConnectTime, new Lazy<IConnectionPluginFactory>(() => new ConnectTimePluginFactory()) },
             { PluginCodes.ExecutionTime, new Lazy<IConnectionPluginFactory>(() => new ExecutionTimePluginFactory()) },
+            { PluginCodes.AuroraConnectionTracker, null },
             { PluginCodes.Failover, new Lazy<IConnectionPluginFactory>(() => new FailoverPluginFactory()) },
             { PluginCodes.HostMonitoring, new Lazy<IConnectionPluginFactory>(() => new HostMonitoringPluginFactory()) },
             { PluginCodes.InitialConnection, new Lazy<IConnectionPluginFactory>(() => new AuroraInitialConnectionStrategyPluginFactory()) },
@@ -50,6 +51,7 @@ public class ConnectionPluginChainBuilder
     private static readonly Dictionary<string, int> PluginWeightByPluginFactoryType = new()
     {
             { PluginCodes.InitialConnection, 390 },
+            { PluginCodes.AuroraConnectionTracker, 400 },
             { PluginCodes.ReadWriteSplitting, 600 },
             { PluginCodes.Failover, 700 },
             { PluginCodes.HostMonitoring, 800 },
