@@ -12,13 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Amazon.Runtime;
+namespace AwsWrapperDataProvider.Plugin.CustomEndpoint.CustomEndpoint;
 
-namespace AwsWrapperDataProvider.Plugin.Iam.Iam;
-
-public interface IIamTokenUtility
+public enum CustomEndpointRoleType
 {
-    public string GetCacheKey(string user, string hostname, int port, string region);
-
-    public Task<string> GenerateAuthenticationTokenAsync(string region, string hostname, int port, string user);
+    Any,
+    Writer,
+    Reader,
 }

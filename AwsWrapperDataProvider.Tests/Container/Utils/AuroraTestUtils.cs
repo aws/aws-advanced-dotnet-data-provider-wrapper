@@ -26,9 +26,11 @@ using Amazon.Runtime.Credentials;
 using Amazon.SecretsManager;
 using Amazon.SecretsManager.Model;
 using AwsWrapperDataProvider.Driver.Dialects;
+using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
 using MySqlConnector;
 using Npgsql;
+using Filter = Amazon.RDS.Model.Filter;
 
 namespace AwsWrapperDataProvider.Tests.Container.Utils;
 
@@ -946,6 +948,134 @@ public class AuroraTestUtils
             DatabaseEngine.MYSQL => $"SELECT sleep({seconds})",
             DatabaseEngine.PG => $"SELECT pg_sleep({seconds})",
             _ => throw new NotSupportedException($"Unsupported database engine: {engine}"),
+        };
+    }
+
+    public async Task CreateDBClusterEndpointAsync(string endpointId, string clusterId, List<string> staticMemberInstanceIds)
+    {
+        var request = new CreateDBClusterEndpointRequest
+        {
+            DBClusterEndpointIdentifier = endpointId,
+            DBClusterIdentifier = clusterId,
+            EndpointType = "ANY",
+            StaticMembers = staticMemberInstanceIds,
+        };
+        await this.rdsClient.CreateDBClusterEndpointAsync(request);
+    }
+
+    public async Task<DBClusterEndpoint> WaitUntilEndpointAvailableAsync(string endpointId)
+    {
+        var timeoutEnd = DateTime.UtcNow + TimeSpan.FromMinutes(5);
+        var customEndpointFilter = new Filter
+        {
+            Name = "db-cluster-endpoint-type",
+            Values = new List<string> { "custom" },
+        };
+
+        while (DateTime.UtcNow < timeoutEnd)
+        {
+            var request = new DescribeDBClusterEndpointsRequest
+            {
+                DBClusterEndpointIdentifier = endpointId,
+                Filters = new List<Filter> { customEndpointFilter },
+            };
+            var response = await this.rdsClient.DescribeDBClusterEndpointsAsync(request);
+            var endpoints = response.DBClusterEndpoints;
+
+            if (endpoints.Count != 1)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(3));
+                continue;
+            }
+
+            var endpoint = endpoints[0];
+            if (string.Equals(endpoint.Status, "available", StringComparison.OrdinalIgnoreCase))
+            {
+                return endpoint;
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(3));
+        }
+
+        throw new InvalidOperationException(
+            $"The test setup step timed out while waiting for the custom endpoint to become available: '{endpointId}'.");
+    }
+
+    public async Task DeleteDBClusterEndpointAsync(string endpointId)
+    {
+        try
+        {
+            await this.rdsClient.DeleteDBClusterEndpointAsync(
+                new DeleteDBClusterEndpointRequest { DBClusterEndpointIdentifier = endpointId });
+        }
+        catch (AmazonRDSException ex) when (ex.ErrorCode == "DBClusterEndpointNotFoundFault" || ex.ErrorCode == "DBClusterEndpointNotFound")
+        {
+            // Custom endpoint already does not exist - do nothing.
+        }
+    }
+
+    public async Task ModifyDBClusterEndpointAsync(string endpointId, List<string> staticMemberInstanceIds)
+    {
+        var request = new ModifyDBClusterEndpointRequest
+        {
+            DBClusterEndpointIdentifier = endpointId,
+            StaticMembers = staticMemberInstanceIds,
+        };
+        await this.rdsClient.ModifyDBClusterEndpointAsync(request);
+    }
+
+    public async Task WaitUntilEndpointHasMembersAsync(string endpointId, HashSet<string> expectedMembers)
+    {
+        var timeoutEnd = DateTime.UtcNow + TimeSpan.FromMinutes(20);
+
+        while (DateTime.UtcNow < timeoutEnd)
+        {
+            var request = new DescribeDBClusterEndpointsRequest
+            {
+                DBClusterEndpointIdentifier = endpointId,
+            };
+            var response = await this.rdsClient.DescribeDBClusterEndpointsAsync(request);
+            var endpoints = response.DBClusterEndpoints;
+
+            if (endpoints.Count != 1)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(3));
+                continue;
+            }
+
+            var endpoint = endpoints[0];
+            var responseMembers = endpoint.StaticMembers != null
+                ? new HashSet<string>(endpoint.StaticMembers)
+                : new HashSet<string>();
+
+            if (responseMembers.SetEquals(expectedMembers) &&
+                string.Equals(endpoint.Status, "available", StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(3));
+        }
+
+        throw new InvalidOperationException(
+            $"Timed out while waiting for the custom endpoint to stabilize: '{endpointId}'.");
+    }
+
+    public async Task<HostRole> QueryHostRoleAsync(DbConnection connection, DatabaseEngine engine, bool async)
+    {
+        string query = (engine, TestEnvironment.Env.Info.Request.Deployment) switch
+        {
+            (DatabaseEngine.MYSQL, DatabaseEngineDeployment.AURORA) => "SELECT @@innodb_read_only",
+            (DatabaseEngine.PG, DatabaseEngineDeployment.AURORA) => "SELECT pg_catalog.pg_is_in_recovery()",
+            _ => throw new NotSupportedException($"Unsupported engine/deployment: {engine}/{TestEnvironment.Env.Info.Request.Deployment}"),
+        };
+
+        var result = await this.ExecuteQuery(connection, query, async);
+        return engine switch
+        {
+            DatabaseEngine.MYSQL => result == "1" ? HostRole.Reader : HostRole.Writer,
+            DatabaseEngine.PG => string.Equals(result, "t", StringComparison.OrdinalIgnoreCase) ? HostRole.Reader : HostRole.Writer,
+            _ => HostRole.Unknown,
         };
     }
 }

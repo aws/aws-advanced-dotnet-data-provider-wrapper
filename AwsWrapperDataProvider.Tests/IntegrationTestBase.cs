@@ -66,7 +66,7 @@ public abstract class IntegrationTestBase : IAsyncLifetime
 
     protected virtual bool MakeSureFirstInstanceWriter => false;
 
-    public async ValueTask InitializeAsync()
+    public virtual async ValueTask InitializeAsync()
     {
         MySqlClientDialectLoader.Load();
         MySqlConnectorDialectLoader.Load();

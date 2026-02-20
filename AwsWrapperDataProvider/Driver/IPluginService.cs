@@ -74,6 +74,14 @@ public interface IPluginService : IExceptionHandlerService
     void SetAvailability(ICollection<string> hostAliases, HostAvailability availability);
 
     /// <summary>
+    /// Sets the allowed and blocked hosts for the given connection URL.
+    /// Used by plugins like CustomEndpoint to restrict which hosts can be connected to.
+    /// </summary>
+    /// <param name="connectionUrl">The connection URL (e.g., custom endpoint URL).</param>
+    /// <param name="allowedAndBlockedHosts">The allowed and blocked hosts configuration.</param>
+    void SetAllowedAndBlockedHosts(string connectionUrl, AllowedAndBlockedHosts allowedAndBlockedHosts);
+
+    /// <summary>
     /// Refreshes the host list.
     /// </summary>
     /// <returns>Refresh host list task.</returns>
