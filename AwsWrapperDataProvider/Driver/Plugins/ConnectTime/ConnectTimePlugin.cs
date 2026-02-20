@@ -1,4 +1,4 @@
-﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -24,16 +24,16 @@ public class ConnectTimePlugin : AbstractConnectionPlugin
 {
     private static readonly ILogger<ConnectTimePlugin> Logger = LoggerUtils.GetLogger<ConnectTimePlugin>();
 
-    private double connectTime;
+    private static double connectTime;
 
-    public void ResetConnectTime()
+    public static void ResetConnectTime()
     {
-        this.connectTime = 0;
+        connectTime = 0;
     }
 
-    public double GetTotalConnectTime()
+    public static double GetTotalConnectTime()
     {
-        return this.connectTime;
+        return connectTime;
     }
 
     public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string>()
@@ -57,7 +57,7 @@ public class ConnectTimePlugin : AbstractConnectionPlugin
         double nanoseconds = (double)ticks * 1_000_000_000.0 / Stopwatch.Frequency;
 
         Logger.LogInformation(Resources.ConnectTimePlugin_ConnectTime, nanoseconds);
-        this.connectTime += nanoseconds;
+        connectTime += nanoseconds;
 
         return results;
     }
