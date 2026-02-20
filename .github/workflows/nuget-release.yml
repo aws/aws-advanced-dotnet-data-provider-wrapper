@@ -33,3 +33,13 @@ jobs:
         run: |
           $nugetKey = aws secretsmanager get-secret-value --secret-id ${{ secrets.NUGET_SECRETS_ID }} --region ${{ secrets.AWS_NUGET_KEY_REGION }} --output text --query SecretString | ConvertFrom-Json
           dotnet nuget push .\packages\*.nupkg --source https://api.nuget.org/v3/index.json --api-key $nugetKey.Key
+
+      - name: Get Github Action IP
+        if: always()
+        id: ip
+        uses: haythem/public-ip@v1.3
+
+      - name: Remove Github Action IP
+        if: always()
+        run: |
+          aws ec2 revoke-security-group-ingress --group-name default --protocol all --port 0-65535 --cidr ${{ steps.ip.outputs.ipv4 }}/32
