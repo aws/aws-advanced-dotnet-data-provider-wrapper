@@ -1,4 +1,4 @@
-﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -18,10 +18,11 @@ using System.Data.Common;
 using System.Diagnostics.CodeAnalysis;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 
 namespace AwsWrapperDataProvider;
 
-public class AwsWrapperDataReader : DbDataReader
+public class AwsWrapperDataReader : DbDataReader, IWrapper
 {
     private readonly ConnectionPluginManager connectionPluginManager;
     protected DbDataReader targetDataReader;
@@ -190,4 +191,19 @@ public class AwsWrapperDataReader : DbDataReader
     }
 
     public override IEnumerator GetEnumerator() => this.targetDataReader.GetEnumerator();
+
+    public T Unwrap<T>() where T : class
+    {
+        if (this.targetDataReader is T readerAsT)
+        {
+            return readerAsT;
+        }
+
+        throw new ArgumentException(string.Format(Resources.Error_CannotUnwrap, typeof(AwsWrapperDataReader).Name, typeof(T).Name));
+    }
+
+    public bool IsWrapperFor<T>() where T : class
+    {
+        return this.targetDataReader is T;
+    }
 }
