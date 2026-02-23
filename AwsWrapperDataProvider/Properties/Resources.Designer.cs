@@ -1137,18 +1137,6 @@ namespace AwsWrapperDataProvider.Properties {
             }
         }
         
-        internal static string Error_WeightedRandomInvalidHostWeightPairs {
-            get {
-                return ResourceManager.GetString("Error_WeightedRandomInvalidHostWeightPairs", resourceCulture);
-            }
-        }
-        
-        internal static string Error_WeightedRandomUnableToGetHost {
-            get {
-                return ResourceManager.GetString("Error_WeightedRandomUnableToGetHost", resourceCulture);
-            }
-        }
-        
         internal static string ExecutionTimePlugin_Execute_ExecutionTime {
             get {
                 return ResourceManager.GetString("ExecutionTimePlugin_Execute_ExecutionTime", resourceCulture);
@@ -1840,18 +1828,6 @@ namespace AwsWrapperDataProvider.Properties {
             }
         }
         
-        internal static string LimitlessRouterMonitor_Dispose_DidNotStopWithinSeconds {
-            get {
-                return ResourceManager.GetString("LimitlessRouterMonitor_Dispose_DidNotStopWithinSeconds", resourceCulture);
-            }
-        }
-        
-        internal static string LimitlessRouterMonitor_Dispose_ErrorWaitingForTask {
-            get {
-                return ResourceManager.GetString("LimitlessRouterMonitor_Dispose_ErrorWaitingForTask", resourceCulture);
-            }
-        }
-        
         internal static string LimitlessRouterMonitor_Dispose_ThreadStopped {
             get {
                 return ResourceManager.GetString("LimitlessRouterMonitor_Dispose_ThreadStopped", resourceCulture);
@@ -1987,6 +1963,18 @@ namespace AwsWrapperDataProvider.Properties {
         internal static string LimitlessRouterService_Error_UnableToConnectNoRoutersAvailable {
             get {
                 return ResourceManager.GetString("LimitlessRouterService_Error_UnableToConnectNoRoutersAvailable", resourceCulture);
+            }
+        }
+        
+        internal static string Error_WeightedRandomInvalidHostWeightPairs {
+            get {
+                return ResourceManager.GetString("Error_WeightedRandomInvalidHostWeightPairs", resourceCulture);
+            }
+        }
+        
+        internal static string Error_WeightedRandomUnableToGetHost {
+            get {
+                return ResourceManager.GetString("Error_WeightedRandomUnableToGetHost", resourceCulture);
             }
         }
     }
