@@ -20,7 +20,7 @@ using AwsWrapperDataProvider.Properties;
 
 namespace AwsWrapperDataProvider;
 
-public class AwsWrapperBatch : DbBatch
+public class AwsWrapperBatch : DbBatch, IWrapper
 {
     protected DbBatch targetBatch;
     protected AwsWrapperConnection? wrapperConnection;
@@ -233,5 +233,20 @@ public class AwsWrapperBatch : DbBatch
         {
             await this.targetBatch.DisposeAsync().ConfigureAwait(false);
         }
+    }
+
+    public T Unwrap<T>() where T : class
+    {
+        if (this.targetBatch is T batchAsT)
+        {
+            return batchAsT;
+        }
+
+        throw new ArgumentException(string.Format(Resources.Error_CannotUnwrap, typeof(AwsWrapperBatch).Name, typeof(T).Name));
+    }
+
+    public bool IsWrapperFor<T>() where T : class
+    {
+        return this.targetBatch is T;
     }
 }

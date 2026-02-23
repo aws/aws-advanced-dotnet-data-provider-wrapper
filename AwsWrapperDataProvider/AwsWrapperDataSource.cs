@@ -13,10 +13,11 @@
 // limitations under the License.
 
 using System.Data.Common;
+using AwsWrapperDataProvider.Properties;
 
 namespace AwsWrapperDataProvider;
 
-public class AwsWrapperDataSource : DbDataSource
+public class AwsWrapperDataSource : DbDataSource, IWrapper
 {
     private readonly DbDataSource targetDataSource;
 
@@ -89,5 +90,20 @@ public class AwsWrapperDataSource : DbDataSource
     protected override async ValueTask DisposeAsyncCore()
     {
         await this.targetDataSource.DisposeAsync().ConfigureAwait(false);
+    }
+
+    public T Unwrap<T>() where T : class
+    {
+        if (this.targetDataSource is T dataSourceAsT)
+        {
+            return dataSourceAsT;
+        }
+
+        throw new ArgumentException(string.Format(Resources.Error_CannotUnwrap, typeof(AwsWrapperDataSource).Name, typeof(T).Name));
+    }
+
+    public bool IsWrapperFor<T>() where T : class
+    {
+        return this.targetDataSource is T;
     }
 }
