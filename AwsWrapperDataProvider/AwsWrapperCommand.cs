@@ -23,7 +23,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider;
 
-public class AwsWrapperCommand : DbCommand
+public class AwsWrapperCommand : DbCommand, IWrapper
 {
     private static readonly ILogger<AwsWrapperCommand> Logger = LoggerUtils.GetLogger<AwsWrapperCommand>();
 
@@ -394,6 +394,23 @@ public class AwsWrapperCommand : DbCommand
         this.EnsureTargetDbCommandCreated();
         this.TargetDbConnection = connection;
         this.TargetDbCommand!.Connection = connection;
+    }
+
+    public T Unwrap<T>() where T : class
+    {
+        this.EnsureTargetDbCommandCreated();
+        if (this.TargetDbCommand is T commandAsT)
+        {
+            return commandAsT;
+        }
+
+        throw new ArgumentException(string.Format(Resources.Error_CannotUnwrap, typeof(AwsWrapperCommand).Name, typeof(T).Name));
+    }
+
+    public bool IsWrapperFor<T>() where T : class
+    {
+        this.EnsureTargetDbCommandCreated();
+        return this.TargetDbCommand is T;
     }
 }
 
