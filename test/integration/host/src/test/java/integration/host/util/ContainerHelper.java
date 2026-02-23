@@ -235,6 +235,7 @@ public class ContainerHelper {
         .withFileSystemBind("../../../AwsWrapperDataProvider.Tests", "/app/AwsWrapperDataProvider.Tests", BindMode.READ_WRITE)
         .withFileSystemBind("../../../AwsWrapperDataProvider.Performance.Tests", "/app/AwsWrapperDataProvider.Performance.Tests", BindMode.READ_WRITE)
         .withFileSystemBind("../../../AwsWrapperDataProvider.NHibernate", "/app/AwsWrapperDataProvider.NHibernate", BindMode.READ_WRITE)
+        .withFileSystemBind("../../../AwsWrapperDataProvider.Performance.Tests", "/app/AwsWrapperDataProvider.Performance.Tests", BindMode.READ_WRITE)
         .withFileSystemBind("../../../AwsWrapperDataProvider.NHibernate.Tests", "/app/AwsWrapperDataProvider.NHibernate.Tests", BindMode.READ_WRITE)
         .withFileSystemBind("../gradle", "/app/gradle", BindMode.READ_WRITE)
         .withFileSystemBind("../../../test/integration/container", "/app/test/integration/container", BindMode.READ_WRITE)
