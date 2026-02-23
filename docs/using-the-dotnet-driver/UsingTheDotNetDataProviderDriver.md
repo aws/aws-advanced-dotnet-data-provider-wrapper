@@ -78,6 +78,28 @@ MySqlClientDialectLoader.Load();
 MySqlConnectorDialectLoader.Load();
 NpgsqlDialectLoader.Load();
 ```
+
+## Accessing the underlying connection or object (IWrapper, Unwrap, IsWrapperFor)
+
+Wrapper types such as `AwsWrapperConnection`, `AwsWrapperCommand`, `AwsWrapperDataReader`, and related wrapper classes implement the `IWrapper` interface. This lets you access the underlying provider instance (for example, the real `NpgsqlConnection` or `MySqlConnection`) when you need provider-specific APIs.
+
+- **`IsWrapperFor<T>()`** — Returns `true` if this wrapper wraps an instance of type `T`. Use this to check before unwrapping.
+- **`Unwrap<T>()`** — Returns the underlying object as `T`. Use only when you know the wrapper contains that type (e.g. after `IsWrapperFor<T>()` is true); otherwise it throws.
+
+Example:
+
+```dotnet
+using (var connection = new AwsWrapperConnection(connectionString))
+{
+    connection.Open();
+    if (connection.IsWrapperFor<NpgsqlConnection>())
+    {
+        var npgsqlConn = connection.Unwrap<NpgsqlConnection>();
+        // Use Npgsql-specific APIs on npgsqlConn
+    }
+}
+```
+
 # Logging
 
 The AWS Wrapper .NET Data Provider Wrapper uses Microsoft.Extensions.Logging for comprehensive logging across all components. 

@@ -20,8 +20,8 @@ jobs:
         dbEngine: ["mysql", "pg"]
         deployment: ["aurora", "multi-az-cluster", "multi-az-instance", "aurora-limitless"]
         exclude:
-          - dbEngine: mysql
-            deployment: aurora-limitless
+          - dbEngine: "mysql"
+            deployment: "aurora-limitless"
     steps:
       - name: 'Clone repository'
         uses: actions/checkout@v4
