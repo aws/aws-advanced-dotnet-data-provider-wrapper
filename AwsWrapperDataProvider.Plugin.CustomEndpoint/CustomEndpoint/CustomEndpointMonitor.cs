@@ -55,7 +55,7 @@ public class CustomEndpointMonitor : ICustomEndpointMonitor
     protected readonly Task monitorTask;
 
     protected TimeSpan currentRefreshRate;
-    private bool _disposed = false;
+    private int disposed;
 
     public CustomEndpointMonitor(
         IPluginService pluginService,
@@ -371,7 +371,7 @@ public class CustomEndpointMonitor : ICustomEndpointMonitor
 
     public void Dispose(bool disposing)
     {
-        if (this._disposed)
+        if (Interlocked.Exchange(ref this.disposed, 1) != 0)
         {
             return;
         }
@@ -400,14 +400,6 @@ public class CustomEndpointMonitor : ICustomEndpointMonitor
                     Resources.CustomEndpointMonitorImpl_InterruptedWhileTerminating,
                     this.customEndpointHostSpec.Host);
             }
-            finally
-            {
-                this.cancellationTokenSource.Dispose();
-                CustomEndpointInfoCache.Remove(this.customEndpointHostSpec.Host);
-                this.rdsClient.Dispose();
-            }
         }
-
-        this._disposed = true;
     }
 }

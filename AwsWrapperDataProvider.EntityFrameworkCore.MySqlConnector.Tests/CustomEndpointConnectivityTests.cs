@@ -21,6 +21,8 @@ using AwsWrapperDataProvider.Plugin.CustomEndpoint.CustomEndpoint;
 using AwsWrapperDataProvider.Tests;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 
 namespace AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.Tests;
 
@@ -30,16 +32,31 @@ namespace AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.Tests;
 /// </summary>
 public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixture<CustomEndpointTestFixture>
 {
-    private readonly ITestOutputHelper _logger;
-    private readonly CustomEndpointTestFixture _fixture;
-    private readonly MySqlServerVersion _version = new("8.0.32");
+    private readonly ILogger logger;
+    private readonly CustomEndpointTestFixture fixture;
+    private readonly MySqlServerVersion version = new("8.0.32");
 
     protected override bool MakeSureFirstInstanceWriter => true;
 
-    public CustomEndpointConnectivityTests(CustomEndpointTestFixture fixture, ITestOutputHelper output)
+    public CustomEndpointConnectivityTests(CustomEndpointTestFixture fixture)
     {
-        this._fixture = fixture;
-        this._logger = output;
+        this.fixture = fixture;
+        var loggerFactory = LoggerFactory.Create(builder =>
+        {
+            builder
+                .SetMinimumLevel(LogLevel.Trace)
+                .AddDebug()
+                .AddConsole(options => options.FormatterName = "simple");
+
+            builder.AddSimpleConsole(options =>
+            {
+                options.IncludeScopes = true;
+                options.TimestampFormat = "yyyy-MM-dd HH:mm:ss.fff ";
+                options.UseUtcTimestamp = true;
+                options.ColorBehavior = LoggerColorBehavior.Enabled;
+            });
+        });
+        this.logger = loggerFactory.CreateLogger<CustomEndpointConnectivityTests>();
     }
 
     public override async ValueTask InitializeAsync()
@@ -50,14 +67,14 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
 
     private async Task SetupCustomEndpointRoleAsync(HostRole hostRole)
     {
-        this._logger.WriteLine($"Setting up custom endpoint instance with role: {hostRole}");
-        var endpointMembers = this._fixture.EndpointInfo!.StaticMembers ?? new List<string>();
+        this.logger.LogInformation($"Setting up custom endpoint instance with role: {hostRole}");
+        var endpointMembers = this.fixture.EndpointInfo!.StaticMembers ?? new List<string>();
         var clusterId = TestEnvironment.Env.Info.RdsDbName!;
         var originalWriter = await AuroraUtils.GetDBClusterWriterInstanceIdAsync(clusterId);
 
         var connectionStringNoPlugins = ConnectionStringHelper.GetUrl(
             Engine,
-            this._fixture.EndpointInfo.Endpoint,
+            this.fixture.EndpointInfo.Endpoint,
             Port,
             Username,
             Password,
@@ -78,28 +95,28 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
             {
                 if (originalInstanceId == originalWriter)
                 {
-                    this._logger.WriteLine($"Role is already {hostRole}, no failover needed.");
+                    this.logger.LogInformation($"Role is already {hostRole}, no failover needed.");
                     return;
                 }
 
                 failoverTarget = originalInstanceId;
-                this._logger.WriteLine("Failing over to get writer role...");
+                this.logger.LogInformation("Failing over to get writer role...");
             }
             else if (hostRole == HostRole.Reader)
             {
                 if (originalInstanceId != originalWriter)
                 {
-                    this._logger.WriteLine($"Role is already {hostRole}, no failover needed.");
+                    this.logger.LogInformation($"Role is already {hostRole}, no failover needed.");
                     return;
                 }
 
-                this._logger.WriteLine("Failing over to get reader role...");
+                this.logger.LogInformation("Failing over to get reader role...");
             }
 
             await AuroraUtils.FailoverClusterToATargetAndWaitUntilWriterChanged(clusterId, originalWriter, failoverTarget!);
         }
 
-        this._logger.WriteLine($"Verifying that new connection has role: {hostRole}");
+        this.logger.LogInformation($"Verifying that new connection has role: {hostRole}");
         using (var conn = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionStringNoPlugins))
         {
             await conn.OpenAsync(TestContext.Current.CancellationToken);
@@ -110,7 +127,7 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
             Assert.Equal(hostRole, newRole);
         }
 
-        this._logger.WriteLine($"Custom endpoint instance successfully set to role: {hostRole}");
+        this.logger.LogInformation($"Custom endpoint instance successfully set to role: {hostRole}");
     }
 
     [Fact]
@@ -120,13 +137,13 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
     public async Task EF_CustomEndpoint_ReadWriteSplitting_WithCustomEndpointChanges_WithReaderAsInitConn()
     {
         Assert.SkipWhen(NumberOfInstances < 3, "Skipped due to test requiring number of database instances >= 3.");
-        Assert.SkipWhen(this._fixture.EndpointInfo == null, "Custom endpoint fixture not created (not Aurora or < 3 instances).");
+        Assert.SkipWhen(this.fixture.EndpointInfo == null, "Custom endpoint fixture not created (not Aurora or < 3 instances).");
 
         await this.SetupCustomEndpointRoleAsync(HostRole.Reader);
 
         var connectionString = ConnectionStringHelper.GetUrl(
             Engine,
-            this._fixture.EndpointInfo!.Endpoint,
+            this.fixture.EndpointInfo!.Endpoint,
             Port,
             Username,
             Password,
@@ -142,29 +159,29 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
         var options = new DbContextOptionsBuilder<PersonDbContext>()
             .UseAwsWrapper(
                 connectionString,
-                wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, this._version))
+                wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, this.version))
             .Options;
 
         using var db = new PersonDbContext(options);
         await db.Database.OpenConnectionAsync(TestContext.Current.CancellationToken);
         var connection = db.Database.GetDbConnection();
 
-        var endpointMembers = this._fixture.EndpointInfo.StaticMembers ?? new List<string>();
+        var endpointMembers = this.fixture.EndpointInfo.StaticMembers ?? new List<string>();
         var originalReaderId = await AuroraUtils.QueryInstanceId(connection, true);
         Assert.True(endpointMembers.Contains(originalReaderId!), $"Instance {originalReaderId} should be in endpoint members");
 
-        this._logger.WriteLine("Initial connection is to a reader. Attempting to switch to writer...");
+        this.logger.LogInformation("Initial connection is to a reader. Attempting to switch to writer...");
         await Assert.ThrowsAsync<ReadWriteSplittingDbException>(async () =>
         {
             await AuroraUtils.SetReadOnly(connection, Engine, false, true);
         });
 
         var writerId = await AuroraUtils.GetDBClusterWriterInstanceIdAsync(TestEnvironment.Env.Info.RdsDbName!);
-        await AuroraUtils.ModifyDBClusterEndpointAsync(this._fixture.EndpointId, new List<string> { originalReaderId!, writerId });
+        await AuroraUtils.ModifyDBClusterEndpointAsync(this.fixture.EndpointId, new List<string> { originalReaderId!, writerId });
 
         try
         {
-            await AuroraUtils.WaitUntilEndpointHasMembersAsync(this._fixture.EndpointId, new HashSet<string> { originalReaderId!, writerId });
+            await AuroraUtils.WaitUntilEndpointHasMembersAsync(this.fixture.EndpointId, new HashSet<string> { originalReaderId!, writerId });
 
             await AuroraUtils.SetReadOnly(connection, Engine, false, true);
             var newInstanceId = await AuroraUtils.QueryInstanceId(connection, true);
@@ -176,11 +193,11 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
         }
         finally
         {
-            await AuroraUtils.ModifyDBClusterEndpointAsync(this._fixture.EndpointId, new List<string> { originalReaderId! });
-            await AuroraUtils.WaitUntilEndpointHasMembersAsync(this._fixture.EndpointId, new HashSet<string> { originalReaderId! });
+            await AuroraUtils.ModifyDBClusterEndpointAsync(this.fixture.EndpointId, new List<string> { originalReaderId! });
+            await AuroraUtils.WaitUntilEndpointHasMembersAsync(this.fixture.EndpointId, new HashSet<string> { originalReaderId! });
         }
 
-        this._logger.WriteLine("Writer removed from endpoint. Attempting to switch to writer should fail...");
+        this.logger.LogInformation("Writer removed from endpoint. Attempting to switch to writer should fail...");
         await Assert.ThrowsAsync<ReadWriteSplittingDbException>(async () =>
         {
             await AuroraUtils.SetReadOnly(connection, Engine, false, true);
@@ -194,13 +211,13 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
     public async Task EF_CustomEndpoint_ReadWriteSplitting_WithCustomEndpointChanges_WithWriterAsInitConn()
     {
         Assert.SkipWhen(NumberOfInstances < 3, "Skipped due to test requiring number of database instances >= 3.");
-        Assert.SkipWhen(this._fixture.EndpointInfo == null, "Custom endpoint fixture not created (not Aurora or < 3 instances).");
+        Assert.SkipWhen(this.fixture.EndpointInfo == null, "Custom endpoint fixture not created (not Aurora or < 3 instances).");
 
         await this.SetupCustomEndpointRoleAsync(HostRole.Writer);
 
         var connectionString = ConnectionStringHelper.GetUrl(
             Engine,
-            this._fixture.EndpointInfo!.Endpoint,
+            this.fixture.EndpointInfo!.Endpoint,
             Port,
             Username,
             Password,
@@ -216,18 +233,18 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
         var options = new DbContextOptionsBuilder<PersonDbContext>()
             .UseAwsWrapper(
                 connectionString,
-                wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, this._version))
+                wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, this.version))
             .Options;
 
         using var db = new PersonDbContext(options);
         await db.Database.OpenConnectionAsync(TestContext.Current.CancellationToken);
         var connection = db.Database.GetDbConnection();
 
-        var endpointMembers = this._fixture.EndpointInfo.StaticMembers ?? new List<string>();
+        var endpointMembers = this.fixture.EndpointInfo.StaticMembers ?? new List<string>();
         var originalWriterId = await AuroraUtils.QueryInstanceId(connection, true);
         Assert.True(endpointMembers.Contains(originalWriterId!), $"Instance {originalWriterId} should be in endpoint members");
 
-        this._logger.WriteLine("Initial connection is to the writer. Attempting to switch to reader...");
+        this.logger.LogInformation("Initial connection is to the writer. Attempting to switch to reader...");
         await AuroraUtils.SetReadOnly(connection, Engine, true, true);
         var newInstanceId = await AuroraUtils.QueryInstanceId(connection, true);
         Assert.Equal(originalWriterId, newInstanceId);
@@ -236,11 +253,11 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
         string readerIdToAdd = TestEnvironment.Env.Info.DatabaseInfo.Instances
             .First(i => i.InstanceId != writerId).InstanceId;
 
-        await AuroraUtils.ModifyDBClusterEndpointAsync(this._fixture.EndpointId, new List<string> { originalWriterId!, readerIdToAdd });
+        await AuroraUtils.ModifyDBClusterEndpointAsync(this.fixture.EndpointId, new List<string> { originalWriterId!, readerIdToAdd });
 
         try
         {
-            await AuroraUtils.WaitUntilEndpointHasMembersAsync(this._fixture.EndpointId, new HashSet<string> { originalWriterId!, readerIdToAdd });
+            await AuroraUtils.WaitUntilEndpointHasMembersAsync(this.fixture.EndpointId, new HashSet<string> { originalWriterId!, readerIdToAdd });
 
             await AuroraUtils.SetReadOnly(connection, Engine, true, true);
             newInstanceId = await AuroraUtils.QueryInstanceId(connection, true);
@@ -250,11 +267,11 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
         }
         finally
         {
-            await AuroraUtils.ModifyDBClusterEndpointAsync(this._fixture.EndpointId, new List<string> { originalWriterId! });
-            await AuroraUtils.WaitUntilEndpointHasMembersAsync(this._fixture.EndpointId, new HashSet<string> { originalWriterId! });
+            await AuroraUtils.ModifyDBClusterEndpointAsync(this.fixture.EndpointId, new List<string> { originalWriterId! });
+            await AuroraUtils.WaitUntilEndpointHasMembersAsync(this.fixture.EndpointId, new HashSet<string> { originalWriterId! });
         }
 
-        this._logger.WriteLine("Reader removed from endpoint. Attempting to switch to reader should fallback to writer...");
+        this.logger.LogInformation("Reader removed from endpoint. Attempting to switch to reader should fallback to writer...");
         await AuroraUtils.SetReadOnly(connection, Engine, true, true);
         newInstanceId = await AuroraUtils.QueryInstanceId(connection, true);
         Assert.Equal(originalWriterId, newInstanceId);

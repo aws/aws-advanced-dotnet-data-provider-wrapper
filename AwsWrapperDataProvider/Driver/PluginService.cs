@@ -179,7 +179,7 @@ public class PluginService : IPluginService, IHostListProviderService
             return this.AllHosts;
         }
 
-        var filteredHosts = new List<HostSpec>(this.AllHosts);
+        var filteredHosts = this.AllHosts;
         var allowedHostIds = hostPermissions.AllowedHostIds;
         var blockedHostIds = hostPermissions.BlockedHostIds;
         var requiredRole = hostPermissions.RequiredRole;
