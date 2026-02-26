@@ -1690,6 +1690,132 @@ namespace AwsWrapperDataProvider.Properties {
             }
         }
         
+        internal static string CustomEndpointPlugin_ConnectionRequestToCustomEndpoint {
+            get {
+                return ResourceManager.GetString("CustomEndpointPlugin_ConnectionRequestToCustomEndpoint", resourceCulture);
+            }
+        }
+        
+        internal static string CustomEndpointPlugin_ErrorParsingEndpointIdentifier {
+            get {
+                return ResourceManager.GetString("CustomEndpointPlugin_ErrorParsingEndpointIdentifier", resourceCulture);
+            }
+        }
+        
+        internal static string CustomEndpointPlugin_UnableToDetermineRegion {
+            get {
+                return ResourceManager.GetString("CustomEndpointPlugin_UnableToDetermineRegion", resourceCulture);
+            }
+        }
+        
+        internal static string CustomEndpointPlugin_OnMonitorEvicted_Disposing {
+            get {
+                return ResourceManager.GetString("CustomEndpointPlugin_OnMonitorEvicted_Disposing", resourceCulture);
+            }
+        }
+        
+        internal static string Error_DisposingCustomEndpointMonitor {
+            get {
+                return ResourceManager.GetString("Error_DisposingCustomEndpointMonitor", resourceCulture);
+            }
+        }
+        
+        internal static string CustomEndpointPlugin_WaitingForCustomEndpointInfo {
+            get {
+                return ResourceManager.GetString("CustomEndpointPlugin_WaitingForCustomEndpointInfo", resourceCulture);
+            }
+        }
+        
+        internal static string CustomEndpointPlugin_InterruptedThread {
+            get {
+                return ResourceManager.GetString("CustomEndpointPlugin_InterruptedThread", resourceCulture);
+            }
+        }
+        
+        internal static string CustomEndpointPlugin_TimedOutWaitingForCustomEndpointInfo {
+            get {
+                return ResourceManager.GetString("CustomEndpointPlugin_TimedOutWaitingForCustomEndpointInfo", resourceCulture);
+            }
+        }
+        
+        internal static string CustomEndpointPlugin_ErrorCreatingMonitor {
+            get {
+                return ResourceManager.GetString("CustomEndpointPlugin_ErrorCreatingMonitor", resourceCulture);
+            }
+        }
+        
+        internal static string CustomEndpointPlugin_CloseMonitors {
+            get {
+                return ResourceManager.GetString("CustomEndpointPlugin_CloseMonitors", resourceCulture);
+            }
+        }
+        
+        internal static string CustomEndpointMonitorImpl_StartingMonitor {
+            get {
+                return ResourceManager.GetString("CustomEndpointMonitorImpl_StartingMonitor", resourceCulture);
+            }
+        }
+        
+        internal static string CustomEndpointMonitorImpl_UnexpectedNumberOfEndpoints {
+            get {
+                return ResourceManager.GetString("CustomEndpointMonitorImpl_UnexpectedNumberOfEndpoints", resourceCulture);
+            }
+        }
+        
+        internal static string CustomEndpointMonitorImpl_DetectedChangeInCustomEndpointInfo {
+            get {
+                return ResourceManager.GetString("CustomEndpointMonitorImpl_DetectedChangeInCustomEndpointInfo", resourceCulture);
+            }
+        }
+        
+        internal static string CustomEndpointMonitorImpl_Exception {
+            get {
+                return ResourceManager.GetString("CustomEndpointMonitorImpl_Exception", resourceCulture);
+            }
+        }
+        
+        internal static string CustomEndpointMonitorImpl_Interrupted {
+            get {
+                return ResourceManager.GetString("CustomEndpointMonitorImpl_Interrupted", resourceCulture);
+            }
+        }
+        
+        internal static string CustomEndpointMonitorImpl_StoppedMonitor {
+            get {
+                return ResourceManager.GetString("CustomEndpointMonitorImpl_StoppedMonitor", resourceCulture);
+            }
+        }
+        
+        internal static string CustomEndpointMonitorImpl_StoppingMonitor {
+            get {
+                return ResourceManager.GetString("CustomEndpointMonitorImpl_StoppingMonitor", resourceCulture);
+            }
+        }
+        
+        internal static string CustomEndpointMonitorImpl_MonitorTerminationTimeout {
+            get {
+                return ResourceManager.GetString("CustomEndpointMonitorImpl_MonitorTerminationTimeout", resourceCulture);
+            }
+        }
+        
+        internal static string CustomEndpointMonitorImpl_InterruptedWhileTerminating {
+            get {
+                return ResourceManager.GetString("CustomEndpointMonitorImpl_InterruptedWhileTerminating", resourceCulture);
+            }
+        }
+        
+        internal static string CustomEndpointMonitorImpl_ClearCache {
+            get {
+                return ResourceManager.GetString("CustomEndpointMonitorImpl_ClearCache", resourceCulture);
+            }
+        }
+        
+        internal static string CustomEndpointPluginFactory_AwsSdkNotInClasspath {
+            get {
+                return ResourceManager.GetString("CustomEndpointPluginFactory_AwsSdkNotInClasspath", resourceCulture);
+            }
+        }
+        
         internal static string LimitlessRouterMonitor_Dispose_DidNotStopWithinSeconds {
             get {
                 return ResourceManager.GetString("LimitlessRouterMonitor_Dispose_DidNotStopWithinSeconds", resourceCulture);

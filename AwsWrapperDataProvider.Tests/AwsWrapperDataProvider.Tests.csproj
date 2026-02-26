@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
@@ -35,6 +35,7 @@
     <ProjectReference Include="..\AwsWrapperDataProvider.Dialect.MySqlConnector\AwsWrapperDataProvider.Dialect.MySqlConnector.csproj" />
     <ProjectReference Include="..\AwsWrapperDataProvider.Dialect.MySqlClient\AwsWrapperDataProvider.Dialect.MySqlClient.csproj" />
     <ProjectReference Include="..\AwsWrapperDataProvider.Dialect.Npgsql\AwsWrapperDataProvider.Dialect.Npgsql.csproj" />
+    <ProjectReference Include="..\AwsWrapperDataProvider.Plugin.CustomEndpoint\AwsWrapperDataProvider.Plugin.CustomEndpoint.csproj" />
     <ProjectReference Include="..\AwsWrapperDataProvider\AwsWrapperDataProvider.csproj" />
   </ItemGroup>
 
@@ -45,10 +46,6 @@
     <ItemGroup>
         <Folder Include="Driver\Plugins\Failover\" />
         <Folder Include="Driver\Plugins\Limitless\" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\AwsWrapperDataProvider\AwsWrapperDataProvider.csproj" />
     </ItemGroup>
 
 </Project>

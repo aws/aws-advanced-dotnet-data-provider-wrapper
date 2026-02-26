@@ -26,6 +26,8 @@ public class TestEnvironmentConfiguration {
       Boolean.parseBoolean(System.getProperty("test-no-multi-az-cluster", "false"));
   public boolean noMultiAzInstance =
       Boolean.parseBoolean(System.getProperty("test-no-multi-az-instance", "false"));
+  public boolean noAuroraLimitless =
+      Boolean.parseBoolean(System.getProperty("test-no-aurora-limitless", "false"));
   public boolean noPerformance =
       Boolean.parseBoolean(System.getProperty("test-no-performance", "false"));
   public boolean noMysqlEngine =
