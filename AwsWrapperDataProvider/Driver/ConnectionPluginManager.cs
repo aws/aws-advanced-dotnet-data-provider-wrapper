@@ -248,4 +248,9 @@ public class ConnectionPluginManager
     {
         return this.defaultConnProvider.AcceptsStrategy(strategy);
     }
+
+    public bool IsPluginActive(string pluginName)
+    {
+        return this.plugins.Any(p => p.GetType().Name.Contains(pluginName, StringComparison.OrdinalIgnoreCase));
+    }
 }

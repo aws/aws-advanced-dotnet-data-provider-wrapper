@@ -1,0 +1,53 @@
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// 
+// Licensed under the Apache License, Version 2.0 (the "License").
+// You may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+// http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+using System.Data.Common;
+using AwsWrapperDataProvider.Driver;
+using AwsWrapperDataProvider.Driver.HostInfo;
+using AwsWrapperDataProvider.Driver.Plugins;
+using AwsWrapperDataProvider.Plugin.BlueGreenConnection.Routing;
+
+namespace AwsWrapperDataProvider.Plugin.BlueGreenConnection.BlueGreenConnection.Routing;
+
+public abstract class BaseConnectRouting : BaseRouting, IConnectRouting
+{
+    protected readonly string? HostAndPort;
+    protected readonly BlueGreenRoleType? Role;
+
+    protected BaseConnectRouting(string? hostAndPort, BlueGreenRoleType? role)
+    {
+        this.HostAndPort = hostAndPort?.ToLowerInvariant();
+        this.Role = role;
+    }
+
+    public bool IsMatch(HostSpec? hostSpec, BlueGreenRoleType? hostRole)
+    {
+        return (this.HostAndPort == null || this.HostAndPort.Equals(hostSpec?.GetHostAndPort()?.ToLowerInvariant()))
+               && (this.Role == null || this.Role.Equals(hostRole));
+    }
+
+    public abstract Task<DbConnection> Apply(
+        IConnectionPlugin plugin,
+        HostSpec hostSpec,
+        Dictionary<string, string> props,
+        bool isInitialConnection,
+        bool useForceConnect,
+        ADONetDelegate<DbConnection> connectFunc,
+        IPluginService pluginService);
+
+    public override string ToString()
+    {
+        return $"{base.ToString()} [{this.HostAndPort ?? "<null>"}, {this.Role?.ToString() ?? "<null>"}]";
+    }
+}

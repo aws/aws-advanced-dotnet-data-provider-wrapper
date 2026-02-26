@@ -208,6 +208,23 @@ public static class PropertyDefinition
         null,
         "The ID of the AWS application configured on Okta");
 
+    public static readonly AwsWrapperProperty BgdId = new(
+        "BgdId",
+        "1",
+        "Blue/Green Deployment identifier that helps the driver to distinguish different deployments.");
+
+    public static readonly AwsWrapperProperty BgIntervalBaselineMs = new(
+        "BgBaselineMs", "60000", "Baseline Blue/Green Deployment status checking interval (in msec).");
+
+    public static readonly AwsWrapperProperty BgIntervalIncreasedMs = new(
+        "BgIncreasedMs", "1000", "Increased Blue/Green Deployment status checking interval (in msec).");
+
+    public static readonly AwsWrapperProperty BgIntervalHighMs = new(
+        "BgHighMs", "100", "High Blue/Green Deployment status checking interval (in msec).");
+
+    public static readonly AwsWrapperProperty BgSwitchoverTimeoutMs = new(
+        "BgSwitchoverTimeoutMs", "180000", "Blue/Green Deployment switchover timeout (in msec).");
+    
     /// <summary>
     /// A set of AwsWrapperProperties that is used by the wrapper and should not be passed to the target driver.
     /// </summary>

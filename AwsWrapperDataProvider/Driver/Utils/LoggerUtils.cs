@@ -46,7 +46,7 @@ public static class LoggerUtils
                 options.ColorBehavior = LoggerColorBehavior.Enabled;
             });
 
-            if (EnabledFileLog)
+            if (true)
             {
                 builder.AddProvider(loggerProvider);
             }

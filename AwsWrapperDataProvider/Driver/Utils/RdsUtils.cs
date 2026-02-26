@@ -126,6 +126,17 @@ public static partial class RdsUtils
         return string.IsNullOrEmpty(host) ? null : CacheMatcher(host, AuroraDnsPatterns)?.Groups[InstanceGroup].Value;
     }
 
+    public static string? GetRdsClusterId(string? host)
+    {
+        if (string.IsNullOrEmpty(host))
+        {
+            return null;
+        }
+
+        var matcher = CacheMatcher(host, AuroraDnsPatterns);
+        return matcher?.Groups[DnsGroup]?.Value != null ? matcher.Groups[InstanceGroup].Value : null;
+    }
+
     public static string GetRdsInstanceHostPattern(string host)
     {
         if (string.IsNullOrEmpty(host))

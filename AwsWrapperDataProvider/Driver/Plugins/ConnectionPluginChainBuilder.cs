@@ -43,6 +43,7 @@ public class ConnectionPluginChainBuilder
             { PluginCodes.SecretsManager, null },
             { PluginCodes.FederatedAuth, null },
             { PluginCodes.Okta, null },
+            { PluginCodes.BlueGreenConnection, null },
     };
 
     private static readonly Dictionary<string, int> PluginWeightByPluginFactoryType = new()
