@@ -439,6 +439,42 @@ public class AwsWrapperConnectionStringBuilder : DbConnectionStringBuilder
         set => this.SetValue(PropertyDefinition.MonitorDisposalTimeMs.Name, value?.ToString());
     }
 
+    public string? BgdId
+    {
+        get => this.GetValue(PropertyDefinition.BgdId.Name);
+        set => this.SetValue(PropertyDefinition.BgdId.Name, value);
+    }
+
+    public int? BgBaselineMs
+    {
+        get => this.GetIntValue(PropertyDefinition.BgIntervalBaselineMs.Name);
+        set => this.SetValue(PropertyDefinition.BgIntervalBaselineMs.Name, value?.ToString());
+    }
+
+    public int? BgIncreasedMs
+    {
+        get => this.GetIntValue(PropertyDefinition.BgIntervalIncreasedMs.Name);
+        set => this.SetValue(PropertyDefinition.BgIntervalIncreasedMs.Name, value?.ToString());
+    }
+
+    public int? BgHighMs
+    {
+        get => this.GetIntValue(PropertyDefinition.BgIntervalHighMs.Name);
+        set => this.SetValue(PropertyDefinition.BgIntervalHighMs.Name, value?.ToString());
+    }
+
+    public int? BgSwitchoverTimeoutMs
+    {
+        get => this.GetIntValue(PropertyDefinition.BgSwitchoverTimeoutMs.Name);
+        set => this.SetValue(PropertyDefinition.BgSwitchoverTimeoutMs.Name, value?.ToString());
+    }
+
+    public int? BgConnectTimeoutMs
+    {
+        get => this.GetIntValue(PropertyDefinition.BgConnectTimeout.Name);
+        set => this.SetValue(PropertyDefinition.BgConnectTimeout.Name, value?.ToString());
+    }
+
     private string? GetValue(string key)
     {
         return this.TryGetValue(key, out object? value) ? value?.ToString() : null;

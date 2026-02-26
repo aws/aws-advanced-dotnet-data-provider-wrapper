@@ -197,4 +197,11 @@ public class HostSpec
             this.LastUpdateTime,
             this.HostId);
     }
+
+    public HostSpec Clone()
+    {
+        HostSpec copy = new(this.Host, this.Port, this.HostId, this.Role, this.RawAvailability, this.Weight, this.LastUpdateTime);
+        copy.AddAlias(this.aliases.Keys.ToArray());
+        return copy;
+    }
 }

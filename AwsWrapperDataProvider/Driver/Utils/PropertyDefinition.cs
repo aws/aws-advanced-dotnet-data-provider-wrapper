@@ -243,6 +243,28 @@ public static class PropertyDefinition
         null,
         "The ID of the AWS application configured on Okta");
 
+    public static readonly AwsWrapperProperty BgdId = new(
+        "BgdId",
+        "1",
+        "Blue/Green Deployment identifier that helps the driver to distinguish different deployments.");
+
+    public static readonly AwsWrapperProperty BgIntervalBaselineMs = new(
+        "BgBaselineMs", "60000", "Baseline Blue/Green Deployment status checking interval (in millisecond).");
+
+    public static readonly AwsWrapperProperty BgIntervalIncreasedMs = new(
+        "BgIncreasedMs", "1000", "Increased Blue/Green Deployment status checking interval (in millisecond).");
+
+    public static readonly AwsWrapperProperty BgIntervalHighMs = new(
+        "BgHighMs", "100", "High Blue/Green Deployment status checking interval (in millisecond).");
+
+    public static readonly AwsWrapperProperty BgSwitchoverTimeoutMs = new(
+        "BgSwitchoverTimeoutMs", "180000", "Blue/Green Deployment switchover timeout (in millisecond).");
+
+    public static readonly AwsWrapperProperty BgConnectTimeout = new(
+        "BgConnectTimeoutMs",
+        "30000",
+        "Connect timeout (in millisecond) during Blue/Green Deployment switchover.");
+
     // Custom Endpoint Plugin Properties
     public static readonly AwsWrapperProperty CustomEndpointInfoRefreshRateMs = new(
         "CustomEndpointInfoRefreshRateMs",
@@ -359,13 +381,23 @@ public static class PropertyDefinition
         FailureDetectionTime,
         FailureDetectionInterval,
         FailureDetectionCount,
+
+        // BG Plugin Properties
+        BgIntervalBaselineMs,
+        BgIntervalIncreasedMs,
+        BgIntervalHighMs,
+        BgSwitchoverTimeoutMs,
+        BgConnectTimeout,
+        BgdId,
     ];
 
     public static readonly string EfmMonitoringPropertyPrefix = "monitoring-";
     public static readonly string ClusterTopologyMonitoringPropertyPrefix = "topology-monitoring-";
+    public static readonly string MonitoringPropertyPrefix = "blue-green-monitoring-";
 
     public static readonly List<string> MonitoringPropertyPrefixes = [
         EfmMonitoringPropertyPrefix,
-        ClusterTopologyMonitoringPropertyPrefix
+        ClusterTopologyMonitoringPropertyPrefix,
+        MonitoringPropertyPrefix,
     ];
 }

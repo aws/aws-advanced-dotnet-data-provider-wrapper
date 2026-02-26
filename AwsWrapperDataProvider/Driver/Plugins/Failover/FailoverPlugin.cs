@@ -57,41 +57,8 @@ public class FailoverPlugin : AbstractConnectionPlugin
     private Exception? lastExceptionDealtWith;
     private FailoverMode? failoverMode;
 
-    public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string>()
-    {
-        // Network-bound methods that might fail and trigger failover
-        "DbConnection.Open",
-        "DbConnection.OpenAsync",
-        "DbConnection.BeginDbTransaction",
-        "DbConnection.BeginDbTransactionAsync",
-
-        "DbCommand.ExecuteNonQuery",
-        "DbCommand.ExecuteNonQueryAsync",
-        "DbCommand.ExecuteReader",
-        "DbCommand.ExecuteReaderAsync",
-        "DbCommand.ExecuteScalar",
-        "DbCommand.ExecuteScalarAsync",
-
-        "DbBatch.ExecuteNonQuery",
-        "DbBatch.ExecuteNonQueryAsync",
-        "DbBatch.ExecuteReader",
-        "DbBatch.ExecuteReaderAsync",
-        "DbBatch.ExecuteScalar",
-        "DbBatch.ExecuteScalarAsync",
-
-        "DbDataReader.Read",
-        "DbDataReader.ReadAsync",
-        "DbDataReader.NextResult",
-        "DbDataReader.NextResultAsync",
-
-        "DbTransaction.Commit",
-        "DbTransaction.CommitAsync",
-        "DbTransaction.Rollback",
-        "DbTransaction.RollbackAsync",
-
-        // Special methods
-        "initHostProvider",
-    };
+    public override IReadOnlySet<string> SubscribedMethods { get; } =
+        new HashSet<string>(PluginMethods.NetworkBoundMethods.Concat(PluginMethods.SpecialMethods));
 
     public FailoverPlugin(IPluginService pluginService, Dictionary<string, string> props)
     {

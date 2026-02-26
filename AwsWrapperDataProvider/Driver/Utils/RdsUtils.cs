@@ -64,6 +64,15 @@ public static partial class RdsUtils
     [GeneratedRegex("^(([0-9A-Fa-f]{1,4}(:[0-9A-Fa-f]{1,4}){0,5})?)::(([0-9A-Fa-f]{1,4}(:[0-9A-Fa-f]{1,4}){0,5})?)$")]
     private static partial Regex IpV6CompressedPattern();
 
+    [GeneratedRegex(@".*(?<prefix>-green-[0-9a-z]{6})\..*", RegexOptions.IgnoreCase)]
+    private static partial Regex BgGreenHostPattern();
+
+    [GeneratedRegex(@"(.*)-green-[0-9a-z]{6}", RegexOptions.IgnoreCase)]
+    private static partial Regex BgGreenHostIdPattern();
+
+    [GeneratedRegex(@".*(?<prefix>-old1)\..*", RegexOptions.IgnoreCase)]
+    private static partial Regex BgOldHostPattern();
+
     // Cache for DNS patterns to improve performance
     private static readonly ConcurrentDictionary<string, Match> CachedPatterns = new();
 
@@ -124,6 +133,17 @@ public static partial class RdsUtils
     public static string? GetRdsInstanceId(string? host)
     {
         return string.IsNullOrEmpty(host) ? null : CacheMatcher(host, AuroraDnsPatterns)?.Groups[InstanceGroup].Value;
+    }
+
+    public static string? GetRdsClusterId(string? host)
+    {
+        if (string.IsNullOrEmpty(host))
+        {
+            return null;
+        }
+
+        var matcher = CacheMatcher(host, AuroraDnsPatterns);
+        return matcher?.Groups[DnsGroup]?.Value != null ? matcher.Groups[InstanceGroup].Value : null;
     }
 
     public static string GetRdsInstanceHostPattern(string host)
@@ -195,6 +215,52 @@ public static partial class RdsUtils
                    || string.Equals(dnsGroup, "cluster-ro-", StringComparison.OrdinalIgnoreCase));
     }
 
+    public static string RemoveGreenInstancePrefix(string? host)
+    {
+        if (string.IsNullOrEmpty(host))
+        {
+            return host ?? string.Empty;
+        }
+
+        Match? match = CacheMatcher(host, BgGreenHostPattern());
+
+        if (match is null or { Success: false })
+        {
+            Match? hostIdMatch = CacheMatcher(host, BgGreenHostIdPattern());
+            if (hostIdMatch is null or { Success: false })
+            {
+                return host;
+            }
+
+            return hostIdMatch.Groups[1].Value;
+        }
+
+        var prefix = match.Groups["prefix"].Value;
+        if (string.IsNullOrEmpty(prefix))
+        {
+            return host;
+        }
+
+        return host.Replace(prefix + ".", ".");
+    }
+
+    public static bool IsNotOldInstance(string? host)
+    {
+        if (string.IsNullOrEmpty(host))
+        {
+            return false;
+        }
+
+        var match = BgOldHostPattern().Match(host);
+        return !match.Success;
+    }
+
+    public static bool IsRdsCustomClusterDns(string host)
+    {
+        string? dnsGroup = GetDnsGroup(host);
+        return dnsGroup != null && dnsGroup.StartsWith("cluster-custom-");
+    }
+
     public static bool IsWriterClusterDns(string host)
     {
         string? dnsGroup = GetDnsGroup(host);
@@ -249,17 +315,6 @@ public static partial class RdsUtils
     public static bool IsIpV6(string host)
     {
         return IpV6Pattern().IsMatch(host) || IpV6CompressedPattern().IsMatch(host);
-    }
-
-    public static bool IsRdsCustomClusterDns(string host)
-    {
-        string? dnsGroup = GetDnsGroup(host);
-        return dnsGroup != null && dnsGroup.StartsWith("cluster-custom-", StringComparison.OrdinalIgnoreCase);
-    }
-
-    public static string? GetRdsClusterId(string host)
-    {
-        return GetRdsInstanceId(host);
     }
 
     public static string RemovePort(string hostAndPort)

@@ -182,4 +182,11 @@ public interface IPluginService : IExceptionHandlerService
     HostSpec GetHostSpecByStrategy(HostRole hostRole, string strategy);
 
     HostSpec GetHostSpecByStrategy(IList<HostSpec> hosts, HostRole hostRole, string strategy);
+
+    /// <summary>
+    /// Checks if a specific plugin type is currently in use.
+    /// </summary>
+    /// <param name="pluginCode">The name of the plugin.</param>
+    /// <returns>True if the plugin is in use, false otherwise.</returns>
+    bool IsPluginInUse(string pluginCode);
 }
