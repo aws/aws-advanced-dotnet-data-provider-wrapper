@@ -14,6 +14,7 @@
 
 using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
+using AwsWrapperDataProvider.Driver.Plugins.AuroraConnectionTracker;
 using AwsWrapperDataProvider.Driver.Plugins.AuroraInitialConnectionStrategy;
 using AwsWrapperDataProvider.Driver.Plugins.ConnectTime;
 using AwsWrapperDataProvider.Driver.Plugins.Efm;
@@ -36,7 +37,7 @@ public class ConnectionPluginChainBuilder
     {
             { PluginCodes.ConnectTime, new Lazy<IConnectionPluginFactory>(() => new ConnectTimePluginFactory()) },
             { PluginCodes.ExecutionTime, new Lazy<IConnectionPluginFactory>(() => new ExecutionTimePluginFactory()) },
-            { PluginCodes.AuroraConnectionTracker, null },
+            { PluginCodes.AuroraConnectionTracker, new Lazy<IConnectionPluginFactory>(() => new AuroraConnectionTrackerPluginFactory()) },
             { PluginCodes.Failover, new Lazy<IConnectionPluginFactory>(() => new FailoverPluginFactory()) },
             { PluginCodes.HostMonitoring, new Lazy<IConnectionPluginFactory>(() => new HostMonitoringPluginFactory()) },
             { PluginCodes.InitialConnection, new Lazy<IConnectionPluginFactory>(() => new AuroraInitialConnectionStrategyPluginFactory()) },
