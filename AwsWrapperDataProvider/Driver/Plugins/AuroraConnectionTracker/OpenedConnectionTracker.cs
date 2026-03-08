@@ -14,7 +14,9 @@
 
 using System.Collections.Concurrent;
 using System.Data.Common;
+using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.AuroraConnectionTracker;
@@ -54,6 +56,45 @@ public class OpenedConnectionTracker
     }
 
     /// <summary>
+    /// Registers a connection in the tracking map keyed by its RDS instance endpoint.
+    /// </summary>
+    public void PopulateOpenedConnectionQueue(HostSpec hostSpec, DbConnection connection)
+    {
+        // Check if the connection was established using an instance endpoint
+        if (RdsUtils.IsRdsInstance(hostSpec.Host))
+        {
+            TrackConnection(hostSpec.GetHostAndPort(), connection);
+            this.LogOpenedConnections();
+            return;
+        }
+
+        // Find the instance endpoint from aliases
+        string? instanceEndpoint = hostSpec.AsAliases()
+            .Where(alias => RdsUtils.IsRdsInstance(RdsUtils.RemovePort(alias)))
+            .MaxBy(alias => alias, StringComparer.OrdinalIgnoreCase);
+
+        if (instanceEndpoint != null)
+        {
+            TrackConnection(instanceEndpoint, connection);
+            this.LogOpenedConnections();
+            return;
+        }
+
+        // No RDS instance endpoint found — skip tracking
+        Logger.LogDebug(
+            Resources.OpenedConnectionTracker_PopulateOpenedConnectionQueue_NoRdsInstanceEndpoint,
+            hostSpec.Host);
+    }
+
+    private static void TrackConnection(string instanceEndpoint, DbConnection connection)
+    {
+        var queue = OpenedConnections.GetOrAdd(
+            instanceEndpoint,
+            _ => new ConcurrentQueue<WeakReference<DbConnection>>());
+        queue.Enqueue(new WeakReference<DbConnection>(connection));
+    }
+
+    /// <summary>
     /// Clears all entries from the static tracking map.
     /// </summary>
     public static void ClearCache()
@@ -72,7 +113,7 @@ public class OpenedConnectionTracker
             }
             catch (Exception ex)
             {
-                Logger.LogDebug(ex, "Error during connection pruning");
+                Logger.LogDebug(ex, Resources.OpenedConnectionTracker_PruneLoop_Error);
             }
         }
     }
@@ -104,6 +145,23 @@ public class OpenedConnectionTracker
             else
             {
                 OpenedConnections.TryRemove(kvp.Key, out _);
+            }
+        }
+    }
+
+    private void LogOpenedConnections()
+    {
+        if (!Logger.IsEnabled(LogLevel.Debug))
+        {
+            return;
+        }
+
+        foreach (var kvp in OpenedConnections)
+        {
+            if (!kvp.Value.IsEmpty)
+            {
+                int count = kvp.Value.Count;
+                Logger.LogDebug(Resources.OpenedConnectionTracker_LogOpenedConnections_Tracking, count, kvp.Key);
             }
         }
     }

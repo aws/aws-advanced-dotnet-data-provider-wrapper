@@ -1008,4 +1008,13 @@
   <data name="LimitlessRouterService_Error_UnableToConnectNoRoutersAvailable" xml:space="preserve">
       <value>Unable to connect, no routers available: {0}.</value>
   </data>
+  <data name="OpenedConnectionTracker_PopulateOpenedConnectionQueue_NoRdsInstanceEndpoint" xml:space="preserve">
+    <value>The driver is unable to track this opened connection because the instance endpoint is unknown: {0}</value>
+  </data>
+  <data name="OpenedConnectionTracker_PruneLoop_Error" xml:space="preserve">
+    <value>Background connection tracker pruning task encountered an error while removing stale connection references.</value>
+  </data>
+  <data name="OpenedConnectionTracker_LogOpenedConnections_Tracking" xml:space="preserve">
+    <value>Tracking {0} connection(s) for endpoint {1}.</value>
+  </data>
 </root>
