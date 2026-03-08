@@ -95,6 +95,46 @@ public class OpenedConnectionTracker
     }
 
     /// <summary>
+    /// Removes a specific connection from the tracking map for the given host.
+    /// </summary>
+    public void RemoveConnectionTracking(HostSpec hostSpec, DbConnection? connection)
+    {
+        string? host = RdsUtils.IsRdsInstance(hostSpec.Host)
+            ? hostSpec.AsAlias()
+            : hostSpec.GetAliases()
+                .FirstOrDefault(alias => RdsUtils.IsRdsInstance(RdsUtils.RemovePort(alias)));
+
+        if (string.IsNullOrEmpty(host))
+        {
+            return;
+        }
+
+        if (!OpenedConnections.TryGetValue(host, out var queue))
+        {
+            return;
+        }
+
+        // Drain and re-enqueue entries that don't match the target connection.
+        var remaining = new ConcurrentQueue<WeakReference<DbConnection>>();
+        while (queue.TryDequeue(out var weakRef))
+        {
+            if (weakRef.TryGetTarget(out var conn) && !ReferenceEquals(conn, connection))
+            {
+                remaining.Enqueue(weakRef);
+            }
+        }
+
+        if (!remaining.IsEmpty)
+        {
+            OpenedConnections[host] = remaining;
+        }
+        else
+        {
+            OpenedConnections.TryRemove(host, out _);
+        }
+    }
+
+    /// <summary>
     /// Clears all entries from the static tracking map.
     /// </summary>
     public static void ClearCache()
