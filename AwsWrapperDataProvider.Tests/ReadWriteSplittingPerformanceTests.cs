@@ -1,4 +1,4 @@
-﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -14,7 +14,6 @@
 
 using System.Data;
 using System.Diagnostics;
-using AwsWrapperDataProvider.Driver.Plugins.ConnectTime;
 using AwsWrapperDataProvider.Driver.Plugins.ExecutionTime;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 using NPOI.SS.UserModel;
@@ -51,17 +50,17 @@ public class ReadWriteSplittingPerformanceTests : IntegrationTestBase
 
         SetReadOnlyPerfDataList.Clear();
 
-        var resultsWithPluginWithConnectionPool = await this.GetSetReadOnlyResults("readWriteSplitting,connectTime,executionTime", async, true);
-
-        this.logger.WriteLine("Results with readWriteSplitting plugin and with connection pool:");
-        this.LogResult(resultsWithPluginWithConnectionPool);
-
-        var resultsWithoutPlugin = await this.GetSetReadOnlyResults("connectTime,executionTime", async, true);
+        var resultsWithoutPlugin = await this.GetSetReadOnlyResults("executionTime", async, true);
 
         this.logger.WriteLine("Results without readWriteSplitting plugin:");
         this.LogResult(resultsWithoutPlugin);
 
-        var resultsWithPluginWithoutConnectionPool = await this.GetSetReadOnlyResults("readWriteSplitting,connectTime,executionTime", async, false);
+        var resultsWithPluginWithConnectionPool = await this.GetSetReadOnlyResults("readWriteSplitting,executionTime", async, true);
+
+        this.logger.WriteLine("Results with readWriteSplitting plugin and with connection pool:");
+        this.LogResult(resultsWithPluginWithConnectionPool);
+
+        var resultsWithPluginWithoutConnectionPool = await this.GetSetReadOnlyResults("readWriteSplitting,executionTime", async, false);
 
         this.logger.WriteLine("Results with readWriteSplitting plugin and without connection pool:");
         this.LogResult(resultsWithPluginWithoutConnectionPool);
@@ -98,7 +97,7 @@ public class ReadWriteSplittingPerformanceTests : IntegrationTestBase
 
         SetReadOnlyPerfDataList.Clear();
 
-        // Without connecition pool
+        // Without connection pool
         long connPoolSwitchToReaderMinOverhead = resultsWithPluginWithoutConnectionPool.SwitchToReaderMin - resultsWithoutPlugin.SwitchToReaderMin;
         long connPoolSwitchToReaderMaxOverhead = resultsWithPluginWithoutConnectionPool.SwitchToReaderMax - resultsWithoutPlugin.SwitchToReaderMax;
         long connPoolSwitchToReaderAvgOverhead = resultsWithPluginWithoutConnectionPool.SwitchToReaderAvg - resultsWithoutPlugin.SwitchToReaderAvg;
@@ -205,33 +204,27 @@ public class ReadWriteSplittingPerformanceTests : IntegrationTestBase
             Assert.Equal(ConnectionState.Open, connection.State);
 
             // Measure switch to reader
-            ConnectTimePlugin.ReseConnectTime();
             ExecutionTimePlugin.ResetExecutionTime();
 
             var sw = Stopwatch.StartNew();
             await AuroraUtils.SetReadOnly(connection, Engine, true, async);
-            var connectTimeNs = ConnectTimePlugin.GetTotalConnectTime();
             var executionTimeNs = ExecutionTimePlugin.GetTotalExecutionTime();
-            this.logger.WriteLine($"Iteration {i}: connectTimeNs={connectTimeNs}, executionTimeNs={executionTimeNs}");
-
             sw.Stop();
             long ticks = sw.ElapsedTicks;
             double elapsedReaderNs = (double)ticks * 1_000_000_000.0 / Stopwatch.Frequency;
-            this.logger.WriteLine($"Iteration {i}: elapsedReaderNs={elapsedReaderNs}");
-            elapsedSwitchToReaderTimes.Add(elapsedReaderNs - connectTimeNs - executionTimeNs);
+            this.logger.WriteLine($"Iteration {i}: elapsedReaderNs={elapsedReaderNs}, executionTimeNs={executionTimeNs}");
+            elapsedSwitchToReaderTimes.Add(elapsedReaderNs - executionTimeNs);
 
             // Measure switch to writer
-            ConnectTimePlugin.ReseConnectTime();
             ExecutionTimePlugin.ResetExecutionTime();
 
             sw = Stopwatch.StartNew();
             await AuroraUtils.SetReadOnly(connection, Engine, false, async);
-            connectTimeNs = ConnectTimePlugin.GetTotalConnectTime();
             executionTimeNs = ExecutionTimePlugin.GetTotalExecutionTime();
             sw.Stop();
             ticks = sw.ElapsedTicks;
             double elapsedWriterNs = (double)ticks * 1_000_000_000.0 / Stopwatch.Frequency;
-            elapsedSwitchToWriterTimes.Add(elapsedWriterNs - connectTimeNs - executionTimeNs);
+            elapsedSwitchToWriterTimes.Add(elapsedWriterNs - executionTimeNs);
         }
 
         // Summary stats for reader

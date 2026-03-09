@@ -43,6 +43,7 @@ public class ConnectionPluginChainBuilder
             { PluginCodes.InitialConnection, new Lazy<IConnectionPluginFactory>(() => new AuroraInitialConnectionStrategyPluginFactory()) },
             { PluginCodes.Limitless, new Lazy<IConnectionPluginFactory>(() => new LimitlessConnectionPluginFactory()) },
             { PluginCodes.ReadWriteSplitting, new Lazy<IConnectionPluginFactory>(() => new ReadWriteSplittingPluginFactory()) },
+            { PluginCodes.CustomEndpoint, null },
             { PluginCodes.Iam, null },
             { PluginCodes.SecretsManager, null },
             { PluginCodes.FederatedAuth, null },
@@ -51,6 +52,7 @@ public class ConnectionPluginChainBuilder
 
     private static readonly Dictionary<string, int> PluginWeightByPluginFactoryType = new()
     {
+            { PluginCodes.CustomEndpoint, 380 },
             { PluginCodes.InitialConnection, 390 },
             { PluginCodes.AuroraConnectionTracker, 400 },
             { PluginCodes.ReadWriteSplitting, 600 },

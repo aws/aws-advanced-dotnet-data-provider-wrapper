@@ -30,6 +30,11 @@ public class SecretsManagerAuthPluginTests
     private static readonly string Host = $"fake.host.{Region}.rds.amazonaws.com";
     private static readonly int Port = 5432;
     private static readonly string SecretId = "test-secret-id";
+#pragma warning disable CS0414 // Field is assigned but its value is never used - reserved for future test assertions
+    private static readonly int ExpirationTime = 870;
+    private static readonly string DefaultUsernameKey = "username";
+    private static readonly string DefaultPasswordKey = "password";
+#pragma warning restore CS0414
 
     private readonly Mock<IPluginService> mockPluginService;
     private readonly Dictionary<string, string> props = new();

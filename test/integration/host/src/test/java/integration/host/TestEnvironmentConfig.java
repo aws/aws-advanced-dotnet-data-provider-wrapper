@@ -661,6 +661,8 @@ public class TestEnvironmentConfig implements AutoCloseable {
                 !StringUtils.isNullOrEmpty(config.rdsDbRegion)
                         ? config.rdsDbRegion
                         : "us-east-2");
+        
+        LOGGER.info("Using AWS Region: " + env.info.getRegion());
 
         env.reuseDb = config.reuseRdsDb;
         env.rdsDbName = config.rdsDbName; // "cluster-mysql"
