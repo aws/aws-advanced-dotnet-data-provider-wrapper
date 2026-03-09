@@ -2001,5 +2001,11 @@ namespace AwsWrapperDataProvider.Properties {
                 return ResourceManager.GetString("OpenedConnectionTracker_InvalidateAllConnections_Invalidating", resourceCulture);
             }
         }
+        
+        internal static string OpenedConnectionTracker_LogConnectionQueue_InvalidatingConnections {
+            get {
+                return ResourceManager.GetString("OpenedConnectionTracker_LogConnectionQueue_InvalidatingConnections", resourceCulture);
+            }
+        }
     }
 }

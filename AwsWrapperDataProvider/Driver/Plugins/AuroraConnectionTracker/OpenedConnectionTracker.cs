@@ -164,12 +164,7 @@ public class OpenedConnectionTracker
                     continue;
                 }
 
-                int count = queue.Count;
-                if (count > 0)
-                {
-                    Logger.LogDebug(Resources.OpenedConnectionTracker_InvalidateAllConnections_Invalidating, count, key);
-                }
-
+                LogConnectionQueue(key, queue);
                 InvalidateConnections(queue);
             }
             catch (Exception)
@@ -269,5 +264,24 @@ public class OpenedConnectionTracker
                 Logger.LogDebug(Resources.OpenedConnectionTracker_LogOpenedConnections_Tracking, count, kvp.Key);
             }
         }
+    }
+
+    private static void LogConnectionQueue(string host, ConcurrentQueue<WeakReference<DbConnection>> queue)
+    {
+        if (!Logger.IsEnabled(LogLevel.Debug) || queue.IsEmpty)
+        {
+            return;
+        }
+
+        var builder = new System.Text.StringBuilder();
+        builder.Append(host).Append("\n[");
+        foreach (var weakRef in queue)
+        {
+            weakRef.TryGetTarget(out var conn);
+            builder.Append("\n\t").Append(conn);
+        }
+
+        builder.Append("\n]");
+        Logger.LogDebug(Resources.OpenedConnectionTracker_LogConnectionQueue_InvalidatingConnections, builder.ToString());
     }
 }
