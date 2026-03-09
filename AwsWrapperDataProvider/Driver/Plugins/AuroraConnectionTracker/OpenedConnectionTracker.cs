@@ -254,7 +254,7 @@ public class OpenedConnectionTracker
         }
     }
 
-    private void LogOpenedConnections()
+    public void LogOpenedConnections()
     {
         if (!Logger.IsEnabled(LogLevel.Debug))
         {

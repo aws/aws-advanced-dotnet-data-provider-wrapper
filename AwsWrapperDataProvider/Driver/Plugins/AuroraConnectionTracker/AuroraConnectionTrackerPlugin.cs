@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
+using AwsWrapperDataProvider.Driver.Plugins.Failover.Exceptions;
 using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Logging;
 
@@ -35,7 +37,7 @@ public class AuroraConnectionTrackerPlugin : AbstractConnectionPlugin
 
     // Static shared state for refresh deadline across all plugin instances.
     // 0 means no refresh needed. Uses Interlocked for thread-safe updates.
-    private static long hostListRefreshEndTimeTicks = 0;
+    private static long s_hostListRefreshEndTimeTicks = 0;
 
     private readonly IPluginService pluginService;
     private readonly Dictionary<string, string> props;
@@ -103,5 +105,135 @@ public class AuroraConnectionTrackerPlugin : AbstractConnectionPlugin
         this.pluginService = pluginService;
         this.props = props;
         this.tracker = tracker;
+    }
+
+    public override async Task<DbConnection> OpenConnection(
+        HostSpec? hostSpec,
+        Dictionary<string, string> props,
+        bool isInitialConnection,
+        ADONetDelegate<DbConnection> methodFunc,
+        bool async)
+    {
+        var conn = await methodFunc();
+
+        if (conn == null || hostSpec == null)
+        {
+            return conn;
+        }
+
+        var rdsUrlType = RdsUtils.IdentifyRdsType(hostSpec.Host);
+        if (rdsUrlType.IsRdsCluster || rdsUrlType == RdsUrlType.Other || rdsUrlType == RdsUrlType.IpAddress)
+        {
+            hostSpec.ResetAliases();
+            await this.pluginService.FillAliasesAsync(conn, hostSpec);
+        }
+
+        this.tracker.PopulateOpenedConnectionQueue(hostSpec, conn);
+
+        return conn;
+    }
+
+    public override async Task<T> Execute<T>(
+        object methodInvokedOn,
+        string methodName,
+        ADONetDelegate<T> methodFunc,
+        params object[] methodArgs)
+    {
+        var currentHostSpec = this.pluginService.CurrentHostSpec;
+        this.RememberWriter();
+
+        if (methodName is MethodClose or MethodCloseAsync or MethodDispose)
+        {
+            var result = await methodFunc();
+            if (currentHostSpec != null)
+            {
+                this.tracker.RemoveConnectionTracking(currentHostSpec, this.pluginService.CurrentConnection);
+            }
+
+            return result;
+        }
+
+        long localRefreshEndTicks = Interlocked.Read(ref s_hostListRefreshEndTimeTicks);
+        bool needRefreshHostList = false;
+        if (localRefreshEndTicks > 0)
+        {
+            if (localRefreshEndTicks > DateTime.UtcNow.Ticks)
+            {
+                // The time specified in s_hostListRefreshEndTimeTicks isn't yet reached
+                // Need to continue to refresh host list
+                needRefreshHostList = true;
+            }
+            else
+            {
+                // The time specified in s_hostListRefreshEndTimeTicks is reached, and we can stop further refreshes
+                // of host list
+                Interlocked.CompareExchange(ref s_hostListRefreshEndTimeTicks, 0, localRefreshEndTicks);
+            }
+        }
+
+        if (this.needUpdateCurrentWriter || needRefreshHostList)
+        {
+            await this.CheckWriterChangedAsync(needRefreshHostList);
+        }
+
+        try
+        {
+            return await methodFunc();
+        }
+        catch (Exception ex) when (ex is FailoverException)
+        {
+            // Set the 3-minute refresh window.
+            Interlocked.Exchange(
+                ref s_hostListRefreshEndTimeTicks,
+                DateTime.UtcNow.Ticks + TopologyChangesExpectedTime.Ticks);
+
+            await this.CheckWriterChangedAsync(true);
+            throw;
+        }
+    }
+
+    private void RememberWriter()
+    {
+        if (this.currentWriter == null || this.needUpdateCurrentWriter)
+        {
+            this.currentWriter = WrapperUtils.GetWriter(this.pluginService.AllHosts);
+            this.needUpdateCurrentWriter = false;
+        }
+    }
+
+    private async Task CheckWriterChangedAsync(bool needRefreshHostList)
+    {
+        if (needRefreshHostList)
+        {
+            try
+            {
+                await this.pluginService.RefreshHostListAsync();
+            }
+            catch (Exception)
+            {
+                // Do nothing
+            }
+        }
+
+        var writerAfterRefresh = WrapperUtils.GetWriter(this.pluginService.AllHosts);
+        if (writerAfterRefresh == null)
+        {
+            return;
+        }
+
+        if (this.currentWriter == null)
+        {
+            this.currentWriter = writerAfterRefresh;
+            this.needUpdateCurrentWriter = false;
+        }
+        else if (this.currentWriter.GetHostAndPort() != writerAfterRefresh.GetHostAndPort())
+        {
+            // The writer's changed, invalidate all connections to the old writer
+            this.tracker.InvalidateAllConnections(this.currentWriter);
+            this.tracker.LogOpenedConnections();
+            this.currentWriter = writerAfterRefresh;
+            this.needUpdateCurrentWriter = false;
+            Interlocked.Exchange(ref s_hostListRefreshEndTimeTicks, 0);
+        }
     }
 }
