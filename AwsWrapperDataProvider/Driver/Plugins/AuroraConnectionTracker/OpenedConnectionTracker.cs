@@ -135,6 +135,71 @@ public class OpenedConnectionTracker
     }
 
     /// <summary>
+    /// Invalidates all tracked connections for the given host.
+    /// </summary>
+    public void InvalidateAllConnections(HostSpec hostSpec)
+    {
+        var keys = new List<string> { hostSpec.AsAlias() };
+        keys.AddRange(hostSpec.GetAliases());
+        this.InvalidateAllConnections(keys.ToArray());
+    }
+
+    /// <summary>
+    /// Invalidates all tracked connections for the given keys.
+    /// </summary>
+    private void InvalidateAllConnections(params string[] keys)
+    {
+        foreach (string key in keys)
+        {
+            try
+            {
+                string cleanHost = RdsUtils.RemovePort(key);
+                if (!RdsUtils.IsRdsInstance(cleanHost))
+                {
+                    continue;
+                }
+
+                if (!OpenedConnections.TryGetValue(key, out var queue))
+                {
+                    continue;
+                }
+
+                int count = queue.Count;
+                if (count > 0)
+                {
+                    Logger.LogDebug(Resources.OpenedConnectionTracker_InvalidateAllConnections_Invalidating, count, key);
+                }
+
+                InvalidateConnections(queue);
+            }
+            catch (Exception)
+            {
+                // ignore and continue
+            }
+        }
+    }
+
+    private static void InvalidateConnections(ConcurrentQueue<WeakReference<DbConnection>> queue)
+    {
+        while (queue.TryDequeue(out var weakRef))
+        {
+            if (!weakRef.TryGetTarget(out var conn))
+            {
+                continue;
+            }
+
+            try
+            {
+                conn.Close();
+            }
+            catch (Exception)
+            {
+                // Swallow — current connection is stale anyway.
+            }
+        }
+    }
+
+    /// <summary>
     /// Clears all entries from the static tracking map.
     /// </summary>
     public static void ClearCache()
