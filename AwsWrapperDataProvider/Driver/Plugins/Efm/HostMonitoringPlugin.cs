@@ -52,7 +52,7 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
 
         "DbBatch.ExecuteNonQuery",
         "DbBatch.ExecuteNonQueryAsync",
-        "DbBatch.ExecuteReaderA",
+        "DbBatch.ExecuteReader",
         "DbBatch.ExecuteReaderAsync",
         "DbBatch.ExecuteScalar",
         "DbBatch.ExecuteScalarAsync",
