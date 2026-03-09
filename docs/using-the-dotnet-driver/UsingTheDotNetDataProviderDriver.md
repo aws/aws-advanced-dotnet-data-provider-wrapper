@@ -52,6 +52,7 @@ The AWS Advanced .NET Data Provider Wrapper has several built-in plugins that ar
 | [Federated Authentication Connection Plugin](./using-plugins/UsingTheFederatedAuthenticationPlugin.md) | `federatedAuth`     | Any database           | Enables users to authenticate via Federated Identity and then database access via IAM.                                                                                                                       | [AWSSDK.CORE and AWSSDK.SecurityToken](https://aws.amazon.com/developer/language/net/)  |
 | [Okta Authentication Plugin](./using-plugins/UsingTheOktaAuthenticationPlugin.md)                      | `okta`              | Aurora, RDS            | Enables users to authenticate using Federated Identity and then connect to their Amazon Aurora Cluster using AWS Identity and Access Management (IAM).                                                       | [AWSSDK.CORE and AWSSDK.SecurityToken](https://aws.amazon.com/developer/language/net/)  |
 | [Aurora Initial Connection Strategy](./using-plugins/UsingTheAuroraInitialConnectionStrategyPlugin.md) | `initialConnection` | Aurora                 | Allows users to configure their initial connection strategy to reader cluster endpoints.                                                                                                                     | None                                                                                    |
+| [Custom Endpoint Connection Plugin](./using-plugins/UsingTheCustomEndpointPlugin.md)                   | `customEndpoint`    | Aurora                 | Adds support for RDS custom endpoints. Ensures connections (including failover and read-write splitting) use instances that are part of the custom endpoint.                                                 | [AWSSDK.RDS](https://www.nuget.org/packages/AWSSDK.RDS/) via plugin package             |
 | Execution Time Connection Plugin                                                                       | `executionTime`     | Any database           | Logs the time taken to execute any .NET method.                                                                                                                                                              | None                                                                                    |
 
 ### AWS Authentication Dependent Plugins
@@ -77,6 +78,28 @@ MySqlClientDialectLoader.Load();
 MySqlConnectorDialectLoader.Load();
 NpgsqlDialectLoader.Load();
 ```
+
+## Accessing the underlying connection or object (IWrapper, Unwrap, IsWrapperFor)
+
+Wrapper types such as `AwsWrapperConnection`, `AwsWrapperCommand`, `AwsWrapperDataReader`, and related wrapper classes implement the `IWrapper` interface. This lets you access the underlying provider instance (for example, the real `NpgsqlConnection` or `MySqlConnection`) when you need provider-specific APIs.
+
+- **`IsWrapperFor<T>()`** — Returns `true` if this wrapper wraps an instance of type `T`. Use this to check before unwrapping.
+- **`Unwrap<T>()`** — Returns the underlying object as `T`. Use only when you know the wrapper contains that type (e.g. after `IsWrapperFor<T>()` is true); otherwise it throws.
+
+Example:
+
+```dotnet
+using (var connection = new AwsWrapperConnection(connectionString))
+{
+    connection.Open();
+    if (connection.IsWrapperFor<NpgsqlConnection>())
+    {
+        var npgsqlConn = connection.Unwrap<NpgsqlConnection>();
+        // Use Npgsql-specific APIs on npgsqlConn
+    }
+}
+```
+
 # Logging
 
 The AWS Wrapper .NET Data Provider Wrapper uses Microsoft.Extensions.Logging for comprehensive logging across all components. 

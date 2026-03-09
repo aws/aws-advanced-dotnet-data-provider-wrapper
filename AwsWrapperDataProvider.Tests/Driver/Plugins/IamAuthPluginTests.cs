@@ -54,7 +54,7 @@ public class IamAuthPluginTests
             utility => utility.GetCacheKey(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>()))
             .Returns((string user, string hostname, int port, string region) => GetCacheKey(user, hostname, port, region));
         this.mockIamTokenUtility.Setup(
-            utility => utility.GenerateAuthenticationTokenAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<AWSCredentials?>()))
+            utility => utility.GenerateAuthenticationTokenAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>()))
             .ReturnsAsync(() => this.iamTokenUtilityGeneratedToken);
 
         this.iamAuthPlugin = new(this.mockPluginService.Object, this.props, this.mockIamTokenUtility.Object);

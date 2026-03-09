@@ -373,6 +373,48 @@ public class AwsWrapperConnectionStringBuilder : DbConnectionStringBuilder
         set => this.SetValue(PropertyDefinition.AppId.Name, value);
     }
 
+    public int? CustomEndpointInfoRefreshRateMs
+    {
+        get => this.GetIntValue(PropertyDefinition.CustomEndpointInfoRefreshRateMs.Name);
+        set => this.SetValue(PropertyDefinition.CustomEndpointInfoRefreshRateMs.Name, value?.ToString());
+    }
+
+    public int? CustomEndpointInfoRefreshRateBackoffFactor
+    {
+        get => this.GetIntValue(PropertyDefinition.CustomEndpointInfoRefreshRateBackoffFactor.Name);
+        set => this.SetValue(PropertyDefinition.CustomEndpointInfoRefreshRateBackoffFactor.Name, value?.ToString());
+    }
+
+    public int? CustomEndpointInfoMaxRefreshRateMs
+    {
+        get => this.GetIntValue(PropertyDefinition.CustomEndpointInfoMaxRefreshRateMs.Name);
+        set => this.SetValue(PropertyDefinition.CustomEndpointInfoMaxRefreshRateMs.Name, value?.ToString());
+    }
+
+    public bool? WaitForCustomEndpointInfo
+    {
+        get => this.GetBoolValue(PropertyDefinition.WaitForCustomEndpointInfo.Name);
+        set => this.SetValue(PropertyDefinition.WaitForCustomEndpointInfo.Name, value?.ToString());
+    }
+
+    public int? WaitForCustomEndpointInfoTimeoutMs
+    {
+        get => this.GetIntValue(PropertyDefinition.WaitForCustomEndpointInfoTimeoutMs.Name);
+        set => this.SetValue(PropertyDefinition.WaitForCustomEndpointInfoTimeoutMs.Name, value?.ToString());
+    }
+
+    public int? CustomEndpointMonitorExpirationMs
+    {
+        get => this.GetIntValue(PropertyDefinition.CustomEndpointMonitorIdleExpirationMs.Name);
+        set => this.SetValue(PropertyDefinition.CustomEndpointMonitorIdleExpirationMs.Name, value?.ToString());
+    }
+
+    public string? CustomEndpointRegion
+    {
+        get => this.GetValue(PropertyDefinition.CustomEndpointRegion.Name);
+        set => this.SetValue(PropertyDefinition.CustomEndpointRegion.Name, value);
+    }
+
     public string? CustomDialect
     {
         get => this.GetValue(PropertyDefinition.TargetDialect.Name);

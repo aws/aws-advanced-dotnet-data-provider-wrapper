@@ -250,4 +250,15 @@ public static partial class RdsUtils
     {
         return IpV6Pattern().IsMatch(host) || IpV6CompressedPattern().IsMatch(host);
     }
+
+    public static bool IsRdsCustomClusterDns(string host)
+    {
+        string? dnsGroup = GetDnsGroup(host);
+        return dnsGroup != null && dnsGroup.StartsWith("cluster-custom-", StringComparison.OrdinalIgnoreCase);
+    }
+
+    public static string? GetRdsClusterId(string host)
+    {
+        return GetRdsInstanceId(host);
+    }
 }
