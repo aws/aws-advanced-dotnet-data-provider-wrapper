@@ -445,9 +445,9 @@ public class AdvancedPerformanceTests
 
     [Fact]
     [Trait("Category", "Integration")]
-    [Trait("Category", "Manual")]
     [Trait("Category", "Performance")]
-    [Trait("Database", "pg")]
+    [Trait("Database", "mysql-advanced-perf")]
+    [Trait("Database", "pg-advanced-perf")]
     [Trait("Engine", "aurora")]
     public async Task AdvancedPerformanceTest()
     {
