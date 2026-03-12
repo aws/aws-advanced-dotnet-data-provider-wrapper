@@ -120,9 +120,9 @@ public class PerformanceTests
 
     [Fact]
     [Trait("Category", "Integration")]
-    [Trait("Category", "Manual")]
     [Trait("Category", "Performance")]
-    [Trait("Database", "pg")]
+    [Trait("Database", "mysql-perf")]
+    [Trait("Database", "pg-perf")]
     [Trait("Engine", "aurora")]
     protected async Task FailureDetectionTimeTest_EnhancedMonitoringEnabled_Efm()
     {
@@ -192,9 +192,9 @@ public class PerformanceTests
 
     [Fact]
     [Trait("Category", "Integration")]
-    [Trait("Category", "Manual")]
     [Trait("Category", "Performance")]
-    [Trait("Database", "pg")]
+    [Trait("Database", "mysql-perf")]
+    [Trait("Database", "pg-perf")]
     [Trait("Engine", "aurora")]
     public async Task FailureDetectionTimeTest_FailoverAndEnhancedMonitoringEnabled()
     {

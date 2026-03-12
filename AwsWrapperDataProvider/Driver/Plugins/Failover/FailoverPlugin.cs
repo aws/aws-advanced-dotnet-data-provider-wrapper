@@ -74,7 +74,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
         "DbBatch.ExecuteNonQuery",
         "DbBatch.ExecuteNonQueryAsync",
-        "DbBatch.ExecuteReaderA",
+        "DbBatch.ExecuteReader",
         "DbBatch.ExecuteReaderAsync",
         "DbBatch.ExecuteScalar",
         "DbBatch.ExecuteScalarAsync",
@@ -465,7 +465,6 @@ public class FailoverPlugin : AbstractConnectionPlugin
     {
         // Force refresh host list and wait for topology to stabilize
         await this.pluginService.ForceRefreshHostListAsync(true, this.failoverTimeoutMs);
-
         var updatedHosts = this.pluginService.AllHosts;
         var writerCandidate = updatedHosts.FirstOrDefault(x => x.Role == HostRole.Writer);
 
