@@ -457,7 +457,6 @@ tasks.register<Test>("test-aurora-mysql-performance") {
         systemProperty("test-no-mariadb-engine", "true")
         systemProperty("test-no-instances-1", "true")
         systemProperty("test-no-instances-2", "true")
-        systemProperty("test-no-instances-3", "true")
         systemProperty("test-no-bg", "true")
     }
 }
@@ -478,7 +477,6 @@ tasks.register<Test>("test-aurora-pg-performance") {
         systemProperty("test-no-mariadb-engine", "true")
         systemProperty("test-no-instances-1", "true")
         systemProperty("test-no-instances-2", "true")
-        systemProperty("test-no-instances-3", "true")
         systemProperty("test-no-bg", "true")
     }
 }
@@ -499,7 +497,6 @@ tasks.register<Test>("test-aurora-mysql-advanced-performance") {
         systemProperty("test-no-mariadb-engine", "true")
         systemProperty("test-no-instances-1", "true")
         systemProperty("test-no-instances-2", "true")
-        systemProperty("test-no-instances-3", "true")
         systemProperty("test-no-bg", "true")
     }
 }
@@ -520,7 +517,6 @@ tasks.register<Test>("test-aurora-pg-advanced-performance") {
         systemProperty("test-no-mariadb-engine", "true")
         systemProperty("test-no-instances-1", "true")
         systemProperty("test-no-instances-2", "true")
-        systemProperty("test-no-instances-3", "true")
         systemProperty("test-no-bg", "true")
     }
 }
