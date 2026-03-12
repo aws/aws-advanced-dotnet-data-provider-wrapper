@@ -24,16 +24,6 @@ var connectionString = "Host=my-cluster.cluster-xyz.us-east-1.rds.amazonaws.com;
     "Plugins=readWriteSplitting";
 ```
 
-When using read/write splitting against Aurora clusters, you must also include either the failover plugin or another mechanism (such as the initial connection strategy plugin) so that the driver can obtain the cluster topology. See [Supplying the connection string](#supplying-the-connection-string) below.
-
-## Supplying the connection string
-
-When using the read/write splitting plugin with Aurora clusters, you do not need to supply multiple instance URLs in the connection string. Supply the URL for the initial instance (or cluster endpoint) you connect to. You must include either the failover plugin or the Aurora host list plugin in your plugin chain so that the driver can query Aurora for its topology. See [Loading the Read/Write Splitting Plugin](#loading-the-readwrite-splitting-plugin) for how to configure the plugin list.
-
-## Using the Read/Write Splitting Plugin against non-Aurora clusters
-
-The read/write splitting plugin is not currently supported for non-Aurora clusters.
-
 ## How read/write switching works
 
 The plugin switches between writer and reader based on the **SQL text** of the command being executed. Before running a command, the plugin checks whether the command sets the session to read-only or read-write. If it does, the plugin switches the underlying connection as needed, then executes the command.
@@ -118,11 +108,6 @@ The first time a command sets the session to read-only, the plugin opens a new p
 ### Statements and result sets bound to the current connection
 
 When a `DbCommand` or `DbDataReader` is created, it is bound to the underlying database connection at that time. There is no standard ADO.NET way to change the connection used by an existing command or reader. Therefore, if the read/write splitting plugin switches the underlying connection (e.g., after executing a read-only or read-write session statement), any commands or readers that were created before the switch continue to use the previous connection. To avoid incorrect behavior, create new `DbCommand` and `DbDataReader` instances after switching between reader and writer. Do not reuse commands or readers across such switches.
-
-### Transaction behavior
-
-- You cannot switch from a reader back to the writer while inside a transaction that was started on the reader. The plugin will throw `ReadWriteSplittingDbException` if you execute a statement that sets the session to read-write while the current connection is a reader and a transaction is active. Commit or roll back the transaction first, then switch to the writer.
-- If you start a transaction on the writer and then switch to read-only, read-only operations run on a reader; switching back to read-write while that transaction is still open is not allowed from the reader. The plugin enforces this to keep transaction semantics correct.
 
 ## Example
 
