@@ -41,7 +41,7 @@ public class AuroraConnectionTrackerPlugin : AbstractConnectionPlugin
 
     private readonly IPluginService pluginService;
     private readonly Dictionary<string, string> props;
-    private readonly OpenedConnectionTracker tracker;
+    private readonly IConnectionTracker tracker;
     private HostSpec? currentWriter;
 
     // Forward-compatibility placeholder: in JDBC and Go, this is set to true by the
@@ -100,7 +100,7 @@ public class AuroraConnectionTrackerPlugin : AbstractConnectionPlugin
     internal AuroraConnectionTrackerPlugin(
         IPluginService pluginService,
         Dictionary<string, string> props,
-        OpenedConnectionTracker tracker)
+        IConnectionTracker tracker)
     {
         this.pluginService = pluginService;
         this.props = props;

@@ -27,7 +27,7 @@ namespace AwsWrapperDataProvider.Driver.Plugins.AuroraConnectionTracker;
 /// so that all wrapper connections contribute to and read from the same global
 /// view of tracked connections.
 /// </summary>
-public class OpenedConnectionTracker
+public class OpenedConnectionTracker : IConnectionTracker
 {
     private static readonly ILogger<OpenedConnectionTracker> Logger =
         LoggerUtils.GetLogger<OpenedConnectionTracker>();
