@@ -1,9 +1,6 @@
 name: Performance Tests
 
 on:
-  push:
-    branches:
-      - test/*
   workflow_dispatch:
 
 permissions:
