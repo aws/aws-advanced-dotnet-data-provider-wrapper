@@ -441,6 +441,86 @@ tasks.register<Test>("test-aurora-pg-rw-splitting-performance") {
     }
 }
 
+tasks.register<Test>("test-aurora-mysql-performance") {
+    group = "verification"
+    filter.includeTestsMatching("integration.host.TestRunner.runMySQLPerfTests")
+    doFirst {
+        systemProperty("test-no-docker", "true")
+        systemProperty("test-no-multi-az-cluster", "true")
+        systemProperty("test-no-multi-az-instance", "true")
+        systemProperty("test-no-aurora-limitless", "true")
+        systemProperty("test-no-iam", "true")
+        systemProperty("test-no-secrets-manager", "true")
+        systemProperty("test-no-pg-driver", "true")
+        systemProperty("test-no-pg-engine", "true")
+        systemProperty("test-no-mariadb-driver", "true")
+        systemProperty("test-no-mariadb-engine", "true")
+        systemProperty("test-no-instances-1", "true")
+        systemProperty("test-no-instances-2", "true")
+        systemProperty("test-no-bg", "true")
+    }
+}
+
+tasks.register<Test>("test-aurora-pg-performance") {
+    group = "verification"
+    filter.includeTestsMatching("integration.host.TestRunner.runPGPerfTests")
+    doFirst {
+        systemProperty("test-no-docker", "true")
+        systemProperty("test-no-multi-az-cluster", "true")
+        systemProperty("test-no-multi-az-instance", "true")
+        systemProperty("test-no-aurora-limitless", "true")
+        systemProperty("test-no-iam", "true")
+        systemProperty("test-no-secrets-manager", "true")
+        systemProperty("test-no-mysql-driver", "true")
+        systemProperty("test-no-mysql-engine", "true")
+        systemProperty("test-no-mariadb-driver", "true")
+        systemProperty("test-no-mariadb-engine", "true")
+        systemProperty("test-no-instances-1", "true")
+        systemProperty("test-no-instances-2", "true")
+        systemProperty("test-no-bg", "true")
+    }
+}
+
+tasks.register<Test>("test-aurora-mysql-advanced-performance") {
+    group = "verification"
+    filter.includeTestsMatching("integration.host.TestRunner.runMySQLAdvancedPerfTests")
+    doFirst {
+        systemProperty("test-no-docker", "true")
+        systemProperty("test-no-multi-az-cluster", "true")
+        systemProperty("test-no-multi-az-instance", "true")
+        systemProperty("test-no-aurora-limitless", "true")
+        systemProperty("test-no-iam", "true")
+        systemProperty("test-no-secrets-manager", "true")
+        systemProperty("test-no-pg-driver", "true")
+        systemProperty("test-no-pg-engine", "true")
+        systemProperty("test-no-mariadb-driver", "true")
+        systemProperty("test-no-mariadb-engine", "true")
+        systemProperty("test-no-instances-1", "true")
+        systemProperty("test-no-instances-2", "true")
+        systemProperty("test-no-bg", "true")
+    }
+}
+
+tasks.register<Test>("test-aurora-pg-advanced-performance") {
+    group = "verification"
+    filter.includeTestsMatching("integration.host.TestRunner.runPGAdvancedPerfTests")
+    doFirst {
+        systemProperty("test-no-docker", "true")
+        systemProperty("test-no-multi-az-cluster", "true")
+        systemProperty("test-no-multi-az-instance", "true")
+        systemProperty("test-no-aurora-limitless", "true")
+        systemProperty("test-no-iam", "true")
+        systemProperty("test-no-secrets-manager", "true")
+        systemProperty("test-no-mysql-driver", "true")
+        systemProperty("test-no-mysql-engine", "true")
+        systemProperty("test-no-mariadb-driver", "true")
+        systemProperty("test-no-mariadb-engine", "true")
+        systemProperty("test-no-instances-1", "true")
+        systemProperty("test-no-instances-2", "true")
+        systemProperty("test-no-bg", "true")
+    }
+}
+
 tasks.register<Test>("in-container") {
     filter.excludeTestsMatching("software.*") // exclude unit tests
 
