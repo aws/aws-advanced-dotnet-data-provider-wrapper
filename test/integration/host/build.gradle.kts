@@ -528,10 +528,3 @@ tasks.register<Test>("in-container") {
     // see https://docs.gradle.org/current/javadoc/org/gradle/api/tasks/testing/TestFilter.html
     filter.includeTestsMatching("integration.container.tests.*")
 }
-
-// Explicitly set test classpath for custom Test tasks (required for Gradle 9.0 compatibility).
-// Without this, "Relying on the convention for Test.classpath in custom Test tasks" is deprecated.
-tasks.withType<Test>().matching { it.name != "test" }.configureEach {
-    testClassesDirs = sourceSets["test"].output.classesDirs
-    classpath = sourceSets["test"].runtimeClasspath
-}
