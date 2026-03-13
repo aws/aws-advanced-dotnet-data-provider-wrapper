@@ -153,6 +153,38 @@ public class TestRunner {
   }
 
   @TestTemplate
+  public void runMySQLPerfTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
+
+    try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
+      env.runTests("mysql-perf", "aurora");
+    }
+  }
+
+  @TestTemplate
+  public void runPGPerfTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
+
+    try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
+      env.runTests("pg-perf", "aurora");
+    }
+  }
+
+  @TestTemplate
+  public void runMySQLAdvancedPerfTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
+
+    try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
+      env.runTests("mysql-advanced-perf", "aurora");
+    }
+  }
+
+  @TestTemplate
+  public void runPGAdvancedPerfTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
+
+    try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
+      env.runTests("pg-advanced-perf", "aurora");
+    }
+  }
+
+  @TestTemplate
   public void runMySQLRWSplittingPerfTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
 
     try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
