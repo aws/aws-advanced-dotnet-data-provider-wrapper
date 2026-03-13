@@ -14,7 +14,6 @@
 
 using System.Collections.Concurrent;
 using AwsWrapperDataProvider.Performance.Tests.PerformanceStatistics;
-using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 
 namespace AwsWrapperDataProvider.Performance.Tests;

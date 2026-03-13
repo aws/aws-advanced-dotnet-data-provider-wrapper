@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using System.Data.Common;
-using System.Resources;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
 using AwsWrapperDataProvider.Properties;
