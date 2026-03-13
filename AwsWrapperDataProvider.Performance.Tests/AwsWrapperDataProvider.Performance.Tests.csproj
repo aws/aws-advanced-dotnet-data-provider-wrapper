@@ -16,13 +16,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="NPOI" Version="2.7.5" />
+    <PackageReference Include="NPOI" Version="2.7.6" />
     <PackageReference Include="ToxiproxyNetCore" Version="1.0.50" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="xunit.v3" Version="3.2.1" />
+    <PackageReference Include="xunit.v3" Version="3.2.2" />
   </ItemGroup>
 
 </Project>
