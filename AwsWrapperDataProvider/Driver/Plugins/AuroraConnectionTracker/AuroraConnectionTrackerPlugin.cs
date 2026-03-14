@@ -44,10 +44,8 @@ public class AuroraConnectionTrackerPlugin : AbstractConnectionPlugin
     private readonly IConnectionTracker tracker;
     private HostSpec? currentWriter;
 
-    // Forward-compatibility placeholder: in JDBC and Go, this is set to true by the
-    // NotifyNodeListChanged pipeline when a PROMOTED_TO_WRITER event fires. Since the
-    // dotnet wrapper does not yet have this pipeline, nothing currently sets this flag.
-    // Writer change detection relies on the CheckWriterChangedAsync path instead.
+    // Forward-compatibility placeholder: in reference implementation, this is set to true by the
+    // NotifyNodeListChanged pipeline. This wrapper does not yet have this pipeline.
     private bool needUpdateCurrentWriter;
 
     public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string>
