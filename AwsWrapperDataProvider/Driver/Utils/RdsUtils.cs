@@ -261,4 +261,15 @@ public static partial class RdsUtils
     {
         return GetRdsInstanceId(host);
     }
+
+    public static string RemovePort(string hostAndPort)
+    {
+        if (string.IsNullOrEmpty(hostAndPort))
+        {
+            return hostAndPort;
+        }
+
+        int colonIndex = hostAndPort.LastIndexOf(':');
+        return colonIndex >= 0 ? hostAndPort[..colonIndex] : hostAndPort;
+    }
 }

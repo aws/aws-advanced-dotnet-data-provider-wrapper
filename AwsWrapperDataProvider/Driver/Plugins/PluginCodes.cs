@@ -18,6 +18,7 @@ public static class PluginCodes
 {
     public const string ConnectTime = "connectTime";
     public const string ExecutionTime = "executionTime";
+    public const string AuroraConnectionTracker = "auroraConnectionTracker";
     public const string Failover = "failover";
     public const string HostMonitoring = "efm";
     public const string ReadWriteSplitting = "readWriteSplitting";
