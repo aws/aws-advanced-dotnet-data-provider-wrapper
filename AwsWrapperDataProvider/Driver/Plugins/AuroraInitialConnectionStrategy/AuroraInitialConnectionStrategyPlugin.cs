@@ -18,12 +18,15 @@ using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Utils;
 using AwsWrapperDataProvider.Properties;
+using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.AuroraInitialConnectionStrategy;
 
 public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
 {
     private const int DnsRetries = 3;
+
+    private static readonly ILogger<AuroraInitialConnectionStrategyPlugin> Logger = LoggerUtils.GetLogger<AuroraInitialConnectionStrategyPlugin>();
 
     private readonly IPluginService pluginService;
     private readonly VerifyOpenedConnectionType? verifyOpenedConnectionType;
@@ -35,6 +38,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
         this.pluginService = pluginService;
         string? verifyOpenedConnectionTypeStr = PropertyDefinition.VerifyOpenedConnectionType.GetString(props);
         this.verifyOpenedConnectionType = verifyOpenedConnectionTypeStr != null ? this.verifyOpenedConnectionTypeMap[verifyOpenedConnectionTypeStr] : null;
+        Logger.LogDebug("verifyOpenedConnectionType={verifyOpenedConnectionType}", this.verifyOpenedConnectionType);
     }
 
     public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string> { "DbConnection.Open", "DbConnection.OpenAsync", "initHostProvider" };
@@ -57,6 +61,9 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
         ADONetDelegate<DbConnection> methodFunc,
         bool async)
     {
+        Logger.LogDebug("********************");
+        Logger.LogDebug("OpenConnection called. HostSpec: {HostSpec}, IsInitialConnection: {IsInitial}", hostSpec, isInitialConnection);
+        Logger.LogDebug("InitialConnectionHostSpec before={InitialConnectionHostSpec}", this.hostListProviderService!.InitialConnectionHostSpec);
         RdsUrlType urlType = RdsUtils.IdentifyRdsType(hostSpec?.Host);
         DbConnection? connectionCandidate = null;
 
@@ -79,10 +86,15 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
                 async);
         }
 
+        Logger.LogDebug("InitialConnectionHostSpec after={InitialConnectionHostSpec}", this.hostListProviderService!.InitialConnectionHostSpec);
+
         if (connectionCandidate == null)
         {
             return await methodFunc();
         }
+
+        Logger.LogDebug("connectionCandidate datasource={datasource}", connectionCandidate.DataSource);
+        Logger.LogDebug("connectionCandidate connection string={string}", connectionCandidate.ConnectionString);
 
         return connectionCandidate;
     }
