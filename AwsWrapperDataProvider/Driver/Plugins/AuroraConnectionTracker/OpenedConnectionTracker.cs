@@ -37,7 +37,7 @@ public class OpenedConnectionTracker : IConnectionTracker
     /// endpoints in host:port format. Values are thread-safe queues of weak
     /// references to DbConnection objects opened to that instance.
     /// </summary>
-    internal static readonly ConcurrentDictionary<string, ConcurrentQueue<WeakReference<DbConnection>>> OpenedConnections = new();
+    internal static readonly ConcurrentDictionary<string, RWQueue<WeakReference<DbConnection>>> OpenedConnections = new();
 
     /// <summary>
     /// Singleton background pruning task. Initialized once on first access via Lazy.
@@ -90,7 +90,7 @@ public class OpenedConnectionTracker : IConnectionTracker
     {
         var queue = OpenedConnections.GetOrAdd(
             instanceEndpoint,
-            _ => new ConcurrentQueue<WeakReference<DbConnection>>());
+            _ => new RWQueue<WeakReference<DbConnection>>());
         queue.Enqueue(new WeakReference<DbConnection>(connection));
     }
 
@@ -114,24 +114,7 @@ public class OpenedConnectionTracker : IConnectionTracker
             return;
         }
 
-        // Drain and re-enqueue entries that don't match the target connection.
-        var remaining = new ConcurrentQueue<WeakReference<DbConnection>>();
-        while (queue.TryDequeue(out var weakRef))
-        {
-            if (weakRef.TryGetTarget(out var conn) && !ReferenceEquals(conn, connection))
-            {
-                remaining.Enqueue(weakRef);
-            }
-        }
-
-        if (!remaining.IsEmpty)
-        {
-            OpenedConnections[host] = remaining;
-        }
-        else
-        {
-            OpenedConnections.TryRemove(host, out _);
-        }
+        queue.RemoveIf(weakRef => !weakRef.TryGetTarget(out var conn) || ReferenceEquals(conn, connection));
     }
 
     /// <summary>
@@ -174,11 +157,14 @@ public class OpenedConnectionTracker : IConnectionTracker
         }
     }
 
-    private static void InvalidateConnections(ConcurrentQueue<WeakReference<DbConnection>> queue)
+    private static void InvalidateConnections(RWQueue<WeakReference<DbConnection>> queue)
     {
-        while (queue.TryDequeue(out var weakRef))
+        while (true)
         {
-            if (!weakRef.TryGetTarget(out var conn))
+            var (weakRef, success) = queue.Dequeue();
+            if (!success) break;
+
+            if (!weakRef!.TryGetTarget(out var conn))
             {
                 continue;
             }
@@ -225,27 +211,7 @@ public class OpenedConnectionTracker : IConnectionTracker
     {
         foreach (var kvp in OpenedConnections)
         {
-            var queue = kvp.Value;
-            var liveEntries = new ConcurrentQueue<WeakReference<DbConnection>>();
-
-            while (queue.TryDequeue(out var weakRef))
-            {
-                if (weakRef.TryGetTarget(out _))
-                {
-                    liveEntries.Enqueue(weakRef);
-                }
-            }
-
-            // Replace the old drained queue with only live references,
-            // or remove the key entirely if no live references remain.
-            if (!liveEntries.IsEmpty)
-            {
-                OpenedConnections[kvp.Key] = liveEntries;
-            }
-            else
-            {
-                OpenedConnections.TryRemove(kvp.Key, out _);
-            }
+            kvp.Value.RemoveIf(weakRef => !weakRef.TryGetTarget(out _));
         }
     }
 
@@ -266,7 +232,7 @@ public class OpenedConnectionTracker : IConnectionTracker
         }
     }
 
-    private static void LogConnectionQueue(string host, ConcurrentQueue<WeakReference<DbConnection>> queue)
+    private static void LogConnectionQueue(string host, RWQueue<WeakReference<DbConnection>> queue)
     {
         if (!Logger.IsEnabled(LogLevel.Debug) || queue.IsEmpty)
         {
@@ -275,11 +241,11 @@ public class OpenedConnectionTracker : IConnectionTracker
 
         var builder = new System.Text.StringBuilder();
         builder.Append(host).Append("\n[");
-        foreach (var weakRef in queue)
+        queue.ForEach(weakRef =>
         {
             weakRef.TryGetTarget(out var conn);
             builder.Append("\n\t").Append(conn);
-        }
+        });
 
         builder.Append("\n]");
         Logger.LogDebug(Resources.OpenedConnectionTracker_LogConnectionQueue_InvalidatingConnections, builder.ToString());
