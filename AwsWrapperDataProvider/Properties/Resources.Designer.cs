@@ -2007,5 +2007,11 @@ namespace AwsWrapperDataProvider.Properties {
                 return ResourceManager.GetString("OpenedConnectionTracker_LogConnectionQueue_InvalidatingConnections", resourceCulture);
             }
         }
+        
+        internal static string RWQueue_ThrowIfReentrant_CannotModifyDuringForEach {
+            get {
+                return ResourceManager.GetString("RWQueue_ThrowIfReentrant_CannotModifyDuringForEach", resourceCulture);
+            }
+        }
     }
 }

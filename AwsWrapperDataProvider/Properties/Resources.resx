@@ -1040,4 +1040,7 @@
   <data name="OpenedConnectionTracker_LogConnectionQueue_InvalidatingConnections" xml:space="preserve">
     <value>Invalidating connections {0}</value>
   </data>
+  <data name="RWQueue_ThrowIfReentrant_CannotModifyDuringForEach" xml:space="preserve">
+    <value>Cannot modify RWQueue during ForEach iteration on the same thread.</value>
+  </data>
 </root>
