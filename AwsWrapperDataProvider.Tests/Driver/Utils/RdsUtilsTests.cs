@@ -291,4 +291,28 @@ public class RdsUtilsTests
     {
         Assert.Equal(expectedHostPattern, RdsUtils.GetRdsInstanceHostPattern(host));
     }
+
+    [Theory]
+    [Trait("Category", "Unit")]
+    [InlineData(UsEastRegionInstance, true)]
+    [InlineData(ChinaRegionInstance, true)]
+    [InlineData(OldChinaRegionInstance, true)]
+    [InlineData(UsIsoEastRegionInstance, true)]
+    [InlineData(UsIsobEastRegionInstance, true)]
+    [InlineData(EuRedshift, true)]
+    [InlineData(AuRegionInstance, true)]
+    [InlineData(UkRegionInstance, true)]
+    [InlineData(RdsFipsInstance, true)]
+    [InlineData(UsEastRegionCluster, false)]
+    [InlineData(UsEastRegionClusterReadOnly, false)]
+    [InlineData(UsEastRegionProxy, false)]
+    [InlineData(UsEastRegionCustomDomain, false)]
+    [InlineData(UsEastRegionLimitlessDbShardGroup, false)]
+    [InlineData(UsEastRegionElbUrl, false)]
+    [InlineData("192.168.1.1", false)]
+    [InlineData("example.com", false)]
+    public void IsRdsInstance_ShouldReturnCorrectResult(string host, bool expected)
+    {
+        Assert.Equal(expected, RdsUtils.IsRdsInstance(host));
+    }
 }
