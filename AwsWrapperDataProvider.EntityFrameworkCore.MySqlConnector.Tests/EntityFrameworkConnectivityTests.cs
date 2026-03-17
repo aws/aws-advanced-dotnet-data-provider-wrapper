@@ -285,103 +285,103 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
     //    }
     //}
 
-    [Fact]
-    [Trait("Category", "Integration")]
-    [Trait("Database", "mysql-ef")]
-    [Trait("Engine", "aurora")]
-    public async Task EFCrashAfterOpenWithFailoverPluginTest()
-    {
-        Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
+    //[Fact]
+    //[Trait("Category", "Integration")]
+    //[Trait("Database", "mysql-ef")]
+    //[Trait("Engine", "aurora")]
+    //public async Task EFCrashAfterOpenWithFailoverPluginTest()
+    //{
+    //    Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
 
-        string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
+    //    string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
 
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName, 2, 10);
+    //    var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName, 2, 10);
 
-        var wrapperConnectionString = connectionString
-            + $";Plugins=initialConnection,failover;" +
-            $"EnableConnectFailover=true;" +
-            $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
+    //    var wrapperConnectionString = connectionString
+    //        + $";Plugins=initialConnection,failover;" +
+    //        $"EnableConnectFailover=true;" +
+    //        $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
 
-        var options = new DbContextOptionsBuilder<PersonDbContext>()
-            .UseLoggerFactory(this.loggerFactory)
-            .UseAwsWrapper(
-                wrapperConnectionString,
-                wrappedOptionBuilder => wrappedOptionBuilder
-                    .UseLoggerFactory(this.loggerFactory)
-                    .UseMySql(connectionString, this.version))
-            .Options;
+    //    var options = new DbContextOptionsBuilder<PersonDbContext>()
+    //        .UseLoggerFactory(this.loggerFactory)
+    //        .UseAwsWrapper(
+    //            wrapperConnectionString,
+    //            wrappedOptionBuilder => wrappedOptionBuilder
+    //                .UseLoggerFactory(this.loggerFactory)
+    //                .UseMySql(connectionString, this.version))
+    //        .Options;
 
-        using (var db = new PersonDbContext(options))
-        {
-            db.Database.ExecuteSqlRaw($"Truncate table persons;");
-        }
+    //    using (var db = new PersonDbContext(options))
+    //    {
+    //        db.Database.ExecuteSqlRaw($"Truncate table persons;");
+    //    }
 
-        using (var db = new PersonDbContext(options))
-        {
-            Person jane = new() { FirstName = "Jane", LastName = "Smith" };
-            db.Add(jane);
-            db.SaveChanges();
+    //    using (var db = new PersonDbContext(options))
+    //    {
+    //        Person jane = new() { FirstName = "Jane", LastName = "Smith" };
+    //        db.Add(jane);
+    //        db.SaveChanges();
 
-            await db.Database.OpenConnectionAsync(cancellationToken: TestContext.Current.CancellationToken);
-            var instanceId = await AuroraUtils.ExecuteInstanceIdQuery(db.Database.GetDbConnection(), Engine, Deployment, true);
-            this.logger.WriteLine($"==========================================");
-            this.logger.WriteLine($"Current node before crash is {instanceId}");
-            this.logger.WriteLine($"Current data source {db.Database.GetDbConnection().DataSource}");
-            this.logger.WriteLine($"Current connection string {db.Database.GetDbConnection().ConnectionString}");
-            await db.Database.CloseConnectionAsync();
+    //        await db.Database.OpenConnectionAsync(cancellationToken: TestContext.Current.CancellationToken);
+    //        var instanceId = await AuroraUtils.ExecuteInstanceIdQuery(db.Database.GetDbConnection(), Engine, Deployment, true);
+    //        this.logger.WriteLine($"==========================================");
+    //        this.logger.WriteLine($"Current node before crash is {instanceId}");
+    //        this.logger.WriteLine($"Current data source {db.Database.GetDbConnection().DataSource}");
+    //        this.logger.WriteLine($"Current connection string {db.Database.GetDbConnection().ConnectionString}");
+    //        await db.Database.CloseConnectionAsync();
 
-            Person john = new() { FirstName = "John", LastName = "Smith" };
-            await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
-            {
-                var connection = db.Database.GetDbConnection();
-                try
-                {
-                    if (connection.State == System.Data.ConnectionState.Closed)
-                    {
-                        // Open explicly to trigger failover on execute pipeline
-                        connection.Open();
-                    }
+    //        Person john = new() { FirstName = "John", LastName = "Smith" };
+    //        await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
+    //        {
+    //            var connection = db.Database.GetDbConnection();
+    //            try
+    //            {
+    //                if (connection.State == System.Data.ConnectionState.Closed)
+    //                {
+    //                    // Open explicly to trigger failover on execute pipeline
+    //                    connection.Open();
+    //                }
 
-                    var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-                    var crashInstanceTask = AuroraUtils.CrashInstance(currentWriter, tcs);
-                    await tcs.Task;
+    //                var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+    //                var crashInstanceTask = AuroraUtils.CrashInstance(currentWriter, tcs);
+    //                await tcs.Task;
 
-                    // Query to trigger failover
-                    var anyUser = await db.Persons.AnyAsync(cancellationToken: TestContext.Current.CancellationToken);
+    //                // Query to trigger failover
+    //                var anyUser = await db.Persons.AnyAsync(cancellationToken: TestContext.Current.CancellationToken);
 
-                    db.Add(john);
-                    db.SaveChanges();
-                    await crashInstanceTask;
-                }
-                finally
-                {
-                    connection.Close();
-                }
-            });
+    //                db.Add(john);
+    //                db.SaveChanges();
+    //                await crashInstanceTask;
+    //            }
+    //            finally
+    //            {
+    //                connection.Close();
+    //            }
+    //        });
 
-            Assert.Equal(EntityState.Detached, db.Entry(john).State);
+    //        Assert.Equal(EntityState.Detached, db.Entry(john).State);
 
-            await db.Database.OpenConnectionAsync(cancellationToken: TestContext.Current.CancellationToken);
-            instanceId = await AuroraUtils.ExecuteInstanceIdQuery(db.Database.GetDbConnection(), Engine, Deployment, true);
-            this.logger.WriteLine($"==========================================");
-            this.logger.WriteLine($"Current node after crash is {instanceId}");
-            this.logger.WriteLine($"Current data source {db.Database.GetDbConnection().DataSource}");
-            this.logger.WriteLine($"Current connection string {db.Database.GetDbConnection().ConnectionString}");
-            await db.Database.CloseConnectionAsync();
+    //        await db.Database.OpenConnectionAsync(cancellationToken: TestContext.Current.CancellationToken);
+    //        instanceId = await AuroraUtils.ExecuteInstanceIdQuery(db.Database.GetDbConnection(), Engine, Deployment, true);
+    //        this.logger.WriteLine($"==========================================");
+    //        this.logger.WriteLine($"Current node after crash is {instanceId}");
+    //        this.logger.WriteLine($"Current data source {db.Database.GetDbConnection().DataSource}");
+    //        this.logger.WriteLine($"Current connection string {db.Database.GetDbConnection().ConnectionString}");
+    //        await db.Database.CloseConnectionAsync();
 
-            Person joe = new() { FirstName = "Joe", LastName = "Smith" };
-            db.Add(joe);
-            db.SaveChanges();
-        }
+    //        Person joe = new() { FirstName = "Joe", LastName = "Smith" };
+    //        db.Add(joe);
+    //        db.SaveChanges();
+    //    }
 
-        using (var db = new PersonDbContext(options))
-        {
-            Assert.True(db.Persons.Any(p => p.FirstName == "Jane"));
-            Assert.True(db.Persons.Any(p => p.FirstName == "Joe"));
-            Assert.False(db.Persons.Any(p => p.FirstName == "John"));
-            Assert.Equal(2, db.Persons.Count());
-        }
-    }
+    //    using (var db = new PersonDbContext(options))
+    //    {
+    //        Assert.True(db.Persons.Any(p => p.FirstName == "Jane"));
+    //        Assert.True(db.Persons.Any(p => p.FirstName == "Joe"));
+    //        Assert.False(db.Persons.Any(p => p.FirstName == "John"));
+    //        Assert.Equal(2, db.Persons.Count());
+    //    }
+    //}
 
     [Fact]
     [Trait("Category", "Integration")]

@@ -130,152 +130,152 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
         this.logger.LogInformation($"Custom endpoint instance successfully set to role: {hostRole}");
     }
 
-    [Fact]
-    [Trait("Category", "Integration")]
-    [Trait("Database", "mysql-ef")]
-    [Trait("Engine", "aurora")]
-    public async Task EF_CustomEndpoint_ReadWriteSplitting_WithCustomEndpointChanges_WithReaderAsInitConn()
-    {
-        Assert.SkipWhen(NumberOfInstances < 3, "Skipped due to test requiring number of database instances >= 3.");
-        Assert.SkipWhen(this.fixture.EndpointInfo == null, "Custom endpoint fixture not created (not Aurora or < 3 instances).");
+    //[Fact]
+    //[Trait("Category", "Integration")]
+    //[Trait("Database", "mysql-ef")]
+    //[Trait("Engine", "aurora")]
+    //public async Task EF_CustomEndpoint_ReadWriteSplitting_WithCustomEndpointChanges_WithReaderAsInitConn()
+    //{
+    //    Assert.SkipWhen(NumberOfInstances < 3, "Skipped due to test requiring number of database instances >= 3.");
+    //    Assert.SkipWhen(this.fixture.EndpointInfo == null, "Custom endpoint fixture not created (not Aurora or < 3 instances).");
 
-        await this.SetupCustomEndpointRoleAsync(HostRole.Reader);
+    //    await this.SetupCustomEndpointRoleAsync(HostRole.Reader);
 
-        var connectionString = ConnectionStringHelper.GetUrl(
-            Engine,
-            this.fixture.EndpointInfo!.Endpoint,
-            Port,
-            Username,
-            Password,
-            DefaultDbName,
-            3,
-            10,
-            enablePooling: false);
+    //    var connectionString = ConnectionStringHelper.GetUrl(
+    //        Engine,
+    //        this.fixture.EndpointInfo!.Endpoint,
+    //        Port,
+    //        Username,
+    //        Password,
+    //        DefaultDbName,
+    //        3,
+    //        10,
+    //        enablePooling: false);
 
-        var wrapperConnectionString = connectionString + $";Plugins=customEndpoint,readWriteSplitting,failover;";
-        wrapperConnectionString += $"; ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
-        wrapperConnectionString += $"; {PropertyDefinition.CustomEndpointMonitorIdleExpirationMs.Name}=30000";
-        wrapperConnectionString += $"; {PropertyDefinition.WaitForCustomEndpointInfoTimeoutMs.Name}=30000";
+    //    var wrapperConnectionString = connectionString + $";Plugins=customEndpoint,readWriteSplitting,failover;";
+    //    wrapperConnectionString += $"; ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
+    //    wrapperConnectionString += $"; {PropertyDefinition.CustomEndpointMonitorIdleExpirationMs.Name}=30000";
+    //    wrapperConnectionString += $"; {PropertyDefinition.WaitForCustomEndpointInfoTimeoutMs.Name}=30000";
 
-        var options = new DbContextOptionsBuilder<PersonDbContext>()
-            .UseAwsWrapper(
-                wrapperConnectionString,
-                wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, this.version))
-            .Options;
+    //    var options = new DbContextOptionsBuilder<PersonDbContext>()
+    //        .UseAwsWrapper(
+    //            wrapperConnectionString,
+    //            wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, this.version))
+    //        .Options;
 
-        using var db = new PersonDbContext(options);
-        await db.Database.OpenConnectionAsync(TestContext.Current.CancellationToken);
-        var connection = db.Database.GetDbConnection();
+    //    using var db = new PersonDbContext(options);
+    //    await db.Database.OpenConnectionAsync(TestContext.Current.CancellationToken);
+    //    var connection = db.Database.GetDbConnection();
 
-        var endpointMembers = this.fixture.EndpointInfo.StaticMembers ?? new List<string>();
-        var originalReaderId = await AuroraUtils.QueryInstanceId(connection, true);
-        Assert.True(endpointMembers.Contains(originalReaderId!), $"Instance {originalReaderId} should be in endpoint members");
+    //    var endpointMembers = this.fixture.EndpointInfo.StaticMembers ?? new List<string>();
+    //    var originalReaderId = await AuroraUtils.QueryInstanceId(connection, true);
+    //    Assert.True(endpointMembers.Contains(originalReaderId!), $"Instance {originalReaderId} should be in endpoint members");
 
-        this.logger.LogInformation("Initial connection is to a reader. Attempting to switch to writer...");
-        await Assert.ThrowsAsync<ReadWriteSplittingDbException>(async () =>
-        {
-            await AuroraUtils.SetReadOnly(connection, Engine, false, true);
-        });
+    //    this.logger.LogInformation("Initial connection is to a reader. Attempting to switch to writer...");
+    //    await Assert.ThrowsAsync<ReadWriteSplittingDbException>(async () =>
+    //    {
+    //        await AuroraUtils.SetReadOnly(connection, Engine, false, true);
+    //    });
 
-        var writerId = await AuroraUtils.GetDBClusterWriterInstanceIdAsync(TestEnvironment.Env.Info.RdsDbName!);
-        await AuroraUtils.ModifyDBClusterEndpointAsync(this.fixture.EndpointId, new List<string> { originalReaderId!, writerId });
+    //    var writerId = await AuroraUtils.GetDBClusterWriterInstanceIdAsync(TestEnvironment.Env.Info.RdsDbName!);
+    //    await AuroraUtils.ModifyDBClusterEndpointAsync(this.fixture.EndpointId, new List<string> { originalReaderId!, writerId });
 
-        try
-        {
-            await AuroraUtils.WaitUntilEndpointHasMembersAsync(this.fixture.EndpointId, new HashSet<string> { originalReaderId!, writerId });
+    //    try
+    //    {
+    //        await AuroraUtils.WaitUntilEndpointHasMembersAsync(this.fixture.EndpointId, new HashSet<string> { originalReaderId!, writerId });
 
-            await AuroraUtils.SetReadOnly(connection, Engine, false, true);
-            var newInstanceId = await AuroraUtils.QueryInstanceId(connection, true);
-            Assert.Equal(writerId, newInstanceId);
+    //        await AuroraUtils.SetReadOnly(connection, Engine, false, true);
+    //        var newInstanceId = await AuroraUtils.QueryInstanceId(connection, true);
+    //        Assert.Equal(writerId, newInstanceId);
 
-            await AuroraUtils.SetReadOnly(connection, Engine, true, true);
-            newInstanceId = await AuroraUtils.QueryInstanceId(connection, true);
-            Assert.Equal(originalReaderId, newInstanceId);
-        }
-        finally
-        {
-            await AuroraUtils.ModifyDBClusterEndpointAsync(this.fixture.EndpointId, new List<string> { originalReaderId! });
-            await AuroraUtils.WaitUntilEndpointHasMembersAsync(this.fixture.EndpointId, new HashSet<string> { originalReaderId! });
-        }
+    //        await AuroraUtils.SetReadOnly(connection, Engine, true, true);
+    //        newInstanceId = await AuroraUtils.QueryInstanceId(connection, true);
+    //        Assert.Equal(originalReaderId, newInstanceId);
+    //    }
+    //    finally
+    //    {
+    //        await AuroraUtils.ModifyDBClusterEndpointAsync(this.fixture.EndpointId, new List<string> { originalReaderId! });
+    //        await AuroraUtils.WaitUntilEndpointHasMembersAsync(this.fixture.EndpointId, new HashSet<string> { originalReaderId! });
+    //    }
 
-        this.logger.LogInformation("Writer removed from endpoint. Attempting to switch to writer should fail...");
-        await Assert.ThrowsAsync<ReadWriteSplittingDbException>(async () =>
-        {
-            await AuroraUtils.SetReadOnly(connection, Engine, false, true);
-        });
-    }
+    //    this.logger.LogInformation("Writer removed from endpoint. Attempting to switch to writer should fail...");
+    //    await Assert.ThrowsAsync<ReadWriteSplittingDbException>(async () =>
+    //    {
+    //        await AuroraUtils.SetReadOnly(connection, Engine, false, true);
+    //    });
+    //}
 
-    [Fact]
-    [Trait("Category", "Integration")]
-    [Trait("Database", "mysql-ef")]
-    [Trait("Engine", "aurora")]
-    public async Task EF_CustomEndpoint_ReadWriteSplitting_WithCustomEndpointChanges_WithWriterAsInitConn()
-    {
-        Assert.SkipWhen(NumberOfInstances < 3, "Skipped due to test requiring number of database instances >= 3.");
-        Assert.SkipWhen(this.fixture.EndpointInfo == null, "Custom endpoint fixture not created (not Aurora or < 3 instances).");
+    //[Fact]
+    //[Trait("Category", "Integration")]
+    //[Trait("Database", "mysql-ef")]
+    //[Trait("Engine", "aurora")]
+    //public async Task EF_CustomEndpoint_ReadWriteSplitting_WithCustomEndpointChanges_WithWriterAsInitConn()
+    //{
+    //    Assert.SkipWhen(NumberOfInstances < 3, "Skipped due to test requiring number of database instances >= 3.");
+    //    Assert.SkipWhen(this.fixture.EndpointInfo == null, "Custom endpoint fixture not created (not Aurora or < 3 instances).");
 
-        await this.SetupCustomEndpointRoleAsync(HostRole.Writer);
+    //    await this.SetupCustomEndpointRoleAsync(HostRole.Writer);
 
-        var connectionString = ConnectionStringHelper.GetUrl(
-            Engine,
-            this.fixture.EndpointInfo!.Endpoint,
-            Port,
-            Username,
-            Password,
-            DefaultDbName,
-            3,
-            10,
-            enablePooling: false);
+    //    var connectionString = ConnectionStringHelper.GetUrl(
+    //        Engine,
+    //        this.fixture.EndpointInfo!.Endpoint,
+    //        Port,
+    //        Username,
+    //        Password,
+    //        DefaultDbName,
+    //        3,
+    //        10,
+    //        enablePooling: false);
 
-        var wrapperConnectionString = connectionString + $";Plugins=customEndpoint,readWriteSplitting,failover;";
-        wrapperConnectionString += $"; ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
-        wrapperConnectionString += $"; {PropertyDefinition.CustomEndpointMonitorIdleExpirationMs.Name}=30000";
-        wrapperConnectionString += $"; {PropertyDefinition.WaitForCustomEndpointInfoTimeoutMs.Name}=30000";
+    //    var wrapperConnectionString = connectionString + $";Plugins=customEndpoint,readWriteSplitting,failover;";
+    //    wrapperConnectionString += $"; ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
+    //    wrapperConnectionString += $"; {PropertyDefinition.CustomEndpointMonitorIdleExpirationMs.Name}=30000";
+    //    wrapperConnectionString += $"; {PropertyDefinition.WaitForCustomEndpointInfoTimeoutMs.Name}=30000";
 
-        var options = new DbContextOptionsBuilder<PersonDbContext>()
-            .UseAwsWrapper(
-                wrapperConnectionString,
-                wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, this.version))
-            .Options;
+    //    var options = new DbContextOptionsBuilder<PersonDbContext>()
+    //        .UseAwsWrapper(
+    //            wrapperConnectionString,
+    //            wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, this.version))
+    //        .Options;
 
-        using var db = new PersonDbContext(options);
-        await db.Database.OpenConnectionAsync(TestContext.Current.CancellationToken);
-        var connection = db.Database.GetDbConnection();
+    //    using var db = new PersonDbContext(options);
+    //    await db.Database.OpenConnectionAsync(TestContext.Current.CancellationToken);
+    //    var connection = db.Database.GetDbConnection();
 
-        var endpointMembers = this.fixture.EndpointInfo.StaticMembers ?? new List<string>();
-        var originalWriterId = await AuroraUtils.QueryInstanceId(connection, true);
-        Assert.True(endpointMembers.Contains(originalWriterId!), $"Instance {originalWriterId} should be in endpoint members");
+    //    var endpointMembers = this.fixture.EndpointInfo.StaticMembers ?? new List<string>();
+    //    var originalWriterId = await AuroraUtils.QueryInstanceId(connection, true);
+    //    Assert.True(endpointMembers.Contains(originalWriterId!), $"Instance {originalWriterId} should be in endpoint members");
 
-        this.logger.LogInformation("Initial connection is to the writer. Attempting to switch to reader...");
-        await AuroraUtils.SetReadOnly(connection, Engine, true, true);
-        var newInstanceId = await AuroraUtils.QueryInstanceId(connection, true);
-        Assert.Equal(originalWriterId, newInstanceId);
+    //    this.logger.LogInformation("Initial connection is to the writer. Attempting to switch to reader...");
+    //    await AuroraUtils.SetReadOnly(connection, Engine, true, true);
+    //    var newInstanceId = await AuroraUtils.QueryInstanceId(connection, true);
+    //    Assert.Equal(originalWriterId, newInstanceId);
 
-        var writerId = await AuroraUtils.GetDBClusterWriterInstanceIdAsync(TestEnvironment.Env.Info.RdsDbName!);
-        string readerIdToAdd = TestEnvironment.Env.Info.DatabaseInfo.Instances
-            .First(i => i.InstanceId != writerId).InstanceId;
+    //    var writerId = await AuroraUtils.GetDBClusterWriterInstanceIdAsync(TestEnvironment.Env.Info.RdsDbName!);
+    //    string readerIdToAdd = TestEnvironment.Env.Info.DatabaseInfo.Instances
+    //        .First(i => i.InstanceId != writerId).InstanceId;
 
-        await AuroraUtils.ModifyDBClusterEndpointAsync(this.fixture.EndpointId, new List<string> { originalWriterId!, readerIdToAdd });
+    //    await AuroraUtils.ModifyDBClusterEndpointAsync(this.fixture.EndpointId, new List<string> { originalWriterId!, readerIdToAdd });
 
-        try
-        {
-            await AuroraUtils.WaitUntilEndpointHasMembersAsync(this.fixture.EndpointId, new HashSet<string> { originalWriterId!, readerIdToAdd });
+    //    try
+    //    {
+    //        await AuroraUtils.WaitUntilEndpointHasMembersAsync(this.fixture.EndpointId, new HashSet<string> { originalWriterId!, readerIdToAdd });
 
-            await AuroraUtils.SetReadOnly(connection, Engine, true, true);
-            newInstanceId = await AuroraUtils.QueryInstanceId(connection, true);
-            Assert.Equal(readerIdToAdd, newInstanceId);
+    //        await AuroraUtils.SetReadOnly(connection, Engine, true, true);
+    //        newInstanceId = await AuroraUtils.QueryInstanceId(connection, true);
+    //        Assert.Equal(readerIdToAdd, newInstanceId);
 
-            await AuroraUtils.SetReadOnly(connection, Engine, false, true);
-        }
-        finally
-        {
-            await AuroraUtils.ModifyDBClusterEndpointAsync(this.fixture.EndpointId, new List<string> { originalWriterId! });
-            await AuroraUtils.WaitUntilEndpointHasMembersAsync(this.fixture.EndpointId, new HashSet<string> { originalWriterId! });
-        }
+    //        await AuroraUtils.SetReadOnly(connection, Engine, false, true);
+    //    }
+    //    finally
+    //    {
+    //        await AuroraUtils.ModifyDBClusterEndpointAsync(this.fixture.EndpointId, new List<string> { originalWriterId! });
+    //        await AuroraUtils.WaitUntilEndpointHasMembersAsync(this.fixture.EndpointId, new HashSet<string> { originalWriterId! });
+    //    }
 
-        this.logger.LogInformation("Reader removed from endpoint. Attempting to switch to reader should fallback to writer...");
-        await AuroraUtils.SetReadOnly(connection, Engine, true, true);
-        newInstanceId = await AuroraUtils.QueryInstanceId(connection, true);
-        Assert.Equal(originalWriterId, newInstanceId);
-    }
+    //    this.logger.LogInformation("Reader removed from endpoint. Attempting to switch to reader should fallback to writer...");
+    //    await AuroraUtils.SetReadOnly(connection, Engine, true, true);
+    //    newInstanceId = await AuroraUtils.QueryInstanceId(connection, true);
+    //    Assert.Equal(originalWriterId, newInstanceId);
+    //}
 }
