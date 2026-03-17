@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data;
+using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 using Npgsql;
@@ -21,6 +22,7 @@ namespace AwsWrapperDataProvider.Tests;
 
 public class FailoverConnectivityTests : IntegrationTestBase
 {
+    private const int IdleConnectionsNum = 5;
     private readonly ITestOutputHelper logger;
 
     protected override bool MakeSureFirstInstanceWriter => true;
@@ -374,6 +376,129 @@ public class FailoverConnectivityTests : IntegrationTestBase
             this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Finished executing without exception thrown");
         });
         await simulationTask;
+    }
+
+    /// <summary>
+    /// Idle connections opened via the cluster endpoint are tracked by the aurora connection tracker plugin.
+    /// When a writer failover occurs, all idle connections to the old writer should be closed.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    [Trait("Category", "Integration")]
+    [Trait("Database", "mysql")]
+    [Trait("Database", "pg")]
+    [Trait("Engine", "aurora")]
+    [Trait("Engine", "multi-az-cluster")]
+    public async Task ServerFailoverWithIdleConnections(bool async)
+    {
+        Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
+        Assert.SkipWhen(ProxyDatabaseInfo == null, "Skipped due to proxy database info not available.");
+
+        var idleConnections = new List<AwsWrapperConnection>();
+        string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
+
+        var connectionString = ConnectionStringHelper.GetUrl(
+            Engine,
+            ProxyClusterEndpoint,
+            ProxyPort,
+            Username,
+            Password,
+            ProxyDatabaseInfo!.DefaultDbName,
+            2,
+            10,
+            $"{PluginCodes.AuroraConnectionTracker},{PluginCodes.Failover}");
+        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo!.InstanceEndpointSuffix}:{ProxyDatabaseInfo!.InstanceEndpointPort}; Pooling=false";
+
+        try
+        {
+            // Open N idle connections via the cluster endpoint.
+            for (int i = 0; i < IdleConnectionsNum; i++)
+            {
+                var idleConn = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
+                await AuroraUtils.OpenDbConnection(idleConn, async);
+                idleConnections.Add(idleConn);
+            }
+
+            // Open an active connection via the cluster endpoint.
+            using var activeConn = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
+            await AuroraUtils.OpenDbConnection(activeConn, async);
+            Assert.Equal(ConnectionState.Open, activeConn.State);
+
+            // Verify the active connection is on the current writer.
+            var instanceId = await AuroraUtils.ExecuteInstanceIdQuery(activeConn, Engine, Deployment, async);
+            Assert.Equal(currentWriter, instanceId);
+
+            // Ensure all idle connections are still open.
+            foreach (var idleConn in idleConnections)
+            {
+                Assert.Equal(ConnectionState.Open, idleConn.State);
+            }
+
+            // Crash the writer instance.
+            var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var crashTask = AuroraUtils.CrashInstance(currentWriter, tcs);
+            await tcs.Task;
+
+            // Trigger failover on the active connection.
+            await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
+            {
+                this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Executing query to trigger failover...");
+                await AuroraUtils.ExecuteInstanceIdQuery(activeConn, Engine, Deployment, async);
+            });
+
+            await crashTask;
+
+            // Wait for invalidation to complete.
+            await Task.Delay(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
+
+            // Open a new connection to check which instance we land on.
+            using var checkConn = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
+            await AuroraUtils.OpenDbConnection(checkConn, async);
+            var newInstanceId = await AuroraUtils.ExecuteInstanceIdQuery(checkConn, Engine, Deployment, async);
+
+            if (currentWriter == newInstanceId)
+            {
+                this.logger.WriteLine($"Cluster failed over to the same instance {newInstanceId}.");
+
+                // Writer didn't change — idle connections should still be open.
+                foreach (var idleConn in idleConnections)
+                {
+                    Assert.Equal(
+                        ConnectionState.Open,
+                        idleConn.State);
+                }
+            }
+            else
+            {
+                this.logger.WriteLine($"Cluster failed over to instance {newInstanceId}.");
+
+                // Writer changed — all idle connections should be closed.
+                foreach (var idleConn in idleConnections)
+                {
+                    Assert.Equal(
+                        ConnectionState.Closed,
+                        idleConn.State);
+                }
+            }
+        }
+        finally
+        {
+            foreach (var idleConn in idleConnections)
+            {
+                try
+                {
+                    idleConn.Close();
+                    idleConn.Dispose();
+                }
+                catch
+                {
+                    // Ignore
+                }
+            }
+
+            idleConnections.Clear();
+        }
     }
 }
 
