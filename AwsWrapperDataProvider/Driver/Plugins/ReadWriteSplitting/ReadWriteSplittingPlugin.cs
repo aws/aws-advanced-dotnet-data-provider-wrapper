@@ -74,7 +74,12 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
     {
         var query = WrapperUtils.GetQueryFromSqlObject(methodInvokedOn);
         var (readOnly, found) = WrapperUtils.DoesSetReadOnly(query, this.pluginService.Dialect);
-        Logger.LogDebug("ReadOnly is " + (found ? "set to " + (readOnly ? "read only" : "read write") : "not set"));
+
+        Logger.LogDebug(
+            "ReadOnly: found={Found}, mode={Mode}",
+            found,
+            found ? (readOnly ? "read only" : "read write") : "n/a");
+
         if (found)
         {
             await this.SwitchConnectionIfRequired(readOnly);
@@ -131,6 +136,7 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
 
         HostSpec updatedHostSpec = new(currentHostSpec, currentRole);
         this.hostListProviderService.InitialConnectionHostSpec = updatedHostSpec;
+        Logger.LogDebug("initialConnectionHostSpec is updated to {host} from {old}", updatedHostSpec.ToString(), currentHostSpec.ToString());
         return conn;
     }
 
@@ -145,9 +151,12 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
 
         if (this.IsConnectionUsable(currentConnection))
         {
+            Logger.LogDebug("connection is usable with datasource {ds}", currentConnection?.DataSource);
             try
             {
+                Logger.LogDebug("refreshing host list");
                 await this.pluginService.RefreshHostListAsync();
+                Logger.LogDebug("done refreshing host list");
             }
             catch (DbException)
             {
@@ -162,6 +171,7 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
         }
 
         var currentHost = this.pluginService.CurrentHostSpec!;
+        Logger.LogDebug("current host: {host}", currentHost.ToString());
         if (readOnly)
         {
             // Not in a transaction and currently not on a reader, try switch to reader
@@ -191,6 +201,7 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
                 throw new ReadWriteSplittingDbException(Resources.ReadWriteSplittingPlugin_SetReadOnlyFalseInTransaction);
             }
 
+            Logger.LogDebug("Current host before switching to writer connection: {host}", currentHost.ToString());
             if (currentHost.Role != HostRole.Writer)
             {
                 try
@@ -207,12 +218,14 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
 
     private async Task SwitchToWriterConnection(IList<HostSpec> hosts)
     {
+        Logger.LogDebug("Switching to writer connection");
         var currentConnection = this.pluginService.CurrentConnection;
         var currentHost = this.pluginService.CurrentHostSpec!;
         Logger.LogDebug(currentHost.ToString());
 
         if (currentHost.Role == HostRole.Writer && this.IsConnectionUsable(currentConnection))
         {
+            Logger.LogDebug("Already connected to a writer.");
             return;
         }
 
@@ -244,6 +257,7 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
 
     private async Task SwitchToReaderConnection(IList<HostSpec> hosts)
     {
+        Logger.LogDebug("Switching to reader connection");
         var currentConnection = this.pluginService.CurrentConnection;
         var currentHost = this.pluginService.CurrentHostSpec!;
         if (currentHost.Role == HostRole.Reader && this.IsConnectionUsable(currentConnection))
