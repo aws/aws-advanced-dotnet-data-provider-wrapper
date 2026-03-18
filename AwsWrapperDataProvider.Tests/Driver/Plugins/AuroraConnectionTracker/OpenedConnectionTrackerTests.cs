@@ -16,6 +16,7 @@ using System.Data.Common;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins.AuroraConnectionTracker;
+using AwsWrapperDataProvider.Driver.Utils;
 using Moq;
 
 namespace AwsWrapperDataProvider.Tests.Driver.Plugins.AuroraConnectionTracker;
@@ -50,8 +51,10 @@ public class OpenedConnectionTrackerTests
 
         var queue = OpenedConnectionTracker.OpenedConnections["test-instance.xyz.us-east-1.rds.amazonaws.com:5432"];
         Assert.False(queue.IsEmpty);
-        Assert.True(queue.TryPeek(out var weakRef));
-        Assert.True(weakRef.TryGetTarget(out var conn));
+        var items = new List<WeakReference<DbConnection>>();
+        queue.ForEach(item => items.Add(item));
+        Assert.Single(items);
+        Assert.True(items[0].TryGetTarget(out var conn));
         Assert.Equal(mockConnection.Object, conn);
     }
 
@@ -138,9 +141,11 @@ public class OpenedConnectionTrackerTests
         var key = "test-instance-1.xyz.us-east-1.rds.amazonaws.com:5432";
         Assert.True(OpenedConnectionTracker.OpenedConnections.ContainsKey(key));
         var queue = OpenedConnectionTracker.OpenedConnections[key];
-        Assert.Single(queue);
-        Assert.True(queue.TryPeek(out var weakRef));
-        Assert.True(weakRef.TryGetTarget(out var remaining));
+        Assert.Equal(1, queue.Count);
+        var items = new List<WeakReference<DbConnection>>();
+        queue.ForEach(item => items.Add(item));
+        Assert.Single(items);
+        Assert.True(items[0].TryGetTarget(out var remaining));
         Assert.Equal(mockConnection2.Object, remaining);
     }
 
@@ -163,9 +168,11 @@ public class OpenedConnectionTrackerTests
         var key = "test-instance-1.xyz.us-east-1.rds.amazonaws.com:5432";
         Assert.True(OpenedConnectionTracker.OpenedConnections.ContainsKey(key));
         var queue = OpenedConnectionTracker.OpenedConnections[key];
-        Assert.Single(queue);
-        Assert.True(queue.TryPeek(out var weakRef));
-        Assert.True(weakRef.TryGetTarget(out var conn));
+        Assert.Equal(1, queue.Count);
+        var items = new List<WeakReference<DbConnection>>();
+        queue.ForEach(item => items.Add(item));
+        Assert.Single(items);
+        Assert.True(items[0].TryGetTarget(out var conn));
         Assert.Equal(mockConnection.Object, conn);
     }
 
