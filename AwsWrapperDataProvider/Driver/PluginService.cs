@@ -447,6 +447,7 @@ public class PluginService : IPluginService, IHostListProviderService
             ?? this.GetHosts().First();
 
         ArgumentNullException.ThrowIfNull(this.currentHostSpec);
+        Logger.LogDebug("Current host is set to {host}", this.currentHostSpec.ToString());
         return this.currentHostSpec;
     }
 

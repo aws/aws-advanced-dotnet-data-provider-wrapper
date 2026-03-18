@@ -137,6 +137,8 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
         HostSpec updatedHostSpec = new(currentHostSpec, currentRole);
         this.hostListProviderService.InitialConnectionHostSpec = updatedHostSpec;
         Logger.LogDebug("initialConnectionHostSpec is updated to {host} from {old}", updatedHostSpec.ToString(), currentHostSpec.ToString());
+        this.pluginService.SetCurrentConnection(conn, updatedHostSpec);
+        Logger.LogDebug("current host spec is updated to {host}", updatedHostSpec.ToString());
         return conn;
     }
 
