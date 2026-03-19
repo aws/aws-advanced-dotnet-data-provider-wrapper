@@ -136,9 +136,9 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
 
         HostSpec updatedHostSpec = new(currentHostSpec, currentRole);
         this.hostListProviderService.InitialConnectionHostSpec = updatedHostSpec;
-        Logger.LogDebug("initialConnectionHostSpec is updated to {host} from {old}", updatedHostSpec.ToString(), currentHostSpec.ToString());
+
+        // Same connection, only update the current host spec
         this.pluginService.SetCurrentConnection(conn, updatedHostSpec);
-        Logger.LogDebug("current host spec is updated to {host}", updatedHostSpec.ToString());
         return conn;
     }
 
@@ -153,12 +153,9 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
 
         if (this.IsConnectionUsable(currentConnection))
         {
-            Logger.LogDebug("connection is usable with datasource {ds}", currentConnection?.DataSource);
             try
             {
-                Logger.LogDebug("refreshing host list");
                 await this.pluginService.RefreshHostListAsync();
-                Logger.LogDebug("done refreshing host list");
             }
             catch (DbException)
             {
@@ -173,7 +170,6 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
         }
 
         var currentHost = this.pluginService.CurrentHostSpec!;
-        Logger.LogDebug("current host: {host}", currentHost.ToString());
         if (readOnly)
         {
             // Not in a transaction and currently not on a reader, try switch to reader
@@ -203,7 +199,6 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
                 throw new ReadWriteSplittingDbException(Resources.ReadWriteSplittingPlugin_SetReadOnlyFalseInTransaction);
             }
 
-            Logger.LogDebug("Current host before switching to writer connection: {host}", currentHost.ToString());
             if (currentHost.Role != HostRole.Writer)
             {
                 try
