@@ -1978,9 +1978,9 @@ namespace AwsWrapperDataProvider.Properties {
             }
         }
         
-        internal static string OpenedConnectionTracker_PopulateOpenedConnectionQueue_NoRdsInstanceEndpoint {
+        internal static string OpenedConnectionTracker_PopulateOpenedConnectionQueue_TrackingByAllAliases {
             get {
-                return ResourceManager.GetString("OpenedConnectionTracker_PopulateOpenedConnectionQueue_NoRdsInstanceEndpoint", resourceCulture);
+                return ResourceManager.GetString("OpenedConnectionTracker_PopulateOpenedConnectionQueue_TrackingByAllAliases", resourceCulture);
             }
         }
         

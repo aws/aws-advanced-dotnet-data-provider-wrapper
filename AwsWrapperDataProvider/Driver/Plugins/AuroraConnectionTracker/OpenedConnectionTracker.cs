@@ -78,8 +78,10 @@ public class OpenedConnectionTracker : IConnectionTracker
             return;
         }
 
+        var aliases = hostSpec.AsAliases();
+
         // Find the instance endpoint from aliases
-        string? instanceEndpoint = hostSpec.AsAliases()
+        string? instanceEndpoint = aliases
             .Where(alias => RdsUtils.IsRdsInstance(RdsUtils.RemovePort(alias)))
             .MaxBy(alias => alias, StringComparer.OrdinalIgnoreCase);
 
@@ -90,10 +92,17 @@ public class OpenedConnectionTracker : IConnectionTracker
             return;
         }
 
-        // No RDS instance endpoint found — skip tracking
+        // No RDS instance host found. It might be a custom domain name. Track by all aliases.
         Logger.LogDebug(
-            Resources.OpenedConnectionTracker_PopulateOpenedConnectionQueue_NoRdsInstanceEndpoint,
+            Resources.OpenedConnectionTracker_PopulateOpenedConnectionQueue_TrackingByAllAliases,
             hostSpec.Host);
+
+        foreach (string alias in aliases)
+        {
+            TrackConnection(alias, connection);
+        }
+
+        this.LogOpenedConnections();
     }
 
     private static void TrackConnection(string instanceEndpoint, DbConnection connection)
@@ -116,6 +125,9 @@ public class OpenedConnectionTracker : IConnectionTracker
 
         if (string.IsNullOrEmpty(host))
         {
+            // Connections tracked under custom domain aliases are not individually
+            // removed here as iterating all alias keys is expensive. They will be
+            // cleaned up by the background pruning loop once garbage-collected.
             return;
         }
 
@@ -146,12 +158,6 @@ public class OpenedConnectionTracker : IConnectionTracker
         {
             try
             {
-                string cleanHost = RdsUtils.RemovePort(key);
-                if (!RdsUtils.IsRdsInstance(cleanHost))
-                {
-                    continue;
-                }
-
                 if (!OpenedConnections.TryGetValue(key, out var queue))
                 {
                     continue;
@@ -172,7 +178,10 @@ public class OpenedConnectionTracker : IConnectionTracker
         while (true)
         {
             var (weakRef, success) = queue.Dequeue();
-            if (!success) break;
+            if (!success)
+            {
+                break;
+            }
 
             if (!weakRef!.TryGetTarget(out var conn))
             {

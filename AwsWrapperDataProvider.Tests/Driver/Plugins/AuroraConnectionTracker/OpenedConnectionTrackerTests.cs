@@ -221,4 +221,85 @@ public class OpenedConnectionTrackerTests
         trackerB.InvalidateAllConnections(hostSpec);
         mockConnection.Verify(x => x.Close(), Times.Once);
     }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void PopulateOpenedConnectionQueue_CustomDomainNoRdsAlias_TracksUnderAllAliases()
+    {
+        var mockConnection = new Mock<DbConnection>();
+        var hostSpec = new HostSpec(
+            "my-custom-db.company.com",
+            5432,
+            HostRole.Writer,
+            HostAvailability.Available);
+
+        this.tracker.PopulateOpenedConnectionQueue(hostSpec, mockConnection.Object);
+
+        // The only alias is the host:port itself since no additional aliases were added.
+        Assert.Single(OpenedConnectionTracker.OpenedConnections);
+        Assert.True(OpenedConnectionTracker.OpenedConnections.ContainsKey("my-custom-db.company.com:5432"));
+
+        var queue = OpenedConnectionTracker.OpenedConnections["my-custom-db.company.com:5432"];
+        Assert.False(queue.IsEmpty);
+        var items = new List<WeakReference<DbConnection>>();
+        queue.ForEach(item => items.Add(item));
+        Assert.Single(items);
+        Assert.True(items[0].TryGetTarget(out var conn));
+        Assert.Equal(mockConnection.Object, conn);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void PopulateOpenedConnectionQueue_CustomDomainMultipleAliases_TracksUnderEachAlias()
+    {
+        var mockConnection = new Mock<DbConnection>();
+        var hostSpec = new HostSpec(
+            "my-custom-db.company.com",
+            5432,
+            HostRole.Writer,
+            HostAvailability.Available);
+        hostSpec.AddAlias("custom-alias-1.company.com:5432");
+        hostSpec.AddAlias("custom-alias-2.company.com:3306");
+
+        this.tracker.PopulateOpenedConnectionQueue(hostSpec, mockConnection.Object);
+
+        // Should track under all 3 aliases: host:port + 2 added aliases.
+        Assert.Equal(3, OpenedConnectionTracker.OpenedConnections.Count);
+        Assert.True(OpenedConnectionTracker.OpenedConnections.ContainsKey("my-custom-db.company.com:5432"));
+        Assert.True(OpenedConnectionTracker.OpenedConnections.ContainsKey("custom-alias-1.company.com:5432"));
+        Assert.True(OpenedConnectionTracker.OpenedConnections.ContainsKey("custom-alias-2.company.com:3306"));
+
+        // Each alias queue should hold the same connection.
+        foreach (string key in new[] { "my-custom-db.company.com:5432", "custom-alias-1.company.com:5432", "custom-alias-2.company.com:3306" })
+        {
+            var queue = OpenedConnectionTracker.OpenedConnections[key];
+            var items = new List<WeakReference<DbConnection>>();
+            queue.ForEach(item => items.Add(item));
+            Assert.Single(items);
+            Assert.True(items[0].TryGetTarget(out var conn));
+            Assert.Equal(mockConnection.Object, conn);
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void InvalidateAllConnections_CustomDomainTrackedConnections_ClosesConnections()
+    {
+        var mockConnection = new Mock<DbConnection>();
+        var hostSpec = new HostSpec(
+            "my-custom-db.company.com",
+            5432,
+            HostRole.Writer,
+            HostAvailability.Available);
+        hostSpec.AddAlias("custom-alias.company.com:5432");
+
+        this.tracker.PopulateOpenedConnectionQueue(hostSpec, mockConnection.Object);
+        Assert.Equal(2, OpenedConnectionTracker.OpenedConnections.Count);
+
+        this.tracker.InvalidateAllConnections(hostSpec);
+
+        // Close is called once per alias queue that held the connection.
+        mockConnection.Verify(x => x.Close(), Times.Exactly(2));
+    }
+
 }
