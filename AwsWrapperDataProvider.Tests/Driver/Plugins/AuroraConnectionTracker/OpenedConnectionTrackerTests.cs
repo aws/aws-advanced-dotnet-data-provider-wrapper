@@ -301,5 +301,4 @@ public class OpenedConnectionTrackerTests
         // Close is called once per alias queue that held the connection.
         mockConnection.Verify(x => x.Close(), Times.Exactly(2));
     }
-
 }

@@ -39,9 +39,9 @@ public class OpenedConnectionTracker : IConnectionTracker
     /// </summary>
     internal static readonly ConcurrentDictionary<string, RWQueue<WeakReference<DbConnection>>> OpenedConnections = new();
 
-    private static CancellationTokenSource? _pruneCts;
-    private static Task? _pruneTask;
     private static readonly object PruneLock = new();
+    private static CancellationTokenSource? s_pruneCts;
+    private static Task? s_pruneTask;
 
     private readonly IPluginService pluginService;
 
@@ -55,10 +55,10 @@ public class OpenedConnectionTracker : IConnectionTracker
     {
         lock (PruneLock)
         {
-            if (_pruneTask is null || _pruneTask.IsCompleted)
+            if (s_pruneTask is null || s_pruneTask.IsCompleted)
             {
-                _pruneCts = new CancellationTokenSource();
-                _pruneTask = Task.Run(() => PruneLoop(_pruneCts.Token));
+                s_pruneCts = new CancellationTokenSource();
+                s_pruneTask = Task.Run(() => PruneLoop(s_pruneCts.Token));
             }
         }
     }
@@ -149,30 +149,6 @@ public class OpenedConnectionTracker : IConnectionTracker
         this.InvalidateAllConnections(keys.ToArray());
     }
 
-    /// <summary>
-    /// Invalidates all tracked connections for the given keys.
-    /// </summary>
-    private void InvalidateAllConnections(params string[] keys)
-    {
-        foreach (string key in keys)
-        {
-            try
-            {
-                if (!OpenedConnections.TryGetValue(key, out var queue))
-                {
-                    continue;
-                }
-
-                LogConnectionQueue(key, queue);
-                InvalidateConnections(queue);
-            }
-            catch (Exception)
-            {
-                // ignore and continue
-            }
-        }
-    }
-
     private static void InvalidateConnections(RWQueue<WeakReference<DbConnection>> queue)
     {
         while (true)
@@ -200,6 +176,30 @@ public class OpenedConnectionTracker : IConnectionTracker
     }
 
     /// <summary>
+    /// Invalidates all tracked connections for the given keys.
+    /// </summary>
+    private void InvalidateAllConnections(params string[] keys)
+    {
+        foreach (string key in keys)
+        {
+            try
+            {
+                if (!OpenedConnections.TryGetValue(key, out var queue))
+                {
+                    continue;
+                }
+
+                LogConnectionQueue(key, queue);
+                InvalidateConnections(queue);
+            }
+            catch (Exception)
+            {
+                // ignore and continue
+            }
+        }
+    }
+
+    /// <summary>
     /// Clears all entries from the static tracking map.
     /// </summary>
     public static void ClearCache()
@@ -215,10 +215,10 @@ public class OpenedConnectionTracker : IConnectionTracker
     {
         lock (PruneLock)
         {
-            _pruneCts?.Cancel();
-            _pruneCts?.Dispose();
-            _pruneCts = null;
-            _pruneTask = null;
+            s_pruneCts?.Cancel();
+            s_pruneCts?.Dispose();
+            s_pruneCts = null;
+            s_pruneTask = null;
         }
 
         OpenedConnections.Clear();
@@ -257,11 +257,6 @@ public class OpenedConnectionTracker : IConnectionTracker
 
     public void LogOpenedConnections()
     {
-        if (!Logger.IsEnabled(LogLevel.Debug))
-        {
-            return;
-        }
-
         foreach (var kvp in OpenedConnections)
         {
             if (!kvp.Value.IsEmpty)
@@ -274,7 +269,7 @@ public class OpenedConnectionTracker : IConnectionTracker
 
     private static void LogConnectionQueue(string host, RWQueue<WeakReference<DbConnection>> queue)
     {
-        if (!Logger.IsEnabled(LogLevel.Debug) || queue.IsEmpty)
+        if (queue.IsEmpty)
         {
             return;
         }
