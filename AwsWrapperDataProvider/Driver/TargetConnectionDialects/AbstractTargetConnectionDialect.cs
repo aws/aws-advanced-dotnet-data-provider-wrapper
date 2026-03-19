@@ -22,7 +22,7 @@ namespace AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 
 public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
 {
-    private const string DefaultPluginCode = "initialConnection,efm,failover";
+    private const string DefaultPluginCode = "initialConnection,efm,failover,auroraConnectionTracker";
 
     protected const string DefaultPoolingParameterName = "Pooling";
 

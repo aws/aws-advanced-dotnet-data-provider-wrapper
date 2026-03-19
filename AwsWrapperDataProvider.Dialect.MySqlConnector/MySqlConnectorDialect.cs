@@ -25,7 +25,7 @@ namespace AwsWrapperDataProvider.Dialect.MySqlConnector;
 
 public class MySqlConnectorDialect : AbstractTargetConnectionDialect
 {
-    private const string DefaultPluginCode = "initialConnection,failover";
+    private const string DefaultPluginCode = "initialConnection,failover,auroraConnectionTracker";
 
     public override Type DriverConnectionType { get; } = typeof(MySqlConnection);
 

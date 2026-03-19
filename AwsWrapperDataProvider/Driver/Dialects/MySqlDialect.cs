@@ -26,7 +26,7 @@ public class MySqlDialect : IDialect
 {
     private static readonly ILogger<MySqlDialect> Logger = LoggerUtils.GetLogger<MySqlDialect>();
 
-    public static readonly string DefaultPluginCodes = "initialConnection,failover";
+    public static readonly string DefaultPluginCodes = "initialConnection,failover,auroraConnectionTracker";
 
     public int DefaultPort { get; } = 3306;
 
