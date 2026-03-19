@@ -56,16 +56,7 @@ public class PluginService : IPluginService, IHostListProviderService
 
     public IDialect Dialect { get; private set; }
     public ITargetConnectionDialect TargetConnectionDialect { get; }
-    private HostSpec? initialConnectionHostSpec;
-    public HostSpec? InitialConnectionHostSpec
-    {
-        get => this.initialConnectionHostSpec;
-        set
-        {
-            Logger.LogDebug("initialConnectionHostSpec is set to {host}", value?.ToString());
-            this.initialConnectionHostSpec = value;
-        }
-    }
+    public HostSpec? InitialConnectionHostSpec { get; set; }
 
     public HostSpec? CurrentHostSpec { get => this.currentHostSpec ?? this.GetCurrentHostSpec(); }
     public IList<HostSpec> AllHosts { get; private set; } = [];
@@ -447,7 +438,6 @@ public class PluginService : IPluginService, IHostListProviderService
             ?? this.GetHosts().First();
 
         ArgumentNullException.ThrowIfNull(this.currentHostSpec);
-        Logger.LogDebug("Current host is set to {host}", this.currentHostSpec.ToString());
         return this.currentHostSpec;
     }
 

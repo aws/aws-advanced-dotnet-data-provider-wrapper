@@ -327,7 +327,6 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
             this.logger.WriteLine($"==========================================");
             this.logger.WriteLine($"Current node before crash is {instanceId}");
             this.logger.WriteLine($"Current data source {db.Database.GetDbConnection().DataSource}");
-            this.logger.WriteLine($"Current connection string {db.Database.GetDbConnection().ConnectionString}");
             await db.Database.CloseConnectionAsync();
 
             Person john = new() { FirstName = "John", LastName = "Smith" };
@@ -366,7 +365,6 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
             this.logger.WriteLine($"==========================================");
             this.logger.WriteLine($"Current node after crash is {instanceId}");
             this.logger.WriteLine($"Current data source {db.Database.GetDbConnection().DataSource}");
-            this.logger.WriteLine($"Current connection string {db.Database.GetDbConnection().ConnectionString}");
             await db.Database.CloseConnectionAsync();
 
             Person joe = new() { FirstName = "Joe", LastName = "Smith" };
@@ -425,7 +423,6 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
             this.logger.WriteLine($"==========================================");
             this.logger.WriteLine($"Current node before crash is {instanceId}");
             this.logger.WriteLine($"Current data source {db.Database.GetDbConnection().DataSource}");
-            this.logger.WriteLine($"Current connection string {db.Database.GetDbConnection().ConnectionString}");
             await db.Database.CloseConnectionAsync();
 
             Person john = new() { FirstName = "John", LastName = "Smith" };
@@ -464,7 +461,6 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
             this.logger.WriteLine($"==========================================");
             this.logger.WriteLine($"Current node after crash is {instanceId}");
             this.logger.WriteLine($"Current data source {db.Database.GetDbConnection().DataSource}");
-            this.logger.WriteLine($"Current connection string {db.Database.GetDbConnection().ConnectionString}");
             await db.Database.CloseConnectionAsync();
 
             Person joe = new() { FirstName = "Joe", LastName = "Smith" };
