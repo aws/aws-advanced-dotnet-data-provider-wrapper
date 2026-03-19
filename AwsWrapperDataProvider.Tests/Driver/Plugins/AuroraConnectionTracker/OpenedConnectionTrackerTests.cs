@@ -29,7 +29,7 @@ public class OpenedConnectionTrackerTests
     public OpenedConnectionTrackerTests()
     {
         this.mockPluginService = new Mock<IPluginService>();
-        OpenedConnectionTracker.ClearCache();
+        OpenedConnectionTracker.ReleaseResources();
         this.tracker = new OpenedConnectionTracker(this.mockPluginService.Object);
     }
 

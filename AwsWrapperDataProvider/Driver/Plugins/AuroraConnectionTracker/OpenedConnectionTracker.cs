@@ -39,20 +39,28 @@ public class OpenedConnectionTracker : IConnectionTracker
     /// </summary>
     internal static readonly ConcurrentDictionary<string, RWQueue<WeakReference<DbConnection>>> OpenedConnections = new();
 
-    /// <summary>
-    /// Singleton background pruning task. Initialized once on first access via Lazy.
-    /// Runs every 30 seconds to remove garbage-collected connection references.
-    /// </summary>
-    private static readonly Lazy<Task> PruneTask = new(() => Task.Run(PruneLoop));
+    private static CancellationTokenSource? _pruneCts;
+    private static Task? _pruneTask;
+    private static readonly object PruneLock = new();
 
     private readonly IPluginService pluginService;
 
     public OpenedConnectionTracker(IPluginService pluginService)
     {
         this.pluginService = pluginService;
+        EnsurePruneLoopRunning();
+    }
 
-        // Touch the lazy to ensure the background pruning task is started.
-        _ = PruneTask.Value;
+    private static void EnsurePruneLoopRunning()
+    {
+        lock (PruneLock)
+        {
+            if (_pruneTask is null || _pruneTask.IsCompleted)
+            {
+                _pruneCts = new CancellationTokenSource();
+                _pruneTask = Task.Run(() => PruneLoop(_pruneCts.Token));
+            }
+        }
     }
 
     /// <summary>
@@ -60,6 +68,8 @@ public class OpenedConnectionTracker : IConnectionTracker
     /// </summary>
     public void PopulateOpenedConnectionQueue(HostSpec hostSpec, DbConnection connection)
     {
+        EnsurePruneLoopRunning();
+
         // Check if the connection was established using an instance endpoint
         if (RdsUtils.IsRdsInstance(hostSpec.Host))
         {
@@ -188,14 +198,35 @@ public class OpenedConnectionTracker : IConnectionTracker
         OpenedConnections.Clear();
     }
 
-    private static async Task PruneLoop()
+    /// <summary>
+    /// Cancels the background pruning task and clears all tracked connections.
+    /// The pruning loop will restart automatically when a new tracker instance is created or when a connection is tracked.
+    /// </summary>
+    public static void ReleaseResources()
     {
-        while (true)
+        lock (PruneLock)
+        {
+            _pruneCts?.Cancel();
+            _pruneCts?.Dispose();
+            _pruneCts = null;
+            _pruneTask = null;
+        }
+
+        OpenedConnections.Clear();
+    }
+
+    private static async Task PruneLoop(CancellationToken token)
+    {
+        while (!token.IsCancellationRequested)
         {
             try
             {
                 PruneNullConnections();
-                await Task.Delay(TimeSpan.FromSeconds(30));
+                await Task.Delay(TimeSpan.FromSeconds(30), token);
+            }
+            catch (OperationCanceledException)
+            {
+                break;
             }
             catch (Exception ex)
             {
