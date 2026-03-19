@@ -73,7 +73,7 @@ public class OpenedConnectionTracker : IConnectionTracker
         // Check if the connection was established using an instance endpoint
         if (RdsUtils.IsRdsInstance(hostSpec.Host))
         {
-            TrackConnection(hostSpec.GetHostAndPort(), connection);
+            TrackConnection(hostSpec.AsAlias(), connection);
             this.LogOpenedConnections();
             return;
         }

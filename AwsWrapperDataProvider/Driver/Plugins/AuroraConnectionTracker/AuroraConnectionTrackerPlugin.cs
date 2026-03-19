@@ -178,7 +178,7 @@ public class AuroraConnectionTrackerPlugin : AbstractConnectionPlugin
         {
             return await methodFunc();
         }
-        catch (Exception ex) when (ex is FailoverException)
+        catch (FailoverException ex)
         {
             // Set the 3-minute refresh window.
             Interlocked.Exchange(
