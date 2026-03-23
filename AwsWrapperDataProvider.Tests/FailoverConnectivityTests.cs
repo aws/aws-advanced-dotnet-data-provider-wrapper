@@ -440,6 +440,9 @@ public class FailoverConnectivityTests : IntegrationTestBase
             var crashTask = AuroraUtils.CrashInstance(currentWriter, tcs);
             await tcs.Task;
 
+            // Allow time for the proxy to fully sever existing TCP connections.
+            await Task.Delay(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
             // Trigger failover on the active connection.
             await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
             {
