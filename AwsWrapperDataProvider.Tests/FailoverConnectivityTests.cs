@@ -397,11 +397,12 @@ public class FailoverConnectivityTests : IntegrationTestBase
 
         var idleConnections = new List<AwsWrapperConnection>();
         string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
+        var initialWriterInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.GetInstance(currentWriter);
 
         var connectionString = ConnectionStringHelper.GetUrl(
             Engine,
-            ProxyClusterEndpoint,
-            ProxyPort,
+            initialWriterInstanceInfo.Host,
+            initialWriterInstanceInfo.Port,
             Username,
             Password,
             ProxyDatabaseInfo!.DefaultDbName,
@@ -439,9 +440,6 @@ public class FailoverConnectivityTests : IntegrationTestBase
             var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             var crashTask = AuroraUtils.CrashInstance(currentWriter, tcs);
             await tcs.Task;
-
-            // Allow time for the proxy to fully sever existing TCP connections.
-            await Task.Delay(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
             // Trigger failover on the active connection.
             await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
