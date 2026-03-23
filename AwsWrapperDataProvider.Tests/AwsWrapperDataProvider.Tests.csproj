@@ -10,7 +10,7 @@
     </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.EC2" Version="4.0.80" />
+    <PackageReference Include="AWSSDK.EC2" Version="4.0.82" />
     <PackageReference Include="AWSSDK.RDS" Version="4.0.18.3" />
     <PackageReference Include="coverlet.collector" Version="6.0.4">
       <PrivateAssets>all</PrivateAssets>
