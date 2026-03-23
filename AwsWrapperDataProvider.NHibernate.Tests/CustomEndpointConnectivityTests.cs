@@ -131,6 +131,9 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
             }
 
             await AuroraUtils.FailoverClusterToATargetAndWaitUntilWriterChanged(clusterId, originalWriter, failoverTarget!);
+
+            var originalInstanceInfo = TestEnvironment.Env.Info.DatabaseInfo.Instances.Where(i => i.InstanceId == originalInstanceId).ToList();
+            await AuroraUtils.MakeSureInstancesUpAsync([.. originalInstanceInfo], TimeSpan.FromMinutes(5));
         }
 
         this.logger.WriteLine($"Verifying that new connection has role: {hostRole}");

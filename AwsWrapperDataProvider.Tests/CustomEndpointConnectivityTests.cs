@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using System.Data;
-using Amazon.RDS.Model;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
