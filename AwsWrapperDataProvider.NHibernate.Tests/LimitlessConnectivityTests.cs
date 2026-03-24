@@ -18,10 +18,8 @@ using AwsWrapperDataProvider.Driver.Utils;
 using AwsWrapperDataProvider.Tests;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 using Microsoft.Extensions.Logging;
-using NHibernate;
 using NHibernate.Cfg;
 using NHibernate.Driver;
-using Npgsql;
 
 namespace AwsWrapperDataProvider.NHibernate.Tests;
 
