@@ -275,6 +275,8 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
         {
             await AuroraUtils.WaitUntilEndpointHasMembersAsync(this.fixture.EndpointId, new HashSet<string> { originalWriterId!, readerIdToAdd });
 
+            // wait 30 seconds for custom endpoint monitor to pick up the new reader
+            await Task.Delay(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
             await AuroraUtils.SetReadOnly(connection, Engine, true, true);
             newInstanceId = await AuroraUtils.QueryInstanceId(connection, true);
             Assert.Equal(readerIdToAdd, newInstanceId);
