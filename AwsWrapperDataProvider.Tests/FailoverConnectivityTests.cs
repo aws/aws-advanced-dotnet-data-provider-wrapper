@@ -453,14 +453,13 @@ public class FailoverConnectivityTests : IntegrationTestBase
             // Wait for invalidation to complete.
             await Task.Delay(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
 
-            // Open a new connection to check which instance we land on.
-            using var checkConn = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
-            await AuroraUtils.OpenDbConnection(checkConn, async);
-            var newInstanceId = await AuroraUtils.ExecuteInstanceIdQuery(checkConn, Engine, Deployment, async);
+            // Query the RDS API to determine the current writer.
+            var clusterId = TestEnvironment.Env.Info.RdsDbName!;
+            var newWriterId = await AuroraUtils.GetDBClusterWriterInstanceIdAsync(clusterId);
 
-            if (currentWriter == newInstanceId)
+            if (currentWriter == newWriterId)
             {
-                this.logger.WriteLine($"Cluster failed over to the same instance {newInstanceId}.");
+                this.logger.WriteLine($"Cluster failed over to the same instance {newWriterId}.");
 
                 // Writer didn't change — idle connections should still be open.
                 foreach (var idleConn in idleConnections)
@@ -472,7 +471,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
             }
             else
             {
-                this.logger.WriteLine($"Cluster failed over to instance {newInstanceId}.");
+                this.logger.WriteLine($"Cluster failed over to instance {newWriterId}.");
 
                 // Writer changed — all idle connections should be closed.
                 foreach (var idleConn in idleConnections)
