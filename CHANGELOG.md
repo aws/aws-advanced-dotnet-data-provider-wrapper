@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - The [Limitless Connection Plugin](./docs/using-the-dotnet-driver/using-plugins/UsingTheLimitlessConnectionPlugin.md) for AWS RDS Limitless router balancing ([Issue #185](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/issues/185), [PR #208](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/208)).
 - Support for custom endpoint and custom secret data formats in the [AWS Secrets Manager Authentication Plugin](./docs/using-the-dotnet-driver/using-plugins/UsingTheAwsSecretsManagerPlugin.md) ([Issue #193](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/issues/193), [PR #209](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/209)).
 - IWrapper interface to expose the underlying wrapped connection instance ([Issue #234](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/issues/234), [PR #238](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/238)).
-- Support for custom logger providers ([PR #165](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/165)).
+- Support for [custom logger providers](./docs/using-the-dotnet-driver/UsingTheDotNetDataProviderDriver.md#logging) ([PR #165](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/165)).
 
 ## [1.0.1] - 2025-11-07
 
