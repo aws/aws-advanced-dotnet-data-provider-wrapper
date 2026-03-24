@@ -35,3 +35,5 @@ The AWS Advanced .NET Data Provider Wrapper is complementary to existing .NET da
 
 
 [1.0.0]: https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/releases/tag/1.0.0
+[1.0.1]: https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/compare/1.0.0...1.0.1
+[1.1.0]: https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/compare/1.0.1...1.1.0
