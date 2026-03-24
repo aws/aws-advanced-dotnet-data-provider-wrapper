@@ -309,11 +309,11 @@ public class AwsWrapperConnection : DbConnection, IWrapper
 
         DbConnection connection = await WrapperUtils.OpenWithPlugins(
             this.PluginManager,
-            this.pluginService.InitialConnectionHostSpec,
+            this.pluginService.CurrentHostSpec,
             this.ConnectionProperties!,
             true,
             async);
-        this.pluginService.SetCurrentConnection(connection, this.pluginService.InitialConnectionHostSpec);
+        this.pluginService.SetCurrentConnection(connection, this.pluginService.CurrentHostSpec);
         await this.pluginService.RefreshHostListAsync();
     }
 

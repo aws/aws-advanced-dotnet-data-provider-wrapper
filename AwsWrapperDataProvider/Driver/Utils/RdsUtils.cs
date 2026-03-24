@@ -184,7 +184,7 @@ public static partial class RdsUtils
 
     public static bool IsRdsInstance(string host)
     {
-        return GetDnsGroup(host) == null && IsRdsDns(host);
+        return string.IsNullOrEmpty(GetDnsGroup(host)) && IsRdsDns(host);
     }
 
     public static bool IsRdsClusterDns(string host)

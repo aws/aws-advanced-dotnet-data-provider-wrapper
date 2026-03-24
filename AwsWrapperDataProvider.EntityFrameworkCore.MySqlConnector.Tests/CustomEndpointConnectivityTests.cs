@@ -150,15 +150,16 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
             DefaultDbName,
             3,
             10,
-            "customEndpoint,readWriteSplitting,failover",
-            false);
-        connectionString += $"; ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
-        connectionString += $"; {PropertyDefinition.CustomEndpointMonitorIdleExpirationMs.Name}=30000";
-        connectionString += $"; {PropertyDefinition.WaitForCustomEndpointInfoTimeoutMs.Name}=30000";
+            enablePooling: false);
+
+        var wrapperConnectionString = connectionString + $";Plugins=customEndpoint,readWriteSplitting,failover;";
+        wrapperConnectionString += $"; ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
+        wrapperConnectionString += $"; {PropertyDefinition.CustomEndpointMonitorIdleExpirationMs.Name}=30000";
+        wrapperConnectionString += $"; {PropertyDefinition.WaitForCustomEndpointInfoTimeoutMs.Name}=30000";
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
             .UseAwsWrapper(
-                connectionString,
+                wrapperConnectionString,
                 wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, this.version))
             .Options;
 
@@ -224,15 +225,16 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
             DefaultDbName,
             3,
             10,
-            "customEndpoint,readWriteSplitting,failover",
-            false);
-        connectionString += $"; ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
-        connectionString += $"; {PropertyDefinition.CustomEndpointMonitorIdleExpirationMs.Name}=30000";
-        connectionString += $"; {PropertyDefinition.WaitForCustomEndpointInfoTimeoutMs.Name}=30000";
+            enablePooling: false);
+
+        var wrapperConnectionString = connectionString + $";Plugins=customEndpoint,readWriteSplitting,failover;";
+        wrapperConnectionString += $"; ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
+        wrapperConnectionString += $"; {PropertyDefinition.CustomEndpointMonitorIdleExpirationMs.Name}=30000";
+        wrapperConnectionString += $"; {PropertyDefinition.WaitForCustomEndpointInfoTimeoutMs.Name}=30000";
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
             .UseAwsWrapper(
-                connectionString,
+                wrapperConnectionString,
                 wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, this.version))
             .Options;
 

@@ -1074,7 +1074,7 @@ public class AuroraTestUtils
         return engine switch
         {
             DatabaseEngine.MYSQL => result == "1" ? HostRole.Reader : HostRole.Writer,
-            DatabaseEngine.PG => string.Equals(result, "t", StringComparison.OrdinalIgnoreCase) ? HostRole.Reader : HostRole.Writer,
+            DatabaseEngine.PG => string.Equals(result, "True", StringComparison.OrdinalIgnoreCase) ? HostRole.Reader : HostRole.Writer,
             _ => HostRole.Unknown,
         };
     }
