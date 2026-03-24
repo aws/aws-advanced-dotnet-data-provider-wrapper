@@ -13,8 +13,6 @@
 // limitations under the License.
 
 using Amazon.RDS.Model;
-using AwsWrapperDataProvider.Driver.Plugins;
-using AwsWrapperDataProvider.Driver.Plugins.Failover;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 
 namespace AwsWrapperDataProvider.Tests;

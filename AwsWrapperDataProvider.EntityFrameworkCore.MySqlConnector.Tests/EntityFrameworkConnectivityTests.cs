@@ -519,6 +519,9 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
             await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
             {
                 var connection = db.Database.GetDbConnection();
+                Task? clusterFailureTask = null;
+                Task? writerNodeFailureTask = null;
+                var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
                 try
                 {
                     if (connection.State == System.Data.ConnectionState.Closed)
@@ -527,9 +530,8 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
                         connection.Open();
                     }
 
-                    var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-                    var clusterFailureTask = AuroraUtils.SimulateTemporaryFailureTask(ProxyClusterEndpoint, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
-                    var writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
+                    clusterFailureTask = AuroraUtils.SimulateTemporaryFailureTask(ProxyClusterEndpoint, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
+                    writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
                     await tcs.Task;
 
                     // Query to trigger failover
@@ -537,10 +539,16 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
                     db.Add(john);
                     db.SaveChanges();
-                    await Task.WhenAll(clusterFailureTask, writerNodeFailureTask);
                 }
                 finally
                 {
+                    tcs.TrySetResult();
+
+                    if (clusterFailureTask != null && writerNodeFailureTask != null)
+                    {
+                        await Task.WhenAll(clusterFailureTask, writerNodeFailureTask).WaitAsync(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
+                    }
+
                     connection.Close();
                 }
             });
@@ -603,6 +611,9 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
             await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
             {
                 var connection = db.Database.GetDbConnection();
+                Task? clusterFailureTask = null;
+                Task? writerNodeFailureTask = null;
+                var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
                 try
                 {
                     if (connection.State == System.Data.ConnectionState.Closed)
@@ -611,9 +622,8 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
                         await connection.OpenAsync(TestContext.Current.CancellationToken);
                     }
 
-                    var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-                    var clusterFailureTask = AuroraUtils.SimulateTemporaryFailureTask(ProxyClusterEndpoint, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
-                    var writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
+                    clusterFailureTask = AuroraUtils.SimulateTemporaryFailureTask(ProxyClusterEndpoint, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
+                    writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
                     await tcs.Task;
 
                     // Query to trigger failover
@@ -621,10 +631,16 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
                     await db.AddAsync(john, TestContext.Current.CancellationToken);
                     await db.SaveChangesAsync(TestContext.Current.CancellationToken);
-                    await Task.WhenAll(clusterFailureTask, writerNodeFailureTask);
                 }
                 finally
                 {
+                    tcs.TrySetResult();
+
+                    if (clusterFailureTask != null && writerNodeFailureTask != null)
+                    {
+                        await Task.WhenAll(clusterFailureTask, writerNodeFailureTask).WaitAsync(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
+                    }
+
                     await connection.CloseAsync();
                 }
             });
