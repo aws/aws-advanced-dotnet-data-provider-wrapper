@@ -66,6 +66,8 @@ public class OpenedConnectionTracker : IConnectionTracker
     /// <summary>
     /// Registers a connection in the tracking map keyed by its RDS instance endpoint.
     /// </summary>
+    /// <param name="hostSpec">The host specification identifying the database instance.</param>
+    /// <param name="connection">The database connection to track.</param>
     public void PopulateOpenedConnectionQueue(HostSpec hostSpec, DbConnection connection)
     {
         EnsurePruneLoopRunning();
@@ -116,6 +118,8 @@ public class OpenedConnectionTracker : IConnectionTracker
     /// <summary>
     /// Removes a specific connection from the tracking map for the given host.
     /// </summary>
+    /// <param name="hostSpec">The host specification identifying the database instance.</param>
+    /// <param name="connection">The database connection to remove from tracking.</param>
     public void RemoveConnectionTracking(HostSpec hostSpec, DbConnection? connection)
     {
         string? host = RdsUtils.IsRdsInstance(hostSpec.Host)
@@ -142,6 +146,7 @@ public class OpenedConnectionTracker : IConnectionTracker
     /// <summary>
     /// Invalidates all tracked connections for the given host.
     /// </summary>
+    /// <param name="hostSpec">The host specification identifying the database instance.</param>
     public void InvalidateAllConnections(HostSpec hostSpec)
     {
         var keys = new List<string> { hostSpec.AsAlias() };

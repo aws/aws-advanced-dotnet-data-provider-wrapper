@@ -46,7 +46,7 @@ public class RWQueue<T> : IDisposable
         }
     }
 
-    public (T?, bool) Dequeue()
+    public (T? Item, bool Success) Dequeue()
     {
         this.ThrowIfReentrant();
         this._lock.EnterWriteLock();
@@ -119,6 +119,7 @@ public class RWQueue<T> : IDisposable
     /// The provided delegate must not call write operations (Enqueue, Dequeue, RemoveIf)
     /// on this same RWQueue instance — doing so will throw <see cref="InvalidOperationException"/>.
     /// </summary>
+    /// <param name="action">The delegate to invoke for each item in the queue.</param>
     public void ForEach(Action<T> action)
     {
         this._lock.EnterReadLock();

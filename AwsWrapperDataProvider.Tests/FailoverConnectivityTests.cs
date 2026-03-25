@@ -382,6 +382,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
     /// Idle connections opened via the cluster endpoint are tracked by the aurora connection tracker plugin.
     /// When a writer failover occurs, all idle connections to the old writer should be closed.
     /// </summary>
+    /// <param name="async">True if testing async calls, false if testing sync calls.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Theory]
     [InlineData(true)]
