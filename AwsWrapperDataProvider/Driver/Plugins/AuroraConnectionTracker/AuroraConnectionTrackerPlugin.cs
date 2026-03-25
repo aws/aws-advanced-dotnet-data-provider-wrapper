@@ -37,7 +37,7 @@ public class AuroraConnectionTrackerPlugin : AbstractConnectionPlugin
 
     // Static shared state for refresh deadline across all plugin instances.
     // 0 means no refresh needed. Uses Interlocked for thread-safe updates.
-    private static long s_hostListRefreshEndTimeTicks = 0;
+    private static long hostListRefreshEndTimeTicks = 0;
 
     private readonly IPluginService pluginService;
     private readonly Dictionary<string, string> props;
@@ -151,7 +151,7 @@ public class AuroraConnectionTrackerPlugin : AbstractConnectionPlugin
             return result;
         }
 
-        long localRefreshEndTicks = Interlocked.Read(ref s_hostListRefreshEndTimeTicks);
+        long localRefreshEndTicks = Interlocked.Read(ref hostListRefreshEndTimeTicks);
         bool needRefreshHostList = false;
         if (localRefreshEndTicks > 0)
         {
@@ -165,7 +165,7 @@ public class AuroraConnectionTrackerPlugin : AbstractConnectionPlugin
             {
                 // The time specified in s_hostListRefreshEndTimeTicks is reached, and we can stop further refreshes
                 // of host list
-                Interlocked.CompareExchange(ref s_hostListRefreshEndTimeTicks, 0, localRefreshEndTicks);
+                Interlocked.CompareExchange(ref hostListRefreshEndTimeTicks, 0, localRefreshEndTicks);
             }
         }
 
@@ -182,7 +182,7 @@ public class AuroraConnectionTrackerPlugin : AbstractConnectionPlugin
         {
             // Set the 3-minute refresh window.
             Interlocked.Exchange(
-                ref s_hostListRefreshEndTimeTicks,
+                ref hostListRefreshEndTimeTicks,
                 DateTime.UtcNow.Ticks + TopologyChangesExpectedTime.Ticks);
 
             await this.CheckWriterChangedAsync(true);
@@ -231,7 +231,7 @@ public class AuroraConnectionTrackerPlugin : AbstractConnectionPlugin
             this.tracker.LogOpenedConnections();
             this.currentWriter = writerAfterRefresh;
             this.needUpdateCurrentWriter = false;
-            Interlocked.Exchange(ref s_hostListRefreshEndTimeTicks, 0);
+            Interlocked.Exchange(ref hostListRefreshEndTimeTicks, 0);
         }
     }
 }

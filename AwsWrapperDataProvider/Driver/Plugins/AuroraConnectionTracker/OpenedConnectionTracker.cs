@@ -40,8 +40,8 @@ public class OpenedConnectionTracker : IConnectionTracker
     internal static readonly ConcurrentDictionary<string, RWQueue<WeakReference<DbConnection>>> OpenedConnections = new();
 
     private static readonly object PruneLock = new();
-    private static CancellationTokenSource? s_pruneCts;
-    private static Task? s_pruneTask;
+    private static CancellationTokenSource? pruneCts;
+    private static Task? pruneTask;
 
     private readonly IPluginService pluginService;
 
@@ -55,10 +55,10 @@ public class OpenedConnectionTracker : IConnectionTracker
     {
         lock (PruneLock)
         {
-            if (s_pruneTask is null || s_pruneTask.IsCompleted)
+            if (pruneTask is null || pruneTask.IsCompleted)
             {
-                s_pruneCts = new CancellationTokenSource();
-                s_pruneTask = Task.Run(() => PruneLoop(s_pruneCts.Token));
+                pruneCts = new CancellationTokenSource();
+                pruneTask = Task.Run(() => PruneLoop(pruneCts.Token));
             }
         }
     }
@@ -215,10 +215,10 @@ public class OpenedConnectionTracker : IConnectionTracker
     {
         lock (PruneLock)
         {
-            s_pruneCts?.Cancel();
-            s_pruneCts?.Dispose();
-            s_pruneCts = null;
-            s_pruneTask = null;
+            pruneCts?.Cancel();
+            pruneCts?.Dispose();
+            pruneCts = null;
+            pruneTask = null;
         }
 
         OpenedConnections.Clear();
