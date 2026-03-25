@@ -157,13 +157,13 @@ public class AuroraConnectionTrackerPlugin : AbstractConnectionPlugin
         {
             if (localRefreshEndTicks > DateTime.UtcNow.Ticks)
             {
-                // The time specified in s_hostListRefreshEndTimeTicks isn't yet reached
+                // The time specified in hostListRefreshEndTimeTicks isn't yet reached
                 // Need to continue to refresh host list
                 needRefreshHostList = true;
             }
             else
             {
-                // The time specified in s_hostListRefreshEndTimeTicks is reached, and we can stop further refreshes
+                // The time specified in hostListRefreshEndTimeTicks is reached, and we can stop further refreshes
                 // of host list
                 Interlocked.CompareExchange(ref hostListRefreshEndTimeTicks, 0, localRefreshEndTicks);
             }

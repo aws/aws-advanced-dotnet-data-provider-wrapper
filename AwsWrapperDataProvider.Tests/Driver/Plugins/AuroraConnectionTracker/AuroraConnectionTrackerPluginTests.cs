@@ -295,7 +295,7 @@ public class AuroraConnectionTrackerPluginTests
             // Set refresh deadline to 5 minutes in the future
             TestUtils.SetNonPublicStaticField(
                 typeof(AuroraConnectionTrackerPlugin),
-                "s_hostListRefreshEndTimeTicks",
+                "hostListRefreshEndTimeTicks",
                 DateTime.UtcNow.Ticks + TimeSpan.FromMinutes(3).Ticks);
 
             var mockMethodFunc = new Mock<ADONetDelegate<object>>();
@@ -314,7 +314,7 @@ public class AuroraConnectionTrackerPluginTests
         {
             TestUtils.SetNonPublicStaticField(
                 typeof(AuroraConnectionTrackerPlugin),
-                "s_hostListRefreshEndTimeTicks",
+                "hostListRefreshEndTimeTicks",
                 0L);
         }
     }
@@ -328,7 +328,7 @@ public class AuroraConnectionTrackerPluginTests
             // Set refresh deadline to 1 minute in the past
             TestUtils.SetNonPublicStaticField(
                 typeof(AuroraConnectionTrackerPlugin),
-                "s_hostListRefreshEndTimeTicks",
+                "hostListRefreshEndTimeTicks",
                 DateTime.UtcNow.Ticks - TimeSpan.FromMinutes(1).Ticks);
 
             var mockMethodFunc = new Mock<ADONetDelegate<object>>();
@@ -344,7 +344,7 @@ public class AuroraConnectionTrackerPluginTests
                 Times.Never);
 
             var field = typeof(AuroraConnectionTrackerPlugin)
-                .GetField("s_hostListRefreshEndTimeTicks", BindingFlags.Static | BindingFlags.NonPublic);
+                .GetField("hostListRefreshEndTimeTicks", BindingFlags.Static | BindingFlags.NonPublic);
             Assert.NotNull(field);
             Assert.Equal(0L, (long)field.GetValue(null)!);
         }
@@ -352,7 +352,7 @@ public class AuroraConnectionTrackerPluginTests
         {
             TestUtils.SetNonPublicStaticField(
                 typeof(AuroraConnectionTrackerPlugin),
-                "s_hostListRefreshEndTimeTicks",
+                "hostListRefreshEndTimeTicks",
                 0L);
         }
     }
