@@ -114,7 +114,7 @@ public class AuroraConnectionTrackerPlugin : AbstractConnectionPlugin
     {
         var conn = await methodFunc();
 
-        if (conn == null || hostSpec == null)
+        if (hostSpec == null)
         {
             return conn;
         }
@@ -178,7 +178,7 @@ public class AuroraConnectionTrackerPlugin : AbstractConnectionPlugin
         {
             return await methodFunc();
         }
-        catch (FailoverException ex)
+        catch (FailoverException)
         {
             // Set the 3-minute refresh window.
             Interlocked.Exchange(
