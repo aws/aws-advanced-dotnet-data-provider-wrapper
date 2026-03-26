@@ -27,7 +27,7 @@ namespace AwsWrapperDataProvider.Driver.Dialects;
 
 public class RdsMultiAzDbClusterPgDialect : PgDialect
 {
-    private static readonly string DriverVersion = "1.0.1";
+    private static readonly string DriverVersion = "1.1.0";
 
     private static readonly ILogger<RdsMultiAzDbClusterPgDialect> Logger = LoggerUtils.GetLogger<RdsMultiAzDbClusterPgDialect>();
 

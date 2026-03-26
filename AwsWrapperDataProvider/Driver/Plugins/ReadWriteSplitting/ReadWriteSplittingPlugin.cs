@@ -74,7 +74,12 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
     {
         var query = WrapperUtils.GetQueryFromSqlObject(methodInvokedOn);
         var (readOnly, found) = WrapperUtils.DoesSetReadOnly(query, this.pluginService.Dialect);
-        Logger.LogDebug("ReadOnly is " + (found ? "set to " + (readOnly ? "read only" : "read write") : "not set"));
+
+        Logger.LogDebug(
+            "ReadOnly: found={Found}, mode={Mode}",
+            found,
+            found ? (readOnly ? "read only" : "read write") : "n/a");
+
         if (found)
         {
             await this.SwitchConnectionIfRequired(readOnly);
@@ -131,6 +136,9 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
 
         HostSpec updatedHostSpec = new(currentHostSpec, currentRole);
         this.hostListProviderService.InitialConnectionHostSpec = updatedHostSpec;
+
+        // Same connection, only update the current host spec
+        this.pluginService.SetCurrentConnection(conn, updatedHostSpec);
         return conn;
     }
 
@@ -207,12 +215,14 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
 
     private async Task SwitchToWriterConnection(IList<HostSpec> hosts)
     {
+        Logger.LogDebug("Switching to writer connection");
         var currentConnection = this.pluginService.CurrentConnection;
         var currentHost = this.pluginService.CurrentHostSpec!;
         Logger.LogDebug(currentHost.ToString());
 
         if (currentHost.Role == HostRole.Writer && this.IsConnectionUsable(currentConnection))
         {
+            Logger.LogDebug("Already connected to a writer.");
             return;
         }
 
@@ -244,6 +254,7 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
 
     private async Task SwitchToReaderConnection(IList<HostSpec> hosts)
     {
+        Logger.LogDebug("Switching to reader connection");
         var currentConnection = this.pluginService.CurrentConnection;
         var currentHost = this.pluginService.CurrentHostSpec!;
         if (currentHost.Role == HostRole.Reader && this.IsConnectionUsable(currentConnection))

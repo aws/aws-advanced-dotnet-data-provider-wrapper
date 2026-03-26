@@ -8,8 +8,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AWSSDK.RDS" Version="4.0.18.3" />
-        <PackageReference Include="AWSSDK.SecurityToken" Version="4.0.5.11" />
+        <PackageReference Include="AWSSDK.RDS" Version="4.0.18.4" />
+        <PackageReference Include="AWSSDK.SecurityToken" Version="4.0.5.13" />
     </ItemGroup>
 
     <ItemGroup>

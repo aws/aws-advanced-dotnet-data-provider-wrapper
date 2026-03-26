@@ -96,7 +96,9 @@ public class HostSpec
               copyHost.Port,
               copyHost.HostId,
               role,
-              copyHost.RawAvailability)
+              copyHost.RawAvailability,
+              copyHost.Weight,
+              copyHost.LastUpdateTime)
     {
     }
 
