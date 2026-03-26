@@ -147,78 +147,108 @@ public class AuroraConnectionTrackerPluginTests
     [Trait("Category", "Unit")]
     public async Task Execute_FailoverException_WriterNotChanged_DoesNotInvalidate()
     {
-        var originalHost = new HostSpec(
-            "host.xyz.us-east-1.rds.amazonaws.com",
-            5432,
-            HostRole.Writer,
-            HostAvailability.Available);
+        try
+        {
+            TestUtils.SetNonPublicStaticField(
+                typeof(AuroraConnectionTrackerPlugin),
+                "hostListRefreshEndTimeTicks",
+                0L);
 
-        this.mockPluginService.Setup(x => x.AllHosts).Returns(new List<HostSpec> { originalHost });
+            var originalHost = new HostSpec(
+                "host.xyz.us-east-1.rds.amazonaws.com",
+                5432,
+                HostRole.Writer,
+                HostAvailability.Available);
 
-        var mockMethodFunc = new Mock<ADONetDelegate<object>>();
-        mockMethodFunc.Setup(x => x.Invoke()).ThrowsAsync(new FailoverSuccessException());
+            this.mockPluginService.Setup(x => x.AllHosts).Returns(new List<HostSpec> { originalHost });
 
-        var ex = await Assert.ThrowsAsync<FailoverSuccessException>(() =>
-            this.plugin.Execute(
-                new object(),
-                "DbCommand.ExecuteNonQuery",
-                mockMethodFunc.Object));
+            var mockMethodFunc = new Mock<ADONetDelegate<object>>();
+            mockMethodFunc.Setup(x => x.Invoke()).ThrowsAsync(new FailoverSuccessException());
 
-        Assert.NotNull(ex);
-        this.mockTracker.Verify(
-            x => x.InvalidateAllConnections(It.IsAny<HostSpec>()),
-            Times.Never);
-        this.mockTracker.Verify(
-            x => x.RemoveConnectionTracking(It.IsAny<HostSpec>(), It.IsAny<DbConnection>()),
-            Times.Never);
+            var ex = await Assert.ThrowsAsync<FailoverSuccessException>(() =>
+                this.plugin.Execute(
+                    new object(),
+                    "DbCommand.ExecuteNonQuery",
+                    mockMethodFunc.Object));
+
+            Assert.NotNull(ex);
+            this.mockTracker.Verify(
+                x => x.InvalidateAllConnections(It.IsAny<HostSpec>()),
+                Times.Never);
+            this.mockTracker.Verify(
+                x => x.RemoveConnectionTracking(It.IsAny<HostSpec>(), It.IsAny<DbConnection>()),
+                Times.Never);
+        }
+        finally
+        {
+            TestUtils.SetNonPublicStaticField(
+                typeof(AuroraConnectionTrackerPlugin),
+                "hostListRefreshEndTimeTicks",
+                0L);
+        }
     }
 
     [Fact]
     [Trait("Category", "Unit")]
     public async Task Execute_FailoverException_WriterChanged_InvalidatesOldWriter()
     {
-        var originalHost = new HostSpec(
-            "original-host.xyz.us-east-1.rds.amazonaws.com",
-            5432,
-            HostRole.Writer,
-            HostAvailability.Available);
+        try
+        {
+            TestUtils.SetNonPublicStaticField(
+                typeof(AuroraConnectionTrackerPlugin),
+                "hostListRefreshEndTimeTicks",
+                0L);
 
-        var newHost = new HostSpec(
-            "new-host.xyz.us-east-1.rds.amazonaws.com",
-            5432,
-            HostRole.Writer,
-            HostAvailability.Available);
+            var originalHost = new HostSpec(
+                "original-host.xyz.us-east-1.rds.amazonaws.com",
+                5432,
+                HostRole.Writer,
+                HostAvailability.Available);
 
-        this.mockPluginService.SetupSequence(x => x.AllHosts)
-            .Returns(new List<HostSpec> { originalHost }) // RememberWriter on first Execute
-            .Returns(new List<HostSpec> { newHost });        // CheckWriterChangedAsync after failover
+            var newHost = new HostSpec(
+                "new-host.xyz.us-east-1.rds.amazonaws.com",
+                5432,
+                HostRole.Writer,
+                HostAvailability.Available);
 
-        var mockSuccessFunc = new Mock<ADONetDelegate<object>>();
-        mockSuccessFunc.Setup(x => x.Invoke()).ReturnsAsync(new object());
+            this.mockPluginService.SetupSequence(x => x.AllHosts)
+                .Returns(new List<HostSpec> { originalHost }) // RememberWriter on first Execute
+                .Returns(new List<HostSpec> { newHost });        // CheckWriterChangedAsync after failover
 
-        var mockFailoverFunc = new Mock<ADONetDelegate<object>>();
-        mockFailoverFunc.Setup(x => x.Invoke()).ThrowsAsync(new FailoverSuccessException());
+            var mockSuccessFunc = new Mock<ADONetDelegate<object>>();
+            mockSuccessFunc.Setup(x => x.Invoke()).ReturnsAsync(new object());
 
-        // First call succeeds — sets currentWriter to originalHost
-        await this.plugin.Execute(
-            new object(),
-            "DbCommand.ExecuteNonQuery",
-            mockSuccessFunc.Object);
+            var mockFailoverFunc = new Mock<ADONetDelegate<object>>();
+            mockFailoverFunc.Setup(x => x.Invoke()).ThrowsAsync(new FailoverSuccessException());
 
-        // Second call throws FailoverSuccessException — triggers writer change detection
-        var ex = await Assert.ThrowsAsync<FailoverSuccessException>(() =>
-            this.plugin.Execute(
+            // First call succeeds — sets currentWriter to originalHost
+            await this.plugin.Execute(
                 new object(),
                 "DbCommand.ExecuteNonQuery",
-                mockFailoverFunc.Object));
+                mockSuccessFunc.Object);
 
-        Assert.NotNull(ex);
-        this.mockTracker.Verify(
-            x => x.InvalidateAllConnections(originalHost),
-            Times.Once);
-        this.mockTracker.Verify(
-            x => x.RemoveConnectionTracking(It.IsAny<HostSpec>(), It.IsAny<DbConnection>()),
-            Times.Never);
+            // Second call throws FailoverSuccessException — triggers writer change detection
+            var ex = await Assert.ThrowsAsync<FailoverSuccessException>(() =>
+                this.plugin.Execute(
+                    new object(),
+                    "DbCommand.ExecuteNonQuery",
+                    mockFailoverFunc.Object));
+
+            Assert.NotNull(ex);
+            this.mockTracker.Verify(
+                x => x.InvalidateAllConnections(originalHost),
+                Times.Once);
+            this.mockTracker.Verify(
+                x => x.RemoveConnectionTracking(It.IsAny<HostSpec>(), It.IsAny<DbConnection>()),
+                Times.Never);
+        }
+        finally
+        {
+            TestUtils.SetNonPublicStaticField(
+                typeof(AuroraConnectionTrackerPlugin),
+                "hostListRefreshEndTimeTicks",
+                0L);
+        }
     }
 
     [Theory]
