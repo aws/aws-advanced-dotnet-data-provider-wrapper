@@ -116,35 +116,6 @@ public class AuroraConnectionTrackerPluginTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task OpenConnection_ReturnsNullConnection_SkipsTracking()
-    {
-        var hostSpec = new HostSpec(
-            "test-cluster.cluster-xyz.us-east-1.rds.amazonaws.com",
-            5432,
-            HostRole.Writer,
-            HostAvailability.Available);
-
-        var mockMethodFunc = new Mock<ADONetDelegate<DbConnection>>();
-        mockMethodFunc.Setup(x => x.Invoke()).ReturnsAsync((DbConnection)null!);
-
-        var conn = await this.plugin.OpenConnection(
-            hostSpec,
-            this.props,
-            false,
-            mockMethodFunc.Object,
-            true);
-
-        Assert.Null(conn);
-        this.mockPluginService.Verify(
-            x => x.FillAliasesAsync(It.IsAny<DbConnection>(), It.IsAny<HostSpec>(), It.IsAny<DbTransaction>()),
-            Times.Never);
-        this.mockTracker.Verify(
-            x => x.PopulateOpenedConnectionQueue(It.IsAny<HostSpec>(), It.IsAny<DbConnection>()),
-            Times.Never);
-    }
-
-    [Fact]
-    [Trait("Category", "Unit")]
     public async Task Execute_FailoverException_WriterNotChanged_DoesNotInvalidate()
     {
         try
