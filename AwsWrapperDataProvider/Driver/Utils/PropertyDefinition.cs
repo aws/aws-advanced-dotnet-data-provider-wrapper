@@ -368,4 +368,7 @@ public static class PropertyDefinition
         EfmMonitoringPropertyPrefix,
         ClusterTopologyMonitoringPropertyPrefix
     ];
+
+    public static bool IsInternalWrapperPropertyKey(string key) =>
+        InternalWrapperProperties.Any(p => p.Name.Equals(key, StringComparison.OrdinalIgnoreCase));
 }
