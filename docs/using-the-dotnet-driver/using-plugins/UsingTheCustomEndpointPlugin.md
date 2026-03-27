@@ -10,9 +10,10 @@ The plugin is available in the `AWS.AdvancedDotnetDataProviderWrapper.Plugin.Cus
 
 ## Prerequisites
 
-This plugin requires the following NuGet package to be installed in your project:
+This plugin requires the following NuGet packages to be installed in your project:
 
 - [AWSSDK.RDS](https://www.nuget.org/packages/AWSSDK.RDS/)
+- [AWSSDK.SecurityToken](https://www.nuget.org/packages/AWSSDK.SecurityToken/)
 
 > [!NOTE]\
 > The AWSSDK.RDS package has transitive dependencies (such as AWSSDK.Core) that are automatically included when using a package manager.
