@@ -27,7 +27,7 @@ public class PgDialect : IDialect
 {
     private static readonly ILogger<PgDialect> Logger = LoggerUtils.GetLogger<PgDialect>();
 
-    public static readonly string DefaultPluginCodes = "initialConnection,efm,failover,auroraConnectionTracker";
+    public static readonly string DefaultPluginCodes = "initialConnection,auroraConnectionTracker,failover,efm";
 
     public int DefaultPort { get; } = 5432;
 
