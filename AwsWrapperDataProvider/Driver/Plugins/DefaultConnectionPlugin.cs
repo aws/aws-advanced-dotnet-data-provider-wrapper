@@ -104,6 +104,11 @@ public class DefaultConnectionPlugin(
                 (bool pingSuccess, Exception? pingException) = this.pluginService.TargetConnectionDialect.Ping(conn);
                 if (!pingSuccess)
                 {
+                    if (attempt == UpdateDialectMaxRetries)
+                    {
+                        throw new InvalidOpenConnectionException(Resources.Error_UnableToEstablishValidConnectionAfterMultipleAttempts, pingException);
+                    }
+
                     if (async)
                     {
                         await conn.DisposeAsync();
@@ -122,11 +127,6 @@ public class DefaultConnectionPlugin(
                     else
                     {
                         conn.Open();
-                    }
-
-                    if (attempt == UpdateDialectMaxRetries)
-                    {
-                        throw new InvalidOpenConnectionException(Resources.Error_UnableToEstablishValidConnectionAfterMultipleAttempts, pingException);
                     }
                 }
                 else

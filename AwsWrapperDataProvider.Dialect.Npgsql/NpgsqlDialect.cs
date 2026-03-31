@@ -56,6 +56,15 @@ public class NpgsqlDialect : AbstractTargetConnectionDialect
             copyOfProps[DefaultPoolingParameterName] = "false";
         }
 
+        // Workaround for Npgsql 10.0.x bug: GSS encryption fallback corrupts pooled connections,
+        // causing ObjectDisposedException on ManualResetEventSlim.Reset() in ResetCancellation().
+        // AWS RDS/Aurora proxies reject GSS encryption, triggering the fallback path every time.
+        // See https://github.com/npgsql/npgsql/issues/6506
+        if (!copyOfProps.ContainsKey("Gss Encryption Mode"))
+        {
+            copyOfProps["Gss Encryption Mode"] = "Disable";
+        }
+
         return this.PrepareConnectionString(dialect, hostSpec, copyOfProps, PropertyDefinition.Host);
     }
 
@@ -65,7 +74,13 @@ public class NpgsqlDialect : AbstractTargetConnectionDialect
         {
             if (connection is NpgsqlConnection npgsqlConnection)
             {
+                if (npgsqlConnection.State != ConnectionState.Open)
+                {
+                    return (false, null);
+                }
+
                 using var cmd = new NpgsqlCommand("SELECT 1", npgsqlConnection);
+                cmd.CommandTimeout = 5;
                 cmd.ExecuteScalar();
                 return (true, null);
             }
