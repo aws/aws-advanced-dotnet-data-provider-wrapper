@@ -14,7 +14,7 @@
 
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests;
+namespace AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.Tests;
 
 [Table("persons")]
 public class Person

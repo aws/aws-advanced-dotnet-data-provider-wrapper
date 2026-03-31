@@ -13,7 +13,7 @@
 // limitations under the License.
 
 using System.Data.Common;
-using AwsWrapperDataProvider.EntityFrameworkCore.MySQL;
+using AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.RelationalConnectionDialects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 
@@ -23,7 +23,7 @@ public class AwsWrapperDbContextOptionsBuilderExtensionsTests
 {
     [Fact]
     [Trait("Category", "Unit")]
-    public void UseAwsWrapper_AlwaysEnforcesPomeloMandatoryMySqlOptions()
+    public void UseAwsWrapper_StoresRawWrapperConnectionString_OnExtension()
     {
         var pomeloConnectionString = "Server=localhost;Database=test;User ID=u;Password=p;";
         var wrapperConnectionString = "Server=localhost;Database=test;User ID=u;Password=p;Plugins=failover;AllowUserVariables=false;UseAffectedRows=true;";
@@ -34,12 +34,41 @@ public class AwsWrapperDbContextOptionsBuilderExtensionsTests
             wrapped => wrapped.UseMySql(pomeloConnectionString, new MySqlServerVersion(new Version(8, 0, 36))));
 
         var extension = builder.Options.Extensions.OfType<AwsWrapperOptionsExtension>().Single();
-        var connectionStringBuilder = new DbConnectionStringBuilder
-        {
-            ConnectionString = extension.WrapperConnectionString,
-        };
+        Assert.Equal(wrapperConnectionString, extension.WrapperConnectionString);
+    }
 
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void PomeloDialect_NormalizeConnectionString_EnforcesMandatoryMySqlOptions()
+    {
+        var input = "Server=localhost;Database=test;User ID=u;Password=p;Plugins=failover;AllowUserVariables=false;UseAffectedRows=true;";
+        var normalized = PomeloEfMySqlRelationalConnectionDialect.Instance.NormalizeConnectionString(input);
+
+        var connectionStringBuilder = new DbConnectionStringBuilder { ConnectionString = normalized };
         Assert.True(Convert.ToBoolean(connectionStringBuilder["AllowUserVariables"]));
         Assert.False(Convert.ToBoolean(connectionStringBuilder["UseAffectedRows"]));
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void DetectEfMySqlProviderKind_WithPomeloUseMySql_ReturnsPomelo()
+    {
+        var pomeloConnectionString = "Server=localhost;Database=test;User ID=u;Password=p;";
+        var wrapped = new DbContextOptionsBuilder()
+            .UseMySql(pomeloConnectionString, new MySqlServerVersion(new Version(8, 0, 36)))
+            .Options;
+
+        var ext = wrapped.Extensions.First(x => x is not CoreOptionsExtension);
+        Assert.Equal(EfMySqlProviderKind.Pomelo, RelationalConnectionDialectProvider.DetectEfMySqlProviderKind(ext));
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void GetDialect_WithUnknownProviderKind_ThrowsInvalidOperationException()
+    {
+        var ex = Assert.Throws<InvalidOperationException>(
+            () => RelationalConnectionDialectProvider.GetDialect(EfMySqlProviderKind.Unknown, wrappedExtensionForDiagnostics: null));
+        Assert.Contains("relational connection", ex.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("not supported", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 }

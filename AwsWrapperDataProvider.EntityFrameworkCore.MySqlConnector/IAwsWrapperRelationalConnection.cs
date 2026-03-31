@@ -14,7 +14,7 @@
 
 using Microsoft.EntityFrameworkCore.Storage;
 
-namespace AwsWrapperDataProvider.EntityFrameworkCore.MySQL;
+namespace AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector;
 
 public interface IAwsWrapperRelationalConnection : IRelationalConnection
 {

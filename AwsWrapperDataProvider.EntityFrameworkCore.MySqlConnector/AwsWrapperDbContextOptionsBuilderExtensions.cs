@@ -12,18 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data.Common;
-using AwsWrapperDataProvider.EntityFrameworkCore.MySQL;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 
-namespace Microsoft.EntityFrameworkCore;
+namespace AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector;
 
 public static class AwsWrapperDbContextOptionsBuilderExtensions
 {
-    private const string AllowUserVariablesKey = "AllowUserVariables";
-    private const string UseAffectedRowsKey = "UseAffectedRows";
-
     public static DbContextOptionsBuilder UseAwsWrapper(
         this DbContextOptionsBuilder optionsBuilder,
         string wrapperConnectionString,
@@ -39,8 +35,7 @@ public static class AwsWrapperDbContextOptionsBuilderExtensions
 
         ((IDbContextOptionsBuilderInfrastructure)optionsBuilder).AddOrUpdateExtension(targetOptionExtension!);
 
-        var normalizedWrapperConnectionString = EnsurePomeloMandatoryMySqlOptions(wrapperConnectionString);
-        var extension = new AwsWrapperOptionsExtension(targetOptionExtension!, normalizedWrapperConnectionString);
+        var extension = new AwsWrapperOptionsExtension(targetOptionExtension!, wrapperConnectionString);
         ((IDbContextOptionsBuilderInfrastructure)optionsBuilder).AddOrUpdateExtension(extension);
 
         ConfigureWarnings(optionsBuilder);
@@ -64,18 +59,5 @@ public static class AwsWrapperDbContextOptionsBuilderExtensions
                 RelationalEventId.AmbientTransactionWarning, WarningBehavior.Throw));
 
         ((IDbContextOptionsBuilderInfrastructure)optionsBuilder).AddOrUpdateExtension(coreOptionsExtension);
-    }
-
-    private static string EnsurePomeloMandatoryMySqlOptions(string wrapperConnectionString)
-    {
-        var connectionStringBuilder = new DbConnectionStringBuilder
-        {
-            ConnectionString = wrapperConnectionString,
-        };
-
-        connectionStringBuilder[AllowUserVariablesKey] = true;
-        connectionStringBuilder[UseAffectedRowsKey] = false;
-
-        return connectionStringBuilder.ConnectionString;
     }
 }

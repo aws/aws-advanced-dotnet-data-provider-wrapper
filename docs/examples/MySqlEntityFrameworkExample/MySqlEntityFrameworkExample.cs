@@ -14,6 +14,7 @@
 
 using AwsWrapperDataProvider.Dialect.MySqlConnector;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
+using AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector;
 using Microsoft.EntityFrameworkCore;
 
 namespace MySqlEntityFrameworkExample;

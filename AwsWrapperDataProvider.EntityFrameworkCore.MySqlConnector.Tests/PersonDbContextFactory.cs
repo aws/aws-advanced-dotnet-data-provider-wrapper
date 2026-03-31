@@ -13,10 +13,11 @@
 // limitations under the License.
 
 using AwsWrapperDataProvider.Dialect.MySqlConnector;
+using AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
-namespace AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests;
+namespace AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.Tests;
 
 public class PersonDbContextFactory : IDesignTimeDbContextFactory<PersonDbContext>
 {

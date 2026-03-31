@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests;
 using Microsoft.EntityFrameworkCore;
 
-namespace AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests;
+namespace AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.Tests;
 
 public class PersonDbContext : DbContext
 {
