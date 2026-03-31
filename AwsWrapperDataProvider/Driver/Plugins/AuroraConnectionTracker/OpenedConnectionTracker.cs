@@ -204,7 +204,6 @@ public class OpenedConnectionTracker : IConnectionTracker
         }
     }
 
-
     /// <summary>
     /// Cancels the background pruning task and clears all tracked connections.
     /// The pruning loop will restart automatically when a new tracker instance is created or when a connection is tracked.

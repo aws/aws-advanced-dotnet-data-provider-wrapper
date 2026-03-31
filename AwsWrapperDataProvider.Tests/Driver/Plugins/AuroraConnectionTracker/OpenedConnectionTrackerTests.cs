@@ -175,7 +175,6 @@ public class OpenedConnectionTrackerTests
         Assert.Equal(mockConnection.Object, conn);
     }
 
-
     [Fact]
     [Trait("Category", "Unit")]
     public void SharedStaticMap_TwoTrackerInstances_SeeEachOthersConnections()
