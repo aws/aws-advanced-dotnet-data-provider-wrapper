@@ -104,9 +104,25 @@ public class DefaultConnectionPlugin(
                 (bool pingSuccess, Exception? pingException) = this.pluginService.TargetConnectionDialect.Ping(conn);
                 if (!pingSuccess)
                 {
-                    await conn.DisposeAsync();
+                    if (async)
+                    {
+                        await conn.DisposeAsync();
+                    }
+                    else
+                    {
+                        conn.Dispose();
+                    }
+
                     conn = connProvider.CreateDbConnection(this.pluginService.Dialect, this.pluginService.TargetConnectionDialect, hostSpec, props);
-                    await conn.OpenAsync();
+
+                    if (async)
+                    {
+                        await conn.OpenAsync();
+                    }
+                    else
+                    {
+                        conn.Open();
+                    }
 
                     if (attempt == UpdateDialectMaxRetries)
                     {
