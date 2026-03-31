@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using AwsWrapperDataProvider.Dialect.MySqlConnector;
-using AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 

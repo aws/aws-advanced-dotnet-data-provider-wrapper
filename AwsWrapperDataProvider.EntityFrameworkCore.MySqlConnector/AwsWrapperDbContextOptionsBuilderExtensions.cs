@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Microsoft.EntityFrameworkCore;
+using AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 
-namespace AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector;
+namespace Microsoft.EntityFrameworkCore;
 
 public static class AwsWrapperDbContextOptionsBuilderExtensions
 {

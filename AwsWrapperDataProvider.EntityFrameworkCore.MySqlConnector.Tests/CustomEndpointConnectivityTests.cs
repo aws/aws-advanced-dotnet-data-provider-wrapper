@@ -16,7 +16,6 @@ using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Plugins.ReadWriteSplitting;
 using AwsWrapperDataProvider.Driver.Utils;
-using AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests;
 using AwsWrapperDataProvider.Plugin.CustomEndpoint.CustomEndpoint;
 using AwsWrapperDataProvider.Tests;
 using AwsWrapperDataProvider.Tests.Container.Utils;
