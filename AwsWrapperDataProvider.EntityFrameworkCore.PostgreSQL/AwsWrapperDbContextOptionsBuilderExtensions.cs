@@ -33,8 +33,15 @@ public static class AwsWrapperDbContextOptionsBuilderExtensions
 
         IDbContextOptionsExtension? targetOptionExtension = wrappedOptionBuilder.Options.Extensions.Where(x => x is not CoreOptionsExtension).FirstOrDefault();
 
-        var extension = (AwsWrapperOptionsExtension)GetOrCreateExtension(optionsBuilder, targetOptionExtension!)
-            .WithConnectionString(connectionString);
+        // Extract the clean connection string from the wrapped extension (e.g. NpgsqlOptionsExtension)
+        // so that the base RelationalOptionsExtension only sees provider-understood properties.
+        // The full wrapper connection string (with Plugins=... etc.) is stored separately.
+        var wrappedRelationalExtension = targetOptionExtension as RelationalOptionsExtension;
+        var cleanConnectionString = wrappedRelationalExtension?.ConnectionString ?? connectionString;
+
+        var extension = GetOrCreateExtension(optionsBuilder, targetOptionExtension!);
+        extension.WrapperConnectionString = connectionString;
+        extension = (AwsWrapperOptionsExtension)extension.WithConnectionString(cleanConnectionString);
         ((IDbContextOptionsBuilderInfrastructure)optionsBuilder).AddOrUpdateExtension(extension);
 
         ConfigureWarnings(optionsBuilder);
@@ -42,9 +49,13 @@ public static class AwsWrapperDbContextOptionsBuilderExtensions
         return optionsBuilder;
     }
 
-    /// <summary>
-    /// Returns an existing instance of <see cref="AwsWrapperOptionsExtension"/>, or a new instance if one does not exist.
-    /// </summary>
+    public static DbContextOptionsBuilder<TContext> UseAwsWrapper<TContext>(
+        this DbContextOptionsBuilder<TContext> optionsBuilder,
+        string connectionString,
+        Action<DbContextOptionsBuilder> wrappedOptionsBuilderAction)
+        where TContext : DbContext
+        => (DbContextOptionsBuilder<TContext>)UseAwsWrapper((DbContextOptionsBuilder)optionsBuilder, connectionString, wrappedOptionsBuilderAction);
+
     /// <param name="optionsBuilder">The <see cref="DbContextOptionsBuilder"/> to search.</param>
     /// <param name="targetOptionExtension">The target <see cref="IDbContextOptionsExtension"/> to wrap.</param>
     /// <returns>

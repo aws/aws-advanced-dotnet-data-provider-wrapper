@@ -14,6 +14,7 @@
 
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.EntityFrameworkCore.Update;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL;
@@ -21,6 +22,11 @@ namespace AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL;
 public class AwsWrapperOptionsExtension : RelationalOptionsExtension, IDbContextOptionsExtension
 {
     private AwsWrapperDbContextOptionsExtensionInfo? _info;
+
+    // The full wrapper connection string (may contain Plugins=... and other wrapper-specific properties).
+    // This is kept separate from the base RelationalOptionsExtension.ConnectionString,
+    // which should only contain properties understood by the underlying provider (Npgsql).
+    public string? WrapperConnectionString { get; set; }
 
     // Add more AWS Wrapper settings here if needed
 
@@ -32,6 +38,7 @@ public class AwsWrapperOptionsExtension : RelationalOptionsExtension, IDbContext
     protected internal AwsWrapperOptionsExtension(AwsWrapperOptionsExtension copyFrom) : base(copyFrom)
     {
         this.WrappedExtension = copyFrom.WrappedExtension;
+        this.WrapperConnectionString = copyFrom.WrapperConnectionString;
     }
 
     public override void ApplyServices(IServiceCollection services)
@@ -76,10 +83,18 @@ public class AwsWrapperOptionsExtension : RelationalOptionsExtension, IDbContext
         // add all other service descriptors
         foreach (var serviceDescriptor in wrappedServiceCollection
             .Where(x => x.ServiceType != typeof(IDatabaseProvider)
-                && x.ServiceType != typeof(IRelationalConnection)))
+                && x.ServiceType != typeof(IRelationalConnection)
+                && x.ServiceType != typeof(IModificationCommandBatchFactory)))
         {
             services.Add(serviceDescriptor);
         }
+
+        // Replace the modification command batch factory with our wrapper-aware version
+        // to handle the NpgsqlDataReader cast issue when using wrapper connections.
+        services.Add(new ServiceDescriptor(
+            typeof(IModificationCommandBatchFactory),
+            typeof(AwsWrapperModificationCommandBatchFactory),
+            ServiceLifetime.Scoped));
     }
 
     protected override RelationalOptionsExtension Clone() => new AwsWrapperOptionsExtension(this);

@@ -20,10 +20,22 @@ public class PersonDbContext : DbContext
 {
     public DbSet<Person> Persons { get; set; }
 
+    public PersonDbContext(DbContextOptions<PersonDbContext> options)
+        : base(options)
+    {
+    }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseAwsWrapper(
-                "Host=<insert_rds_instance_here>;Username=pgadmin;Password=<password>;Database=postgres;",
-                wrappedOptionBuilder => wrappedOptionBuilder.UseNpgsql());
+    {
+        if (optionsBuilder.IsConfigured)
+        {
+            return;
+        }
+
+        optionsBuilder.UseAwsWrapper(
+            "Host=database-yan-pg.cluster-cxmsoia46djo.us-west-2.rds.amazonaws.com;Username=postgres;Password=postgres;Database=postgres;",
+            wrappedOptionBuilder => wrappedOptionBuilder.UseNpgsql());
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
