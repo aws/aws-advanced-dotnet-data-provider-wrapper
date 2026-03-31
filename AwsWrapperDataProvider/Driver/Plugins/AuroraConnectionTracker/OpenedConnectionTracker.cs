@@ -204,13 +204,6 @@ public class OpenedConnectionTracker : IConnectionTracker
         }
     }
 
-    /// <summary>
-    /// Clears all entries from the static tracking map.
-    /// </summary>
-    public static void ClearCache()
-    {
-        OpenedConnections.Clear();
-    }
 
     /// <summary>
     /// Cancels the background pruning task and clears all tracked connections.

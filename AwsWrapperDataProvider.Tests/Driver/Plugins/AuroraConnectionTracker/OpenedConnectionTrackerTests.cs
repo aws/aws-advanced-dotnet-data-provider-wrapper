@@ -16,7 +16,6 @@ using System.Data.Common;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins.AuroraConnectionTracker;
-using AwsWrapperDataProvider.Driver.Utils;
 using Moq;
 
 namespace AwsWrapperDataProvider.Tests.Driver.Plugins.AuroraConnectionTracker;
@@ -176,24 +175,6 @@ public class OpenedConnectionTrackerTests
         Assert.Equal(mockConnection.Object, conn);
     }
 
-    [Fact]
-    [Trait("Category", "Unit")]
-    public void ClearCache_EmptiesTrackingMap()
-    {
-        var mockConnection = new Mock<DbConnection>();
-        var hostSpec = new HostSpec(
-            "test-instance-1.xyz.us-east-1.rds.amazonaws.com",
-            5432,
-            HostRole.Writer,
-            HostAvailability.Available);
-
-        this.tracker.PopulateOpenedConnectionQueue(hostSpec, mockConnection.Object);
-        Assert.NotEmpty(OpenedConnectionTracker.OpenedConnections);
-
-        OpenedConnectionTracker.ClearCache();
-
-        Assert.Empty(OpenedConnectionTracker.OpenedConnections);
-    }
 
     [Fact]
     [Trait("Category", "Unit")]
