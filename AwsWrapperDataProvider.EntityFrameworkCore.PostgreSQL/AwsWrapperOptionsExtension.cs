@@ -20,29 +20,20 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL;
 
-public class AwsWrapperOptionsExtension : RelationalOptionsExtension, IDbContextOptionsExtension
+public class AwsWrapperOptionsExtension : IDbContextOptionsExtension
 {
     private AwsWrapperDbContextOptionsExtensionInfo? info;
 
-    // The full wrapper connection string (may contain Plugins=... and other wrapper-specific properties).
-    // This is kept separate from the base RelationalOptionsExtension.ConnectionString,
-    // which should only contain properties understood by the underlying provider (Npgsql).
-    public string? WrapperConnectionString { get; set; }
+    public IDbContextOptionsExtension WrappedExtension { get; set; }
 
-    // Add more AWS Wrapper settings here if needed
+    public string? WrapperConnectionString { get; set; }
 
     public AwsWrapperOptionsExtension(IDbContextOptionsExtension wrappedExtension)
     {
         this.WrappedExtension = wrappedExtension;
     }
 
-    protected internal AwsWrapperOptionsExtension(AwsWrapperOptionsExtension copyFrom) : base(copyFrom)
-    {
-        this.WrappedExtension = copyFrom.WrappedExtension;
-        this.WrapperConnectionString = copyFrom.WrapperConnectionString;
-    }
-
-    public override void ApplyServices(IServiceCollection services)
+    public void ApplyServices(IServiceCollection services)
     {
         this.WrappedExtension.ApplyServices(services);
 
@@ -80,18 +71,15 @@ public class AwsWrapperOptionsExtension : RelationalOptionsExtension, IDbContext
             p => p.GetRequiredService<IAwsWrapperRelationalConnection>(),
             ServiceLifetime.Scoped));
 
-        // Replace the modification command batch factory with our wrapper-aware version
-        // to handle the NpgsqlDataReader cast issue when using wrapper connections.
         services.Replace(new ServiceDescriptor(
             typeof(IModificationCommandBatchFactory),
             typeof(AwsWrapperModificationCommandBatchFactory),
             ServiceLifetime.Scoped));
     }
 
-    protected override RelationalOptionsExtension Clone() => new AwsWrapperOptionsExtension(this);
+    public void Validate(IDbContextOptions options)
+    {
+    }
 
-    /// <inheritdoc />
-    public override DbContextOptionsExtensionInfo Info => this.info ??= new AwsWrapperDbContextOptionsExtensionInfo(this);
-
-    public IDbContextOptionsExtension WrappedExtension { get; set; }
+    public DbContextOptionsExtensionInfo Info => this.info ??= new AwsWrapperDbContextOptionsExtensionInfo(this);
 }

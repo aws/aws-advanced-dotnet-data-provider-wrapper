@@ -35,8 +35,5 @@ public class AwsWrapperDbContextOptionsExtensionInfo : DbContextOptionsExtension
 
     public override AwsWrapperOptionsExtension Extension => (AwsWrapperOptionsExtension)base.Extension;
 
-    private string? ConnectionString =>
-        this.Extension.Connection == null
-            ? this.Extension.ConnectionString
-            : this.Extension.Connection.ConnectionString;
+    private string? ConnectionString => this.Extension.WrapperConnectionString;
 }
