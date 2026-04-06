@@ -31,17 +31,19 @@ public static class AwsWrapperDbContextOptionsBuilderExtensions
         var wrappedOptionBuilder = new DbContextOptionsBuilder();
         wrappedOptionsBuilderAction(wrappedOptionBuilder);
 
-        IDbContextOptionsExtension? targetOptionExtension = wrappedOptionBuilder.Options.Extensions.Where(x => x is not CoreOptionsExtension).FirstOrDefault();
+        IDbContextOptionsExtension? targetOptionExtension = wrappedOptionBuilder.Options.Extensions
+            .Where(x => x is not CoreOptionsExtension).FirstOrDefault();
 
-        // Extract the clean connection string from the wrapped extension (e.g. NpgsqlOptionsExtension)
-        // so that the base RelationalOptionsExtension only sees provider-understood properties.
-        // The full wrapper connection string (with Plugins=... etc.) is stored separately.
-        var wrappedRelationalExtension = targetOptionExtension as RelationalOptionsExtension;
-        var cleanConnectionString = wrappedRelationalExtension?.ConnectionString ?? connectionString;
+        // Add the wrapped provider extension (e.g. NpgsqlOptionsExtension) directly —
+        // it remains the real database provider and registers all Npgsql services.
+        ((IDbContextOptionsBuilderInfrastructure)optionsBuilder).AddOrUpdateExtension(targetOptionExtension!);
 
-        var extension = GetOrCreateExtension(optionsBuilder, targetOptionExtension!);
-        extension.WrapperConnectionString = connectionString;
-        extension = (AwsWrapperOptionsExtension)extension.WithConnectionString(cleanConnectionString);
+        // Add our wrapper extension (IsDatabaseProvider=false) which replaces
+        // IRelationalConnection and IModificationCommandBatchFactory via ApplyServices.
+        var extension = new AwsWrapperOptionsExtension(targetOptionExtension!)
+        {
+            WrapperConnectionString = connectionString,
+        };
         ((IDbContextOptionsBuilderInfrastructure)optionsBuilder).AddOrUpdateExtension(extension);
 
         ConfigureWarnings(optionsBuilder);
@@ -55,27 +57,6 @@ public static class AwsWrapperDbContextOptionsBuilderExtensions
         Action<DbContextOptionsBuilder> wrappedOptionsBuilderAction)
         where TContext : DbContext
         => (DbContextOptionsBuilder<TContext>)UseAwsWrapper((DbContextOptionsBuilder)optionsBuilder, connectionString, wrappedOptionsBuilderAction);
-
-    /// <param name="optionsBuilder">The <see cref="DbContextOptionsBuilder"/> to search.</param>
-    /// <param name="targetOptionExtension">The target <see cref="IDbContextOptionsExtension"/> to wrap.</param>
-    /// <returns>
-    /// An existing instance of <see cref="AwsWrapperOptionsExtension"/>, or a new instance if one does not exist.
-    /// </returns>
-    private static AwsWrapperOptionsExtension GetOrCreateExtension(DbContextOptionsBuilder optionsBuilder, IDbContextOptionsExtension targetOptionExtension)
-    {
-        if (optionsBuilder.Options.FindExtension<AwsWrapperOptionsExtension>() is AwsWrapperOptionsExtension existing)
-        {
-            var extension = new AwsWrapperOptionsExtension(existing)
-            {
-                WrappedExtension = targetOptionExtension,
-            };
-            return extension;
-        }
-        else
-        {
-            return new AwsWrapperOptionsExtension(targetOptionExtension);
-        }
-    }
 
     private static void ConfigureWarnings(DbContextOptionsBuilder optionsBuilder)
     {

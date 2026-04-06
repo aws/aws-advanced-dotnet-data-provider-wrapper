@@ -38,7 +38,6 @@ public class AwsWrapperModificationCommandBatchFactory : IModificationCommandBat
 
 #pragma warning disable EF1001 // Internal EF Core API usage.
         this.maxBatchSize = options.FindExtension<NpgsqlOptionsExtension>()?.MaxBatchSize
-            ?? options.FindExtension<AwsWrapperOptionsExtension>()?.MaxBatchSize
             ?? DefaultMaxBatchSize;
 #pragma warning restore EF1001 // Internal EF Core API usage.
 

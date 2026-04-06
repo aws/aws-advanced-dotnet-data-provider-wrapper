@@ -16,12 +16,13 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Update;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL;
 
 public class AwsWrapperOptionsExtension : RelationalOptionsExtension, IDbContextOptionsExtension
 {
-    private AwsWrapperDbContextOptionsExtensionInfo? _info;
+    private AwsWrapperDbContextOptionsExtensionInfo? info;
 
     // The full wrapper connection string (may contain Plugins=... and other wrapper-specific properties).
     // This is kept separate from the base RelationalOptionsExtension.ConnectionString,
@@ -43,20 +44,14 @@ public class AwsWrapperOptionsExtension : RelationalOptionsExtension, IDbContext
 
     public override void ApplyServices(IServiceCollection services)
     {
-        var wrappedServiceCollection = new WrappedServiceCollection();
-        this.WrappedExtension.ApplyServices(wrappedServiceCollection);
+        this.WrappedExtension.ApplyServices(services);
 
-        ServiceDescriptor? targetRelationalConnectionServiceDescriptor = wrappedServiceCollection
+        var targetRelationalConnectionServiceDescriptor = services
             .FirstOrDefault(x => x.ServiceType == typeof(IRelationalConnection));
 
         Type? targetRelationalConnectionType = targetRelationalConnectionServiceDescriptor?.ImplementationType;
         Func<IServiceProvider, object>? targetRelationalConnectionImplementationFactory = targetRelationalConnectionServiceDescriptor?.ImplementationFactory;
 
-        // add IDatabaseProvider
-        services.Add(new ServiceDescriptor(typeof(IDatabaseProvider), typeof(DatabaseProvider<AwsWrapperOptionsExtension>), ServiceLifetime.Singleton));
-
-        // add IRelationalConnection
-        services.Add(new ServiceDescriptor(typeof(IRelationalConnection), p => p.GetRequiredService<IAwsWrapperRelationalConnection>(), ServiceLifetime.Scoped));
         if (targetRelationalConnectionType != null)
         {
             services.Add(new ServiceDescriptor(
@@ -77,21 +72,17 @@ public class AwsWrapperOptionsExtension : RelationalOptionsExtension, IDbContext
         }
         else
         {
-            throw new Exception("not implemented");
+            throw new InvalidOperationException("Could not determine the target relational connection type or factory.");
         }
 
-        // add all other service descriptors
-        foreach (var serviceDescriptor in wrappedServiceCollection
-            .Where(x => x.ServiceType != typeof(IDatabaseProvider)
-                && x.ServiceType != typeof(IRelationalConnection)
-                && x.ServiceType != typeof(IModificationCommandBatchFactory)))
-        {
-            services.Add(serviceDescriptor);
-        }
+        services.Replace(new ServiceDescriptor(
+            typeof(IRelationalConnection),
+            p => p.GetRequiredService<IAwsWrapperRelationalConnection>(),
+            ServiceLifetime.Scoped));
 
         // Replace the modification command batch factory with our wrapper-aware version
         // to handle the NpgsqlDataReader cast issue when using wrapper connections.
-        services.Add(new ServiceDescriptor(
+        services.Replace(new ServiceDescriptor(
             typeof(IModificationCommandBatchFactory),
             typeof(AwsWrapperModificationCommandBatchFactory),
             ServiceLifetime.Scoped));
@@ -100,7 +91,7 @@ public class AwsWrapperOptionsExtension : RelationalOptionsExtension, IDbContext
     protected override RelationalOptionsExtension Clone() => new AwsWrapperOptionsExtension(this);
 
     /// <inheritdoc />
-    public override DbContextOptionsExtensionInfo Info => this._info ??= new AwsWrapperDbContextOptionsExtensionInfo(this);
+    public override DbContextOptionsExtensionInfo Info => this.info ??= new AwsWrapperDbContextOptionsExtensionInfo(this);
 
     public IDbContextOptionsExtension WrappedExtension { get; set; }
 }

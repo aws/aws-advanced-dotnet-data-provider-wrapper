@@ -20,7 +20,7 @@ public class AwsWrapperDbContextOptionsExtensionInfo : DbContextOptionsExtension
 {
     public AwsWrapperDbContextOptionsExtensionInfo(AwsWrapperOptionsExtension optionsExtension) : base(optionsExtension) { }
 
-    public override bool IsDatabaseProvider => true;
+    public override bool IsDatabaseProvider => false;
 
     public override string LogFragment => $"Using AWS Wrapper Provider - ConnectionString: {this.ConnectionString}";
 
