@@ -46,7 +46,7 @@ public class AwsWrapperModificationCommandBatch : ReaderModificationCommandBatch
         int maxBatchSize)
         : base(dependencies)
     {
-        MaxBatchSize = maxBatchSize;
+        this.MaxBatchSize = maxBatchSize;
     }
 
     /// <inheritdoc />
@@ -65,32 +65,38 @@ public class AwsWrapperModificationCommandBatch : ReaderModificationCommandBatch
 
     /// <inheritdoc />
     protected override void Consume(RelationalDataReader reader)
-        => ConsumeInternal(reader, async: false).GetAwaiter().GetResult();
+        => this.ConsumeInternal(reader, async: false).GetAwaiter().GetResult();
 
     /// <inheritdoc />
     protected override Task ConsumeAsync(RelationalDataReader reader, CancellationToken cancellationToken = default)
-        => ConsumeInternal(reader, async: true, cancellationToken);
+        => this.ConsumeInternal(reader, async: true, cancellationToken);
 
     private async Task ConsumeInternal(RelationalDataReader reader, bool async, CancellationToken cancellationToken = default)
     {
         var npgsqlReader = UnwrapNpgsqlDataReader(reader.DbDataReader);
+
+#pragma warning disable 618
+        Debug.Assert(
+            npgsqlReader is null || npgsqlReader.Statements.Count == this.ModificationCommands.Count,
+            $"Reader has {npgsqlReader?.Statements.Count} statements, expected {this.ModificationCommands.Count}");
+#pragma warning restore 618
 
         var commandIndex = 0;
 
         try
         {
             bool? onResultSet = null;
-            while (commandIndex < ModificationCommands.Count)
+            while (commandIndex < this.ModificationCommands.Count)
             {
-                var command = ModificationCommands[commandIndex];
+                var command = this.ModificationCommands[commandIndex];
 
-                if (ResultSetMappings[commandIndex].HasFlag(ResultSetMapping.HasResultRow))
+                if (this.ResultSetMappings[commandIndex].HasFlag(ResultSetMapping.HasResultRow))
                 {
                     if (async)
                     {
                         if (!(await reader.ReadAsync(cancellationToken).ConfigureAwait(false)))
                         {
-                            await ThrowAggregateUpdateConcurrencyExceptionAsync(reader, commandIndex, 1, 0, cancellationToken)
+                            await this.ThrowAggregateUpdateConcurrencyExceptionAsync(reader, commandIndex, 1, 0, cancellationToken)
                                 .ConfigureAwait(false);
                         }
                     }
@@ -98,7 +104,7 @@ public class AwsWrapperModificationCommandBatch : ReaderModificationCommandBatch
                     {
                         if (!reader.Read())
                         {
-                            ThrowAggregateUpdateConcurrencyException(reader, commandIndex, 1, 0);
+                            this.ThrowAggregateUpdateConcurrencyException(reader, commandIndex, 1, 0);
                         }
                     }
 
@@ -130,7 +136,7 @@ public class AwsWrapperModificationCommandBatch : ReaderModificationCommandBatch
 
                         if (reader.DbDataReader.GetInt32(readerIndex) != 1)
                         {
-                            await ThrowAggregateUpdateConcurrencyExceptionAsync(reader, commandIndex, 1, 0, cancellationToken)
+                            await this.ThrowAggregateUpdateConcurrencyExceptionAsync(reader, commandIndex, 1, 0, cancellationToken)
                                 .ConfigureAwait(false);
                         }
                     }
@@ -145,7 +151,7 @@ public class AwsWrapperModificationCommandBatch : ReaderModificationCommandBatch
                 }
                 else
                 {
-                    Debug.Assert(ResultSetMappings[commandIndex] == ResultSetMapping.NoResults);
+                    Debug.Assert(this.ResultSetMappings[commandIndex] == ResultSetMapping.NoResults);
 
 #pragma warning disable 618
                     if (npgsqlReader is not null
@@ -154,12 +160,12 @@ public class AwsWrapperModificationCommandBatch : ReaderModificationCommandBatch
                     {
                         if (async)
                         {
-                            await ThrowAggregateUpdateConcurrencyExceptionAsync(reader, commandIndex, 1, 0, cancellationToken)
+                            await this.ThrowAggregateUpdateConcurrencyExceptionAsync(reader, commandIndex, 1, 0, cancellationToken)
                                 .ConfigureAwait(false);
                         }
                         else
                         {
-                            ThrowAggregateUpdateConcurrencyException(reader, commandIndex, 1, 0);
+                            this.ThrowAggregateUpdateConcurrencyException(reader, commandIndex, 1, 0);
                         }
                     }
 #pragma warning restore 618
@@ -169,12 +175,12 @@ public class AwsWrapperModificationCommandBatch : ReaderModificationCommandBatch
 
             if (onResultSet == true)
             {
-                Dependencies.UpdateLogger.UnexpectedTrailingResultSetWhenSaving();
+                this.Dependencies.UpdateLogger.UnexpectedTrailingResultSetWhenSaving();
             }
         }
         catch (Exception ex) when (ex is not DbUpdateException and not OperationCanceledException)
         {
-            if (commandIndex == ModificationCommands.Count)
+            if (commandIndex == this.ModificationCommands.Count)
             {
                 commandIndex--;
             }
@@ -182,7 +188,7 @@ public class AwsWrapperModificationCommandBatch : ReaderModificationCommandBatch
             throw new DbUpdateException(
                 RelationalStrings.UpdateStoreException,
                 ex,
-                ModificationCommands[commandIndex].Entries);
+                this.ModificationCommands[commandIndex].Entries);
         }
     }
 
@@ -219,7 +225,7 @@ public class AwsWrapperModificationCommandBatch : ReaderModificationCommandBatch
         var entries = new List<IUpdateEntry>();
         for (var i = endIndex - commandCount; i < endIndex; i++)
         {
-            entries.AddRange(ModificationCommands[i].Entries);
+            entries.AddRange(this.ModificationCommands[i].Entries);
         }
 
         return entries;
@@ -232,13 +238,13 @@ public class AwsWrapperModificationCommandBatch : ReaderModificationCommandBatch
         int expectedRowsAffected,
         int rowsAffected)
     {
-        var entries = AggregateEntries(commandIndex + 1, expectedRowsAffected);
+        var entries = this.AggregateEntries(commandIndex + 1, expectedRowsAffected);
         var exception = new DbUpdateConcurrencyException(
             RelationalStrings.UpdateConcurrencyException(expectedRowsAffected, rowsAffected),
             entries);
 
-        if (!Dependencies.UpdateLogger.OptimisticConcurrencyException(
-                Dependencies.CurrentContext.Context,
+        if (!this.Dependencies.UpdateLogger.OptimisticConcurrencyException(
+                this.Dependencies.CurrentContext.Context,
                 entries,
                 exception,
                 (c, ex, e, d) => CreateConcurrencyExceptionEventData(c, reader, ex, e, d)).IsSuppressed)
@@ -255,13 +261,13 @@ public class AwsWrapperModificationCommandBatch : ReaderModificationCommandBatch
         int rowsAffected,
         CancellationToken cancellationToken)
     {
-        var entries = AggregateEntries(commandIndex + 1, expectedRowsAffected);
+        var entries = this.AggregateEntries(commandIndex + 1, expectedRowsAffected);
         var exception = new DbUpdateConcurrencyException(
             RelationalStrings.UpdateConcurrencyException(expectedRowsAffected, rowsAffected),
             entries);
 
-        if (!(await Dependencies.UpdateLogger.OptimisticConcurrencyExceptionAsync(
-                    Dependencies.CurrentContext.Context,
+        if (!(await this.Dependencies.UpdateLogger.OptimisticConcurrencyExceptionAsync(
+                    this.Dependencies.CurrentContext.Context,
                     entries,
                     exception,
                     (c, ex, e, d) => CreateConcurrencyExceptionEventData(c, reader, ex, e, d),

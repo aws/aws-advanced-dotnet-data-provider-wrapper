@@ -32,9 +32,10 @@ public class PersonDbContext : DbContext
             return;
         }
 
+        var connectionString = EFUtils.GetNpgsqlConnectionString();
         optionsBuilder.UseAwsWrapper(
-            "Host=database-yan-pg.cluster-cxmsoia46djo.us-west-2.rds.amazonaws.com;Username=postgres;Password=postgres;Database=postgres;",
-            wrappedOptionBuilder => wrappedOptionBuilder.UseNpgsql());
+            connectionString,
+            wrappedOptionBuilder => wrappedOptionBuilder.UseNpgsql(connectionString));
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

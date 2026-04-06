@@ -53,6 +53,6 @@ public class EFUtils
             Timeout = 30,
         };
 
-        return builder.ConnectionString + ";Plugins=;";
+        return builder.ConnectionString;
     }
 }

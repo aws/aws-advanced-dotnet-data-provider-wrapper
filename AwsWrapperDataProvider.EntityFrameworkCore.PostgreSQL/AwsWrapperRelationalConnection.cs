@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using System.Data.Common;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL;

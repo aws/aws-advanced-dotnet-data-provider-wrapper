@@ -95,12 +95,21 @@ public class ContainerHelper {
 
     // For Entity Framework tests
     if (task.endsWith("ef")) {
+        String efProject;
+        if (task.startsWith("pg")) {
+            efProject = "AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL.Tests";
+        } else if (task.startsWith("mysql")) {
+            efProject = "AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.Tests";
+        } else {
+            throw new IllegalArgumentException("Unknown EF task prefix: " + task);
+        }
+
         exitCode = execInContainer(container, consumer,
-                "dotnet", "ef", "migrations", "add", "InitialCreate_" + System.currentTimeMillis(), "--project", "AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.Tests");
+                "dotnet", "ef", "migrations", "add", "InitialCreate_" + System.currentTimeMillis(), "--project", efProject);
         assertEquals(0, exitCode, "Failed to generate Entity framework migration.");
 
         exitCode = execInContainer(container, consumer,
-                "dotnet", "ef", "database", "update", "--project", "AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.Tests");
+                "dotnet", "ef", "database", "update", "--project", efProject);
         assertEquals(0, exitCode, "Failed to update database with migration");
     }
 

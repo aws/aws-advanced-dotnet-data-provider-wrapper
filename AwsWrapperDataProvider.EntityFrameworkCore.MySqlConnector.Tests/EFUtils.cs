@@ -16,6 +16,7 @@ using System.Text.Json;
 using MySqlConnector;
 
 namespace AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests;
+
 public class EFUtils
 {
     public static string GetMySqlConnectionString()

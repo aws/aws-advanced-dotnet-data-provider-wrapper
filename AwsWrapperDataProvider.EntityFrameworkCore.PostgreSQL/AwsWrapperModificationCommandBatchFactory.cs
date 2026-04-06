@@ -12,10 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Update;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Infrastructure.Internal;
 
@@ -29,27 +27,29 @@ public class AwsWrapperModificationCommandBatchFactory : IModificationCommandBat
 {
     private const int DefaultMaxBatchSize = 1000;
 
-    private readonly ModificationCommandBatchFactoryDependencies _dependencies;
-    private readonly int _maxBatchSize;
+    private readonly ModificationCommandBatchFactoryDependencies dependencies;
+    private readonly int maxBatchSize;
 
     public AwsWrapperModificationCommandBatchFactory(
         ModificationCommandBatchFactoryDependencies dependencies,
         IDbContextOptions options)
     {
-        _dependencies = dependencies;
+        this.dependencies = dependencies;
 
-        _maxBatchSize = options.FindExtension<NpgsqlOptionsExtension>()?.MaxBatchSize
+#pragma warning disable EF1001 // Internal EF Core API usage.
+        this.maxBatchSize = options.FindExtension<NpgsqlOptionsExtension>()?.MaxBatchSize
             ?? options.FindExtension<AwsWrapperOptionsExtension>()?.MaxBatchSize
             ?? DefaultMaxBatchSize;
+#pragma warning restore EF1001 // Internal EF Core API usage.
 
-        if (_maxBatchSize <= 0)
+        if (this.maxBatchSize <= 0)
         {
             throw new ArgumentOutOfRangeException(
                 nameof(RelationalOptionsExtension.MaxBatchSize),
-                RelationalStrings.InvalidMaxBatchSize(_maxBatchSize));
+                RelationalStrings.InvalidMaxBatchSize(this.maxBatchSize));
         }
     }
 
     public virtual ModificationCommandBatch Create()
-        => new AwsWrapperModificationCommandBatch(_dependencies, _maxBatchSize);
+        => new AwsWrapperModificationCommandBatch(this.dependencies, this.maxBatchSize);
 }
