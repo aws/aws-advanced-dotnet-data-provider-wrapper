@@ -1,4 +1,4 @@
-﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -169,7 +169,6 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
         using (var db = new PersonDbContext(options))
         {
-            db.Database.EnsureCreated();
             db.Database.ExecuteSqlRaw($"Truncate table persons;");
         }
 
@@ -243,7 +242,6 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
         using (var db = new PersonDbContext(options))
         {
-            db.Database.EnsureCreated();
             await db.Database.ExecuteSqlRawAsync($"Truncate table persons;", TestContext.Current.CancellationToken);
         }
 
@@ -316,7 +314,6 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
         using (var db = new PersonDbContext(options))
         {
-            db.Database.EnsureCreated();
             db.Database.ExecuteSqlRaw($"Truncate table persons;");
         }
 
@@ -413,7 +410,6 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
         using (var db = new PersonDbContext(options))
         {
-            db.Database.EnsureCreated();
             await db.Database.ExecuteSqlRawAsync($"Truncate table persons;", TestContext.Current.CancellationToken);
         }
 
@@ -511,7 +507,6 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
         using (var db = new PersonDbContext(options))
         {
-            db.Database.EnsureCreated();
             db.Database.ExecuteSqlRaw($"Truncate table persons;");
         }
 
@@ -604,7 +599,6 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
         using (var db = new PersonDbContext(options))
         {
-            db.Database.EnsureCreated();
             await db.Database.ExecuteSqlRawAsync($"Truncate table persons;", TestContext.Current.CancellationToken);
         }
 
