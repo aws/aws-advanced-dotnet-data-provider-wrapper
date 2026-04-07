@@ -19,6 +19,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 
+[assembly: CollectionBehavior(DisableTestParallelization = true)]
+[assembly: CaptureConsole]
+
 namespace AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL.Tests;
 
 public class EntityFrameworkConnectivityTests : IntegrationTestBase
