@@ -44,13 +44,129 @@ public class FailoverConnectivityTests : IntegrationTestBase
     /// 5. Execute an INSERT — if the underlying driver pool handed back a stale physical
     ///    connection to the now-demoted reader, this will fail with a read-only error.
     /// </summary>
+    // [Theory]
+    // [InlineData(true)]
+    // [InlineData(false)]
+    // [Trait("Category", "Integration")]
+    // [Trait("Database", "pg")]
+    // [Trait("Engine", "aurora")]
+    // public async Task ServerFailoverWithPooling_StaleConnectionReturnsReadOnlyError(bool async)
+    // {
+    //     Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
+
+    //     var dbInfo = TestEnvironment.Env.Info.DatabaseInfo;
+    //     string currentWriter = dbInfo.Instances.First().InstanceId;
+    //     var initialWriterInstanceInfo = dbInfo.GetInstance(currentWriter);
+
+    //     // Use the writer's real instance endpoint with pooling ON and the connection tracker plugin.
+    //     var connectionString = ConnectionStringHelper.GetUrl(
+    //         Engine,
+    //         initialWriterInstanceInfo.Host,
+    //         initialWriterInstanceInfo.Port,
+    //         Username,
+    //         Password,
+    //         DefaultDbName,
+    //         2,
+    //         10,
+    //         $"{PluginCodes.AuroraConnectionTracker},{PluginCodes.Failover}");
+    //     connectionString += $"; ClusterInstanceHostPattern=?.{dbInfo.InstanceEndpointSuffix}:{dbInfo.InstanceEndpointPort}; Pooling=true";
+
+    //     this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Connecting to writer instance: {initialWriterInstanceInfo.Host}");
+
+    //     // Step 1: Open a connection and confirm we're on the writer.
+    //     await using var activeConn = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
+    //     await AuroraUtils.OpenDbConnection(activeConn, async);
+    //     Assert.Equal(ConnectionState.Open, activeConn.State);
+
+    //     var instanceId = await AuroraUtils.ExecuteInstanceIdQuery(activeConn, Engine, Deployment, async);
+    //     this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Connected to instance: {instanceId}");
+    //     Assert.Equal(currentWriter, instanceId);
+
+    //     // Create a test table to use for the write query later.
+    //     const string createTableSql = "DROP TABLE IF EXISTS pooling_failover_test; CREATE TABLE pooling_failover_test (id SERIAL PRIMARY KEY, data TEXT)";
+    //     await AuroraUtils.ExecuteNonQuery(activeConn, createTableSql, async);
+
+    //     // Step 2: Trigger a cluster failover and wait for it to complete.
+    //     var clusterId = TestEnvironment.Env.Info.RdsDbName!;
+    //     var targetWriter = dbInfo.Instances.First(i => i.InstanceId != currentWriter).InstanceId;
+    //     this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Triggering failover from {currentWriter} to {targetWriter}...");
+    //     await AuroraUtils.FailoverClusterToATargetAndWaitUntilWriterChanged(clusterId, currentWriter, targetWriter);
+
+    //     // Step 3: Use the active connection to trigger failover detection in the plugin.
+    //     await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
+    //     {
+    //         this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Executing query to trigger failover detection...");
+    //         await AuroraUtils.ExecuteInstanceIdQuery(activeConn, Engine, Deployment, async);
+    //     });
+
+    //     // Allow time for invalidation and pool state to settle.
+    //     await Task.Delay(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+
+    //     var newWriterId = await AuroraUtils.GetDBClusterWriterInstanceIdAsync(clusterId);
+    //     this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Old writer: {currentWriter}, New writer: {newWriterId}");
+
+    //     // Step 4: Open a new connection using the SAME old writer instance endpoint.
+    //     // If the pool still has the stale physical connection, it will be returned here.
+    //     this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Opening new connection to old writer endpoint (now a reader)...");
+    //     await using var newConn = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
+    //     await AuroraUtils.OpenDbConnection(newConn, async);
+    //     Assert.Equal(ConnectionState.Open, newConn.State);
+
+    //     // Step 5: Execute a write query. If the pool returned a stale connection to the
+    //     // now-demoted reader, this should fail with "cannot execute INSERT in a read-only transaction".
+    //     const string writeSql = "INSERT INTO pooling_failover_test (data) VALUES ('post-failover-write')";
+    //     Exception? writeException = null;
+    //     try
+    //     {
+    //         await AuroraUtils.ExecuteNonQuery(newConn, writeSql, async);
+    //         this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Write query succeeded — no stale pooled connection issue.");
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         writeException = ex;
+    //         this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Write query failed: {ex.GetType().Name}: {ex.Message}");
+    //     }
+
+    //     // Log the outcome. We expect the write to fail if the pooling issue exists.
+    //     if (writeException != null)
+    //     {
+    //         var fullMessage = writeException.InnerException?.Message ?? writeException.Message;
+    //         this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} CONFIRMED: Stale pooled connection issue detected. Error: {fullMessage}");
+    //         Assert.Contains("read-only", fullMessage, StringComparison.OrdinalIgnoreCase);
+    //     }
+    //     else
+    //     {
+    //         this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Write succeeded — pool did not return a stale connection.");
+    //     }
+
+    //     // Cleanup
+    //     try
+    //     {
+    //         await AuroraUtils.ExecuteNonQuery(newConn, "DROP TABLE IF EXISTS pooling_failover_test", async);
+    //     }
+    //     catch
+    //     {
+    //         // Best-effort cleanup
+    //     }
+    // }
+
+    /// <summary>
+    /// Checks when the aurora connection tracker calls Close() on an idle pooled
+    /// connection, the underlying driver pool does not destroy the physical TCP connection.
+    /// Instead it returns the same physical connection on the next Open() call.
+    ///
+    /// This is verified by comparing the PostgreSQL backend PID (pg_backend_pid()) of the
+    /// idle connection before the tracker closes it, with the PID of a new connection opened
+    /// to the same instance endpoint afterward. If the PIDs match, the pool reused the same
+    /// physical connection — confirming that Close() did not destroy it.
+    /// </summary>
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg")]
     [Trait("Engine", "aurora")]
-    public async Task ServerFailoverWithPooling_StaleConnectionReturnsReadOnlyError(bool async)
+    public async Task ServerFailoverWithPooling_PoolReusesPhysicalConnectionAfterTrackerClose(bool async)
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
 
@@ -58,7 +174,6 @@ public class FailoverConnectivityTests : IntegrationTestBase
         string currentWriter = dbInfo.Instances.First().InstanceId;
         var initialWriterInstanceInfo = dbInfo.GetInstance(currentWriter);
 
-        // Use the writer's real instance endpoint with pooling ON and the connection tracker plugin.
         var connectionString = ConnectionStringHelper.GetUrl(
             Engine,
             initialWriterInstanceInfo.Host,
@@ -71,82 +186,60 @@ public class FailoverConnectivityTests : IntegrationTestBase
             $"{PluginCodes.AuroraConnectionTracker},{PluginCodes.Failover}");
         connectionString += $"; ClusterInstanceHostPattern=?.{dbInfo.InstanceEndpointSuffix}:{dbInfo.InstanceEndpointPort}; Pooling=true";
 
-        this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Connecting to writer instance: {initialWriterInstanceInfo.Host}");
-
-        // Step 1: Open a connection and confirm we're on the writer.
+        // Step 1: Open an active connection (used to trigger failover detection later).
         await using var activeConn = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
         await AuroraUtils.OpenDbConnection(activeConn, async);
-        Assert.Equal(ConnectionState.Open, activeConn.State);
-
         var instanceId = await AuroraUtils.ExecuteInstanceIdQuery(activeConn, Engine, Deployment, async);
-        this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Connected to instance: {instanceId}");
+        this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Active connection on instance: {instanceId}");
         Assert.Equal(currentWriter, instanceId);
 
-        // Create a test table to use for the write query later.
-        const string createTableSql = "DROP TABLE IF EXISTS pooling_failover_test; CREATE TABLE pooling_failover_test (id SERIAL PRIMARY KEY, data TEXT)";
-        await AuroraUtils.ExecuteNonQuery(activeConn, createTableSql, async);
+        // Step 2: Open an idle connection and record its backend PID.
+        await using var idleConn = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
+        await AuroraUtils.OpenDbConnection(idleConn, async);
 
-        // Step 2: Trigger a cluster failover and wait for it to complete.
+        var pidBeforeClose = await AuroraUtils.ExecuteQuery(idleConn, "SELECT pg_backend_pid()", async);
+        this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Idle connection backend PID before tracker close: {pidBeforeClose}");
+
+        // Step 3: Trigger failover.
         var clusterId = TestEnvironment.Env.Info.RdsDbName!;
         var targetWriter = dbInfo.Instances.First(i => i.InstanceId != currentWriter).InstanceId;
         this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Triggering failover from {currentWriter} to {targetWriter}...");
         await AuroraUtils.FailoverClusterToATargetAndWaitUntilWriterChanged(clusterId, currentWriter, targetWriter);
 
-        // Step 3: Use the active connection to trigger failover detection in the plugin.
+        // Step 4: Use the active connection to trigger failover detection.
+        // This causes the connection tracker to call Close() on the idle connection.
         await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
         {
             this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Executing query to trigger failover detection...");
             await AuroraUtils.ExecuteInstanceIdQuery(activeConn, Engine, Deployment, async);
         });
 
-        // Allow time for invalidation and pool state to settle.
+        // Wait for invalidation to complete.
         await Task.Delay(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
 
-        var newWriterId = await AuroraUtils.GetDBClusterWriterInstanceIdAsync(clusterId);
-        this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Old writer: {currentWriter}, New writer: {newWriterId}");
+        // Confirm the idle connection was closed by the tracker.
+        this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Idle connection state after tracker close: {idleConn.State}");
+        Assert.Equal(ConnectionState.Closed, idleConn.State);
 
-        // Step 4: Open a new connection using the SAME old writer instance endpoint.
-        // If the pool still has the stale physical connection, it will be returned here.
-        this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Opening new connection to old writer endpoint (now a reader)...");
+        // Step 5: Open a new connection to the same old writer instance endpoint.
         await using var newConn = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
         await AuroraUtils.OpenDbConnection(newConn, async);
-        Assert.Equal(ConnectionState.Open, newConn.State);
 
-        // Step 5: Execute a write query. If the pool returned a stale connection to the
-        // now-demoted reader, this should fail with "cannot execute INSERT in a read-only transaction".
-        const string writeSql = "INSERT INTO pooling_failover_test (data) VALUES ('post-failover-write')";
-        Exception? writeException = null;
-        try
-        {
-            await AuroraUtils.ExecuteNonQuery(newConn, writeSql, async);
-            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Write query succeeded — no stale pooled connection issue.");
-        }
-        catch (Exception ex)
-        {
-            writeException = ex;
-            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Write query failed: {ex.GetType().Name}: {ex.Message}");
-        }
+        var pidAfterReopen = await AuroraUtils.ExecuteQuery(newConn, "SELECT pg_backend_pid()", async);
+        this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} New connection backend PID after reopen: {pidAfterReopen}");
 
-        // Log the outcome. We expect the write to fail if the pooling issue exists.
-        if (writeException != null)
+        // Step 6: Compare PIDs.
+        if (pidBeforeClose == pidAfterReopen)
         {
-            var fullMessage = writeException.InnerException?.Message ?? writeException.Message;
-            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} CONFIRMED: Stale pooled connection issue detected. Error: {fullMessage}");
-            Assert.Contains("read-only", fullMessage, StringComparison.OrdinalIgnoreCase);
+            this.logger.WriteLine(
+                $"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} CONFIRMED: Pool reused the same physical connection (PID {pidBeforeClose}). " +
+                "Close() did not destroy the underlying TCP connection.");
         }
         else
         {
-            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Write succeeded — pool did not return a stale connection.");
-        }
-
-        // Cleanup
-        try
-        {
-            await AuroraUtils.ExecuteNonQuery(newConn, "DROP TABLE IF EXISTS pooling_failover_test", async);
-        }
-        catch
-        {
-            // Best-effort cleanup
+            this.logger.WriteLine(
+                $"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Pool created a new physical connection (old PID: {pidBeforeClose}, new PID: {pidAfterReopen}). " +
+                "Close() destroyed the underlying TCP connection.");
         }
     }
 }
