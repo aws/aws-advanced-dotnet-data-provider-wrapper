@@ -76,7 +76,6 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
         using (var db = new PersonDbContext(options))
         {
-            db.Database.EnsureCreated();
             db.Database.ExecuteSqlRaw($"Truncate table persons;");
         }
 
@@ -120,7 +119,6 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
         using (var db = new PersonDbContext(options))
         {
-            db.Database.EnsureCreated();
             await db.Database.ExecuteSqlRawAsync($"Truncate table persons;", TestContext.Current.CancellationToken);
         }
 

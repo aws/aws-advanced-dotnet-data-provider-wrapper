@@ -372,12 +372,23 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         }
 
         DateTime endTime = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+        Logger.LogTrace(Resources.ClusterTopologyMonitor_WaitTillTopologyGetsUpdated_EndTime, timeoutMs, endTime.ToString("yyyy-MM-dd HH:mm:ss.fff"));
         IList<HostSpec>? latestHosts = [];
         lock (this.topologyUpdatedLock)
         {
-            while (this.topologyMap.TryGetValue(this.clusterId, out latestHosts) &&
-                ReferenceEquals(currentHosts, latestHosts) && DateTime.UtcNow < endTime)
+            while (DateTime.UtcNow < endTime)
             {
+                if (!this.topologyMap.TryGetValue(this.clusterId, out latestHosts))
+                {
+                    // Cache entry expired — treat as "not yet updated" and keep waiting.
+                    latestHosts = null;
+                }
+                else if (!ReferenceEquals(currentHosts, latestHosts))
+                {
+                    // Topology has been updated with a new reference.
+                    break;
+                }
+
                 Logger.LogTrace(Resources.ClusterTopologyMonitor_RunMonitoringLoop_WaitingUpdatedLock);
                 if (Monitor.Wait(this.topologyUpdatedLock, 1000))
                 {
