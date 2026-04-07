@@ -25,7 +25,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        dbEngine: ["pg"]
+        dbEngine: ["mysql", "pg"]
         deployment: ["aurora"]
         exclude:
           - dbEngine: "mysql"
