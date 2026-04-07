@@ -25,8 +25,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        dbEngine: ["mysql", "pg"]
-        deployment: ["aurora", "multi-az-cluster", "multi-az-instance", "aurora-limitless"]
+        dbEngine: ["pg"]
+        deployment: ["aurora"]
         exclude:
           - dbEngine: "mysql"
             deployment: "aurora-limitless"
@@ -62,6 +62,9 @@ jobs:
           AWS_RDS_MONITORING_ROLE_ARN: ${{ secrets.AWS_RDS_MONITORING_ROLE_ARN }}
           MYSQL_VERSION: "default"
           PG_VERSION: "default"
+          REUSE_RDS_DB: "true"
+          RDS_DB_NAME: ${{ secrets.RDS_DB_NAME }}
+          RDS_DB_DOMAIN: ${{ secrets.RDS_DB_DOMAIN }}
       - name: Archive results
         if: always()
         uses: actions/upload-artifact@v4

@@ -16,13 +16,11 @@ using System.Data;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
 using AwsWrapperDataProvider.Tests.Container.Utils;
-using Npgsql;
 
 namespace AwsWrapperDataProvider.Tests;
 
 public class FailoverConnectivityTests : IntegrationTestBase
 {
-    private const int IdleConnectionsNum = 5;
     private readonly ITestOutputHelper logger;
 
     protected override bool MakeSureFirstInstanceWriter => true;
@@ -33,1011 +31,122 @@ public class FailoverConnectivityTests : IntegrationTestBase
     }
 
     /// <summary>
-    /// Current writer dies, driver failover occurs when executing a method against the connection.
+    /// Verifies that after a writer failover, reopening a connection to the old writer's
+    /// instance endpoint with pooling enabled does not silently return a stale pooled
+    /// connection that is now pointing to a reader.
+    ///
+    /// Steps:
+    /// 1. Connect to the current writer using its instance endpoint with Pooling=true.
+    /// 2. Trigger a cluster failover so the writer role moves to a different instance.
+    /// 3. The active connection detects the failover (FailoverSuccessException), which
+    ///    causes the aurora connection tracker to invalidate (Close) tracked connections.
+    /// 4. Open a brand-new wrapper connection using the same old writer instance endpoint.
+    /// 5. Execute an INSERT — if the underlying driver pool handed back a stale physical
+    ///    connection to the now-demoted reader, this will fail with a read-only error.
     /// </summary>
-    /// <param name="async">True if testing async calls, false if testing sync calls.</param>
-    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
     [Trait("Category", "Integration")]
-    [Trait("Database", "mysql")]
     [Trait("Database", "pg")]
     [Trait("Engine", "aurora")]
-    [Trait("Engine", "multi-az-cluster")]
-    public async Task WriterFailover_FailOnConnectionInvocation(bool async)
+    public async Task ServerFailoverWithPooling_StaleConnectionReturnsReadOnlyError(bool async)
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
-        string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
-        var initialWriterInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.GetInstance(currentWriter);
 
+        var dbInfo = TestEnvironment.Env.Info.DatabaseInfo;
+        string currentWriter = dbInfo.Instances.First().InstanceId;
+        var initialWriterInstanceInfo = dbInfo.GetInstance(currentWriter);
+
+        // Use the writer's real instance endpoint with pooling ON and the connection tracker plugin.
         var connectionString = ConnectionStringHelper.GetUrl(
             Engine,
             initialWriterInstanceInfo.Host,
             initialWriterInstanceInfo.Port,
             Username,
             Password,
-            ProxyDatabaseInfo!.DefaultDbName,
-            2,
-            10,
-            "failover");
-        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo!.InstanceEndpointSuffix}:{ProxyDatabaseInfo!.InstanceEndpointPort}; Pooling=false";
-
-        using AwsWrapperConnection connection = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
-        await AuroraUtils.OpenDbConnection(connection, async);
-        Assert.Equal(ConnectionState.Open, connection.State);
-
-        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var crashTask = AuroraUtils.CrashInstance(currentWriter, tcs);
-
-        // Wait for simulation to start
-        await tcs.Task;
-
-        await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
-        {
-            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Executing instance ID query to trigger failover...");
-            await AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, async);
-        });
-
-        await crashTask;
-
-        Assert.NotNull(AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, false));
-    }
-
-    /// <summary>
-    /// Current writer dies, driver failover occurs when executing a method against the connection.
-    /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Fact]
-    [Trait("Category", "Integration")]
-    [Trait("Database", "mysql")]
-    [Trait("Database", "pg")]
-    [Trait("Engine", "aurora")]
-    [Trait("Engine", "multi-az-cluster")]
-    public async Task WriterFailover_FailOnConnectionInvocation_WithPooling()
-    {
-        Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
-        string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
-        var initialWriterInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.GetInstance(currentWriter);
-
-        var connectionString = ConnectionStringHelper.GetUrl(
-            Engine,
-            initialWriterInstanceInfo.Host,
-            initialWriterInstanceInfo.Port,
-            Username,
-            Password,
-            ProxyDatabaseInfo!.DefaultDbName,
-            2,
-            10,
-            "failover");
-        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo!.InstanceEndpointSuffix}:{ProxyDatabaseInfo!.InstanceEndpointPort}; Pooling=true";
-
-        using AwsWrapperConnection connection = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
-        connection.Open();
-        Assert.Equal(ConnectionState.Open, connection.State);
-
-        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var crashTask = AuroraUtils.CrashInstance(currentWriter, tcs);
-
-        // Wait for simulation to start
-        await tcs.Task;
-
-        await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
-        {
-            this.logger.WriteLine("Executing instance ID query to trigger failover...");
-            await AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, false);
-        });
-
-        await crashTask;
-
-        Assert.NotNull(AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, false));
-    }
-
-    /// <summary>
-    /// Current reader dies, no other reader instance, failover to writer.
-    /// </summary>
-    /// <param name="async">True if testing async calls, false if testing sync calls.</param>
-    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    [Trait("Category", "Integration")]
-    [Trait("Database", "mysql")]
-    [Trait("Database", "pg")]
-    [Trait("Engine", "aurora")]
-    [Trait("Engine", "multi-az-cluster")]
-    public async Task FailFromReaderToWriter(bool async)
-    {
-        Assert.SkipWhen(NumberOfInstances != 2, "Skipped due to test requiring number of database instances = 2.");
-
-        // Connect to the only available reader instance
-        string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
-        var readerInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances[1];
-
-        var connectionString = ConnectionStringHelper.GetUrl(
-            Engine,
-            readerInstanceInfo.Host,
-            readerInstanceInfo.Port,
-            Username,
-            Password,
-            ProxyDatabaseInfo!.DefaultDbName,
-            2,
-            10,
-            "failover");
-        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo!.InstanceEndpointSuffix}:{ProxyDatabaseInfo!.InstanceEndpointPort}";
-
-        using AwsWrapperConnection connection = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
-        await AuroraUtils.OpenDbConnection(connection, async);
-        Assert.Equal(ConnectionState.Open, connection.State);
-
-        await ProxyHelper.DisableConnectivityAsync(readerInstanceInfo.InstanceId);
-
-        await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
-        {
-            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Executing instance ID query to trigger failover...");
-            await AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, async);
-        });
-
-        // Assert that we are currently connected to the writer instance.
-        var currentConnectionId = await AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, async);
-        Assert.NotNull(currentConnectionId);
-        Assert.Equal(currentWriter, currentConnectionId);
-        Assert.True(await AuroraUtils.IsDBInstanceWriterAsync(currentConnectionId));
-    }
-
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    [Trait("Category", "Integration")]
-    [Trait("Database", "mysql")]
-    [Trait("Database", "pg")]
-    [Trait("Engine", "aurora")]
-    [Trait("Engine", "multi-az-cluster")]
-    public async Task WriterFailover_WriterReelected(bool async)
-    {
-        Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
-
-        string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
-        var initialWriterInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.GetInstance(currentWriter);
-
-        var connectionString = ConnectionStringHelper.GetUrl(
-            Engine,
-            initialWriterInstanceInfo.Host,
-            initialWriterInstanceInfo.Port,
-            Username,
-            Password,
-            ProxyDatabaseInfo!.DefaultDbName,
-            2,
-            10,
-            "failover");
-        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo!.InstanceEndpointSuffix}:{ProxyDatabaseInfo!.InstanceEndpointPort}";
-
-        using AwsWrapperConnection connection = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
-        await AuroraUtils.OpenDbConnection(connection, async);
-        Assert.Equal(ConnectionState.Open, connection.State);
-
-        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var simulationTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(12), tcs);
-
-        // Wait for the simulation to start
-        await tcs.Task;
-        await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
-        {
-            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Executing instance ID query to trigger failover...");
-            this.logger.WriteLine(await AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, async) ?? "No instance ID returned");
-            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Finished executing without exception thrown");
-        });
-
-        // Assert that we are currently connected to the writer instance.
-        var currentConnectionId = await AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, async);
-        Assert.NotNull(currentConnectionId);
-        Assert.Equal(currentWriter, currentConnectionId);
-        Assert.True(await AuroraUtils.IsDBInstanceWriterAsync(currentConnectionId));
-        await simulationTask;
-    }
-
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    [Trait("Category", "Integration")]
-    [Trait("Database", "mysql")]
-    [Trait("Database", "pg")]
-    [Trait("Engine", "aurora")]
-    [Trait("Engine", "multi-az-cluster")]
-    public async Task ReaderFailover_ReaderOrWriter(bool async)
-    {
-        Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
-
-        string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
-        var initialWriterInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.GetInstance(currentWriter);
-
-        var connectionString = ConnectionStringHelper.GetUrl(
-            Engine,
-            initialWriterInstanceInfo.Host,
-            initialWriterInstanceInfo.Port,
-            Username,
-            Password,
-            ProxyDatabaseInfo!.DefaultDbName,
-            2,
-            10,
-            "failover");
-        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo!.InstanceEndpointSuffix}:{ProxyDatabaseInfo!.InstanceEndpointPort}" +
-            $"; FailoverMode=ReaderOrWriter";
-
-        using AwsWrapperConnection connection = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
-        await AuroraUtils.OpenDbConnection(connection, async);
-        Assert.Equal(ConnectionState.Open, connection.State);
-
-        await ProxyHelper.DisableConnectivityAsync(currentWriter);
-
-        await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
-        {
-            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Executing instance ID query to trigger failover...");
-            await AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, async);
-        });
-    }
-
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    [Trait("Category", "Integration")]
-    [Trait("Database", "mysql")]
-    [Trait("Database", "pg")]
-    [Trait("Engine", "aurora")]
-    [Trait("Engine", "multi-az-cluster")]
-    public async Task ReaderFailover_StrictReader(bool async)
-    {
-        Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
-
-        string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
-        var initialWriterInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.GetInstance(currentWriter);
-
-        var connectionString = ConnectionStringHelper.GetUrl(
-            Engine,
-            initialWriterInstanceInfo.Host,
-            initialWriterInstanceInfo.Port,
-            Username,
-            Password,
-            ProxyDatabaseInfo!.DefaultDbName,
-            2,
-            10,
-            "failover");
-        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo!.InstanceEndpointSuffix}:{ProxyDatabaseInfo!.InstanceEndpointPort}" +
-            $"; FailoverMode=StrictReader" +
-            $"; FailoverTimeoutMs=120000";
-
-        using AwsWrapperConnection connection = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
-        await AuroraUtils.OpenDbConnection(connection, async);
-        Assert.Equal(ConnectionState.Open, connection.State);
-
-        await Task.Delay(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
-        this.logger.WriteLine("===============test env set up done=================");
-        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var crashTask = AuroraUtils.CrashInstance(currentWriter, tcs);
-
-        // Wait for simulation to start
-        await tcs.Task;
-
-        await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
-        {
-            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Executing instance ID query to trigger failover...");
-            await AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, async);
-        });
-
-        // Assert that we are currently connected to the reader instance.
-        var currentConnectionId = await AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, async);
-        Assert.NotNull(currentConnectionId);
-        Assert.False(await AuroraUtils.IsDBInstanceWriterAsync(currentConnectionId));
-
-        await crashTask;
-    }
-
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    [Trait("Category", "Integration")]
-    [Trait("Database", "mysql")]
-    [Trait("Database", "pg")]
-    [Trait("Engine", "aurora")]
-    [Trait("Engine", "multi-az-cluster")]
-    public async Task ReaderFailover_WriterReelected(bool async)
-    {
-        Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
-
-        string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
-        var initialWriterInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.GetInstance(currentWriter);
-
-        var connectionString = ConnectionStringHelper.GetUrl(
-            Engine,
-            initialWriterInstanceInfo.Host,
-            initialWriterInstanceInfo.Port,
-            Username,
-            Password,
-            ProxyDatabaseInfo!.DefaultDbName,
-            2,
-            10,
-            "failover");
-        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo!.InstanceEndpointSuffix}:{ProxyDatabaseInfo!.InstanceEndpointPort}" +
-            $"; FailoverMode=ReaderOrWriter";
-
-        using AwsWrapperConnection connection = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
-        await AuroraUtils.OpenDbConnection(connection, async);
-        Assert.Equal(ConnectionState.Open, connection.State);
-
-        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var simulationTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(12), tcs);
-
-        // Wait for the simulation to start
-        await tcs.Task;
-        await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
-        {
-            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Executing instance ID query to trigger failover...");
-            await AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, async);
-            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Finished executing without exception thrown");
-        });
-        await simulationTask;
-    }
-
-    /// <summary>
-    /// Idle connections opened via the cluster endpoint are tracked by the aurora connection tracker plugin.
-    /// When a writer failover occurs, all idle connections to the old writer should be closed.
-    /// </summary>
-    /// <param name="async">True if testing async calls, false if testing sync calls.</param>
-    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    [Trait("Category", "Integration")]
-    [Trait("Database", "mysql")]
-    [Trait("Database", "pg")]
-    [Trait("Engine", "aurora")]
-    [Trait("Engine", "multi-az-cluster")]
-    public async Task ServerFailoverWithIdleConnections(bool async)
-    {
-        Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
-        Assert.SkipWhen(ProxyDatabaseInfo == null, "Skipped due to proxy database info not available.");
-
-        var idleConnections = new List<AwsWrapperConnection>();
-        string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
-        var initialWriterInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.GetInstance(currentWriter);
-
-        var connectionString = ConnectionStringHelper.GetUrl(
-            Engine,
-            initialWriterInstanceInfo.Host,
-            initialWriterInstanceInfo.Port,
-            Username,
-            Password,
-            ProxyDatabaseInfo!.DefaultDbName,
+            DefaultDbName,
             2,
             10,
             $"{PluginCodes.AuroraConnectionTracker},{PluginCodes.Failover}");
-        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo!.InstanceEndpointSuffix}:{ProxyDatabaseInfo!.InstanceEndpointPort}; Pooling=false";
+        connectionString += $"; ClusterInstanceHostPattern=?.{dbInfo.InstanceEndpointSuffix}:{dbInfo.InstanceEndpointPort}; Pooling=true";
 
+        this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Connecting to writer instance: {initialWriterInstanceInfo.Host}");
+
+        // Step 1: Open a connection and confirm we're on the writer.
+        await using var activeConn = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
+        await AuroraUtils.OpenDbConnection(activeConn, async);
+        Assert.Equal(ConnectionState.Open, activeConn.State);
+
+        var instanceId = await AuroraUtils.ExecuteInstanceIdQuery(activeConn, Engine, Deployment, async);
+        this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Connected to instance: {instanceId}");
+        Assert.Equal(currentWriter, instanceId);
+
+        // Create a test table to use for the write query later.
+        const string createTableSql = "DROP TABLE IF EXISTS pooling_failover_test; CREATE TABLE pooling_failover_test (id SERIAL PRIMARY KEY, data TEXT)";
+        await AuroraUtils.ExecuteNonQuery(activeConn, createTableSql, async);
+
+        // Step 2: Trigger a cluster failover and wait for it to complete.
+        var clusterId = TestEnvironment.Env.Info.RdsDbName!;
+        var targetWriter = dbInfo.Instances.First(i => i.InstanceId != currentWriter).InstanceId;
+        this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Triggering failover from {currentWriter} to {targetWriter}...");
+        await AuroraUtils.FailoverClusterToATargetAndWaitUntilWriterChanged(clusterId, currentWriter, targetWriter);
+
+        // Step 3: Use the active connection to trigger failover detection in the plugin.
+        await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
+        {
+            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Executing query to trigger failover detection...");
+            await AuroraUtils.ExecuteInstanceIdQuery(activeConn, Engine, Deployment, async);
+        });
+
+        // Allow time for invalidation and pool state to settle.
+        await Task.Delay(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+
+        var newWriterId = await AuroraUtils.GetDBClusterWriterInstanceIdAsync(clusterId);
+        this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Old writer: {currentWriter}, New writer: {newWriterId}");
+
+        // Step 4: Open a new connection using the SAME old writer instance endpoint.
+        // If the pool still has the stale physical connection, it will be returned here.
+        this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Opening new connection to old writer endpoint (now a reader)...");
+        await using var newConn = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
+        await AuroraUtils.OpenDbConnection(newConn, async);
+        Assert.Equal(ConnectionState.Open, newConn.State);
+
+        // Step 5: Execute a write query. If the pool returned a stale connection to the
+        // now-demoted reader, this should fail with "cannot execute INSERT in a read-only transaction".
+        const string writeSql = "INSERT INTO pooling_failover_test (data) VALUES ('post-failover-write')";
+        Exception? writeException = null;
         try
         {
-            // Open N idle connections via the cluster endpoint.
-            for (int i = 0; i < IdleConnectionsNum; i++)
-            {
-                var idleConn = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
-                await AuroraUtils.OpenDbConnection(idleConn, async);
-                idleConnections.Add(idleConn);
-            }
-
-            // Open an active connection via the cluster endpoint.
-            using var activeConn = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
-            await AuroraUtils.OpenDbConnection(activeConn, async);
-            Assert.Equal(ConnectionState.Open, activeConn.State);
-
-            // Verify the active connection is on the current writer.
-            var instanceId = await AuroraUtils.ExecuteInstanceIdQuery(activeConn, Engine, Deployment, async);
-            Assert.Equal(currentWriter, instanceId);
-
-            // Ensure all idle connections are still open.
-            foreach (var idleConn in idleConnections)
-            {
-                Assert.Equal(ConnectionState.Open, idleConn.State);
-            }
-
-            // Crash the writer instance.
-            var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            var crashTask = AuroraUtils.CrashInstance(currentWriter, tcs);
-            await tcs.Task;
-
-            // Trigger failover on the active connection.
-            await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
-            {
-                this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Executing query to trigger failover...");
-                await AuroraUtils.ExecuteInstanceIdQuery(activeConn, Engine, Deployment, async);
-            });
-
-            await crashTask;
-
-            // Wait for invalidation to complete.
-            await Task.Delay(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
-
-            // Query the RDS API to determine the current writer.
-            var clusterId = TestEnvironment.Env.Info.RdsDbName!;
-            var newWriterId = await AuroraUtils.GetDBClusterWriterInstanceIdAsync(clusterId);
-
-            if (currentWriter == newWriterId)
-            {
-                this.logger.WriteLine($"Cluster failed over to the same instance {newWriterId}.");
-
-                // Writer didn't change — idle connections should still be open.
-                foreach (var idleConn in idleConnections)
-                {
-                    Assert.Equal(
-                        ConnectionState.Open,
-                        idleConn.State);
-                }
-            }
-            else
-            {
-                this.logger.WriteLine($"Cluster failed over to instance {newWriterId}.");
-
-                // Writer changed — all idle connections should be closed.
-                foreach (var idleConn in idleConnections)
-                {
-                    Assert.Equal(
-                        ConnectionState.Closed,
-                        idleConn.State);
-                }
-            }
+            await AuroraUtils.ExecuteNonQuery(newConn, writeSql, async);
+            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Write query succeeded — no stale pooled connection issue.");
         }
-        finally
+        catch (Exception ex)
         {
-            foreach (var idleConn in idleConnections)
-            {
-                try
-                {
-                    idleConn.Close();
-                    idleConn.Dispose();
-                }
-                catch
-                {
-                    // Ignore
-                }
-            }
-
-            idleConnections.Clear();
+            writeException = ex;
+            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Write query failed: {ex.GetType().Name}: {ex.Message}");
         }
-    }
-}
 
-public class ManualFailoverConnectivityTests
-{
-    [Fact]
-    [Trait("Category", "Integration")]
-    [Trait("Category", "Manual")]
-    public void FailoverPluginTest_WithStrictWriterMode()
-    {
-        const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
-        const string username = "username"; // Replace with your username
-        const string password = "password"; // Replace with your password
-        const string database = "database"; // Replace with your database name
+        // Log the outcome. We expect the write to fail if the pooling issue exists.
+        if (writeException != null)
+        {
+            var fullMessage = writeException.InnerException?.Message ?? writeException.Message;
+            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} CONFIRMED: Stale pooled connection issue detected. Error: {fullMessage}");
+            Assert.Contains("read-only", fullMessage, StringComparison.OrdinalIgnoreCase);
+        }
+        else
+        {
+            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Write succeeded — pool did not return a stale connection.");
+        }
 
-        var connectionString = $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
-                              $"Plugins=failover;FailoverMode=StrictWriter;EnableConnectFailover=true;";
-        PerformFailoverTest(connectionString);
-    }
-
-    [Fact]
-    [Trait("Category", "Integration")]
-    [Trait("Category", "Manual")]
-    public void FailoverPluginTest_WithStrictReaderMode()
-    {
-        const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
-        const string username = "username"; // Replace with your username
-        const string password = "password"; // Replace with your password
-        const string database = "database"; // Replace with your database name
-
-        var connectionString =
-            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
-            $"Plugins=failover;FailoverMode=StrictReader;EnableConnectFailover=true;";
-        PerformFailoverTest(connectionString);
-    }
-
-    [Fact]
-    [Trait("Category", "Integration")]
-    [Trait("Category", "Manual")]
-    public void FailoverPluginTest_ReadOnlyNode_WithStrictReaderMode()
-    {
-        const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
-        const string username = "username"; // Replace with your username
-        const string password = "password"; // Replace with your password
-        const string database = "database"; // Replace with your database name
-
-        var connectionString =
-            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
-            $"Plugins=failover;FailoverMode=StrictReader;EnableConnectFailover=true;";
-        PerformFailoverTest(connectionString);
-    }
-
-    [Fact]
-    [Trait("Category", "Integration")]
-    [Trait("Category", "Manual")]
-    public void FailoverPluginTest_WithReaderOrWriterMode()
-    {
-        const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
-        const string username = "username"; // Replace with your username
-        const string password = "password"; // Replace with your password
-        const string database = "database"; // Replace with your database name
-
-        var connectionString =
-            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
-            $"Plugins=failover;FailoverMode=ReaderOrWriter;EnableConnectFailover=true;";
-        PerformFailoverTest(connectionString);
-    }
-
-    [Fact]
-    [Trait("Category", "Integration")]
-    [Trait("Category", "Manual")]
-    public void FailoverPluginTest_WithStrictWriterMode_WithRoundRobinHostSelectorStrategy()
-    {
-        const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
-        const string username = "username"; // Replace with your username
-        const string password = "password"; // Replace with your password
-        const string database = "database"; // Replace with your database name
-
-        var connectionString =
-            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
-            $"Plugins=failover;FailoverMode=ReaderOrWriter;EnableConnectFailover=true;" +
-            $"FailoverReaderHostSelectorStrategy=RoundRobin;";
-        PerformFailoverTest(connectionString);
-    }
-
-    [Fact]
-    [Trait("Category", "Integration")]
-    [Trait("Category", "Manual")]
-    public void FailoverPluginTest_WithStrictWriterMode_WithHighestWeightHostSelectorStrategy()
-    {
-        const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
-        const string username = "username"; // Replace with your username
-        const string password = "password"; // Replace with your password
-        const string database = "database"; // Replace with your database name
-
-        var connectionString =
-            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
-            $"Plugins=failover;FailoverMode=ReaderOrWriter;EnableConnectFailover=true;" +
-            $"FailoverReaderHostSelectorStrategy=HighestWeight;";
-        PerformFailoverTest(connectionString);
-    }
-
-    [Fact]
-    [Trait("Category", "Integration")]
-    [Trait("Category", "Manual")]
-    public void FailoverPluginTest_WithAuroraInitialConnectionStrategyPlugin()
-    {
-        const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
-        const string username = "username"; // Replace with your username
-        const string password = "password"; // Replace with your password
-        const string database = "database"; // Replace with your database name
-
-        var connectionString =
-            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
-            $"Plugins=failover,initialConnection;FailoverMode=StrictReader;EnableConnectFailover=true;";
-        PerformFailoverTest(connectionString);
-    }
-
-    [Fact]
-    [Trait("Category", "Integration")]
-    [Trait("Category", "Manual")]
-    public void FailoverPluginTest_WithIamAuth()
-    {
-        const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
-        const string username = "username"; // Replace with your username
-        const string database = "database"; // Replace with your database name
-
-        var connectionString =
-            $"Host={clusterEndpoint};Username={username};Database={database};Port=5432;" +
-            $"Plugins=failover,iam;FailoverMode=ReaderOrWriter;EnableConnectFailover=true;";
-        PerformFailoverTest(connectionString);
-    }
-
-    [Fact]
-    [Trait("Category", "Integration")]
-    [Trait("Category", "Manual")]
-    public void FailoverPluginTest_Transaction_WithStrictWriterMode()
-    {
-        const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
-        const string username = "username"; // Replace with your username
-        const string password = "password"; // Replace with your password
-        const string database = "database"; // Replace with your database name
-
-        var connectionString = $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
-                              $"Plugins=failover;FailoverMode=StrictWriter;EnableConnectFailover=true;";
-        PerformTransactionFailoverTest(connectionString);
-    }
-
-    [Fact]
-    [Trait("Category", "Integration")]
-    [Trait("Category", "Manual")]
-    public void FailoverPluginTest_Transaction_WithStrictReaderMode()
-    {
-        const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
-        const string username = "username"; // Replace with your username
-        const string password = "password"; // Replace with your password
-        const string database = "database"; // Replace with your database name
-
-        var connectionString =
-            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
-            $"Plugins=failover;FailoverMode=StrictReader;EnableConnectFailover=true;";
-        PerformTransactionFailoverTest(connectionString);
-    }
-
-    [Fact]
-    [Trait("Category", "Integration")]
-    [Trait("Category", "Manual")]
-    public void FailoverPluginTest_Transaction_WithReaderOrWriterMode()
-    {
-        const string clusterEndpoint = "atlas-postgres.cluster-xyz.us-east-2.rds.amazonaws.com"; // Replace with your cluster endpoint
-        const string username = "username"; // Replace with your username
-        const string password = "password"; // Replace with your password
-        const string database = "database"; // Replace with your database name
-
-        var connectionString =
-            $"Host={clusterEndpoint};Username={username};Password={password};Database={database};Port=5432;" +
-            $"Plugins=failover;FailoverMode=ReaderOrWriter;EnableConnectFailover=true;";
-        PerformTransactionFailoverTest(connectionString);
-    }
-
-    private static void PerformFailoverTest(string connectionString)
-    {
-        using var connection = new AwsWrapperConnection<NpgsqlConnection>(connectionString);
-
+        // Cleanup
         try
         {
-            Console.WriteLine("1. Opening initial connection...");
-            connection.Open();
-            Console.WriteLine($"   ✓ Connected successfully");
-            Console.WriteLine($"   Connection State: {connection.State}");
-
-            // Get initial writer information
-            Console.WriteLine("\n2. Identifying current host...");
-            var hostInfo = GetCurrentConnectionInfo(connection);
-            Console.WriteLine($"   Current Host: {hostInfo.Host}:{hostInfo.Port}");
-            Console.WriteLine($"   Current Host Name: {hostInfo.HostName}");
-            Console.WriteLine($"   Current Host Role: {hostInfo.Role}");
-            Console.WriteLine($"   Server Version: {hostInfo.Version}");
-
-            Console.WriteLine("\n3. Starting long-running query (60 second wait)...");
-            Console.WriteLine("   TRIGGER FAILOVER NOW using:");
-            Console.WriteLine("   aws rds failover-db-cluster --db-cluster-identifier atlas-postgres");
-
-            // Execute long-running query that should survive failover
-            var startTime = DateTime.UtcNow;
-            Console.WriteLine($"   Query started at: {startTime:HH:mm:ss}");
-
-            string serverIp;
-            DateTime queryTime = DateTime.UtcNow;
-
-            using (var command = connection.CreateCommand<NpgsqlCommand>())
-            {
-                command.CommandText =
-                    "SELECT pg_sleep(500), now() as query_time, inet_server_addr()::text as server_ip";
-                command.CommandTimeout = 500; // Allow extra time for failover
-
-                try
-                {
-                    using (var reader = command.ExecuteReader())
-                    {
-                        if (reader.Read())
-                        {
-                            queryTime = reader.GetDateTime("query_time");
-                            serverIp = reader.IsDBNull("server_ip") ? "unknown" : reader.GetString("server_ip");
-                            Console.WriteLine($"   Initial Query: {queryTime:HH:mm:ss.fff} from {serverIp}");
-                        }
-                    }
-                }
-                catch (FailoverSuccessException)
-                {
-                    var newHostInfo = GetCurrentConnectionInfo(connection);
-
-                    Console.WriteLine("\n4. Verifying connection after potential failover...");
-                    Console.WriteLine($"   Current Host: {hostInfo.Host}:{hostInfo.Port}");
-                    Console.WriteLine($"   Current Host Name: {hostInfo.HostName}");
-                    Console.WriteLine($"   Current Host Role: {hostInfo.Role}");
-
-                    if (hostInfo.Host != newHostInfo.Host || hostInfo.Port != newHostInfo.Port)
-                    {
-                        Console.WriteLine("   ✓ FAILOVER DETECTED! Host changed successfully.");
-                        Console.WriteLine($"   New Host: {newHostInfo.Host}:{newHostInfo.Port}");
-                        Console.WriteLine($"   Current Host Name: {newHostInfo.HostName}");
-                        Console.WriteLine($"   New Host Role: {newHostInfo.Role}");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"\n❌ Test failed with exception:");
-                    Console.WriteLine($"   Type: {ex.GetType().Name}");
-                    Console.WriteLine($"   Message: {ex.Message}");
-
-                    if (ex.InnerException != null)
-                    {
-                        Console.WriteLine($"   Inner Exception: {ex.InnerException.GetType().Name}");
-                        Console.WriteLine($"   Inner Message: {ex.InnerException.Message}");
-                    }
-
-                    Console.WriteLine($"\n   Full Stack Trace:");
-                    Console.WriteLine(ex.ToString());
-                    throw;
-                }
-            }
-
-            // Ensure command and reader are fully disposed before continuing
-
-            Console.WriteLine("\n5. Testing additional queries after failover...");
-            for (int i = 1; i <= 3; i++)
-            {
-                using (var testCommand = connection.CreateCommand<NpgsqlCommand>())
-                {
-                    testCommand.CommandText = "SELECT current_timestamp, inet_server_addr()::text";
-                    using (var testReader = testCommand.ExecuteReader())
-                    {
-                        if (testReader.Read())
-                        {
-                            var timestamp = testReader.GetDateTime(0);
-                            var testServerIp = testReader.IsDBNull(1) ? "unknown" : testReader.GetString(1);
-                            Console.WriteLine($"   Post Failover Query {i}: {timestamp:HH:mm:ss.fff} from {testServerIp}");
-                        }
-                    }
-                }
-            }
-
-            Console.WriteLine("\n✓ Failover test completed successfully!");
+            await AuroraUtils.ExecuteNonQuery(newConn, "DROP TABLE IF EXISTS pooling_failover_test", async);
         }
-        finally
+        catch
         {
-            Console.WriteLine("\n6. Cleaning up connection...");
-            if (connection.State == ConnectionState.Open)
-            {
-                connection.Close();
-                Console.WriteLine("   Connection closed.");
-            }
+            // Best-effort cleanup
         }
-    }
-
-    private static void PerformTransactionFailoverTest(string connectionString)
-    {
-        using var connection = new AwsWrapperConnection<NpgsqlConnection>(connectionString);
-
-        try
-        {
-            Console.WriteLine("1. Opening initial connection...");
-            connection.Open();
-            Console.WriteLine($"   ✓ Connected successfully");
-            Console.WriteLine($"   Connection State: {connection.State}");
-
-            // Get initial writer information
-            Console.WriteLine("\n2. Identifying current host...");
-            var hostInfo = GetCurrentConnectionInfo(connection);
-            Console.WriteLine($"   Current Host: {hostInfo.Host}:{hostInfo.Port}");
-            Console.WriteLine($"   Current Host Name: {hostInfo.HostName}");
-            Console.WriteLine($"   Current Host Role: {hostInfo.Role}");
-            Console.WriteLine($"   Server Version: {hostInfo.Version}");
-
-            // Create a persistent table outside of transaction to verify rollback
-            Console.WriteLine("\n3. Creating persistent test table...");
-            using (var setupCommand = connection.CreateCommand<NpgsqlCommand>())
-            {
-                setupCommand.CommandText = @"
-                    DROP TABLE IF EXISTS failover_rollback_test;
-                    CREATE TABLE failover_rollback_test (
-                        id SERIAL PRIMARY KEY, 
-                        test_data TEXT, 
-                        created_at TIMESTAMP DEFAULT NOW()
-                    )";
-                setupCommand.ExecuteNonQuery();
-                Console.WriteLine("   ✓ Persistent test table created");
-            }
-
-            Console.WriteLine("\n4. Starting transaction with operations that should be rolled back...");
-            Console.WriteLine("   TRIGGER FAILOVER NOW using:");
-            Console.WriteLine("   aws rds failover-db-cluster --db-cluster-identifier atlas-postgres");
-
-            // Start a transaction
-            using var transaction = connection.BeginTransaction();
-            Console.WriteLine("   ✓ Transaction started");
-
-            var startTime = DateTime.UtcNow;
-            Console.WriteLine($"   Transaction started at: {startTime:HH:mm:ss}");
-
-            bool failoverOccurred = false;
-
-            try
-            {
-                // Insert data within the transaction that should be rolled back
-                using (var insertCommand = connection.CreateCommand<NpgsqlCommand>())
-                {
-                    insertCommand.Transaction = transaction;
-                    insertCommand.CommandText = "INSERT INTO failover_rollback_test (test_data) VALUES ('data-that-should-be-rolled-back-1')";
-                    insertCommand.ExecuteNonQuery();
-                    Console.WriteLine("   ✓ First insert completed within transaction");
-                }
-
-                using (var insertCommand2 = connection.CreateCommand<NpgsqlCommand>())
-                {
-                    insertCommand2.Transaction = transaction;
-                    insertCommand2.CommandText = "INSERT INTO failover_rollback_test (test_data) VALUES ('data-that-should-be-rolled-back-2')";
-                    insertCommand2.ExecuteNonQuery();
-                    Console.WriteLine("   ✓ Second insert completed within transaction");
-                }
-
-                // Verify data exists within the transaction before failover
-                using (var preFailoverSelect = connection.CreateCommand<NpgsqlCommand>())
-                {
-                    preFailoverSelect.Transaction = transaction;
-                    preFailoverSelect.CommandText = "SELECT COUNT(*) FROM failover_rollback_test";
-                    var countBeforeFailover = (long)(preFailoverSelect.ExecuteScalar() ?? 0L);
-                    Console.WriteLine($"   ✓ Data visible within transaction: {countBeforeFailover} rows");
-                }
-
-                // Execute long-running query within the transaction that should trigger failover
-                using (var longRunningCommand = connection.CreateCommand<NpgsqlCommand>())
-                {
-                    longRunningCommand.Transaction = transaction;
-                    longRunningCommand.CommandText = "SELECT pg_sleep(500), now() as query_time, inet_server_addr()::text as server_ip";
-                    longRunningCommand.CommandTimeout = 500; // Allow extra time for failover
-
-                    using (var reader = longRunningCommand.ExecuteReader())
-                    {
-                        if (reader.Read())
-                        {
-                            var queryTime = reader.GetDateTime("query_time");
-                            var serverIp = reader.IsDBNull("server_ip") ? "unknown" : reader.GetString("server_ip");
-                            Console.WriteLine($"   Long-running query completed: {queryTime:HH:mm:ss.fff} from {serverIp}");
-                        }
-                    }
-                }
-
-                // If we reach here, no failover occurred during the sleep
-                Console.WriteLine("   ⚠️  No failover detected during long-running query");
-            }
-            catch (TransactionStateUnknownException)
-            {
-                failoverOccurred = true;
-                Console.WriteLine("   ✓ Failover detected during transaction!");
-
-                var newHostInfo = GetCurrentConnectionInfo(connection);
-                Console.WriteLine("\n5. Verifying connection after failover...");
-                Console.WriteLine($"   Previous Host: {hostInfo.Host}:{hostInfo.Port}");
-                Console.WriteLine($"   Current Host: {newHostInfo.Host}:{newHostInfo.Port}");
-                Console.WriteLine($"   Current Host Name: {newHostInfo.HostName}");
-                Console.WriteLine($"   Current Host Role: {newHostInfo.Role}");
-
-                if (hostInfo.Host != newHostInfo.Host || hostInfo.Port != newHostInfo.Port)
-                {
-                    Console.WriteLine("   ✓ FAILOVER DETECTED! Host changed successfully.");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"   ❌ Exception during transaction: {ex.GetType().Name}: {ex.Message}");
-            }
-
-            // Now verify that the transaction was rolled back
-            Console.WriteLine("\n6. Verifying transaction rollback after failover...");
-
-            // Check if the data was rolled back by querying outside of transaction
-            using (var rollbackCheckCommand = connection.CreateCommand<NpgsqlCommand>())
-            {
-                rollbackCheckCommand.CommandText = "SELECT COUNT(*) FROM failover_rollback_test";
-                var countAfterFailover = (long)(rollbackCheckCommand.ExecuteScalar() ?? 0L);
-                Console.WriteLine($"   Data count after failover: {countAfterFailover} rows");
-
-                if (countAfterFailover == 0)
-                {
-                    Console.WriteLine("   ✓ ROLLBACK VERIFIED: All transaction data was rolled back!");
-                }
-                else
-                {
-                    Console.WriteLine("   ❌ ROLLBACK FAILED: Transaction data was not rolled back!");
-
-                    // Show what data remains
-                    using (var dataCommand = connection.CreateCommand<NpgsqlCommand>())
-                    {
-                        dataCommand.CommandText = "SELECT id, test_data, created_at FROM failover_rollback_test ORDER BY id";
-                        using (var reader = dataCommand.ExecuteReader())
-                        {
-                            Console.WriteLine("   Remaining data:");
-                            while (reader.Read())
-                            {
-                                var id = reader.GetInt32("id");
-                                var testData = reader.GetString("test_data");
-                                var createdAt = reader.GetDateTime("created_at");
-                                Console.WriteLine($"     ID={id}, Data='{testData}', Created={createdAt:HH:mm:ss.fff}");
-                            }
-                        }
-                    }
-                }
-            }
-
-            Console.WriteLine("\n7. Testing new transaction after failover...");
-            using (var newTransaction = connection.BeginTransaction())
-            {
-                using (var newInsertCommand = connection.CreateCommand<NpgsqlCommand>())
-                {
-                    newInsertCommand.Transaction = newTransaction;
-                    newInsertCommand.CommandText = "INSERT INTO failover_rollback_test (test_data) VALUES ('post-failover-data')";
-                    newInsertCommand.ExecuteNonQuery();
-                    Console.WriteLine("   ✓ New transaction insert successful");
-                }
-
-                newTransaction.Commit();
-                Console.WriteLine("   ✓ New transaction committed successfully");
-            }
-
-            // Verify the new data exists
-            using (var finalCheckCommand = connection.CreateCommand<NpgsqlCommand>())
-            {
-                finalCheckCommand.CommandText = "SELECT COUNT(*) FROM failover_rollback_test";
-                var finalCount = (long)(finalCheckCommand.ExecuteScalar() ?? 0L);
-                Console.WriteLine($"   Final data count: {finalCount} rows");
-            }
-
-            if (failoverOccurred)
-            {
-                Console.WriteLine("\n✓ Transaction rollback failover test completed successfully!");
-                Console.WriteLine("  - Failover was detected during transaction");
-                Console.WriteLine("  - Transaction was automatically rolled back");
-                Console.WriteLine("  - New transactions work correctly after failover");
-            }
-            else
-            {
-                Console.WriteLine("\n⚠️  Test completed but no failover was detected");
-                Console.WriteLine("   Make sure to trigger failover during the pg_sleep operation");
-            }
-        }
-        finally
-        {
-            Console.WriteLine("\n8. Cleaning up...");
-
-            // Clean up the test table
-            try
-            {
-                using (var cleanupCommand = connection.CreateCommand<NpgsqlCommand>())
-                {
-                    cleanupCommand.CommandText = "DROP TABLE IF EXISTS failover_rollback_test";
-                    cleanupCommand.ExecuteNonQuery();
-                    Console.WriteLine("   ✓ Test table cleaned up");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"   ⚠️  Cleanup warning: {ex.Message}");
-            }
-
-            if (connection.State == ConnectionState.Open)
-            {
-                connection.Close();
-                Console.WriteLine("   ✓ Connection closed");
-            }
-        }
-    }
-
-    private static (string HostName, string Host, int Port, string Version, string Role) GetCurrentConnectionInfo(AwsWrapperConnection<NpgsqlConnection> connection)
-    {
-        using var command = connection.CreateCommand<NpgsqlCommand>();
-        command.CommandText = @"
-        SELECT
-            aurora_db_instance_identifier()::text as server_name,
-            inet_server_addr()::text as server_ip,
-            inet_server_port() as server_port,
-            version() as server_version,
-            CASE WHEN pg_is_in_recovery() THEN 'reader' ELSE 'writer' END as node_role;";
-
-        using var reader = command.ExecuteReader();
-        if (reader.Read())
-        {
-            var hostName = reader.IsDBNull("server_name") ? "unknow" : reader.GetString("server_name");
-            var host = reader.IsDBNull("server_ip") ? "unknown" : reader.GetString("server_ip");
-            var port = reader.IsDBNull("server_port") ? 5432 : reader.GetInt32("server_port");
-            var version = reader.IsDBNull("server_version") ? "unknown" : reader.GetString("server_version");
-            var role = reader.IsDBNull("node_role") ? "unknown" : reader.GetString("node_role");
-
-            return (hostName, host, port, version, role);
-        }
-
-        return ("unknown", "unknown", 5432, "unknown", "unknown");
     }
 }
