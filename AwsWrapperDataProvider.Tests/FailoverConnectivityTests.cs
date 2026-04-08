@@ -221,14 +221,28 @@ public class FailoverConnectivityTests : IntegrationTestBase
         this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Idle connection state after tracker close: {idleConn.State}");
         Assert.Equal(ConnectionState.Closed, idleConn.State);
 
-        // Step 5: Open a new connection to the same old writer instance endpoint.
+        // Step 5: Try to use the idle connection after the tracker closed it.
+        // This simulates what a user application would experience if it held a reference
+        // to this connection and tried to use it after failover.
+        try
+        {
+            await AuroraUtils.ExecuteQuery(idleConn, "SELECT 1", async);
+            this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Idle connection query succeeded unexpectedly after tracker close.");
+        }
+        catch (Exception ex)
+        {
+            this.logger.WriteLine(
+                $"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Idle connection query after tracker close threw: {ex.GetType().Name}: {ex.Message}");
+        }
+
+        // Step 6: Open a new connection to the same old writer instance endpoint.
         await using var newConn = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
         await AuroraUtils.OpenDbConnection(newConn, async);
 
         var pidAfterReopen = await AuroraUtils.ExecuteQuery(newConn, "SELECT pg_backend_pid()", async);
         this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} New connection backend PID after reopen: {pidAfterReopen}");
 
-        // Step 6: Compare PIDs.
+        // Step 7: Compare PIDs.
         if (pidBeforeClose == pidAfterReopen)
         {
             this.logger.WriteLine(
