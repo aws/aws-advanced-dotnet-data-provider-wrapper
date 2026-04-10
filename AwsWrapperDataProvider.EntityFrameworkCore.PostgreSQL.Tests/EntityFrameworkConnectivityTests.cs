@@ -64,7 +64,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
         var wrapperConnectionString = connectionString + $";Plugins=initialConnection,failover;";
         if (Deployment != DatabaseEngineDeployment.AURORA && Deployment != DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER)
         {
-            wrapperConnectionString = connectionString + $";Plugins=failover;";
+            wrapperConnectionString = connectionString + $";Plugins=initialConnection,failover;";
         }
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
@@ -107,7 +107,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
         var wrapperConnectionString = connectionString + $";Plugins=initialConnection,failover;";
         if (Deployment != DatabaseEngineDeployment.AURORA && Deployment != DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER)
         {
-            wrapperConnectionString = connectionString + $";Plugins=failover;";
+            wrapperConnectionString = connectionString + $";Plugins=initialConnection,failover;";
         }
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
@@ -490,7 +490,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
         var connectionString = ConnectionStringHelper.GetUrl(Engine, ProxyClusterEndpoint, ProxyPort, Username, Password, DefaultDbName, 5, 10);
 
         var wrapperConnectionString = connectionString
-            + $";Plugins=failover;" +
+            + $";Plugins=initialConnection,failover;" +
             $"EnableConnectFailover=true;" +
             $"ClusterInstanceHostPattern=?.{ProxyDatabaseInfo!.InstanceEndpointSuffix}:{ProxyDatabaseInfo!.InstanceEndpointPort}";
 
@@ -582,7 +582,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
         var connectionString = ConnectionStringHelper.GetUrl(Engine, ProxyClusterEndpoint, ProxyPort, Username, Password, DefaultDbName, 5, 10);
 
         var wrapperConnectionString = connectionString
-            + $";Plugins=failover;" +
+            + $";Plugins=initialConnection,failover;" +
             $"EnableConnectFailover=true;" +
             $"ClusterInstanceHostPattern=?.{ProxyDatabaseInfo!.InstanceEndpointSuffix}:{ProxyDatabaseInfo!.InstanceEndpointPort}";
 
