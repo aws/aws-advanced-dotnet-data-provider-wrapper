@@ -112,21 +112,33 @@ public class CustomEndpointTestFixture : IDisposable
         }
 
         logger.WriteLine($"Verifying that new connection has role: {hostRole}");
-        using (var conn = auroraUtils.CreateAwsWrapperConnection(
-            TestEnvironment.Env.Info.Request.Engine, connectionStringNoPlugins))
+        var maxRetries = 10;
+        for (var attempt = 1; attempt <= maxRetries; attempt++)
         {
-            await conn.OpenAsync();
-            var currentInstanceId = await auroraUtils.QueryInstanceId(conn, true);
-            if (!endpointMembers.Contains(currentInstanceId!))
+            try
             {
-                throw new InvalidOperationException($"Instance {currentInstanceId} should be in endpoint members");
-            }
+                using var conn = auroraUtils.CreateAwsWrapperConnection(
+                    TestEnvironment.Env.Info.Request.Engine, connectionStringNoPlugins);
+                await conn.OpenAsync();
+                var currentInstanceId = await auroraUtils.QueryInstanceId(conn, true);
+                if (!endpointMembers.Contains(currentInstanceId!))
+                {
+                    throw new InvalidOperationException($"Instance {currentInstanceId} should be in endpoint members");
+                }
 
-            var newRole = await auroraUtils.QueryHostRoleAsync(
-                conn, TestEnvironment.Env.Info.Request.Engine, true);
-            if (newRole != hostRole)
+                var newRole = await auroraUtils.QueryHostRoleAsync(
+                    conn, TestEnvironment.Env.Info.Request.Engine, true);
+                if (newRole != hostRole)
+                {
+                    throw new InvalidOperationException($"Expected role {hostRole} but got {newRole}");
+                }
+
+                break;
+            }
+            catch (Exception ex) when (attempt < maxRetries)
             {
-                throw new InvalidOperationException($"Expected role {hostRole} but got {newRole}");
+                logger.WriteLine($"Verification attempt {attempt} failed: {ex.Message}. Retrying in 5s...");
+                await Task.Delay(TimeSpan.FromSeconds(5));
             }
         }
 

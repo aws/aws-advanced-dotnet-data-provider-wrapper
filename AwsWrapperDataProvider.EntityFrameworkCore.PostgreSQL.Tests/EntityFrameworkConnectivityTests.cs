@@ -154,6 +154,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
         var wrapperConnectionString = connectionString
             + $";Plugins=initialConnection,failover;" +
             $"EnableConnectFailover=true;" +
+            $"VerifyOpenedConnectionType=writer;" +
             $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
@@ -227,6 +228,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
         var wrapperConnectionString = connectionString
             + $";Plugins=initialConnection,failover;" +
             $"EnableConnectFailover=true;" +
+            $"VerifyOpenedConnectionType=writer;" +
             $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
@@ -299,6 +301,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
         var wrapperConnectionString = connectionString
             + $";Plugins=initialConnection,failover;" +
             $"EnableConnectFailover=true;" +
+            $"VerifyOpenedConnectionType=writer;" +
             $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
@@ -395,6 +398,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
         var wrapperConnectionString = connectionString
             + $";Plugins=initialConnection,failover;" +
             $"EnableConnectFailover=true;" +
+            $"VerifyOpenedConnectionType=writer;" +
             $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
@@ -492,6 +496,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
         var wrapperConnectionString = connectionString
             + $";Plugins=initialConnection,failover;" +
             $"EnableConnectFailover=true;" +
+            $"VerifyOpenedConnectionType=writer;" +
             $"ClusterInstanceHostPattern=?.{ProxyDatabaseInfo!.InstanceEndpointSuffix}:{ProxyDatabaseInfo!.InstanceEndpointPort}";
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
@@ -584,6 +589,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
         var wrapperConnectionString = connectionString
             + $";Plugins=initialConnection,failover;" +
             $"EnableConnectFailover=true;" +
+            $"VerifyOpenedConnectionType=writer;" +
             $"ClusterInstanceHostPattern=?.{ProxyDatabaseInfo!.InstanceEndpointSuffix}:{ProxyDatabaseInfo!.InstanceEndpointPort}";
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
