@@ -21,6 +21,7 @@ using AwsWrapperDataProvider.Driver.HostInfo.HostSelectors;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 using AwsWrapperDataProvider.Driver.Plugins;
+using AwsWrapperDataProvider.Driver.Plugins.AuroraConnectionTracker;
 using AwsWrapperDataProvider.Driver.Plugins.Efm;
 using AwsWrapperDataProvider.Plugin.FederatedAuth.FederatedAuth;
 using AwsWrapperDataProvider.Plugin.Iam.Iam;
@@ -140,6 +141,7 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         IamAuthPlugin.ClearCache();
         OktaAuthPlugin.ClearCache();
         RoundRobinHostSelector.ClearCache();
+        OpenedConnectionTracker.ReleaseResources();
         Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Done Clearing all cache for each integration test.");
         return ValueTask.CompletedTask;
     }
