@@ -15,6 +15,7 @@
 using System.Data;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
+using AwsWrapperDataProvider.Driver.Plugins.Failover.Exceptions;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 using Npgsql;
 
@@ -379,20 +380,23 @@ public class FailoverConnectivityTests : IntegrationTestBase
     }
 
     /// <summary>
-    /// Idle connections opened via the cluster endpoint are tracked by the aurora connection tracker plugin.
+    /// Idle connections opened by an application are tracked by the aurora connection tracker plugin.
     /// When a writer failover occurs, all idle connections to the old writer should be closed.
     /// </summary>
     /// <param name="async">True if testing async calls, false if testing sync calls.</param>
+    /// <param name="pooling">True if connection pooling is enabled, false if disabled.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
+    [InlineData(true, false)]
+    [InlineData(false, false)]
+    [InlineData(true, true)]
+    [InlineData(false, true)]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
     [Trait("Database", "pg")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
-    public async Task ServerFailoverWithIdleConnections(bool async)
+    public async Task ServerFailoverWithIdleConnections(bool async, bool pooling)
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
         Assert.SkipWhen(ProxyDatabaseInfo == null, "Skipped due to proxy database info not available.");
@@ -411,7 +415,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
             2,
             10,
             $"{PluginCodes.AuroraConnectionTracker},{PluginCodes.Failover}");
-        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo!.InstanceEndpointSuffix}:{ProxyDatabaseInfo!.InstanceEndpointPort}; Pooling=false";
+        connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo!.InstanceEndpointSuffix}:{ProxyDatabaseInfo!.InstanceEndpointPort}; Pooling={pooling}";
 
         try
         {
@@ -423,12 +427,12 @@ public class FailoverConnectivityTests : IntegrationTestBase
                 idleConnections.Add(idleConn);
             }
 
-            // Open an active connection via the cluster endpoint.
+            // Open a connection via the cluster endpoint and make it active
             using var activeConn = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
             await AuroraUtils.OpenDbConnection(activeConn, async);
             Assert.Equal(ConnectionState.Open, activeConn.State);
 
-            // Verify the active connection is on the current writer.
+            // Verify the connection is on the current writer.
             var instanceId = await AuroraUtils.ExecuteInstanceIdQuery(activeConn, Engine, Deployment, async);
             Assert.Equal(currentWriter, instanceId);
 
@@ -444,7 +448,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
             await tcs.Task;
 
             // Trigger failover on the active connection.
-            await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
+            await Assert.ThrowsAsync<FailoverException>(async () =>
             {
                 this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Executing query to trigger failover...");
                 await AuroraUtils.ExecuteInstanceIdQuery(activeConn, Engine, Deployment, async);
@@ -461,7 +465,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
 
             if (currentWriter == newWriterId)
             {
-                this.logger.WriteLine($"Cluster failed over to the same instance {newWriterId}.");
+                this.logger.WriteLine($"Writer did not change, still {newWriterId}.");
 
                 // Writer didn't change — idle connections should still be open.
                 foreach (var idleConn in idleConnections)
