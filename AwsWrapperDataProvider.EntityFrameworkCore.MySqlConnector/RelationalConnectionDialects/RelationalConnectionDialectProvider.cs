@@ -21,54 +21,40 @@ namespace AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.RelationalCo
 /// </summary>
 public static class RelationalConnectionDialectProvider
 {
-    private const string PomeloEntityFrameworkCoreMySqlAssemblyPrefix = "Pomelo.EntityFrameworkCore.MySql";
+    private static readonly Dictionary<string, IRelationalConnectionDialect> DialectsByAssemblyPrefix = new()
+    {
+        { EfMySqlAssemblyPrefixes.Pomelo, PomeloEfMySqlRelationalConnectionDialect.Instance },
+    };
 
     /// <summary>
-    /// Detects which EF MySQL provider registered <paramref name="wrappedExtension"/>.
+    /// Returns the dialect for the EF MySQL provider that registered <paramref name="wrappedExtension"/>.
     /// </summary>
     /// <param name="wrappedExtension">The wrapped options extension (e.g. from <c>UseMySql</c>).</param>
-    /// <returns>The detected provider kind.</returns>
-    public static EfMySqlProviderKind DetectEfMySqlProviderKind(IDbContextOptionsExtension? wrappedExtension)
+    /// <returns>The dialect instance.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when no supported provider is detected.</exception>
+    public static IRelationalConnectionDialect GetDialect(IDbContextOptionsExtension? wrappedExtension)
     {
-        if (wrappedExtension is null)
+        if (wrappedExtension is not null)
         {
-            return EfMySqlProviderKind.Unknown;
+            var assemblyName = wrappedExtension.GetType().Assembly.GetName().Name ?? string.Empty;
+            foreach (var (prefix, dialect) in DialectsByAssemblyPrefix)
+            {
+                if (assemblyName.StartsWith(prefix, StringComparison.Ordinal))
+                {
+                    return dialect;
+                }
+            }
         }
 
-        var assemblyName = wrappedExtension.GetType().Assembly.GetName().Name ?? string.Empty;
-        if (assemblyName.StartsWith(PomeloEntityFrameworkCoreMySqlAssemblyPrefix, StringComparison.Ordinal))
-        {
-            return EfMySqlProviderKind.Pomelo;
-        }
-
-        return EfMySqlProviderKind.Unknown;
+        throw new InvalidOperationException(BuildUnsupportedRelationalConnectionMessage(wrappedExtension));
     }
 
-    /// <summary>
-    /// Returns the dialect for <paramref name="providerKind"/>.
-    /// </summary>
-    /// <param name="providerKind">The EF MySQL provider kind.</param>
-    /// <param name="wrappedExtensionForDiagnostics">The wrapped extension (included in exception detail when kind is <see cref="EfMySqlProviderKind.Unknown"/>).</param>
-    /// <returns>The dialect instance.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when <paramref name="providerKind"/> is <see cref="EfMySqlProviderKind.Unknown"/>.</exception>
-    public static IRelationalConnectionDialect GetDialect(
-        EfMySqlProviderKind providerKind,
-        IDbContextOptionsExtension? wrappedExtensionForDiagnostics = null)
+    public static void RegisterDialect(string assemblyPrefix, IRelationalConnectionDialect dialect)
     {
-        if (providerKind == EfMySqlProviderKind.Unknown)
-        {
-            throw new InvalidOperationException(BuildUnsupportedRelationalConnectionMessage(providerKind, wrappedExtensionForDiagnostics));
-        }
-
-        return providerKind switch
-        {
-            EfMySqlProviderKind.Pomelo => PomeloEfMySqlRelationalConnectionDialect.Instance,
-            _ => throw new InvalidOperationException(BuildUnsupportedRelationalConnectionMessage(providerKind, wrappedExtensionForDiagnostics)),
-        };
+        DialectsByAssemblyPrefix[assemblyPrefix] = dialect;
     }
 
     private static string BuildUnsupportedRelationalConnectionMessage(
-        EfMySqlProviderKind providerKind,
         IDbContextOptionsExtension? wrappedExtension)
     {
         var extensionDetail = wrappedExtension is null
@@ -76,8 +62,7 @@ public static class RelationalConnectionDialectProvider
             : $"{wrappedExtension.GetType().FullName} (Assembly={wrappedExtension.GetType().Assembly.GetName().Name})";
 
         return
-            "The relational connection from the wrapped Entity Framework Core provider is not supported for AWS Advanced .NET Data Provider MySQL integration " +
-            $"({nameof(EfMySqlProviderKind)}={providerKind}). " +
+            "The relational connection from the wrapped Entity Framework Core provider is not supported for AWS Advanced .NET Data Provider MySQL integration. " +
             $"Wrapped extension: {extensionDetail}. " +
             "Supported provider: Pomelo.EntityFrameworkCore.MySql.";
     }

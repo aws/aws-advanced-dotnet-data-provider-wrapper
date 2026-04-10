@@ -14,18 +14,7 @@
 
 namespace AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.RelationalConnectionDialects;
 
-/// <summary>
-/// Identifies which Entity Framework Core MySQL provider registered the wrapped options extension.
-/// </summary>
-public enum EfMySqlProviderKind
+public static class EfMySqlAssemblyPrefixes
 {
-    /// <summary>
-    /// Could not determine a supported provider. <see cref="RelationalConnectionDialectProvider.GetDialect"/> throws <see cref="InvalidOperationException"/>.
-    /// </summary>
-    Unknown = 0,
-
-    /// <summary>
-    /// <c>Pomelo.EntityFrameworkCore.MySql</c> — applies the same mandatory MySQL connection options Pomelo validates when not using the wrapper path.
-    /// </summary>
-    Pomelo,
+    public static string Pomelo = "Pomelo.EntityFrameworkCore.MySql";
 }

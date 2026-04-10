@@ -24,8 +24,6 @@ namespace AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.RelationalCo
 /// </summary>
 internal sealed class PomeloEfMySqlRelationalConnectionDialect : IRelationalConnectionDialect
 {
-    private static readonly MethodInfo? EnsureMandatoryOptionsMethod = ResolveEnsureMandatoryOptions();
-
     internal static readonly PomeloEfMySqlRelationalConnectionDialect Instance = new();
 
     private PomeloEfMySqlRelationalConnectionDialect()
@@ -39,40 +37,8 @@ internal sealed class PomeloEfMySqlRelationalConnectionDialect : IRelationalConn
     public string NormalizeConnectionString(string wrapperConnectionString)
     {
         var cs = wrapperConnectionString;
-        EnsureMandatoryOptions(ref cs);
+        ApplyManualMySqlConnectorMandatoryDefaults(ref cs);
         return cs;
-    }
-
-    private static MethodInfo? ResolveEnsureMandatoryOptions()
-    {
-        try
-        {
-            var assembly = Assembly.Load("Pomelo.EntityFrameworkCore.MySql");
-            var validatorType = Array.Find(assembly.GetTypes(), static t => t.Name == "MySqlConnectionStringOptionsValidator");
-            return validatorType?.GetMethod(
-                "EnsureMandatoryOptions",
-                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static,
-                null,
-                new[] { typeof(string).MakeByRefType() },
-                null);
-        }
-        catch (Exception)
-        {
-            return null;
-        }
-    }
-
-    private static void EnsureMandatoryOptions(ref string connectionString)
-    {
-        if (EnsureMandatoryOptionsMethod is not null)
-        {
-            var args = new object?[] { connectionString };
-            EnsureMandatoryOptionsMethod.Invoke(null, args);
-            connectionString = (string)(args[0] ?? connectionString);
-            return;
-        }
-
-        ApplyManualMySqlConnectorMandatoryDefaults(ref connectionString);
     }
 
     private static void ApplyManualMySqlConnectorMandatoryDefaults(ref string connectionString)

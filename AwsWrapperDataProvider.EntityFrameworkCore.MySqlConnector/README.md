@@ -21,6 +21,21 @@ services.AddDbContext<MyDbContext>(options =>
         wrappedOptions => wrappedOptions.UseMySQL(connectionString)));
 ```
 
+## Custom Provider Registration
+
+The wrapper automatically detects supported EF Core MySQL providers (e.g. Pomelo) by matching the assembly name prefix of the wrapped options extension. If you are using an unsupported or custom EF Core MySQL provider, you can register it manually using `RelationalConnectionDialectProvider.RegisterDialect`:
+
+```csharp
+using AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.RelationalConnectionDialects;
+
+// Register a custom dialect before configuring the DbContext.
+RelationalConnectionDialectProvider.RegisterDialect(
+    "MyCustom.EntityFrameworkCore.MySql",
+    MyCustomRelationalConnectionDialect.Instance);
+```
+
+The first argument is the assembly name prefix that the provider's options extension belongs to. The second argument is an implementation of `IRelationalConnectionDialect` that specifies the underlying connection type and any connection string normalization.
+
 ## Example
 
 See the [MySqlEntityFrameworkExample](../docs/examples/MySqlEntityFrameworkExample/) project for a complete working demonstration.

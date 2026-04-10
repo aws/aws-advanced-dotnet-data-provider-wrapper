@@ -37,8 +37,7 @@ public class AwsWrapperRelationalConnection : RelationalConnection, IAwsWrapperR
             throw new InvalidOperationException("AwsWrapperOptionsExtension not found.");
         }
 
-        var providerKind = RelationalConnectionDialectProvider.DetectEfMySqlProviderKind(extension.WrappedExtension);
-        this.relationalConnectionDialect = RelationalConnectionDialectProvider.GetDialect(providerKind, extension.WrappedExtension);
+        this.relationalConnectionDialect = RelationalConnectionDialectProvider.GetDialect(extension.WrappedExtension);
         this.wrapperConnectionString = this.relationalConnectionDialect.NormalizeConnectionString(extension.WrapperConnectionString);
     }
 

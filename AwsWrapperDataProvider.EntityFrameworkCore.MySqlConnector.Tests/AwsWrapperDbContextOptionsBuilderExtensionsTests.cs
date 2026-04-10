@@ -51,7 +51,7 @@ public class AwsWrapperDbContextOptionsBuilderExtensionsTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void DetectEfMySqlProviderKind_WithPomeloUseMySql_ReturnsPomelo()
+    public void GetDialect_WithPomeloUseMySql_ReturnsPomeloDialect()
     {
         var pomeloConnectionString = "Server=localhost;Database=test;User ID=u;Password=p;";
         var wrapped = new DbContextOptionsBuilder()
@@ -59,15 +59,16 @@ public class AwsWrapperDbContextOptionsBuilderExtensionsTests
             .Options;
 
         var ext = wrapped.Extensions.First(x => x is not CoreOptionsExtension);
-        Assert.Equal(EfMySqlProviderKind.Pomelo, RelationalConnectionDialectProvider.DetectEfMySqlProviderKind(ext));
+        var dialect = RelationalConnectionDialectProvider.GetDialect(ext);
+        Assert.IsType<PomeloEfMySqlRelationalConnectionDialect>(dialect);
     }
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void GetDialect_WithUnknownProviderKind_ThrowsInvalidOperationException()
+    public void GetDialect_WithNullExtension_ThrowsInvalidOperationException()
     {
         var ex = Assert.Throws<InvalidOperationException>(
-            () => RelationalConnectionDialectProvider.GetDialect(EfMySqlProviderKind.Unknown, wrappedExtensionForDiagnostics: null));
+            () => RelationalConnectionDialectProvider.GetDialect(null));
         Assert.Contains("relational connection", ex.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("not supported", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
