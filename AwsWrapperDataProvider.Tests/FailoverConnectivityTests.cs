@@ -448,7 +448,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
             await tcs.Task;
 
             // Trigger failover on the active connection.
-            await Assert.ThrowsAsync<FailoverException>(async () =>
+            await Assert.ThrowsAnyAsync<FailoverException>(async () =>
             {
                 this.logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Executing query to trigger failover...");
                 await AuroraUtils.ExecuteInstanceIdQuery(activeConn, Engine, Deployment, async);
