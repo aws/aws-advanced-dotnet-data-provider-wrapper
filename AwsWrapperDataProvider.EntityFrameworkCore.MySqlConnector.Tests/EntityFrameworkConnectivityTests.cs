@@ -488,7 +488,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
         string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
 
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ProxyClusterEndpoint, ProxyPort, Username, Password, DefaultDbName, 2, 5);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, ProxyClusterEndpoint, ProxyPort, Username, Password, DefaultDbName, 5, 10);
 
         var wrapperConnectionString = connectionString
             + $";Plugins=failover;" +
@@ -530,8 +530,8 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
                         connection.Open();
                     }
 
-                    clusterFailureTask = AuroraUtils.SimulateTemporaryFailureTask(ProxyClusterEndpoint, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
-                    writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
+                    clusterFailureTask = AuroraUtils.SimulateTemporaryFailureTask(ProxyClusterEndpoint, TimeSpan.Zero, TimeSpan.FromSeconds(15), tcs);
+                    writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(15), tcs);
                     await tcs.Task;
 
                     // Query to trigger failover
@@ -580,7 +580,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
         string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
 
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ProxyClusterEndpoint, ProxyPort, Username, Password, DefaultDbName, 2, 5);
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, ProxyClusterEndpoint, ProxyPort, Username, Password, DefaultDbName, 5, 10);
 
         var wrapperConnectionString = connectionString
             + $";Plugins=failover;" +
@@ -622,8 +622,8 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
                         await connection.OpenAsync(TestContext.Current.CancellationToken);
                     }
 
-                    clusterFailureTask = AuroraUtils.SimulateTemporaryFailureTask(ProxyClusterEndpoint, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
-                    writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
+                    clusterFailureTask = AuroraUtils.SimulateTemporaryFailureTask(ProxyClusterEndpoint, TimeSpan.Zero, TimeSpan.FromSeconds(15), tcs);
+                    writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(15), tcs);
                     await tcs.Task;
 
                     // Query to trigger failover
