@@ -17,6 +17,7 @@
 - [Using the Entity Framework Integration](./using-the-dotnet-driver/UsingEntityFrameworkIntegration.md)
 
 ## Plugins
+- [Aurora Connection Tracker Plugin](./using-the-dotnet-driver/using-plugins/UsingTheAuroraConnectionTrackerPlugin.md)
 - [Aurora Initial Connection Strategy Plugin](./using-the-dotnet-driver/using-plugins/UsingTheAuroraInitialConnectionStrategyPlugin.md)
 - [AWS Secrets Manager Plugin](./using-the-dotnet-driver/using-plugins/UsingTheAwsSecretsManagerPlugin.md)
 - [Failover Plugin](./using-the-dotnet-driver/using-plugins/UsingTheFailoverPlugin.md)

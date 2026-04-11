@@ -17,6 +17,7 @@ using AwsWrapperDataProvider.Dialect.Npgsql;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.Plugins;
+using AwsWrapperDataProvider.Driver.Plugins.AuroraConnectionTracker;
 using AwsWrapperDataProvider.Driver.Plugins.AuroraInitialConnectionStrategy;
 using AwsWrapperDataProvider.Driver.Plugins.ConnectTime;
 using AwsWrapperDataProvider.Driver.Plugins.Efm;
@@ -76,6 +77,7 @@ public class ConnectionPluginChainBuilderTests
         string allPluginCodes = string.Join(
             ",",
             PluginCodes.ExecutionTime,
+            PluginCodes.AuroraConnectionTracker,
             PluginCodes.Failover,
             PluginCodes.HostMonitoring,
             PluginCodes.Iam,
@@ -93,7 +95,7 @@ public class ConnectionPluginChainBuilderTests
             null);
 
         Assert.NotNull(plugins);
-        Assert.Equal(8, plugins.Count);
+        Assert.Equal(9, plugins.Count);
     }
 
     [Fact]
@@ -177,11 +179,12 @@ public class ConnectionPluginChainBuilderTests
             null);
 
         Assert.NotNull(plugins);
-        Assert.Equal(4, plugins.Count);
+        Assert.Equal(5, plugins.Count);
         Assert.IsType<AuroraInitialConnectionStrategyPlugin>(plugins[0]);
-        Assert.IsType<FailoverPlugin>(plugins[1]);
-        Assert.IsType<HostMonitoringPlugin>(plugins[2]);
-        Assert.IsType<DefaultConnectionPlugin>(plugins[3]);
+        Assert.IsType<AuroraConnectionTrackerPlugin>(plugins[1]);
+        Assert.IsType<FailoverPlugin>(plugins[2]);
+        Assert.IsType<HostMonitoringPlugin>(plugins[3]);
+        Assert.IsType<DefaultConnectionPlugin>(plugins[4]);
     }
 
     [Fact]
@@ -235,10 +238,11 @@ public class ConnectionPluginChainBuilderTests
             null);
 
         Assert.NotNull(plugins);
-        Assert.Equal(3, plugins.Count);
+        Assert.Equal(4, plugins.Count);
         Assert.IsType<AuroraInitialConnectionStrategyPlugin>(plugins[0]);
-        Assert.IsType<FailoverPlugin>(plugins[1]);
-        Assert.IsType<DefaultConnectionPlugin>(plugins[2]);
+        Assert.IsType<AuroraConnectionTrackerPlugin>(plugins[1]);
+        Assert.IsType<FailoverPlugin>(plugins[2]);
+        Assert.IsType<DefaultConnectionPlugin>(plugins[3]);
     }
 
     [Fact]
