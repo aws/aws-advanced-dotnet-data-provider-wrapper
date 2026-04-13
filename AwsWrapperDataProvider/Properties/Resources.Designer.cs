@@ -1983,5 +1983,41 @@ namespace AwsWrapperDataProvider.Properties {
                 return ResourceManager.GetString("Error_WeightedRandomUnableToGetHost", resourceCulture);
             }
         }
+        
+        internal static string OpenedConnectionTracker_PopulateOpenedConnectionQueue_TrackingByAllAliases {
+            get {
+                return ResourceManager.GetString("OpenedConnectionTracker_PopulateOpenedConnectionQueue_TrackingByAllAliases", resourceCulture);
+            }
+        }
+        
+        internal static string OpenedConnectionTracker_PruneLoop_Error {
+            get {
+                return ResourceManager.GetString("OpenedConnectionTracker_PruneLoop_Error", resourceCulture);
+            }
+        }
+        
+        internal static string OpenedConnectionTracker_LogOpenedConnections_Tracking {
+            get {
+                return ResourceManager.GetString("OpenedConnectionTracker_LogOpenedConnections_Tracking", resourceCulture);
+            }
+        }
+        
+        internal static string OpenedConnectionTracker_InvalidateAllConnections_Invalidating {
+            get {
+                return ResourceManager.GetString("OpenedConnectionTracker_InvalidateAllConnections_Invalidating", resourceCulture);
+            }
+        }
+        
+        internal static string OpenedConnectionTracker_LogConnectionQueue_InvalidatingConnections {
+            get {
+                return ResourceManager.GetString("OpenedConnectionTracker_LogConnectionQueue_InvalidatingConnections", resourceCulture);
+            }
+        }
+        
+        internal static string RWQueue_ThrowIfReentrant_CannotModifyDuringForEach {
+            get {
+                return ResourceManager.GetString("RWQueue_ThrowIfReentrant_CannotModifyDuringForEach", resourceCulture);
+            }
+        }
     }
 }

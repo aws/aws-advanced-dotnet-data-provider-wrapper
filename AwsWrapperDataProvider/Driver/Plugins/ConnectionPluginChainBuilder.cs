@@ -14,6 +14,7 @@
 
 using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
+using AwsWrapperDataProvider.Driver.Plugins.AuroraConnectionTracker;
 using AwsWrapperDataProvider.Driver.Plugins.AuroraInitialConnectionStrategy;
 using AwsWrapperDataProvider.Driver.Plugins.ConnectTime;
 using AwsWrapperDataProvider.Driver.Plugins.Efm;
@@ -34,24 +35,26 @@ public class ConnectionPluginChainBuilder
 
     private static readonly Dictionary<string, Lazy<IConnectionPluginFactory>?> PluginFactoryTypesByCode = new()
     {
-            { PluginCodes.ConnectTime, new Lazy<IConnectionPluginFactory>(() => new ConnectTimePluginFactory()) },
-            { PluginCodes.ExecutionTime, new Lazy<IConnectionPluginFactory>(() => new ExecutionTimePluginFactory()) },
+            { PluginCodes.CustomEndpoint, null },
+            { PluginCodes.InitialConnection, new Lazy<IConnectionPluginFactory>(() => new AuroraInitialConnectionStrategyPluginFactory()) },
+            { PluginCodes.AuroraConnectionTracker, new Lazy<IConnectionPluginFactory>(() => new AuroraConnectionTrackerPluginFactory()) },
+            { PluginCodes.ReadWriteSplitting, new Lazy<IConnectionPluginFactory>(() => new ReadWriteSplittingPluginFactory()) },
             { PluginCodes.Failover, new Lazy<IConnectionPluginFactory>(() => new FailoverPluginFactory()) },
             { PluginCodes.HostMonitoring, new Lazy<IConnectionPluginFactory>(() => new HostMonitoringPluginFactory()) },
-            { PluginCodes.InitialConnection, new Lazy<IConnectionPluginFactory>(() => new AuroraInitialConnectionStrategyPluginFactory()) },
             { PluginCodes.Limitless, new Lazy<IConnectionPluginFactory>(() => new LimitlessConnectionPluginFactory()) },
-            { PluginCodes.ReadWriteSplitting, new Lazy<IConnectionPluginFactory>(() => new ReadWriteSplittingPluginFactory()) },
-            { PluginCodes.CustomEndpoint, null },
             { PluginCodes.Iam, null },
             { PluginCodes.SecretsManager, null },
             { PluginCodes.FederatedAuth, null },
             { PluginCodes.Okta, null },
+            { PluginCodes.ConnectTime, new Lazy<IConnectionPluginFactory>(() => new ConnectTimePluginFactory()) },
+            { PluginCodes.ExecutionTime, new Lazy<IConnectionPluginFactory>(() => new ExecutionTimePluginFactory()) },
     };
 
     private static readonly Dictionary<string, int> PluginWeightByPluginFactoryType = new()
     {
             { PluginCodes.CustomEndpoint, 380 },
             { PluginCodes.InitialConnection, 390 },
+            { PluginCodes.AuroraConnectionTracker, 400 },
             { PluginCodes.ReadWriteSplitting, 600 },
             { PluginCodes.Failover, 700 },
             { PluginCodes.HostMonitoring, 800 },

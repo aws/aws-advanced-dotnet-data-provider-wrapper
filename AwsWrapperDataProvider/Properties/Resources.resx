@@ -1028,4 +1028,22 @@
   <data name="Error_WeightedRandomUnableToGetHost" xml:space="preserve">
     <value>Unable to get host for role: {0}.</value>
   </data>
+  <data name="OpenedConnectionTracker_PopulateOpenedConnectionQueue_TrackingByAllAliases" xml:space="preserve">
+    <value>No RDS instance host found for '{0}'. This may be a custom domain. Tracking connection by all aliases.</value>
+  </data>
+  <data name="OpenedConnectionTracker_PruneLoop_Error" xml:space="preserve">
+    <value>Background connection tracker pruning task encountered an error while removing stale connection references.</value>
+  </data>
+  <data name="OpenedConnectionTracker_LogOpenedConnections_Tracking" xml:space="preserve">
+    <value>Tracking {0} connection(s) for endpoint {1}.</value>
+  </data>
+  <data name="OpenedConnectionTracker_InvalidateAllConnections_Invalidating" xml:space="preserve">
+    <value>Invalidating {0} tracked connection(s) for endpoint {1}.</value>
+  </data>
+  <data name="OpenedConnectionTracker_LogConnectionQueue_InvalidatingConnections" xml:space="preserve">
+    <value>Invalidating connections {0}</value>
+  </data>
+  <data name="RWQueue_ThrowIfReentrant_CannotModifyDuringForEach" xml:space="preserve">
+    <value>Cannot modify RWQueue during ForEach iteration on the same thread.</value>
+  </data>
 </root>
