@@ -14,7 +14,7 @@
 
 using Microsoft.EntityFrameworkCore;
 
-namespace AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL.Tests;
+namespace AwsWrapperDataProvider.EntityFrameworkCore.Tests;
 
 public class PersonDbContext : DbContext
 {
@@ -23,19 +23,6 @@ public class PersonDbContext : DbContext
     public PersonDbContext(DbContextOptions<PersonDbContext> options)
         : base(options)
     {
-    }
-
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        if (optionsBuilder.IsConfigured)
-        {
-            return;
-        }
-
-        var connectionString = EFUtils.GetNpgsqlConnectionString();
-        optionsBuilder.UseAwsWrapperNpgsql(
-            connectionString,
-            wrappedOptionBuilder => wrappedOptionBuilder.UseNpgsql(connectionString));
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

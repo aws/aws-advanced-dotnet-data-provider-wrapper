@@ -1,4 +1,4 @@
-
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.12.35707.178
@@ -10,10 +10,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector", "AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector\AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.csproj", "{33C70E3B-22DF-4EA7-9DF8-FC0545610875}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL", "AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL\AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL.csproj", "{1B88D898-A88D-428E-91DB-F4BC8716ACE6}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.Tests", "AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.Tests\AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.Tests.csproj", "{CE32DAF8-37B3-4DD4-9507-709A066AA652}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL.Tests", "AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL.Tests\AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL.Tests.csproj", "{5A645AE2-191A-4CE9-B22F-D8A0FE3160EC}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AwsWrapperDataProvider.Dialect.MySqlClient", "AwsWrapperDataProvider.Dialect.MySqlClient\AwsWrapperDataProvider.Dialect.MySqlClient.csproj", "{6B80F62D-FEB4-4230-A935-548ACB869645}"
 EndProject
@@ -41,6 +37,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AwsWrapperDataProviderExamp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AwsWrapperDataProvider.Performance.Tests", "AwsWrapperDataProvider.Performance.Tests\AwsWrapperDataProvider.Performance.Tests.csproj", "{1A00C448-9549-4995-9180-C70C908963A5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AwsWrapperDataProvider.EntityFrameworkCore.Tests", "AwsWrapperDataProvider.EntityFrameworkCore.Tests\AwsWrapperDataProvider.EntityFrameworkCore.Tests.csproj", "{EF51CF13-9B0D-4CC4-9563-874925D868CA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -63,14 +61,6 @@ Global
 		{1B88D898-A88D-428E-91DB-F4BC8716ACE6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1B88D898-A88D-428E-91DB-F4BC8716ACE6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1B88D898-A88D-428E-91DB-F4BC8716ACE6}.Release|Any CPU.Build.0 = Release|Any CPU
-		{CE32DAF8-37B3-4DD4-9507-709A066AA652}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{CE32DAF8-37B3-4DD4-9507-709A066AA652}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{CE32DAF8-37B3-4DD4-9507-709A066AA652}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{CE32DAF8-37B3-4DD4-9507-709A066AA652}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5A645AE2-191A-4CE9-B22F-D8A0FE3160EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5A645AE2-191A-4CE9-B22F-D8A0FE3160EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5A645AE2-191A-4CE9-B22F-D8A0FE3160EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5A645AE2-191A-4CE9-B22F-D8A0FE3160EC}.Release|Any CPU.Build.0 = Release|Any CPU
 		{6B80F62D-FEB4-4230-A935-548ACB869645}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{6B80F62D-FEB4-4230-A935-548ACB869645}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6B80F62D-FEB4-4230-A935-548ACB869645}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -107,6 +97,10 @@ Global
 		{1A00C448-9549-4995-9180-C70C908963A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1A00C448-9549-4995-9180-C70C908963A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1A00C448-9549-4995-9180-C70C908963A5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EF51CF13-9B0D-4CC4-9563-874925D868CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EF51CF13-9B0D-4CC4-9563-874925D868CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EF51CF13-9B0D-4CC4-9563-874925D868CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EF51CF13-9B0D-4CC4-9563-874925D868CA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

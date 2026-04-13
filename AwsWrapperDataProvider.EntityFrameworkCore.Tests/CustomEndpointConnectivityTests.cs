@@ -21,11 +21,11 @@ using AwsWrapperDataProvider.Tests;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 using Microsoft.EntityFrameworkCore;
 
-namespace AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL.Tests;
+namespace AwsWrapperDataProvider.EntityFrameworkCore.Tests;
 
 /// <summary>
-/// Entity Framework PostgreSQL integration tests for Custom Endpoint plugin with read-write splitting.
-/// Runs only on Aurora PostgreSQL with at least 3 instances; requires first instance to be writer.
+/// Entity Framework integration tests for Custom Endpoint plugin with read-write splitting.
+/// Runs only on Aurora with at least 3 instances; requires first instance to be writer.
 /// </summary>
 public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixture<CustomEndpointTestFixture>
 {
@@ -46,9 +46,33 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
         await base.InitializeAsync();
     }
 
+    private DbContextOptions<PersonDbContext> BuildOptions(string wrapperConnectionString, string connectionString)
+    {
+        if (Engine == DatabaseEngine.PG)
+        {
+            return new DbContextOptionsBuilder<PersonDbContext>()
+                .UseAwsWrapperNpgsql(
+                    wrapperConnectionString,
+                    wrappedOptionBuilder => wrappedOptionBuilder.UseNpgsql(connectionString))
+                .Options;
+        }
+
+        if (Engine == DatabaseEngine.MYSQL)
+        {
+            return new DbContextOptionsBuilder<PersonDbContext>()
+                .UseAwsWrapperMySql(
+                    wrapperConnectionString,
+                    wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)))
+                .Options;
+        }
+
+        throw new InvalidOperationException($"Unsupported engine {Engine}");
+    }
+
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg-ef")]
+    [Trait("Database", "mysql-ef")]
     [Trait("Engine", "aurora")]
     public async Task EF_CustomEndpoint_ReadWriteSplitting_WithCustomEndpointChanges_WithReaderAsInitConn()
     {
@@ -73,11 +97,7 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
         wrapperConnectionString += $"; {PropertyDefinition.CustomEndpointMonitorIdleExpirationMs.Name}=30000";
         wrapperConnectionString += $"; {PropertyDefinition.WaitForCustomEndpointInfoTimeoutMs.Name}=30000";
 
-        var options = new DbContextOptionsBuilder<PersonDbContext>()
-            .UseAwsWrapperNpgsql(
-                wrapperConnectionString,
-                wrappedOptionBuilder => wrappedOptionBuilder.UseNpgsql(connectionString))
-            .Options;
+        var options = this.BuildOptions(wrapperConnectionString, connectionString);
 
         using var db = new PersonDbContext(options);
         await db.Database.OpenConnectionAsync(TestContext.Current.CancellationToken);
@@ -124,6 +144,7 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg-ef")]
+    [Trait("Database", "mysql-ef")]
     [Trait("Engine", "aurora")]
     public async Task EF_CustomEndpoint_ReadWriteSplitting_WithCustomEndpointChanges_WithWriterAsInitConn()
     {
@@ -148,11 +169,7 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
         wrapperConnectionString += $"; {PropertyDefinition.CustomEndpointMonitorIdleExpirationMs.Name}=30000";
         wrapperConnectionString += $"; {PropertyDefinition.WaitForCustomEndpointInfoTimeoutMs.Name}=30000";
 
-        var options = new DbContextOptionsBuilder<PersonDbContext>()
-            .UseAwsWrapperNpgsql(
-                wrapperConnectionString,
-                wrappedOptionBuilder => wrappedOptionBuilder.UseNpgsql(connectionString))
-            .Options;
+        var options = this.BuildOptions(wrapperConnectionString, connectionString);
 
         using var db = new PersonDbContext(options);
         await db.Database.OpenConnectionAsync(TestContext.Current.CancellationToken);
