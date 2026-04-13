@@ -378,14 +378,11 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         {
             while (DateTime.UtcNow < endTime)
             {
-                if (!this.topologyMap.TryGetValue(this.clusterId, out latestHosts))
+                // Break only if the cache has a new topology (different reference).
+                // If the cache entry expired (TryGetValue returns false), keep waiting.
+                if (this.topologyMap.TryGetValue(this.clusterId, out latestHosts)
+                    && !ReferenceEquals(currentHosts, latestHosts))
                 {
-                    // Cache entry expired — treat as "not yet updated" and keep waiting.
-                    latestHosts = null;
-                }
-                else if (!ReferenceEquals(currentHosts, latestHosts))
-                {
-                    // Topology has been updated with a new reference.
                     break;
                 }
 
