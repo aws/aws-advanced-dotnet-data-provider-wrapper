@@ -27,7 +27,7 @@ public class PersonDbContextFactory : IDesignTimeDbContextFactory<PersonDbContex
         var connectionString = EFUtils.GetNpgsqlConnectionString();
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
-            .UseAwsWrapper(
+            .UseAwsWrapperNpgsql(
                 connectionString,
                 wrappedOptionBuilder => wrappedOptionBuilder.UseNpgsql(connectionString))
             .LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Trace)

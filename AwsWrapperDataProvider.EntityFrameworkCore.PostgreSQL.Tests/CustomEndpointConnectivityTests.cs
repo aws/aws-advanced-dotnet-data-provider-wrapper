@@ -74,7 +74,7 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
         wrapperConnectionString += $"; {PropertyDefinition.WaitForCustomEndpointInfoTimeoutMs.Name}=30000";
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
-            .UseAwsWrapper(
+            .UseAwsWrapperNpgsql(
                 wrapperConnectionString,
                 wrappedOptionBuilder => wrappedOptionBuilder.UseNpgsql(connectionString))
             .Options;
@@ -149,7 +149,7 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
         wrapperConnectionString += $"; {PropertyDefinition.WaitForCustomEndpointInfoTimeoutMs.Name}=30000";
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
-            .UseAwsWrapper(
+            .UseAwsWrapperNpgsql(
                 wrapperConnectionString,
                 wrappedOptionBuilder => wrappedOptionBuilder.UseNpgsql(connectionString))
             .Options;

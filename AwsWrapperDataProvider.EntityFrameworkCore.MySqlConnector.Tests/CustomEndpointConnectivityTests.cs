@@ -76,7 +76,7 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
         wrapperConnectionString += $"; {PropertyDefinition.WaitForCustomEndpointInfoTimeoutMs.Name}=30000";
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
-            .UseAwsWrapper(
+            .UseAwsWrapperMySql(
                 wrapperConnectionString,
                 wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, this.version))
             .Options;
@@ -151,7 +151,7 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
         wrapperConnectionString += $"; {PropertyDefinition.WaitForCustomEndpointInfoTimeoutMs.Name}=30000";
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
-            .UseAwsWrapper(
+            .UseAwsWrapperMySql(
                 wrapperConnectionString,
                 wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, this.version))
             .Options;

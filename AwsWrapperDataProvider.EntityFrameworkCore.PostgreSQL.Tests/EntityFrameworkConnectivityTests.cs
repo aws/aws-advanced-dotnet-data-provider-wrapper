@@ -68,7 +68,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
         }
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
-            .UseAwsWrapper(
+            .UseAwsWrapperNpgsql(
                 wrapperConnectionString,
                 wrappedOptionBuilder => wrappedOptionBuilder.UseNpgsql(connectionString))
             .LogTo(Console.WriteLine)
@@ -111,7 +111,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
         }
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
-            .UseAwsWrapper(
+            .UseAwsWrapperNpgsql(
                 wrapperConnectionString,
                 wrappedOptionBuilder => wrappedOptionBuilder.UseNpgsql(connectionString))
             .LogTo(Console.WriteLine)
@@ -159,7 +159,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
             .UseLoggerFactory(this.loggerFactory)
-            .UseAwsWrapper(
+            .UseAwsWrapperNpgsql(
                 wrapperConnectionString,
                 wrappedOptionBuilder => wrappedOptionBuilder
                     .UseLoggerFactory(this.loggerFactory)
@@ -233,7 +233,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
             .UseLoggerFactory(this.loggerFactory)
-            .UseAwsWrapper(
+            .UseAwsWrapperNpgsql(
                 wrapperConnectionString,
                 wrappedOptionBuilder => wrappedOptionBuilder
                     .UseLoggerFactory(this.loggerFactory)
@@ -306,7 +306,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
             .UseLoggerFactory(this.loggerFactory)
-            .UseAwsWrapper(
+            .UseAwsWrapperNpgsql(
                 wrapperConnectionString,
                 wrappedOptionBuilder => wrappedOptionBuilder
                     .UseLoggerFactory(this.loggerFactory)
@@ -403,7 +403,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
             .UseLoggerFactory(this.loggerFactory)
-            .UseAwsWrapper(
+            .UseAwsWrapperNpgsql(
                 wrapperConnectionString,
                 wrappedOptionBuilder => wrappedOptionBuilder
                     .UseLoggerFactory(this.loggerFactory)
@@ -501,7 +501,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
             .UseLoggerFactory(this.loggerFactory)
-            .UseAwsWrapper(
+            .UseAwsWrapperNpgsql(
                 wrapperConnectionString,
                 wrappedOptionBuilder => wrappedOptionBuilder
                     .UseLoggerFactory(this.loggerFactory)
@@ -594,7 +594,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
             .UseLoggerFactory(this.loggerFactory)
-            .UseAwsWrapper(
+            .UseAwsWrapperNpgsql(
                 wrapperConnectionString,
                 wrappedOptionBuilder => wrappedOptionBuilder
                     .UseLoggerFactory(this.loggerFactory)

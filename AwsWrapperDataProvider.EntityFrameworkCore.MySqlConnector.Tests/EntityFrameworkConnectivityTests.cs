@@ -69,7 +69,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
         }
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
-            .UseAwsWrapper(
+            .UseAwsWrapperMySql(
             wrapperConnectionString,
             wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, this.version))
             .LogTo(Console.WriteLine)
@@ -112,7 +112,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
         }
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
-            .UseAwsWrapper(
+            .UseAwsWrapperMySql(
             wrapperConnectionString,
             wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, this.version))
             .LogTo(Console.WriteLine)
@@ -159,7 +159,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
             .UseLoggerFactory(this.loggerFactory)
-            .UseAwsWrapper(
+            .UseAwsWrapperMySql(
                 wrapperConnectionString,
                 wrappedOptionBuilder => wrappedOptionBuilder
                     .UseLoggerFactory(this.loggerFactory)
@@ -232,7 +232,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
             .UseLoggerFactory(this.loggerFactory)
-            .UseAwsWrapper(
+            .UseAwsWrapperMySql(
                 wrapperConnectionString,
                 wrappedOptionBuilder => wrappedOptionBuilder
                     .UseLoggerFactory(this.loggerFactory)
@@ -304,7 +304,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
             .UseLoggerFactory(this.loggerFactory)
-            .UseAwsWrapper(
+            .UseAwsWrapperMySql(
                 wrapperConnectionString,
                 wrappedOptionBuilder => wrappedOptionBuilder
                     .UseLoggerFactory(this.loggerFactory)
@@ -400,7 +400,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
             .UseLoggerFactory(this.loggerFactory)
-            .UseAwsWrapper(
+            .UseAwsWrapperMySql(
                 wrapperConnectionString,
                 wrappedOptionBuilder => wrappedOptionBuilder
                     .UseLoggerFactory(this.loggerFactory)
@@ -497,7 +497,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
             .UseLoggerFactory(this.loggerFactory)
-            .UseAwsWrapper(
+            .UseAwsWrapperMySql(
                 wrapperConnectionString,
                 wrappedOptionBuilder => wrappedOptionBuilder
                     .UseLoggerFactory(this.loggerFactory)
@@ -589,7 +589,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
         var options = new DbContextOptionsBuilder<PersonDbContext>()
             .UseLoggerFactory(this.loggerFactory)
-            .UseAwsWrapper(
+            .UseAwsWrapperMySql(
                 wrapperConnectionString,
                 wrappedOptionBuilder => wrappedOptionBuilder
                     .UseLoggerFactory(this.loggerFactory)

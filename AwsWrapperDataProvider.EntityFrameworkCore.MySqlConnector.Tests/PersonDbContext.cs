@@ -1,4 +1,4 @@
-﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ public class PersonDbContext : DbContext
         var version = new MySqlServerVersion("8.0.32");
 
         optionsBuilder
-            .UseAwsWrapper(
+            .UseAwsWrapperMySql(
             connectionString,
             wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, version))
             .LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Trace);

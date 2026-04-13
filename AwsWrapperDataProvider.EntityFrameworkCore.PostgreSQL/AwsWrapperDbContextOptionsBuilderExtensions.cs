@@ -20,7 +20,7 @@ namespace Microsoft.EntityFrameworkCore;
 
 public static class AwsWrapperDbContextOptionsBuilderExtensions
 {
-    public static DbContextOptionsBuilder UseAwsWrapper(
+    public static DbContextOptionsBuilder UseAwsWrapperNpgsql(
         this DbContextOptionsBuilder optionsBuilder,
         string connectionString,
         Action<DbContextOptionsBuilder> wrappedOptionsBuilderAction)
@@ -51,12 +51,12 @@ public static class AwsWrapperDbContextOptionsBuilderExtensions
         return optionsBuilder;
     }
 
-    public static DbContextOptionsBuilder<TContext> UseAwsWrapper<TContext>(
+    public static DbContextOptionsBuilder<TContext> UseAwsWrapperNpgsql<TContext>(
         this DbContextOptionsBuilder<TContext> optionsBuilder,
         string connectionString,
         Action<DbContextOptionsBuilder> wrappedOptionsBuilderAction)
         where TContext : DbContext
-        => (DbContextOptionsBuilder<TContext>)UseAwsWrapper((DbContextOptionsBuilder)optionsBuilder, connectionString, wrappedOptionsBuilderAction);
+        => (DbContextOptionsBuilder<TContext>)UseAwsWrapperNpgsql((DbContextOptionsBuilder)optionsBuilder, connectionString, wrappedOptionsBuilderAction);
 
     private static void ConfigureWarnings(DbContextOptionsBuilder optionsBuilder)
     {
