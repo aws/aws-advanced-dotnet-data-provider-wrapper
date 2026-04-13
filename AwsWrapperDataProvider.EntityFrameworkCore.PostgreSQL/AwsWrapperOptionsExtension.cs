@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Update;
@@ -82,4 +83,30 @@ public class AwsWrapperOptionsExtension : IDbContextOptionsExtension
     }
 
     public DbContextOptionsExtensionInfo Info => this.info ??= new AwsWrapperDbContextOptionsExtensionInfo(this);
+
+    private sealed class AwsWrapperDbContextOptionsExtensionInfo : DbContextOptionsExtensionInfo
+    {
+        public AwsWrapperDbContextOptionsExtensionInfo(AwsWrapperOptionsExtension optionsExtension)
+            : base(optionsExtension)
+        {
+        }
+
+        public override bool IsDatabaseProvider => false;
+
+        public override string LogFragment => $"Using AWS Wrapper Provider - ConnectionString: {this.ConnectionString}";
+
+        public override int GetServiceProviderHashCode() => (this.ConnectionString ?? string.Empty).GetHashCode();
+
+        public override void PopulateDebugInfo(IDictionary<string, string> debugInfo)
+        {
+            debugInfo["AwsWrapper:" + nameof(AwsWrapperDbContextOptionsBuilderExtensions.UseAwsWrapperNpgsql)] = "1";
+        }
+
+        public override bool ShouldUseSameServiceProvider(DbContextOptionsExtensionInfo other) =>
+            other is AwsWrapperDbContextOptionsExtensionInfo;
+
+        public override AwsWrapperOptionsExtension Extension => (AwsWrapperOptionsExtension)base.Extension;
+
+        private string? ConnectionString => this.Extension.WrapperConnectionString;
+    }
 }
