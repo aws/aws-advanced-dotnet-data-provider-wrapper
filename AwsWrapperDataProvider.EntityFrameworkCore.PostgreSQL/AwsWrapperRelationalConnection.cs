@@ -19,16 +19,24 @@ namespace AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL;
 
 public class AwsWrapperRelationalConnection : RelationalConnection, IAwsWrapperRelationalConnection
 {
+    private readonly string? wrapperConnectionString;
+
     public AwsWrapperRelationalConnection(
         RelationalConnectionDependencies dependencies, IRelationalConnection targetRelationalConnection) : base(dependencies)
     {
         this.TargetRelationalConnection = targetRelationalConnection;
+
+        // Retrieve the wrapper connection string (with Plugins=... etc.) from our extension.
+        var wrapperExtension = dependencies.ContextOptions.FindExtension<AwsWrapperOptionsExtension>();
+        this.wrapperConnectionString = wrapperExtension?.WrapperConnectionString;
     }
 
     public IRelationalConnection? TargetRelationalConnection { get; set; }
 
     protected override DbConnection CreateDbConnection()
     {
-        return new AwsWrapperConnection(typeof(Npgsql.NpgsqlConnection), this.ConnectionString!);
+        // Use the wrapper connection string (which includes Plugins= and other wrapper-specific keys)
+        // rather than the base ConnectionString (which only has provider-understood keys).
+        return new AwsWrapperConnection(typeof(Npgsql.NpgsqlConnection), this.wrapperConnectionString ?? this.ConnectionString!);
     }
 }

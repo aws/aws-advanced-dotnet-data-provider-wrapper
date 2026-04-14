@@ -12,44 +12,38 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.EntityFrameworkCore.Update;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL;
 
-public class AwsWrapperOptionsExtension : RelationalOptionsExtension, IDbContextOptionsExtension
+public class AwsWrapperOptionsExtension : IDbContextOptionsExtension
 {
-    private AwsWrapperDbContextOptionsExtensionInfo? _info;
+    private AwsWrapperDbContextOptionsExtensionInfo? info;
 
-    // Add more AWS Wrapper settings here if needed
+    public IDbContextOptionsExtension WrappedExtension { get; set; }
+
+    public string? WrapperConnectionString { get; set; }
 
     public AwsWrapperOptionsExtension(IDbContextOptionsExtension wrappedExtension)
     {
         this.WrappedExtension = wrappedExtension;
     }
 
-    protected internal AwsWrapperOptionsExtension(AwsWrapperOptionsExtension copyFrom) : base(copyFrom)
+    public void ApplyServices(IServiceCollection services)
     {
-        this.WrappedExtension = copyFrom.WrappedExtension;
-    }
+        this.WrappedExtension.ApplyServices(services);
 
-    public override void ApplyServices(IServiceCollection services)
-    {
-        var wrappedServiceCollection = new WrappedServiceCollection();
-        this.WrappedExtension.ApplyServices(wrappedServiceCollection);
-
-        ServiceDescriptor? targetRelationalConnectionServiceDescriptor = wrappedServiceCollection
+        var targetRelationalConnectionServiceDescriptor = services
             .FirstOrDefault(x => x.ServiceType == typeof(IRelationalConnection));
 
         Type? targetRelationalConnectionType = targetRelationalConnectionServiceDescriptor?.ImplementationType;
         Func<IServiceProvider, object>? targetRelationalConnectionImplementationFactory = targetRelationalConnectionServiceDescriptor?.ImplementationFactory;
 
-        // add IDatabaseProvider
-        services.Add(new ServiceDescriptor(typeof(IDatabaseProvider), typeof(DatabaseProvider<AwsWrapperOptionsExtension>), ServiceLifetime.Singleton));
-
-        // add IRelationalConnection
-        services.Add(new ServiceDescriptor(typeof(IRelationalConnection), p => p.GetRequiredService<IAwsWrapperRelationalConnection>(), ServiceLifetime.Scoped));
         if (targetRelationalConnectionType != null)
         {
             services.Add(new ServiceDescriptor(
@@ -70,22 +64,49 @@ public class AwsWrapperOptionsExtension : RelationalOptionsExtension, IDbContext
         }
         else
         {
-            throw new Exception("not implemented");
+            throw new InvalidOperationException("Could not determine the target relational connection type or factory.");
         }
 
-        // add all other service descriptors
-        foreach (var serviceDescriptor in wrappedServiceCollection
-            .Where(x => x.ServiceType != typeof(IDatabaseProvider)
-                && x.ServiceType != typeof(IRelationalConnection)))
-        {
-            services.Add(serviceDescriptor);
-        }
+        services.Replace(new ServiceDescriptor(
+            typeof(IRelationalConnection),
+            p => p.GetRequiredService<IAwsWrapperRelationalConnection>(),
+            ServiceLifetime.Scoped));
+
+        services.Replace(new ServiceDescriptor(
+            typeof(IModificationCommandBatchFactory),
+            typeof(AwsWrapperModificationCommandBatchFactory),
+            ServiceLifetime.Scoped));
     }
 
-    protected override RelationalOptionsExtension Clone() => new AwsWrapperOptionsExtension(this);
+    public void Validate(IDbContextOptions options)
+    {
+    }
 
-    /// <inheritdoc />
-    public override DbContextOptionsExtensionInfo Info => this._info ??= new AwsWrapperDbContextOptionsExtensionInfo(this);
+    public DbContextOptionsExtensionInfo Info => this.info ??= new AwsWrapperDbContextOptionsExtensionInfo(this);
 
-    public IDbContextOptionsExtension WrappedExtension { get; set; }
+    private sealed class AwsWrapperDbContextOptionsExtensionInfo : DbContextOptionsExtensionInfo
+    {
+        public AwsWrapperDbContextOptionsExtensionInfo(AwsWrapperOptionsExtension optionsExtension)
+            : base(optionsExtension)
+        {
+        }
+
+        public override bool IsDatabaseProvider => false;
+
+        public override string LogFragment => $"Using AWS Wrapper Provider - ConnectionString: {this.ConnectionString}";
+
+        public override int GetServiceProviderHashCode() => (this.ConnectionString ?? string.Empty).GetHashCode();
+
+        public override void PopulateDebugInfo(IDictionary<string, string> debugInfo)
+        {
+            debugInfo["AwsWrapper:" + nameof(AwsWrapperDbContextOptionsBuilderExtensions.UseAwsWrapperNpgsql)] = "1";
+        }
+
+        public override bool ShouldUseSameServiceProvider(DbContextOptionsExtensionInfo other) =>
+            other is AwsWrapperDbContextOptionsExtensionInfo;
+
+        public override AwsWrapperOptionsExtension Extension => (AwsWrapperOptionsExtension)base.Extension;
+
+        private string? ConnectionString => this.Extension.WrapperConnectionString;
+    }
 }

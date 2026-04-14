@@ -387,6 +387,12 @@ namespace AwsWrapperDataProvider.Properties {
             }
         }
         
+        internal static string ClusterTopologyMonitor_WaitTillTopologyGetsUpdated_EndTime {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor_WaitTillTopologyGetsUpdated_EndTime", resourceCulture);
+            }
+        }
+        
         internal static string DbConnectionProvider_CreateDbConnection {
             get {
                 return ResourceManager.GetString("DbConnectionProvider_CreateDbConnection", resourceCulture);

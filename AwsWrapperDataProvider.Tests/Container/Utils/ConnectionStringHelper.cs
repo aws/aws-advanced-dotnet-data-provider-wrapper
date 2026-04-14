@@ -79,6 +79,7 @@ public class ConnectionStringHelper
                 npgsqlConnectionStringBuilder.Timeout = connectionTimeout;
                 npgsqlConnectionStringBuilder.CommandTimeout = commandTimeout;
                 npgsqlConnectionStringBuilder.Pooling = enablePooling;
+                npgsqlConnectionStringBuilder.SslMode = SslMode.Require;
 
                 url = npgsqlConnectionStringBuilder.ConnectionString;
                 break;

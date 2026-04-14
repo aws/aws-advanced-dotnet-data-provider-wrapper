@@ -12,20 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using AwsWrapperDataProvider.Dialect.MySqlConnector;
+using AwsWrapperDataProvider.Dialect.Npgsql;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
 using Microsoft.EntityFrameworkCore;
 
-namespace MySqlEntityFrameworkExample;
+namespace PgEntityFrameworkExample;
 
-public class MySqlEntityFrameworkExample
+public class PgEntityFrameworkExample
 {
     private static readonly DbContextOptions<ProductDbContext> Options = CreateDbContextOptions();
 
     public static async Task Main(string[] args)
     {
         // Load relevant DbConnection dialect
-        MySqlConnectorDialectLoader.Load();
+        NpgsqlDialectLoader.Load();
 
         var start = DateTime.UtcNow;
         var threshold = TimeSpan.FromMinutes(5);
@@ -68,18 +68,16 @@ public class MySqlEntityFrameworkExample
 
     private static DbContextOptions<ProductDbContext> CreateDbContextOptions()
     {
-        const string connectionString = "Server=<endpoint>;" +
+        const string connectionString = "Host=<endpoint>;" +
                                         "Database=<db name>;" +
-                                        "User Id=<user>;" +
+                                        "Username=<user>;" +
                                         "Password=<password>;" +
                                         "Plugins=failover,initialConnection;";
 
         return new DbContextOptionsBuilder<ProductDbContext>()
-            .UseAwsWrapperMySql(
+            .UseAwsWrapperNpgsql(
                 connectionString,
-                wrappedOptions => wrappedOptions.UseMySql(
-                    connectionString,
-                    new MySqlServerVersion("9.0.0")))
+                wrappedOptions => wrappedOptions.UseNpgsql(connectionString))
             .Options;
     }
 }

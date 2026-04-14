@@ -1,4 +1,4 @@
-﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -12,11 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Microsoft.Extensions.DependencyInjection;
+namespace PgEntityFrameworkExample;
 
-namespace AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL;
-
-public class WrappedServiceCollection : List<ServiceDescriptor>, IServiceCollection
+public class Product
 {
-    public WrappedServiceCollection() { }
+    public int Id { get; set; }
+
+    public string Name { get; set; } = string.Empty;
+
+    public decimal Price { get; set; }
+
+    public DateTime CreatedAt { get; set; }
 }

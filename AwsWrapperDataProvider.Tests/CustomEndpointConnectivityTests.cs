@@ -125,75 +125,6 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
     }
 
     /// <summary>
-    /// Ensures the custom endpoint's single instance has the specified role (writer or reader).
-    /// May trigger a failover to achieve the desired role.
-    /// </summary>
-    private async Task SetupCustomEndpointRoleAsync(HostRole hostRole)
-    {
-        this._logger.WriteLine($"Setting up custom endpoint instance with role: {hostRole}");
-        var endpointMembers = this._fixture.EndpointInfo!.StaticMembers ?? new List<string>();
-        var clusterId = TestEnvironment.Env.Info.RdsDbName!;
-        var originalWriter = await AuroraUtils.GetDBClusterWriterInstanceIdAsync(clusterId);
-
-        var connectionStringNoPlugins = ConnectionStringHelper.GetUrl(
-            Engine,
-            this._fixture.EndpointInfo.Endpoint,
-            Port,
-            Username,
-            Password,
-            DefaultDbName,
-            10,
-            10,
-            string.Empty,
-            false);
-
-        using (var conn = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionStringNoPlugins))
-        {
-            await conn.OpenAsync(TestContext.Current.CancellationToken);
-            var originalInstanceId = await AuroraUtils.QueryInstanceId(conn, true);
-            Assert.True(endpointMembers.Contains(originalInstanceId!), $"Instance {originalInstanceId} should be in endpoint members");
-
-            string? failoverTarget = null;
-            if (hostRole == HostRole.Writer)
-            {
-                if (originalInstanceId == originalWriter)
-                {
-                    this._logger.WriteLine($"Role is already {hostRole}, no failover needed.");
-                    return;
-                }
-
-                failoverTarget = originalInstanceId;
-                this._logger.WriteLine("Failing over to get writer role...");
-            }
-            else if (hostRole == HostRole.Reader)
-            {
-                if (originalInstanceId != originalWriter)
-                {
-                    this._logger.WriteLine($"Role is already {hostRole}, no failover needed.");
-                    return;
-                }
-
-                this._logger.WriteLine("Failing over to get reader role...");
-            }
-
-            await AuroraUtils.FailoverClusterToATargetAndWaitUntilWriterChanged(clusterId, originalWriter, failoverTarget!);
-        }
-
-        this._logger.WriteLine($"Verifying that new connection has role: {hostRole}");
-        using (var conn = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionStringNoPlugins))
-        {
-            await conn.OpenAsync(TestContext.Current.CancellationToken);
-            var currentInstanceId = await AuroraUtils.QueryInstanceId(conn, true);
-            Assert.True(endpointMembers.Contains(currentInstanceId!), $"Instance {currentInstanceId} should be in endpoint members");
-
-            var newRole = await AuroraUtils.QueryHostRoleAsync(conn, Engine, true);
-            Assert.Equal(hostRole, newRole);
-        }
-
-        this._logger.WriteLine($"Custom endpoint instance successfully set to role: {hostRole}");
-    }
-
-    /// <summary>
     /// Tests read-write splitting with custom endpoint changes when initial connection is to a reader:
     /// 1. Connect to reader via custom endpoint (endpoint has only reader).
     /// 2. Switch to writer fails (endpoint has no writer).
@@ -212,7 +143,7 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
         Assert.SkipWhen(NumberOfInstances < 3, "Skipped due to test requiring number of database instances >= 3.");
         Assert.SkipWhen(this._fixture.EndpointInfo == null, "Custom endpoint fixture not created (not Aurora or < 3 instances).");
 
-        await this.SetupCustomEndpointRoleAsync(HostRole.Reader);
+        await this._fixture.SetupCustomEndpointRoleAsync(HostRole.Reader, this._logger);
 
         var pluginCodes = Engine == DatabaseEngine.PG ? "customEndpoint,efm,readWriteSplitting,failover" : "customEndpoint,readWriteSplitting,failover";
         var connectionString = ConnectionStringHelper.GetUrl(
@@ -290,7 +221,7 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
         Assert.SkipWhen(NumberOfInstances < 3, "Skipped due to test requiring number of database instances >= 3.");
         Assert.SkipWhen(this._fixture.EndpointInfo == null, "Custom endpoint fixture not created (not Aurora or < 3 instances).");
 
-        await this.SetupCustomEndpointRoleAsync(HostRole.Writer);
+        await this._fixture.SetupCustomEndpointRoleAsync(HostRole.Writer, this._logger);
 
         var connectionString = ConnectionStringHelper.GetUrl(
             Engine,

@@ -7,7 +7,7 @@ This project provides Entity Framework Core integration for MySQL databases usin
 ## Dependencies
 
 This project depends on:
-- **[MySql.Data](https://www.nuget.org/packages/MySql.Data/)**: MySQL Connector/NET for database connectivity
+- **[Pomelo.EntityFrameworkCore.MySql](https://www.nuget.org/packages/Pomelo.EntityFrameworkCore.MySql/)**: Pomelo EF Core provider for MySQL
 - **[Microsoft.EntityFrameworkCore](https://www.nuget.org/packages/Microsoft.EntityFrameworkCore/)**: Entity Framework Core framework
 
 ## Usage
@@ -16,9 +16,9 @@ Configure your DbContext to use the AWS Wrapper:
 
 ```csharp
 services.AddDbContext<MyDbContext>(options =>
-    options.UseAwsWrapper(
+    options.UseAwsWrapperMySql(
         connectionString,
-        wrappedOptions => wrappedOptions.UseMySQL(connectionString)));
+        wrappedOptions => wrappedOptions.UseMySql(connectionString)));
 ```
 
 ## Example

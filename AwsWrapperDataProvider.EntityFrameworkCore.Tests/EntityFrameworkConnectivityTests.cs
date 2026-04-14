@@ -22,14 +22,13 @@ using Microsoft.Extensions.Logging.Console;
 [assembly: CollectionBehavior(DisableTestParallelization = true)]
 [assembly: CaptureConsole]
 
-namespace AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests;
+namespace AwsWrapperDataProvider.EntityFrameworkCore.Tests;
 
 public class EntityFrameworkConnectivityTests : IntegrationTestBase
 {
     protected override bool MakeSureFirstInstanceWriter => true;
 
     private readonly ITestOutputHelper logger;
-    private readonly MySqlServerVersion version = new("8.0.32");
     private readonly ILoggerFactory loggerFactory;
 
     public EntityFrameworkConnectivityTests(ITestOutputHelper output)
@@ -39,9 +38,9 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
         this.loggerFactory = LoggerFactory.Create(builder =>
         {
             builder
-            .SetMinimumLevel(LogLevel.Trace)
-            .AddDebug()
-            .AddConsole(options => options.FormatterName = "simple");
+                .SetMinimumLevel(LogLevel.Trace)
+                .AddDebug()
+                .AddConsole(options => options.FormatterName = "simple");
 
             builder.AddSimpleConsole(options =>
             {
@@ -53,27 +52,110 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
         });
     }
 
+    private DbContextOptions<PersonDbContext> BuildOptions(string wrapperConnectionString, string connectionString)
+    {
+        if (Engine == DatabaseEngine.PG)
+        {
+            return new DbContextOptionsBuilder<PersonDbContext>()
+                .UseAwsWrapperNpgsql(
+                    wrapperConnectionString,
+                    wrappedOptionBuilder => wrappedOptionBuilder.UseNpgsql(connectionString))
+                .LogTo(Console.WriteLine)
+                .Options;
+        }
+
+        if (Engine == DatabaseEngine.MYSQL)
+        {
+            return new DbContextOptionsBuilder<PersonDbContext>()
+                .UseAwsWrapperMySql(
+                    wrapperConnectionString,
+                    wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)))
+                .LogTo(Console.WriteLine)
+                .Options;
+        }
+
+        throw new InvalidOperationException($"Unsupported engine {Engine}");
+    }
+
+    private DbContextOptions<PersonDbContext> BuildOptionsWithLogger(
+        string wrapperConnectionString, string connectionString, ILoggerFactory factory)
+    {
+        if (Engine == DatabaseEngine.PG)
+        {
+            return new DbContextOptionsBuilder<PersonDbContext>()
+                .UseLoggerFactory(factory)
+                .UseAwsWrapperNpgsql(
+                    wrapperConnectionString,
+                    wrappedOptionBuilder => wrappedOptionBuilder
+                        .UseLoggerFactory(factory)
+                        .UseNpgsql(connectionString))
+                .Options;
+        }
+
+        if (Engine == DatabaseEngine.MYSQL)
+        {
+            return new DbContextOptionsBuilder<PersonDbContext>()
+                .UseLoggerFactory(factory)
+                .UseAwsWrapperMySql(
+                    wrapperConnectionString,
+                    wrappedOptionBuilder => wrappedOptionBuilder
+                        .UseLoggerFactory(factory)
+                        .UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)))
+                .Options;
+        }
+
+        throw new InvalidOperationException($"Unsupported engine {Engine}");
+    }
+
+    private static string GetBasicWrapperConnectionString(string connectionString)
+    {
+        var wrapperConnectionString = connectionString + ";Plugins=initialConnection,failover;";
+        if (Deployment != DatabaseEngineDeployment.AURORA && Deployment != DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER)
+        {
+            wrapperConnectionString = Engine == DatabaseEngine.PG
+                ? connectionString + ";Plugins=initialConnection,failover;"
+                : connectionString + ";Plugins=failover;";
+        }
+
+        return wrapperConnectionString;
+    }
+
+    private static string GetCrashWrapperConnectionString(string connectionString)
+    {
+        var wrapperConnectionString = connectionString
+            + ";Plugins=initialConnection,failover;"
+            + "EnableConnectFailover=true;"
+            + "VerifyOpenedConnectionType=writer;"
+            + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
+
+        return wrapperConnectionString;
+    }
+
+    private static string GetTempFailureWrapperConnectionString(string connectionString)
+    {
+        var wrapperConnectionString = connectionString
+            + (Engine == DatabaseEngine.PG
+                ? ";Plugins=initialConnection,failover;"
+                : ";Plugins=failover;")
+            + "EnableConnectFailover=true;"
+            + "VerifyOpenedConnectionType=writer;"
+            + $"ClusterInstanceHostPattern=?.{ProxyDatabaseInfo!.InstanceEndpointSuffix}:{ProxyDatabaseInfo!.InstanceEndpointPort}";
+
+        return wrapperConnectionString;
+    }
+
     [Fact]
     [Trait("Category", "Integration")]
+    [Trait("Database", "pg-ef")]
     [Trait("Database", "mysql-ef")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
     [Trait("Engine", "multi-az-instance")]
-    public void MysqlEFAddTest()
+    public void EFAddTest()
     {
         var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName);
-        var wrapperConnectionString = connectionString + $";Plugins=initialConnection,failover;";
-        if (Deployment != DatabaseEngineDeployment.AURORA && Deployment != DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER)
-        {
-            wrapperConnectionString = connectionString + $";Plugins=failover;";
-        }
-
-        var options = new DbContextOptionsBuilder<PersonDbContext>()
-            .UseAwsWrapper(
-            wrapperConnectionString,
-            wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, this.version))
-            .LogTo(Console.WriteLine)
-            .Options;
+        var wrapperConnectionString = GetBasicWrapperConnectionString(connectionString);
+        var options = this.BuildOptions(wrapperConnectionString, connectionString);
 
         using (var db = new PersonDbContext(options))
         {
@@ -98,25 +180,16 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
     [Fact]
     [Trait("Category", "Integration")]
+    [Trait("Database", "pg-ef")]
     [Trait("Database", "mysql-ef")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
     [Trait("Engine", "multi-az-instance")]
-    public async Task MysqlEFAddTestAsync()
+    public async Task EFAddTestAsync()
     {
         var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName);
-        var wrapperConnectionString = connectionString + $";Plugins=initialConnection,failover;";
-        if (Deployment != DatabaseEngineDeployment.AURORA && Deployment != DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER)
-        {
-            wrapperConnectionString = connectionString + $";Plugins=failover;";
-        }
-
-        var options = new DbContextOptionsBuilder<PersonDbContext>()
-            .UseAwsWrapper(
-            wrapperConnectionString,
-            wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, this.version))
-            .LogTo(Console.WriteLine)
-            .Options;
+        var wrapperConnectionString = GetBasicWrapperConnectionString(connectionString);
+        var options = this.BuildOptions(wrapperConnectionString, connectionString);
 
         using (var db = new PersonDbContext(options))
         {
@@ -141,6 +214,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
     [Fact]
     [Trait("Category", "Integration")]
+    [Trait("Database", "pg-ef")]
     [Trait("Database", "mysql-ef")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
@@ -151,20 +225,8 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
         string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
 
         var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName, 2, 10);
-
-        var wrapperConnectionString = connectionString
-            + $";Plugins=initialConnection,failover;" +
-            $"EnableConnectFailover=true;" +
-            $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
-
-        var options = new DbContextOptionsBuilder<PersonDbContext>()
-            .UseLoggerFactory(this.loggerFactory)
-            .UseAwsWrapper(
-                wrapperConnectionString,
-                wrappedOptionBuilder => wrappedOptionBuilder
-                    .UseLoggerFactory(this.loggerFactory)
-                    .UseMySql(connectionString, this.version))
-            .Options;
+        var wrapperConnectionString = GetCrashWrapperConnectionString(connectionString);
+        var options = this.BuildOptionsWithLogger(wrapperConnectionString, connectionString, this.loggerFactory);
 
         using (var db = new PersonDbContext(options))
         {
@@ -214,6 +276,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
     [Fact]
     [Trait("Category", "Integration")]
+    [Trait("Database", "pg-ef")]
     [Trait("Database", "mysql-ef")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
@@ -224,20 +287,8 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
         string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
 
         var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName, 2, 10);
-
-        var wrapperConnectionString = connectionString
-            + $";Plugins=initialConnection,failover;" +
-            $"EnableConnectFailover=true;" +
-            $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
-
-        var options = new DbContextOptionsBuilder<PersonDbContext>()
-            .UseLoggerFactory(this.loggerFactory)
-            .UseAwsWrapper(
-                wrapperConnectionString,
-                wrappedOptionBuilder => wrappedOptionBuilder
-                    .UseLoggerFactory(this.loggerFactory)
-                    .UseMySql(connectionString, this.version))
-            .Options;
+        var wrapperConnectionString = GetCrashWrapperConnectionString(connectionString);
+        var options = this.BuildOptionsWithLogger(wrapperConnectionString, connectionString, this.loggerFactory);
 
         using (var db = new PersonDbContext(options))
         {
@@ -287,6 +338,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
     [Fact]
     [Trait("Category", "Integration")]
+    [Trait("Database", "pg-ef")]
     [Trait("Database", "mysql-ef")]
     [Trait("Engine", "aurora")]
     public async Task EFCrashAfterOpenWithFailoverPluginTest()
@@ -296,20 +348,8 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
         string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
 
         var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName, 2, 10);
-
-        var wrapperConnectionString = connectionString
-            + $";Plugins=initialConnection,failover;" +
-            $"EnableConnectFailover=true;" +
-            $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
-
-        var options = new DbContextOptionsBuilder<PersonDbContext>()
-            .UseLoggerFactory(this.loggerFactory)
-            .UseAwsWrapper(
-                wrapperConnectionString,
-                wrappedOptionBuilder => wrappedOptionBuilder
-                    .UseLoggerFactory(this.loggerFactory)
-                    .UseMySql(connectionString, this.version))
-            .Options;
+        var wrapperConnectionString = GetCrashWrapperConnectionString(connectionString);
+        var options = this.BuildOptionsWithLogger(wrapperConnectionString, connectionString, this.loggerFactory);
 
         using (var db = new PersonDbContext(options))
         {
@@ -337,7 +377,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
                 {
                     if (connection.State == System.Data.ConnectionState.Closed)
                     {
-                        // Open explicly to trigger failover on execute pipeline
+                        // Open explicitly to trigger failover on execute pipeline
                         connection.Open();
                     }
 
@@ -383,6 +423,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
     [Fact]
     [Trait("Category", "Integration")]
+    [Trait("Database", "pg-ef")]
     [Trait("Database", "mysql-ef")]
     [Trait("Engine", "aurora")]
     public async Task EFCrashAfterOpenWithFailoverPluginTestAsync()
@@ -392,20 +433,8 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
         string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
 
         var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, Username, Password, DefaultDbName, 2, 10);
-
-        var wrapperConnectionString = connectionString
-            + $";Plugins=initialConnection,failover;" +
-            $"EnableConnectFailover=true;" +
-            $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
-
-        var options = new DbContextOptionsBuilder<PersonDbContext>()
-            .UseLoggerFactory(this.loggerFactory)
-            .UseAwsWrapper(
-                wrapperConnectionString,
-                wrappedOptionBuilder => wrappedOptionBuilder
-                    .UseLoggerFactory(this.loggerFactory)
-                    .UseMySql(connectionString, this.version))
-            .Options;
+        var wrapperConnectionString = GetCrashWrapperConnectionString(connectionString);
+        var options = this.BuildOptionsWithLogger(wrapperConnectionString, connectionString, this.loggerFactory);
 
         using (var db = new PersonDbContext(options))
         {
@@ -433,7 +462,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
                 {
                     if (connection.State == System.Data.ConnectionState.Closed)
                     {
-                        // Open explicly to trigger failover on execute pipeline
+                        // Open explicitly to trigger failover on execute pipeline
                         await connection.OpenAsync(TestContext.Current.CancellationToken);
                     }
 
@@ -479,6 +508,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
     [Fact]
     [Trait("Category", "Integration")]
+    [Trait("Database", "pg-ef")]
     [Trait("Database", "mysql-ef")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
@@ -488,21 +518,9 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
         string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
 
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ProxyClusterEndpoint, ProxyPort, Username, Password, DefaultDbName, 2, 5);
-
-        var wrapperConnectionString = connectionString
-            + $";Plugins=failover;" +
-            $"EnableConnectFailover=true;" +
-            $"ClusterInstanceHostPattern=?.{ProxyDatabaseInfo!.InstanceEndpointSuffix}:{ProxyDatabaseInfo!.InstanceEndpointPort}";
-
-        var options = new DbContextOptionsBuilder<PersonDbContext>()
-            .UseLoggerFactory(this.loggerFactory)
-            .UseAwsWrapper(
-                wrapperConnectionString,
-                wrappedOptionBuilder => wrappedOptionBuilder
-                    .UseLoggerFactory(this.loggerFactory)
-                    .UseMySql(connectionString, this.version))
-            .Options;
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, ProxyClusterEndpoint, ProxyPort, Username, Password, DefaultDbName, 5, 10);
+        var wrapperConnectionString = GetTempFailureWrapperConnectionString(connectionString);
+        var options = this.BuildOptionsWithLogger(wrapperConnectionString, connectionString, this.loggerFactory);
 
         using (var db = new PersonDbContext(options))
         {
@@ -526,12 +544,12 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
                 {
                     if (connection.State == System.Data.ConnectionState.Closed)
                     {
-                        // Open explicly to trigger failover on execute pipeline
+                        // Open explicitly to trigger failover on execute pipeline
                         connection.Open();
                     }
 
-                    clusterFailureTask = AuroraUtils.SimulateTemporaryFailureTask(ProxyClusterEndpoint, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
-                    writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
+                    clusterFailureTask = AuroraUtils.SimulateTemporaryFailureTask(ProxyClusterEndpoint, TimeSpan.Zero, TimeSpan.FromSeconds(15), tcs);
+                    writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(15), tcs);
                     await tcs.Task;
 
                     // Query to trigger failover
@@ -571,6 +589,7 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
     [Fact]
     [Trait("Category", "Integration")]
+    [Trait("Database", "pg-ef")]
     [Trait("Database", "mysql-ef")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
@@ -580,21 +599,9 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
 
         string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
 
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, ProxyClusterEndpoint, ProxyPort, Username, Password, DefaultDbName, 2, 5);
-
-        var wrapperConnectionString = connectionString
-            + $";Plugins=failover;" +
-            $"EnableConnectFailover=true;" +
-            $"ClusterInstanceHostPattern=?.{ProxyDatabaseInfo!.InstanceEndpointSuffix}:{ProxyDatabaseInfo!.InstanceEndpointPort}";
-
-        var options = new DbContextOptionsBuilder<PersonDbContext>()
-            .UseLoggerFactory(this.loggerFactory)
-            .UseAwsWrapper(
-                wrapperConnectionString,
-                wrappedOptionBuilder => wrappedOptionBuilder
-                    .UseLoggerFactory(this.loggerFactory)
-                    .UseMySql(connectionString, this.version))
-            .Options;
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, ProxyClusterEndpoint, ProxyPort, Username, Password, DefaultDbName, 5, 10);
+        var wrapperConnectionString = GetTempFailureWrapperConnectionString(connectionString);
+        var options = this.BuildOptionsWithLogger(wrapperConnectionString, connectionString, this.loggerFactory);
 
         using (var db = new PersonDbContext(options))
         {
@@ -618,12 +625,12 @@ public class EntityFrameworkConnectivityTests : IntegrationTestBase
                 {
                     if (connection.State == System.Data.ConnectionState.Closed)
                     {
-                        // Open explicly to trigger failover on execute pipeline
+                        // Open explicitly to trigger failover on execute pipeline
                         await connection.OpenAsync(TestContext.Current.CancellationToken);
                     }
 
-                    clusterFailureTask = AuroraUtils.SimulateTemporaryFailureTask(ProxyClusterEndpoint, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
-                    writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
+                    clusterFailureTask = AuroraUtils.SimulateTemporaryFailureTask(ProxyClusterEndpoint, TimeSpan.Zero, TimeSpan.FromSeconds(15), tcs);
+                    writerNodeFailureTask = AuroraUtils.SimulateTemporaryFailureTask(currentWriter, TimeSpan.Zero, TimeSpan.FromSeconds(15), tcs);
                     await tcs.Task;
 
                     // Query to trigger failover

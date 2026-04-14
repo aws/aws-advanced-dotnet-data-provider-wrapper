@@ -230,6 +230,9 @@
   <data name="ClusterTopologyMonitor_UpdateTopologyCache_TopologyUpdate" xml:space="preserve">
     <value>UpdateTopologyCache:</value>
   </data>
+  <data name="ClusterTopologyMonitor_WaitTillTopologyGetsUpdated_EndTime" xml:space="preserve">
+    <value>Waiting for topology update with timeout {0}ms, will stop waiting at {1}.</value>
+  </data>
   <data name="DbConnectionProvider_CreateDbConnection" xml:space="preserve">
     <value>Connection created: {0}@{1} with data source {2}.</value>
   </data>
