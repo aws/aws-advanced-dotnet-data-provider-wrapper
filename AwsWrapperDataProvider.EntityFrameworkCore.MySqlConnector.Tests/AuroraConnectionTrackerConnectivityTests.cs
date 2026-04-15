@@ -62,8 +62,14 @@ public class AuroraConnectionTrackerConnectivityTests : IntegrationTestBase
 
     private DbContextOptions<PersonDbContext> BuildOptions(bool pooling)
     {
+        var useProxy = Deployment == DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER;
+        var host = useProxy ? ProxyClusterEndpoint : Endpoint;
+        var port = useProxy ? ProxyPort : Port;
+        var instanceSuffix = useProxy ? ProxyDatabaseInfo!.InstanceEndpointSuffix : TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix;
+        var instancePort = useProxy ? ProxyDatabaseInfo!.InstanceEndpointPort : TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort;
+
         var connectionString = ConnectionStringHelper.GetUrl(
-            Engine, Endpoint, Port, Username, Password, DefaultDbName, 2, 10, enablePooling: pooling);
+            Engine, host, port, Username, Password, DefaultDbName, 2, 10, enablePooling: pooling);
 
         var plugins = Deployment is DatabaseEngineDeployment.AURORA or DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER
             ? $"{PluginCodes.InitialConnection},{PluginCodes.AuroraConnectionTracker},{PluginCodes.Failover}"
@@ -72,7 +78,7 @@ public class AuroraConnectionTrackerConnectivityTests : IntegrationTestBase
         var wrapperConnectionString = connectionString
             + $";Plugins={plugins};"
             + $"EnableConnectFailover=true;"
-            + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
+            + $"ClusterInstanceHostPattern=?.{instanceSuffix}:{instancePort}";
 
         return new DbContextOptionsBuilder<PersonDbContext>()
             .UseLoggerFactory(this.loggerFactory)
