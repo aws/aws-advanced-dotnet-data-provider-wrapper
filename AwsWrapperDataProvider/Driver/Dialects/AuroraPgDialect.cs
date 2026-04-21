@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data.Common;
+using System.Reflection;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -21,7 +22,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
-public class AuroraPgDialect : PgDialect, IAuroraLimitlessDialect
+public class AuroraPgDialect : PgDialect, IAuroraLimitlessDialect, IBlueGreenDialect
 {
     private const string ReaderOrdinal = "aurora_stat_utils";
 
@@ -47,6 +48,11 @@ public class AuroraPgDialect : PgDialect, IAuroraLimitlessDialect
 
     private static readonly string IsWriterQuery = "SELECT SERVER_ID FROM pg_catalog.aurora_replica_status() "
         + "WHERE SESSION_ID OPERATOR(pg_catalog.=) 'MASTER_SESSION_ID' AND SERVER_ID OPERATOR(pg_catalog.=) aurora_db_instance_identifier()";
+
+    protected static readonly string AuroraPostgreSqlBgTopologyExistsQuery = "SELECT 'pg_catalog.get_blue_green_fast_switchover_metadata'::regproc";
+
+    protected static readonly string DriverVersion = "1.0.1";
+    protected static readonly string AuroraPostgreSqlBgStatusQuery = $"SELECT * FROM pg_catalog.get_blue_green_fast_switchover_metadata('aws_advanced_dotnet_data_provider_wrapper-{DriverVersion}')";
 
     public override IList<Type> DialectUpdateCandidates { get; } = [
         typeof(RdsMultiAzDbClusterPgDialect),
@@ -113,6 +119,16 @@ public class AuroraPgDialect : PgDialect, IAuroraLimitlessDialect
                     TopologyQuery,
                     NodeIdQuery,
                     IsReaderQuery);
+    }
+
+    public async Task<bool> IsBlueGreenStatusAvailable(DbConnection connection)
+    {
+        return await DialectUtils.CheckExistenceQueries(connection, this.ExceptionHandler, Logger, AuroraPostgreSqlBgTopologyExistsQuery);
+    }
+
+    public string GetBlueGreenStatusQuery()
+    {
+        return AuroraPostgreSqlBgStatusQuery;
     }
 
     public string LimitlessRouterEndpointQuery { get => "SELECT router_endpoint, load from aurora_limitless_router_endpoints()"; }

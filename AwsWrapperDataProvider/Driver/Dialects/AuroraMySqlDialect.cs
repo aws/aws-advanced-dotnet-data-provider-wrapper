@@ -21,7 +21,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
-public class AuroraMySqlDialect : MySqlDialect
+public class AuroraMySqlDialect : MySqlDialect, IBlueGreenDialect
 {
     private static readonly ILogger<AuroraMySqlDialect> Logger = LoggerUtils.GetLogger<AuroraMySqlDialect>();
 
@@ -39,6 +39,10 @@ public class AuroraMySqlDialect : MySqlDialect
     private static readonly string IsWriterQuery = "SELECT SERVER_ID FROM information_schema.replica_host_status "
         + "WHERE SESSION_ID = 'MASTER_SESSION_ID' AND SERVER_ID = @@aurora_server_id";
 
+    private static readonly string AuroraMySqlBgTopologyExistsQuery = "SELECT 1 AS tmp FROM information_schema.tables WHERE table_schema = 'mysql' AND table_name = 'rds_topology'";
+
+    private static readonly string AuroraMySqlBgStatusQuery = "SELECT * FROM mysql.rds_topology";
+
     public override IList<Type> DialectUpdateCandidates { get; } = [
         typeof(RdsMultiAzDbClusterMySqlDialect),
     ];
@@ -54,7 +58,7 @@ public class AuroraMySqlDialect : MySqlDialect
         }
         catch (Exception ex) when (this.ExceptionHandler.IsSyntaxError(ex))
         {
-            // Syntax error - expected when querying against incorrect dialect
+            Logger.LogTrace(ex, Resources.Error_CantCheckDialect_Syntax, nameof(AuroraMySqlDialect));
         }
         catch (Exception ex)
         {
@@ -84,5 +88,15 @@ public class AuroraMySqlDialect : MySqlDialect
                     TopologyQuery,
                     NodeIdQuery,
                     IsReaderQuery);
+    }
+
+    public async Task<bool> IsBlueGreenStatusAvailable(DbConnection connection)
+    {
+        return await DialectUtils.CheckExistenceQueries(connection, this.ExceptionHandler, Logger, AuroraMySqlBgTopologyExistsQuery);
+    }
+
+    public string GetBlueGreenStatusQuery()
+    {
+        return AuroraMySqlBgStatusQuery;
     }
 }

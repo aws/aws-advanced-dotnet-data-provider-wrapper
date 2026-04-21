@@ -88,4 +88,10 @@ public static class LoggerUtils
         loggerFactory.Dispose();
         loggerFactory = CreateLoggerFactory();
     }
+
+    public static void SetLoggerFactory(ILoggerFactory factory)
+    {
+        loggerFactory?.Dispose();
+        loggerFactory = factory;
+    }
 }

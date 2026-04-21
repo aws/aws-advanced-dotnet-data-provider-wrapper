@@ -20,7 +20,9 @@ using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Plugins;
+using AwsWrapperDataProvider.Driver.Utils;
 using AwsWrapperDataProvider.Properties;
+using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver;
 
@@ -28,6 +30,7 @@ public class ConnectionPluginManager
 {
     private readonly Dictionary<string, Delegate> pluginChainDelegates = [];
     protected IList<IConnectionPlugin> plugins = [];
+    protected string[] activePluginCodes = [];
     protected IConnectionProvider defaultConnProvider;
     protected IConnectionProvider? effectiveConnProvider;
     protected ConfigurationProfile? configurationProfile;
@@ -90,6 +93,7 @@ public class ConnectionPluginManager
             this.effectiveConnProvider,
             props,
             this.configurationProfile);
+        this.activePluginCodes = pluginChainBuilder.GetPluginCodes(this.pluginService, props);
     }
 
     private async Task<T> ExecuteWithSubscribedPlugins<T>(
@@ -104,7 +108,7 @@ public class ConnectionPluginManager
         if (!this.pluginChainDelegates.TryGetValue(methodName, out Delegate? del))
         {
             del = this.MakePluginChainDelegate<T>(methodName);
-            this.pluginChainDelegates.Add(methodName, del);
+            this.pluginChainDelegates[methodName] = del;
         }
 
         if (del is not PluginChainADONetDelegate<T> pluginChainDelegate)
@@ -130,7 +134,6 @@ public class ConnectionPluginManager
     private PluginChainADONetDelegate<T> MakePluginChainDelegate<T>(string methodName)
     {
         PluginChainADONetDelegate<T>? pluginChainDelegate = null;
-
         for (int i = this.plugins.Count - 1; i >= 0; i--)
         {
             IConnectionPlugin plugin = this.plugins[i];
@@ -247,5 +250,10 @@ public class ConnectionPluginManager
     public virtual bool AcceptsStrategy(string strategy)
     {
         return this.defaultConnProvider.AcceptsStrategy(strategy);
+    }
+
+    public bool IsPluginActive(string pluginCode)
+    {
+        return this.activePluginCodes.Contains(pluginCode);
     }
 }

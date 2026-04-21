@@ -19,8 +19,13 @@ using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
-public class RdsMySqlDialect : MySqlDialect
+public class RdsMySqlDialect : MySqlDialect, IBlueGreenDialect
 {
+    protected static readonly string RdsMySqlTopologyTableExistsQuery = "SELECT 1 AS tmp FROM information_schema.tables WHERE" +
+                                                                        " table_schema = 'mysql' AND table_name = 'rds_topology'";
+
+    protected static readonly string RdsMySqlBgStatusQuery = "SELECT * FROM mysql.rds_topology";
+
     private static readonly ILogger<RdsMySqlDialect> Logger = LoggerUtils.GetLogger<RdsMySqlDialect>();
 
     public override IList<Type> DialectUpdateCandidates { get; } =
@@ -56,7 +61,7 @@ public class RdsMySqlDialect : MySqlDialect
         }
         catch (Exception ex) when (this.ExceptionHandler.IsSyntaxError(ex))
         {
-            // Syntax error - expected when querying against incorrect dialect
+            Logger.LogTrace(ex, Resources.Error_CantCheckDialect_Syntax, nameof(RdsPgDialect));
         }
         catch (Exception ex)
         {
@@ -64,5 +69,15 @@ public class RdsMySqlDialect : MySqlDialect
         }
 
         return false;
+    }
+
+    public async Task<bool> IsBlueGreenStatusAvailable(DbConnection connection)
+    {
+        return await DialectUtils.CheckExistenceQueries(connection, this.ExceptionHandler, Logger, RdsMySqlTopologyTableExistsQuery);
+    }
+
+    public string GetBlueGreenStatusQuery()
+    {
+        return RdsMySqlBgStatusQuery;
     }
 }
