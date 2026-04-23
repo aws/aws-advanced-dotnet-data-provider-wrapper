@@ -19,12 +19,16 @@ using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
-public class RdsPgDialect : PgDialect
+public class RdsPgDialect : PgDialect, IBlueGreenDialect
 {
     internal const string ExtensionsSql = "SELECT (setting LIKE '%rds_tools%') AS rds_tools, "
                                          + "(setting LIKE '%aurora_stat_utils%') AS aurora_stat_utils "
                                          + "FROM pg_catalog.pg_settings "
                                          + "WHERE name OPERATOR(pg_catalog.=) 'rds.extensions'";
+
+    protected static readonly string RdsPgTopologyTableExistsQuery = "SELECT 'rds_tools.show_topology'::regproc";
+
+    protected static readonly string RdsPgBgStatusQuery = "SELECT * FROM rds_tools.show_topology('aws_advanced_dotnet_data_provider_wrapper')";
 
     private static readonly ILogger<RdsPgDialect> Logger = LoggerUtils.GetLogger<RdsPgDialect>();
 
@@ -58,7 +62,7 @@ public class RdsPgDialect : PgDialect
         }
         catch (Exception ex) when (this.ExceptionHandler.IsSyntaxError(ex))
         {
-            // Syntax error - expected when querying against incorrect dialect
+            Logger.LogTrace(ex, Resources.Error_CantCheckDialect_Syntax, nameof(RdsPgDialect));
         }
         catch (Exception ex)
         {
@@ -66,5 +70,15 @@ public class RdsPgDialect : PgDialect
         }
 
         return false;
+    }
+
+    public async Task<bool> IsBlueGreenStatusAvailable(DbConnection connection)
+    {
+        return await DialectUtils.CheckExistenceQueries(connection, this.ExceptionHandler, Logger, RdsPgTopologyTableExistsQuery);
+    }
+
+    public string GetBlueGreenStatusQuery()
+    {
+        return RdsPgBgStatusQuery;
     }
 }

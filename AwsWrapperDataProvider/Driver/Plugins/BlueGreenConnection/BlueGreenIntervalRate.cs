@@ -12,20 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.ComponentModel.DataAnnotations.Schema;
+namespace AwsWrapperDataProvider.Driver.Plugins.BlueGreenConnection;
 
-namespace AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL.Tests;
-
-[Table("persons")]
-public class Person
+public enum BlueGreenIntervalRate
 {
-    [Column("id")]
-    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    public virtual int Id { get; set; }
-
-    [Column("firstname")]
-    public virtual string? FirstName { get; set; }
-
-    [Column("lastname")]
-    public virtual string? LastName { get; set; }
+    BASELINE,
+    INCREASED,
+    HIGH,
 }

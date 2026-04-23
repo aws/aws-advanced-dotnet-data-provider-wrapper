@@ -95,12 +95,14 @@ public class ContainerHelper {
 
     // For Entity Framework tests
     if (task.endsWith("ef")) {
+        String efProject = "AwsWrapperDataProvider.EntityFrameworkCore.Tests";
+
         exitCode = execInContainer(container, consumer,
-                "dotnet", "ef", "migrations", "add", "InitialCreate_" + System.currentTimeMillis(), "--project", "AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.Tests");
+                "dotnet", "ef", "migrations", "add", "InitialCreate_" + System.currentTimeMillis(), "--project", efProject);
         assertEquals(0, exitCode, "Failed to generate Entity framework migration.");
 
         exitCode = execInContainer(container, consumer,
-                "dotnet", "ef", "database", "update", "--project", "AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.Tests");
+                "dotnet", "ef", "database", "update", "--project", efProject);
         assertEquals(0, exitCode, "Failed to update database with migration");
     }
 
@@ -223,9 +225,8 @@ public class ContainerHelper {
         .withFileSystemBind("../../../AwsWrapperDataProvider.Dialect.MySqlClient", "/app/AwsWrapperDataProvider.Dialect.MySqlClient", BindMode.READ_WRITE)
         .withFileSystemBind("../../../AwsWrapperDataProvider.Dialect.MySqlConnector", "/app/AwsWrapperDataProvider.Dialect.MySqlConnector", BindMode.READ_WRITE)
         .withFileSystemBind("../../../AwsWrapperDataProvider.Dialect.Npgsql", "/app/AwsWrapperDataProvider.Dialect.Npgsql", BindMode.READ_WRITE)
-        .withFileSystemBind("../../../AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.Tests", "/app/AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.Tests", BindMode.READ_WRITE)
+        .withFileSystemBind("../../../AwsWrapperDataProvider.EntityFrameworkCore.Tests", "/app/AwsWrapperDataProvider.EntityFrameworkCore.Tests", BindMode.READ_WRITE)
         .withFileSystemBind("../../../AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector", "/app/AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector", BindMode.READ_WRITE)
-        .withFileSystemBind("../../../AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL.Tests", "/app/AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL.Tests", BindMode.READ_WRITE)
         .withFileSystemBind("../../../AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL", "/app/AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL", BindMode.READ_WRITE)
         .withFileSystemBind("../../../AwsWrapperDataProvider", "/app/AwsWrapperDataProvider", BindMode.READ_WRITE)
         .withFileSystemBind("../../../AwsWrapperDataProvider.Plugin.Iam", "/app/AwsWrapperDataProvider.Plugin.Iam", BindMode.READ_WRITE)

@@ -20,7 +20,7 @@ namespace Microsoft.EntityFrameworkCore;
 
 public static class AwsWrapperDbContextOptionsBuilderExtensions
 {
-    public static DbContextOptionsBuilder UseAwsWrapper(
+    public static DbContextOptionsBuilder UseAwsWrapperMySql(
         this DbContextOptionsBuilder optionsBuilder,
         string wrapperConnectionString,
         Action<DbContextOptionsBuilder> wrappedOptionsBuilderAction)
@@ -43,12 +43,33 @@ public static class AwsWrapperDbContextOptionsBuilderExtensions
         return optionsBuilder;
     }
 
-    public static DbContextOptionsBuilder<TContext> UseAwsWrapper<TContext>(
+    public static DbContextOptionsBuilder<TContext> UseAwsWrapperMySql<TContext>(
     this DbContextOptionsBuilder<TContext> optionsBuilder,
     string connectionString,
     Action<DbContextOptionsBuilder> wrappedOptionsBuilderAction)
     where TContext : DbContext
-    => (DbContextOptionsBuilder<TContext>)UseAwsWrapper((DbContextOptionsBuilder)optionsBuilder, connectionString, wrappedOptionsBuilderAction);
+    => (DbContextOptionsBuilder<TContext>)UseAwsWrapperMySql((DbContextOptionsBuilder)optionsBuilder, connectionString, wrappedOptionsBuilderAction);
+
+    /// <summary>
+    /// Configures the context to use the AWS Wrapper with MySQL. Use <see cref="UseAwsWrapperMySql"/> instead.
+    /// </summary>
+    [Obsolete("Use UseAwsWrapperMySql instead. This method will be removed in a future major version.")]
+    public static DbContextOptionsBuilder UseAwsWrapper(
+        this DbContextOptionsBuilder optionsBuilder,
+        string wrapperConnectionString,
+        Action<DbContextOptionsBuilder> wrappedOptionsBuilderAction)
+        => UseAwsWrapperMySql(optionsBuilder, wrapperConnectionString, wrappedOptionsBuilderAction);
+
+    /// <summary>
+    /// Configures the context to use the AWS Wrapper with MySQL. Use <see cref="UseAwsWrapperMySql{TContext}"/> instead.
+    /// </summary>
+    [Obsolete("Use UseAwsWrapperMySql instead. This method will be removed in a future major version.")]
+    public static DbContextOptionsBuilder<TContext> UseAwsWrapper<TContext>(
+        this DbContextOptionsBuilder<TContext> optionsBuilder,
+        string connectionString,
+        Action<DbContextOptionsBuilder> wrappedOptionsBuilderAction)
+        where TContext : DbContext
+        => (DbContextOptionsBuilder<TContext>)UseAwsWrapperMySql((DbContextOptionsBuilder)optionsBuilder, connectionString, wrappedOptionsBuilderAction);
 
     private static void ConfigureWarnings(DbContextOptionsBuilder optionsBuilder)
     {

@@ -98,6 +98,30 @@ public class TestRunner {
   }
 
   @TestTemplate
+  public void runPGEFAuroraTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
+
+    try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
+      env.runTests("pg-ef", "aurora");
+    }
+  }
+
+  @TestTemplate
+  public void runPGEFMultiAzClusterTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
+
+    try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
+      env.runTests("pg-ef", "multi-az-cluster");
+    }
+  }
+
+  @TestTemplate
+  public void runPGEFMultiAzInstanceTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
+
+    try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
+      env.runTests("pg-ef", "multi-az-instance");
+    }
+  }
+
+  @TestTemplate
   public void runMySQLNHAuroraTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
 
     try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {

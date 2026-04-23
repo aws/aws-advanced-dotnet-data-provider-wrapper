@@ -27,6 +27,7 @@ public static class PluginCodes
     public const string InitialConnection = "initialConnection";
     public const string FederatedAuth = "federatedAuth";
     public const string Okta = "okta";
+    public const string BlueGreenConnection = "bg";
     public const string CustomEndpoint = "customEndpoint";
     public const string Limitless = "limitless";
 }

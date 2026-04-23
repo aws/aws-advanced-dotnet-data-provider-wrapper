@@ -25,8 +25,8 @@ jobs:
     strategy: 
       fail-fast: false
       matrix: 
-        dbEngine: ["mysql"]
-        deployment: ["multi-az-cluster"]
+        dbEngine: ["mysql", "pg"]
+        deployment: ["aurora", "multi-az-cluster", "multi-az-instance"]
     steps:
       - name: 'Clone repository'
         uses: actions/checkout@v4

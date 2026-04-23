@@ -36,11 +36,7 @@ public class ConnectTimePlugin : AbstractConnectionPlugin
         return connectTime;
     }
 
-    public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string>()
-    {
-        "DbConnection.Open",
-        "DbConnection.OpenAsync",
-    };
+    public override IReadOnlySet<string> SubscribedMethods { get; } = PluginMethods.OpenMethods;
 
     public override async Task<DbConnection> OpenConnection(
     HostSpec? hostSpec,

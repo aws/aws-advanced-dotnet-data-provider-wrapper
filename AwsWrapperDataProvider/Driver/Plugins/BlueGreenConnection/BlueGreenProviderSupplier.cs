@@ -12,20 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.ComponentModel.DataAnnotations.Schema;
+namespace AwsWrapperDataProvider.Driver.Plugins.BlueGreenConnection;
 
-namespace AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests;
-
-[Table("persons")]
-public class Person
-{
-    [Column("id")]
-    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    public virtual int Id { get; set; }
-
-    [Column("firstname")]
-    public virtual string? FirstName { get; set; }
-
-    [Column("lastname")]
-    public virtual string? LastName { get; set; }
-}
+public delegate BlueGreenStatusProvider BlueGreenProviderSupplier(
+    IPluginService pluginService,
+    Dictionary<string, string> props,
+    string bgdId,
+    string clusterId);

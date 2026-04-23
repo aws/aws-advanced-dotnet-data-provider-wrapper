@@ -75,7 +75,7 @@ public class MySqlEntityFrameworkExample
                                         "Plugins=failover,initialConnection;";
 
         return new DbContextOptionsBuilder<ProductDbContext>()
-            .UseAwsWrapper(
+            .UseAwsWrapperMySql(
                 connectionString,
                 wrappedOptions => wrappedOptions.UseMySql(
                     connectionString,
