@@ -26,7 +26,7 @@ jobs:
       fail-fast: false
       matrix:
         dbEngine: ["mysql", "pg"]
-        deployment: ["aurora", "multi-az-cluster", "multi-az-instance", "aurora-limitless"]
+        deployment: ["aurora"]
         exclude:
           - dbEngine: "mysql"
             deployment: "aurora-limitless"

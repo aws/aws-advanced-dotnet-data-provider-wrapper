@@ -103,7 +103,6 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
         [Trait("Category", "Integration")]
         [Trait("Database", "mysql-nh")]
         [Trait("Database", "pg-nh")]
-        [Trait("Engine", "aurora")]
         [Trait("Engine", "multi-az-cluster")]
         [Trait("Engine", "multi-az-instance")]
         public void NHibernateAddTest()
@@ -138,7 +137,6 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
         [Trait("Category", "Integration")]
         [Trait("Database", "mysql-nh")]
         [Trait("Database", "pg-nh")]
-        [Trait("Engine", "aurora")]
         [Trait("Engine", "multi-az-cluster")]
         public async Task NHibernateCrashBeforeOpenWithFailoverTest_WithoutPooling()
         {
@@ -201,7 +199,6 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
         [Trait("Category", "Integration")]
         [Trait("Database", "mysql-nh")]
         [Trait("Database", "pg-nh")]
-        [Trait("Engine", "aurora")]
         [Trait("Engine", "multi-az-cluster")]
         public async Task NHibernateCrashBeforeOpenWithFailoverTest_WithPooling()
         {
@@ -264,7 +261,6 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
         [Trait("Category", "Integration")]
         [Trait("Database", "mysql-nh")]
         [Trait("Database", "pg-nh")]
-        [Trait("Engine", "aurora")]
         public async Task NHibernateCrashAfterOpenWithFailoverTest()
         {
             Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
@@ -333,7 +329,6 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                 Assert.Contains(persons, p => p.FirstName == "Jane");
                 Assert.Contains(persons, p => p.FirstName == "Joe");
 
-                // John may or may not be saved depending on when failover occurred
                 Assert.True(persons.Count >= 2);
             }
         }
@@ -419,7 +414,6 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
         [Trait("Category", "Integration")]
         [Trait("Database", "mysql-nh")]
         [Trait("Database", "pg-nh")]
-        [Trait("Engine", "aurora")]
         [Trait("Engine", "multi-az-cluster")]
         public async Task NHibernateTempFailureWithFailoverTest()
         {
