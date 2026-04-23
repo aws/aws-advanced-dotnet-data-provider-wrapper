@@ -154,7 +154,6 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql-nh")]
     [Trait("Database", "pg-nh")]
-    [Trait("Engine", "aurora")]
     public async Task NHibernate_CustomEndpoint_ReadWriteSplitting_WithCustomEndpointChanges_WithReaderAsInitConn()
     {
         Assert.SkipWhen(NumberOfInstances < 3, "Skipped due to test requiring number of database instances >= 3.");
@@ -226,7 +225,6 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql-nh")]
     [Trait("Database", "pg-nh")]
-    [Trait("Engine", "aurora")]
     public async Task NHibernate_CustomEndpoint_ReadWriteSplitting_WithCustomEndpointChanges_WithWriterAsInitConn()
     {
         Assert.SkipWhen(NumberOfInstances < 3, "Skipped due to test requiring number of database instances >= 3.");
