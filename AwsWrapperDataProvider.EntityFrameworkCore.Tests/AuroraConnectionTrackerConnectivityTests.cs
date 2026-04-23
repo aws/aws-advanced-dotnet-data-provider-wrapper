@@ -21,7 +21,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 
-namespace AwsWrapperDataProvider.EntityFrameworkCore.MySQL.Tests;
+namespace AwsWrapperDataProvider.EntityFrameworkCore.Tests;
 
 /// <summary>
 /// EF Core integration tests for the Aurora Connection Tracker plugin.
@@ -36,7 +36,6 @@ public class AuroraConnectionTrackerConnectivityTests : IntegrationTestBase
     protected override bool MakeSureFirstInstanceWriter => true;
 
     private readonly ITestOutputHelper logger;
-    private readonly MySqlServerVersion version = new("8.0.32");
     private readonly ILoggerFactory loggerFactory;
 
     public AuroraConnectionTrackerConnectivityTests(ITestOutputHelper output)
@@ -80,20 +79,38 @@ public class AuroraConnectionTrackerConnectivityTests : IntegrationTestBase
             + $"EnableConnectFailover=true;"
             + $"ClusterInstanceHostPattern=?.{instanceSuffix}:{instancePort}";
 
-        return new DbContextOptionsBuilder<PersonDbContext>()
-            .UseLoggerFactory(this.loggerFactory)
-            .UseAwsWrapper(
-                wrapperConnectionString,
-                wrappedOptionBuilder => wrappedOptionBuilder
-                    .UseLoggerFactory(this.loggerFactory)
-                    .UseMySql(connectionString, this.version))
-            .Options;
+        if (Engine == DatabaseEngine.PG)
+        {
+            return new DbContextOptionsBuilder<PersonDbContext>()
+                .UseLoggerFactory(this.loggerFactory)
+                .UseAwsWrapperNpgsql(
+                    wrapperConnectionString,
+                    wrappedOptionBuilder => wrappedOptionBuilder
+                        .UseLoggerFactory(this.loggerFactory)
+                        .UseNpgsql(connectionString))
+                .Options;
+        }
+
+        if (Engine == DatabaseEngine.MYSQL)
+        {
+            return new DbContextOptionsBuilder<PersonDbContext>()
+                .UseLoggerFactory(this.loggerFactory)
+                .UseAwsWrapperMySql(
+                    wrapperConnectionString,
+                    wrappedOptionBuilder => wrappedOptionBuilder
+                        .UseLoggerFactory(this.loggerFactory)
+                        .UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)))
+                .Options;
+        }
+
+        throw new InvalidOperationException($"Unsupported engine {Engine}");
     }
 
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
     [Trait("Category", "Integration")]
+    [Trait("Database", "pg-ef")]
     [Trait("Database", "mysql-ef")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
@@ -213,6 +230,7 @@ public class AuroraConnectionTrackerConnectivityTests : IntegrationTestBase
     [InlineData(true)]
     [InlineData(false)]
     [Trait("Category", "Integration")]
+    [Trait("Database", "pg-ef")]
     [Trait("Database", "mysql-ef")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
@@ -332,6 +350,7 @@ public class AuroraConnectionTrackerConnectivityTests : IntegrationTestBase
     [InlineData(true)]
     [InlineData(false)]
     [Trait("Category", "Integration")]
+    [Trait("Database", "pg-ef")]
     [Trait("Database", "mysql-ef")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
@@ -436,6 +455,7 @@ public class AuroraConnectionTrackerConnectivityTests : IntegrationTestBase
     [InlineData(true)]
     [InlineData(false)]
     [Trait("Category", "Integration")]
+    [Trait("Database", "pg-ef")]
     [Trait("Database", "mysql-ef")]
     [Trait("Engine", "aurora")]
     [Trait("Engine", "multi-az-cluster")]
