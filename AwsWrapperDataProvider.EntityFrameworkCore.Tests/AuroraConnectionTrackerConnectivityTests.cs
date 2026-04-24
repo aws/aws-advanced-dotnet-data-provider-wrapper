@@ -353,6 +353,8 @@ public class AuroraConnectionTrackerConnectivityTests : EFIntegrationTestBase
 
             var clusterId = TestEnvironment.Env.Info.RdsDbName!;
             var newWriterId = await AuroraUtils.GetDBClusterWriterInstanceIdAsync(clusterId);
+            Assert.SkipWhen(currentWriter == newWriterId, "Writer did not change after failover; cannot verify recovery.");
+
             this.Logger.WriteLine($"Cluster failed over to instance {newWriterId}.");
 
             // Verify idle connections were closed.

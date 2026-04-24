@@ -129,7 +129,7 @@ public class AuroraConnectionTrackerConnectivityTests : NHibernateTestBase
             // Trigger failover on the active session by executing a query against the dead writer.
             var exception = await Assert.ThrowsAnyAsync<HibernateException>(() =>
                 activeSession.CreateSQLQuery(AuroraUtils.GetInstanceIdSql(Engine, Deployment))
-                    .ExecuteUpdateAsync(TestContext.Current.CancellationToken));
+                    .UniqueResultAsync<object>(TestContext.Current.CancellationToken));
             Assert.IsAssignableFrom<FailoverException>(exception.InnerException);
 
             await crashTask;
@@ -244,7 +244,7 @@ public class AuroraConnectionTrackerConnectivityTests : NHibernateTestBase
             // Trigger failover on the active session.
             var exception = await Assert.ThrowsAnyAsync<HibernateException>(() =>
                 activeSession.CreateSQLQuery(AuroraUtils.GetInstanceIdSql(Engine, Deployment))
-                    .ExecuteUpdateAsync(TestContext.Current.CancellationToken));
+                    .UniqueResultAsync<object>(TestContext.Current.CancellationToken));
             Assert.IsAssignableFrom<FailoverException>(exception.InnerException);
 
             await crashTask;
@@ -267,7 +267,7 @@ public class AuroraConnectionTrackerConnectivityTests : NHibernateTestBase
             // to the new writer, so the subsequent read succeeds.
             var reconnectException0 = await Assert.ThrowsAnyAsync<HibernateException>(() =>
                 idleSessions[0].CreateSQLQuery("SELECT COUNT(*) FROM persons WHERE FirstName = 'Idle0'")
-                    .ExecuteUpdateAsync(TestContext.Current.CancellationToken));
+                    .UniqueResultAsync<object>(TestContext.Current.CancellationToken));
             Assert.IsAssignableFrom<FailoverException>(reconnectException0.InnerException);
 
             // Now the connection is re-established — read should succeed.
@@ -278,7 +278,7 @@ public class AuroraConnectionTrackerConnectivityTests : NHibernateTestBase
             // Idle session 1: first operation also triggers reconnection.
             var reconnectException1 = await Assert.ThrowsAnyAsync<HibernateException>(() =>
                 idleSessions[1].CreateSQLQuery("SELECT 1")
-                    .ExecuteUpdateAsync(TestContext.Current.CancellationToken));
+                    .UniqueResultAsync<object>(TestContext.Current.CancellationToken));
             Assert.IsAssignableFrom<FailoverException>(reconnectException1.InnerException);
 
             // Now write should succeed.
