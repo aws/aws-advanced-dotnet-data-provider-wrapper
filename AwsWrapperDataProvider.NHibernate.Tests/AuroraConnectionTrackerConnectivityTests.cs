@@ -14,16 +14,10 @@
 
 using System.Data;
 using System.Data.Common;
-using System.Reflection;
 using AwsWrapperDataProvider.Driver.Plugins;
-using AwsWrapperDataProvider.Driver.Plugins.Failover;
 using AwsWrapperDataProvider.Driver.Plugins.Failover.Exceptions;
-using AwsWrapperDataProvider.Tests;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 using NHibernate;
-using NHibernate.Cfg;
-using NHibernate.Driver;
-using NHibernate.Driver.MySqlConnector;
 
 namespace AwsWrapperDataProvider.NHibernate.Tests;
 
@@ -41,7 +35,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests;
 /// If Multi-AZ cluster testing adds support for real failover (writer change),
 /// these tests should be extended to cover that engine as well.
 /// </summary>
-public class AuroraConnectionTrackerConnectivityTests : IntegrationTestBase
+public class AuroraConnectionTrackerConnectivityTests : NHibernateTestBase
 {
     private const int IdleSessionCount = 3;
 
@@ -60,32 +54,6 @@ public class AuroraConnectionTrackerConnectivityTests : IntegrationTestBase
                ?? throw new InvalidOperationException("Could not get DbConnection from NHibernate session.");
     }
 
-    private Configuration GetNHibernateConfiguration(string connectionString)
-    {
-        var properties = new Dictionary<string, string>
-        {
-            { "connection.connection_string", connectionString },
-            { "connection.release_mode", "on_close" },
-        };
-
-        var cfg = new Configuration().AddAssembly(Assembly.GetExecutingAssembly());
-
-        switch (Engine)
-        {
-            case DatabaseEngine.PG:
-                properties.Add("dialect", "NHibernate.Dialect.PostgreSQLDialect");
-                cfg.DataBaseIntegration(c => c.UseAwsWrapperDriver<NpgsqlDriver>());
-                break;
-            case DatabaseEngine.MYSQL:
-            default:
-                properties.Add("dialect", "NHibernate.Dialect.MySQLDialect");
-                cfg.DataBaseIntegration(c => c.UseAwsWrapperDriver<MySqlConnectorDriver>());
-                break;
-        }
-
-        return cfg.AddProperties(properties);
-    }
-
     private string BuildConnectionString(bool pooling)
     {
         var connectionString = ConnectionStringHelper.GetUrl(
@@ -96,34 +64,6 @@ public class AuroraConnectionTrackerConnectivityTests : IntegrationTestBase
                + "EnableConnectFailover=true;"
                + "FailoverMode=StrictWriter;"
                + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
-    }
-
-    private void CreateAndClearPersonsTable(ISession session)
-    {
-        switch (Engine)
-        {
-            case DatabaseEngine.PG:
-                // PostgreSQL syntax - create sequence first
-                session.CreateSQLQuery("CREATE SEQUENCE IF NOT EXISTS hibernate_sequence START 1").ExecuteUpdate();
-                session.CreateSQLQuery(@"
-                    CREATE TABLE IF NOT EXISTS persons (
-                        Id SERIAL PRIMARY KEY,
-                        FirstName VARCHAR(255),
-                        LastName VARCHAR(255)
-                    )").ExecuteUpdate();
-                break;
-            case DatabaseEngine.MYSQL:
-            default:
-                session.CreateSQLQuery(@"
-                    CREATE TABLE IF NOT EXISTS persons (
-                        Id INT AUTO_INCREMENT PRIMARY KEY,
-                        FirstName VARCHAR(255),
-                        LastName VARCHAR(255)
-                    )").ExecuteUpdate();
-                break;
-        }
-
-        session.CreateSQLQuery("TRUNCATE TABLE persons").ExecuteUpdate();
     }
 
     [Theory]
@@ -139,7 +79,9 @@ public class AuroraConnectionTrackerConnectivityTests : IntegrationTestBase
 
         var currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
         var wrapperConnectionString = this.BuildConnectionString(pooling);
-        var cfg = this.GetNHibernateConfiguration(wrapperConnectionString);
+        var cfg = this.GetNHibernateConfiguration(
+            wrapperConnectionString,
+            new Dictionary<string, string> { { "connection.release_mode", "on_close" } });
         var sessionFactory = cfg.BuildSessionFactory();
         var idleSessions = new List<ISession>();
 
@@ -260,7 +202,9 @@ public class AuroraConnectionTrackerConnectivityTests : IntegrationTestBase
 
         var currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
         var wrapperConnectionString = this.BuildConnectionString(pooling);
-        var cfg = this.GetNHibernateConfiguration(wrapperConnectionString);
+        var cfg = this.GetNHibernateConfiguration(
+            wrapperConnectionString,
+            new Dictionary<string, string> { { "connection.release_mode", "on_close" } });
         var sessionFactory = cfg.BuildSessionFactory();
         var idleSessions = new List<ISession>();
 

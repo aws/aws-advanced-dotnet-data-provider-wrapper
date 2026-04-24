@@ -12,22 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Reflection;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
-using AwsWrapperDataProvider.Tests;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 using NHibernate;
-using NHibernate.Cfg;
 using NHibernate.Criterion;
-using NHibernate.Driver;
-using NHibernate.Driver.MySqlConnector;
 
 [assembly: CollectionBehavior(DisableTestParallelization = true)]
 [assembly: CaptureConsole]
 
 namespace AwsWrapperDataProvider.NHibernate.Tests
 {
-    public class AwsWrapperDriverTests : IntegrationTestBase
+    public class AwsWrapperDriverTests : NHibernateTestBase
     {
         protected override bool MakeSureFirstInstanceWriter => true;
 
@@ -41,62 +36,6 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                 default:
                     return "SELECT SLEEP(120)";
             }
-        }
-
-        private void CreateAndClearPersonsTable(ISession session)
-        {
-            switch (Engine)
-            {
-                case DatabaseEngine.PG:
-                    // PostgreSQL syntax - create sequence first
-                    session.CreateSQLQuery("CREATE SEQUENCE IF NOT EXISTS hibernate_sequence START 1").ExecuteUpdate();
-
-                    session.CreateSQLQuery(@"
-                        CREATE TABLE IF NOT EXISTS persons (
-                            Id SERIAL PRIMARY KEY,
-                            FirstName VARCHAR(255),
-                            LastName VARCHAR(255)
-                        )").ExecuteUpdate();
-                    break;
-                case DatabaseEngine.MYSQL:
-                default:
-                    // MySQL syntax
-                    session.CreateSQLQuery(@"
-                        CREATE TABLE IF NOT EXISTS persons (
-                            Id INT AUTO_INCREMENT PRIMARY KEY,
-                            FirstName VARCHAR(255),
-                            LastName VARCHAR(255)
-                        )").ExecuteUpdate();
-                    break;
-            }
-
-            session.CreateSQLQuery("TRUNCATE TABLE persons").ExecuteUpdate();
-        }
-
-        private Configuration GetNHibernateConfiguration(string connectionString)
-        {
-            var properties = new Dictionary<string, string>
-            {
-                { "connection.connection_string", connectionString },
-            };
-
-            var cfg = new Configuration().AddAssembly(Assembly.GetExecutingAssembly());
-
-            switch (Engine)
-            {
-                case DatabaseEngine.PG:
-                    properties.Add("dialect", "NHibernate.Dialect.PostgreSQLDialect");
-                    cfg.DataBaseIntegration(c => c.UseAwsWrapperDriver<NpgsqlDriver>());
-                    break;
-
-                case DatabaseEngine.MYSQL:
-                default:
-                    properties.Add("dialect", "NHibernate.Dialect.MySQLDialect");
-                    cfg.DataBaseIntegration(c => c.UseAwsWrapperDriver<MySqlConnectorDriver>());
-                    break;
-            }
-
-            return cfg.AddProperties(properties);
         }
 
         [Fact]
