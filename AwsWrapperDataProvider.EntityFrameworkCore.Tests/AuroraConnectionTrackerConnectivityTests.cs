@@ -15,11 +15,8 @@
 using System.Data;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Plugins.Failover.Exceptions;
-using AwsWrapperDataProvider.Tests;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Console;
 
 namespace AwsWrapperDataProvider.EntityFrameworkCore.Tests;
 
@@ -28,82 +25,42 @@ namespace AwsWrapperDataProvider.EntityFrameworkCore.Tests;
 /// Validates that when a failover is detected by one EF context, idle connections
 /// held by other EF contexts are closed by the tracker, and that those contexts
 /// can recover on subsequent operations.
+///
+/// These tests only run on Aurora deployments because the connection tracker
+/// invalidates idle connections only when the writer instance changes.
+/// Currently, CrashInstance on Multi-AZ clusters simulates a temporary network
+/// failure via Toxiproxy without triggering a real failover, so the writer
+/// remains the same and the tracker has nothing to invalidate.
+/// If Multi-AZ cluster testing adds support for real failover (writer change),
+/// these tests should be extended to cover that engine as well.
 /// </summary>
-public class AuroraConnectionTrackerConnectivityTests : IntegrationTestBase
+public class AuroraConnectionTrackerConnectivityTests : EFIntegrationTestBase
 {
     private const int IdleContextCount = 3;
 
     protected override bool MakeSureFirstInstanceWriter => true;
 
-    private readonly ITestOutputHelper logger;
-    private readonly ILoggerFactory loggerFactory;
-
-    public AuroraConnectionTrackerConnectivityTests(ITestOutputHelper output)
+    public AuroraConnectionTrackerConnectivityTests(ITestOutputHelper output) : base(output)
     {
-        this.logger = output;
+    }
 
-        this.loggerFactory = LoggerFactory.Create(builder =>
-        {
-            builder
-                .SetMinimumLevel(LogLevel.Trace)
-                .AddDebug()
-                .AddConsole(options => options.FormatterName = "simple");
+    private (string WrapperConnectionString, string ConnectionString) GetConnectionStrings(bool pooling)
+    {
+        var connectionString = ConnectionStringHelper.GetUrl(
+            Engine, Endpoint, Port, Username, Password, DefaultDbName, 2, 10, enablePooling: pooling);
 
-            builder.AddSimpleConsole(options =>
-            {
-                options.IncludeScopes = true;
-                options.TimestampFormat = "yyyy-MM-dd HH:mm:ss.fff ";
-                options.UseUtcTimestamp = true;
-                options.ColorBehavior = LoggerColorBehavior.Enabled;
-            });
-        });
+        var wrapperConnectionString = connectionString
+            + $";Plugins={PluginCodes.InitialConnection},{PluginCodes.AuroraConnectionTracker},{PluginCodes.Failover};"
+            + $"EnableConnectFailover=true;"
+            + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
+
+        return (wrapperConnectionString, connectionString);
     }
 
     private DbContextOptions<PersonDbContext> BuildOptions(bool pooling)
     {
-        var useProxy = Deployment == DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER;
-        var host = useProxy ? ProxyClusterEndpoint : Endpoint;
-        var port = useProxy ? ProxyPort : Port;
-        var instanceSuffix = useProxy ? ProxyDatabaseInfo!.InstanceEndpointSuffix : TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix;
-        var instancePort = useProxy ? ProxyDatabaseInfo!.InstanceEndpointPort : TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort;
-
-        var connectionString = ConnectionStringHelper.GetUrl(
-            Engine, host, port, Username, Password, DefaultDbName, 2, 10, enablePooling: pooling);
-
-        var plugins = Deployment is DatabaseEngineDeployment.AURORA or DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER
-            ? $"{PluginCodes.InitialConnection},{PluginCodes.AuroraConnectionTracker},{PluginCodes.Failover}"
-            : $"{PluginCodes.AuroraConnectionTracker},{PluginCodes.Failover}";
-
-        var wrapperConnectionString = connectionString
-            + $";Plugins={plugins};"
-            + $"EnableConnectFailover=true;"
-            + $"ClusterInstanceHostPattern=?.{instanceSuffix}:{instancePort}";
-
-        if (Engine == DatabaseEngine.PG)
-        {
-            return new DbContextOptionsBuilder<PersonDbContext>()
-                .UseLoggerFactory(this.loggerFactory)
-                .UseAwsWrapperNpgsql(
-                    wrapperConnectionString,
-                    wrappedOptionBuilder => wrappedOptionBuilder
-                        .UseLoggerFactory(this.loggerFactory)
-                        .UseNpgsql(connectionString))
-                .Options;
-        }
-
-        if (Engine == DatabaseEngine.MYSQL)
-        {
-            return new DbContextOptionsBuilder<PersonDbContext>()
-                .UseLoggerFactory(this.loggerFactory)
-                .UseAwsWrapperMySql(
-                    wrapperConnectionString,
-                    wrappedOptionBuilder => wrappedOptionBuilder
-                        .UseLoggerFactory(this.loggerFactory)
-                        .UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)))
-                .Options;
-        }
-
-        throw new InvalidOperationException($"Unsupported engine {Engine}");
+        var (wrapper, conn) = this.GetConnectionStrings(pooling);
+        return this.BuildOptionsWithLogger(wrapper, conn);
     }
 
     [Theory]
@@ -113,12 +70,11 @@ public class AuroraConnectionTrackerConnectivityTests : IntegrationTestBase
     [Trait("Database", "pg-ef")]
     [Trait("Database", "mysql-ef")]
     [Trait("Engine", "aurora")]
-    [Trait("Engine", "multi-az-cluster")]
     public async Task EF_IdleContextConnections_ClosedAfterFailover(bool pooling)
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
 
-        string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
+        string currentWriter = TestEnvironment.Env.Info.DatabaseInfo.Instances.First().InstanceId;
         var options = this.BuildOptions(pooling);
         var idleContexts = new List<PersonDbContext>();
 
@@ -174,7 +130,7 @@ public class AuroraConnectionTrackerConnectivityTests : IntegrationTestBase
 
             if (currentWriter == newWriterId)
             {
-                this.logger.WriteLine($"Writer did not change, still {newWriterId}.");
+                this.Logger.WriteLine($"Writer did not change, still {newWriterId}.");
                 foreach (var ctx in idleContexts)
                 {
                     Assert.Equal(ConnectionState.Open, ctx.Database.GetDbConnection().State);
@@ -182,7 +138,7 @@ public class AuroraConnectionTrackerConnectivityTests : IntegrationTestBase
             }
             else
             {
-                this.logger.WriteLine($"Cluster failed over to instance {newWriterId}.");
+                this.Logger.WriteLine($"Cluster failed over to instance {newWriterId}.");
                 foreach (var ctx in idleContexts)
                 {
                     Assert.Equal(ConnectionState.Closed, ctx.Database.GetDbConnection().State);
@@ -233,12 +189,11 @@ public class AuroraConnectionTrackerConnectivityTests : IntegrationTestBase
     [Trait("Database", "pg-ef")]
     [Trait("Database", "mysql-ef")]
     [Trait("Engine", "aurora")]
-    [Trait("Engine", "multi-az-cluster")]
     public async Task EF_IdleContextConnections_ClosedAfterFailoverAsync(bool pooling)
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
 
-        string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
+        string currentWriter = TestEnvironment.Env.Info.DatabaseInfo.Instances.First().InstanceId;
         var options = this.BuildOptions(pooling);
         var idleContexts = new List<PersonDbContext>();
 
@@ -294,7 +249,7 @@ public class AuroraConnectionTrackerConnectivityTests : IntegrationTestBase
 
             if (currentWriter == newWriterId)
             {
-                this.logger.WriteLine($"Writer did not change, still {newWriterId}.");
+                this.Logger.WriteLine($"Writer did not change, still {newWriterId}.");
                 foreach (var ctx in idleContexts)
                 {
                     Assert.Equal(ConnectionState.Open, ctx.Database.GetDbConnection().State);
@@ -302,7 +257,7 @@ public class AuroraConnectionTrackerConnectivityTests : IntegrationTestBase
             }
             else
             {
-                this.logger.WriteLine($"Cluster failed over to instance {newWriterId}.");
+                this.Logger.WriteLine($"Cluster failed over to instance {newWriterId}.");
                 foreach (var ctx in idleContexts)
                 {
                     Assert.Equal(ConnectionState.Closed, ctx.Database.GetDbConnection().State);
@@ -353,12 +308,11 @@ public class AuroraConnectionTrackerConnectivityTests : IntegrationTestBase
     [Trait("Database", "pg-ef")]
     [Trait("Database", "mysql-ef")]
     [Trait("Engine", "aurora")]
-    [Trait("Engine", "multi-az-cluster")]
     public async Task EF_IdleContextConnections_RecoverAfterInvalidation(bool pooling)
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
 
-        string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
+        string currentWriter = TestEnvironment.Env.Info.DatabaseInfo.Instances.First().InstanceId;
         var options = this.BuildOptions(pooling);
         var idleContexts = new List<PersonDbContext>();
 
@@ -399,9 +353,7 @@ public class AuroraConnectionTrackerConnectivityTests : IntegrationTestBase
 
             var clusterId = TestEnvironment.Env.Info.RdsDbName!;
             var newWriterId = await AuroraUtils.GetDBClusterWriterInstanceIdAsync(clusterId);
-            Assert.SkipWhen(currentWriter == newWriterId, "Writer did not change after failover; cannot verify recovery.");
-
-            this.logger.WriteLine($"Cluster failed over to instance {newWriterId}.");
+            this.Logger.WriteLine($"Cluster failed over to instance {newWriterId}.");
 
             // Verify idle connections were closed.
             foreach (var ctx in idleContexts)
@@ -458,12 +410,11 @@ public class AuroraConnectionTrackerConnectivityTests : IntegrationTestBase
     [Trait("Database", "pg-ef")]
     [Trait("Database", "mysql-ef")]
     [Trait("Engine", "aurora")]
-    [Trait("Engine", "multi-az-cluster")]
     public async Task EF_IdleContextConnections_RecoverAfterInvalidationAsync(bool pooling)
     {
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
 
-        string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
+        string currentWriter = TestEnvironment.Env.Info.DatabaseInfo.Instances.First().InstanceId;
         var options = this.BuildOptions(pooling);
         var idleContexts = new List<PersonDbContext>();
 
@@ -506,7 +457,7 @@ public class AuroraConnectionTrackerConnectivityTests : IntegrationTestBase
             var newWriterId = await AuroraUtils.GetDBClusterWriterInstanceIdAsync(clusterId);
             Assert.SkipWhen(currentWriter == newWriterId, "Writer did not change after failover; cannot verify recovery.");
 
-            this.logger.WriteLine($"Cluster failed over to instance {newWriterId}.");
+            this.Logger.WriteLine($"Cluster failed over to instance {newWriterId}.");
 
             // Verify idle connections were closed.
             foreach (var ctx in idleContexts)
