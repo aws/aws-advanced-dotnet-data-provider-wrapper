@@ -22,11 +22,7 @@ using Microsoft.Extensions.Logging.Console;
 [assembly: CollectionBehavior(DisableTestParallelization = true)]
 [assembly: CaptureConsole]
 
-<<<<<<< HEAD:AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.Tests/EntityFrameworkConnectivityTests.cs
-namespace AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.Tests;
-=======
 namespace AwsWrapperDataProvider.EntityFrameworkCore.Tests;
->>>>>>> main:AwsWrapperDataProvider.EntityFrameworkCore.Tests/EntityFrameworkConnectivityTests.cs
 
 public class EntityFrameworkConnectivityTests : IntegrationTestBase
 {
