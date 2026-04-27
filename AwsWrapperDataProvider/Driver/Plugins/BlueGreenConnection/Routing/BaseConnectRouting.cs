@@ -1,0 +1,50 @@
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License").
+// You may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+using System.Data.Common;
+using AwsWrapperDataProvider.Driver.HostInfo;
+
+namespace AwsWrapperDataProvider.Driver.Plugins.BlueGreenConnection.Routing;
+
+public abstract class BaseConnectRouting : BaseRouting, IConnectRouting
+{
+    protected readonly string? hostAndPort;
+    protected readonly BlueGreenRoleType? role;
+
+    protected BaseConnectRouting(string? hostAndPort, BlueGreenRoleType? role)
+    {
+        this.hostAndPort = hostAndPort?.ToLowerInvariant();
+        this.role = role;
+    }
+
+    public bool IsMatch(HostSpec? hostSpec, BlueGreenRoleType? hostRole)
+    {
+        return (this.hostAndPort == null || this.hostAndPort.Equals(hostSpec?.GetHostAndPort().ToLowerInvariant()))
+               && (this.role == null || this.role.Equals(hostRole));
+    }
+
+    public abstract Task<DbConnection?> Apply(
+        IConnectionPlugin plugin,
+        HostSpec? hostSpec,
+        Dictionary<string, string> props,
+        bool isInitialConnection,
+        bool useForceConnect,
+        ADONetDelegate<DbConnection> connectFunc,
+        IPluginService pluginService);
+
+    public override string ToString()
+    {
+        return $"{base.ToString()} [{this.hostAndPort ?? "<null>"}, {this.role?.ToString() ?? "<null>"}]";
+    }
+}

@@ -380,11 +380,13 @@ indent_size = 4
 # SyleCop rules
 [*.cs]
 dotnet_diagnostic.SA1116.severity = suggestion
+dotnet_diagnostic.SA1118.severity = suggestion
 dotnet_diagnostic.SA1127.severity = suggestion
 dotnet_diagnostic.SA1128.severity = suggestion
 dotnet_diagnostic.SA1200.severity = suggestion
 dotnet_diagnostic.SA1201.severity = suggestion
 dotnet_diagnostic.SA1202.severity = suggestion
+dotnet_diagnostic.SA1204.severity = suggestion
 dotnet_diagnostic.SA1309.severity = suggestion
 dotnet_diagnostic.SA1401.severity = suggestion
 dotnet_diagnostic.SA1402.severity = suggestion
@@ -395,6 +397,9 @@ dotnet_diagnostic.SA1516.severity = suggestion
 dotnet_diagnostic.SA1600.severity = suggestion
 dotnet_diagnostic.SA1601.severity = suggestion
 dotnet_diagnostic.SA1602.severity = none
+dotnet_diagnostic.SA1611.severity = suggestion
+dotnet_diagnostic.SA1615.severity = suggestion
+dotnet_diagnostic.SA1618.severity = suggestion
 dotnet_diagnostic.SA1633.severity = none
 
 dotnet_diagnostic.IDE0073.severity = warning

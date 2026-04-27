@@ -12,20 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.ComponentModel.DataAnnotations.Schema;
+namespace AwsWrapperDataProvider.Driver.Plugins.BlueGreenConnection;
 
-namespace AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.Tests;
-
-[Table("persons")]
-public class Person
+public class BlueGreenConnectionPluginFactory : IConnectionPluginFactory
 {
-    [Column("id")]
-    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    public virtual int Id { get; set; }
-
-    [Column("firstname")]
-    public virtual string? FirstName { get; set; }
-
-    [Column("lastname")]
-    public virtual string? LastName { get; set; }
+    public IConnectionPlugin GetInstance(IPluginService pluginService, Dictionary<string, string> props)
+    {
+        return new BlueGreenConnectionPlugin(pluginService, props);
+    }
 }

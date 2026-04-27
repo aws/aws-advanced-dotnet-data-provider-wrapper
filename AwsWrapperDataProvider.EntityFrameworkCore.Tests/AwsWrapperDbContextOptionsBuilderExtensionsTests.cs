@@ -13,11 +13,12 @@
 // limitations under the License.
 
 using System.Data.Common;
+using AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector;
 using AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.RelationalConnectionDialects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 
-namespace AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.Tests;
+namespace AwsWrapperDataProvider.EntityFrameworkCore.Tests;
 
 public class AwsWrapperDbContextOptionsBuilderExtensionsTests
 {
@@ -29,7 +30,7 @@ public class AwsWrapperDbContextOptionsBuilderExtensionsTests
         var wrapperConnectionString = "Server=localhost;Database=test;User ID=u;Password=p;Plugins=failover;AllowUserVariables=false;UseAffectedRows=true;";
 
         var builder = new DbContextOptionsBuilder();
-        builder.UseAwsWrapper(
+        builder.UseAwsWrapperMySql(
             wrapperConnectionString,
             wrapped => wrapped.UseMySql(pomeloConnectionString, new MySqlServerVersion(new Version(8, 0, 36))));
 

@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Microsoft.Extensions.DependencyInjection;
+namespace AwsWrapperDataProvider.Driver.Plugins.BlueGreenConnection;
 
-namespace AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL;
-
-public class WrappedServiceCollection : List<ServiceDescriptor>, IServiceCollection
-{
-    public WrappedServiceCollection() { }
-}
+public delegate BlueGreenStatusProvider BlueGreenProviderSupplier(
+    IPluginService pluginService,
+    Dictionary<string, string> props,
+    string bgdId,
+    string clusterId);

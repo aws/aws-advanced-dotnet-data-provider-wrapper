@@ -83,7 +83,7 @@ public class AwsWrapperOptionsExtension : IDbContextOptionsExtension
 
         public override void PopulateDebugInfo(IDictionary<string, string> debugInfo)
         {
-            debugInfo["AwsWrapper:" + nameof(AwsWrapperDbContextOptionsBuilderExtensions.UseAwsWrapper)] = "1";
+            debugInfo["AwsWrapper:" + nameof(AwsWrapperDbContextOptionsBuilderExtensions.UseAwsWrapperMySql)] = "1";
         }
 
         public override bool ShouldUseSameServiceProvider(DbContextOptionsExtensionInfo other) =>

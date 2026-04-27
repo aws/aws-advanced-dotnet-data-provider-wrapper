@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.Tests" />
+    <InternalsVisibleTo Include="AwsWrapperDataProvider.EntityFrameworkCore.Tests" />
   </ItemGroup>
 
   <ItemGroup>

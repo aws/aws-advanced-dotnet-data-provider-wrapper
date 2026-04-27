@@ -41,27 +41,11 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
 
     private IHostListProviderService? hostListProviderService;
 
-    public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string>()
-    {
-        "DbConnection.Open",
-        "DbConnection.OpenAsync",
-
-        "DbCommand.ExecuteNonQuery",
-        "DbCommand.ExecuteNonQueryAsync",
-        "DbCommand.ExecuteReader",
-        "DbCommand.ExecuteReaderAsync",
-        "DbCommand.ExecuteScalar",
-        "DbCommand.ExecuteScalarAsync",
-
-        "DbBatch.ExecuteNonQuery",
-        "DbBatch.ExecuteNonQueryAsync",
-        "DbBatch.ExecuteReader",
-        "DbBatch.ExecuteReaderAsync",
-        "DbBatch.ExecuteScalar",
-        "DbBatch.ExecuteScalarAsync",
-
-        "initHostProvider",
-    };
+    public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string>(
+        PluginMethods.OpenMethods
+        .Concat(PluginMethods.CommandMethods)
+        .Concat(PluginMethods.BatchMethods)
+        .Concat(PluginMethods.SpecialMethods));
 
     public ReadWriteSplittingPlugin(IPluginService pluginService, Dictionary<string, string> props)
     {

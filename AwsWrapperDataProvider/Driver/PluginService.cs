@@ -430,6 +430,11 @@ public class PluginService : IPluginService, IHostListProviderService
         return this.pluginManager.GetHostSpecByStrategy(hosts, hostRole, strategy, this.props);
     }
 
+    public bool IsPluginInUse(string pluginCode)
+    {
+        return this.pluginManager.IsPluginActive(pluginCode);
+    }
+
     private HostSpec GetCurrentHostSpec()
     {
         this.currentHostSpec = this.InitialConnectionHostSpec

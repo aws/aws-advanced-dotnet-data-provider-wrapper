@@ -230,6 +230,9 @@
   <data name="ClusterTopologyMonitor_UpdateTopologyCache_TopologyUpdate" xml:space="preserve">
     <value>UpdateTopologyCache:</value>
   </data>
+  <data name="ClusterTopologyMonitor_WaitTillTopologyGetsUpdated_EndTime" xml:space="preserve">
+    <value>Waiting for topology update with timeout {0}ms, will stop waiting at {1}.</value>
+  </data>
   <data name="DbConnectionProvider_CreateDbConnection" xml:space="preserve">
     <value>Connection created: {0}@{1} with data source {2}.</value>
   </data>
@@ -1025,4 +1028,151 @@
   <data name="Error_WeightedRandomUnableToGetHost" xml:space="preserve">
     <value>Unable to get host for role: {0}.</value>
   </data>
+  <data name="OpenedConnectionTracker_PopulateOpenedConnectionQueue_TrackingByAllAliases" xml:space="preserve">
+    <value>No RDS instance host found for '{0}'. This may be a custom domain. Tracking connection by all aliases.</value>
+  </data>
+  <data name="OpenedConnectionTracker_PruneLoop_Error" xml:space="preserve">
+    <value>Background connection tracker pruning task encountered an error while removing stale connection references.</value>
+  </data>
+  <data name="OpenedConnectionTracker_LogOpenedConnections_Tracking" xml:space="preserve">
+    <value>Tracking {0} connection(s) for endpoint {1}.</value>
+  </data>
+  <data name="OpenedConnectionTracker_InvalidateAllConnections_Invalidating" xml:space="preserve">
+    <value>Invalidating {0} tracked connection(s) for endpoint {1}.</value>
+  </data>
+  <data name="OpenedConnectionTracker_LogConnectionQueue_InvalidatingConnections" xml:space="preserve">
+    <value>Invalidating connections {0}</value>
+  </data>
+  <data name="RWQueue_ThrowIfReentrant_CannotModifyDuringForEach" xml:space="preserve">
+    <value>Cannot modify RWQueue during ForEach iteration on the same thread.</value>
+  </data>
+  <data name="SuspendUntilCorrespondingNodeFoundConnectRouting_Apply_WaitConnectUntilCorrespondingNodeFound" xml:space="preserve">
+        <value>Blue/Green Deployment switchover is in progress and a corresponding node for '{0}' is not found. The 'connect' call will be delayed.</value>
+    </data>
+  <data name="BlueGreenStatusProvider_PrepareStatus_InterimStatus" xml:space="preserve">
+        <value>[bgdId: '{0}', role: {1}] {2}</value>
+    </data>
+  <data name="BlueGreenStatusMonitor_CollectStatus_NoEntriesInStatusTable" xml:space="preserve">
+        <value>[{0}] No entries in status table.</value>
+    </data>
+  <data name="BlueGreenStatusMonitor_CollectStatus_UnhandledSqlException" xml:space="preserve">
+        <value>[{0}] Unhandled SQLException.</value>
+    </data>
+  <data name="BlueGreenStatusMonitor_CollectStatus_UnhandledException" xml:space="preserve">
+        <value>An error occured while retrieving the blue/green fast switchover metadata.</value>
+    </data>
+  <data name="SuspendUntilCorrespondingNodeFoundConnectRouting_Apply_CorrespondingNodeNotFoundTryConnectLater" xml:space="preserve">
+        <value>Blue/Green Deployment switchover is still in progress and a corresponding node for '{0}' is not found after {1} ms. Try to connect again later.</value>
+    </data>
+  <data name="SuspendUntilCorrespondingNodeFoundConnectRouting_Apply_CorrespondingNodeFoundContinueWithConnect" xml:space="preserve">
+        <value>A corresponding node for '{0}' is found. Continue with connect call. The call was held for {1} ms.</value>
+    </data>
+  <data name="BlueGreenStatusProvider_UnknownPhase" xml:space="preserve">
+        <value>[bgdId: '{0}'] Unknown BG phase '{1}'.</value>
+    </data>
+  <data name="BlueGreenStatusProvider_UpdatePhase_Rollback" xml:space="preserve">
+        <value>[bgdId: '{0}'] Blue/Green deployment is in rollback mode.</value>
+    </data>
+  <data name="SubstituteConnectRouting_Apply_InProgressCantOpenConnection" xml:space="preserve">
+        <value>Blue/Green Deployment switchover is in progress. Can't establish connection to '{0}'.</value>
+    </data>
+  <data name="BlueGreenStatusMonitor_RunMonitoringLoop_StatusChanged" xml:space="preserve">
+        <value>[{0}] Status changed to: {1}.</value>
+    </data>
+  <data name="SubstituteConnectRouting_Apply_RequireIamHost" xml:space="preserve">
+        <value>Connecting with IP address when IAM authentication is enabled requires an 'iamHost' parameter.</value>
+    </data>
+  <data name="BlueGreenStatusProvider_UpdateDnsFlags_GreenTopologyChanged" xml:space="preserve">
+        <value>[bgdId: '{0}'] Green topology changed.</value>
+    </data>
+  <data name="SuspendConnectRouting_Apply_SwitchoverCompleteContinueWithConnect" xml:space="preserve">
+        <value>Blue/Green Deployment switchover is completed. Continue with connect call. The call was held for {0} ms.</value>
+    </data>
+  <data name="SuspendExecuteRouting_Apply_StillInProgressTryMethodLater" xml:space="preserve">
+        <value>"Blue/Green Deployment switchover is still in progress after {0} ms. Try '{1}' again later."
+</value>
+    </data>
+  <data name="SuspendConnectRouting_Apply_InProgressHoldConnect" xml:space="preserve">
+        <value>Blue/Green Deployment switchover is in progress. The  'connect' call will be delayed until switchover is completed.</value>
+    </data>
+  <data name="BlueGreenStatusMonitor_CollectStatus_Exception" xml:space="preserve">
+        <value>[{0}] currentPhase: {1}, exception while querying for blue/green status.</value>
+    </data>
+  <data name="BlueGreenStatusProvider_UpdateDnsFlags_BlueDnsCompleted" xml:space="preserve">
+        <value>[bgdId: '{0}'] Blue DNS update completed.</value>
+    </data>
+  <data name="BlueGreenStatusMonitor_OpenConnection_OpenedConnectionWithIp" xml:space="preserve">
+        <value>[{0}] Opened monitoring connection (IP) to {1}.</value>
+    </data>
+  <data name="BlueGreenStatusMonitor_OpenConnection_OpeningConnectionWithIp" xml:space="preserve">
+        <value>[{0}] Opening monitoring connection (IP) to {1}.</value>
+    </data>
+  <data name="BlueGreenStatusMonitor_OpenConnection_OpeningConnection" xml:space="preserve">
+        <value>[{0}] Opening monitoring connection to {1}.</value>
+    </data>
+  <data name="BlueGreenStatusMonitor_RunMonitoringLoop_Interrupted" xml:space="preserve">
+        <value>[{0}] Interrupted.</value>
+    </data>
+  <data name="BlueGreenStatusMonitor_OpenConnection_OpenedConnection" xml:space="preserve">
+        <value>[{0}] Opened monitoring connection to {1}.</value>
+    </data>
+  <data name="BlueGreenStatusProvider_SwitchoverTimeout" xml:space="preserve">
+        <value>Blue/Green switchover has timed out.</value>
+    </data>
+  <data name="BlueGreenStatusMonitor_CollectStatus_StatusNotAvailable" xml:space="preserve">
+        <value>[{0}] (status not available) currentPhase: {1}</value>
+    </data>
+  <data name="BlueGreenStatusMonitor_InitHostListProvider_CreateHostListProvider" xml:space="preserve">
+        <value>[{0}] Creating a new HostListProvider, clusterId: {1}.</value>
+    </data>
+  <data name="BlueGreenStatusProvider_RegisterIamHost_GreenNodeChangedName" xml:space="preserve">
+        <value>Green node '{0}' has changed its name to '{1}'.</value>
+    </data>
+  <data name="BlueGreenStatusMonitor_InitHostListProvider_HostSpecNull" xml:space="preserve">
+        <value>Unable to initialize HostListProvider since connection host information is null.</value>
+    </data>
+  <data name="BlueGreenStatusProvider_UpdateDnsFlags_GreenDnsRemoved" xml:space="preserve">
+        <value>[bgdId: '{0}'] Green DNS removed.</value>
+    </data>
+  <data name="RejectConnectRouting_Apply_InProgressCantConnect" xml:space="preserve">
+        <value>Blue/Green Deployment switchover is in progress. New connection can't be opened.</value>
+    </data>
+  <data name="BlueGreenStatusProvider_ResetContext" xml:space="preserve">
+        <value>Resetting context.</value>
+    </data>
+  <data name="BlueGreenStatusProvider_UnsupportedDialect" xml:space="preserve">
+        <value>[bgdId: '{0}'] Blue/Green Deployments isn't supported by database dialect {1}.</value>
+    </data>
+  <data name="SuspendConnectRouting_Apply_InProgressTryConnectLater" xml:space="preserve">
+        <value>Blue/Green Deployment switchover is still in progress after {0} ms. Try to connect again later.</value>
+    </data>
+  <data name="SuspendExecuteRouting_Apply_InProgressSuspendMethod" xml:space="preserve">
+        <value>"Blue/Green Deployment switchover is in progress. Suspend '{0}' call until switchover is completed."
+</value>
+    </data>
+  <data name="SuspendExecuteRouting_Apply_SwitchoverCompletedContinueWithMethod" xml:space="preserve">
+        <value>"Blue/Green Deployment switchover is completed. Continue with '{0}' call. The call was held for {1} ms."
+</value>
+    </data>
+  <data name="SuspendUntilCorrespondingNodeFoundConnectRouting_Apply_CompletedContinueWithConnect" xml:space="preserve">
+        <value>Blue/Green Deployment status is completed. Continue with 'connect' call. The call was held for {0} ms.</value>
+    </data>
+  <data name="Error_CantCheckDialect_Syntax" xml:space="preserve">
+      <value>Syntax error occurred when checking {0}.</value>
+  </data>
+  <data name="BlueGreenRole_ParseRole_ExceptionVersion" xml:space="preserve">
+      <value>Unknown blue/green deployment version: {0}</value>
+  </data>
+  <data name="BlueGreenRole_ParseRole_ExceptionValue" xml:space="preserve">
+      <value>Unknown blue/green deployment role: {0}</value>
+  </data>
+    <data name="BlueGreenConnection_SubstituteConnectRouting_Apply" xml:space="preserve">
+        <value>Substitue Connect Routing to {0}.</value>
+    </data>
+    <data name="SubstituteConnectRouting_Apply_IamSuccessfulConnectNotifyFailed" xml:space="preserve">
+        <value>Notifying IAM connect was not successful for {0}.</value>
+    </data>
+    <data name="BlueGreenStatusMonitor_UnsupportedDialect" xml:space="preserve">
+        <value>Dialect {0} is not supported by Blue Green Connection Plugin</value>
+    </data>
 </root>
