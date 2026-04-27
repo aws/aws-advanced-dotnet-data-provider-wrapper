@@ -1,4 +1,4 @@
-﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -13,13 +13,15 @@
 // limitations under the License.
 
 using System.Data.Common;
+using AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.RelationalConnectionDialects;
 using Microsoft.EntityFrameworkCore.Storage;
 
-namespace AwsWrapperDataProvider.EntityFrameworkCore.MySQL;
+namespace AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector;
 
 public class AwsWrapperRelationalConnection : RelationalConnection, IAwsWrapperRelationalConnection
 {
     private readonly string wrapperConnectionString;
+    private readonly IRelationalConnectionDialect relationalConnectionDialect;
 
     public AwsWrapperRelationalConnection(
         RelationalConnectionDependencies dependencies, IRelationalConnection targetRelationalConnection) : base(dependencies)
@@ -30,13 +32,19 @@ public class AwsWrapperRelationalConnection : RelationalConnection, IAwsWrapperR
             .OfType<AwsWrapperOptionsExtension>()
             .FirstOrDefault();
 
-        this.wrapperConnectionString = extension?.WrapperConnectionString ?? throw new InvalidOperationException("AwsWrapperOptionsExtension not found.");
+        if (extension is null)
+        {
+            throw new InvalidOperationException("AwsWrapperOptionsExtension not found.");
+        }
+
+        this.relationalConnectionDialect = RelationalConnectionDialectProvider.GetDialect(extension.WrappedExtension);
+        this.wrapperConnectionString = this.relationalConnectionDialect.NormalizeConnectionString(extension.WrapperConnectionString);
     }
 
     public IRelationalConnection? TargetRelationalConnection { get; set; }
 
     protected override DbConnection CreateDbConnection()
     {
-        return new AwsWrapperConnection(typeof(MySqlConnector.MySqlConnection), this.wrapperConnectionString!);
+        return new AwsWrapperConnection(this.relationalConnectionDialect.UnderlyingConnectionType, this.wrapperConnectionString);
     }
 }

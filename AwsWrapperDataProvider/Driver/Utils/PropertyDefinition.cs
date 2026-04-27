@@ -400,4 +400,7 @@ public static class PropertyDefinition
         ClusterTopologyMonitoringPropertyPrefix,
         MonitoringPropertyPrefix,
     ];
+
+    public static bool IsInternalWrapperPropertyKey(string key) =>
+        InternalWrapperProperties.Any(p => p.Name.Equals(key, StringComparison.OrdinalIgnoreCase));
 }
