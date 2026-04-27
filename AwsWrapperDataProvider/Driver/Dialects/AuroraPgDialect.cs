@@ -13,16 +13,14 @@
 // limitations under the License.
 
 using System.Data.Common;
-using System.Reflection;
 using AwsWrapperDataProvider.Driver.HostListProviders;
-using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 using AwsWrapperDataProvider.Driver.Utils;
 using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
-public class AuroraPgDialect : PgDialect, IAuroraLimitlessDialect, IBlueGreenDialect
+public class AuroraPgDialect : PgDialect, ITopologyDialect, IAuroraLimitlessDialect, IBlueGreenDialect
 {
     private const string ReaderOrdinal = "aurora_stat_utils";
 
@@ -34,19 +32,19 @@ public class AuroraPgDialect : PgDialect, IAuroraLimitlessDialect, IBlueGreenDia
 
     internal static readonly string TopologySql = "SELECT 1 FROM pg_catalog.aurora_replica_status() LIMIT 1";
 
-    private static readonly string TopologyQuery = "SELECT SERVER_ID, CASE WHEN SESSION_ID OPERATOR(pg_catalog.=) 'MASTER_SESSION_ID' THEN TRUE ELSE FALSE END, "
-          + "CPU, COALESCE(REPLICA_LAG_IN_MSEC, 0), LAST_UPDATE_TIMESTAMP "
-          + "FROM pg_catalog.aurora_replica_status() "
-          + "WHERE EXTRACT("
-          + "EPOCH FROM(pg_catalog.NOW() OPERATOR(pg_catalog.-) LAST_UPDATE_TIMESTAMP)) OPERATOR(pg_catalog.<=) 300 "
-          + "OR SESSION_ID OPERATOR(pg_catalog.=) 'MASTER_SESSION_ID' "
-          + "OR LAST_UPDATE_TIMESTAMP IS NULL";
-
     private static readonly string NodeIdQuery = "SELECT pg_catalog.aurora_db_instance_identifier(), pg_catalog.aurora_db_instance_identifier()";
 
-    private static readonly string IsReaderQuery = "SELECT pg_catalog.pg_is_in_recovery()";
+    public string TopologyQuery =>
+        "SELECT SERVER_ID, CASE WHEN SESSION_ID OPERATOR(pg_catalog.=) 'MASTER_SESSION_ID' THEN TRUE ELSE FALSE END, "
+        + "CPU, COALESCE(REPLICA_LAG_IN_MSEC, 0), LAST_UPDATE_TIMESTAMP "
+        + "FROM pg_catalog.aurora_replica_status() "
+        + "WHERE EXTRACT("
+        + "EPOCH FROM(pg_catalog.NOW() OPERATOR(pg_catalog.-) LAST_UPDATE_TIMESTAMP)) OPERATOR(pg_catalog.<=) 300 "
+        + "OR SESSION_ID OPERATOR(pg_catalog.=) 'MASTER_SESSION_ID' "
+        + "OR LAST_UPDATE_TIMESTAMP IS NULL";
 
-    private static readonly string IsWriterQuery = "SELECT SERVER_ID FROM pg_catalog.aurora_replica_status() "
+    public string WriterIdQuery =>
+        "SELECT SERVER_ID FROM pg_catalog.aurora_replica_status() "
         + "WHERE SESSION_ID OPERATOR(pg_catalog.=) 'MASTER_SESSION_ID' AND SERVER_ID OPERATOR(pg_catalog.=) aurora_db_instance_identifier()";
 
     protected static readonly string AuroraPostgreSqlBgTopologyExistsQuery = "SELECT 'pg_catalog.get_blue_green_fast_switchover_metadata'::regproc";
@@ -55,6 +53,7 @@ public class AuroraPgDialect : PgDialect, IAuroraLimitlessDialect, IBlueGreenDia
     protected static readonly string AuroraPostgreSqlBgStatusQuery = $"SELECT * FROM pg_catalog.get_blue_green_fast_switchover_metadata('aws_advanced_dotnet_data_provider_wrapper-{DriverVersion}')";
 
     public override IList<Type> DialectUpdateCandidates { get; } = [
+        typeof(GlobalAuroraPgDialect),
         typeof(RdsMultiAzDbClusterPgDialect),
     ];
 
@@ -104,21 +103,12 @@ public class AuroraPgDialect : PgDialect, IAuroraLimitlessDialect, IBlueGreenDia
     private HostListProviderSupplier GetHostListProviderSupplier()
     {
         return (props, hostListProviderService, pluginService) =>
-            (PropertyDefinition.Plugins.GetString(props) ?? DefaultPluginCodes).Contains("failover") ?
-                new MonitoringRdsHostListProvider(
-                    props,
-                    hostListProviderService,
-                    TopologyQuery,
-                    NodeIdQuery,
-                    IsReaderQuery,
-                    IsWriterQuery,
-                    pluginService) :
-                new RdsHostListProvider(
-                    props,
-                    hostListProviderService,
-                    TopologyQuery,
-                    NodeIdQuery,
-                    IsReaderQuery);
+            new RdsHostListProvider(
+                props,
+                hostListProviderService,
+                NodeIdQuery,
+                pluginService,
+                new AuroraTopologyUtils(hostListProviderService.HostSpecBuilder, this));
     }
 
     public async Task<bool> IsBlueGreenStatusAvailable(DbConnection connection)

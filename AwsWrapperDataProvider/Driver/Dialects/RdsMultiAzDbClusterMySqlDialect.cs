@@ -16,71 +16,55 @@ using System.Data;
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
-using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 using AwsWrapperDataProvider.Driver.Utils;
 using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
-public class RdsMultiAzDbClusterMySqlDialect : MySqlDialect
+public class RdsMultiAzDbClusterMySqlDialect : MySqlDialect, IMultiAzClusterDialect
 {
-    internal const string TopologyQuery = "SELECT id, endpoint, port FROM mysql.rds_topology";
+    internal const string TopologyQueryStr = "SELECT id, endpoint, port FROM mysql.rds_topology";
 
     internal const string TopologyTableExistQuery =
         "SELECT 1 AS tmp FROM information_schema.tables WHERE"
         + " table_schema = 'mysql' AND table_name = 'rds_topology'";
 
-    private const string FetchWriterNodeQuery = "SHOW REPLICA STATUS";
     private const string FetchWriterNodeQueryColumnName = "Source_Server_Id";
 
     private const string NodeIdQuery = "SELECT id, SUBSTRING_INDEX(endpoint, '.', 1) FROM mysql.rds_topology WHERE id = @@server_id";
-    private const string IsReaderQuery = "SELECT @@read_only";
 
-    internal const string IsDialectQuery = "SHOW VARIABLES LIKE 'report_host'";
+    internal const string ReportHostExistQuery = "SHOW VARIABLES LIKE 'report_host'";
 
     private static readonly ILogger<RdsMultiAzDbClusterMySqlDialect> Logger = LoggerUtils.GetLogger<RdsMultiAzDbClusterMySqlDialect>();
 
+    public string TopologyQuery => TopologyQueryStr;
+
+    public string WriterIdQuery => "SHOW REPLICA STATUS";
+
+    string IMultiAzClusterDialect.WriterIdColumnName => FetchWriterNodeQueryColumnName;
+
     public override async Task<bool> IsDialect(DbConnection connection)
     {
+        if (!await DialectUtils.CheckExistenceQueries(connection, this.ExceptionHandler, Logger, TopologyTableExistQuery, TopologyQuery))
+        {
+            return false;
+        }
+
         try
         {
-            await using (var topologyTableExistCommand = connection.CreateCommand())
+            await using var isDialectCommand = connection.CreateCommand();
+            isDialectCommand.CommandText = ReportHostExistQuery;
+
+            await using var reader = await isDialectCommand.ExecuteReaderAsync(CommandBehavior.SingleRow);
+            if (!(await reader.ReadAsync()))
             {
-                topologyTableExistCommand.CommandText = TopologyTableExistQuery;
-                await using var topologyTableExistReader = await topologyTableExistCommand.ExecuteReaderAsync();
-                if (!(await topologyTableExistReader.ReadAsync()))
-                {
-                    Logger.LogDebug(Resources.RdsMultiAzDbClusterMySqlDialect_IsDialect_AsyncReader, nameof(topologyTableExistReader));
-                    return false;
-                }
+                Logger.LogDebug(Resources.RdsMultiAzDbClusterMySqlDialect_IsDialect_AsyncReader, nameof(reader));
+                return false;
             }
 
-            await using (var topologyCommand = connection.CreateCommand())
-            {
-                topologyCommand.CommandText = TopologyQuery;
-                await using var topologyReader = await topologyCommand.ExecuteReaderAsync();
-                if (!(await topologyReader.ReadAsync()))
-                {
-                    Logger.LogDebug(Resources.RdsMultiAzDbClusterMySqlDialect_IsDialect_AsyncReader, nameof(topologyReader));
-                    return false;
-                }
-            }
-
-            await using (var isDialectCommand = connection.CreateCommand())
-            {
-                isDialectCommand.CommandText = IsDialectQuery;
-
-                await using var reader = await isDialectCommand.ExecuteReaderAsync(CommandBehavior.SingleRow);
-                if (!(await reader.ReadAsync()))
-                {
-                    Logger.LogDebug(Resources.RdsMultiAzDbClusterMySqlDialect_IsDialect_AsyncReader, nameof(reader));
-                    return false;
-                }
-
-                string? reportHost = await reader.IsDBNullAsync(1) ? null : reader.GetString(1);
-                return !string.IsNullOrEmpty(reportHost);
-            }
+            string? reportHost = await reader.IsDBNullAsync(1) ? null : reader.GetString(1);
+            return !string.IsNullOrEmpty(reportHost);
         }
         catch (Exception ex) when (this.ExceptionHandler.IsSyntaxError(ex))
         {
@@ -101,25 +85,12 @@ public class RdsMultiAzDbClusterMySqlDialect : MySqlDialect
     private HostListProviderSupplier GetHostListProviderSupplier()
     {
         return (props, hostListProviderService, pluginService) =>
-            (PropertyDefinition.Plugins.GetString(props) ?? DefaultPluginCodes).Contains("failover") ?
-                new MonitoringRdsMultiAzHostListProvider(
-                    props,
-                    hostListProviderService,
-                    TopologyQuery,
-                    NodeIdQuery,
-                    IsReaderQuery,
-                    FetchWriterNodeQuery,
-                    pluginService,
-                    FetchWriterNodeQuery,
-                    FetchWriterNodeQueryColumnName) :
-                new RdsMultiAzDbClusterListProvider(
-                    props,
-                    hostListProviderService,
-                    TopologyQuery,
-                    NodeIdQuery,
-                    IsReaderQuery,
-                    FetchWriterNodeQuery,
-                    FetchWriterNodeQueryColumnName);
+            new RdsHostListProvider(
+                props,
+                hostListProviderService,
+                NodeIdQuery,
+                pluginService,
+                new MultiAzTopologyUtils(hostListProviderService.HostSpecBuilder, this, NodeIdQuery));
     }
 
     public override void PrepareConnectionProperties(Dictionary<string, string> props, HostSpec hostSpec)

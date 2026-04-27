@@ -265,6 +265,12 @@ public static class PropertyDefinition
         "30000",
         "Connect timeout (in millisecond) during Blue/Green Deployment switchover.");
 
+    // GDB Plugin Properties
+    public static readonly AwsWrapperProperty GlobalClusterInstanceHostPatterns = new(
+        "GlobalClusterInstanceHostPatterns",
+        null,
+        "Comma-separated list of the cluster instance DNS patterns that will be used to build a complete instance endpoints. A '?' character in these patterns should be used as a placeholder for cluster instance names. This parameter is required for Global Aurora Databases. Each region in the Global Aurora Database should be specified in the list.");
+
     // Custom Endpoint Plugin Properties
     public static readonly AwsWrapperProperty CustomEndpointInfoRefreshRateMs = new(
         "CustomEndpointInfoRefreshRateMs",
@@ -389,6 +395,9 @@ public static class PropertyDefinition
         BgSwitchoverTimeoutMs,
         BgConnectTimeout,
         BgdId,
+
+        // GDB Plugin Properties
+        GlobalClusterInstanceHostPatterns,
     ];
 
     public static readonly string EfmMonitoringPropertyPrefix = "monitoring-";

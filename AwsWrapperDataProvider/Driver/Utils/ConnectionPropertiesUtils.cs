@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Text.RegularExpressions;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Utils;
@@ -22,6 +24,12 @@ internal static class ConnectionPropertiesUtils
 {
     private const string HostSeperator = ",";
     private const string HostPortSeperator = ":";
+
+    // Regex to parse optional [region] prefix, domain, and optional :port
+    // Matches: [region]?.host.com:port  or  ?.host.com:port  or  ?.host.com
+    private static readonly Regex UrlWithRegionPattern = new(
+        @"^(\[(?<region>.+)\])?(?<domain>[a-zA-Z0-9\?\.\-]+)(:(?<port>[0-9]+))?$",
+        RegexOptions.Compiled);
 
     private static readonly ILogger<AwsWrapperProperty> Logger = LoggerUtils.GetLogger<AwsWrapperProperty>();
 
@@ -142,5 +150,51 @@ internal static class ConnectionPropertiesUtils
             .WithHostId(hostId)
             .WithRole(hostRole)
             .Build();
+    }
+
+    internal static (string Region, HostSpec HostSpec) ParseHostPortPairWithRegionPrefix(
+        string urlWithRegionPrefix,
+        HostSpecBuilder hostSpecBuilder)
+    {
+        var match = UrlWithRegionPattern.Match(urlWithRegionPrefix);
+        if (!match.Success)
+        {
+            throw new ArgumentException(string.Format(Resources.Error_CannotParseUrl, urlWithRegionPrefix));
+        }
+
+        string? awsRegion = match.Groups["region"].Success ? match.Groups["region"].Value : null;
+        string host = match.Groups["domain"].Value;
+        string? portStr = match.Groups["port"].Success ? match.Groups["port"].Value : null;
+
+        if (string.IsNullOrEmpty(host))
+        {
+            throw new ArgumentException(string.Format(Resources.Error_CannotParseHostFromUrl, urlWithRegionPrefix));
+        }
+
+        if (string.IsNullOrEmpty(awsRegion))
+        {
+            awsRegion = RdsUtils.GetRdsRegion(host);
+            if (string.IsNullOrEmpty(awsRegion))
+            {
+                throw new ArgumentException(string.Format(Resources.Error_CannotParseRegionFromUrl, urlWithRegionPrefix));
+            }
+        }
+
+        RdsUrlType urlType = RdsUtils.IdentifyRdsType(host);
+        HostRole hostRole = RdsUrlType.RdsReaderCluster.Equals(urlType) ? HostRole.Reader : HostRole.Writer;
+
+        int port = HostSpec.NoPort;
+        if (!string.IsNullOrEmpty(portStr) && int.TryParse(portStr, out int parsedPort))
+        {
+            port = parsedPort;
+        }
+
+        HostSpec hostSpec = hostSpecBuilder
+            .WithHost(host)
+            .WithPort(port)
+            .WithRole(hostRole)
+            .Build();
+
+        return (awsRegion, hostSpec);
     }
 }

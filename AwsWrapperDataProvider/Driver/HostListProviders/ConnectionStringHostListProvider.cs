@@ -47,25 +47,16 @@ public class ConnectionStringHostListProvider : IStaticHostListProvider
         return Task.FromResult((IList<HostSpec>)this.hostList.AsReadOnly());
     }
 
-    public async Task<IList<HostSpec>> RefreshAsync(DbConnection? connection)
-    {
-        return await this.RefreshAsync();
-    }
-
     public Task<IList<HostSpec>> ForceRefreshAsync()
     {
         this.Init();
         return Task.FromResult((IList<HostSpec>)this.hostList.AsReadOnly());
     }
 
-    public async Task<IList<HostSpec>> ForceRefreshAsync(DbConnection? connection)
+    public Task<IList<HostSpec>> ForceRefreshAsync(bool shouldVerifyWriter, long timeoutMs)
     {
-        return await this.ForceRefreshAsync();
-    }
-
-    public Task<HostRole> GetHostRoleAsync(DbConnection connection)
-    {
-        throw new NotSupportedException(Resources.Error_ConnectionStringHostListProvider_GetHostRoleAsync);
+        this.Init();
+        return this.ForceRefreshAsync();
     }
 
     public string GetClusterId()

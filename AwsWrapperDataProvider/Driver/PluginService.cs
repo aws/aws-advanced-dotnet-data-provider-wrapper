@@ -19,7 +19,6 @@ using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
-using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -31,6 +30,7 @@ namespace AwsWrapperDataProvider.Driver;
 
 public class PluginService : IPluginService, IHostListProviderService
 {
+    private const int DefaultTopologyQueryTimeoutMs = 5000;
     private static readonly TimeSpan DefaultHostAvailabilityCacheExpiration = TimeSpan.FromMinutes(5);
     internal static readonly MemoryCache HostAvailabilityExpiringCache = new(new MemoryCacheOptions());
 
@@ -55,6 +55,7 @@ public class PluginService : IPluginService, IHostListProviderService
     // private IExceptionHandler _exceptionHandler;
 
     public IDialect Dialect { get; private set; }
+    public bool IsDialectConfirmed { get; private set; }
     public ITargetConnectionDialect TargetConnectionDialect { get; }
     public HostSpec? InitialConnectionHostSpec { get; set; }
     public HostSpec? CurrentHostSpec { get => this.currentHostSpec ?? this.GetCurrentHostSpec(); }
@@ -207,7 +208,7 @@ public class PluginService : IPluginService, IHostListProviderService
 
     public async Task<HostRole> GetHostRole(DbConnection? connection)
     {
-        return await this.hostListProvider.GetHostRoleAsync(connection!);
+        return await this.Dialect.GetHostRoleAsync(connection!);
     }
 
     public void SetAllowedAndBlockedHosts(string connectionUrl, AllowedAndBlockedHosts allowedAndBlockedHosts)
@@ -287,56 +288,26 @@ public class PluginService : IPluginService, IHostListProviderService
         Logger.LogDebug(Resources.PluginService_RefreshHostListAsync_Completed, LoggerUtils.LogTopology(this.AllHosts, "All Hosts"));
     }
 
-    public async Task RefreshHostListAsync(DbConnection connection)
-    {
-        IList<HostSpec> updateHostList = await this.hostListProvider.RefreshAsync(connection);
-        this.UpdateHostAvailability(updateHostList);
-        this.NotifyNodeChangeList(this.AllHosts, updateHostList);
-        this.AllHosts = updateHostList;
-
-        Logger.LogDebug(Resources.PluginService_RefreshHostListAsync_CompletedWithConnection, connection.State, LoggerUtils.LogTopology(this.AllHosts, "All Hosts"));
-    }
-
     public async Task ForceRefreshHostListAsync()
     {
-        IList<HostSpec> updateHostList = await this.hostListProvider.ForceRefreshAsync();
-        this.UpdateHostAvailability(updateHostList);
-        this.NotifyNodeChangeList(this.AllHosts, updateHostList);
-        this.AllHosts = updateHostList;
-
-        Logger.LogDebug(Resources.PluginService_ForceRefreshHostListAsync_Completed, LoggerUtils.LogTopology(this.AllHosts, "All Hosts"));
-    }
-
-    public async Task ForceRefreshHostListAsync(DbConnection connection)
-    {
-        IList<HostSpec> updateHostList = await this.hostListProvider.ForceRefreshAsync(connection);
-        this.UpdateHostAvailability(updateHostList);
-        this.NotifyNodeChangeList(this.AllHosts, updateHostList);
-        this.AllHosts = updateHostList;
-
-        Logger.LogDebug(Resources.PluginService_ForceRefreshHostListAsync_CompletedWithConnection, connection.State, LoggerUtils.LogTopology(this.AllHosts, "All Hosts"));
+        await this.ForceRefreshHostListAsync(false, DefaultTopologyQueryTimeoutMs);
     }
 
     public async Task<bool> ForceRefreshHostListAsync(bool shouldVerifyWriter, long timeoutMs)
     {
         try
         {
-            if (this.HostListProvider is IBlockingHostListProvider blockingHostListProvider)
-            {
-                IList<HostSpec> updateHostList = await blockingHostListProvider.ForceRefreshAsync(shouldVerifyWriter, timeoutMs);
-                this.UpdateHostAvailability(updateHostList);
-                this.NotifyNodeChangeList(this.AllHosts, updateHostList);
-                this.AllHosts = updateHostList;
-                return true;
-            }
+            IList<HostSpec> updateHostList = await this.hostListProvider.ForceRefreshAsync(shouldVerifyWriter, timeoutMs);
+            this.UpdateHostAvailability(updateHostList);
+            this.NotifyNodeChangeList(this.AllHosts, updateHostList);
+            this.AllHosts = updateHostList;
+            return true;
         }
         catch (TimeoutException)
         {
             Logger.LogDebug(Resources.PluginService_ForceRefreshHostListAsync_TimeoutException, timeoutMs);
             return false;
         }
-
-        throw new InvalidOperationException(Resources.Error_RequiredIBlockingHostListProvider);
     }
 
     public Task<DbConnection> OpenConnection(
@@ -357,6 +328,7 @@ public class PluginService : IPluginService, IHostListProviderService
     {
         IDialect dialect = this.Dialect;
         this.Dialect = await this.dialectProvider.UpdateDialectAsync(connection, this.Dialect);
+        this.IsDialectConfirmed = true;
         Logger.LogDebug(Resources.PluginService_UpdateDialectAsync_DialectUpdated, this.Dialect.GetType().FullName);
 
         if (dialect != this.Dialect)
@@ -365,7 +337,7 @@ public class PluginService : IPluginService, IHostListProviderService
                                      ?? this.hostListProvider;
         }
 
-        await this.RefreshHostListAsync(connection);
+        await this.RefreshHostListAsync();
     }
 
     public Task<HostSpec?> IdentifyConnectionAsync(DbConnection connection, DbTransaction? transaction = null)

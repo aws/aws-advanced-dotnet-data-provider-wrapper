@@ -63,6 +63,32 @@ public class MySqlConnectorDialect : AbstractTargetConnectionDialect
         return this.PrepareConnectionString(dialect, hostSpec, copyOfProps, PropertyDefinition.Host);
     }
 
+    public override void EnsureMonitoringTimeouts(
+        Dictionary<string, string> props,
+        int defaultConnectTimeoutSec,
+        int defaultCommandTimeoutSec)
+    {
+        var builder = new MySqlConnectionStringBuilder();
+        foreach (var kvp in props)
+        {
+            try { builder[kvp.Key] = kvp.Value; }
+            catch (ArgumentException) { }
+        }
+
+        var setKeys = new HashSet<string>(builder.Keys.Cast<string>(), StringComparer.OrdinalIgnoreCase);
+
+        builder.ConnectionTimeout = (uint)defaultConnectTimeoutSec;
+        builder.DefaultCommandTimeout = (uint)defaultCommandTimeoutSec;
+
+        foreach (string key in builder.Keys.Cast<string>())
+        {
+            if (!setKeys.Contains(key))
+            {
+                props[key] = builder[key]?.ToString() ?? string.Empty;
+            }
+        }
+    }
+
     public override (bool ConnectionAlive, Exception? ConnectionException) Ping(IDbConnection connection)
     {
         if (connection is MySqlConnection mySqlConnection)

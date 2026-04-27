@@ -12,11 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using AwsWrapperDataProvider.Driver.HostInfo;
+namespace AwsWrapperDataProvider.Driver.Dialects;
 
-namespace AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
-
-public interface IBlockingHostListProvider : IHostListProvider
+public interface IGlobalAuroraTopologyDialect : ITopologyDialect
 {
-    Task<IList<HostSpec>> ForceRefreshAsync(bool shouldVerifyWriter, long timeoutMs);
+    string RegionByInstanceIdQuery { get; }
 }

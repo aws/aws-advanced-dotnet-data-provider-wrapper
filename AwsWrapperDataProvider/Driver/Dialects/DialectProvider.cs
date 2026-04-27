@@ -47,6 +47,8 @@ public class DialectProvider
         { typeof(RdsPgDialect), new RdsPgDialect() },
         { typeof(AuroraMySqlDialect), new AuroraMySqlDialect() },
         { typeof(AuroraPgDialect), new AuroraPgDialect() },
+        { typeof(GlobalAuroraMySqlDialect), new GlobalAuroraMySqlDialect() },
+        { typeof(GlobalAuroraPgDialect), new GlobalAuroraPgDialect() },
         { typeof(RdsMultiAzDbClusterMySqlDialect), new RdsMultiAzDbClusterMySqlDialect() },
         { typeof(RdsMultiAzDbClusterPgDialect), new RdsMultiAzDbClusterPgDialect() },
         { typeof(UnknownDialect), new UnknownDialect() },
@@ -61,6 +63,7 @@ public class DialectProvider
     private static readonly Dictionary<(RdsUrlType UrlType, string DatasourceType), Type> DialectTypeMap = new()
     {
         { (RdsUrlType.IpAddress, PgDataSource), typeof(PgDialect) },
+        { (RdsUrlType.RdsGlobalWriterCluster, PgDataSource), typeof(AuroraPgDialect) },
         { (RdsUrlType.RdsWriterCluster, PgDataSource), typeof(AuroraPgDialect) },
         { (RdsUrlType.RdsReaderCluster, PgDataSource), typeof(AuroraPgDialect) },
         { (RdsUrlType.RdsCustomCluster, PgDataSource), typeof(AuroraPgDialect) },
@@ -71,6 +74,7 @@ public class DialectProvider
         // TODO : Uncomment when Aurora Limitless DB Shard Group is supported
         // { (RdsUrlType.RdsAuroraLimitlessDbShardGroup, PgDataSource), typeof() },
         { (RdsUrlType.IpAddress, MySqlDataSource), typeof(MySqlDialect) },
+        { (RdsUrlType.RdsGlobalWriterCluster, MySqlDataSource), typeof(AuroraMySqlDialect) },
         { (RdsUrlType.RdsWriterCluster, MySqlDataSource), typeof(AuroraMySqlDialect) },
         { (RdsUrlType.RdsReaderCluster, MySqlDataSource), typeof(AuroraMySqlDialect) },
         { (RdsUrlType.RdsCustomCluster, MySqlDataSource), typeof(AuroraMySqlDialect) },
