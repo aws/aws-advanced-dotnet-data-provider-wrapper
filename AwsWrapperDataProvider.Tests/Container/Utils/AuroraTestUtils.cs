@@ -325,6 +325,22 @@ public class AuroraTestUtils
         return await this.IsDBInstanceWriterAsync(TestEnvironment.Env.Info.RdsDbName!, instanceId);
     }
 
+    public async Task<bool> IsDBInstanceWriterAsync(string instanceId, TimeSpan timeout)
+    {
+        var deadline = DateTime.UtcNow + timeout;
+        while (DateTime.UtcNow < deadline)
+        {
+            if (await this.IsDBInstanceWriterAsync(instanceId))
+            {
+                return true;
+            }
+
+            await Task.Delay(1000);
+        }
+
+        return false;
+    }
+
     public async Task<bool> IsDBInstanceWriterAsync(string clusterId, string instanceId)
     {
         var dbClusterMember = await this.GetMatchedDBClusterMemberAsync(clusterId, instanceId);

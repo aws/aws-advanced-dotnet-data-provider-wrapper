@@ -435,7 +435,7 @@ public class ReadWriteSplittingTests : IntegrationTestBase
         });
 
         var newWriterId = await AuroraUtils.QueryInstanceId(connection, async);
-        Assert.True(await AuroraUtils.IsDBInstanceWriterAsync(newWriterId!));
+        Assert.True(await AuroraUtils.IsDBInstanceWriterAsync(newWriterId!, TimeSpan.FromSeconds(30)));
 
         await AuroraUtils.SetReadOnly(connection, Engine, true, async);
         currentConnectionId = await AuroraUtils.QueryInstanceId(connection, async);

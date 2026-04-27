@@ -13,22 +13,16 @@
 // limitations under the License.
 
 using System.Data.Common;
+using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
-using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 using AwsWrapperDataProvider.Driver.Utils;
-using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
-public class AuroraMySqlDialect : MySqlDialect, IBlueGreenDialect
+public class AuroraMySqlDialect : MySqlDialect, ITopologyDialect, IBlueGreenDialect
 {
     private static readonly ILogger<AuroraMySqlDialect> Logger = LoggerUtils.GetLogger<AuroraMySqlDialect>();
-
-    private static readonly string TopologyQuery = "SELECT SERVER_ID, CASE WHEN SESSION_ID = 'MASTER_SESSION_ID' THEN TRUE ELSE FALSE END, "
-          + "CPU, REPLICA_LAG_IN_MILLISECONDS, LAST_UPDATE_TIMESTAMP "
-          + "FROM information_schema.replica_host_status "
-          + "WHERE time_to_sec(timediff(now(), LAST_UPDATE_TIMESTAMP)) <= 300 OR SESSION_ID = 'MASTER_SESSION_ID' ";
 
     private static readonly string IsReaderQuery = "SELECT @@innodb_read_only";
 
@@ -36,7 +30,14 @@ public class AuroraMySqlDialect : MySqlDialect, IBlueGreenDialect
 
     internal static readonly string IsDialectQuery = "SHOW VARIABLES LIKE 'aurora_version'";
 
-    private static readonly string IsWriterQuery = "SELECT SERVER_ID FROM information_schema.replica_host_status "
+    public string TopologyQuery =>
+        "SELECT SERVER_ID, CASE WHEN SESSION_ID = 'MASTER_SESSION_ID' THEN TRUE ELSE FALSE END, "
+        + "CPU, REPLICA_LAG_IN_MILLISECONDS, LAST_UPDATE_TIMESTAMP "
+        + "FROM information_schema.replica_host_status "
+        + "WHERE time_to_sec(timediff(now(), LAST_UPDATE_TIMESTAMP)) <= 300 OR SESSION_ID = 'MASTER_SESSION_ID' ";
+
+    public string WriterIdQuery =>
+        "SELECT SERVER_ID FROM information_schema.replica_host_status "
         + "WHERE SESSION_ID = 'MASTER_SESSION_ID' AND SERVER_ID = @@aurora_server_id";
 
     private static readonly string AuroraMySqlBgTopologyExistsQuery = "SELECT 1 AS tmp FROM information_schema.tables WHERE table_schema = 'mysql' AND table_name = 'rds_topology'";
@@ -44,50 +45,31 @@ public class AuroraMySqlDialect : MySqlDialect, IBlueGreenDialect
     private static readonly string AuroraMySqlBgStatusQuery = "SELECT * FROM mysql.rds_topology";
 
     public override IList<Type> DialectUpdateCandidates { get; } = [
+        typeof(GlobalAuroraMySqlDialect),
         typeof(RdsMultiAzDbClusterMySqlDialect),
     ];
 
     public override async Task<bool> IsDialect(DbConnection connection)
     {
-        try
-        {
-            await using var command = connection.CreateCommand();
-            command.CommandText = IsDialectQuery;
-            await using var reader = await command.ExecuteReaderAsync();
-            return await reader.ReadAsync();
-        }
-        catch (Exception ex) when (this.ExceptionHandler.IsSyntaxError(ex))
-        {
-            Logger.LogTrace(ex, Resources.Error_CantCheckDialect_Syntax, nameof(AuroraMySqlDialect));
-        }
-        catch (Exception ex)
-        {
-            Logger.LogTrace(ex, Resources.Error_CantCheckDialect, nameof(AuroraMySqlDialect));
-        }
-
-        return false;
+        return await DialectUtils.CheckExistenceQueries(connection, this.ExceptionHandler, Logger, IsDialectQuery);
     }
 
     public override HostListProviderSupplier HostListProviderSupplier => this.GetHostListProviderSupplier();
 
+    public override Task<HostRole> GetHostRoleAsync(DbConnection connection)
+    {
+        return DialectUtils.GetHostRoleAsync(connection, IsReaderQuery);
+    }
+
     private HostListProviderSupplier GetHostListProviderSupplier()
     {
         return (props, hostListProviderService, pluginService) =>
-            (PropertyDefinition.Plugins.GetString(props) ?? DefaultPluginCodes).Contains("failover") ?
-                new MonitoringRdsHostListProvider(
-                    props,
-                    hostListProviderService,
-                    TopologyQuery,
-                    NodeIdQuery,
-                    IsReaderQuery,
-                    IsWriterQuery,
-                    pluginService) :
-                new RdsHostListProvider(
-                    props,
-                    hostListProviderService,
-                    TopologyQuery,
-                    NodeIdQuery,
-                    IsReaderQuery);
+            new RdsHostListProvider(
+                props,
+                hostListProviderService,
+                NodeIdQuery,
+                pluginService,
+                new AuroraTopologyUtils(hostListProviderService.HostSpecBuilder, this));
     }
 
     public async Task<bool> IsBlueGreenStatusAvailable(DbConnection connection)

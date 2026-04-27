@@ -58,9 +58,16 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
         bool async)
     {
         RdsUrlType urlType = RdsUtils.IdentifyRdsType(hostSpec?.Host);
+        if (!urlType.IsRdsCluster)
+        {
+            // It's not a cluster endpoint. Continue with a normal workflow.
+            return await methodFunc();
+        }
+
         DbConnection? connectionCandidate = null;
 
         if (urlType == RdsUrlType.RdsWriterCluster ||
+            urlType == RdsUrlType.RdsGlobalWriterCluster ||
             (isInitialConnection && this.verifyOpenedConnectionType == VerifyOpenedConnectionType.Writer))
         {
             connectionCandidate = await this.GetVerifiedWriterConnection(
@@ -108,7 +115,9 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
             {
                 writerCandidate = WrapperUtils.GetWriter(this.pluginService.AllHosts);
 
-                if (writerCandidate == null || RdsUtils.IsRdsClusterDns(writerCandidate.Host))
+                if (writerCandidate == null
+                    || RdsUtils.IsRdsClusterDns(writerCandidate.Host)
+                    || RdsUtils.IsGlobalDbWriterClusterDns(writerCandidate.Host))
                 {
                     try
                     {
@@ -125,7 +134,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
                         }
                     }
 
-                    await this.pluginService.ForceRefreshHostListAsync(writerConnectionCandidate);
+                    await this.pluginService.ForceRefreshHostListAsync();
                     writerCandidate = await this.pluginService.IdentifyConnectionAsync(writerConnectionCandidate);
 
                     if (writerCandidate == null || writerCandidate.Role != HostRole.Writer)
@@ -154,7 +163,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
 
                 if ((await this.pluginService.GetHostRole(writerConnectionCandidate)) != HostRole.Writer)
                 {
-                    await this.pluginService.ForceRefreshHostListAsync(writerConnectionCandidate);
+                    await this.pluginService.ForceRefreshHostListAsync();
                     this.DisposeConnection(writerConnectionCandidate);
                     await Task.Delay(retryDelay);
                     continue;
@@ -228,7 +237,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
                         }
                     }
 
-                    await this.pluginService.ForceRefreshHostListAsync(readerConnectionCandidate);
+                    await this.pluginService.ForceRefreshHostListAsync();
                     readerCandidate = await this.pluginService.IdentifyConnectionAsync(readerConnectionCandidate);
 
                     if (readerCandidate == null)
@@ -267,7 +276,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
 
                 if ((await this.pluginService.GetHostRole(readerConnectionCandidate)) != HostRole.Reader)
                 {
-                    await this.pluginService.ForceRefreshHostListAsync(readerConnectionCandidate);
+                    await this.pluginService.ForceRefreshHostListAsync();
 
                     if (this.HasNoReader())
                     {

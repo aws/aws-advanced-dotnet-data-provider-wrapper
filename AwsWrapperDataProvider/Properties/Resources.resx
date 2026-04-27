@@ -551,9 +551,6 @@
   <data name="Error_ProvidedTypeDoesntImplementIDbCommand" xml:space="preserve">
     <value>Provided type doesn't implement IDbCommand.</value>
   </data>
-  <data name="Error_RequiredIBlockingHostListProvider" xml:space="preserve">
-    <value>[PluginService] Required IBlockingHostListProvider.</value>
-  </data>
   <data name="Error_ShouldNotBeCalled" xml:space="preserve">
     <value>Should not be called</value>
   </data>
@@ -820,9 +817,6 @@
   </data>
   <data name="RdsHostListProvider_QueryForTopologyAsync" xml:space="preserve">
     <value>QueryForTopology: hostName={0}, template={1}, endpoint={2}.</value>
-  </data>
-  <data name="RdsMultiAzDbClusterListProvider_ProcessWriterNodeId_NoWriterNodesFound" xml:space="preserve">
-    <value>No writer node found in the result of the fetchWriterNodeQuery. Ensure that the query is correct and that the database is configured properly.</value>
   </data>
   <data name="RdsMultiAzDbClusterMySqlDialect_IsDialect_AsyncReader" xml:space="preserve">
     <value>Reader no result set left in {0}.</value>
@@ -1174,5 +1168,32 @@
     </data>
     <data name="BlueGreenStatusMonitor_UnsupportedDialect" xml:space="preserve">
         <value>Dialect {0} is not supported by Blue Green Connection Plugin</value>
+    </data>
+    <data name="Error_CannotFindInstanceTemplateForRegion" xml:space="preserve">
+        <value>Cannot find instance template for region: {0}.</value>
+    </data>
+    <data name="Error_GlobalClusterInstanceHostPatternsRequired" xml:space="preserve">
+        <value>GlobalClusterInstanceHostPatterns is required for Global Aurora Databases.</value>
+    </data>
+    <data name="Error_InstanceTemplatesNotSet" xml:space="preserve">
+        <value>Instance templates by region must be set before creating hosts.</value>
+    </data>
+    <data name="Error_UnableToDetermineHostRole" xml:space="preserve">
+        <value>Unable to determine host role, connected to unknown DB type.</value>
+    </data>
+    <data name="Error_CannotParseUrl" xml:space="preserve">
+        <value>Cannot parse URL: {0}.</value>
+    </data>
+    <data name="Error_CannotParseHostFromUrl" xml:space="preserve">
+        <value>Cannot parse host from URL: {0}.</value>
+    </data>
+    <data name="Error_CannotParseRegionFromUrl" xml:space="preserve">
+        <value>Cannot parse AWS region from URL: {0}.</value>
+    </data>
+    <data name="GlobalAuroraTopologyUtils_DetectedGdbPatterns" xml:space="preserve">
+        <value>Detected global database instance patterns: {0}.</value>
+    </data>
+    <data name="GlobalAuroraHostListProvider_InitMonitor_Initializing" xml:space="preserve">
+        <value>Initializing GlobalAuroraTopologyMonitor for cluster: {0}.</value>
     </data>
 </root>

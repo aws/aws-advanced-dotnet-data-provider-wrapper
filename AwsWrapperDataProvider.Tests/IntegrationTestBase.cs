@@ -19,7 +19,6 @@ using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo.HostSelectors;
 using AwsWrapperDataProvider.Driver.HostListProviders;
-using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Plugins.AuroraConnectionTracker;
 using AwsWrapperDataProvider.Driver.Plugins.Efm;
@@ -126,13 +125,17 @@ public abstract class IntegrationTestBase : IAsyncLifetime
 
             Console.WriteLine($"Cluster {TestEnvironment.Env.Info.RdsDbName} is healthy.");
         }
+
+        Console.WriteLine($"Monitor cache count is {RdsHostListProvider.MonitorCount()}");
     }
 
     public ValueTask DisposeAsync()
     {
         Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Clearing all cache for each integration test.");
+        Console.WriteLine($"Topology monitor cache count before cleaning is {RdsHostListProvider.MonitorCount()}");
         RdsHostListProvider.ClearAll();
-        MonitoringRdsHostListProvider.CloseAllMonitors();
+        RdsHostListProvider.CloseAllMonitors();
+        Console.WriteLine($"Topology monitor cache count after cleaning is {RdsHostListProvider.MonitorCount()}");
         HostMonitorService.CloseAllMonitors();
         PluginService.ClearCache();
         DialectProvider.ResetEndpointCache();
