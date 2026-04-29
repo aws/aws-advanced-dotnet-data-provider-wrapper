@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using System.Data.Common;
-using System.Reflection;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Plugins.ReadWriteSplitting;
@@ -22,9 +21,6 @@ using AwsWrapperDataProvider.Plugin.CustomEndpoint.CustomEndpoint;
 using AwsWrapperDataProvider.Tests;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 using NHibernate;
-using NHibernate.Cfg;
-using NHibernate.Driver;
-using NHibernate.Driver.MySqlConnector;
 
 namespace AwsWrapperDataProvider.NHibernate.Tests;
 
@@ -32,7 +28,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests;
 /// NHibernate integration tests for Custom Endpoint plugin with read-write splitting.
 /// Runs only on Aurora with at least 3 instances; requires first instance to be writer.
 /// </summary>
-public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixture<CustomEndpointTestFixture>
+public class CustomEndpointConnectivityTests : NHibernateTestBase, IClassFixture<CustomEndpointTestFixture>
 {
     private readonly ITestOutputHelper logger;
     private readonly CustomEndpointTestFixture fixture;
@@ -55,31 +51,6 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
     {
         ConnectionPluginChainBuilder.RegisterPluginFactory<CustomEndpointPluginFactory>(PluginCodes.CustomEndpoint);
         await base.InitializeAsync();
-    }
-
-    private Configuration GetNHibernateConfiguration(string connectionString)
-    {
-        var properties = new Dictionary<string, string>
-        {
-            { "connection.connection_string", connectionString },
-        };
-
-        var cfg = new Configuration().AddAssembly(Assembly.GetExecutingAssembly());
-
-        switch (Engine)
-        {
-            case DatabaseEngine.PG:
-                properties.Add("dialect", "NHibernate.Dialect.PostgreSQLDialect");
-                cfg.DataBaseIntegration(c => c.UseAwsWrapperDriver<NpgsqlDriver>());
-                break;
-            case DatabaseEngine.MYSQL:
-            default:
-                properties.Add("dialect", "NHibernate.Dialect.MySQLDialect");
-                cfg.DataBaseIntegration(c => c.UseAwsWrapperDriver<MySqlConnectorDriver>());
-                break;
-        }
-
-        return cfg.AddProperties(properties);
     }
 
     [Fact]

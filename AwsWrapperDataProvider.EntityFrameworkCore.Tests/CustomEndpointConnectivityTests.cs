@@ -27,46 +27,21 @@ namespace AwsWrapperDataProvider.EntityFrameworkCore.Tests;
 /// Entity Framework integration tests for Custom Endpoint plugin with read-write splitting.
 /// Runs only on Aurora with at least 3 instances; requires first instance to be writer.
 /// </summary>
-public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixture<CustomEndpointTestFixture>
+public class CustomEndpointConnectivityTests : EFIntegrationTestBase, IClassFixture<CustomEndpointTestFixture>
 {
-    private readonly ITestOutputHelper logger;
     private readonly CustomEndpointTestFixture fixture;
 
     protected override bool MakeSureFirstInstanceWriter => true;
 
-    public CustomEndpointConnectivityTests(CustomEndpointTestFixture fixture, ITestOutputHelper output)
+    public CustomEndpointConnectivityTests(CustomEndpointTestFixture fixture, ITestOutputHelper output) : base(output)
     {
         this.fixture = fixture;
-        this.logger = output;
     }
 
     public override async ValueTask InitializeAsync()
     {
         ConnectionPluginChainBuilder.RegisterPluginFactory<CustomEndpointPluginFactory>(PluginCodes.CustomEndpoint);
         await base.InitializeAsync();
-    }
-
-    private DbContextOptions<PersonDbContext> BuildOptions(string wrapperConnectionString, string connectionString)
-    {
-        if (Engine == DatabaseEngine.PG)
-        {
-            return new DbContextOptionsBuilder<PersonDbContext>()
-                .UseAwsWrapperNpgsql(
-                    wrapperConnectionString,
-                    wrappedOptionBuilder => wrappedOptionBuilder.UseNpgsql(connectionString))
-                .Options;
-        }
-
-        if (Engine == DatabaseEngine.MYSQL)
-        {
-            return new DbContextOptionsBuilder<PersonDbContext>()
-                .UseAwsWrapperMySql(
-                    wrapperConnectionString,
-                    wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)))
-                .Options;
-        }
-
-        throw new InvalidOperationException($"Unsupported engine {Engine}");
     }
 
     [Fact]
@@ -79,7 +54,7 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
         Assert.SkipWhen(NumberOfInstances < 3, "Skipped due to test requiring number of database instances >= 3.");
         Assert.SkipWhen(this.fixture.EndpointInfo == null, "Custom endpoint fixture not created (not Aurora or < 3 instances).");
 
-        await this.fixture.SetupCustomEndpointRoleAsync(HostRole.Reader, this.logger);
+        await this.fixture.SetupCustomEndpointRoleAsync(HostRole.Reader, this.Logger);
 
         var connectionString = ConnectionStringHelper.GetUrl(
             Engine,
@@ -107,7 +82,7 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
         var originalReaderId = await AuroraUtils.QueryInstanceId(connection, true);
         Assert.True(endpointMembers.Contains(originalReaderId!), $"Instance {originalReaderId} should be in endpoint members");
 
-        this.logger.WriteLine("Initial connection is to a reader. Attempting to switch to writer...");
+        this.Logger.WriteLine("Initial connection is to a reader. Attempting to switch to writer...");
         await Assert.ThrowsAsync<ReadWriteSplittingDbException>(async () =>
         {
             await AuroraUtils.SetReadOnly(connection, Engine, false, true);
@@ -134,7 +109,7 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
             await AuroraUtils.WaitUntilEndpointHasMembersAsync(this.fixture.EndpointId, new HashSet<string> { originalReaderId! });
         }
 
-        this.logger.WriteLine("Writer removed from endpoint. Attempting to switch to writer should fail...");
+        this.Logger.WriteLine("Writer removed from endpoint. Attempting to switch to writer should fail...");
         await Assert.ThrowsAsync<ReadWriteSplittingDbException>(async () =>
         {
             await AuroraUtils.SetReadOnly(connection, Engine, false, true);
@@ -151,7 +126,7 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
         Assert.SkipWhen(NumberOfInstances < 3, "Skipped due to test requiring number of database instances >= 3.");
         Assert.SkipWhen(this.fixture.EndpointInfo == null, "Custom endpoint fixture not created (not Aurora or < 3 instances).");
 
-        await this.fixture.SetupCustomEndpointRoleAsync(HostRole.Writer, this.logger);
+        await this.fixture.SetupCustomEndpointRoleAsync(HostRole.Writer, this.Logger);
 
         var connectionString = ConnectionStringHelper.GetUrl(
             Engine,
@@ -179,7 +154,7 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
         var originalWriterId = await AuroraUtils.QueryInstanceId(connection, true);
         Assert.True(endpointMembers.Contains(originalWriterId!), $"Instance {originalWriterId} should be in endpoint members");
 
-        this.logger.WriteLine("Initial connection is to the writer. Attempting to switch to reader...");
+        this.Logger.WriteLine("Initial connection is to the writer. Attempting to switch to reader...");
         await AuroraUtils.SetReadOnly(connection, Engine, true, true);
         var newInstanceId = await AuroraUtils.QueryInstanceId(connection, true);
         Assert.Equal(originalWriterId, newInstanceId);
@@ -206,7 +181,7 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
             await AuroraUtils.WaitUntilEndpointHasMembersAsync(this.fixture.EndpointId, new HashSet<string> { originalWriterId! });
         }
 
-        this.logger.WriteLine("Reader removed from endpoint. Attempting to switch to reader should fallback to writer...");
+        this.Logger.WriteLine("Reader removed from endpoint. Attempting to switch to reader should fallback to writer...");
         await AuroraUtils.SetReadOnly(connection, Engine, true, true);
         newInstanceId = await AuroraUtils.QueryInstanceId(connection, true);
         Assert.Equal(originalWriterId, newInstanceId);
