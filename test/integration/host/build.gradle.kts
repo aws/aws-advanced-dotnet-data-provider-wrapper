@@ -578,6 +578,91 @@ tasks.register<Test>("test-aurora-pg-advanced-performance") {
     }
 }
 
+tasks.register<Test>("test-bgd-multi-az-instance-mysql") {
+    group = "verification"
+    filter.includeTestsMatching("integration.host.TestRunner.runBgdMySqlInstance")
+    doFirst {
+        systemProperty("test-no-docker", "true")
+        systemProperty("test-no-performance", "true")
+        systemProperty("test-no-pg-driver", "true")
+        systemProperty("test-no-pg-engine", "true")
+        systemProperty("test-no-aurora", "true")
+        systemProperty("test-no-failover", "true")
+        systemProperty("test-no-secrets-manager", "true")
+        systemProperty("test-no-mariadb-driver", "true")
+        systemProperty("test-no-mariadb-engine", "true")
+        systemProperty("test-no-instances-2", "true")
+        systemProperty("test-no-instances-3", "true")
+        systemProperty("test-no-instances-5", "true")
+        systemProperty("test-no-multi-az-cluster", "true")
+        systemProperty("test-bg-only", "true")
+    }
+}
+
+tasks.register<Test>("test-bgd-aurora-mysql") {
+    group = "verification"
+    filter.includeTestsMatching("integration.host.TestRunner.runBgdMySqlAurora")
+    doFirst {
+        systemProperty("test-no-docker", "true")
+        systemProperty("test-no-performance", "true")
+        systemProperty("test-no-pg-driver", "true")
+        systemProperty("test-no-pg-engine", "true")
+        systemProperty("test-no-multi-az-instance", "true")
+        systemProperty("test-no-failover", "true")
+        systemProperty("test-no-secrets-manager", "true")
+        systemProperty("test-no-mariadb-driver", "true")
+        systemProperty("test-no-mariadb-engine", "true")
+        systemProperty("test-no-instances-1", "true")
+        systemProperty("test-no-instances-2", "false")
+        systemProperty("test-no-instances-3", "true")
+        systemProperty("test-no-instances-5", "true")
+        systemProperty("test-no-multi-az-cluster", "true")
+        systemProperty("test-bg-only", "true")
+    }
+}
+
+tasks.register<Test>("test-bgd-aurora-pg") {
+    group = "verification"
+    filter.includeTestsMatching("integration.host.TestRunner.runBgdPgAurora")
+    doFirst {
+        systemProperty("test-no-docker", "true")
+        systemProperty("test-no-performance", "true")
+        systemProperty("test-no-mysql-driver", "true")
+        systemProperty("test-no-mysql-engine", "true")
+        systemProperty("test-no-multi-az-instance", "true")
+        systemProperty("test-no-failover", "true")
+        systemProperty("test-no-secrets-manager", "true")
+        systemProperty("test-no-mariadb-driver", "true")
+        systemProperty("test-no-mariadb-engine", "true")
+        systemProperty("test-no-instances-1", "true")
+        systemProperty("test-no-instances-3", "true")
+        systemProperty("test-no-instances-5", "true")
+        systemProperty("test-no-multi-az-cluster", "true")
+        systemProperty("test-bg-only", "true")
+    }
+}
+
+tasks.register<Test>("test-bgd-multi-az-instance-pg") {
+    group = "verification"
+    filter.includeTestsMatching("integration.host.TestRunner.runBgdPgInstance")
+    doFirst {
+        systemProperty("test-no-docker", "true")
+        systemProperty("test-no-aurora", "true")
+        systemProperty("test-no-performance", "true")
+        systemProperty("test-no-mysql-driver", "true")
+        systemProperty("test-no-mysql-engine", "true")
+        systemProperty("test-no-failover", "true")
+        systemProperty("test-no-secrets-manager", "true")
+        systemProperty("test-no-mariadb-driver", "true")
+        systemProperty("test-no-mariadb-engine", "true")
+        systemProperty("test-no-instances-2", "true")
+        systemProperty("test-no-instances-3", "true")
+        systemProperty("test-no-instances-5", "true")
+        systemProperty("test-no-multi-az-cluster", "true")
+        systemProperty("test-bg-only", "true")
+    }
+}
+
 tasks.register<Test>("in-container") {
     filter.excludeTestsMatching("software.*") // exclude unit tests
 

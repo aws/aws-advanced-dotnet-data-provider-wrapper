@@ -477,7 +477,7 @@ public class BlueGreenStatusMonitor
                 this.InitHostListProvider();
             }
         }
-        catch (DbException e)
+        catch (Exception ex) when (ex is DbException or SocketException)
         {
             if (this.connection?.State != System.Data.ConnectionState.Closed && this.connection?.State != ConnectionState.Broken)
             {
@@ -485,13 +485,13 @@ public class BlueGreenStatusMonitor
                 // If connection isn't closed but there's an exception then let's log it.
 
                 // For PG databases
-                if (e.Message?.Contains("An error occured while retrieving the blue/green fast switchover metadata") == true)
+                if (ex.Message?.Contains("An error occured while retrieving the blue/green fast switchover metadata") == true)
                 {
                     this.currentPhase = BlueGreenPhaseType.NOT_CREATED;
                     return;
                 }
 
-                Logger.LogTrace(e, Resources.BlueGreenStatusMonitor_CollectStatus_UnhandledSqlException, this.role);
+                Logger.LogTrace(ex, Resources.BlueGreenStatusMonitor_CollectStatus_UnhandledSqlException, this.role);
             }
             else
             {
@@ -516,7 +516,7 @@ public class BlueGreenStatusMonitor
                 || conn.State == System.Data.ConnectionState.Closed
                 || conn.State == System.Data.ConnectionState.Broken;
         }
-        catch (DbException)
+        catch (Exception ex) when (ex is DbException or SocketException)
         {
             // do nothing
         }
@@ -607,7 +607,7 @@ public class BlueGreenStatusMonitor
                 this.panicMode = false;
                 this.NotifyChanges();
             }
-            catch (DbException ex)
+            catch (Exception ex) when (ex is DbException or SocketException)
             {
                 Logger.LogWarning(ex, "[OpenConnection] Failed to open connection for role: {Role}", this.role);
                 this.connection = null;

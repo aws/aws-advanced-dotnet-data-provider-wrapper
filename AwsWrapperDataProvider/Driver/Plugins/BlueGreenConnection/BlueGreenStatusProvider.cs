@@ -31,7 +31,7 @@ public class BlueGreenStatusProvider
     private readonly Dictionary<string, string> props;
     private readonly string bgdId;
     private readonly Dictionary<BlueGreenIntervalRate, long> statusCheckIntervalMap = new();
-    private readonly long switchoverTimeoutNano;
+    private readonly long switchoverTimeoutMs;
     private readonly object processStatusLock = new();
 
     private readonly HostSpecBuilder hostSpecBuilder = new();
@@ -58,7 +58,7 @@ public class BlueGreenStatusProvider
     private bool blueDnsUpdateCompleted;
     private bool greenDnsRemoved;
     private bool greenTopologyChanged;
-    private long postStatusEndTimeNano;
+    private Stopwatch? stopwatch;
 
     public BlueGreenStatusProvider(
         IPluginService pluginService,
@@ -84,10 +84,9 @@ public class BlueGreenStatusProvider
                 ? long.Parse(PropertyDefinition.BgIntervalHighMs.DefaultValue!)
                 : long.Parse(high);
 
-        long switchoverTimeoutMs = props.TryGetValue(PropertyDefinition.BgSwitchoverTimeoutMs.Name, out var timeout)
+        this.switchoverTimeoutMs = props.TryGetValue(PropertyDefinition.BgSwitchoverTimeoutMs.Name, out var timeout)
             ? long.Parse(timeout)
             : long.Parse(PropertyDefinition.BgSwitchoverTimeoutMs.DefaultValue!);
-        this.switchoverTimeoutNano = switchoverTimeoutMs * 1_000_000;
 
         IDialect dialect = this.pluginService.Dialect;
         if (DialectUtils.IsBlueGreenConnectionDialect(dialect))
@@ -102,7 +101,7 @@ public class BlueGreenStatusProvider
 
     private void InitMonitoring()
     {
-        BlueGreenStatusMonitor sourceMonitor = new BlueGreenStatusMonitor(
+        BlueGreenStatusMonitor sourceMonitor = new(
             BlueGreenRoleType.SOURCE,
             this.bgdId,
             this.pluginService.CurrentHostSpec!,
@@ -113,7 +112,7 @@ public class BlueGreenStatusProvider
         this.monitors[(int)BlueGreenRoleType.SOURCE] = sourceMonitor;
         sourceMonitor.Start();
 
-        BlueGreenStatusMonitor targetMonitor = new BlueGreenStatusMonitor(
+        BlueGreenStatusMonitor targetMonitor = new(
             BlueGreenRoleType.TARGET,
             this.bgdId,
             this.pluginService.CurrentHostSpec!,
@@ -224,7 +223,7 @@ public class BlueGreenStatusProvider
 
     private void UpdateStatusCache()
     {
-        BlueGreenStatus latestStatus = BlueGreenConnectionCache.Instance.Get<BlueGreenStatus>(this.bgdId);
+        BlueGreenStatus? latestStatus = BlueGreenConnectionCache.Instance.Get<BlueGreenStatus>(this.bgdId);
         BlueGreenConnectionCache.Instance.Set(this.bgdId, this.summaryStatus);
         this.StorePhaseTime(this.summaryStatus!.CurrentPhase);
 
@@ -791,7 +790,7 @@ public class BlueGreenStatusProvider
 
     private void CreatePostRouting(List<IConnectRouting> connectRouting)
     {
-        if (!this.blueDnsUpdateCompleted || this.allGreenNodesChangedName.Get())
+        if (!this.blueDnsUpdateCompleted || !this.allGreenNodesChangedName.Get())
         {
             // New connect calls to blue nodes should be routed to green nodes.
             foreach ((string blueHost, BlueGreenRoleType role) in
@@ -1030,7 +1029,7 @@ public class BlueGreenStatusProvider
         this.greenDnsRemoved = false;
         this.greenTopologyChanged = false;
         this.allGreenNodesChangedName.Set(false);
-        this.postStatusEndTimeNano = 0;
+        this.stopwatch = null;
         this.interimStatusHashes = [0, 0];
         this.lastContextHash = 0;
         this.interimStatuses = [null, null];
@@ -1059,15 +1058,15 @@ public class BlueGreenStatusProvider
 
     private void StartSwitchoverTimer()
     {
-        if (this.postStatusEndTimeNano == 0)
+        if (this.stopwatch == null)
         {
-            this.postStatusEndTimeNano = this.GetNanoTime() + this.switchoverTimeoutNano;
+            this.stopwatch = Stopwatch.StartNew();
         }
     }
 
     private bool IsSwitchoverTimerExpired()
     {
-        return this.postStatusEndTimeNano > 0 && this.postStatusEndTimeNano < this.GetNanoTime();
+        return this.stopwatch != null && this.stopwatch.ElapsedMilliseconds > this.switchoverTimeoutMs;
     }
 
     private long GetNanoTime()
