@@ -14,6 +14,7 @@
 
 using AwsWrapperDataProvider.Dialect.MySqlConnector;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
+using AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.RelationalConnectionDialects;
 using Microsoft.EntityFrameworkCore;
 
 namespace MySqlEntityFrameworkExample;
@@ -26,6 +27,13 @@ public class MySqlEntityFrameworkExample
     {
         // Load relevant DbConnection dialect
         MySqlConnectorDialectLoader.Load();
+
+        // To register a custom EF Core MySQL provider dialect, call RegisterDialect
+        // before configuring the DbContext. The first argument is the assembly name
+        // prefix of the provider's options extension.
+        // RelationalConnectionDialectProvider.RegisterDialect(
+        //     "MyCustom.EntityFrameworkCore.MySql",
+        //     myCustomDialectInstance);
 
         var start = DateTime.UtcNow;
         var threshold = TimeSpan.FromMinutes(5);

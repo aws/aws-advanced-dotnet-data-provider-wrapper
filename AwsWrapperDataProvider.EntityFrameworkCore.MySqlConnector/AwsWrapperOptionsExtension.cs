@@ -18,7 +18,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace AwsWrapperDataProvider.EntityFrameworkCore.MySQL;
+namespace AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector;
 
 public class AwsWrapperOptionsExtension : IDbContextOptionsExtension
 {

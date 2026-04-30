@@ -91,8 +91,8 @@ public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
     protected string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, AwsWrapperProperty hostProperty)
     {
         Dictionary<string, string> targetConnectionParameters = props
-            .Where(x => !PropertyDefinition.InternalWrapperProperties.Select(prop => prop.Name).Contains(x.Key)
-                        && !PropertyDefinition.MonitoringPropertyPrefixes.Any(prefix => x.Key.StartsWith(prefix)))
+            .Where(x => !PropertyDefinition.IsInternalWrapperPropertyKey(x.Key)
+                        && !PropertyDefinition.MonitoringPropertyPrefixes.Any(prefix => x.Key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)))
             .ToDictionary(x => x.Key, x => x.Value);
 
         if (hostSpec == null)

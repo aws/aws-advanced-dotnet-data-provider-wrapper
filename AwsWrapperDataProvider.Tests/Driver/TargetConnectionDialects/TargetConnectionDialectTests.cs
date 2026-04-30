@@ -63,6 +63,12 @@ public class TargetConnectionDialectTests
         { PropertyDefinition.CustomTargetConnectionDialect.Name, "SomeDialect" },
     };
 
+    private static readonly Dictionary<string, string> PropsWithLowercasePluginsKey = new()
+    {
+        { "Database", "testdb" },
+        { "plugins", "failover" },
+    };
+
     [Fact]
     [Trait("Category", "Unit")]
     public void PgTargetDriverDialect_PrepareConnectionString_WithHostSpec_IncludesHostAndPort()
@@ -160,6 +166,27 @@ public class TargetConnectionDialectTests
         Assert.DoesNotContain(PropertyDefinition.TargetConnectionType.Name, connectionString);
         Assert.DoesNotContain(PropertyDefinition.CustomTargetConnectionDialect.Name, connectionString);
     }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void MySqlTargetDriverDialect_PrepareConnectionString_FiltersPluginsCaseInsensitive()
+    {
+        var connectionDialect = new MySqlConnectorDialect();
+        var dialect = new MySqlDialect();
+        var connectionString = connectionDialect.PrepareConnectionString(dialect, HostWithPort, PropsWithLowercasePluginsKey);
+
+        Assert.Contains("Server=test-host", connectionString);
+        Assert.DoesNotContain("plugins", connectionString, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Theory]
+    [Trait("Category", "Unit")]
+    [InlineData("Plugins", true)]
+    [InlineData("plugins", true)]
+    [InlineData("PLUGINS", true)]
+    [InlineData("Database", false)]
+    public void PropertyDefinition_IsInternalWrapperPropertyKey_IsCaseInsensitive(string key, bool expected) =>
+        Assert.Equal(expected, PropertyDefinition.IsInternalWrapperPropertyKey(key));
 
     [Fact]
     [Trait("Category", "Unit")]
