@@ -291,6 +291,16 @@ public class BlueGreenConnectionPlugin : AbstractConnectionPlugin
         return Stopwatch.GetTimestamp();
     }
 
+    public long GetHoldTimeNano()
+    {
+        if (this.startTimeNano.Get() == 0)
+        {
+            return 0;
+        }
+
+        return this.endTimeNano.Get() == 0 ? Stopwatch.GetTimestamp() - this.startTimeNano.Get() : this.endTimeNano.Get() - this.startTimeNano.Get();
+    }
+
     public void ResetRoutingTimeNano()
     {
         this.startTimeNano.Set(0);

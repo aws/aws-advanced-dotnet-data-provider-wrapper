@@ -101,15 +101,20 @@ public abstract class IntegrationTestBase : IAsyncLifetime
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Cluster {TestEnvironment.Env.Info.RdsDbName} is not healthy: {ex.Message}. Rebooting all instances and retrying...");
+                    AuroraTestUtils auroraTestUtils = AuroraTestUtils.GetUtility();
 
                     switch (deployment)
                     {
                         case DatabaseEngineDeployment.AURORA:
+                            await TestEnvironment.RebootAllClusterInstancesAsync();
+                            await TestEnvironment.CreateBlueGreenDeployment(auroraTestUtils);
+                            break;
                         case DatabaseEngineDeployment.AURORA_LIMITLESS:
                             await TestEnvironment.RebootAllClusterInstancesAsync();
                             break;
                         case DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER:
                             await TestEnvironment.RebootClusterAsync();
+                            await TestEnvironment.CreateBlueGreenDeployment(auroraTestUtils);
                             break;
                         default:
                             throw new InvalidOperationException($"Unsupported deployment {deployment}");

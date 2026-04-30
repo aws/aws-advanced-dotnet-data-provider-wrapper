@@ -14,12 +14,16 @@
 
 using System.Diagnostics;
 using System.Text.Json;
+using Amazon.RDS.Model;
+using AwsWrapperDataProvider.Driver.Utils;
+using Microsoft.Extensions.Logging;
 using Toxiproxy.Net;
 
 namespace AwsWrapperDataProvider.Tests.Container.Utils;
 
 public class TestEnvironment
 {
+    private static readonly ILogger<TestEnvironment> Logger = LoggerUtils.GetLogger<TestEnvironment>();
     private static readonly Lazy<TestEnvironment> LazyTestEnvironmentInstance = new(Create);
 
     private static readonly JsonSerializerOptions Options = new() { PropertyNameCaseInsensitive = true };
@@ -101,6 +105,89 @@ public class TestEnvironment
                     throw new Exception("Cluster RO endpoint isn't updated.");
                 }
             }
+        }
+    }
+
+    public static async Task CreateBlueGreenDeployment(AuroraTestUtils auroraTestUtils)
+    {
+        Logger.LogTrace("Creating Blue Green Deployment");
+        var deployment = Env.Info.Request.Deployment;
+
+        if (deployment == DatabaseEngineDeployment.AURORA)
+        {
+            var clusterInfo = await auroraTestUtils.GetClusterInfo(Env.Info.RdsDbName);
+            var bgDeployment = await auroraTestUtils.GetBlueGreenDeploymentBySource(clusterInfo.DBClusterArn);
+            if (bgDeployment != null)
+            {
+                Env.Info.BlueGreenDeploymentId = bgDeployment.BlueGreenDeploymentIdentifier;
+                await WaitForBlueGreenClustersHaveRightState(auroraTestUtils, bgDeployment);
+                return;
+            }
+
+            var blueGreenId = await auroraTestUtils.CreateBlueGreenDeployment(Env.Info.RdsDbName!, clusterInfo.DBClusterArn);
+            Env.Info.BlueGreenDeploymentId = blueGreenId;
+
+            var newBgDeployment = auroraTestUtils.GetBlueGreenDeployment(blueGreenId);
+            if (newBgDeployment != null)
+            {
+                await WaitForBlueGreenClustersHaveRightState(auroraTestUtils, newBgDeployment);
+            }
+        }
+        else if (deployment == DatabaseEngineDeployment.RDS_MULTI_AZ_INSTANCE)
+        {
+            var instanceInfo = await auroraTestUtils.GetRdsInstanceInfo(Env.Info.RdsDbName!);
+            var bgDeployment = await auroraTestUtils.GetBlueGreenDeploymentBySource(instanceInfo.DBInstanceArn);
+            if (bgDeployment != null)
+            {
+                Env.Info.BlueGreenDeploymentId = bgDeployment.BlueGreenDeploymentIdentifier;
+                await WaitForBlueGreenInstancesHaveRightState(auroraTestUtils, bgDeployment);
+                return;
+            }
+
+            var blueGreenId = await auroraTestUtils.CreateBlueGreenDeployment(
+                Env.Info.RdsDbName!, instanceInfo.DBInstanceArn);
+            Env.Info.BlueGreenDeploymentId = blueGreenId;
+
+            var newBgDeployment = auroraTestUtils.GetBlueGreenDeployment(blueGreenId);
+            if (newBgDeployment != null)
+            {
+                await WaitForBlueGreenInstancesHaveRightState(auroraTestUtils, newBgDeployment);
+            }
+        }
+        else
+        {
+            Logger.LogWarning("BG Deployments are supported for RDS MultiAz Instances and Aurora clusters only."
+                + " Proceed without creating BG Deployment.");
+        }
+    }
+
+    private static async Task WaitForBlueGreenClustersHaveRightState(AuroraTestUtils auroraTestUtils, BlueGreenDeployment bgDeployment)
+    {
+        var blueClusterInfo = await auroraTestUtils.GetClusterByArn(bgDeployment.Source);
+        if (blueClusterInfo != null)
+        {
+            await auroraTestUtils.WaitUntilClusterHasRightStateAsync(blueClusterInfo.DBClusterIdentifier);
+        }
+
+        var greenClusterInfo = await auroraTestUtils.GetClusterByArn(bgDeployment.Target);
+        if (greenClusterInfo != null)
+        {
+            await auroraTestUtils.WaitUntilClusterHasRightStateAsync(greenClusterInfo.DBClusterIdentifier);
+        }
+    }
+
+    private static async Task WaitForBlueGreenInstancesHaveRightState(AuroraTestUtils auroraTestUtils, BlueGreenDeployment bgDeployment)
+    {
+        var blueInstanceInfo = auroraTestUtils.GetRdsInstanceInfoByArn(bgDeployment.Source);
+        if (blueInstanceInfo != null)
+        {
+            await auroraTestUtils.WaitUntilClusterHasRightStateAsync(blueInstanceInfo.DBClusterIdentifier, "available");
+        }
+
+        var greenInstanceInfo = auroraTestUtils.GetRdsInstanceInfoByArn(bgDeployment.Target);
+        if (greenInstanceInfo != null)
+        {
+            await auroraTestUtils.WaitUntilClusterHasRightStateAsync(greenInstanceInfo.DBClusterIdentifier, "available");
         }
     }
 
