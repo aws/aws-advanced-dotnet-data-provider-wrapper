@@ -111,7 +111,7 @@ public class ContainerHelper {
               "Category=Integration&Database=" + task + "&Engine=" + engineDeployment, "--configuration", "Release", "--logger:\"console;verbosity=detailed\"");
     } else {
       exitCode = execInContainer(container, consumer, "dotnet", "test", "--filter",
-              "Category=Integration&Database=" + task + "&Engine=" + engineDeployment, "--no-build", "--logger:\"console;verbosity=detailed\"");
+              "Category=Integration&Database=" + task + "&Engine=" + engineDeployment + "&FullyQualifiedName~ConnectToWriter_SwitchToReadWrite_ReadOnlyTransaction", "--no-build", "--logger:\"console;verbosity=detailed\"");
     }
 
 

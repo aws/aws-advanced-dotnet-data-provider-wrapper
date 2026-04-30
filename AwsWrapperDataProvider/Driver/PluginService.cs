@@ -111,6 +111,12 @@ public class PluginService : IPluginService, IHostListProviderService
 
     public static void ClearCache()
     {
+        // [DIAG] Log every cache clear so we can verify it runs between tests.
+        Logger.LogWarning(
+            "[DIAG] ClearCache called. thread={Thread}, stack={Stack}",
+            Environment.CurrentManagedThreadId,
+            new System.Diagnostics.StackTrace(1, false).ToString());
+
         HostAvailabilityExpiringCache.Clear();
     }
 
@@ -218,6 +224,14 @@ public class PluginService : IPluginService, IHostListProviderService
 
     public void SetAvailability(ICollection<string> hostAliases, HostAvailability availability)
     {
+        // [DIAG] Log entry point + caller stack to identify which code path triggers availability changes.
+        Logger.LogWarning(
+            "[DIAG] SetAvailability called. aliases=[{Aliases}], availability={Availability}, thread={Thread}, stack={Stack}",
+            string.Join(",", hostAliases),
+            availability,
+            Environment.CurrentManagedThreadId,
+            new System.Diagnostics.StackTrace(1, false).ToString());
+
         if (hostAliases.Count == 0)
         {
             return;
@@ -231,6 +245,11 @@ public class PluginService : IPluginService, IHostListProviderService
 
         if (hostsToChange.Count == 0)
         {
+            // [DIAG] Also show what AllHosts contained so we can see why nothing matched.
+            Logger.LogWarning(
+                "[DIAG] SetAvailability no-match. aliases=[{Aliases}], allHosts=[{AllHosts}]",
+                string.Join(",", hostAliases),
+                string.Join(" | ", this.AllHosts.Select(h => h.AsAlias())));
             Logger.LogTrace(Resources.PluginService_SetAvailability_NoChanges);
             return;
         }
@@ -243,11 +262,25 @@ public class PluginService : IPluginService, IHostListProviderService
             host.Availability = availability;
             HostAvailabilityExpiringCache.Set(host.GetHostAndPort(), availability, DefaultHostAvailabilityCacheExpiration);
 
+            // [DIAG] Record write by host:port key.
+            Logger.LogWarning(
+                "[DIAG] Cache.Set by host:port. key={Key}, value={Value}, host={Host}",
+                host.GetHostAndPort(),
+                availability,
+                host);
+
             // Also store by HostId so availability can be restored when new HostSpec objects are created
             // during topology refresh (e.g., for custom endpoint restrictions set before topology is populated)
             if (!string.IsNullOrEmpty(host.HostId))
             {
                 HostAvailabilityExpiringCache.Set(host.HostId, availability, DefaultHostAvailabilityCacheExpiration);
+
+                // [DIAG] Record write by HostId key.
+                Logger.LogWarning(
+                    "[DIAG] Cache.Set by HostId. key={Key}, value={Value}, host={Host}",
+                    host.HostId,
+                    availability,
+                    host);
             }
 
             if (currentAvailability != availability)
@@ -278,9 +311,21 @@ public class PluginService : IPluginService, IHostListProviderService
     public async Task RefreshHostListAsync()
     {
         IList<HostSpec> updateHostList = await this.hostListProvider.RefreshAsync();
+
+        // [DIAG] Capture state BEFORE UpdateHostAvailability runs so we can see mutations it causes.
+        Logger.LogWarning(
+            "[DIAG] RefreshHostListAsync pre-UpdateHostAvailability. updateHostList=[{Hosts}]",
+            string.Join(" | ", updateHostList.Select(h => $"{h.AsAlias()}({h.Role}/{h.Availability})")));
+
         if (!updateHostList.SequenceEqual(this.AllHosts))
         {
             this.UpdateHostAvailability(updateHostList);
+
+            // [DIAG] Capture state AFTER UpdateHostAvailability to confirm who mutated what.
+            Logger.LogWarning(
+                "[DIAG] RefreshHostListAsync post-UpdateHostAvailability. updateHostList=[{Hosts}]",
+                string.Join(" | ", updateHostList.Select(h => $"{h.AsAlias()}({h.Role}/{h.Availability})")));
+
             this.NotifyNodeChangeList(this.AllHosts, updateHostList);
             this.AllHosts = updateHostList;
         }
@@ -422,17 +467,40 @@ public class PluginService : IPluginService, IHostListProviderService
         foreach (HostSpec host in hosts)
         {
             // First try to restore from cache by host:port (for existing hosts)
-            HostAvailabilityExpiringCache.TryGetValue(host.GetHostAndPort(), out HostAvailability? availability);
+            bool foundByHostPort = HostAvailabilityExpiringCache.TryGetValue(host.GetHostAndPort(), out HostAvailability? availability);
+
+            // [DIAG] Record every cache read attempt.
+            Logger.LogWarning(
+                "[DIAG] UpdateHostAvailability cache lookup by host:port. key={Key}, found={Found}, value={Value}, hostRoleBefore={Role}, availBefore={AvailBefore}",
+                host.GetHostAndPort(),
+                foundByHostPort,
+                availability,
+                host.Role,
+                host.Availability);
 
             // If not found and host has a HostId, try to restore by HostId (for custom endpoint restrictions
             // that were set before the topology refresh created these HostSpec objects)
             if (!availability.HasValue && !string.IsNullOrEmpty(host.HostId))
             {
-                HostAvailabilityExpiringCache.TryGetValue(host.HostId, out availability);
+                bool foundByHostId = HostAvailabilityExpiringCache.TryGetValue(host.HostId, out availability);
+
+                Logger.LogWarning(
+                    "[DIAG] UpdateHostAvailability cache lookup by HostId. key={Key}, found={Found}, value={Value}",
+                    host.HostId,
+                    foundByHostId,
+                    availability);
             }
 
             if (availability.HasValue)
             {
+                // [DIAG] Record the mutation.
+                Logger.LogWarning(
+                    "[DIAG] UpdateHostAvailability MUTATING. host={HostPort}, role={Role}, from={From}, to={To}",
+                    host.GetHostAndPort(),
+                    host.Role,
+                    host.Availability,
+                    availability.Value);
+
                 host.Availability = availability.Value;
             }
         }
