@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using AwsWrapperDataProvider.Driver.Plugins.BlueGreenConnection;
+
 namespace AwsWrapperDataProvider.Driver.Utils;
 
 public static class PropertyDefinition
@@ -389,6 +391,7 @@ public static class PropertyDefinition
         BgSwitchoverTimeoutMs,
         BgConnectTimeout,
         BgdId,
+        BlueGreenConnectionPlugin.BgSkipRoutingInForceConnect
     ];
 
     public static readonly string EfmMonitoringPropertyPrefix = "monitoring-";

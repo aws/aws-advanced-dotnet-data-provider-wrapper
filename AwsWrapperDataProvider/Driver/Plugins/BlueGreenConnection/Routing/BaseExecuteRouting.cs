@@ -29,7 +29,7 @@ public abstract class BaseExecuteRouting : BaseRouting, IExecuteRouting
 
     public bool IsMatch(HostSpec hostSpec, BlueGreenRoleType hostRole)
     {
-        return (this.hostAndPort == null || this.hostAndPort.Equals(hostSpec?.GetHostAndPort().ToLowerInvariant()))
+        return (this.hostAndPort == null || this.hostAndPort.Equals(hostSpec.GetHostAndPort().ToLowerInvariant()))
                && (this.role == null || this.role.Equals(hostRole));
     }
 
@@ -44,6 +44,6 @@ public abstract class BaseExecuteRouting : BaseRouting, IExecuteRouting
 
     public override string ToString()
     {
-        return $"{base.ToString()} [{this.hostAndPort ?? "<null>"}, {this.role.ToString()}]";
+        return $"{base.ToString()} [{this.hostAndPort ?? "<null>"}, {this.role?.ToString() ?? "<null>"}]";
     }
 }
