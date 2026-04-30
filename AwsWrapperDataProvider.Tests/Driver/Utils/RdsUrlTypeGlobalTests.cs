@@ -18,7 +18,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.Utils;
 
 /// <summary>
 /// Unit tests for RdsUrlType and RdsUtils global database extensions.
-/// Requirements: 1.1, 1.2, 1.5, 1.6
+/// Requirements: 1.1, 1.2, 1.5, 1.6.
 /// </summary>
 public class RdsUrlTypeGlobalTests
 {
@@ -52,7 +52,9 @@ public class RdsUrlTypeGlobalTests
     [MemberData(nameof(HasRegionTestData))]
     public void HasRegion_ShouldBeCorrectForAllTypes(RdsUrlType type, bool expectedHasRegion, string typeName)
     {
-        Assert.Equal(expectedHasRegion, type.HasRegion);
+        Assert.True(
+            expectedHasRegion == type.HasRegion,
+            $"{typeName}.HasRegion expected {expectedHasRegion} but was {type.HasRegion}.");
     }
 
     public static IEnumerable<object[]> HasRegionTestData()

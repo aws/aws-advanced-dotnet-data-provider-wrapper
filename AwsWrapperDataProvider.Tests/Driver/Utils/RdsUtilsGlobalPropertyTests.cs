@@ -75,27 +75,17 @@ public class RdsUtilsGlobalPropertyTests
     /// </summary>
     private static Gen<string> NonGlobalEndpointGen()
     {
+        // Non-global RDS endpoints: regional writer/reader/instance/proxy clusters, plain hostnames, and IP addresses.
         return Gen.OneOf(
-            // Regional writer cluster endpoint
             InstanceNameGen().Select(
                 name => $"{name}.cluster-xyz123.us-east-1.rds.amazonaws.com"),
-
-            // Regional reader cluster endpoint
             InstanceNameGen().Select(
                 name => $"{name}.cluster-ro-xyz123.us-east-1.rds.amazonaws.com"),
-
-            // Instance endpoint
             InstanceNameGen().Select(
                 name => $"{name}.xyz123.us-east-1.rds.amazonaws.com"),
-
-            // Proxy endpoint
             InstanceNameGen().Select(
                 name => $"{name}.proxy-xyz123.us-east-1.rds.amazonaws.com"),
-
-            // Plain hostname (no RDS pattern)
             InstanceNameGen().Select(name => $"{name}.example.com"),
-
-            // IP address
             Gen.Constant("192.168.1.1"));
     }
 

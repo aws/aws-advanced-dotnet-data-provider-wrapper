@@ -67,8 +67,13 @@ public class NpgsqlDialect : AbstractTargetConnectionDialect
         var builder = new NpgsqlConnectionStringBuilder();
         foreach (var kvp in props)
         {
-            try { builder[kvp.Key] = kvp.Value; }
-            catch (ArgumentException) { }
+            try
+            {
+                builder[kvp.Key] = kvp.Value;
+            }
+            catch (ArgumentException)
+            {
+            }
         }
 
         var setKeys = new HashSet<string>(builder.Keys.Cast<string>(), StringComparer.OrdinalIgnoreCase);

@@ -52,7 +52,9 @@ public class GlobalAuroraPgDialect : AuroraPgDialect, IGlobalAuroraTopologyDiale
         }
 
         if (!await DialectUtils.CheckExistenceQueries(
-                connection, this.ExceptionHandler, Logger,
+                connection,
+                this.ExceptionHandler,
+                Logger,
                 GlobalStatusFuncExistsQuery,
                 GlobalInstanceStatusFuncExistsQuery))
         {

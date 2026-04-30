@@ -66,8 +66,13 @@ public class MySqlClientDialect : AbstractTargetConnectionDialect
         var builder = new MySqlConnectionStringBuilder();
         foreach (var kvp in props)
         {
-            try { builder[kvp.Key] = kvp.Value; }
-            catch (ArgumentException) { }
+            try
+            {
+                builder[kvp.Key] = kvp.Value;
+            }
+            catch (ArgumentException)
+            {
+            }
         }
 
         var setKeys = new HashSet<string>(builder.Keys.Cast<string>(), StringComparer.OrdinalIgnoreCase);

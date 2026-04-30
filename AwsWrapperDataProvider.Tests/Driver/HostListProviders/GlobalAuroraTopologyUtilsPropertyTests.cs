@@ -77,7 +77,7 @@ public class GlobalAuroraTopologyUtilsPropertyTests
     }
 
     /// <summary>
-    /// Generates a standard RDS instance template: ?.{domainId}.{region}.rds.amazonaws.com
+    /// Generates a standard RDS instance template: ?.{domainId}.{region}.rds.amazonaws.com.
     /// </summary>
     private static Gen<(string Region, string Template)> StandardRdsTemplateGen()
     {
@@ -88,7 +88,7 @@ public class GlobalAuroraTopologyUtilsPropertyTests
     }
 
     /// <summary>
-    /// Generates a bracket-format instance template: [{region}]?.{domainId}.{region}.rds.amazonaws.com
+    /// Generates a bracket-format instance template: [{region}]?.{domainId}.{region}.rds.amazonaws.com.
     /// </summary>
     private static Gen<(string Region, string Template)> BracketTemplateGen()
     {
@@ -104,7 +104,7 @@ public class GlobalAuroraTopologyUtilsPropertyTests
     /// Property 3: For any topology query result row with instance name N and region R,
     /// where R exists in the region-to-template map with template T,
     /// the constructed HostSpec.Host equals T.Replace("?", N).
-    /// **Validates: Requirements 3.1, 3.2**
+    /// **Validates: Requirements 3.1, 3.2**.
     /// </summary>
     [Fact]
     public void TopologyEndpointConstruction_ReplacesPlaceholderWithInstanceName()
@@ -126,7 +126,7 @@ public class GlobalAuroraTopologyUtilsPropertyTests
 
                 var templateMap = new Dictionary<string, HostSpec>(StringComparer.OrdinalIgnoreCase)
                 {
-                    [region] = templateHostSpec
+                    [region] = templateHostSpec,
                 };
 
                 // Simulate what QueryForTopologyAsync does: replace "?" with instance name
@@ -144,7 +144,7 @@ public class GlobalAuroraTopologyUtilsPropertyTests
     /// <summary>
     /// Property 4: For any topology query result row with a region R that does NOT exist
     /// in the region-to-template map, an exception is thrown.
-    /// **Validates: Requirements 3.3**
+    /// **Validates: Requirements 3.3**.
     /// </summary>
     [Fact]
     public void MissingRegionTemplate_ThrowsException()
@@ -170,7 +170,7 @@ public class GlobalAuroraTopologyUtilsPropertyTests
 
                 var templateMap = new Dictionary<string, HostSpec>(StringComparer.OrdinalIgnoreCase)
                 {
-                    [mapRegion] = templateHostSpec
+                    [mapRegion] = templateHostSpec,
                 };
 
                 // Attempting to look up a region not in the map should fail
@@ -188,7 +188,7 @@ public class GlobalAuroraTopologyUtilsPropertyTests
     /// or standard RDS format), formatting them as a comma-separated string and parsing
     /// with ParseInstanceTemplates produces a dictionary where each region key maps to
     /// a HostSpec with the correct host pattern.
-    /// **Validates: Requirements 3.4, 3.5, 3.6**
+    /// **Validates: Requirements 3.4, 3.5, 3.6**.
     /// </summary>
     [Fact]
     public void ParseInstanceTemplates_StandardFormat_RoundTrip()
@@ -221,7 +221,7 @@ public class GlobalAuroraTopologyUtilsPropertyTests
     /// <summary>
     /// Property 5 (bracket format): For bracket-format templates [region]?.host,
     /// ParseInstanceTemplates extracts the region from the bracket prefix.
-    /// **Validates: Requirements 3.4, 3.5, 3.6**
+    /// **Validates: Requirements 3.4, 3.5, 3.6**.
     /// </summary>
     [Fact]
     public void ParseInstanceTemplates_BracketFormat_RoundTrip()
@@ -257,7 +257,7 @@ public class GlobalAuroraTopologyUtilsPropertyTests
     /// <summary>
     /// Property 5 (multi-region): For multiple comma-separated region-template pairs,
     /// ParseInstanceTemplates produces a dictionary with all regions.
-    /// **Validates: Requirements 3.4, 3.5, 3.6**
+    /// **Validates: Requirements 3.4, 3.5, 3.6**.
     /// </summary>
     [Fact]
     public void ParseInstanceTemplates_MultipleRegions_AllParsed()
@@ -267,17 +267,17 @@ public class GlobalAuroraTopologyUtilsPropertyTests
             from pair1 in StandardRdsTemplateGen()
             from pair2 in StandardRdsTemplateGen()
             where !string.Equals(pair1.Region, pair2.Region, StringComparison.OrdinalIgnoreCase)
-            select (pair1, pair2);
+            select (Pair1: pair1, Pair2: pair2);
 
         var property = Prop.ForAll(
             pairGen.ToArbitrary(),
-            (((string Region, string Template) pair1, (string Region, string Template) pair2) pairs) =>
+            (((string Region, string Template) Pair1, (string Region, string Template) Pair2) pairs) =>
             {
                 var dialect = new Mock<IGlobalAuroraTopologyDialect>();
                 var hostSpecBuilder = new HostSpecBuilder();
                 var utils = new GlobalAuroraTopologyUtils(dialect.Object, hostSpecBuilder);
 
-                string combined = $"{pairs.pair1.Template},{pairs.pair2.Template}";
+                string combined = $"{pairs.Pair1.Template},{pairs.Pair2.Template}";
 
                 var result = utils.ParseInstanceTemplates(
                     combined,
@@ -290,10 +290,10 @@ public class GlobalAuroraTopologyUtilsPropertyTests
                     });
 
                 return result.Count >= 2
-                    && result.ContainsKey(pairs.pair1.Region)
-                    && result.ContainsKey(pairs.pair2.Region)
-                    && result[pairs.pair1.Region].Host == pairs.pair1.Template
-                    && result[pairs.pair2.Region].Host == pairs.pair2.Template;
+                    && result.ContainsKey(pairs.Pair1.Region)
+                    && result.ContainsKey(pairs.Pair2.Region)
+                    && result[pairs.Pair1.Region].Host == pairs.Pair1.Template
+                    && result[pairs.Pair2.Region].Host == pairs.Pair2.Template;
             });
 
         Check.One(PbtConfig, property);
@@ -304,13 +304,13 @@ public class GlobalAuroraTopologyUtilsPropertyTests
     /// <summary>
     /// Property 6: For any null, empty, or whitespace-only value of the
     /// GlobalClusterInstanceHostPatterns property, initialization throws an exception.
-    /// **Validates: Requirements 4.3**
+    /// **Validates: Requirements 4.3**.
     /// </summary>
     [Fact]
     public void EmptyInstanceHostPatterns_ThrowsException()
     {
         var emptyStringGen = Gen.OneOf(
-            Gen.Constant(""),
+            Gen.Constant(string.Empty),
             Gen.Constant(" "),
             Gen.Constant("  "),
             Gen.Constant("\t"),
