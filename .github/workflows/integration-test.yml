@@ -24,21 +24,18 @@ on:
         default: ''
 
 permissions:
-  id-token: write   # This is required for requesting the JWT
-  contents: read    # This is required for actions/checkout
+  id-token: write
+  contents: read
 
 jobs:
-  run-integration-tests:
-    name: Run Integration Tests with Default
+  all-bg-integration-tests-latest:
+    name: Run Blue/Green integration tests with latest engine version
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         dbEngine: ["mysql", "pg"]
-        deployment: ["aurora", "multi-az-cluster", "multi-az-instance", "aurora-limitless"]
-        exclude:
-          - dbEngine: "mysql"
-            deployment: "aurora-limitless"
+        deployment: ["aurora", "multi-az-instance"]
     steps:
       - name: 'Clone repository'
         uses: actions/checkout@v4
@@ -65,13 +62,12 @@ jobs:
           output-credentials: true
       - name: Run Integration Tests
         run: |
-          cd test/integration/host && ./gradlew --no-parallel --no-daemon test-all-${{ matrix.dbEngine }}-${{ matrix.deployment }} --info
+          cd test/integration/host && ./gradlew --no-parallel --no-daemon test-bgd-${{ matrix.deployment }}-${{ matrix.dbEngine }} --info
         env:
           RDS_DB_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
           AWS_ACCESS_KEY_ID: ${{ steps.creds.outputs.aws-access-key-id }}
           AWS_SECRET_ACCESS_KEY: ${{ steps.creds.outputs.aws-secret-access-key }}
           AWS_SESSION_TOKEN: ${{ steps.creds.outputs.aws-session-token }}
-          AWS_RDS_MONITORING_ROLE_ARN: ${{ secrets.AWS_RDS_MONITORING_ROLE_ARN }}
           MYSQL_VERSION: "default"
           PG_VERSION: "default"
       - name: Archive results
@@ -79,12 +75,12 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: integration-report-default-${{ matrix.dbEngine }}
-          path: ./test/integration/reports
+          path: ./test/integration/container/reports
           retention-days: 5
       - name: Get Github Action IP
         if: always()
         id: ip
-        uses: haythem/public-ip@v1.3
+        run: echo "ipv4=$(curl -s https://checkip.amazonaws.com)" >> $GITHUB_OUTPUT
       - name: Remove Github Action IP
         if: always()
         run: |
