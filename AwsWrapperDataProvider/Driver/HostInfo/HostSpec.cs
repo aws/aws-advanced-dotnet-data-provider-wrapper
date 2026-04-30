@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using System.Collections.Concurrent;
-using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.HostInfo;
 
@@ -45,20 +44,6 @@ public class HostSpec
         }
         set
         {
-            // [DIAG] Trace every mutation to catch any path that bypasses SetAvailability.
-            if (this.RawAvailability != value)
-            {
-                AwsWrapperDataProvider.Driver.Utils.LoggerUtils.GetLogger<HostSpec>().LogWarning(
-                    "[DIAG] HostSpec.Availability setter. host={Host}:{Port}, role={Role}, from={From}, to={To}, thread={Thread}, stack={Stack}",
-                    this.Host,
-                    this.Port,
-                    this.Role,
-                    this.RawAvailability,
-                    value,
-                    System.Environment.CurrentManagedThreadId,
-                    new System.Diagnostics.StackTrace(1, false).ToString());
-            }
-
             this.RawAvailability = value;
         }
     }

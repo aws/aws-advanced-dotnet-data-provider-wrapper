@@ -615,13 +615,6 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         {
             this.topologyMap.Set(this.clusterId, hosts, this.topologyCacheExpiration);
             Logger.LogTrace(LoggerUtils.LogTopology(hosts, Resources.ClusterTopologyMonitor_UpdateTopologyCache_TopologyUpdate));
-
-            // [DIAG] Record which HostSpec objects went into the cache, including per-instance identity (RuntimeHelpers.GetHashCode).
-            Logger.LogWarning(
-                "[DIAG] UpdateTopologyCache stored hosts. clusterId={ClusterId}, identities=[{Hosts}]",
-                this.clusterId,
-                string.Join(" | ", hosts.Select(h => $"{h.AsAlias()}/{h.Role}/{h.Availability}/objId={System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(h)}")));
-
             this.RequestToUpdateTopology = false;
             Logger.LogTrace(Resources.ClusterTopologyMonitor_UpdateTopologyCache_NotifyingLock);
             Monitor.PulseAll(this.topologyUpdatedLock);
@@ -744,6 +737,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                             {
                                 LoggerUtils.MonitoringLogWithHost(hostSpec, NodeMonitorLogger, LogLevel.Information, string.Format(Resources.NodeMonitoringTask_DetectedWriter, hostSpec.Host));
                                 await monitor.FetchTopologyAndUpdateCacheAsync(connection);
+                                hostSpec.Availability = HostAvailability.Available;
                                 monitor.nodeThreadsWriterHostSpec = hostSpec;
                                 monitor.NodeThreadsStop = true;
                             }
