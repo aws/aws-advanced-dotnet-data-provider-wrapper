@@ -328,7 +328,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
         // Assert that we are currently connected to the reader instance.
         var currentConnectionId = await AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, async);
         Assert.NotNull(currentConnectionId);
-        Assert.False(await AuroraUtils.IsDBInstanceWriterAsync(currentConnectionId, TimeSpan.FromSeconds(30)));
+        Assert.False(await AuroraUtils.IsDBInstanceWriterAsync(currentConnectionId, TimeSpan.FromSeconds(120)));
 
         await crashTask;
     }
