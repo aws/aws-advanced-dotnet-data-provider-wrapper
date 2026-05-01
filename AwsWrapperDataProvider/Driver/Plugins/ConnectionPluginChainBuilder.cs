@@ -21,6 +21,7 @@ using AwsWrapperDataProvider.Driver.Plugins.ConnectTime;
 using AwsWrapperDataProvider.Driver.Plugins.Efm;
 using AwsWrapperDataProvider.Driver.Plugins.ExecutionTime;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
+using AwsWrapperDataProvider.Driver.Plugins.GdbFailover;
 using AwsWrapperDataProvider.Driver.Plugins.Limitless;
 using AwsWrapperDataProvider.Driver.Plugins.ReadWriteSplitting;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -42,6 +43,7 @@ public class ConnectionPluginChainBuilder
             { PluginCodes.AuroraConnectionTracker, new Lazy<IConnectionPluginFactory>(() => new AuroraConnectionTrackerPluginFactory()) },
             { PluginCodes.ReadWriteSplitting, new Lazy<IConnectionPluginFactory>(() => new ReadWriteSplittingPluginFactory()) },
             { PluginCodes.Failover, new Lazy<IConnectionPluginFactory>(() => new FailoverPluginFactory()) },
+            { PluginCodes.GdbFailover, new Lazy<IConnectionPluginFactory>(() => new GdbFailoverPluginFactory()) },
             { PluginCodes.HostMonitoring, new Lazy<IConnectionPluginFactory>(() => new HostMonitoringPluginFactory()) },
             { PluginCodes.Limitless, new Lazy<IConnectionPluginFactory>(() => new LimitlessConnectionPluginFactory()) },
             { PluginCodes.Iam, null },
@@ -60,6 +62,7 @@ public class ConnectionPluginChainBuilder
         { PluginCodes.AuroraConnectionTracker, 400 },
         { PluginCodes.ReadWriteSplitting, 600 },
         { PluginCodes.Failover, 700 },
+        { PluginCodes.GdbFailover, 750 },
         { PluginCodes.HostMonitoring, 800 },
         { PluginCodes.Limitless, 950 },
         { PluginCodes.Iam, 1000 },

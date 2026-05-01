@@ -481,6 +481,30 @@ public class AwsWrapperConnectionStringBuilder : DbConnectionStringBuilder
         set => this.SetValue(PropertyDefinition.GlobalClusterInstanceHostPatterns.Name, value);
     }
 
+    public string? FailoverHomeRegion
+    {
+        get => this.GetValue(PropertyDefinition.FailoverHomeRegion.Name);
+        set => this.SetValue(PropertyDefinition.FailoverHomeRegion.Name, value);
+    }
+
+    public string? ActiveHomeFailoverMode
+    {
+        get => this.GetValue(PropertyDefinition.ActiveHomeFailoverMode.Name);
+        set => this.SetValue(PropertyDefinition.ActiveHomeFailoverMode.Name, value);
+    }
+
+    public string? InactiveHomeFailoverMode
+    {
+        get => this.GetValue(PropertyDefinition.InactiveHomeFailoverMode.Name);
+        set => this.SetValue(PropertyDefinition.InactiveHomeFailoverMode.Name, value);
+    }
+
+    public string? GdbEnableGlobalWriteForwarding
+    {
+        get => this.GetValue(PropertyDefinition.GdbEnableGlobalWriteForwarding.Name);
+        set => this.SetValue(PropertyDefinition.GdbEnableGlobalWriteForwarding.Name, value);
+    }
+
     private string? GetValue(string key)
     {
         return this.TryGetValue(key, out object? value) ? value?.ToString() : null;
