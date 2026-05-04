@@ -14,6 +14,7 @@
 
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Exceptions;
+using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
@@ -21,29 +22,52 @@ namespace AwsWrapperDataProvider.Driver.Dialects;
 
 public static class DialectUtils
 {
-    public static async Task<bool> CheckExistenceQueries(DbConnection connection, IExceptionHandler exceptionHandler, ILogger logger, string query)
+    public static async Task<bool> CheckExistenceQueries(DbConnection connection, IExceptionHandler exceptionHandler, ILogger logger, params string[] queries)
     {
-        try
+        foreach (var query in queries)
         {
-            await using var command = connection.CreateCommand();
-            command.CommandText = query;
-            await using var reader = await command.ExecuteReaderAsync();
-            return await reader.ReadAsync();
-        }
-        catch (Exception ex) when (exceptionHandler.IsSyntaxError(ex))
-        {
-            // Syntax error - expected when querying against incorrect dialect
-        }
-        catch (Exception ex)
-        {
-            logger.LogTrace(ex, Resources.Error_CantCheckDialect, nameof(AuroraMySqlDialect));
+            try
+            {
+                await using var command = connection.CreateCommand();
+                command.CommandText = query;
+                await using var reader = await command.ExecuteReaderAsync();
+                if (!await reader.ReadAsync())
+                {
+                    return false;
+                }
+            }
+            catch (Exception ex) when (exceptionHandler.IsSyntaxError(ex))
+            {
+                // Syntax error - expected when querying against incorrect dialect
+                return false;
+            }
+            catch (Exception ex)
+            {
+                logger.LogTrace(ex, Resources.Error_CantCheckDialect, nameof(AuroraMySqlDialect));
+                return false;
+            }
         }
 
-        return false;
+        return queries.Length > 0;
     }
 
     public static bool IsBlueGreenConnectionDialect(IDialect dialect)
     {
         return dialect is IBlueGreenDialect;
+    }
+
+    public static async Task<HostRole> GetHostRoleAsync(DbConnection connection, string isReaderQuery)
+    {
+        await using var command = connection.CreateCommand();
+        command.CommandText = isReaderQuery;
+        await using var reader = await command.ExecuteReaderAsync();
+
+        if (await reader.ReadAsync())
+        {
+            bool isReader = reader.GetBoolean(0);
+            return isReader ? HostRole.Reader : HostRole.Writer;
+        }
+
+        throw new InvalidOperationException(Resources.Error_InvalidHostRole);
     }
 }

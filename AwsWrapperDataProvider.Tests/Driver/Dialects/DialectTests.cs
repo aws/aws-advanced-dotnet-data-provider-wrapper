@@ -264,10 +264,10 @@ public class DialectTests
         IDialect dialect = new RdsMultiAzDbClusterMySqlDialect();
         this.mockConnection.Mocks
             .When(cmd => cmd.CommandText.Contains(RdsMultiAzDbClusterMySqlDialect.TopologyTableExistQuery) ||
-                         cmd.CommandText.Contains(RdsMultiAzDbClusterMySqlDialect.TopologyQuery))
+                         cmd.CommandText.Contains(RdsMultiAzDbClusterMySqlDialect.TopologyQueryStr))
             .ReturnsTable(MockTable.WithColumns("1").AddRow("1"));
         this.mockConnection.Mocks
-            .When(cmd => cmd.CommandText.Contains(RdsMultiAzDbClusterMySqlDialect.IsDialectQuery))
+            .When(cmd => cmd.CommandText.Contains(RdsMultiAzDbClusterMySqlDialect.ReportHostExistQuery))
             .ReturnsTable(MockTable.WithColumns("Variable_name", "Value").AddRow("report_host", "ip-10-0-2-123.ec2.internal"));
         Assert.True(await dialect.IsDialect(this.mockConnection));
     }
@@ -473,6 +473,172 @@ public class DialectTests
         IDialect pgDialect = new RdsMultiAzDbClusterPgDialect();
         this.mockConnection.Mocks.WhenAny().ReturnsTable(MockTable.Empty());
         Assert.False(await pgDialect.IsDialect(this.mockConnection));
+    }
+
+    // --- GlobalAuroraMySqlDialect IsDialect tests ---
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task IsDialect_GlobalAuroraMySQL_Success()
+    {
+        IDialect dialect = new GlobalAuroraMySqlDialect();
+        this.mockConnection.Mocks
+            .When(cmd => cmd.CommandText.Contains(GlobalAuroraMySqlDialect.GlobalStatusTableExistsQuery) ||
+                         cmd.CommandText.Contains(GlobalAuroraMySqlDialect.GlobalInstanceStatusExistsQuery))
+            .ReturnsTable(MockTable.WithColumns("tmp").AddRow(1));
+        this.mockConnection.Mocks
+            .When(cmd => cmd.CommandText.Contains(GlobalAuroraMySqlDialect.RegionCountQuery))
+            .ReturnsTable(MockTable.WithColumns("count(1)").AddRow(2));
+        Assert.True(await dialect.IsDialect(this.mockConnection));
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task IsDialect_GlobalAuroraMySQL_SingleRegion_ReturnsFalse()
+    {
+        IDialect dialect = new GlobalAuroraMySqlDialect();
+        this.mockConnection.Mocks
+            .When(cmd => cmd.CommandText.Contains(GlobalAuroraMySqlDialect.GlobalStatusTableExistsQuery) ||
+                         cmd.CommandText.Contains(GlobalAuroraMySqlDialect.GlobalInstanceStatusExistsQuery))
+            .ReturnsTable(MockTable.WithColumns("tmp").AddRow(1));
+        this.mockConnection.Mocks
+            .When(cmd => cmd.CommandText.Contains(GlobalAuroraMySqlDialect.RegionCountQuery))
+            .ReturnsTable(MockTable.WithColumns("count(1)").AddRow(1));
+        Assert.False(await dialect.IsDialect(this.mockConnection));
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task IsDialect_GlobalAuroraMySQL_NoGlobalStatusTable_ReturnsFalse()
+    {
+        IDialect dialect = new GlobalAuroraMySqlDialect();
+        this.mockConnection.Mocks.WhenAny().ReturnsTable(MockTable.Empty());
+        Assert.False(await dialect.IsDialect(this.mockConnection));
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task IsDialect_GlobalAuroraMySQL_ExceptionThrown()
+    {
+        IDialect dialect = new GlobalAuroraMySqlDialect();
+        this.mockConnection.Mocks.WhenAny().ThrowsException(new MockDbException());
+        Assert.False(await dialect.IsDialect(this.mockConnection));
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task IsDialect_GlobalAuroraMySQL_RegionCountEmpty_ReturnsFalse()
+    {
+        IDialect dialect = new GlobalAuroraMySqlDialect();
+        this.mockConnection.Mocks
+            .When(cmd => cmd.CommandText.Contains(GlobalAuroraMySqlDialect.GlobalStatusTableExistsQuery) ||
+                         cmd.CommandText.Contains(GlobalAuroraMySqlDialect.GlobalInstanceStatusExistsQuery))
+            .ReturnsTable(MockTable.WithColumns("tmp").AddRow(1));
+        this.mockConnection.Mocks
+            .When(cmd => cmd.CommandText.Contains(GlobalAuroraMySqlDialect.RegionCountQuery))
+            .ReturnsTable(MockTable.Empty());
+        Assert.False(await dialect.IsDialect(this.mockConnection));
+    }
+
+    // --- GlobalAuroraPgDialect IsDialect tests ---
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task IsDialect_GlobalAuroraPG_Success()
+    {
+        IDialect dialect = new GlobalAuroraPgDialect();
+        // base.IsDialect: PgSelect1 + aurora_stat_utils extension check
+        this.mockConnection.Mocks
+            .When(cmd => cmd.CommandText.Contains(PgDialect.PGSelect1Query))
+            .ReturnsTable(MockTable.WithColumns("?column?").AddRow("1"));
+        this.mockConnection.Mocks
+            .When(cmd => cmd.CommandText.Contains(AuroraPgDialect.ExtensionsSql) &&
+                         cmd.CommandText.Contains(AuroraPgDialect.TopologySql))
+            .ReturnsDataset(
+        [
+            MockTable.WithColumns("aurora_stat_utils").AddRow(true),
+            MockTable.WithColumns("?column?").AddRow("1"),
+        ]);
+        // Global existence checks
+        this.mockConnection.Mocks
+            .When(cmd => cmd.CommandText.Contains(GlobalAuroraPgDialect.GlobalStatusFuncExistsQuery) ||
+                         cmd.CommandText.Contains(GlobalAuroraPgDialect.GlobalInstanceStatusFuncExistsQuery))
+            .ReturnsTable(MockTable.WithColumns("regproc").AddRow("aurora_global_db_status"));
+        // Region count > 1
+        this.mockConnection.Mocks
+            .When(cmd => cmd.CommandText.Contains(GlobalAuroraPgDialect.RegionCountQuery))
+            .ReturnsTable(MockTable.WithColumns("count").AddRow(2));
+        Assert.True(await dialect.IsDialect(this.mockConnection));
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task IsDialect_GlobalAuroraPG_SingleRegion_ReturnsFalse()
+    {
+        IDialect dialect = new GlobalAuroraPgDialect();
+        this.mockConnection.Mocks
+            .When(cmd => cmd.CommandText.Contains(PgDialect.PGSelect1Query))
+            .ReturnsTable(MockTable.WithColumns("?column?").AddRow("1"));
+        this.mockConnection.Mocks
+            .When(cmd => cmd.CommandText.Contains(AuroraPgDialect.ExtensionsSql) &&
+                         cmd.CommandText.Contains(AuroraPgDialect.TopologySql))
+            .ReturnsDataset(
+        [
+            MockTable.WithColumns("aurora_stat_utils").AddRow(true),
+            MockTable.WithColumns("?column?").AddRow("1"),
+        ]);
+        this.mockConnection.Mocks
+            .When(cmd => cmd.CommandText.Contains(GlobalAuroraPgDialect.GlobalStatusFuncExistsQuery) ||
+                         cmd.CommandText.Contains(GlobalAuroraPgDialect.GlobalInstanceStatusFuncExistsQuery))
+            .ReturnsTable(MockTable.WithColumns("regproc").AddRow("aurora_global_db_status"));
+        this.mockConnection.Mocks
+            .When(cmd => cmd.CommandText.Contains(GlobalAuroraPgDialect.RegionCountQuery))
+            .ReturnsTable(MockTable.WithColumns("count").AddRow(1));
+        Assert.False(await dialect.IsDialect(this.mockConnection));
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task IsDialect_GlobalAuroraPG_BaseDialectFails_ReturnsFalse()
+    {
+        IDialect dialect = new GlobalAuroraPgDialect();
+        // base.IsDialect fails (PgSelect1 returns empty)
+        this.mockConnection.Mocks.WhenAny().ReturnsTable(MockTable.Empty());
+        Assert.False(await dialect.IsDialect(this.mockConnection));
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task IsDialect_GlobalAuroraPG_NoGlobalFunctions_ReturnsFalse()
+    {
+        IDialect dialect = new GlobalAuroraPgDialect();
+        // base.IsDialect succeeds
+        this.mockConnection.Mocks
+            .When(cmd => cmd.CommandText.Contains(PgDialect.PGSelect1Query))
+            .ReturnsTable(MockTable.WithColumns("?column?").AddRow("1"));
+        this.mockConnection.Mocks
+            .When(cmd => cmd.CommandText.Contains(AuroraPgDialect.ExtensionsSql) &&
+                         cmd.CommandText.Contains(AuroraPgDialect.TopologySql))
+            .ReturnsDataset(
+        [
+            MockTable.WithColumns("aurora_stat_utils").AddRow(true),
+            MockTable.WithColumns("?column?").AddRow("1"),
+        ]);
+        // Global function existence check fails
+        this.mockConnection.Mocks
+            .When(cmd => cmd.CommandText.Contains(GlobalAuroraPgDialect.GlobalStatusFuncExistsQuery) ||
+                         cmd.CommandText.Contains(GlobalAuroraPgDialect.GlobalInstanceStatusFuncExistsQuery))
+            .ReturnsTable(MockTable.Empty());
+        Assert.False(await dialect.IsDialect(this.mockConnection));
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task IsDialect_GlobalAuroraPG_ExceptionThrown()
+    {
+        IDialect dialect = new GlobalAuroraPgDialect();
+        this.mockConnection.Mocks.WhenAny().ThrowsException(new MockDbException());
+        Assert.False(await dialect.IsDialect(this.mockConnection));
     }
 
     [Theory]

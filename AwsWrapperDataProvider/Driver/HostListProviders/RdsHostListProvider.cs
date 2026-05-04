@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data;
 using System.Data.Common;
 using System.Globalization;
 using AwsWrapperDataProvider.Driver.HostInfo;
+using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 using AwsWrapperDataProvider.Driver.Utils;
 using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Caching.Memory;
@@ -33,12 +33,26 @@ public class RdsHostListProvider : IDynamicHostListProvider
     internal static readonly MemoryCache SuggestedPrimaryClusterIdCache = new(new MemoryCacheOptions());
     protected static readonly TimeSpan SuggestedClusterIdRefreshRate = TimeSpan.FromMinutes(10);
 
+    protected static readonly TimeSpan MonitorExpirationTime = TimeSpan.FromMinutes(15);
+    protected static readonly TimeSpan TopologyCacheExpirationTime = TimeSpan.FromMinutes(5);
+
+    /// <summary>
+    /// MemoryCache that stores ClusterTopologyMonitors.
+    /// </summary>
+    internal static MemoryCache Monitors = new(new MemoryCacheOptions
+    {
+        SizeLimit = 100,
+    });
+
     protected readonly Lazy<object> init;
     protected readonly Dictionary<string, string> properties;
     protected readonly IHostListProviderService hostListProviderService;
-    protected readonly string topologyQuery;
     protected readonly string nodeIdQuery;
-    protected readonly string isReaderQuery;
+
+    protected readonly IPluginService pluginService;
+    protected readonly TimeSpan highRefreshRate;
+
+    protected readonly TopologyUtils topologyUtils;
 
     protected List<HostSpec> hostList = [];
     protected List<HostSpec> initialHostList = [];
@@ -55,15 +69,16 @@ public class RdsHostListProvider : IDynamicHostListProvider
     public RdsHostListProvider(
         Dictionary<string, string> properties,
         IHostListProviderService hostListProviderService,
-        string topologyQuery,
         string nodeIdQuery,
-        string isReaderQuery)
+        IPluginService pluginService,
+        TopologyUtils topologyUtils)
     {
         this.properties = properties;
         this.hostListProviderService = hostListProviderService;
-        this.topologyQuery = topologyQuery;
         this.nodeIdQuery = nodeIdQuery;
-        this.isReaderQuery = isReaderQuery;
+        this.pluginService = pluginService;
+        this.topologyUtils = topologyUtils;
+        this.highRefreshRate = TimeSpan.FromMilliseconds(PropertyDefinition.ClusterTopologyHighRefreshRateMs.GetLong(this.properties) ?? 100);
         this.init = new Lazy<object>(() =>
         {
             this.Init();
@@ -79,12 +94,23 @@ public class RdsHostListProvider : IDynamicHostListProvider
         SuggestedPrimaryClusterIdCache.Clear();
     }
 
+    public static void CloseAllMonitors()
+    {
+        Monitors.Clear();
+        ClearAll();
+    }
+
+    public static int MonitorCount()
+    {
+        return Monitors.Count;
+    }
+
     internal void EnsureInitialized()
     {
         _ = this.init.Value;
     }
 
-    protected void Init()
+    protected virtual void Init()
     {
         this.initialHostList.AddRange(ConnectionPropertiesUtils.GetHostsFromProperties(
                 this.properties,
@@ -185,7 +211,7 @@ public class RdsHostListProvider : IDynamicHostListProvider
         return null;
     }
 
-    private void ValidateHostPattern(string hostPattern)
+    protected void ValidateHostPattern(string hostPattern)
     {
         if (!RdsUtils.IsDnsPatternValid(hostPattern))
         {
@@ -204,20 +230,127 @@ public class RdsHostListProvider : IDynamicHostListProvider
         }
     }
 
-    public virtual async Task<IList<HostSpec>> ForceRefreshAsync()
-    {
-        return await this.ForceRefreshAsync(null);
-    }
-
-    public virtual async Task<IList<HostSpec>> ForceRefreshAsync(DbConnection? connection)
+    public async Task<IList<HostSpec>> ForceRefreshAsync(bool shouldVerifyWriter, long timeoutMs)
     {
         this.EnsureInitialized();
-        DbConnection? currentConnection = connection ?? this.hostListProviderService.CurrentConnection;
-        FetchTopologyResult result = await this.GetTopologyAsync(currentConnection, true);
-        Logger.LogTrace(LoggerUtils.LogTopology(result.Hosts, null));
+        if (!this.pluginService.IsDialectConfirmed)
+        {
+            // We need to confirm the dialect before creating a topology monitor so that it uses the correct SQL queries.
+            // We will return the original hosts parsed from the connection string until the dialect has been confirmed.
+            return this.initialHostList;
+        }
 
-        this.hostList = result.Hosts;
+        var hosts = await this.ForceRefreshMonitorAsync(shouldVerifyWriter, timeoutMs);
+        if (hosts != null)
+        {
+            this.hostList = [.. hosts];
+        }
+
         return this.hostList.AsReadOnly();
+    }
+
+    protected internal virtual async Task<IList<HostSpec>?> ForceRefreshMonitorAsync(bool shouldVerifyWriter, long timeoutMs)
+    {
+        IClusterTopologyMonitor monitor = Monitors.Get<IClusterTopologyMonitor>(this.ClusterId) ?? this.InitMonitor();
+        try
+        {
+            return await monitor.ForceRefreshAsync(shouldVerifyWriter, timeoutMs);
+        }
+        catch (TimeoutException ex)
+        {
+            Logger.LogDebug(Resources.MonitoringRdsHostListProvider_QueryForTopologyAsync_TimedOut, ex.Message);
+            return null;
+        }
+    }
+
+    protected virtual IClusterTopologyMonitor InitMonitor()
+    {
+        Logger.LogTrace(Resources.MonitoringRdsHostListProvider_InitMonitor, this.ClusterId);
+
+        return Monitors.Set(
+            this.ClusterId,
+            new ClusterTopologyMonitor(
+                this.ClusterId,
+                TopologyCache,
+                this.initialHostSpec!,
+                this.properties,
+                this.pluginService,
+                this.hostListProviderService,
+                this.clusterInstanceTemplate!,
+                this.topologyRefreshRate,
+                this.highRefreshRate,
+                TopologyCacheExpirationTime,
+                this.nodeIdQuery,
+                this.topologyUtils),
+            this.CreateCacheEntryOptions());
+    }
+
+    protected virtual void ClusterIdChanged(string oldClusterId)
+    {
+        Logger.LogTrace(Resources.MonitoringRdsHostListProvider_ClusterIdChanged, oldClusterId);
+        this.TransferExistingMonitor(oldClusterId);
+        this.TransferCachedTopology(oldClusterId);
+    }
+
+    private void TransferExistingMonitor(string oldClusterId)
+    {
+        Logger.LogTrace(Resources.MonitoringRdsHostListProvider_TransferExistingMonitor, oldClusterId);
+        var existingMonitor = Monitors.Get<IClusterTopologyMonitor>(oldClusterId);
+        if (existingMonitor == null)
+        {
+            return;
+        }
+
+        var cacheOptions = this.CreateCacheEntryOptions();
+        Monitors.Set(this.ClusterId, existingMonitor, cacheOptions);
+        existingMonitor.SetClusterId(this.ClusterId);
+        Monitors.Remove(oldClusterId);
+    }
+
+    private void TransferCachedTopology(string oldClusterId)
+    {
+        Logger.LogTrace(Resources.MonitoringRdsHostListProvider_TransferCachedTopology, oldClusterId);
+        if (TopologyCache.TryGetValue(oldClusterId, out List<HostSpec>? existingHosts) && existingHosts != null)
+        {
+            TopologyCache.Set(this.ClusterId, existingHosts, TopologyCacheExpirationTime);
+        }
+    }
+
+    private void OnMonitorEvicted(object key, object? value, EvictionReason reason, object? state)
+    {
+        if (value is IClusterTopologyMonitor evictedMonitor)
+        {
+            try
+            {
+                Logger.LogTrace(Resources.MonitoringRdsHostListProvider_OnMonitorEvicted_Disposing, key, reason);
+                evictedMonitor.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(Resources.MonitoringRdsHostListProvider_OnMonitorEvicted_Error, ex.Message);
+            }
+        }
+    }
+
+    protected MemoryCacheEntryOptions CreateCacheEntryOptions()
+    {
+        return new MemoryCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = MonitorExpirationTime,
+            Size = 1,
+            PostEvictionCallbacks =
+            {
+                new PostEvictionCallbackRegistration
+                {
+                    EvictionCallback = this.OnMonitorEvicted,
+                },
+            },
+        };
+    }
+
+    public virtual async Task<IList<HostSpec>> ForceRefreshAsync()
+    {
+        return await this.ForceRefreshAsync(false, DefaultTopologyQueryTimeoutSec * 1000);
     }
 
     public virtual string GetClusterId()
@@ -245,13 +378,12 @@ public class RdsHostListProvider : IDynamicHostListProvider
                 instanceName = Convert.ToString(resultSet.GetValue(0), CultureInfo.InvariantCulture)!;
             }
 
-            IList<HostSpec> topology = await this.RefreshAsync(connection);
+            IList<HostSpec> topology = await this.RefreshAsync();
             bool isForcedRefresh = false;
 
-            // TODO Clean up if statement
             if (topology == null)
             {
-                topology = await this.ForceRefreshAsync(connection);
+                topology = await this.ForceRefreshAsync();
                 isForcedRefresh = true;
 
                 if (topology == null)
@@ -264,7 +396,7 @@ public class RdsHostListProvider : IDynamicHostListProvider
 
             if (foundHost == null && !isForcedRefresh)
             {
-                topology = await this.ForceRefreshAsync(connection);
+                topology = await this.ForceRefreshAsync();
                 if (topology == null)
                 {
                     return null;
@@ -282,37 +414,15 @@ public class RdsHostListProvider : IDynamicHostListProvider
         }
     }
 
-    public virtual async Task<HostRole> GetHostRoleAsync(DbConnection connection)
-    {
-        await using var command = connection.CreateCommand();
-        command.CommandText = this.isReaderQuery;
-        await using var reader = await command.ExecuteReaderAsync();
-
-        while (await reader.ReadAsync())
-        {
-            bool isReader = reader.GetBoolean(0);
-            return isReader ? HostRole.Reader : HostRole.Writer;
-        }
-
-        throw new InvalidOperationException(Resources.Error_InvalidHostRole);
-    }
-
     public virtual async Task<IList<HostSpec>> RefreshAsync()
     {
-        return await this.RefreshAsync(null);
-    }
-
-    public virtual async Task<IList<HostSpec>> RefreshAsync(DbConnection? connection)
-    {
         this.EnsureInitialized();
-        DbConnection? currentConnection = connection ?? this.hostListProviderService.CurrentConnection;
-        FetchTopologyResult result = await this.GetTopologyAsync(currentConnection, false);
-        Logger.LogTrace(LoggerUtils.LogTopology(result.Hosts, result.IsCachedData ? "From cache" : "New Topology"));
+        FetchTopologyResult result = await this.GetTopologyAsync();
         this.hostList = result.Hosts;
         return this.hostList.AsReadOnly();
     }
 
-    internal async Task<FetchTopologyResult> GetTopologyAsync(DbConnection? connection, bool forceUpdate)
+    internal async Task<FetchTopologyResult> GetTopologyAsync()
     {
         this.EnsureInitialized();
 
@@ -325,153 +435,35 @@ public class RdsHostListProvider : IDynamicHostListProvider
             this.IsPrimaryClusterId = true;
         }
 
-        List<HostSpec>? cachedHosts = TopologyCache.Get<List<HostSpec>>(this.ClusterId);
-        Logger.LogTrace(Resources.RdsHostListProvider_GetTopologyAsync_CacheLookup, this.ClusterId, cachedHosts != null, forceUpdate);
-        if (cachedHosts != null)
+        List<HostSpec>? storedHosts = TopologyCache.Get<List<HostSpec>>(this.ClusterId);
+        if (storedHosts == null)
         {
-            Logger.LogTrace(Resources.RdsHostListProvider_GetTopologyAsync_CachedTopology, LoggerUtils.LogTopology(cachedHosts, "From cache"));
-        }
-
-        bool needToSuggest = cachedHosts == null && this.IsPrimaryClusterId;
-        if (cachedHosts == null || forceUpdate)
-        {
-            if (connection == null || connection.State != ConnectionState.Open)
+            if (!this.pluginService.IsDialectConfirmed)
             {
-                Logger.LogDebug(Resources.RdsHostListProvider_GetTopologyAsync_ConnectionUnavailable, connection?.State);
-                Logger.LogTrace(Resources.RdsHostListProvider_GetTopologyAsync_FallbackTopology, LoggerUtils.LogTopology(this.initialHostList, "Fallback"));
+                // We need to confirm the dialect before creating a topology monitor so that it uses the correct SQL queries.
+                // We will return the original hosts parsed from the connection string until the dialect has been confirmed.
                 return new FetchTopologyResult(false, this.initialHostList);
             }
 
-            List<HostSpec>? hosts = await this.QueryForTopologyAsync(connection);
+            // Need to re-fetch topology via the monitor
+            var hosts = await this.ForceRefreshMonitorAsync(false, DefaultTopologyQueryTimeoutSec * 1000);
             if (hosts != null && hosts.Count > 0)
             {
-                Logger.LogDebug(Resources.RdsHostListProvider_GetTopologyAsync_CachedNewTopology, this.ClusterId, hosts.Count);
                 Logger.LogTrace(Resources.RdsHostListProvider_GetTopologyAsync_NewTopology, LoggerUtils.LogTopology(hosts, "New"));
-                TopologyCache.Set(this.ClusterId, hosts, this.topologyRefreshRate);
-                if (needToSuggest)
-                {
-                    this.SuggestPrimaryCluster(hosts);
-                }
-
-                return new FetchTopologyResult(false, hosts);
-            }
-            else
-            {
-                Logger.LogWarning(Resources.RdsHostListProvider_GetTopologyAsync_FallingBackToInitialHost);
-                Logger.LogTrace(Resources.RdsHostListProvider_GetTopologyAsync_FallbackTopology,
-                    LoggerUtils.LogTopology(this.initialHostList, "Query failed fallback"));
+                return new FetchTopologyResult(false, [.. hosts]);
             }
         }
 
-        return cachedHosts == null ? new FetchTopologyResult(false, this.initialHostList) : new FetchTopologyResult(true, cachedHosts);
-    }
-
-    private void SuggestPrimaryCluster(List<HostSpec> primaryClusterHosts)
-    {
-        if (primaryClusterHosts.Count == 0)
+        storedHosts = TopologyCache.Get<List<HostSpec>>(this.ClusterId);
+        if (storedHosts == null)
         {
-            return;
+            Logger.LogWarning(Resources.RdsHostListProvider_GetTopologyAsync_FallingBackToInitialHost);
+            Logger.LogTrace(Resources.RdsHostListProvider_GetTopologyAsync_FallbackTopology, LoggerUtils.LogTopology(this.initialHostList, "Query failed fallback"));
+            return new FetchTopologyResult(false, this.initialHostList);
         }
 
-        HashSet<string> primaryClusterHostUrls = [.. primaryClusterHosts.Select(x => x.GetHostAndPort())];
-
-        foreach (string clusterId in TopologyCache.Keys.Cast<string>())
-        {
-            List<HostSpec>? clusterHosts = TopologyCache.Get<List<HostSpec>>(clusterId);
-            bool isPrimaryCluster = PrimaryClusterIdCache.GetOrCreate(clusterId, entry =>
-            {
-                entry.AbsoluteExpirationRelativeToNow = SuggestedClusterIdRefreshRate;
-                return false;
-            });
-            string? suggestedPrimaryClusterId = SuggestedPrimaryClusterIdCache.Get<string>(clusterId);
-            if (isPrimaryCluster || !string.IsNullOrEmpty(suggestedPrimaryClusterId) || clusterHosts == null || clusterHosts.Count == 0)
-            {
-                continue;
-            }
-
-            foreach (HostSpec hostSpec in clusterHosts)
-            {
-                if (primaryClusterHostUrls.Contains(hostSpec.GetHostAndPort()))
-                {
-                    SuggestedPrimaryClusterIdCache.Set(clusterId, this.ClusterId, SuggestedClusterIdRefreshRate);
-                    break;
-                }
-            }
-        }
-    }
-
-    internal virtual async Task<List<HostSpec>?> QueryForTopologyAsync(DbConnection connection)
-    {
-        await using var command = connection.CreateCommand();
-        command.CommandTimeout = DefaultTopologyQueryTimeoutSec;
-        command.CommandText = this.topologyQuery;
-        await using var reader = await command.ExecuteReaderAsync();
-
-        List<HostSpec> hosts = [];
-        List<HostSpec> writers = [];
-
-        while (await reader.ReadAsync())
-        {
-            // According to the topology query the result set
-            // should contain 5 columns: node ID, 1/0 (writer/reader), CPU utilization, node lag in time, last update timestamp.
-            string hostName = reader.GetString(0);
-            bool isWriter = reader.GetBoolean(1);
-            double cpuUtilization = reader.GetDouble(2);
-            double nodeLag = reader.GetDouble(3);
-            DateTime lastUpdateTime;
-            try
-            {
-                lastUpdateTime = reader.GetDateTime(4);
-            }
-            catch (Exception)
-            {
-                lastUpdateTime = DateTime.UtcNow;
-            }
-
-            long weight = (long)((Math.Round(nodeLag) * 100L) + Math.Round(cpuUtilization));
-            string endpoint = this.clusterInstanceTemplate!.Host.Replace("?", hostName);
-            Logger.LogTrace(Resources.RdsHostListProvider_QueryForTopologyAsync, hostName, this.clusterInstanceTemplate.Host, endpoint);
-            int port = this.clusterInstanceTemplate.IsPortSpecified
-                ? this.clusterInstanceTemplate.Port
-                : this.initialHostSpec!.Port;
-
-            HostSpec hostSpec = this.hostListProviderService.HostSpecBuilder
-                .WithHost(endpoint)
-                .WithHostId(hostName)
-                .WithPort(port)
-                .WithRole(isWriter ? HostRole.Writer : HostRole.Reader)
-                .WithAvailability(HostAvailability.Available)
-                .WithWeight(weight)
-                .WithLastUpdateTime(lastUpdateTime)
-                .Build();
-            hostSpec.AddAlias(hostName);
-
-            if (!isWriter)
-            {
-                hosts.Add(hostSpec);
-            }
-            else
-            {
-                writers.Add(hostSpec);
-            }
-        }
-
-        if (writers.Count == 0)
-        {
-            // invalid topology
-            hosts.Clear();
-        }
-        else if (writers.Count == 1)
-        {
-            hosts.Add(writers[0]);
-        }
-        else
-        {
-            // Take the latest updated writer node as the current writer. All others will be ignored.
-            hosts.Add(writers.MaxBy(x => x.LastUpdateTime)!);
-        }
-
-        return hosts;
+        Logger.LogTrace(Resources.RdsHostListProvider_GetTopologyAsync_CachedTopology, LoggerUtils.LogTopology(storedHosts, "From cache"));
+        return new FetchTopologyResult(true, storedHosts);
     }
 
     protected readonly struct ClusterSuggestedResult(string clusterId, bool isPrimaryClusterId)
@@ -479,11 +471,6 @@ public class RdsHostListProvider : IDynamicHostListProvider
         public string ClusterId { get; } = clusterId;
 
         public bool IsPrimaryClusterId { get; } = isPrimaryClusterId;
-    }
-
-    protected virtual void ClusterIdChanged(string clusterId)
-    {
-        // Do nothing.
     }
 
     internal class FetchTopologyResult(bool isCachedData, List<HostSpec> hosts)

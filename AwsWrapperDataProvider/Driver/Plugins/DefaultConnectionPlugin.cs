@@ -70,7 +70,6 @@ public class DefaultConnectionPlugin(
     }
 
     /// <summary>
-    /// Internal connection opening logic that mirrors JDBC wrapper's connectInternal method.
     /// Creates a new connection using the connection provider.
     /// </summary>
     private async Task<DbConnection> OpenInternal(

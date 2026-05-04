@@ -17,33 +17,17 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
-using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
-using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Utils;
 using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
-public class RdsMultiAzDbClusterPgDialect : PgDialect
+public class RdsMultiAzDbClusterPgDialect : PgDialect, IMultiAzClusterDialect
 {
     private static readonly string DriverVersion = "1.1.0";
 
     private static readonly ILogger<RdsMultiAzDbClusterPgDialect> Logger = LoggerUtils.GetLogger<RdsMultiAzDbClusterPgDialect>();
-
-    private static readonly string TopologyQuery =
-        $"SELECT id, endpoint, port FROM rds_tools.show_topology('aws_advanced_dotnet_data_provider_wrapper-{DriverVersion}')";
-
-    private static readonly string FetchWriterNodeQuery =
-        "SELECT multi_az_db_cluster_source_dbi_resource_id FROM rds_tools.multi_az_db_cluster_source_dbi_resource_id()"
-        + " WHERE multi_az_db_cluster_source_dbi_resource_id OPERATOR(pg_catalog.!=)"
-        + " (SELECT dbi_resource_id FROM rds_tools.dbi_resource_id())";
-
-    internal static readonly string HasRdsToolsExtensionQuery =
-        "SELECT EXISTS (SELECT 1 FROM pg_catalog.pg_extension WHERE extname OPERATOR(pg_catalog.=) 'rds_tools');";
-
-    internal static readonly string IsRdsClusterQuery =
-        "SELECT multi_az_db_cluster_source_dbi_resource_id FROM rds_tools.multi_az_db_cluster_source_dbi_resource_id()";
 
     private static readonly string FetchWriterNodeQueryColumnName =
         "multi_az_db_cluster_source_dbi_resource_id";
@@ -51,8 +35,21 @@ public class RdsMultiAzDbClusterPgDialect : PgDialect
     private static readonly string NodeIdQuery =
         "SELECT id, SUBSTRING(endpoint FROM 0 FOR POSITION('.' IN endpoint)) FROM rds_tools.show_topology() WHERE id OPERATOR(pg_catalog.=) rds_tools.dbi_resource_id()";
 
-    private static readonly string IsReaderQuery =
-        "SELECT pg_catalog.pg_is_in_recovery()";
+    internal static readonly string HasRdsToolsExtensionQuery =
+        "SELECT EXISTS (SELECT 1 FROM pg_catalog.pg_extension WHERE extname OPERATOR(pg_catalog.=) 'rds_tools');";
+
+    internal static readonly string IsRdsClusterQuery =
+        "SELECT multi_az_db_cluster_source_dbi_resource_id FROM rds_tools.multi_az_db_cluster_source_dbi_resource_id()";
+
+    public string TopologyQuery =>
+        $"SELECT id, endpoint, port FROM rds_tools.show_topology('aws_advanced_dotnet_data_provider_wrapper-{DriverVersion}')";
+
+    public string WriterIdQuery =>
+        "SELECT multi_az_db_cluster_source_dbi_resource_id FROM rds_tools.multi_az_db_cluster_source_dbi_resource_id()"
+        + " WHERE multi_az_db_cluster_source_dbi_resource_id OPERATOR(pg_catalog.!=)"
+        + " (SELECT dbi_resource_id FROM rds_tools.dbi_resource_id())";
+
+    string IMultiAzClusterDialect.WriterIdColumnName => FetchWriterNodeQueryColumnName;
 
     public override async Task<bool> IsDialect(DbConnection connection)
     {
@@ -104,25 +101,12 @@ public class RdsMultiAzDbClusterPgDialect : PgDialect
     private HostListProviderSupplier GetHostListProviderSupplier()
     {
         return (props, hostListProviderService, pluginService) =>
-            (PropertyDefinition.Plugins.GetString(props) ?? DefaultPluginCodes).Contains(PluginCodes.Failover) ?
-                new MonitoringRdsMultiAzHostListProvider(
-                    props,
-                    hostListProviderService,
-                    TopologyQuery,
-                    NodeIdQuery,
-                    IsReaderQuery,
-                    FetchWriterNodeQuery,
-                    pluginService,
-                    FetchWriterNodeQuery,
-                    FetchWriterNodeQueryColumnName) :
-                new RdsMultiAzDbClusterListProvider(
-                    props,
-                    hostListProviderService,
-                    TopologyQuery,
-                    NodeIdQuery,
-                    IsReaderQuery,
-                    FetchWriterNodeQuery,
-                    FetchWriterNodeQueryColumnName);
+            new RdsHostListProvider(
+                props,
+                hostListProviderService,
+                NodeIdQuery,
+                pluginService,
+                new MultiAzTopologyUtils(hostListProviderService.HostSpecBuilder, this, NodeIdQuery));
     }
 
     public override void PrepareConnectionProperties(Dictionary<string, string> props, HostSpec hostSpec)

@@ -40,6 +40,8 @@ public class MySqlDialect : IDialect
 
     internal static readonly string ReadWriteQuery = "set session transaction read write";
 
+    private static readonly string IsReaderQuery = "SELECT @@read_only";
+
     public virtual IList<Type> DialectUpdateCandidates { get; } =
     [
         typeof(RdsMultiAzDbClusterMySqlDialect),
@@ -109,5 +111,10 @@ public class MySqlDialect : IDialect
         }
 
         return (false, false);
+    }
+
+    public virtual Task<HostRole> GetHostRoleAsync(DbConnection connection)
+    {
+        return DialectUtils.GetHostRoleAsync(connection, IsReaderQuery);
     }
 }

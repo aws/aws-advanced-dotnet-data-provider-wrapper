@@ -302,7 +302,7 @@ public class BlueGreenStatusMonitor
             return;
         }
 
-        this.currentTopology = await this.hostListProvider.ForceRefreshAsync(this.connection);
+        this.currentTopology = await this.hostListProvider.ForceRefreshAsync();
 
         if (this.collectTopology)
         {

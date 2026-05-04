@@ -1995,15 +1995,6 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to [PluginService] Required IBlockingHostListProvider..
-        /// </summary>
-        internal static string Error_RequiredIBlockingHostListProvider {
-            get {
-                return ResourceManager.GetString("Error_RequiredIBlockingHostListProvider", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Should not be called.
         /// </summary>
         internal static string Error_ShouldNotBeCalled {
@@ -3085,15 +3076,6 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to No writer node found in the result of the fetchWriterNodeQuery. Ensure that the query is correct and that the database is configured properly..
-        /// </summary>
-        internal static string RdsMultiAzDbClusterListProvider_ProcessWriterNodeId_NoWriterNodesFound {
-            get {
-                return ResourceManager.GetString("RdsMultiAzDbClusterListProvider_ProcessWriterNodeId_NoWriterNodesFound", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Reader no result set left in {0}..
         /// </summary>
         internal static string RdsMultiAzDbClusterMySqlDialect_IsDialect_AsyncReader {
@@ -3403,6 +3385,87 @@ namespace AwsWrapperDataProvider.Properties {
             get {
                 return ResourceManager.GetString("SuspendUntilCorrespondingNodeFoundConnectRouting_Apply_WaitConnectUntilCorrespond" +
                         "ingNodeFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cannot find instance template for region: {0}..
+        /// </summary>
+        internal static string Error_CannotFindInstanceTemplateForRegion {
+            get {
+                return ResourceManager.GetString("Error_CannotFindInstanceTemplateForRegion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to GlobalClusterInstanceHostPatterns is required for Global Aurora Databases..
+        /// </summary>
+        internal static string Error_GlobalClusterInstanceHostPatternsRequired {
+            get {
+                return ResourceManager.GetString("Error_GlobalClusterInstanceHostPatternsRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Instance templates by region must be set before creating hosts..
+        /// </summary>
+        internal static string Error_InstanceTemplatesNotSet {
+            get {
+                return ResourceManager.GetString("Error_InstanceTemplatesNotSet", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unable to determine host role, connected to unknown DB type..
+        /// </summary>
+        internal static string Error_UnableToDetermineHostRole {
+            get {
+                return ResourceManager.GetString("Error_UnableToDetermineHostRole", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cannot parse URL: {0}..
+        /// </summary>
+        internal static string Error_CannotParseUrl {
+            get {
+                return ResourceManager.GetString("Error_CannotParseUrl", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cannot parse host from URL: {0}..
+        /// </summary>
+        internal static string Error_CannotParseHostFromUrl {
+            get {
+                return ResourceManager.GetString("Error_CannotParseHostFromUrl", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cannot parse AWS region from URL: {0}..
+        /// </summary>
+        internal static string Error_CannotParseRegionFromUrl {
+            get {
+                return ResourceManager.GetString("Error_CannotParseRegionFromUrl", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Detected global database instance patterns: {0}..
+        /// </summary>
+        internal static string GlobalAuroraTopologyUtils_DetectedGdbPatterns {
+            get {
+                return ResourceManager.GetString("GlobalAuroraTopologyUtils_DetectedGdbPatterns", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Initializing GlobalAuroraTopologyMonitor for cluster: {0}..
+        /// </summary>
+        internal static string GlobalAuroraHostListProvider_InitMonitor_Initializing {
+            get {
+                return ResourceManager.GetString("GlobalAuroraHostListProvider_InitMonitor_Initializing", resourceCulture);
             }
         }
     }

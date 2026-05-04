@@ -21,6 +21,7 @@ namespace AwsWrapperDataProvider.Tests;
 public class SecretsManagerConnectivityTests : IntegrationTestBase
 {
     private readonly AuroraTestUtils auroraTestUtils;
+    private readonly string testRunId = Guid.NewGuid().ToString("N")[..8];
 
     public SecretsManagerConnectivityTests()
     {
@@ -33,7 +34,7 @@ public class SecretsManagerConnectivityTests : IntegrationTestBase
     [Trait("Engine", "aurora")]
     public void PgWrapper_WithSecretId()
     {
-        var secretId = "PGValidSecretId";
+        var secretId = $"PGValidSecretId-{this.testRunId}";
         _ = this.auroraTestUtils.CreateSecrets(secretId);
 
         var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, null, null, DefaultDbName);
@@ -72,7 +73,7 @@ public class SecretsManagerConnectivityTests : IntegrationTestBase
     [Trait("Engine", "aurora")]
     public void PgWrapper_WithSecretArn()
     {
-        var secretId = "PgValidSecretArn";
+        var secretId = $"PgValidSecretArn-{this.testRunId}";
         var secretsArn = this.auroraTestUtils.CreateSecrets(secretId);
 
         var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, null, null, DefaultDbName);
@@ -111,7 +112,7 @@ public class SecretsManagerConnectivityTests : IntegrationTestBase
     [Trait("Engine", "aurora")]
     public void MySqlClientWrapper_WithSecretId()
     {
-        var secretId = "MySqlClientValidSecretId";
+        var secretId = $"MySqlClientValidSecretId-{this.testRunId}";
         _ = this.auroraTestUtils.CreateSecrets(secretId);
 
         var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, null, null, DefaultDbName);
@@ -150,7 +151,7 @@ public class SecretsManagerConnectivityTests : IntegrationTestBase
     [Trait("Engine", "aurora")]
     public void MySqlClientWrapper_WithSecretArn()
     {
-        var secretId = "MySqlClientValidSecretArn";
+        var secretId = $"MySqlClientValidSecretArn-{this.testRunId}";
         var secretsArn = this.auroraTestUtils.CreateSecrets(secretId);
 
         var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, null, null, DefaultDbName);
@@ -189,7 +190,7 @@ public class SecretsManagerConnectivityTests : IntegrationTestBase
     [Trait("Engine", "aurora")]
     public void MySqlConnectorWrapper_WithSecretId()
     {
-        var secretId = "MySqlConnectorValidSecretId";
+        var secretId = $"MySqlConnectorValidSecretId-{this.testRunId}";
         _ = this.auroraTestUtils.CreateSecrets(secretId);
 
         var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, null, null, DefaultDbName);
@@ -228,7 +229,7 @@ public class SecretsManagerConnectivityTests : IntegrationTestBase
     [Trait("Engine", "aurora")]
     public void MySqlConnectorWrapper_WithSecretArn()
     {
-        var secretId = "MySqlConnectorValidSecretArn";
+        var secretId = $"MySqlConnectorValidSecretArn-{this.testRunId}";
         var secretsArn = this.auroraTestUtils.CreateSecrets(secretId);
 
         var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, null, null, DefaultDbName);

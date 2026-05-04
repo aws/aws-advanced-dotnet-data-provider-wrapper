@@ -30,6 +30,8 @@ public interface IPluginService : IExceptionHandlerService
 {
     IDialect Dialect { get; }
 
+    bool IsDialectConfirmed { get; }
+
     ITargetConnectionDialect TargetConnectionDialect { get; }
 
     DbConnection? CurrentConnection { get; }
@@ -88,24 +90,10 @@ public interface IPluginService : IExceptionHandlerService
     Task RefreshHostListAsync();
 
     /// <summary>
-    /// Refreshes the host list using the given connection.
-    /// </summary>
-    /// <param name="connection">The database connection.</param>
-    /// <returns>Refresh host list task.</returns>
-    Task RefreshHostListAsync(DbConnection connection);
-
-    /// <summary>
     /// Forces a refresh of the host list.
     /// </summary>
     /// <returns>Force refresh host list task.</returns>
     Task ForceRefreshHostListAsync();
-
-    /// <summary>
-    /// Forces a refresh of the host list using the given connection.
-    /// </summary>
-    /// <param name="connection">The database connection.</param>
-    /// <returns>Force refresh host list task.</returns>
-    Task ForceRefreshHostListAsync(DbConnection connection);
 
     /// <summary>
     /// Forces a refresh of the host list with verification options.

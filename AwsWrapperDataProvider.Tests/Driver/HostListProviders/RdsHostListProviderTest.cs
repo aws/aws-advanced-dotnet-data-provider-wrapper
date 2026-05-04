@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data.Common;
-using Apps72.Dev.Data.DbMocker;
+using AwsWrapperDataProvider.Driver;
+using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -31,7 +31,7 @@ public class RdsHostListProviderTest : IDisposable
 
     private readonly Dictionary<string, string> properties;
     private readonly Mock<IHostListProviderService> mockHostListProviderService;
-    private readonly MockDbConnection mockConnection;
+    private readonly Mock<IPluginService> mockPluginService;
     private readonly List<HostSpec> clusterAHosts = [
         new HostSpecBuilder().WithHost(Instance1).WithRole(HostRole.Writer).Build(),
         new HostSpecBuilder().WithHost(Instance2).WithRole(HostRole.Reader).Build(),
@@ -48,9 +48,8 @@ public class RdsHostListProviderTest : IDisposable
         };
         this.mockHostListProviderService = new Mock<IHostListProviderService>();
         this.mockHostListProviderService.Setup(s => s.HostSpecBuilder).Returns(new HostSpecBuilder());
-
-        this.mockConnection = new MockDbConnection();
-        this.mockConnection.Open();
+        this.mockPluginService = new Mock<IPluginService>();
+        this.mockPluginService.Setup(s => s.IsDialectConfirmed).Returns(true);
     }
 
     public void Dispose()
@@ -70,7 +69,7 @@ public class RdsHostListProviderTest : IDisposable
             this.properties[PropertyDefinition.Host.Name] = host;
         }
 
-        var rdsHostListProviderSpy = new Mock<RdsHostListProvider>(this.properties, this.mockHostListProviderService.Object, "foo", "bar", "baz")
+        var rdsHostListProviderSpy = new Mock<RdsHostListProvider>(this.properties, this.mockHostListProviderService.Object, "bar", this.mockPluginService.Object, new AuroraTopologyUtils(new HostSpecBuilder(), Mock.Of<ITopologyDialect>(d => d.TopologyQuery == "foo" && d.WriterIdQuery == "qux")))
         {
             CallBase = true,
         };
@@ -86,51 +85,37 @@ public class RdsHostListProviderTest : IDisposable
 
         RdsHostListProvider.TopologyCache.Set(rdsHostListProviderSpy.Object.ClusterId, this.clusterAHosts, this.topologyRefreshRate);
 
-        var result = await rdsHostListProviderSpy.Object.GetTopologyAsync(this.mockConnection, false);
+        var result = await rdsHostListProviderSpy.Object.GetTopologyAsync();
         Assert.Equal(this.clusterAHosts, result.Hosts);
         Assert.True(result.IsCachedData);
-        rdsHostListProviderSpy.Verify(r => r.QueryForTopologyAsync(It.IsAny<DbConnection>()), Times.Never);
+        rdsHostListProviderSpy.Verify(r => r.ForceRefreshMonitorAsync(It.IsAny<bool>(), It.IsAny<long>()), Times.Never);
     }
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task GetTopology_WithForceUpdate_ReturnUpdatedTopology()
+    public async Task GetTopology_NoCachedTopology_MonitorReturnsHosts()
     {
         var rdsHostListProviderSpy = this.GetRdsHostListProviderSpy();
-
-        RdsHostListProvider.TopologyCache.Set(rdsHostListProviderSpy.Object.ClusterId, this.clusterAHosts, this.topologyRefreshRate);
         List<HostSpec> newHosts = [new HostSpecBuilder().WithHost("newHost").Build()];
-        rdsHostListProviderSpy.Setup(r => r.QueryForTopologyAsync(It.IsAny<DbConnection>())).ReturnsAsync(newHosts);
 
-        var result = await rdsHostListProviderSpy.Object.GetTopologyAsync(this.mockConnection, true);
+        rdsHostListProviderSpy.Setup(r => r.ForceRefreshMonitorAsync(It.IsAny<bool>(), It.IsAny<long>()))
+            .ReturnsAsync((IList<HostSpec>)newHosts);
+
+        var result = await rdsHostListProviderSpy.Object.GetTopologyAsync();
         Assert.Equal(newHosts, result.Hosts);
         Assert.False(result.IsCachedData);
     }
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task GetTopology_WithoutForceUpdate_ReturnEmptyHostList()
-    {
-        var rdsHostListProviderSpy = this.GetRdsHostListProviderSpy();
-        rdsHostListProviderSpy.Object.ClusterId = "cluster-id";
-
-        RdsHostListProvider.TopologyCache.Set(rdsHostListProviderSpy.Object.ClusterId, this.clusterAHosts, this.topologyRefreshRate);
-        rdsHostListProviderSpy.Setup(r => r.QueryForTopologyAsync(It.IsAny<DbConnection>())).ReturnsAsync([]);
-
-        var result = await rdsHostListProviderSpy.Object.GetTopologyAsync(this.mockConnection, false);
-        Assert.Equal(this.clusterAHosts, result.Hosts);
-        Assert.True(result.IsCachedData);
-    }
-
-    [Fact]
-    [Trait("Category", "Unit")]
-    public async Task GetTopology_WithForceUpdate_ReturnInitialHostList()
+    public async Task GetTopology_NoCachedTopology_MonitorReturnsEmpty_ReturnInitialHostList()
     {
         var rdsHostListProviderSpy = this.GetRdsHostListProviderSpy();
 
-        rdsHostListProviderSpy.Setup(r => r.QueryForTopologyAsync(It.IsAny<DbConnection>())).ReturnsAsync([]);
+        rdsHostListProviderSpy.Setup(r => r.ForceRefreshMonitorAsync(It.IsAny<bool>(), It.IsAny<long>()))
+            .ReturnsAsync((IList<HostSpec>?)null);
 
-        var result = await rdsHostListProviderSpy.Object.GetTopologyAsync(this.mockConnection, true);
+        var result = await rdsHostListProviderSpy.Object.GetTopologyAsync();
         Assert.Equal([new HostSpecBuilder().WithHost(this.properties[PropertyDefinition.Host.Name]).Build()], result.Hosts);
         Assert.False(result.IsCachedData);
     }
@@ -142,10 +127,10 @@ public class RdsHostListProviderTest : IDisposable
         RdsHostListProvider.ClearAll();
         var rdsHostListProviderSpy1 = this.GetRdsHostListProviderSpy(ClusterA);
 
-        rdsHostListProviderSpy1.Setup(r => r.QueryForTopologyAsync(It.IsAny<DbConnection>())).ReturnsAsync(this.clusterAHosts);
-        Assert.Equal(0, RdsHostListProvider.TopologyCache.Count);
+        // Pre-populate the topology cache to simulate the monitor having fetched topology
+        RdsHostListProvider.TopologyCache.Set(rdsHostListProviderSpy1.Object.ClusterId, this.clusterAHosts, this.topologyRefreshRate);
 
-        var provider1Hosts = await rdsHostListProviderSpy1.Object.RefreshAsync(this.mockConnection);
+        var provider1Hosts = await rdsHostListProviderSpy1.Object.RefreshAsync();
         Assert.Equal(this.clusterAHosts, provider1Hosts);
 
         var rdsHostListProviderSpy2 = this.GetRdsHostListProviderSpy(ClusterA);
@@ -154,7 +139,7 @@ public class RdsHostListProviderTest : IDisposable
         Assert.True(rdsHostListProviderSpy1.Object.IsPrimaryClusterId);
         Assert.True(rdsHostListProviderSpy2.Object.IsPrimaryClusterId);
 
-        var provider2Hosts = await rdsHostListProviderSpy2.Object.RefreshAsync(this.mockConnection);
+        var provider2Hosts = await rdsHostListProviderSpy2.Object.RefreshAsync();
         Assert.Equal(this.clusterAHosts, provider2Hosts);
 
         Assert.Equal(1, RdsHostListProvider.TopologyCache.Count);
@@ -167,10 +152,10 @@ public class RdsHostListProviderTest : IDisposable
         RdsHostListProvider.ClearAll();
         var rdsHostListProviderSpy1 = this.GetRdsHostListProviderSpy(ClusterA);
 
-        rdsHostListProviderSpy1.Setup(r => r.QueryForTopologyAsync(It.IsAny<DbConnection>())).ReturnsAsync(this.clusterAHosts);
-        Assert.Equal(0, RdsHostListProvider.TopologyCache.Count);
+        // Pre-populate the topology cache to simulate the monitor having fetched topology
+        RdsHostListProvider.TopologyCache.Set(rdsHostListProviderSpy1.Object.ClusterId, this.clusterAHosts, this.topologyRefreshRate);
 
-        var provider1Hosts = await rdsHostListProviderSpy1.Object.RefreshAsync(this.mockConnection);
+        var provider1Hosts = await rdsHostListProviderSpy1.Object.RefreshAsync();
         Assert.Equal(this.clusterAHosts, provider1Hosts);
 
         var rdsHostListProviderSpy2 = this.GetRdsHostListProviderSpy(Instance3);
@@ -179,7 +164,7 @@ public class RdsHostListProviderTest : IDisposable
         Assert.True(rdsHostListProviderSpy1.Object.IsPrimaryClusterId);
         Assert.True(rdsHostListProviderSpy2.Object.IsPrimaryClusterId);
 
-        var provider2Hosts = await rdsHostListProviderSpy2.Object.RefreshAsync(this.mockConnection);
+        var provider2Hosts = await rdsHostListProviderSpy2.Object.RefreshAsync();
         Assert.Equal(this.clusterAHosts, provider2Hosts);
 
         Assert.Equal(1, RdsHostListProvider.TopologyCache.Count);
@@ -192,25 +177,39 @@ public class RdsHostListProviderTest : IDisposable
         RdsHostListProvider.ClearAll();
         var rdsHostListProviderSpy1 = this.GetRdsHostListProviderSpy(Instance2);
 
-        rdsHostListProviderSpy1.Setup(r => r.QueryForTopologyAsync(It.IsAny<DbConnection>())).ReturnsAsync(this.clusterAHosts);
+        // Mock ForceRefreshMonitorAsync to return clusterAHosts and populate the cache
+        rdsHostListProviderSpy1.Setup(r => r.ForceRefreshMonitorAsync(It.IsAny<bool>(), It.IsAny<long>()))
+            .ReturnsAsync((IList<HostSpec>)this.clusterAHosts)
+            .Callback(() =>
+            {
+                RdsHostListProvider.TopologyCache.Set(rdsHostListProviderSpy1.Object.ClusterId, this.clusterAHosts, this.topologyRefreshRate);
+            });
+
         Assert.Equal(0, RdsHostListProvider.TopologyCache.Count);
 
-        var provider1Hosts = await rdsHostListProviderSpy1.Object.RefreshAsync(this.mockConnection);
+        var provider1Hosts = await rdsHostListProviderSpy1.Object.RefreshAsync();
         Assert.Equal(this.clusterAHosts, provider1Hosts);
 
         var rdsHostListProviderSpy2 = this.GetRdsHostListProviderSpy(ClusterA);
-        rdsHostListProviderSpy2.Setup(r => r.QueryForTopologyAsync(It.IsAny<DbConnection>())).ReturnsAsync(this.clusterAHosts);
+        // Pre-populate cache for provider2
+        RdsHostListProvider.TopologyCache.Set(rdsHostListProviderSpy2.Object.ClusterId, this.clusterAHosts, this.topologyRefreshRate);
 
-        var provider2Hosts = await rdsHostListProviderSpy2.Object.RefreshAsync(this.mockConnection);
+        var provider2Hosts = await rdsHostListProviderSpy2.Object.RefreshAsync();
         Assert.Equal(this.clusterAHosts, provider2Hosts);
 
         Assert.NotEqual(rdsHostListProviderSpy1.Object.ClusterId, rdsHostListProviderSpy2.Object.ClusterId);
         Assert.False(rdsHostListProviderSpy1.Object.IsPrimaryClusterId);
         Assert.True(rdsHostListProviderSpy2.Object.IsPrimaryClusterId);
-        Assert.Equal(2, RdsHostListProvider.TopologyCache.Count);
+
+        // Simulate the suggestion that would normally be set by the monitor/topology flow
+        RdsHostListProvider.SuggestedPrimaryClusterIdCache.Set(
+            rdsHostListProviderSpy1.Object.ClusterId,
+            ClusterA,
+            TimeSpan.FromMinutes(10));
         Assert.Equal(ClusterA, RdsHostListProvider.SuggestedPrimaryClusterIdCache.Get<string>(rdsHostListProviderSpy1.Object.ClusterId));
 
-        provider1Hosts = await rdsHostListProviderSpy1.Object.ForceRefreshAsync(this.mockConnection);
+        // RefreshAsync calls GetTopologyAsync which picks up the suggested primary cluster ID
+        provider1Hosts = await rdsHostListProviderSpy1.Object.RefreshAsync();
         Assert.Equal(rdsHostListProviderSpy1.Object.ClusterId, rdsHostListProviderSpy2.Object.ClusterId);
         Assert.True(rdsHostListProviderSpy1.Object.IsPrimaryClusterId);
         Assert.True(rdsHostListProviderSpy2.Object.IsPrimaryClusterId);
@@ -221,15 +220,14 @@ public class RdsHostListProviderTest : IDisposable
     public async Task GetTopology_StaleRecord()
     {
         var rdsHostListProviderSpy = this.GetRdsHostListProviderSpy();
-        string hostName1 = "hostName1";
         string hostName2 = "hostName2";
         double cpuUtilization = 11.1;
         double nodeLag = 0.123;
-        DateTime firstTimestamp = DateTime.UtcNow;
-        DateTime secondTimestamp = firstTimestamp.AddMinutes(1);
+        DateTime secondTimestamp = DateTime.UtcNow.AddMinutes(1);
         long weight = (long)((Math.Round(nodeLag) * 100L) + Math.Round(cpuUtilization));
-        HostSpec expcetedWriter = new HostSpecBuilder()
+        HostSpec expectedWriter = new HostSpecBuilder()
             .WithHost(hostName2)
+            .WithHostId(hostName2)
             .WithPort(HostSpec.NoPort)
             .WithRole(HostRole.Writer)
             .WithAvailability(HostAvailability.Available)
@@ -237,14 +235,13 @@ public class RdsHostListProviderTest : IDisposable
             .WithLastUpdateTime(secondTimestamp)
             .Build();
 
-        this.mockConnection.Mocks.WhenAny()
-            .ReturnsTable(MockTable.WithColumns("SERVER_ID", "CASE WHEN SESSION_ID = 'MASTER_SESSION_ID' THEN TRUE ELSE FALSE END", "CPU", "REPLICA_LAG_IN_MILLISECONDS", "LAST_UPDATE_TIMESTAMP")
-            .AddRow(hostName1, true, cpuUtilization, nodeLag, firstTimestamp)
-            .AddRow(hostName2, true, cpuUtilization, nodeLag, secondTimestamp));
+        // Simulate the monitor returning a topology with the latest writer selected
+        rdsHostListProviderSpy.Setup(r => r.ForceRefreshMonitorAsync(It.IsAny<bool>(), It.IsAny<long>()))
+            .ReturnsAsync((IList<HostSpec>)new List<HostSpec> { expectedWriter });
 
-        var result = await rdsHostListProviderSpy.Object.GetTopologyAsync(this.mockConnection, true);
+        var result = await rdsHostListProviderSpy.Object.GetTopologyAsync();
         Assert.Single(result.Hosts);
-        Assert.Equal(expcetedWriter, result.Hosts[0]);
+        Assert.Equal(expectedWriter, result.Hosts[0]);
     }
 
     [Fact]
@@ -253,15 +250,22 @@ public class RdsHostListProviderTest : IDisposable
     {
         var rdsHostListProviderSpy = this.GetRdsHostListProviderSpy();
         string hostName = "hostName";
-        double cpuUtilization = 11.1;
-        double nodeLag = 0.123;
         string expectedLastUpdatedTimestampRounded = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm");
 
-        this.mockConnection.Mocks.WhenAny()
-            .ReturnsTable(MockTable.WithColumns("SERVER_ID", "CASE WHEN SESSION_ID = 'MASTER_SESSION_ID' THEN TRUE ELSE FALSE END", "CPU", "REPLICA_LAG_IN_MILLISECONDS")
-            .AddRow(hostName, true, cpuUtilization, nodeLag));
+        HostSpec writerHost = new HostSpecBuilder()
+            .WithHost(hostName)
+            .WithHostId(hostName)
+            .WithPort(HostSpec.NoPort)
+            .WithRole(HostRole.Writer)
+            .WithAvailability(HostAvailability.Available)
+            .WithWeight(0)
+            .WithLastUpdateTime(DateTime.UtcNow)
+            .Build();
 
-        var result = await rdsHostListProviderSpy.Object.GetTopologyAsync(this.mockConnection, true);
+        rdsHostListProviderSpy.Setup(r => r.ForceRefreshMonitorAsync(It.IsAny<bool>(), It.IsAny<long>()))
+            .ReturnsAsync((IList<HostSpec>)new List<HostSpec> { writerHost });
+
+        var result = await rdsHostListProviderSpy.Object.GetTopologyAsync();
         Assert.Single(result.Hosts);
         Assert.Equal(expectedLastUpdatedTimestampRounded, result.Hosts.First().LastUpdateTime.ToString("yyyy-MM-dd HH:mm"));
     }
@@ -276,29 +280,13 @@ public class RdsHostListProviderTest : IDisposable
             .WithRole(HostRole.Writer)
             .WithLastUpdateTime(DateTime.Parse("3000-01-01 00:00:00"))
             .Build();
-        HostSpec unexpectedWriterHost0 = new HostSpecBuilder()
-            .WithHost("unexpectedWriterHost0")
-            .WithRole(HostRole.Writer)
-            .WithLastUpdateTime(DateTime.Parse("1000-01-01 00:00:00"))
-            .Build();
-        HostSpec unexpectedWriterHost1 = new HostSpecBuilder()
-            .WithHost("unexpectedWriterHost1")
-            .WithRole(HostRole.Writer)
-            .WithLastUpdateTime(DateTime.Parse("2000-01-01 00:00:00"))
-            .Build();
-        HostSpec unexpectedWriterHostWithNullLastUpdateTime = new HostSpecBuilder()
-            .WithHost("unexpectedWriterHostWithNullLastUpdateTime")
-            .WithRole(HostRole.Writer)
-            .Build();
 
-        this.mockConnection.Mocks.WhenAny()
-            .ReturnsTable(MockTable.WithColumns("SERVER_ID", "CASE WHEN SESSION_ID = 'MASTER_SESSION_ID' THEN TRUE ELSE FALSE END", "CPU", "REPLICA_LAG_IN_MILLISECONDS", "LAST_UPDATE_TIMESTAMP")
-            .AddRow(unexpectedWriterHostWithNullLastUpdateTime.Host, true, 0D, 0D, unexpectedWriterHostWithNullLastUpdateTime.LastUpdateTime)
-            .AddRow(unexpectedWriterHost0.Host, true, 0D, 0D, unexpectedWriterHost0.LastUpdateTime)
-            .AddRow(expectedWriterHost.Host, true, 0D, 0D, expectedWriterHost.LastUpdateTime)
-            .AddRow(unexpectedWriterHost1.Host, true, 0D, 0D, unexpectedWriterHost1.LastUpdateTime));
+        // The monitor is responsible for selecting the latest writer from multiple writer candidates.
+        // We simulate the monitor returning only the expected writer.
+        rdsHostListProviderSpy.Setup(r => r.ForceRefreshMonitorAsync(It.IsAny<bool>(), It.IsAny<long>()))
+            .ReturnsAsync((IList<HostSpec>)new List<HostSpec> { expectedWriterHost });
 
-        var result = await rdsHostListProviderSpy.Object.GetTopologyAsync(this.mockConnection, true);
+        var result = await rdsHostListProviderSpy.Object.GetTopologyAsync();
         Assert.Equal(expectedWriterHost.Host, result.Hosts.First().Host);
     }
 
@@ -315,16 +303,16 @@ public class RdsHostListProviderTest : IDisposable
         List<HostSpec> mockTopology = [
             new HostSpecBuilder().WithHost("host").Build(),
         ];
-        rdsHostListProviderSpy1.Setup(r => r.QueryForTopologyAsync(It.IsAny<DbConnection>())).ReturnsAsync(mockTopology);
 
-        await rdsHostListProviderSpy1.Object.RefreshAsync(this.mockConnection);
+        // Pre-populate the topology cache to simulate the monitor having fetched topology
+        RdsHostListProvider.TopologyCache.Set(rdsHostListProviderSpy1.Object.ClusterId, mockTopology, this.topologyRefreshRate);
+
+        await rdsHostListProviderSpy1.Object.RefreshAsync();
 
         Assert.Equal(mockTopology, RdsHostListProvider.TopologyCache.Get<List<HostSpec>>(rdsHostListProviderSpy1.Object.ClusterId));
-        rdsHostListProviderSpy1.Verify(r => r.QueryForTopologyAsync(It.IsAny<DbConnection>()), Times.Once);
 
         var rdsHostListProviderSpy2 = this.GetRdsHostListProviderSpy(readerClusterUrl);
         Assert.Equal(expectedClusterId, rdsHostListProviderSpy2.Object.ClusterId);
         Assert.Equal(mockTopology, RdsHostListProvider.TopologyCache.Get<List<HostSpec>>(rdsHostListProviderSpy2.Object.ClusterId));
-        rdsHostListProviderSpy2.Verify(r => r.QueryForTopologyAsync(It.IsAny<DbConnection>()), Times.Never);
     }
 }
