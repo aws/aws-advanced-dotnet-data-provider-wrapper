@@ -325,12 +325,12 @@ public class AuroraTestUtils
         return await this.IsDBInstanceWriterAsync(TestEnvironment.Env.Info.RdsDbName!, instanceId);
     }
 
-    public async Task<bool> IsDBInstanceWriterAsync(string instanceId, TimeSpan timeout)
+    public async Task<bool> WaitUntilInstanceHasRoleAsync(string instanceId, bool expectedWriter, TimeSpan timeout)
     {
         var deadline = DateTime.UtcNow + timeout;
         while (DateTime.UtcNow < deadline)
         {
-            if (await this.IsDBInstanceWriterAsync(instanceId))
+            if (await this.IsDBInstanceWriterAsync(instanceId) == expectedWriter)
             {
                 return true;
             }

@@ -183,7 +183,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
         var currentConnectionId = await AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, async);
         Assert.NotNull(currentConnectionId);
         Assert.Equal(currentWriter, currentConnectionId);
-        Assert.True(await AuroraUtils.IsDBInstanceWriterAsync(currentConnectionId));
+        Assert.True(await AuroraUtils.WaitUntilInstanceHasRoleAsync(currentConnectionId, true, TimeSpan.FromSeconds(30)));
     }
 
     [Theory]
@@ -233,7 +233,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
         var currentConnectionId = await AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, async);
         Assert.NotNull(currentConnectionId);
         Assert.Equal(currentWriter, currentConnectionId);
-        Assert.True(await AuroraUtils.IsDBInstanceWriterAsync(currentConnectionId));
+        Assert.True(await AuroraUtils.WaitUntilInstanceHasRoleAsync(currentConnectionId, true, TimeSpan.FromSeconds(30)));
         await simulationTask;
     }
 
@@ -328,7 +328,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
         // Assert that we are currently connected to the reader instance.
         var currentConnectionId = await AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, async);
         Assert.NotNull(currentConnectionId);
-        Assert.False(await AuroraUtils.IsDBInstanceWriterAsync(currentConnectionId, TimeSpan.FromSeconds(120)));
+        Assert.True(await AuroraUtils.WaitUntilInstanceHasRoleAsync(currentConnectionId, expectedWriter: false, TimeSpan.FromSeconds(120)));
 
         await crashTask;
     }
