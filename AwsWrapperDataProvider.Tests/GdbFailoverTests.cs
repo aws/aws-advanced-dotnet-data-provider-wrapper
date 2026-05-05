@@ -59,8 +59,7 @@ public class GdbFailoverTests : IntegrationTestBase
             "gdbFailover");
         connectionString += $"; ClusterInstanceHostPattern=?.{ProxyDatabaseInfo!.InstanceEndpointSuffix}:{ProxyDatabaseInfo!.InstanceEndpointPort}" +
             $"; ActiveHomeFailoverMode=strict-writer" +
-            $"; InactiveHomeFailoverMode=strict-writer" +
-            $"; Pooling=false";
+            $"; InactiveHomeFailoverMode=strict-writer";
 
         using AwsWrapperConnection connection = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
         await AuroraUtils.OpenDbConnection(connection, async);
