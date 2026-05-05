@@ -36,27 +36,6 @@ public abstract class TopologyUtils
     }
 
     /// <summary>
-    /// Creates a <see cref="HostSpec"/> from a topology query result row.
-    /// Called by <see cref="Monitoring.ClusterTopologyMonitor"/> during topology refresh.
-    /// </summary>
-    public abstract HostSpec CreateHost(
-        DbDataReader reader,
-        string? suggestedWriterNodeId,
-        HostSpec initialHostSpec,
-        HostSpec clusterInstanceTemplate,
-        IHostListProviderService hostListProviderService);
-
-    /// <summary>
-    /// Gets the suggested writer node ID. For Multi-AZ this queries the database;
-    /// for Aurora this returns null (not needed).
-    /// </summary>
-    public virtual Task<string?> GetSuggestedWriterNodeIdAsync(
-        DbConnection connection,
-        string nodeIdQuery,
-        CancellationToken ct)
-        => Task.FromResult<string?>(null);
-
-    /// <summary>
     /// Checks if the current connection is to the writer instance.
     /// Aurora: returns true if the writer ID query returns a non-empty result.
     /// Multi-AZ: returns true if the writer ID query returns NO rows (opposite logic).
@@ -65,7 +44,7 @@ public abstract class TopologyUtils
 
     /// <summary>
     /// Queries the database for topology information and returns a list of hosts.
-    /// Executes the topology query, parses each row via <see cref="CreateHost"/>,
+    /// Executes the topology query, delegates row processing to <see cref="GetHostsAsync"/>,
     /// and verifies exactly one writer exists.
     /// </summary>
     public virtual async Task<List<HostSpec>?> QueryForTopologyAsync(
@@ -75,9 +54,6 @@ public abstract class TopologyUtils
         IHostListProviderService hostListProviderService,
         CancellationToken ct = default)
     {
-        string? suggestedWriterNodeId = await this.GetSuggestedWriterNodeIdAsync(
-            connection, string.Empty, ct);
-
         await using var command = connection.CreateCommand();
         command.CommandText = this.dialect.TopologyQuery;
 
@@ -95,16 +71,27 @@ public abstract class TopologyUtils
             return null;
         }
 
-        var allHosts = new List<HostSpec>();
-        while (await reader.ReadAsync(ct))
-        {
-            HostSpec hostSpec = this.CreateHost(
-                reader, suggestedWriterNodeId, initialHostSpec, clusterInstanceTemplate, hostListProviderService);
-            allHosts.Add(hostSpec);
-        }
-
-        return VerifyWriter(allHosts);
+        List<HostSpec>? hosts = await this.GetHostsAsync(
+            connection, reader, initialHostSpec, clusterInstanceTemplate, ct);
+        return VerifyWriter(hosts);
     }
+
+    /// <summary>
+    /// Reads rows from the topology query result and constructs the list of <see cref="HostSpec"/> objects.
+    /// Subclasses implement deployment-specific parsing (Aurora, Multi-AZ, Global Aurora).
+    /// </summary>
+    /// <param name="connection">The connection used to run the topology query (may be used to run auxiliary queries).</param>
+    /// <param name="reader">The topology query result reader.</param>
+    /// <param name="initialHostSpec">The initial host specification used for connecting.</param>
+    /// <param name="instanceTemplate">The cluster instance template used to construct new hosts.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A list of hosts, or null if processing fails.</returns>
+    protected abstract Task<List<HostSpec>?> GetHostsAsync(
+        DbConnection connection,
+        DbDataReader reader,
+        HostSpec initialHostSpec,
+        HostSpec instanceTemplate,
+        CancellationToken ct);
 
     /// <summary>
     /// Creates a <see cref="HostSpec"/> from the given topology information.
@@ -142,9 +129,9 @@ public abstract class TopologyUtils
     /// Verifies that exactly one writer exists in the host list.
     /// If multiple writers exist, takes the latest updated one.
     /// </summary>
-    protected static List<HostSpec>? VerifyWriter(List<HostSpec> allHosts)
+    protected static List<HostSpec>? VerifyWriter(List<HostSpec>? allHosts)
     {
-        if (allHosts.Count == 0)
+        if (allHosts == null || allHosts.Count == 0)
         {
             return null;
         }

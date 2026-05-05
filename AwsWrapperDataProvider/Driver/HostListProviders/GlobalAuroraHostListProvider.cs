@@ -65,7 +65,6 @@ public class GlobalAuroraHostListProvider : RdsHostListProvider
     protected override IClusterTopologyMonitor InitMonitor()
     {
         Logger.LogTrace(Resources.GlobalAuroraHostListProvider_InitMonitor_Initializing, this.ClusterId);
-        this.topologyUtils.SetInstanceTemplatesByRegion(this.instanceTemplatesByRegion);
         return Monitors.Set(
             this.ClusterId,
             new GlobalAuroraTopologyMonitor(

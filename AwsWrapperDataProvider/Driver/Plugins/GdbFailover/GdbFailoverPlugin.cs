@@ -16,6 +16,7 @@ using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.GdbFailover;
@@ -31,7 +32,6 @@ public class GdbFailoverPlugin : FailoverPlugin
     protected GlobalDbFailoverMode? activeHomeFailoverMode;
     protected GlobalDbFailoverMode? inactiveHomeFailoverMode;
     protected string? homeRegion;
-    private new RdsUrlType? rdsUrlType;
 
     public GdbFailoverPlugin(IPluginService pluginService, Dictionary<string, string> props)
         : base(pluginService, props)
@@ -57,18 +57,18 @@ public class GdbFailoverPlugin : FailoverPlugin
             if (!this.rdsUrlType.HasRegion)
             {
                 throw new InvalidOperationException(
-                    "FailoverHomeRegion is required when connecting via a global endpoint or IP address.");
+                    Resources.GdbFailoverPlugin_InitFailoverMode_MissingHomeRegion);
             }
 
             this.homeRegion = RdsUtils.GetRdsRegion(initialHost);
             if (string.IsNullOrEmpty(this.homeRegion))
             {
                 throw new InvalidOperationException(
-                    "FailoverHomeRegion is required when connecting via a global endpoint or IP address.");
+                    Resources.GdbFailoverPlugin_InitFailoverMode_MissingHomeRegion);
             }
         }
 
-        Logger.LogDebug("GdbFailoverPlugin: failoverHomeRegion={HomeRegion}", this.homeRegion);
+        Logger.LogDebug(Resources.GdbFailoverPlugin_InitFailoverMode_FailoverHomeRegion, this.homeRegion);
 
         this.activeHomeFailoverMode = GlobalDbFailoverModeExtensions.FromValue(
             PropertyDefinition.ActiveHomeFailoverMode.GetString(this.props));
@@ -92,7 +92,7 @@ public class GdbFailoverPlugin : FailoverPlugin
         }
 
         Logger.LogDebug(
-            "GdbFailoverPlugin: activeHomeFailoverMode={ActiveMode}, inactiveHomeFailoverMode={InactiveMode}",
+            Resources.GdbFailoverPlugin_InitFailoverMode_FailoverModes,
             this.activeHomeFailoverMode,
             this.inactiveHomeFailoverMode);
     }
@@ -101,12 +101,12 @@ public class GdbFailoverPlugin : FailoverPlugin
     {
         var failoverEndTime = DateTime.UtcNow.AddMilliseconds(this.failoverTimeoutMs);
 
-        Logger.LogInformation("GdbFailoverPlugin: Starting GDB failover.");
+        Logger.LogInformation(Resources.GdbFailoverPlugin_FailoverAsync_StartingFailover);
 
         if (!await this.pluginService.ForceRefreshHostListAsync(true, this.failoverTimeoutMs))
         {
-            Logger.LogError("GdbFailoverPlugin: Unable to refresh host list.");
-            throw new FailoverFailedException("Unable to refresh host list.");
+            Logger.LogError(Resources.GdbFailoverPlugin_FailoverAsync_UnableToRefreshHostList);
+            throw new FailoverFailedException(Resources.GdbFailoverPlugin_FailoverAsync_UnableToRefreshHostList);
         }
 
         var updatedHosts = this.pluginService.AllHosts;
@@ -114,7 +114,8 @@ public class GdbFailoverPlugin : FailoverPlugin
 
         if (writerCandidate == null)
         {
-            var message = LoggerUtils.LogTopology(updatedHosts, "No writer host found in updated topology.");
+            var message = LoggerUtils.LogTopology(
+                updatedHosts, Resources.GdbFailoverPlugin_FailoverAsync_NoWriterFoundInTopology);
             Logger.LogError("{Message}", message);
             throw new FailoverFailedException(message);
         }
@@ -122,12 +123,12 @@ public class GdbFailoverPlugin : FailoverPlugin
         // Determine writer region and select failover mode
         var writerRegion = RdsUtils.GetRdsRegion(writerCandidate.Host);
         var isHomeRegion = this.homeRegion!.Equals(writerRegion, StringComparison.OrdinalIgnoreCase);
-        Logger.LogDebug("GdbFailoverPlugin: isHomeRegion={IsHomeRegion}", isHomeRegion);
+        Logger.LogDebug(Resources.GdbFailoverPlugin_FailoverAsync_IsHomeRegion, isHomeRegion);
 
         var currentFailoverMode = isHomeRegion
             ? this.activeHomeFailoverMode!.Value
             : this.inactiveHomeFailoverMode!.Value;
-        Logger.LogDebug("GdbFailoverPlugin: currentFailoverMode={FailoverMode}", currentFailoverMode);
+        Logger.LogDebug(Resources.GdbFailoverPlugin_FailoverAsync_CurrentFailoverMode, currentFailoverMode);
 
         switch (currentFailoverMode)
         {
@@ -191,11 +192,14 @@ public class GdbFailoverPlugin : FailoverPlugin
                     failoverEndTime);
                 break;
             default:
-                throw new NotSupportedException($"Unsupported failover mode: {currentFailoverMode}");
+                throw new NotSupportedException(
+                    string.Format(
+                        Resources.GdbFailoverPlugin_FailoverAsync_UnsupportedFailoverMode,
+                        currentFailoverMode));
         }
 
         Logger.LogInformation(
-            "GdbFailoverPlugin: Established connection to {Host}.",
+            Resources.GdbFailoverPlugin_FailoverAsync_EstablishedConnection,
             this.pluginService.CurrentHostSpec);
         this.ThrowFailoverSuccessException();
     }
@@ -207,11 +211,13 @@ public class GdbFailoverPlugin : FailoverPlugin
         {
             var topologyString = LoggerUtils.LogTopology(allowedHosts, string.Empty);
             Logger.LogError(
-                "GdbFailoverPlugin: New writer {Host} is not in allowed hosts list. {Topology}",
+                Resources.GdbFailoverPlugin_FailoverToWriter_NewWriterNotInAllowedHostsLog,
                 writerCandidate.Host,
                 topologyString);
             throw new FailoverFailedException(
-                $"New writer {writerCandidate.Host} is not in allowed hosts list.");
+                string.Format(
+                    Resources.GdbFailoverPlugin_FailoverToWriter_NewWriterNotInAllowedHosts,
+                    writerCandidate.Host));
         }
 
         DbConnection writerCandidateConn;
@@ -223,10 +229,13 @@ public class GdbFailoverPlugin : FailoverPlugin
         catch (Exception ex)
         {
             Logger.LogError(
-                "GdbFailoverPlugin: Exception connecting to writer {Host}.",
+                Resources.GdbFailoverPlugin_FailoverToWriter_ExceptionConnectingToWriter,
                 writerCandidate.Host);
             throw new FailoverFailedException(
-                $"Exception connecting to writer {writerCandidate.Host}.", ex);
+                string.Format(
+                    Resources.GdbFailoverPlugin_FailoverToWriter_ExceptionConnectingToWriter,
+                    writerCandidate.Host),
+                ex);
         }
 
         var role = await this.pluginService.GetHostRole(writerCandidateConn);
@@ -242,16 +251,19 @@ public class GdbFailoverPlugin : FailoverPlugin
             }
 
             Logger.LogError(
-                "GdbFailoverPlugin: Unexpected role {Role} for writer candidate {Host}.",
+                Resources.GdbFailoverPlugin_FailoverToWriter_UnexpectedRole,
                 role,
                 writerCandidate.Host);
             throw new FailoverFailedException(
-                $"Unexpected role {role} for writer candidate {writerCandidate.Host}.");
+                string.Format(
+                    Resources.GdbFailoverPlugin_FailoverToWriter_UnexpectedRole,
+                    role,
+                    writerCandidate.Host));
         }
 
         this.pluginService.SetCurrentConnection(writerCandidateConn, writerCandidate);
         Logger.LogInformation(
-            "GdbFailoverPlugin: Connected to writer {Host}.",
+            Resources.GdbFailoverPlugin_FailoverToWriter_ConnectedToWriter,
             writerCandidate.Host);
     }
 
@@ -270,8 +282,9 @@ public class GdbFailoverPlugin : FailoverPlugin
         }
         catch (TimeoutException)
         {
-            Logger.LogError("GdbFailoverPlugin: Unable to connect to reader within timeout.");
-            throw new FailoverFailedException("Unable to connect to reader within timeout.");
+            Logger.LogError(Resources.GdbFailoverPlugin_FailoverToAllowedHost_UnableToConnectToReader);
+            throw new FailoverFailedException(
+                Resources.GdbFailoverPlugin_FailoverToAllowedHost_UnableToConnectToReader);
         }
         finally
         {
@@ -289,7 +302,7 @@ public class GdbFailoverPlugin : FailoverPlugin
         }
 
         Logger.LogInformation(
-            "GdbFailoverPlugin: Established connection to {Host}.",
+            Resources.GdbFailoverPlugin_FailoverAsync_EstablishedConnection,
             this.pluginService.CurrentHostSpec);
     }
 
@@ -335,7 +348,7 @@ public class GdbFailoverPlugin : FailoverPlugin
                 if (candidateHost == null)
                 {
                     Logger.LogDebug(
-                        "GdbFailoverPlugin: No candidate found for role {Role}. Retrying.",
+                        Resources.GdbFailoverPlugin_GetAllowedFailoverConnectionAsync_NoCandidateFound,
                         verifyRole);
                     await Task.Delay(100);
                     break;
@@ -382,6 +395,7 @@ public class GdbFailoverPlugin : FailoverPlugin
         }
         while (DateTime.UtcNow < failoverEndTime);
 
-        throw new TimeoutException("Failover reader timeout.");
+        throw new TimeoutException(
+            Resources.GdbFailoverPlugin_GetAllowedFailoverConnectionAsync_FailoverReaderTimeout);
     }
 }

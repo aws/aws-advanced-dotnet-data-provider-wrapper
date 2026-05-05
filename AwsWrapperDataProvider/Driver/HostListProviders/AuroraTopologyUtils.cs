@@ -15,6 +15,9 @@
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
+using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
+using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.HostListProviders;
 
@@ -24,6 +27,8 @@ namespace AwsWrapperDataProvider.Driver.HostListProviders;
 /// </summary>
 public class AuroraTopologyUtils : TopologyUtils
 {
+    private static readonly ILogger<AuroraTopologyUtils> Logger = LoggerUtils.GetLogger<AuroraTopologyUtils>();
+
     public AuroraTopologyUtils(HostSpecBuilder hostSpecBuilder, ITopologyDialect dialect) : base(hostSpecBuilder, dialect)
     {
     }
@@ -41,13 +46,44 @@ public class AuroraTopologyUtils : TopologyUtils
         return false;
     }
 
-    public override HostSpec CreateHost(
+    protected override async Task<List<HostSpec>?> GetHostsAsync(
+        DbConnection connection,
         DbDataReader reader,
-        string? suggestedWriterNodeId,
         HostSpec initialHostSpec,
-        HostSpec clusterInstanceTemplate,
-        IHostListProviderService hostListProviderService)
+        HostSpec instanceTemplate,
+        CancellationToken ct)
     {
+        // Data in the result set is ordered by last update time, so the latest records are last.
+        // We add hosts to a map to ensure newer records replace the older ones.
+        var hostsMap = new Dictionary<string, HostSpec>();
+        while (await reader.ReadAsync(ct))
+        {
+            try
+            {
+                HostSpec host = this.CreateHost(reader, initialHostSpec, instanceTemplate);
+                if (!hostsMap.TryGetValue(host.Host, out HostSpec? existing)
+                    || existing.LastUpdateTime < host.LastUpdateTime)
+                {
+                    hostsMap[host.Host] = host;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogTrace(Resources.ClusterTopologyMonitor_ErrorProcessingQueryResults, ex.Message);
+                return null;
+            }
+        }
+
+        return [.. hostsMap.Values];
+    }
+
+    protected HostSpec CreateHost(
+        DbDataReader reader,
+        HostSpec initialHostSpec,
+        HostSpec instanceTemplate)
+    {
+        // According to the topology query the result set should contain 5 columns:
+        // instance ID, 1/0 (writer/reader), CPU utilization, instance lag in time, last update time.
         string hostName = reader.GetString(0);
         bool isWriter = reader.GetBoolean(1);
         double cpuUtilization = reader.GetDouble(2);
@@ -56,8 +92,9 @@ public class AuroraTopologyUtils : TopologyUtils
             ? DateTime.UtcNow
             : reader.GetDateTime(4);
 
+        // Calculate weight based on instance lag in time and CPU utilization.
         long weight = (long)((Math.Round(nodeLag) * 100L) + Math.Round(cpuUtilization));
 
-        return this.CreateHost(hostName, hostName, isWriter, weight, lastUpdateTime, initialHostSpec, clusterInstanceTemplate);
+        return this.CreateHost(hostName, hostName, isWriter, weight, lastUpdateTime, initialHostSpec, instanceTemplate);
     }
 }

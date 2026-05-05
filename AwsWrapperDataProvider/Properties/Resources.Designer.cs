@@ -3407,15 +3407,6 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Instance templates by region must be set before creating hosts..
-        /// </summary>
-        internal static string Error_InstanceTemplatesNotSet {
-            get {
-                return ResourceManager.GetString("Error_InstanceTemplatesNotSet", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Unable to determine host role, connected to unknown DB type..
         /// </summary>
         internal static string Error_UnableToDetermineHostRole {
@@ -3466,6 +3457,168 @@ namespace AwsWrapperDataProvider.Properties {
         internal static string GlobalAuroraHostListProvider_InitMonitor_Initializing {
             get {
                 return ResourceManager.GetString("GlobalAuroraHostListProvider_InitMonitor_Initializing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failover home region should be provided..
+        /// </summary>
+        internal static string GdbFailoverPlugin_InitFailoverMode_MissingHomeRegion {
+            get {
+                return ResourceManager.GetString("GdbFailoverPlugin_InitFailoverMode_MissingHomeRegion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failover home region: {0}..
+        /// </summary>
+        internal static string GdbFailoverPlugin_InitFailoverMode_FailoverHomeRegion {
+            get {
+                return ResourceManager.GetString("GdbFailoverPlugin_InitFailoverMode_FailoverHomeRegion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Active home failover mode: {0}, inactive home failover mode: {1}..
+        /// </summary>
+        internal static string GdbFailoverPlugin_InitFailoverMode_FailoverModes {
+            get {
+                return ResourceManager.GetString("GdbFailoverPlugin_InitFailoverMode_FailoverModes", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Starting failover procedure..
+        /// </summary>
+        internal static string GdbFailoverPlugin_FailoverAsync_StartingFailover {
+            get {
+                return ResourceManager.GetString("GdbFailoverPlugin_FailoverAsync_StartingFailover", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unable to refresh host list..
+        /// </summary>
+        internal static string GdbFailoverPlugin_FailoverAsync_UnableToRefreshHostList {
+            get {
+                return ResourceManager.GetString("GdbFailoverPlugin_FailoverAsync_UnableToRefreshHostList", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to No writer host found in updated topology..
+        /// </summary>
+        internal static string GdbFailoverPlugin_FailoverAsync_NoWriterFoundInTopology {
+            get {
+                return ResourceManager.GetString("GdbFailoverPlugin_FailoverAsync_NoWriterFoundInTopology", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to GDB primary region is home region: {0}..
+        /// </summary>
+        internal static string GdbFailoverPlugin_FailoverAsync_IsHomeRegion {
+            get {
+                return ResourceManager.GetString("GdbFailoverPlugin_FailoverAsync_IsHomeRegion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failover mode in effect: {0}..
+        /// </summary>
+        internal static string GdbFailoverPlugin_FailoverAsync_CurrentFailoverMode {
+            get {
+                return ResourceManager.GetString("GdbFailoverPlugin_FailoverAsync_CurrentFailoverMode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unsupported failover mode: {0}..
+        /// </summary>
+        internal static string GdbFailoverPlugin_FailoverAsync_UnsupportedFailoverMode {
+            get {
+                return ResourceManager.GetString("GdbFailoverPlugin_FailoverAsync_UnsupportedFailoverMode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Established connection to {0}..
+        /// </summary>
+        internal static string GdbFailoverPlugin_FailoverAsync_EstablishedConnection {
+            get {
+                return ResourceManager.GetString("GdbFailoverPlugin_FailoverAsync_EstablishedConnection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to New writer {0} is not in allowed hosts list. {1}.
+        /// </summary>
+        internal static string GdbFailoverPlugin_FailoverToWriter_NewWriterNotInAllowedHostsLog {
+            get {
+                return ResourceManager.GetString("GdbFailoverPlugin_FailoverToWriter_NewWriterNotInAllowedHostsLog", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to New writer {0} is not in allowed hosts list..
+        /// </summary>
+        internal static string GdbFailoverPlugin_FailoverToWriter_NewWriterNotInAllowedHosts {
+            get {
+                return ResourceManager.GetString("GdbFailoverPlugin_FailoverToWriter_NewWriterNotInAllowedHosts", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Exception connecting to writer {0}..
+        /// </summary>
+        internal static string GdbFailoverPlugin_FailoverToWriter_ExceptionConnectingToWriter {
+            get {
+                return ResourceManager.GetString("GdbFailoverPlugin_FailoverToWriter_ExceptionConnectingToWriter", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unexpected role {0} for writer candidate {1}..
+        /// </summary>
+        internal static string GdbFailoverPlugin_FailoverToWriter_UnexpectedRole {
+            get {
+                return ResourceManager.GetString("GdbFailoverPlugin_FailoverToWriter_UnexpectedRole", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Connected to writer {0}..
+        /// </summary>
+        internal static string GdbFailoverPlugin_FailoverToWriter_ConnectedToWriter {
+            get {
+                return ResourceManager.GetString("GdbFailoverPlugin_FailoverToWriter_ConnectedToWriter", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unable to connect to reader within timeout..
+        /// </summary>
+        internal static string GdbFailoverPlugin_FailoverToAllowedHost_UnableToConnectToReader {
+            get {
+                return ResourceManager.GetString("GdbFailoverPlugin_FailoverToAllowedHost_UnableToConnectToReader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to No candidate found for role {0}. Retrying..
+        /// </summary>
+        internal static string GdbFailoverPlugin_GetAllowedFailoverConnectionAsync_NoCandidateFound {
+            get {
+                return ResourceManager.GetString("GdbFailoverPlugin_GetAllowedFailoverConnectionAsync_NoCandidateFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failover reader timeout..
+        /// </summary>
+        internal static string GdbFailoverPlugin_GetAllowedFailoverConnectionAsync_FailoverReaderTimeout {
+            get {
+                return ResourceManager.GetString("GdbFailoverPlugin_GetAllowedFailoverConnectionAsync_FailoverReaderTimeout", resourceCulture);
             }
         }
     }

@@ -66,7 +66,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
     protected DbConnection? nodeThreadsWriterConnection;
     protected HostSpec? nodeThreadsWriterHostSpec;
     protected DbConnection? nodeThreadsReaderConnection;
-    protected IList<HostSpec>? nodeThreadsLatestTopology;
+    protected volatile IList<HostSpec>? nodeThreadsLatestTopology;
     protected bool disposed = false;
 
     private int requestToUpdateTopology = 0;
@@ -530,12 +530,6 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         return (null, null);
     }
 
-    protected virtual Task<string?> GetSuggestedWriterNodeIdAsync(DbConnection connection)
-    {
-        return this.topologyUtils.GetSuggestedWriterNodeIdAsync(
-            connection, this.nodeIdQuery, this.ctsTopologyMonitoring.Token);
-    }
-
     /// <summary>
     /// Returns the instance template for the given node.
     /// Overridden by <see cref="GlobalAuroraTopologyMonitor"/> to resolve region-specific templates.
@@ -731,6 +725,26 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                             connection = null;
                         }
 
+                        if (isWriter && connection != null)
+                        {
+                            try
+                            {
+                                if (await monitor.pluginService.GetHostRole(connection) != HostRole.Writer)
+                                {
+                                    // The first connection after failover may be stale.
+                                    isWriter = false;
+                                }
+                            }
+                            catch (DbException)
+                            {
+                                // Invalid connection, retry on the next loop iteration.
+                                await monitor.DisposeConnectionAsync(connection);
+                                connection = null;
+                                await Task.Delay(100, token);
+                                continue;
+                            }
+                        }
+
                         if (isWriter)
                         {
                             if (Interlocked.CompareExchange(ref monitor.nodeThreadsWriterConnection, connection, null) == null)
@@ -796,14 +810,14 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                     return;
                 }
 
+                monitor.nodeThreadsLatestTopology = hosts;
+                var latestWriterHostSpec = hosts.FirstOrDefault(x => x.Role == HostRole.Writer);
+
                 if (this.writerChanged)
                 {
                     monitor.UpdateTopologyCache(hosts);
                     return;
                 }
-
-                monitor.nodeThreadsLatestTopology = hosts;
-                var latestWriterHostSpec = hosts.FirstOrDefault(x => x.Role == HostRole.Writer);
 
                 if (latestWriterHostSpec != null && writerHostSpec != null &&
                     latestWriterHostSpec.GetHostAndPort() != writerHostSpec.GetHostAndPort())

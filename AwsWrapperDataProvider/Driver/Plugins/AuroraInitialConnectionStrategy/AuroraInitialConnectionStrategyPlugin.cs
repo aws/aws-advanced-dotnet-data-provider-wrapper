@@ -155,12 +155,6 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
 
                 writerConnectionCandidate = await this.pluginService.OpenConnection(writerCandidate, props, this, async);
 
-                // Ensure the dialect (and host list provider) is updated before checking the host role.
-                // The initial dialect may be a generic one (e.g. PgDialect) that uses ConnectionStringHostListProvider,
-                // which does not support GetHostRole. UpdateDialect detects the actual database type
-                // (e.g. Aurora, Multi-AZ) and switches to the appropriate host list provider.
-                await this.pluginService.UpdateDialectAsync(writerConnectionCandidate);
-
                 if ((await this.pluginService.GetHostRole(writerConnectionCandidate)) != HostRole.Writer)
                 {
                     await this.pluginService.ForceRefreshHostListAsync();

@@ -1175,9 +1175,6 @@
     <data name="Error_GlobalClusterInstanceHostPatternsRequired" xml:space="preserve">
         <value>GlobalClusterInstanceHostPatterns is required for Global Aurora Databases.</value>
     </data>
-    <data name="Error_InstanceTemplatesNotSet" xml:space="preserve">
-        <value>Instance templates by region must be set before creating hosts.</value>
-    </data>
     <data name="Error_UnableToDetermineHostRole" xml:space="preserve">
         <value>Unable to determine host role, connected to unknown DB type.</value>
     </data>
@@ -1195,5 +1192,59 @@
     </data>
     <data name="GlobalAuroraHostListProvider_InitMonitor_Initializing" xml:space="preserve">
         <value>Initializing GlobalAuroraTopologyMonitor for cluster: {0}.</value>
+    </data>
+    <data name="GdbFailoverPlugin_InitFailoverMode_MissingHomeRegion" xml:space="preserve">
+        <value>Failover home region should be provided.</value>
+    </data>
+    <data name="GdbFailoverPlugin_InitFailoverMode_FailoverHomeRegion" xml:space="preserve">
+        <value>Failover home region: {0}.</value>
+    </data>
+    <data name="GdbFailoverPlugin_InitFailoverMode_FailoverModes" xml:space="preserve">
+        <value>Active home failover mode: {0}, inactive home failover mode: {1}.</value>
+    </data>
+    <data name="GdbFailoverPlugin_FailoverAsync_StartingFailover" xml:space="preserve">
+        <value>Starting failover procedure.</value>
+    </data>
+    <data name="GdbFailoverPlugin_FailoverAsync_UnableToRefreshHostList" xml:space="preserve">
+        <value>Unable to refresh host list.</value>
+    </data>
+    <data name="GdbFailoverPlugin_FailoverAsync_NoWriterFoundInTopology" xml:space="preserve">
+        <value>No writer host found in updated topology.</value>
+    </data>
+    <data name="GdbFailoverPlugin_FailoverAsync_IsHomeRegion" xml:space="preserve">
+        <value>GDB primary region is home region: {0}.</value>
+    </data>
+    <data name="GdbFailoverPlugin_FailoverAsync_CurrentFailoverMode" xml:space="preserve">
+        <value>Failover mode in effect: {0}.</value>
+    </data>
+    <data name="GdbFailoverPlugin_FailoverAsync_UnsupportedFailoverMode" xml:space="preserve">
+        <value>Unsupported failover mode: {0}.</value>
+    </data>
+    <data name="GdbFailoverPlugin_FailoverAsync_EstablishedConnection" xml:space="preserve">
+        <value>Established connection to {0}.</value>
+    </data>
+    <data name="GdbFailoverPlugin_FailoverToWriter_NewWriterNotInAllowedHostsLog" xml:space="preserve">
+        <value>New writer {0} is not in allowed hosts list. {1}</value>
+    </data>
+    <data name="GdbFailoverPlugin_FailoverToWriter_NewWriterNotInAllowedHosts" xml:space="preserve">
+        <value>New writer {0} is not in allowed hosts list.</value>
+    </data>
+    <data name="GdbFailoverPlugin_FailoverToWriter_ExceptionConnectingToWriter" xml:space="preserve">
+        <value>Exception connecting to writer {0}.</value>
+    </data>
+    <data name="GdbFailoverPlugin_FailoverToWriter_UnexpectedRole" xml:space="preserve">
+        <value>Unexpected role {0} for writer candidate {1}.</value>
+    </data>
+    <data name="GdbFailoverPlugin_FailoverToWriter_ConnectedToWriter" xml:space="preserve">
+        <value>Connected to writer {0}.</value>
+    </data>
+    <data name="GdbFailoverPlugin_FailoverToAllowedHost_UnableToConnectToReader" xml:space="preserve">
+        <value>Unable to connect to reader within timeout.</value>
+    </data>
+    <data name="GdbFailoverPlugin_GetAllowedFailoverConnectionAsync_NoCandidateFound" xml:space="preserve">
+        <value>No candidate found for role {0}. Retrying.</value>
+    </data>
+    <data name="GdbFailoverPlugin_GetAllowedFailoverConnectionAsync_FailoverReaderTimeout" xml:space="preserve">
+        <value>Failover reader timeout.</value>
     </data>
 </root>
