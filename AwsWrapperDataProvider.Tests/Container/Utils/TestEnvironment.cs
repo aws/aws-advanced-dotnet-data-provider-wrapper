@@ -304,6 +304,15 @@ public class TestEnvironment
         if (env.Info.Request!.Features.Contains(TestEnvironmentFeatures.NETWORK_OUTAGES_ENABLED))
         {
             InitProxies(env).GetAwaiter().GetResult();
+
+            // Proxied hosts append a ".proxied" suffix to the real RDS hostname, which breaks
+            // the RDS DNS regex patterns (IdentifyRdsType, GetRdsRegion, etc.). Strip the suffix
+            // before any regex-based lookup so proxied hosts are recognized as Aurora endpoints.
+
+            RdsUtils.SetPrepareHostFunc(host =>
+                host.EndsWith(".proxied", StringComparison.Ordinal)
+                    ? host[..^".proxied".Length]
+                    : host);
         }
 
         return env;
