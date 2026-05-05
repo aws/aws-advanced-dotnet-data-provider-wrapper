@@ -30,7 +30,6 @@ public class GlobalAuroraTopologyUtils : AuroraTopologyUtils
     private static readonly ILogger<GlobalAuroraTopologyUtils> Logger = LoggerUtils.GetLogger<GlobalAuroraTopologyUtils>();
 
     private new readonly IGlobalAuroraTopologyDialect dialect;
-    private Dictionary<string, HostSpec>? instanceTemplatesByRegion;
 
     public GlobalAuroraTopologyUtils(
         IGlobalAuroraTopologyDialect dialect,
@@ -55,39 +54,40 @@ public class GlobalAuroraTopologyUtils : AuroraTopologyUtils
     }
 
     /// <summary>
-    /// Sets the instance templates by region for use in <see cref="CreateHost"/>.
-    /// Must be called after <see cref="ParseInstanceTemplates"/> and before the monitor starts.
+    /// This overload should not be called on GlobalAuroraTopologyUtils.
+    /// Global topology queries use <see cref="QueryForTopologyAsync(DbConnection, HostSpec, Dictionary{string, HostSpec})"/>.
     /// </summary>
-    public void SetInstanceTemplatesByRegion(Dictionary<string, HostSpec> templates)
+    protected override Task<List<HostSpec>?> GetHostsAsync(
+        DbConnection connection,
+        DbDataReader reader,
+        HostSpec initialHostSpec,
+        HostSpec instanceTemplate,
+        CancellationToken ct)
     {
-        this.instanceTemplatesByRegion = templates;
+        throw new NotSupportedException();
     }
 
     /// <summary>
-    /// Overrides host creation to handle the global topology query result set format.
+    /// Creates a <see cref="HostSpec"/> from the global topology query result row.
     /// The global topology query returns 4 columns: SERVER_ID, isWriter, lag (float), AWS_REGION.
     /// Uses the AWS_REGION to look up the region-specific instance template.
     /// </summary>
-    public override HostSpec CreateHost(
+    protected HostSpec CreateHost(
         DbDataReader reader,
-        string? suggestedWriterNodeId,
         HostSpec initialHostSpec,
-        HostSpec clusterInstanceTemplate,
-        IHostListProviderService hostListProviderService)
+        Dictionary<string, HostSpec> instanceTemplatesByRegion)
     {
-        if (this.instanceTemplatesByRegion == null)
-        {
-            throw new InvalidOperationException(Resources.Error_InstanceTemplatesNotSet);
-        }
-
+        // According to the topology query the result set should contain 4 columns:
+        // instance ID, 1/0 (writer/reader), node lag in time (msec), AWS region.
         string hostName = reader.GetString(0);
         bool isWriter = reader.GetBoolean(1);
         float nodeLag = reader.GetFloat(2);
         string awsRegion = reader.GetString(3);
 
+        // Calculate weight based on node lag in time.
         long weight = (long)Math.Round(nodeLag) * 100L;
 
-        if (!this.instanceTemplatesByRegion.TryGetValue(awsRegion, out HostSpec? instanceTemplate))
+        if (!instanceTemplatesByRegion.TryGetValue(awsRegion, out HostSpec? instanceTemplate))
         {
             throw new InvalidOperationException(
                 string.Format(Resources.Error_CannotFindInstanceTemplateForRegion, awsRegion));
@@ -139,44 +139,17 @@ public class GlobalAuroraTopologyUtils : AuroraTopologyUtils
 
         if (reader.FieldCount == 0)
         {
+            // We expect at least 4 columns. The server may return 0 columns if failover has occurred.
             return null;
         }
 
-        // Use a dictionary to ensure newer records replace older ones for the same host.
+        // Data in the result set is ordered by last update time, so the latest records are last.
+        // We add hosts to a map to ensure newer records replace the older ones.
         var hostsMap = new Dictionary<string, HostSpec>();
 
         while (await reader.ReadAsync())
         {
-            // The result set contains 4 columns:
-            // SERVER_ID, isWriter (bool), lag (float), AWS_REGION
-            string hostName = reader.GetString(0);
-            bool isWriter = reader.GetBoolean(1);
-            float nodeLag = reader.GetFloat(2);
-            string awsRegion = reader.GetString(3);
-
-            long weight = (long)Math.Round(nodeLag) * 100L;
-
-            if (!instanceTemplatesByRegion.TryGetValue(awsRegion, out HostSpec? instanceTemplate))
-            {
-                throw new InvalidOperationException(
-                    string.Format(Resources.Error_CannotFindInstanceTemplateForRegion, awsRegion));
-            }
-
-            string endpoint = instanceTemplate.Host.Replace("?", hostName);
-            int port = instanceTemplate.IsPortSpecified
-                ? instanceTemplate.Port
-                : initialHostSpec.Port;
-
-            HostSpec hostSpec = this.hostSpecBuilder
-                .WithHost(endpoint)
-                .WithHostId(hostName)
-                .WithPort(port)
-                .WithRole(isWriter ? HostRole.Writer : HostRole.Reader)
-                .WithAvailability(HostAvailability.Available)
-                .WithWeight(weight)
-                .WithLastUpdateTime(DateTime.UtcNow)
-                .Build();
-
+            HostSpec hostSpec = this.CreateHost(reader, initialHostSpec, instanceTemplatesByRegion);
             hostsMap[hostSpec.Host] = hostSpec;
         }
 
