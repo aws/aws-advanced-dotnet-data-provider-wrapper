@@ -28,9 +28,12 @@ using Amazon.SecretsManager.Model;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
+using Microsoft.Extensions.Logging;
 using MySqlConnector;
 using Npgsql;
+using static System.TimeSpan;
 using Filter = Amazon.RDS.Model.Filter;
+using Tag = Amazon.RDS.Model.Tag;
 
 namespace AwsWrapperDataProvider.Tests.Container.Utils;
 
@@ -38,6 +41,7 @@ public class AuroraTestUtils
 {
     private readonly AmazonRDSClient rdsClient;
     private readonly AmazonSecretsManagerClient secretsManagerClient;
+    private static readonly ILogger<AuroraTestUtils> Logger = LoggerUtils.GetLogger<AuroraTestUtils>();
 
     public AuroraTestUtils(string region, string? endpoint) : this(
             region: GetRegionInternal(region),
@@ -105,10 +109,35 @@ public class AuroraTestUtils
         await this.WaitUntilClusterHasRightStateAsync(clusterId, "available");
     }
 
+    public async Task<DBInstance> GetRdsInstanceInfo(string instanceId)
+    {
+        var response = await this.rdsClient.DescribeDBInstancesAsync(new DescribeDBInstancesRequest
+        {
+            DBInstanceIdentifier = instanceId,
+        });
+
+        return response.DBInstances?.FirstOrDefault()
+               ?? throw new InvalidOperationException($"RDS Instance {instanceId} not found.");
+    }
+
+    public DBInstance? GetRdsInstanceInfoByArn(string instanceArn)
+    {
+        Task<DescribeDBInstancesResponse> response = this.rdsClient.DescribeDBInstancesAsync(
+            new DescribeDBInstancesRequest { DBInstanceIdentifier = instanceArn, });
+        return response.Result.DBInstances is { Count: > 0 } ? null : response.Result.DBInstances.First();
+    }
+
+    public DBCluster? GetDBClusterByArn(string clusterId)
+    {
+        Task<DescribeDBClustersResponse> response = this.rdsClient.DescribeDBClustersAsync(
+            new DescribeDBClustersRequest { DBClusterIdentifier = clusterId, });
+        return response.Result.DBClusters is { Count: > 0 } ? response.Result.DBClusters[0] : null;
+    }
+
     public async Task WaitUntilClusterHasRightStateAsync(string clusterId, params string[] allowedStatuses)
     {
         var allowedStatusSet = new HashSet<string>(allowedStatuses.Select(s => s.ToLower()));
-        var timeout = TimeSpan.FromMinutes(15);
+        var timeout = FromMinutes(15);
         var stopwatch = Stopwatch.StartNew();
 
         string status = (await this.GetDBClusterAsync(clusterId))!.Status;
@@ -135,7 +164,7 @@ public class AuroraTestUtils
         Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Instance {instanceId} status: {status}, waiting for status: {string.Join(", ", allowedStatuses)}");
 
         var allowedStatusSet = new HashSet<string>(allowedStatuses.Select(s => s.ToLower()));
-        var timeout = TimeSpan.FromMinutes(15);
+        var timeout = FromMinutes(15);
         var stopwatch = Stopwatch.StartNew();
 
         while (!allowedStatusSet.Contains(status.ToLower()) && stopwatch.Elapsed < timeout)
@@ -285,7 +314,7 @@ public class AuroraTestUtils
                 // Swallow exception, retry
             }
 
-            Thread.Sleep(TimeSpan.FromSeconds(1));
+            Thread.Sleep(FromSeconds(1));
         }
 
         if (remainingTries <= 0 && fail)
@@ -313,7 +342,7 @@ public class AuroraTestUtils
             }
             catch (AmazonServiceException) when (i < 4)
             {
-                await Task.Delay(TimeSpan.FromSeconds(30));
+                await Task.Delay(FromSeconds(30));
             }
         }
 
@@ -420,7 +449,7 @@ public class AuroraTestUtils
         var host = TestEnvironment.Env.Info.DatabaseInfo.Instances[0].Host;
         var port = TestEnvironment.Env.Info.DatabaseInfo.Instances[0].Port;
         var connectionUrl = ConnectionStringHelper.GetUrl(databaseEngine, host, port, username, password, dbName, 30, 30, null, false);
-
+        Console.WriteLine($"Connecting with: {connectionUrl}");
         using var connection = DriverHelper.CreateUnopenedConnection(databaseEngine, connectionUrl);
         connection.Open();
 
@@ -507,7 +536,7 @@ public class AuroraTestUtils
             var startTime = Stopwatch.StartNew();
             while (hostIpAddress == null && startTime.Elapsed < timeout)
             {
-                Thread.Sleep(TimeSpan.FromSeconds(5));
+                Thread.Sleep(FromSeconds(5));
                 hostIpAddress = this.HostToIP(hostToCheck, false);
             }
 
@@ -527,7 +556,7 @@ public class AuroraTestUtils
         bool StillNotExpected() => expectEqual ? expectedHostIpAddress != hostIpAddress : expectedHostIpAddress == hostIpAddress;
         while (StillNotExpected() && checkStartTime.Elapsed < timeout)
         {
-            Thread.Sleep(TimeSpan.FromSeconds(5));
+            Thread.Sleep(FromSeconds(5));
             hostIpAddress = this.HostToIP(hostToCheck, false);
             Console.WriteLine($"{hostToCheck} resolves to {hostIpAddress}");
         }
@@ -670,7 +699,7 @@ public class AuroraTestUtils
 
         if (deployment == DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER)
         {
-            var simulationTask = this.SimulateTemporaryFailureTask(instanceId, TimeSpan.Zero, TimeSpan.FromSeconds(20), tcs);
+            var simulationTask = this.SimulateTemporaryFailureTask(instanceId, Zero, FromSeconds(20), tcs);
         }
         else
         {
@@ -699,7 +728,7 @@ public class AuroraTestUtils
             try
             {
                 Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Simulating temporary failure to {instanceName}...");
-                if (delay != TimeSpan.Zero)
+                if (delay != Zero)
                 {
                     await Task.Delay(delay);
                 }
@@ -738,28 +767,28 @@ public class AuroraTestUtils
             Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Cluster endpoint resolves to: {clusterIp}");
             var newClusterIp = this.HostToIP(clusterEndpoint, true);
 
-            var deadline = DateTime.UtcNow + TimeSpan.FromMinutes(10);
+            var deadline = DateTime.UtcNow + FromMinutes(10);
             while (clusterIp != null
                    && clusterIp == newClusterIp
                    && DateTime.UtcNow < deadline)
             {
-                await Task.Delay(TimeSpan.FromSeconds(1));
+                await Task.Delay(FromSeconds(1));
                 newClusterIp = this.HostToIP(clusterEndpoint, true);
             }
 
             Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Cluster endpoint resolves to (after wait): {newClusterIp}");
 
             // Wait for initial writer instance to be verified as not writer.
-            deadline = DateTime.UtcNow + TimeSpan.FromMinutes(10);
+            deadline = DateTime.UtcNow + FromMinutes(10);
             while (await this.IsDBInstanceWriterAsync(initialWriterId)
                 && DateTime.UtcNow < deadline)
             {
-                await Task.Delay(TimeSpan.FromSeconds(1));
+                await Task.Delay(FromSeconds(1));
             }
 
             var instancesWithoutInitialWriter = TestEnvironment.Env.Info.DatabaseInfo.Instances.Where(i => i.InstanceId != initialWriterId).ToList();
 
-            await this.MakeSureInstancesUpAsync(instancesWithoutInitialWriter, TimeSpan.FromMinutes(5));
+            await this.MakeSureInstancesUpAsync(instancesWithoutInitialWriter, FromMinutes(5));
         }
 
         Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Finished failover from {initialWriterId} to target: {targetWriterId}");
@@ -965,7 +994,7 @@ public class AuroraTestUtils
 
     public async Task<DBClusterEndpoint> WaitUntilEndpointAvailableAsync(string endpointId)
     {
-        var timeoutEnd = DateTime.UtcNow + TimeSpan.FromMinutes(5);
+        var timeoutEnd = DateTime.UtcNow + FromMinutes(5);
         var customEndpointFilter = new Filter
         {
             Name = "db-cluster-endpoint-type",
@@ -984,7 +1013,7 @@ public class AuroraTestUtils
 
             if (endpoints.Count != 1)
             {
-                await Task.Delay(TimeSpan.FromSeconds(3));
+                await Task.Delay(FromSeconds(3));
                 continue;
             }
 
@@ -994,7 +1023,7 @@ public class AuroraTestUtils
                 return endpoint;
             }
 
-            await Task.Delay(TimeSpan.FromSeconds(3));
+            await Task.Delay(FromSeconds(3));
         }
 
         throw new InvalidOperationException(
@@ -1026,7 +1055,7 @@ public class AuroraTestUtils
 
     public async Task WaitUntilEndpointHasMembersAsync(string endpointId, HashSet<string> expectedMembers)
     {
-        var timeoutEnd = DateTime.UtcNow + TimeSpan.FromMinutes(20);
+        var timeoutEnd = DateTime.UtcNow + FromMinutes(20);
 
         while (DateTime.UtcNow < timeoutEnd)
         {
@@ -1039,7 +1068,7 @@ public class AuroraTestUtils
 
             if (endpoints.Count != 1)
             {
-                await Task.Delay(TimeSpan.FromSeconds(3));
+                await Task.Delay(FromSeconds(3));
                 continue;
             }
 
@@ -1054,7 +1083,7 @@ public class AuroraTestUtils
                 return;
             }
 
-            await Task.Delay(TimeSpan.FromSeconds(3));
+            await Task.Delay(FromSeconds(3));
         }
 
         throw new InvalidOperationException(
@@ -1077,5 +1106,237 @@ public class AuroraTestUtils
             DatabaseEngine.PG => string.Equals(result, "True", StringComparison.OrdinalIgnoreCase) ? HostRole.Reader : HostRole.Writer,
             _ => HostRole.Unknown,
         };
+    }
+
+    public async Task<string> CreateBlueGreenDeployment(string name, string sourceArn)
+    {
+        var blueGreenName = "bgd-" + name;
+
+        CreateBlueGreenDeploymentResponse? response = null;
+        int count = 10;
+        while (response == null && count-- > 0)
+        {
+            try
+            {
+                response = await this.rdsClient.CreateBlueGreenDeploymentAsync(
+                    new CreateBlueGreenDeploymentRequest
+                    {
+                        BlueGreenDeploymentName = blueGreenName,
+                        Source = sourceArn,
+                        Tags = GetTag(),
+                    });
+            }
+            catch (AmazonRDSException ex)
+            {
+                if ((int)ex.StatusCode != 500 || count == 0)
+                {
+                    throw;
+                }
+
+                Logger.LogTrace("Can't send createBlueGreenDeployment request. Wait 1min and try again.");
+                await Task.Delay(FromMinutes(1));
+            }
+        }
+
+        if (response == null)
+        {
+            throw new InvalidOperationException("Can't send createBlueGreenDeployment request.");
+        }
+
+        if ((int)response.HttpStatusCode < 200 || (int)response.HttpStatusCode >= 300)
+        {
+            Logger.LogTrace("createBlueGreenDeployment response: {StatusCode}", response.HttpStatusCode);
+            throw new InvalidOperationException($"CreateBlueGreenDeployment failed with status {response.HttpStatusCode}");
+        }
+
+        Logger.LogTrace("createBlueGreenDeployment request is sent");
+
+        var blueGreenId = response.BlueGreenDeployment.BlueGreenDeploymentIdentifier;
+
+        var blueGreenDeployment = this.GetBlueGreenDeployment(blueGreenId)!;
+        var deadline = Stopwatch.GetTimestamp() + (FromMinutes(240).Ticks * (Stopwatch.Frequency / TicksPerSecond));
+        while ((blueGreenDeployment == null || !string.Equals(blueGreenDeployment.Status, "available", StringComparison.OrdinalIgnoreCase))
+               && Stopwatch.GetTimestamp() < deadline)
+        {
+            await Task.Delay(FromSeconds(60));
+            blueGreenDeployment = this.GetBlueGreenDeployment(blueGreenId);
+        }
+
+        if (blueGreenDeployment == null || !string.Equals(blueGreenDeployment.Status, "available", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException($"BlueGreen Deployment {blueGreenId} isn't available.");
+        }
+
+        return blueGreenId;
+    }
+
+    private async Task WaitUntilBlueGreenDeploymentHasRightState(string blueGreenId, params string[] allowedStatuses)
+    {
+        string status = this.GetBlueGreenDeployment(blueGreenId)?.Status ?? string.Empty;
+        Logger.LogTrace("BGD status: {Status}, waiting for status: {Allowed}", status, string.Join(", ", allowedStatuses));
+
+        var allowedStatusSet = new HashSet<string>(allowedStatuses, StringComparer.OrdinalIgnoreCase);
+        var deadline = DateTime.UtcNow.AddMinutes(15);
+
+        while (!allowedStatusSet.Contains(status) && DateTime.UtcNow < deadline)
+        {
+            await Task.Delay(1000);
+            var tmpStatus = this.GetBlueGreenDeployment(blueGreenId)?.Status ?? string.Empty;
+            if (!string.Equals(tmpStatus, status, StringComparison.OrdinalIgnoreCase))
+            {
+                Logger.LogTrace("BGD status (waiting): {Status}", tmpStatus);
+            }
+
+            status = tmpStatus;
+        }
+
+        Logger.LogTrace("BGD status (after wait): {Status}", status);
+
+        if (!allowedStatusSet.Contains(status))
+        {
+            throw new InvalidOperationException($"BlueGreen Deployment {blueGreenId} has wrong status.");
+        }
+    }
+
+    public async Task SwitchoverBlueGreenDeployment(string blueGreenId)
+    {
+        var response = await this.rdsClient.SwitchoverBlueGreenDeploymentAsync(
+            new SwitchoverBlueGreenDeploymentRequest
+            {
+                BlueGreenDeploymentIdentifier = blueGreenId,
+            });
+
+        if ((int)response.HttpStatusCode < 200 || (int)response.HttpStatusCode >= 300)
+        {
+            Logger.LogTrace("switchoverBlueGreenDeployment response: {StatusCode}", response.HttpStatusCode);
+            throw new InvalidOperationException($"Switchover failed with status {response.HttpStatusCode}");
+        }
+
+        Logger.LogTrace("switchoverBlueGreenDeployment request is sent");
+    }
+
+    private async Task<bool> DoesBlueGreenDeploymentExist(string blueGreenId)
+    {
+        try
+        {
+            var response = await this.rdsClient.DescribeBlueGreenDeploymentsAsync(
+                new DescribeBlueGreenDeploymentsRequest
+                {
+                    BlueGreenDeploymentIdentifier = blueGreenId,
+                });
+            return response.BlueGreenDeployments?.Count > 0;
+        }
+        catch (BlueGreenDeploymentNotFoundException)
+        {
+            Logger.LogTrace("blueGreenDeployments not found");
+            return false;
+        }
+    }
+
+    public BlueGreenDeployment? GetBlueGreenDeployment(string bgId)
+    {
+        try
+        {
+            Task<DescribeBlueGreenDeploymentsResponse> response = this.rdsClient.DescribeBlueGreenDeploymentsAsync(
+                new DescribeBlueGreenDeploymentsRequest { BlueGreenDeploymentIdentifier = bgId, });
+            return response.Result.BlueGreenDeployments is { Count: > 0 } ? response.Result.BlueGreenDeployments[0] : null;
+        }
+        catch (BlueGreenDeploymentNotFoundException)
+        {
+            return null;
+        }
+    }
+
+    public async Task<BlueGreenDeployment?> GetBlueGreenDeploymentBySource(string sourceArn)
+    {
+        try
+        {
+            var response = await this.rdsClient.DescribeBlueGreenDeploymentsAsync(
+                new DescribeBlueGreenDeploymentsRequest
+                {
+                    Filters = [new Filter { Name = "source", Values = [sourceArn] }],
+                });
+            return response.BlueGreenDeployments?.FirstOrDefault();
+        }
+        catch (BlueGreenDeploymentNotFoundException)
+        {
+            return null;
+        }
+    }
+
+    public async Task DeleteBlueGreenDeployment(string blueGreenId, bool waitForCompletion)
+    {
+        if (!await this.DoesBlueGreenDeploymentExist(blueGreenId))
+        {
+            return;
+        }
+
+        await this.WaitUntilBlueGreenDeploymentHasRightState(blueGreenId, "available", "switchover_completed");
+
+        var response = await this.rdsClient.DeleteBlueGreenDeploymentAsync(
+            new DeleteBlueGreenDeploymentRequest
+            {
+                BlueGreenDeploymentIdentifier = blueGreenId,
+            });
+
+        if ((int)response.HttpStatusCode < 200 || (int)response.HttpStatusCode >= 300)
+        {
+            Logger.LogTrace("deleteBlueGreenDeployment response: {StatusCode}", response.HttpStatusCode);
+            throw new InvalidOperationException($"DeleteBlueGreenDeployment failed with status {response.HttpStatusCode}");
+        }
+
+        Logger.LogTrace("deleteBlueGreenDeployment request is sent");
+
+        if (waitForCompletion)
+        {
+            var deadline = DateTime.UtcNow.AddMinutes(120);
+            while (await this.DoesBlueGreenDeploymentExist(blueGreenId) && DateTime.UtcNow < deadline)
+            {
+                await Task.Delay(FromMinutes(1));
+            }
+
+            if (await this.DoesBlueGreenDeploymentExist(blueGreenId))
+            {
+                throw new InvalidOperationException("Unable to delete Blue/Green Deployment after waiting for 120 minutes");
+            }
+        }
+    }
+
+    private static List<Tag> GetTag()
+    {
+        var timeStr = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow,
+                TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles"))
+            .ToString("yyyy-MM-dd HH:mm:ss 'PST'");
+
+        return
+        [
+            new Tag { Key = "env", Value = "test-runner" },
+            new Tag { Key = "created", Value = timeStr }
+        ];
+    }
+
+    public async Task<DBCluster> GetClusterInfo(string? clusterId)
+    {
+        var response = await this.rdsClient.DescribeDBClustersAsync(new DescribeDBClustersRequest
+        {
+            DBClusterIdentifier = clusterId,
+        });
+
+        return response.DBClusters?.FirstOrDefault()
+               ?? throw new InvalidOperationException($"Cluster {clusterId} not found.");
+    }
+
+    public async Task<DBCluster?> GetClusterByArn(string clusterArn)
+    {
+        DescribeDBClustersRequest request = new DescribeDBClustersRequest
+        {
+            Filters =
+            [
+                new Filter { Name = "db-cluster-id", Values = [clusterArn] }
+            ],
+        };
+        var response = await this.rdsClient.DescribeDBClustersAsync(request);
+
+        return response.DBClusters?.FirstOrDefault();
     }
 }

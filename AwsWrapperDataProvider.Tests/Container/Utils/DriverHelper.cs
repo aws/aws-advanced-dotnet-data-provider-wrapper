@@ -30,4 +30,19 @@ public class DriverHelper
         };
         return connection;
     }
+
+    public static string GetHostnameSql()
+    {
+        return GetHostnameSql(TestEnvironment.Env.Info.Request.Engine);
+    }
+
+    public static string GetHostnameSql(DatabaseEngine databaseEngine)
+    {
+        return databaseEngine switch
+        {
+            DatabaseEngine.MYSQL => "SELECT @@hostname",
+            DatabaseEngine.PG => "SELECT pg_catalog.inet_server_addr()",
+            _ => throw new NotSupportedException(databaseEngine.ToString()),
+        };
+    }
 }

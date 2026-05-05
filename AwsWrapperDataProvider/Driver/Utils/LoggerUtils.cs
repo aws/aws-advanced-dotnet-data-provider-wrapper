@@ -34,9 +34,12 @@ public static class LoggerUtils
             LogLevel logLevel = Enum.TryParse<LogLevel>(MinimumLogLevel, true, out var result) ? result : LogLevel.Trace;
 
             builder
-                .SetMinimumLevel(logLevel)
+                .SetMinimumLevel(LogLevel.Trace)
                 .AddDebug()
-                .AddConsole(options => options.FormatterName = "simple");
+                .AddSimpleConsole(options =>
+                {
+                    options.IncludeScopes = true;
+                });
 
             builder.AddSimpleConsole(options =>
             {
@@ -46,7 +49,7 @@ public static class LoggerUtils
                 options.ColorBehavior = LoggerColorBehavior.Enabled;
             });
 
-            if (EnabledFileLog)
+            if (true)
             {
                 builder.AddProvider(loggerProvider);
             }
