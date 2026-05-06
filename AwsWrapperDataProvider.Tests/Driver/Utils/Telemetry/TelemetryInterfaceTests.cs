@@ -20,8 +20,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.Utils.Telemetry;
 /// <summary>
 /// Contract tests for the telemetry interfaces. These tests verify that the
 /// interfaces compile, can be mocked with Moq, and expose the members
-/// required by the wrapper-telemetry spec. Implementation behaviour is
-/// covered by the per-implementation test classes added in later tasks.
+/// required by the wrapper-telemetry spec.
 /// </summary>
 public class TelemetryInterfaceTests
 {
@@ -29,7 +28,7 @@ public class TelemetryInterfaceTests
     [Trait("Category", "Unit")]
     public void TelemetryTraceLevel_DefinesExactlyFourValues()
     {
-        // Requirements 2.5: enum with values ForceTopLevel, TopLevel, Nested, NoTrace.
+        // Enum with values ForceTopLevel, TopLevel, Nested, NoTrace.
         string[] values = Enum.GetNames<TelemetryTraceLevel>();
         Assert.Equal(4, values.Length);
         Assert.Contains(nameof(TelemetryTraceLevel.ForceTopLevel), values);
@@ -42,7 +41,7 @@ public class TelemetryInterfaceTests
     [Trait("Category", "Unit")]
     public void ITelemetryContext_MockRecordsAllInteractions()
     {
-        // Requirements 2.2, 2.7: SetSuccess, SetAttribute, SetException, GetName, CloseContext.
+        // SetSuccess, SetAttribute, SetException, GetName, CloseContext.
         Mock<ITelemetryContext> mock = new();
         mock.Setup(c => c.GetName()).Returns("span-name");
 
@@ -65,7 +64,6 @@ public class TelemetryInterfaceTests
     [Trait("Category", "Unit")]
     public void ITelemetryCounter_MockRecordsAddAndInc()
     {
-        // Requirements 2.3: Add(long) and Inc().
         Mock<ITelemetryCounter> mock = new();
         ITelemetryCounter counter = mock.Object;
 
@@ -80,7 +78,7 @@ public class TelemetryInterfaceTests
     [Trait("Category", "Unit")]
     public void ITelemetryGauge_IsMockableMarkerInterface()
     {
-        // Requirements 2.4: gauge is a marker interface; nothing to mock on the instance itself.
+        // Gauge is a marker interface; nothing to mock on the instance itself.
         Mock<ITelemetryGauge> mock = new();
         Assert.NotNull(mock.Object);
         Assert.IsAssignableFrom<ITelemetryGauge>(mock.Object);
@@ -90,7 +88,7 @@ public class TelemetryInterfaceTests
     [Trait("Category", "Unit")]
     public void ITelemetryFactory_MockRoutesAllCreationMethods()
     {
-        // Requirements 2.1, 2.6, 14.2: OpenTelemetryContext, PostCopy, CreateCounter, CreateGauge.
+        // OpenTelemetryContext, PostCopy, CreateCounter, CreateGauge.
         Mock<ITelemetryContext> contextMock = new();
         Mock<ITelemetryCounter> counterMock = new();
         Mock<ITelemetryGauge> gaugeMock = new();
