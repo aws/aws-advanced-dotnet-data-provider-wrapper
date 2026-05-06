@@ -33,6 +33,7 @@ public class MultiAzTopologyUtils : TopologyUtils
 
     private readonly IMultiAzClusterDialect multiAzDialect;
     private readonly string nodeIdQuery;
+    private string? cachedWriterId;
 
     public MultiAzTopologyUtils(
         HostSpecBuilder hostSpecBuilder,
@@ -68,7 +69,9 @@ public class MultiAzTopologyUtils : TopologyUtils
         HostSpec instanceTemplate,
         CancellationToken ct)
     {
-        string? writerId = await this.GetWriterIdAsync(connection, ct);
+        // Note: writerId is retrieved before this method is called (in QueryForTopologyAsync override)
+        // and stored in cachedWriterId to avoid "connection already in use" error
+        string? writerId = this.cachedWriterId;
 
         // Data in the result set is ordered by last update time, so the latest records are last.
         // We add hosts to a map to ensure newer records replace the older ones.
@@ -92,6 +95,24 @@ public class MultiAzTopologyUtils : TopologyUtils
         }
 
         return [.. hostsMap.Values];
+    }
+
+    /// <summary>
+    /// Overrides the base to fetch the writer ID before opening the topology reader.
+    /// This avoids "connection already in use" errors with MySQL which doesn't support MARS.
+    /// </summary>
+    public override async Task<List<HostSpec>?> QueryForTopologyAsync(
+        DbConnection connection,
+        HostSpec initialHostSpec,
+        HostSpec clusterInstanceTemplate,
+        IHostListProviderService hostListProviderService,
+        CancellationToken ct = default)
+    {
+        // Get writer ID first, before opening the topology reader
+        this.cachedWriterId = await this.GetWriterIdAsync(connection, ct);
+
+        // Now run the base implementation which will open the topology reader and call GetHostsAsync
+        return await base.QueryForTopologyAsync(connection, initialHostSpec, clusterInstanceTemplate, hostListProviderService, ct);
     }
 
     protected HostSpec CreateHost(
