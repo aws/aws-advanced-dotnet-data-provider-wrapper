@@ -230,6 +230,9 @@
   <data name="ClusterTopologyMonitor_UpdateTopologyCache_TopologyUpdate" xml:space="preserve">
     <value>UpdateTopologyCache:</value>
   </data>
+  <data name="ClusterTopologyMonitor_MatchingReaderTopologies" xml:space="preserve">
+    <value>The topologies detected by the reader monitors have been consistent for {0}ms, so their topology will be assumed to be correct.</value>
+  </data>
   <data name="ClusterTopologyMonitor_WaitTillTopologyGetsUpdated_EndTime" xml:space="preserve">
     <value>Waiting for topology update with timeout {0}ms, will stop waiting at {1}.</value>
   </data>
