@@ -798,6 +798,15 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The topologies detected by the reader monitors have been consistent for {0}ms, so their topology will be assumed to be correct..
+        /// </summary>
+        internal static string ClusterTopologyMonitor_MatchingReaderTopologies {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor_MatchingReaderTopologies", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Waiting for topology update with timeout {0}ms, will stop waiting at {1}..
         /// </summary>
         internal static string ClusterTopologyMonitor_WaitTillTopologyGetsUpdated_EndTime {

@@ -28,8 +28,7 @@ namespace AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 /// </summary>
 public class GlobalAuroraTopologyMonitor : ClusterTopologyMonitor
 {
-    private static readonly ILogger<GlobalAuroraTopologyMonitor> Logger =
-        LoggerUtils.GetLogger<GlobalAuroraTopologyMonitor>();
+    private static readonly ILogger<GlobalAuroraTopologyMonitor> Logger = LoggerUtils.GetLogger<GlobalAuroraTopologyMonitor>();
 
     private readonly Dictionary<string, HostSpec> instanceTemplatesByRegion;
     private readonly GlobalAuroraTopologyUtils globalTopologyUtils;
@@ -73,8 +72,7 @@ public class GlobalAuroraTopologyMonitor : ClusterTopologyMonitor
         {
             if (!this.instanceTemplatesByRegion.TryGetValue(region, out HostSpec? instanceTemplate))
             {
-                throw new InvalidOperationException(
-                    string.Format(Resources.Error_CannotFindInstanceTemplateForRegion, region));
+                throw new InvalidOperationException(string.Format(Resources.Error_CannotFindInstanceTemplateForRegion, region));
             }
 
             return instanceTemplate;

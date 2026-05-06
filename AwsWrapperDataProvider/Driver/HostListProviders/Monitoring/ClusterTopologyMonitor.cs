@@ -69,6 +69,12 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
     protected volatile IList<HostSpec>? nodeThreadsLatestTopology;
     protected bool disposed = false;
 
+    // Stable reader topology tracking
+    protected readonly ConcurrentDictionary<string, IList<HostSpec>> readerTopologiesById = new();
+    protected readonly ConcurrentDictionary<string, bool> completedOneCycle = new();
+    protected static readonly TimeSpan StableTopologiesDuration = TimeSpan.FromSeconds(15);
+    protected long stableTopologiesStartTicks = 0;
+
     private int requestToUpdateTopology = 0;
     private int nodeThreadsStop = 0;
 
@@ -217,6 +223,9 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                             this.ctsNodeMonitoring.Cancel();
                             Logger.LogTrace(Resources.ClusterTopologyMonitor_RunMonitoringLoop_Clearing);
                             this.nodeThreads.Clear();
+                            this.stableTopologiesStartTicks = 0;
+                            this.readerTopologiesById.Clear();
+                            this.completedOneCycle.Clear();
                             continue;
                         }
 
@@ -244,6 +253,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                         }
                     }
 
+                    this.CheckForStableReaderTopologies();
                     await this.DelayAsync(true);
                 }
                 else
@@ -256,6 +266,9 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                         this.ctsNodeMonitoring.Cancel();
                         Logger.LogTrace(Resources.ClusterTopologyMonitor_RunMonitoringLoop_Clearing);
                         this.nodeThreads.Clear();
+                        this.stableTopologiesStartTicks = 0;
+                        this.readerTopologiesById.Clear();
+                        this.completedOneCycle.Clear();
                     }
 
                     var hosts = await this.FetchTopologyAndUpdateCacheAsync(this.monitoringConnection);
@@ -615,6 +628,78 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         }
     }
 
+    /// <summary>
+    /// Checks whether all reader node monitors report a consistent topology for a sustained period.
+    /// If so, updates the topology cache — unblocking <see cref="WaitTillTopologyGetsUpdated"/>.
+    /// This handles the case where the writer is unreachable but no actual failover occurred.
+    /// </summary>
+    protected void CheckForStableReaderTopologies()
+    {
+        var latestHosts = this.topologyMap.Get<IList<HostSpec>>(this.clusterId);
+        if (latestHosts == null || latestHosts.Count == 0)
+        {
+            Interlocked.Exchange(ref this.stableTopologiesStartTicks, 0);
+            return;
+        }
+
+        // Ensure all node monitors have completed at least one cycle
+        var readerIds = latestHosts.Select(h => h.HostId).Where(id => id != null).ToList();
+        foreach (var id in readerIds)
+        {
+            if (!this.completedOneCycle.GetValueOrDefault(id!, false))
+            {
+                Interlocked.Exchange(ref this.stableTopologiesStartTicks, 0);
+                return;
+            }
+        }
+
+        // Get the first reader topology as reference
+        var readerTopologyFirstEntry = this.readerTopologiesById.Values.FirstOrDefault();
+        if (readerTopologyFirstEntry == null || readerTopologyFirstEntry.Count == 0)
+        {
+            Interlocked.Exchange(ref this.stableTopologiesStartTicks, 0);
+            return;
+        }
+
+        // Check whether all reader topologies match (comparing host, port, role, availability)
+        var referenceKey = readerTopologyFirstEntry
+            .Select(h => (h.Host, h.Port, h.Role, h.Availability))
+            .OrderBy(t => t.Host)
+            .ToList();
+
+        foreach (var topology in this.readerTopologiesById.Values.Skip(1))
+        {
+            var key = topology
+                .Select(h => (h.Host, h.Port, h.Role, h.Availability))
+                .OrderBy(t => t.Host)
+                .ToList();
+
+            if (!referenceKey.SequenceEqual(key))
+            {
+                Interlocked.Exchange(ref this.stableTopologiesStartTicks, 0);
+                return;
+            }
+        }
+
+        // All reader topologies match
+        long startTicks = Interlocked.Read(ref this.stableTopologiesStartTicks);
+        if (startTicks == 0)
+        {
+            Interlocked.Exchange(ref this.stableTopologiesStartTicks, DateTime.UtcNow.Ticks);
+            return;
+        }
+
+        var elapsed = DateTime.UtcNow - new DateTime(startTicks, DateTimeKind.Utc);
+        if (elapsed >= StableTopologiesDuration)
+        {
+            Interlocked.Exchange(ref this.stableTopologiesStartTicks, 0);
+            Logger.LogDebug(
+                Resources.ClusterTopologyMonitor_MatchingReaderTopologies,
+                (long)elapsed.TotalMilliseconds);
+            this.UpdateTopologyCache(readerTopologyFirstEntry);
+        }
+    }
+
     protected virtual async Task<IList<HostSpec>?> QueryForTopologyAsync(DbConnection connection)
     {
         await this.monitoringConnectionSemaphore.WaitAsync();
@@ -709,6 +794,8 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                             monitor.pluginService.SetAvailability(hostSpec.AsAliases(), HostAvailability.Unavailable);
                             await monitor.DisposeConnectionAsync(connection);
                             connection = null;
+                            monitor.completedOneCycle[hostSpec.HostId!] = true;
+                            monitor.readerTopologiesById.TryRemove(hostSpec.HostId!, out _);
                         }
                     }
 
@@ -740,6 +827,8 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                                 // Invalid connection, retry on the next loop iteration.
                                 await monitor.DisposeConnectionAsync(connection);
                                 connection = null;
+                                monitor.completedOneCycle[hostSpec.HostId!] = true;
+                                monitor.readerTopologiesById.TryRemove(hostSpec.HostId!, out _);
                                 await Task.Delay(100, token);
                                 continue;
                             }
@@ -777,10 +866,15 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                                     updateTopology = true;
                                     await this.ReaderThreadFetchTopologyAsync(connection);
                                 }
+                                else
+                                {
+                                    await this.ReaderThreadFetchTopologyAsync(connection);
+                                }
                             }
                         }
                     }
 
+                    monitor.completedOneCycle[hostSpec.HostId!] = true;
                     await Task.Delay(100, token);
                 }
             }
@@ -795,6 +889,8 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             }
             finally
             {
+                monitor.completedOneCycle[hostSpec.HostId!] = true;
+                monitor.readerTopologiesById.TryRemove(hostSpec.HostId!, out _);
                 await monitor.DisposeConnectionAsync(connection);
                 LoggerUtils.MonitoringLogWithHost(hostSpec, NodeMonitorLogger, LogLevel.Trace, string.Format(Resources.NodeMonitoringTask_ThreadCompleted, RuntimeHelpers.GetHashCode(this), (DateTime.UtcNow - start).TotalMilliseconds));
             }
@@ -811,6 +907,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                 }
 
                 monitor.nodeThreadsLatestTopology = hosts;
+                monitor.readerTopologiesById[hostSpec.HostId!] = hosts;
                 var latestWriterHostSpec = hosts.FirstOrDefault(x => x.Role == HostRole.Writer);
 
                 if (this.writerChanged)
