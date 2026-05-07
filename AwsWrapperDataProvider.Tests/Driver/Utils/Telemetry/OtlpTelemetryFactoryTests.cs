@@ -49,7 +49,7 @@ public class OtlpTelemetryFactoryTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void InstrumentationName_MatchesSpec()
+    public void InstrumentationName_IsExpected()
     {
         Assert.Equal("aws-advanced-dotnet-wrapper", OtlpTelemetryFactory.InstrumentationName);
     }

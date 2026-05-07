@@ -105,10 +105,10 @@ public class PluginServiceTelemetryTests
     [Trait("Category", "Unit")]
     public void TelemetryFactory_WhenEnabledButBackendsAreNone_StillRoutesThroughDefaultTelemetryFactory()
     {
-        // Even with both backends NONE, enabling telemetry creates a
-        // DefaultTelemetryFactory (which internally routes to Null). The spec
-        // literal is "enableTelemetry=false → NullTelemetryFactory singleton";
-        // any other configuration yields the router.
+        // Even with both backends NONE, enabling telemetry instantiates a
+        // DefaultTelemetryFactory (which internally routes to Null). The
+        // disabled case is the only path that assigns the NullTelemetryFactory
+        // singleton directly; any other configuration yields the router.
         Dictionary<string, string> props = MinimumProps();
         props["EnableTelemetry"] = "true";
 

@@ -14,6 +14,7 @@
 
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
+using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Utils.Telemetry;
 
@@ -39,6 +40,9 @@ public sealed class OtlpTelemetryFactory : ITelemetryFactory
     public const string InstrumentationName = "aws-advanced-dotnet-wrapper";
 
     private const string CopyPrefix = "copy: ";
+
+    private static readonly ILogger<OtlpTelemetryFactory> Logger =
+        LoggerUtils.GetLogger<OtlpTelemetryFactory>();
 
     private static readonly ActivitySource TelemetryActivitySource = new(InstrumentationName);
     private static readonly Meter TelemetryMeter = new(InstrumentationName);
@@ -132,10 +136,14 @@ public sealed class OtlpTelemetryFactory : ITelemetryFactory
             Counter<long> counter = TelemetryMeter.CreateCounter<long>(name);
             return new OtlpTelemetryCounter(counter);
         }
-        catch
+        catch (Exception ex)
         {
             // Telemetry failures must not break database operations; fall
             // back to a no-op counter.
+            Logger.LogDebug(
+                ex,
+                "Failed to create OTLP counter '{CounterName}'; falling back to NullTelemetryCounter.",
+                name);
             return NullTelemetryCounter.Instance;
         }
     }
@@ -150,8 +158,12 @@ public sealed class OtlpTelemetryFactory : ITelemetryFactory
             TelemetryMeter.CreateObservableGauge(name, valueCallback);
             return new OtlpTelemetryGauge();
         }
-        catch
+        catch (Exception ex)
         {
+            Logger.LogDebug(
+                ex,
+                "Failed to create OTLP gauge '{GaugeName}'; falling back to NullTelemetryGauge.",
+                name);
             return NullTelemetryGauge.Instance;
         }
     }

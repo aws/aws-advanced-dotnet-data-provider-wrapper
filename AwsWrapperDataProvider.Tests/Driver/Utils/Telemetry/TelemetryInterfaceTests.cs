@@ -19,8 +19,9 @@ namespace AwsWrapperDataProvider.Tests.Driver.Utils.Telemetry;
 
 /// <summary>
 /// Contract tests for the telemetry interfaces. These tests verify that the
-/// interfaces compile, can be mocked with Moq, and expose the members
-/// required by the wrapper-telemetry spec.
+/// interfaces compile, can be mocked with Moq, and expose the expected
+/// members of the public telemetry surface. Implementation behaviour is
+/// covered by the per-implementation test classes.
 /// </summary>
 public class TelemetryInterfaceTests
 {

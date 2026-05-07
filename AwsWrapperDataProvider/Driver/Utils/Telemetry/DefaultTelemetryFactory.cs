@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Collections.Concurrent;
+using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Utils.Telemetry;
 
@@ -47,6 +48,9 @@ namespace AwsWrapperDataProvider.Driver.Utils.Telemetry;
 /// </remarks>
 public sealed class DefaultTelemetryFactory : ITelemetryFactory
 {
+    private static readonly ILogger<DefaultTelemetryFactory> Logger =
+        LoggerUtils.GetLogger<DefaultTelemetryFactory>();
+
     private static readonly ConcurrentDictionary<string, ITelemetryFactory> RegisteredFactories = new();
 
     private readonly ITelemetryFactory tracesFactory;
@@ -141,8 +145,21 @@ public sealed class DefaultTelemetryFactory : ITelemetryFactory
             return OtlpTelemetryFactory.Instance;
         }
 
-        return RegisteredFactories.TryGetValue(normalized, out ITelemetryFactory? factory)
-            ? factory
-            : NullTelemetryFactory.Instance;
+        if (RegisteredFactories.TryGetValue(normalized, out ITelemetryFactory? factory))
+        {
+            return factory;
+        }
+
+        // Only log when the caller provided a non-empty value that we did not
+        // recognize. An empty string or "NONE" is the documented disabled value
+        // and should not produce log noise.
+        if (normalized.Length > 0 && normalized != "NONE")
+        {
+            Logger.LogDebug(
+                "Telemetry backend '{Backend}' is not recognized or not registered; falling back to NullTelemetryFactory.",
+                backend);
+        }
+
+        return NullTelemetryFactory.Instance;
     }
 }

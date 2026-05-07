@@ -112,7 +112,7 @@ public class PluginService : IPluginService, IHostListProviderService
         this.hostListProvider =
             this.Dialect.HostListProviderSupplier(this.props, this, this)
             ?? throw new InvalidOperationException(); // TODO : throw proper error
-            
+
         this.TelemetryFactory = PropertyDefinition.EnableTelemetry.GetBoolean(this.props)
             ? new DefaultTelemetryFactory(this.props)
             : NullTelemetryFactory.Instance;
