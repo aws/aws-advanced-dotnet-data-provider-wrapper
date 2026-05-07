@@ -23,6 +23,7 @@ using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Driver.Utils.Telemetry;
 using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
@@ -63,6 +64,16 @@ public class PluginService : IPluginService, IHostListProviderService
     public HostSpecBuilder HostSpecBuilder { get => new HostSpecBuilder(); }
     public DbConnection? CurrentConnection { get; private set; }
 
+    /// <summary>
+    /// Gets the telemetry factory used to produce trace contexts and metric
+    /// instruments. Initialized in the primary constructor based on the
+    /// <c>EnableTelemetry</c>, <c>TelemetryTracesBackend</c>, and
+    /// <c>TelemetryMetricsBackend</c> connection properties. Defaults to
+    /// <see cref="NullTelemetryFactory.Instance"/> so the test-only
+    /// parameterless constructor still yields a safe no-op factory.
+    /// </summary>
+    public ITelemetryFactory TelemetryFactory { get; private set; } = NullTelemetryFactory.Instance;
+
     public DbTransaction? CurrentTransaction
     {
         get => this.transaction;
@@ -101,6 +112,10 @@ public class PluginService : IPluginService, IHostListProviderService
         this.hostListProvider =
             this.Dialect.HostListProviderSupplier(this.props, this, this)
             ?? throw new InvalidOperationException(); // TODO : throw proper error
+            
+        this.TelemetryFactory = PropertyDefinition.EnableTelemetry.GetBoolean(this.props)
+            ? new DefaultTelemetryFactory(this.props)
+            : NullTelemetryFactory.Instance;
     }
 
     // for testing purpose only

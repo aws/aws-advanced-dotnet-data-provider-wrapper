@@ -43,7 +43,6 @@ public class DefaultTelemetryFactoryTests
         return listener;
     }
 
-
     [Fact]
     [Trait("Category", "Unit")]
     public void Disabled_AllOperations_RouteToNullFactory()
