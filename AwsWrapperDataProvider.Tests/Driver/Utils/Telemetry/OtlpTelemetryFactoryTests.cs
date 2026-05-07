@@ -51,7 +51,7 @@ public class OtlpTelemetryFactoryTests
     [Trait("Category", "Unit")]
     public void InstrumentationName_MatchesSpec()
     {
-        Assert.Equal("Amazon.AwsWrapperDataProvider", OtlpTelemetryFactory.InstrumentationName);
+        Assert.Equal("aws-advanced-dotnet-wrapper", OtlpTelemetryFactory.InstrumentationName);
     }
 
     [Fact]
