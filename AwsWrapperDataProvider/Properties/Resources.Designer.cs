@@ -2680,6 +2680,15 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Skipping disposal of cluster topology monitor for clusterId: {0} (eviction reason: {1}); monitor is being transferred to a new clusterId..
+        /// </summary>
+        internal static string MonitoringRdsHostListProvider_OnMonitorEvicted_SkipTransfer {
+            get {
+                return ResourceManager.GetString("MonitoringRdsHostListProvider_OnMonitorEvicted_SkipTransfer", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Error disposing cluster topology monitor: {message}..
         /// </summary>
         internal static string MonitoringRdsHostListProvider_OnMonitorEvicted_Error {

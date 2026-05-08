@@ -94,7 +94,7 @@ public class GlobalAuroraPgDialect : AuroraPgDialect, IGlobalAuroraTopologyDiale
             new GlobalAuroraHostListProvider(
                 props,
                 hostListProviderService,
-                "SELECT pg_catalog.aurora_db_instance_identifier(), pg_catalog.aurora_db_instance_identifier()",
+                NodeIdQuery,
                 pluginService,
                 new GlobalAuroraTopologyUtils(this, hostListProviderService.HostSpecBuilder));
     }

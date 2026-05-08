@@ -135,6 +135,8 @@ public abstract class TopologyUtils
             .WithLastUpdateTime(lastUpdateTime)
             .Build();
 
+        host.AddAlias(instanceName);
+
         return host;
     }
 

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections.Concurrent;
 using System.Data.Common;
 using System.Globalization;
 using AwsWrapperDataProvider.Driver.HostInfo;
@@ -43,6 +44,13 @@ public class RdsHostListProvider : IDynamicHostListProvider
     {
         SizeLimit = 100,
     });
+
+    /// <summary>
+    /// Tracks cluster IDs whose monitor entries are being transferred to a new cluster ID.
+    /// While a key is in this set, <see cref="OnMonitorEvicted"/> skips disposing the monitor
+    /// because the monitor is still referenced by another cache entry.
+    /// </summary>
+    private static readonly ConcurrentDictionary<string, byte> TransferringClusterIds = new();
 
     protected readonly Lazy<object> init;
     protected readonly Dictionary<string, string> properties;
@@ -251,7 +259,20 @@ public class RdsHostListProvider : IDynamicHostListProvider
 
     protected internal virtual async Task<IList<HostSpec>?> ForceRefreshMonitorAsync(bool shouldVerifyWriter, long timeoutMs)
     {
-        IClusterTopologyMonitor monitor = Monitors.Get<IClusterTopologyMonitor>(this.ClusterId) ?? this.InitMonitor();
+        var lazyMonitor = Monitors.GetOrCreate(this.ClusterId, entry =>
+        {
+            var options = this.CreateCacheEntryOptions();
+            entry.AbsoluteExpirationRelativeToNow = options.AbsoluteExpirationRelativeToNow;
+            entry.Size = options.Size;
+            foreach (var callback in options.PostEvictionCallbacks)
+            {
+                entry.PostEvictionCallbacks.Add(callback);
+            }
+
+            return new Lazy<IClusterTopologyMonitor>(() => this.CreateMonitor());
+        });
+
+        var monitor = lazyMonitor!.Value;
         try
         {
             return await monitor.ForceRefreshAsync(shouldVerifyWriter, timeoutMs);
@@ -263,26 +284,23 @@ public class RdsHostListProvider : IDynamicHostListProvider
         }
     }
 
-    protected virtual IClusterTopologyMonitor InitMonitor()
+    protected virtual IClusterTopologyMonitor CreateMonitor()
     {
         Logger.LogTrace(Resources.MonitoringRdsHostListProvider_InitMonitor, this.ClusterId);
 
-        return Monitors.Set(
+        return new ClusterTopologyMonitor(
             this.ClusterId,
-            new ClusterTopologyMonitor(
-                this.ClusterId,
-                TopologyCache,
-                this.initialHostSpec!,
-                this.properties,
-                this.pluginService,
-                this.hostListProviderService,
-                this.clusterInstanceTemplate!,
-                this.topologyRefreshRate,
-                this.highRefreshRate,
-                TopologyCacheExpirationTime,
-                this.nodeIdQuery,
-                this.topologyUtils),
-            this.CreateCacheEntryOptions());
+            TopologyCache,
+            this.initialHostSpec!,
+            this.properties,
+            this.pluginService,
+            this.hostListProviderService,
+            this.clusterInstanceTemplate!,
+            this.topologyRefreshRate,
+            this.highRefreshRate,
+            TopologyCacheExpirationTime,
+            this.nodeIdQuery,
+            this.topologyUtils);
     }
 
     protected virtual void ClusterIdChanged(string oldClusterId)
@@ -295,16 +313,30 @@ public class RdsHostListProvider : IDynamicHostListProvider
     private void TransferExistingMonitor(string oldClusterId)
     {
         Logger.LogTrace(Resources.MonitoringRdsHostListProvider_TransferExistingMonitor, oldClusterId);
-        var existingMonitor = Monitors.Get<IClusterTopologyMonitor>(oldClusterId);
-        if (existingMonitor == null)
+        var existingLazyMonitor = Monitors.Get<Lazy<IClusterTopologyMonitor>>(oldClusterId);
+        if (existingLazyMonitor == null)
         {
             return;
         }
 
         var cacheOptions = this.CreateCacheEntryOptions();
-        Monitors.Set(this.ClusterId, existingMonitor, cacheOptions);
-        existingMonitor.SetClusterId(this.ClusterId);
-        Monitors.Remove(oldClusterId);
+        Monitors.Set(this.ClusterId, existingLazyMonitor, cacheOptions);
+        if (existingLazyMonitor.IsValueCreated)
+        {
+            existingLazyMonitor.Value.SetClusterId(this.ClusterId);
+        }
+
+        // Mark the old key as "in transfer" so the eviction callback does not dispose
+        // the monitor that is now owned by the new cache entry.
+        TransferringClusterIds.TryAdd(oldClusterId, 0);
+        try
+        {
+            Monitors.Remove(oldClusterId);
+        }
+        finally
+        {
+            TransferringClusterIds.TryRemove(oldClusterId, out _);
+        }
     }
 
     private void TransferCachedTopology(string oldClusterId)
@@ -318,12 +350,20 @@ public class RdsHostListProvider : IDynamicHostListProvider
 
     private void OnMonitorEvicted(object key, object? value, EvictionReason reason, object? state)
     {
-        if (value is IClusterTopologyMonitor evictedMonitor)
+        // If this key is currently being transferred to a new cluster ID, the monitor is
+        // still in use under the new key and must not be disposed.
+        if (key is string keyString && TransferringClusterIds.ContainsKey(keyString))
+        {
+            Logger.LogTrace(Resources.MonitoringRdsHostListProvider_OnMonitorEvicted_SkipTransfer, key, reason);
+            return;
+        }
+
+        if (value is Lazy<IClusterTopologyMonitor> lazyMonitor && lazyMonitor.IsValueCreated)
         {
             try
             {
                 Logger.LogTrace(Resources.MonitoringRdsHostListProvider_OnMonitorEvicted_Disposing, key, reason);
-                evictedMonitor.Dispose();
+                lazyMonitor.Value.Dispose();
             }
             catch (Exception ex)
             {

@@ -701,6 +701,9 @@
   <data name="MonitoringRdsHostListProvider_OnMonitorEvicted_Disposing" xml:space="preserve">
     <value>Disposing cluster topology monitor for clusterId: {0} due to eviction reason: {1}.</value>
   </data>
+  <data name="MonitoringRdsHostListProvider_OnMonitorEvicted_SkipTransfer" xml:space="preserve">
+    <value>Skipping disposal of cluster topology monitor for clusterId: {0} (eviction reason: {1}); monitor is being transferred to a new clusterId.</value>
+  </data>
   <data name="MonitoringRdsHostListProvider_OnMonitorEvicted_Error" xml:space="preserve">
     <value>Error disposing cluster topology monitor: {message}.</value>
   </data>

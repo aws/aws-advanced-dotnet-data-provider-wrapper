@@ -62,26 +62,23 @@ public class GlobalAuroraHostListProvider : RdsHostListProvider
     /// Overrides monitor creation to create a <see cref="GlobalAuroraTopologyMonitor"/>
     /// with <see cref="GlobalAuroraTopologyUtils"/> for multi-region topology.
     /// </summary>
-    protected override IClusterTopologyMonitor InitMonitor()
+    protected override IClusterTopologyMonitor CreateMonitor()
     {
         Logger.LogTrace(Resources.GlobalAuroraHostListProvider_InitMonitor_Initializing, this.ClusterId);
         this.topologyUtils.SetInstanceTemplatesByRegion(this.instanceTemplatesByRegion);
-        return Monitors.Set(
+        return new GlobalAuroraTopologyMonitor(
             this.ClusterId,
-            new GlobalAuroraTopologyMonitor(
-                this.ClusterId,
-                TopologyCache,
-                this.initialHostSpec!,
-                this.properties,
-                this.pluginService,
-                this.hostListProviderService,
-                this.clusterInstanceTemplate!,
-                this.topologyRefreshRate,
-                this.highRefreshRate,
-                TopologyCacheExpirationTime,
-                this.nodeIdQuery,
-                this.topologyUtils,
-                this.instanceTemplatesByRegion),
-            this.CreateCacheEntryOptions());
+            TopologyCache,
+            this.initialHostSpec!,
+            this.properties,
+            this.pluginService,
+            this.hostListProviderService,
+            this.clusterInstanceTemplate!,
+            this.topologyRefreshRate,
+            this.highRefreshRate,
+            TopologyCacheExpirationTime,
+            this.nodeIdQuery,
+            this.topologyUtils,
+            this.instanceTemplatesByRegion);
     }
 }

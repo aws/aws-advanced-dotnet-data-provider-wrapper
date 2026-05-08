@@ -90,7 +90,7 @@ public class GlobalAuroraMySqlDialect : AuroraMySqlDialect, IGlobalAuroraTopolog
             new GlobalAuroraHostListProvider(
                 props,
                 hostListProviderService,
-                "SELECT @@aurora_server_id, @@aurora_server_id",
+                NodeIdQuery,
                 pluginService,
                 new GlobalAuroraTopologyUtils(this, hostListProviderService.HostSpecBuilder));
     }

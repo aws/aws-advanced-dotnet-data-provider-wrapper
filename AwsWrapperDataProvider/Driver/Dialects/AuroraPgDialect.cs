@@ -32,7 +32,7 @@ public class AuroraPgDialect : PgDialect, ITopologyDialect, IAuroraLimitlessDial
 
     internal static readonly string TopologySql = "SELECT 1 FROM pg_catalog.aurora_replica_status() LIMIT 1";
 
-    private static readonly string NodeIdQuery = "SELECT pg_catalog.aurora_db_instance_identifier(), pg_catalog.aurora_db_instance_identifier()";
+    protected static readonly string NodeIdQuery = "SELECT pg_catalog.aurora_db_instance_identifier(), pg_catalog.aurora_db_instance_identifier()";
 
     public string TopologyQuery =>
         "SELECT SERVER_ID, CASE WHEN SESSION_ID OPERATOR(pg_catalog.=) 'MASTER_SESSION_ID' THEN TRUE ELSE FALSE END, "

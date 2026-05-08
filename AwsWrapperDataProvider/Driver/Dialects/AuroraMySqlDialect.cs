@@ -26,7 +26,7 @@ public class AuroraMySqlDialect : MySqlDialect, ITopologyDialect, IBlueGreenDial
 
     private static readonly string IsReaderQuery = "SELECT @@innodb_read_only";
 
-    private static readonly string NodeIdQuery = "SELECT @@aurora_server_id, @@aurora_server_id";
+    protected static readonly string NodeIdQuery = "SELECT @@aurora_server_id, @@aurora_server_id";
 
     internal static readonly string IsDialectQuery = "SHOW VARIABLES LIKE 'aurora_version'";
 
