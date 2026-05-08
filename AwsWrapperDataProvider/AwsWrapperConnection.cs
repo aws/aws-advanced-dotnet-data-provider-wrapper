@@ -310,11 +310,6 @@ public class AwsWrapperConnection : DbConnection, IWrapper
             .OpenTelemetryContext("DbConnection.Open", TelemetryTraceLevel.TopLevel);
         try
         {
-            TelemetryAttributes.SetConnectionAttributes(
-                telemetryContext,
-                this.pluginService.Dialect,
-                this.ConnectionProperties!);
-
             await this.PluginManager.InitHostProvider(this.connectionString!, this.ConnectionProperties!, this.hostListProviderService);
 
             DbConnection connection = await WrapperUtils.OpenWithPlugins(

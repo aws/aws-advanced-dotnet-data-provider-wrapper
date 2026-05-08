@@ -66,11 +66,7 @@ public class PluginService : IPluginService, IHostListProviderService
 
     /// <summary>
     /// Gets the telemetry factory used to produce trace contexts and metric
-    /// instruments. Initialized in the primary constructor based on the
-    /// <c>EnableTelemetry</c>, <c>TelemetryTracesBackend</c>, and
-    /// <c>TelemetryMetricsBackend</c> connection properties. Defaults to
-    /// <see cref="NullTelemetryFactory.Instance"/> so the test-only
-    /// parameterless constructor still yields a safe no-op factory.
+    /// instruments. Initialized in the primary constructor.
     /// </summary>
     public ITelemetryFactory TelemetryFactory { get; private set; } = NullTelemetryFactory.Instance;
 

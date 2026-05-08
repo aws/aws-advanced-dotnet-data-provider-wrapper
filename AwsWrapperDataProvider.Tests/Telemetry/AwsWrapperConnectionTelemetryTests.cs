@@ -81,7 +81,7 @@ public class AwsWrapperConnectionTelemetryTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void Open_OnSuccess_CreatesTopLevelSpanWithAttributesAndSuccessTrue()
+    public void Open_OnSuccess_CreatesTopLevelSpanAndSuccessTrue()
     {
         string backendName = "T7MOCK" + Guid.NewGuid().ToString("N");
         Mock<ITelemetryContext> mockContext = new();
@@ -101,12 +101,6 @@ public class AwsWrapperConnectionTelemetryTests
             mockFactory.Verify(
                 f => f.OpenTelemetryContext("DbConnection.Open", TelemetryTraceLevel.TopLevel),
                 Times.Once);
-
-            // Attributes set from connection properties + dialect.
-            mockContext.Verify(c => c.SetAttribute(TelemetryAttributes.DbSystemKey, "mysql"), Times.Once);
-            mockContext.Verify(c => c.SetAttribute(TelemetryAttributes.DbUserKey, "admin"), Times.Once);
-            mockContext.Verify(c => c.SetAttribute(TelemetryAttributes.NetPeerNameKey, "localhost"), Times.Once);
-            mockContext.Verify(c => c.SetAttribute(TelemetryAttributes.NetPeerPortKey, "3306"), Times.Once);
 
             // Success path.
             mockContext.Verify(c => c.SetSuccess(true), Times.Once);
@@ -205,45 +199,6 @@ public class AwsWrapperConnectionTelemetryTests
 
         Exception? caught = Record.Exception(() => connection.Open());
         Assert.Null(caught);
-    }
-
-    [Fact]
-    [Trait("Category", "Unit")]
-    public void Open_OmitsAttributesWhenSourceValuesAreMissing()
-    {
-        string backendName = "T7MOCKNOATTR" + Guid.NewGuid().ToString("N");
-        Mock<ITelemetryContext> mockContext = new();
-        Mock<ITelemetryFactory> mockFactory = new();
-        mockFactory
-            .Setup(f => f.OpenTelemetryContext(It.IsAny<string>(), It.IsAny<TelemetryTraceLevel>()))
-            .Returns(mockContext.Object);
-
-        DefaultTelemetryFactory.RegisterTelemetryFactory(backendName, mockFactory.Object);
-        try
-        {
-            Dictionary<string, string> props = new()
-            {
-                { "TargetConnectionType", "MySqlConnector.MySqlConnection,MySqlConnector" },
-                { "Host", "localhost" },
-                { "EnableTelemetry", "true" },
-                { "TelemetryTracesBackend", backendName },
-                { "TelemetrySubmitTopLevel", "true" },
-            };
-
-            using AwsWrapperConnection<MySqlConnection> connection =
-                new(HostOnlyConnectionString, CreateProfile(props));
-            connection.Open();
-
-            // Host + db.system are present; Username/Port were not provided.
-            mockContext.Verify(c => c.SetAttribute(TelemetryAttributes.DbSystemKey, "mysql"), Times.Once);
-            mockContext.Verify(c => c.SetAttribute(TelemetryAttributes.NetPeerNameKey, "localhost"), Times.Once);
-            mockContext.Verify(c => c.SetAttribute(TelemetryAttributes.DbUserKey, It.IsAny<string>()), Times.Never);
-            mockContext.Verify(c => c.SetAttribute(TelemetryAttributes.NetPeerPortKey, It.IsAny<string>()), Times.Never);
-        }
-        finally
-        {
-            DefaultTelemetryFactory.UnregisterTelemetryFactory(backendName);
-        }
     }
 
     /// <summary>

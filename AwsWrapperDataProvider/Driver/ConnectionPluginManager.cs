@@ -21,6 +21,7 @@ using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Driver.Utils.Telemetry;
 using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
@@ -34,8 +35,17 @@ public class ConnectionPluginManager
     protected IConnectionProvider defaultConnProvider;
     protected IConnectionProvider? effectiveConnProvider;
     protected ConfigurationProfile? configurationProfile;
+
     protected AwsWrapperConnection ConnectionWrapper { get; }
+
     protected IPluginService? pluginService;
+
+    /// <summary>
+    /// Gets the telemetry factory associated with this plugin manager.
+    /// </summary>
+    internal ITelemetryFactory TelemetryFactory
+        => this.pluginService?.TelemetryFactory ?? NullTelemetryFactory.Instance;
+
     private const string AllMethods = "*";
     private const string GetHostSpecByStrategyMethod = "GetHostSpecByStrategy";
     private const string ConnectMethod = "DbConnection.Open";
