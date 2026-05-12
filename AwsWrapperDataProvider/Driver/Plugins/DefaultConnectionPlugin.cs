@@ -84,7 +84,6 @@ public class DefaultConnectionPlugin(
     {
         DbConnection conn = connProvider.CreateDbConnection(this.pluginService.Dialect, this.pluginService.TargetConnectionDialect, hostSpec, props);
 
-
         ITelemetryContext targetDriverContext = this.pluginService.TelemetryFactory
             .OpenTelemetryContext(conn.GetType().FullName ?? "target", TelemetryTraceLevel.Nested);
         try

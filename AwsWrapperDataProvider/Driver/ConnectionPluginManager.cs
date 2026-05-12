@@ -52,6 +52,33 @@ public class ConnectionPluginManager
     private const string ForceConnectMethod = "DbConnection.ForceOpen";
     private const string InitHostMethod = "initHostProvider";
 
+    /// <summary>
+    /// Pretty-name map used to produce human-readable nested span names for the
+    /// per-plugin telemetry wrap in <see cref="InvokePluginWithNestedTrace{T}"/>.
+    /// </summary>
+    private static readonly IReadOnlyDictionary<string, string> PluginNameByType =
+        new Dictionary<string, string>
+        {
+            // Core plugins in AwsWrapperDataProvider
+            ["FailoverPlugin"] = "plugin:failover",
+            ["HostMonitoringPlugin"] = "plugin:efm",
+            ["AuroraConnectionTrackerPlugin"] = "plugin:auroraConnectionTracker",
+            ["AuroraInitialConnectionStrategyPlugin"] = "plugin:auroraInitialConnectionStrategy",
+            ["BlueGreenConnectionPlugin"] = "plugin:blueGreen",
+            ["ConnectTimePlugin"] = "plugin:connectTime",
+            ["DefaultConnectionPlugin"] = "plugin:targetDriver",
+            ["ExecutionTimePlugin"] = "plugin:executionTime",
+            ["LimitlessConnectionPlugin"] = "plugin:limitless",
+            ["ReadWriteSplittingPlugin"] = "plugin:readWriteSplitting",
+
+            // Plugins in separate projects — referenced by simple class name
+            ["IamAuthPlugin"] = "plugin:iam",
+            ["FederatedAuthPlugin"] = "plugin:federatedAuth",
+            ["OktaAuthPlugin"] = "plugin:okta",
+            ["SecretsManagerAuthPlugin"] = "plugin:awsSecretsManager",
+            ["CustomEndpointPlugin"] = "plugin:customEndpoint",
+        };
+
     private delegate Task<T> PluginPipelineDelegate<T>(IConnectionPlugin plugin, ADONetDelegate<T> methodFunc);
 
     private delegate Task<T> PluginChainADONetDelegate<T>(PluginPipelineDelegate<T> pipelineDelegate, ADONetDelegate<T> methodFunc, IConnectionPlugin? pluginToSkip);
@@ -192,8 +219,16 @@ public class ConnectionPluginManager
         IConnectionPlugin plugin,
         Func<Task<T>> invocation)
     {
+        // Resolve the span name from the PluginNameByType map so operators see
+        // readable names (e.g., "plugin:failover") in trace UIs. Plugins that
+        // aren't in the map fall back to their .NET type name unchanged.
+        string typeName = plugin.GetType().Name;
+        string spanName = PluginNameByType.TryGetValue(typeName, out string? prettyName)
+            ? prettyName
+            : typeName;
+
         ITelemetryContext nestedContext = this.TelemetryFactory.OpenTelemetryContext(
-            plugin.GetType().Name, TelemetryTraceLevel.Nested);
+            spanName, TelemetryTraceLevel.Nested);
         try
         {
             T result = await invocation();
