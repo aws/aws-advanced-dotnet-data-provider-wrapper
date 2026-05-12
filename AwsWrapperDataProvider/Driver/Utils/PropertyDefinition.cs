@@ -85,8 +85,8 @@ public static class PropertyDefinition
 
     public static readonly AwsWrapperProperty ClusterId = new(
         "ClusterId",
-        string.Empty,
-        "A unique identifier for the cluster. Connections with the same cluster id share a cluster topology cache. If unspecified, a cluster id is automatically created for AWS RDS clusters.");
+        "1",
+        "A unique identifier for the cluster. Connections with the same cluster id share a cluster topology cache. If unspecified, a cluster id is '1'.");
 
     public static readonly AwsWrapperProperty SecretsManagerSecretId = new(
         "SecretsManagerSecretId", null, "The name or the ARN of the secret to retrieve.");

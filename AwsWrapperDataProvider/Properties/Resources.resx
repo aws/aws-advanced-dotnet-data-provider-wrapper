@@ -695,29 +695,17 @@
   <data name="FailoverPlugin_ThrowFailoverSuccessException_FailoverSucceeded" xml:space="preserve">
     <value>Failover succeeded.</value>
   </data>
-  <data name="MonitoringRdsHostListProvider_ClusterIdChanged" xml:space="preserve">
-    <value>Cluster Id changed, old cluster id: {0}.</value>
-  </data>
   <data name="MonitoringRdsHostListProvider_InitMonitor" xml:space="preserve">
     <value>Initializing new cluster topology monitor for clusterId: {0}.</value>
   </data>
   <data name="MonitoringRdsHostListProvider_OnMonitorEvicted_Disposing" xml:space="preserve">
     <value>Disposing cluster topology monitor for clusterId: {0} due to eviction reason: {1}.</value>
   </data>
-  <data name="MonitoringRdsHostListProvider_OnMonitorEvicted_SkipTransfer" xml:space="preserve">
-    <value>Skipping disposal of cluster topology monitor for clusterId: {0} (eviction reason: {1}); monitor is being transferred to a new clusterId.</value>
-  </data>
   <data name="MonitoringRdsHostListProvider_OnMonitorEvicted_Error" xml:space="preserve">
     <value>Error disposing cluster topology monitor: {message}.</value>
   </data>
   <data name="MonitoringRdsHostListProvider_QueryForTopologyAsync_TimedOut" xml:space="preserve">
     <value>Query for topology async for MonitoringRdsHostListProvider timed out for connection: {0}.</value>
-  </data>
-  <data name="MonitoringRdsHostListProvider_TransferCachedTopology" xml:space="preserve">
-    <value>Cluster Id transferred cache topology, old cluster id: {0}.</value>
-  </data>
-  <data name="MonitoringRdsHostListProvider_TransferExistingMonitor" xml:space="preserve">
-    <value>Cluster Id transferred, old cluster id: {0}.</value>
   </data>
   <data name="MultiAzClusterTopologyMonitor_GetSuggestedWriterNodeIdAsync_Error" xml:space="preserve">
     <value>Error getting suggested writer node ID: {0}.</value>
@@ -796,9 +784,6 @@
   </data>
   <data name="RdsHostListProvider_GetTopologyAsync_CachedTopology" xml:space="preserve">
     <value>Cached topology: {0}.</value>
-  </data>
-  <data name="RdsHostListProvider_GetTopologyAsync_ClusterIdChanged" xml:space="preserve">
-    <value>ClusterId changed: {0} -&gt; {1}.</value>
   </data>
   <data name="RdsHostListProvider_GetTopologyAsync_ConnectionUnavailable" xml:space="preserve">
     <value>Connection unavailable (State={0}), falling back to initial hosts.</value>

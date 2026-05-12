@@ -27,12 +27,6 @@ public interface IClusterTopologyMonitor : IDisposable
     bool CanDispose { get; }
 
     /// <summary>
-    /// Sets the cluster ID for this monitor.
-    /// </summary>
-    /// <param name="clusterId">The cluster ID to set.</param>
-    void SetClusterId(string clusterId);
-
-    /// <summary>
     /// Forces a refresh of the cluster topology.
     /// </summary>
     /// <param name="writerImportant">Whether writer verification is important.</param>
