@@ -55,9 +55,9 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
     protected readonly object disposeLock = new();
     protected readonly SemaphoreSlim monitoringConnectionSemaphore = new(1, 1);
     protected readonly TopologyUtils topologyUtils;
+    protected readonly string clusterId;
 
     protected CancellationTokenSource ctsNodeMonitoring;
-    protected string clusterId;
     protected HostSpec? writerHostSpec;
     protected DbConnection? monitoringConnection;
     protected bool isVerifiedWriterConnection;
@@ -140,11 +140,6 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
     }
 
     public bool CanDispose => true;
-
-    public void SetClusterId(string clusterId)
-    {
-        this.clusterId = clusterId;
-    }
 
     public async Task RunMonitoringLoop()
     {

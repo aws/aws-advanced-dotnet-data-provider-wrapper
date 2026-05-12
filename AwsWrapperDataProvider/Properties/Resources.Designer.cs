@@ -2680,15 +2680,6 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cluster Id changed, old cluster id: {0}..
-        /// </summary>
-        internal static string MonitoringRdsHostListProvider_ClusterIdChanged {
-            get {
-                return ResourceManager.GetString("MonitoringRdsHostListProvider_ClusterIdChanged", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Initializing new cluster topology monitor for clusterId: {0}..
         /// </summary>
         internal static string MonitoringRdsHostListProvider_InitMonitor {
@@ -2707,15 +2698,6 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Skipping disposal of cluster topology monitor for clusterId: {0} (eviction reason: {1}); monitor is being transferred to a new clusterId..
-        /// </summary>
-        internal static string MonitoringRdsHostListProvider_OnMonitorEvicted_SkipTransfer {
-            get {
-                return ResourceManager.GetString("MonitoringRdsHostListProvider_OnMonitorEvicted_SkipTransfer", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Error disposing cluster topology monitor: {message}..
         /// </summary>
         internal static string MonitoringRdsHostListProvider_OnMonitorEvicted_Error {
@@ -2730,24 +2712,6 @@ namespace AwsWrapperDataProvider.Properties {
         internal static string MonitoringRdsHostListProvider_QueryForTopologyAsync_TimedOut {
             get {
                 return ResourceManager.GetString("MonitoringRdsHostListProvider_QueryForTopologyAsync_TimedOut", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Cluster Id transferred cache topology, old cluster id: {0}..
-        /// </summary>
-        internal static string MonitoringRdsHostListProvider_TransferCachedTopology {
-            get {
-                return ResourceManager.GetString("MonitoringRdsHostListProvider_TransferCachedTopology", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Cluster Id transferred, old cluster id: {0}..
-        /// </summary>
-        internal static string MonitoringRdsHostListProvider_TransferExistingMonitor {
-            get {
-                return ResourceManager.GetString("MonitoringRdsHostListProvider_TransferExistingMonitor", resourceCulture);
             }
         }
         
@@ -3045,15 +3009,6 @@ namespace AwsWrapperDataProvider.Properties {
         internal static string RdsHostListProvider_GetTopologyAsync_CacheLookup {
             get {
                 return ResourceManager.GetString("RdsHostListProvider_GetTopologyAsync_CacheLookup", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to ClusterId changed: {0} -&gt; {1}..
-        /// </summary>
-        internal static string RdsHostListProvider_GetTopologyAsync_ClusterIdChanged {
-            get {
-                return ResourceManager.GetString("RdsHostListProvider_GetTopologyAsync_ClusterIdChanged", resourceCulture);
             }
         }
         
