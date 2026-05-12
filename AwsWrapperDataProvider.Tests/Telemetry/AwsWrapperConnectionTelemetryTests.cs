@@ -84,11 +84,19 @@ public class AwsWrapperConnectionTelemetryTests
     public void Open_OnSuccess_CreatesTopLevelSpanAndSuccessTrue()
     {
         string backendName = "T7MOCK" + Guid.NewGuid().ToString("N");
-        Mock<ITelemetryContext> mockContext = new();
+        Mock<ITelemetryContext> topLevelContext = new();
+        Mock<ITelemetryContext> otherContext = new();
         Mock<ITelemetryFactory> mockFactory = new();
+        // Route the "DbConnection.Open" top-level span to the context under
+        // test; every other span (ConnectionPluginManager.Open /
+        // .InitHostProvider middle spans, per-plugin nested spans, target-driver
+        // spans) goes to a throw-away mock so lifecycle assertions on
+        // topLevelContext aren't polluted by those spans' SetSuccess /
+        // CloseContext calls.
         mockFactory
             .Setup(f => f.OpenTelemetryContext(It.IsAny<string>(), It.IsAny<TelemetryTraceLevel>()))
-            .Returns(mockContext.Object);
+            .Returns<string, TelemetryTraceLevel>((name, _) =>
+                name == "DbConnection.Open" ? topLevelContext.Object : otherContext.Object);
 
         DefaultTelemetryFactory.RegisterTelemetryFactory(backendName, mockFactory.Object);
         try
@@ -102,10 +110,10 @@ public class AwsWrapperConnectionTelemetryTests
                 f => f.OpenTelemetryContext("DbConnection.Open", TelemetryTraceLevel.TopLevel),
                 Times.Once);
 
-            // Success path.
-            mockContext.Verify(c => c.SetSuccess(true), Times.Once);
-            mockContext.Verify(c => c.SetException(It.IsAny<Exception>()), Times.Never);
-            mockContext.Verify(c => c.CloseContext(), Times.Once);
+            // Success path — on the top-level context only.
+            topLevelContext.Verify(c => c.SetSuccess(true), Times.Once);
+            topLevelContext.Verify(c => c.SetException(It.IsAny<Exception>()), Times.Never);
+            topLevelContext.Verify(c => c.CloseContext(), Times.Once);
         }
         finally
         {
@@ -118,11 +126,13 @@ public class AwsWrapperConnectionTelemetryTests
     public async Task OpenAsync_OnSuccess_CreatesTopLevelSpan()
     {
         string backendName = "T7MOCKASYNC" + Guid.NewGuid().ToString("N");
-        Mock<ITelemetryContext> mockContext = new();
+        Mock<ITelemetryContext> topLevelContext = new();
+        Mock<ITelemetryContext> otherContext = new();
         Mock<ITelemetryFactory> mockFactory = new();
         mockFactory
             .Setup(f => f.OpenTelemetryContext(It.IsAny<string>(), It.IsAny<TelemetryTraceLevel>()))
-            .Returns(mockContext.Object);
+            .Returns<string, TelemetryTraceLevel>((name, _) =>
+                name == "DbConnection.Open" ? topLevelContext.Object : otherContext.Object);
 
         DefaultTelemetryFactory.RegisterTelemetryFactory(backendName, mockFactory.Object);
         try
@@ -137,8 +147,8 @@ public class AwsWrapperConnectionTelemetryTests
             mockFactory.Verify(
                 f => f.OpenTelemetryContext("DbConnection.Open", TelemetryTraceLevel.TopLevel),
                 Times.Once);
-            mockContext.Verify(c => c.SetSuccess(true), Times.Once);
-            mockContext.Verify(c => c.CloseContext(), Times.Once);
+            topLevelContext.Verify(c => c.SetSuccess(true), Times.Once);
+            topLevelContext.Verify(c => c.CloseContext(), Times.Once);
         }
         finally
         {
@@ -151,11 +161,13 @@ public class AwsWrapperConnectionTelemetryTests
     public void Open_OnException_RecordsExceptionSetsSuccessFalseAndCloses()
     {
         string backendName = "T7MOCKERR" + Guid.NewGuid().ToString("N");
-        Mock<ITelemetryContext> mockContext = new();
+        Mock<ITelemetryContext> topLevelContext = new();
+        Mock<ITelemetryContext> otherContext = new();
         Mock<ITelemetryFactory> mockFactory = new();
         mockFactory
             .Setup(f => f.OpenTelemetryContext(It.IsAny<string>(), It.IsAny<TelemetryTraceLevel>()))
-            .Returns(mockContext.Object);
+            .Returns<string, TelemetryTraceLevel>((name, _) =>
+                name == "DbConnection.Open" ? topLevelContext.Object : otherContext.Object);
 
         DefaultTelemetryFactory.RegisterTelemetryFactory(backendName, mockFactory.Object);
         try
@@ -171,10 +183,14 @@ public class AwsWrapperConnectionTelemetryTests
             mockFactory.Verify(
                 f => f.OpenTelemetryContext("DbConnection.Open", TelemetryTraceLevel.TopLevel),
                 Times.Once);
-            mockContext.Verify(c => c.SetException(It.Is<InvalidOperationException>(e => e.Message == "boom")), Times.Once);
-            mockContext.Verify(c => c.SetSuccess(false), Times.Once);
-            mockContext.Verify(c => c.SetSuccess(true), Times.Never);
-            mockContext.Verify(c => c.CloseContext(), Times.Once);
+
+            // Assertions target the top-level context only — the exception
+            // propagates up through nested, middle, and top-level spans, and
+            // every layer records it. Nested/middle spans use `otherContext`.
+            topLevelContext.Verify(c => c.SetException(It.Is<InvalidOperationException>(e => e.Message == "boom")), Times.Once);
+            topLevelContext.Verify(c => c.SetSuccess(false), Times.Once);
+            topLevelContext.Verify(c => c.SetSuccess(true), Times.Never);
+            topLevelContext.Verify(c => c.CloseContext(), Times.Once);
         }
         finally
         {

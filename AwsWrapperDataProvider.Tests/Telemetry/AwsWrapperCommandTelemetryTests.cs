@@ -73,6 +73,13 @@ public class AwsWrapperCommandTelemetryTests
     /// opening it), and creates an <see cref="AwsWrapperCommand"/> bound to
     /// a DbMocker command so that the execute methods have a working
     /// in-memory target.
+    ///
+    /// <para>The factory routes the top-level command span (name = <paramref
+    /// name="topLevelSpanName"/> supplied to the harness ctor) to the context
+    /// exposed as <see cref="MockContext"/>; every other span (per-plugin
+    /// nested spans opened by <c>ConnectionPluginManager</c>) goes to a
+    /// throw-away context so lifecycle assertions on <c>MockContext</c>
+    /// aren't polluted by those spans.</para>
     /// </summary>
     private sealed class TestHarness : IDisposable
     {
@@ -82,18 +89,21 @@ public class AwsWrapperCommandTelemetryTests
 
         public Mock<ITelemetryContext> MockContext { get; } = new();
 
+        private Mock<ITelemetryContext> OtherContext { get; } = new();
+
         public AwsWrapperConnection<MySqlConnection> Connection { get; }
 
         public MockDbConnection MockedTarget { get; } = new();
 
         public AwsWrapperCommand Command { get; }
 
-        public TestHarness(Action<MockDbConnection> configureMock)
+        public TestHarness(Action<MockDbConnection> configureMock, string topLevelSpanName)
         {
             this.BackendName = "T8MOCK" + Guid.NewGuid().ToString("N");
             this.MockFactory
                 .Setup(f => f.OpenTelemetryContext(It.IsAny<string>(), It.IsAny<TelemetryTraceLevel>()))
-                .Returns(this.MockContext.Object);
+                .Returns<string, TelemetryTraceLevel>((name, _) =>
+                    name == topLevelSpanName ? this.MockContext.Object : this.OtherContext.Object);
             DefaultTelemetryFactory.RegisterTelemetryFactory(this.BackendName, this.MockFactory.Object);
 
             configureMock(this.MockedTarget);
@@ -144,7 +154,9 @@ public class AwsWrapperCommandTelemetryTests
     [Trait("Category", "Unit")]
     public void ExecuteNonQuery_OnSuccess_CreatesTopLevelSpan()
     {
-        using TestHarness harness = new(mock => mock.Mocks.WhenAny().ReturnsScalar(42));
+        using TestHarness harness = new(
+            mock => mock.Mocks.WhenAny().ReturnsScalar(42),
+            "DbCommand.ExecuteNonQuery");
         harness.Command.CommandText = "INSERT INTO t VALUES (1);";
 
         int affected = harness.Command.ExecuteNonQuery();
@@ -157,7 +169,9 @@ public class AwsWrapperCommandTelemetryTests
     [Trait("Category", "Unit")]
     public async Task ExecuteNonQueryAsync_OnSuccess_CreatesTopLevelSpan()
     {
-        using TestHarness harness = new(mock => mock.Mocks.WhenAny().ReturnsScalar(7));
+        using TestHarness harness = new(
+            mock => mock.Mocks.WhenAny().ReturnsScalar(7),
+            "DbCommand.ExecuteNonQueryAsync");
         harness.Command.CommandText = "UPDATE t SET v=1;";
 
         int affected = await harness.Command.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
@@ -170,7 +184,9 @@ public class AwsWrapperCommandTelemetryTests
     [Trait("Category", "Unit")]
     public void ExecuteScalar_OnSuccess_CreatesTopLevelSpan()
     {
-        using TestHarness harness = new(mock => mock.Mocks.WhenAny().ReturnsScalar("hello"));
+        using TestHarness harness = new(
+            mock => mock.Mocks.WhenAny().ReturnsScalar("hello"),
+            "DbCommand.ExecuteScalar");
         harness.Command.CommandText = "SELECT 'hello';";
 
         object? value = harness.Command.ExecuteScalar();
@@ -183,7 +199,9 @@ public class AwsWrapperCommandTelemetryTests
     [Trait("Category", "Unit")]
     public async Task ExecuteScalarAsync_OnSuccess_CreatesTopLevelSpan()
     {
-        using TestHarness harness = new(mock => mock.Mocks.WhenAny().ReturnsScalar("async-hi"));
+        using TestHarness harness = new(
+            mock => mock.Mocks.WhenAny().ReturnsScalar("async-hi"),
+            "DbCommand.ExecuteScalarAsync");
         harness.Command.CommandText = "SELECT 'async-hi';";
 
         object? value = await harness.Command.ExecuteScalarAsync(TestContext.Current.CancellationToken);
@@ -196,8 +214,9 @@ public class AwsWrapperCommandTelemetryTests
     [Trait("Category", "Unit")]
     public void ExecuteReader_OnSuccess_CreatesTopLevelSpan()
     {
-        using TestHarness harness = new(mock =>
-            mock.Mocks.WhenAny().ReturnsTable(MockTable.WithColumns("id").AddRow(1)));
+        using TestHarness harness = new(
+            mock => mock.Mocks.WhenAny().ReturnsTable(MockTable.WithColumns("id").AddRow(1)),
+            "DbCommand.ExecuteReader");
         harness.Command.CommandText = "SELECT id FROM t;";
 
         using DbDataReader reader = harness.Command.ExecuteReader();
@@ -214,8 +233,9 @@ public class AwsWrapperCommandTelemetryTests
     [Trait("Category", "Unit")]
     public async Task ExecuteReaderAsync_OnSuccess_CreatesTopLevelSpan()
     {
-        using TestHarness harness = new(mock =>
-            mock.Mocks.WhenAny().ReturnsTable(MockTable.WithColumns("id").AddRow(1)));
+        using TestHarness harness = new(
+            mock => mock.Mocks.WhenAny().ReturnsTable(MockTable.WithColumns("id").AddRow(1)),
+            "DbCommand.ExecuteReaderAsync");
         harness.Command.CommandText = "SELECT id FROM t;";
 
         await using DbDataReader reader =
@@ -231,8 +251,9 @@ public class AwsWrapperCommandTelemetryTests
     [Trait("Category", "Unit")]
     public void ExecuteNonQuery_OnException_RecordsExceptionSetsSuccessFalseAndCloses()
     {
-        using TestHarness harness = new(mock =>
-            mock.Mocks.WhenAny().ThrowsException(new InvalidOperationException("boom")));
+        using TestHarness harness = new(
+            mock => mock.Mocks.WhenAny().ThrowsException(new InvalidOperationException("boom")),
+            "DbCommand.ExecuteNonQuery");
         harness.Command.CommandText = "THROW;";
 
         InvalidOperationException thrown = Assert.Throws<InvalidOperationException>(
