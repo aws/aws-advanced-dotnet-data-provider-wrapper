@@ -110,9 +110,8 @@ public class ContainerHelper {
       exitCode = execInContainer(container, consumer, "dotnet", "test", "--filter",
               "Category=Integration&Database=" + task + "&Engine=" + engineDeployment, "--configuration", "Release", "--logger:\"console;verbosity=detailed\"");
     } else {
-      // [DIAG] Temporarily restrict integration runs to the ReadWriteSplittingTests suite to narrow down the availability-mismatch issue.
       exitCode = execInContainer(container, consumer, "dotnet", "test", "--filter",
-              "Category=Integration&Database=" + task + "&Engine=" + engineDeployment + "&FullyQualifiedName~ReadWriteSplittingTests", "--no-build", "--logger:\"console;verbosity=detailed\"");
+              "Category=Integration&Database=" + task + "&Engine=" + engineDeployment, "--no-build", "--logger:\"console;verbosity=detailed\"");
     }
 
 
