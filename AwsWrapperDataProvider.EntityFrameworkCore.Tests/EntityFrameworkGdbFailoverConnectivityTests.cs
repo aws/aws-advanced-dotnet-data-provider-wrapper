@@ -36,13 +36,35 @@ public class EntityFrameworkGdbFailoverConnectivityTests : EFIntegrationTestBase
     {
     }
 
-    private static string GetGdbCrashWrapperConnectionString(string connectionString, string mode)
+    /// <summary>
+    /// Connection string used by tests that hold a single AwsWrapperConnection through a proxy
+    /// and trigger failover on an in-flight query. Targets the proxied writer instance host
+    /// directly so the simulated outage produces an immediate FailoverSuccessException.
+    /// </summary>
+    private static string GetGdbProxiedWrapperConnectionString(string connectionString, string mode)
     {
         return connectionString
             + $";Plugins={PluginCodes.GdbFailover};"
+            + $"EnableConnectFailover=true;"
             + $"ActiveHomeFailoverMode={mode};"
             + $"InactiveHomeFailoverMode={mode};"
             + $"ClusterInstanceHostPattern=?.{ProxyDatabaseInfo!.InstanceEndpointSuffix}:{ProxyDatabaseInfo!.InstanceEndpointPort}";
+    }
+
+    /// <summary>
+    /// Connection string used by tests that crash the writer between EF contexts and rely on
+    /// reconnection through the cluster endpoint (Aurora DNS update or multi-az re-election).
+    /// Mirrors <c>GetCrashWrapperConnectionString</c> from <c>EntityFrameworkConnectivityTests</c>
+    /// but with the gdbFailover plugin chain.
+    /// </summary>
+    private static string GetGdbCrashWrapperConnectionString(string connectionString, string mode)
+    {
+        return connectionString
+            + $";{PluginCodes.GdbFailover};"
+            + $"EnableConnectFailover=true;"
+            + $"ActiveHomeFailoverMode={mode};"
+            + $"InactiveHomeFailoverMode={mode};"
+            + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
     }
 
     /// <summary>
@@ -74,7 +96,7 @@ public class EntityFrameworkGdbFailoverConnectivityTests : EFIntegrationTestBase
                 ProxyDatabaseInfo!.DefaultDbName,
                 2,
                 10);
-        var wrapperConnectionString = GetGdbCrashWrapperConnectionString(connectionString, "strict-writer");
+        var wrapperConnectionString = GetGdbProxiedWrapperConnectionString(connectionString, "strict-writer");
         var options = this.BuildOptionsWithLogger(wrapperConnectionString, connectionString);
 
         using (var db = new PersonDbContext(options))
@@ -170,7 +192,7 @@ public class EntityFrameworkGdbFailoverConnectivityTests : EFIntegrationTestBase
                 ProxyDatabaseInfo!.DefaultDbName,
                 2,
                 10);
-        var wrapperConnectionString = GetGdbCrashWrapperConnectionString(connectionString, "strict-writer");
+        var wrapperConnectionString = GetGdbProxiedWrapperConnectionString(connectionString, "strict-writer");
         var options = this.BuildOptionsWithLogger(wrapperConnectionString, connectionString);
 
         using (var db = new PersonDbContext(options))
@@ -271,7 +293,7 @@ public class EntityFrameworkGdbFailoverConnectivityTests : EFIntegrationTestBase
                 ProxyDatabaseInfo!.DefaultDbName,
                 2,
                 10);
-        var wrapperConnectionString = GetGdbCrashWrapperConnectionString(connectionString, "strict-home-reader");
+        var wrapperConnectionString = GetGdbProxiedWrapperConnectionString(connectionString, "strict-home-reader");
         var options = this.BuildOptionsWithLogger(wrapperConnectionString, connectionString);
 
         using (var db = new PersonDbContext(options))
@@ -360,7 +382,7 @@ public class EntityFrameworkGdbFailoverConnectivityTests : EFIntegrationTestBase
                 ProxyDatabaseInfo!.DefaultDbName,
                 2,
                 10);
-        var wrapperConnectionString = GetGdbCrashWrapperConnectionString(connectionString, "home-reader-or-writer");
+        var wrapperConnectionString = GetGdbProxiedWrapperConnectionString(connectionString, "home-reader-or-writer");
         var options = this.BuildOptionsWithLogger(wrapperConnectionString, connectionString);
 
         using var context = new PersonDbContext(options);
@@ -431,7 +453,7 @@ public class EntityFrameworkGdbFailoverConnectivityTests : EFIntegrationTestBase
                 ProxyDatabaseInfo!.DefaultDbName,
                 2,
                 10);
-        var wrapperConnectionString = GetGdbCrashWrapperConnectionString(connectionString, "home-reader-or-writer");
+        var wrapperConnectionString = GetGdbProxiedWrapperConnectionString(connectionString, "home-reader-or-writer");
         var options = this.BuildOptionsWithLogger(wrapperConnectionString, connectionString);
 
         using var context = new PersonDbContext(options);
@@ -494,17 +516,9 @@ public class EntityFrameworkGdbFailoverConnectivityTests : EFIntegrationTestBase
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
 
         string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
-        var initialWriterInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.GetInstance(currentWriter);
 
         var connectionString = ConnectionStringHelper.GetUrl(
-                Engine,
-                initialWriterInstanceInfo.Host,
-                initialWriterInstanceInfo.Port,
-                Username,
-                Password,
-                ProxyDatabaseInfo!.DefaultDbName,
-                2,
-                10);
+            Engine, Endpoint, Port, Username, Password, DefaultDbName, 2, 10);
         var wrapperConnectionString = GetGdbCrashWrapperConnectionString(connectionString, "strict-writer");
         var options = this.BuildOptionsWithLogger(wrapperConnectionString, connectionString);
 
@@ -567,17 +581,9 @@ public class EntityFrameworkGdbFailoverConnectivityTests : EFIntegrationTestBase
         Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
 
         string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
-        var initialWriterInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.GetInstance(currentWriter);
 
         var connectionString = ConnectionStringHelper.GetUrl(
-                Engine,
-                initialWriterInstanceInfo.Host,
-                initialWriterInstanceInfo.Port,
-                Username,
-                Password,
-                ProxyDatabaseInfo!.DefaultDbName,
-                2,
-                10);
+            Engine, Endpoint, Port, Username, Password, DefaultDbName, 2, 10);
         var wrapperConnectionString = GetGdbCrashWrapperConnectionString(connectionString, "strict-writer");
         var options = this.BuildOptionsWithLogger(wrapperConnectionString, connectionString);
 
