@@ -88,6 +88,37 @@ public class RdsHostListProvider : IDynamicHostListProvider
 
     public static void CloseAllMonitors()
     {
+        // Snapshot and dispose each monitor synchronously BEFORE clearing caches.
+        // MemoryCache.Clear() dispatches post-eviction callbacks to the thread pool,
+        // so relying on them would leave background RunMonitoringLoop tasks running
+        // that can write stale topology back into TopologyCache after it is cleared.
+        // Disposing first cancels each monitor's loop and waits for it to terminate.
+        List<Lazy<IClusterTopologyMonitor>> snapshot = [];
+        foreach (var key in Monitors.Keys)
+        {
+            if (Monitors.TryGetValue(key, out var value) && value is Lazy<IClusterTopologyMonitor> lazyMonitor)
+            {
+                snapshot.Add(lazyMonitor);
+            }
+        }
+
+        foreach (var lazyMonitor in snapshot)
+        {
+            if (!lazyMonitor.IsValueCreated)
+            {
+                continue;
+            }
+
+            try
+            {
+                lazyMonitor.Value.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(Resources.MonitoringRdsHostListProvider_OnMonitorEvicted_Error, ex.Message);
+            }
+        }
+
         Monitors.Clear();
         ClearAll();
     }

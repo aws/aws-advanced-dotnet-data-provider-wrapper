@@ -179,7 +179,9 @@ public class GdbFailoverTests : IntegrationTestBase
         // Assert that we are currently connected to a reader instance.
         var currentConnectionId = await AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, async);
         Assert.NotNull(currentConnectionId);
-        Assert.False(await AuroraUtils.IsDBInstanceWriterAsync(currentConnectionId));
+
+        // RDS API lags behind the writer election after a cluster failover, so we retry the check.
+        Assert.True(await AuroraUtils.WaitUntilInstanceHasRoleAsync(currentConnectionId, false, TimeSpan.FromMinutes(5)));
 
         await crashTask;
     }
