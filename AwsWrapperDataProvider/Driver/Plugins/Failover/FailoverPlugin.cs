@@ -468,7 +468,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
                 // Ignore close exception
             }
 
-            throw new FailoverFailedException(string.Format(Resources.Error_UnexpectedRoleForWriterCandidate, writerCandidate.Host));
+            throw new FailoverFailedException(string.Format(Resources.Error_UnexpectedRoleForWriterCandidate, role, writerCandidate.Host));
         }
 
         this.pluginService.SetCurrentConnection(writerCandidateConn, writerCandidate);

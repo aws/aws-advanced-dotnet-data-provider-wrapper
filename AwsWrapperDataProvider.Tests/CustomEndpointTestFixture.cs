@@ -14,6 +14,7 @@
 
 using Amazon.RDS.Model;
 using AwsWrapperDataProvider.Driver.HostInfo;
+using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 
 namespace AwsWrapperDataProvider.Tests;
@@ -143,6 +144,12 @@ public class CustomEndpointTestFixture : IDisposable
         }
 
         logger.WriteLine($"Custom endpoint instance successfully set to role: {hostRole}");
+
+        // The setup above may perform failover, which means any topology
+        // cached by the setup connections (via the default RdsHostListProvider monitor) is
+        // now stale. Close all topology monitors and clear the cache so the test body's
+        // wrapper connection starts with fresh topology that reflects post-failover roles.
+        RdsHostListProvider.CloseAllMonitors();
     }
 
     public void Dispose()
