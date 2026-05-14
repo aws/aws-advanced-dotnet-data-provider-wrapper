@@ -133,7 +133,7 @@ public class GdbFailoverPlugin : FailoverPlugin
         switch (currentFailoverMode)
         {
             case GlobalDbFailoverMode.StrictWriter:
-                await this.FailoverToWriter(writerCandidate);
+                await this.FailoverToWriter(failoverEndTime);
                 break;
             case GlobalDbFailoverMode.StrictHomeReader:
                 await this.FailoverToAllowedHost(
@@ -204,67 +204,76 @@ public class GdbFailoverPlugin : FailoverPlugin
         this.ThrowFailoverSuccessException();
     }
 
-    protected virtual async Task FailoverToWriter(HostSpec writerCandidate)
+    /// <summary>
+    /// Failover to the current writer using a retry loop that re-evaluates the writer candidate
+    /// on each iteration. This keeps trying until the failover timeout elapses.
+    /// The retry is required because the initial topology returned by <c>ForceRefreshHostListAsync</c>
+    /// may be stale when the dialect has not yet been confirmed (for example, when the very first connection attempt
+    /// fails because the writer is unreachable). In that case the cached topology eventually
+    /// contains the new writer and subsequent calls to <c>RefreshHostListAsync</c> pick it up.
+    /// </summary>
+    protected virtual async Task FailoverToWriter(DateTime failoverEndTime)
     {
-        var allowedHosts = this.pluginService.GetHosts();
-        if (!allowedHosts.Any(h => h.Host == writerCandidate.Host && h.Port == writerCandidate.Port))
-        {
-            var topologyString = LoggerUtils.LogTopology(allowedHosts, string.Empty);
-            Logger.LogError(
-                Resources.GdbFailoverPlugin_FailoverToWriter_NewWriterNotInAllowedHostsLog,
-                writerCandidate.Host,
-                topologyString);
-            throw new FailoverFailedException(
-                string.Format(
-                    Resources.GdbFailoverPlugin_FailoverToWriter_NewWriterNotInAllowedHosts,
-                    writerCandidate.Host));
-        }
-
-        DbConnection writerCandidateConn;
+        FailoverResult? result = null;
         try
         {
-            writerCandidateConn = await this.pluginService.OpenConnection(
-                writerCandidate, this.props, this, true);
+            result = await this.GetAllowedFailoverConnectionAsync(
+                () =>
+                {
+                    var allHosts = this.pluginService.AllHosts;
+                    var writer = allHosts.FirstOrDefault(x => x.Role == HostRole.Writer);
+                    if (writer == null)
+                    {
+                        return [];
+                    }
+
+                    var allowedHosts = this.pluginService.GetHosts();
+                    if (!allowedHosts.Any(h => h.Host == writer.Host && h.Port == writer.Port))
+                    {
+                        Logger.LogError(
+                            Resources.GdbFailoverPlugin_FailoverToWriter_NewWriterNotInAllowedHostsLog,
+                            writer.Host,
+                            LoggerUtils.LogTopology(allowedHosts, string.Empty));
+                        return [];
+                    }
+
+                    return [writer];
+                },
+                HostRole.Writer,
+                failoverEndTime);
+            this.pluginService.SetCurrentConnection(result.Connection, result.HostSpec);
+            Logger.LogInformation(
+                Resources.GdbFailoverPlugin_FailoverToWriter_ConnectedToWriter,
+                result.HostSpec.Host);
+            result = null; // Prevent connection from being closed in finally block
         }
-        catch (Exception ex)
+        catch (TimeoutException)
         {
+            var allHosts = this.pluginService.AllHosts;
+            var writer = allHosts.FirstOrDefault(x => x.Role == HostRole.Writer);
+            var writerHost = writer?.Host ?? string.Empty;
             Logger.LogError(
                 Resources.GdbFailoverPlugin_FailoverToWriter_ExceptionConnectingToWriter,
-                writerCandidate.Host);
+                writerHost);
             throw new FailoverFailedException(
                 string.Format(
                     Resources.GdbFailoverPlugin_FailoverToWriter_ExceptionConnectingToWriter,
-                    writerCandidate.Host),
-                ex);
+                    writerHost));
         }
-
-        var role = await this.pluginService.GetHostRole(writerCandidateConn);
-        if (role != HostRole.Writer)
+        finally
         {
-            try
+            if (result != null && result.Connection != this.pluginService.CurrentConnection)
             {
-                await writerCandidateConn.DisposeAsync().ConfigureAwait(false);
+                try
+                {
+                    await result.Connection.DisposeAsync().ConfigureAwait(false);
+                }
+                catch (Exception)
+                {
+                    // Ignore
+                }
             }
-            catch (Exception)
-            {
-                // Ignore close exception
-            }
-
-            Logger.LogError(
-                Resources.GdbFailoverPlugin_FailoverToWriter_UnexpectedRole,
-                role,
-                writerCandidate.Host);
-            throw new FailoverFailedException(
-                string.Format(
-                    Resources.GdbFailoverPlugin_FailoverToWriter_UnexpectedRole,
-                    role,
-                    writerCandidate.Host));
         }
-
-        this.pluginService.SetCurrentConnection(writerCandidateConn, writerCandidate);
-        Logger.LogInformation(
-            Resources.GdbFailoverPlugin_FailoverToWriter_ConnectedToWriter,
-            writerCandidate.Host);
     }
 
     protected virtual async Task FailoverToAllowedHost(
@@ -272,7 +281,7 @@ public class GdbFailoverPlugin : FailoverPlugin
         HostRole? verifyRole,
         DateTime failoverEndTime)
     {
-        ReaderFailoverResult? result = null;
+        FailoverResult? result = null;
         try
         {
             result = await this.GetAllowedFailoverConnectionAsync(
@@ -306,7 +315,7 @@ public class GdbFailoverPlugin : FailoverPlugin
             this.pluginService.CurrentHostSpec);
     }
 
-    protected virtual async Task<ReaderFailoverResult> GetAllowedFailoverConnectionAsync(
+    protected virtual async Task<FailoverResult> GetAllowedFailoverConnectionAsync(
         Func<HashSet<HostSpec>> allowedHostsSupplier,
         HostRole? verifyRole,
         DateTime failoverEndTime)
@@ -368,7 +377,7 @@ public class GdbFailoverPlugin : FailoverPlugin
                     if (verifyRole == null || verifyRole == role)
                     {
                         var updatedHostSpec = new HostSpec(candidateHost, role ?? candidateHost.Role);
-                        return new ReaderFailoverResult(candidateConn, updatedHostSpec);
+                        return new FailoverResult(candidateConn, updatedHostSpec);
                     }
 
                     // Role mismatch
