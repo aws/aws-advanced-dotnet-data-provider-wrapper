@@ -20,6 +20,7 @@ using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Plugins.AuroraStaleDns;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Driver.Utils.Telemetry;
 using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 using ThreadState = System.Threading.ThreadState;
@@ -38,6 +39,18 @@ public class FailoverPlugin : AbstractConnectionPlugin
     private const string MethodCloseAsync = "DbConnection.CloseAsync";
     private const string MethodDispose = "DbConnection.Dispose";
 
+    // Telemetry span names
+    private const string TelemetryWriterFailover = "failover to writer";
+    private const string TelemetryReaderFailover = "failover to reader";
+
+    // Telemetry counter names
+    private const string WriterFailoverTriggeredCounterName = "writerFailover.triggered.count";
+    private const string WriterFailoverSuccessCounterName = "writerFailover.completed.success.count";
+    private const string WriterFailoverFailedCounterName = "writerFailover.completed.failed.count";
+    private const string ReaderFailoverTriggeredCounterName = "readerFailover.triggered.count";
+    private const string ReaderFailoverSuccessCounterName = "readerFailover.completed.success.count";
+    private const string ReaderFailoverFailedCounterName = "readerFailover.completed.failed.count";
+
     private static readonly ILogger<FailoverPlugin> Logger = LoggerUtils.GetLogger<FailoverPlugin>();
 
     private readonly IPluginService pluginService;
@@ -48,6 +61,14 @@ public class FailoverPlugin : AbstractConnectionPlugin
     private readonly bool skipFailoverOnInterruptedThread;
     private readonly bool closedExplicitly = false;
     private readonly AuroraStaleDnsHelper auroraStaleDnsHelper;
+    
+    private readonly ITelemetryCounter writerFailoverTriggered;
+    private readonly ITelemetryCounter writerFailoverSuccess;
+    private readonly ITelemetryCounter writerFailoverFailed;
+    private readonly ITelemetryCounter readerFailoverTriggered;
+    private readonly ITelemetryCounter readerFailoverSuccess;
+    private readonly ITelemetryCounter readerFailoverFailed;
+    private readonly bool telemetryFailoverAdditionalTopTrace;
 
     private IHostListProviderService? hostListProviderService;
     private RdsUrlType? rdsUrlType;
@@ -71,6 +92,19 @@ public class FailoverPlugin : AbstractConnectionPlugin
         this.enableConnectFailover = PropertyDefinition.EnableConnectFailover.GetBoolean(props);
         this.skipFailoverOnInterruptedThread = PropertyDefinition.SkipFailoverOnInterruptedThread.GetBoolean(props);
         this.auroraStaleDnsHelper = new AuroraStaleDnsHelper(pluginService);
+
+        // Telemetry instruments. TelemetryFactory returns no-op NullTelemetry*
+        // instances when telemetry is disabled, so these calls are safe even
+        // without any telemetry configuration.
+        ITelemetryFactory telemetryFactory = pluginService.TelemetryFactory;
+        this.writerFailoverTriggered = telemetryFactory.CreateCounter(WriterFailoverTriggeredCounterName);
+        this.writerFailoverSuccess = telemetryFactory.CreateCounter(WriterFailoverSuccessCounterName);
+        this.writerFailoverFailed = telemetryFactory.CreateCounter(WriterFailoverFailedCounterName);
+        this.readerFailoverTriggered = telemetryFactory.CreateCounter(ReaderFailoverTriggeredCounterName);
+        this.readerFailoverSuccess = telemetryFactory.CreateCounter(ReaderFailoverSuccessCounterName);
+        this.readerFailoverFailed = telemetryFactory.CreateCounter(ReaderFailoverFailedCounterName);
+        this.telemetryFailoverAdditionalTopTrace =
+            PropertyDefinition.TelemetryFailoverAdditionalTopTrace.GetBoolean(props);
     }
 
     public override async Task<T> Execute<T>(object methodInvokedOn, string methodName, ADONetDelegate<T> methodFunc, params object[] methodArgs)
@@ -307,19 +341,64 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
     private async Task FailoverReaderAsync()
     {
-        Logger.LogInformation(Resources.FailoverPlugin_FailoverReaderAsync_StartingReaderFailover);
-        await this.pluginService.ForceRefreshHostListAsync(false, 0);
+        ITelemetryFactory telemetryFactory = this.pluginService.TelemetryFactory;
+        ITelemetryContext failoverContext = telemetryFactory.OpenTelemetryContext(
+            TelemetryReaderFailover, TelemetryTraceLevel.Nested);
+        this.readerFailoverTriggered.Inc();
 
-        var result = await this.GetReaderFailoverConnectionAsync(DateTime.UtcNow.AddMilliseconds(this.failoverTimeoutMs));
-        Logger.LogInformation(Resources.FailoverPlugin_FailoverReaderAsync_ReaderFailoverSuccessful, result.HostSpec.Host);
+        try
+        {
+            Logger.LogInformation(Resources.FailoverPlugin_FailoverReaderAsync_StartingReaderFailover);
+            await this.pluginService.ForceRefreshHostListAsync(false, 0);
 
-        this.pluginService.SetCurrentConnection(result.Connection, result.HostSpec);
-        Logger.LogInformation(Resources.FailoverPlugin_FailoverReaderAsync_SetNewConnection,
-            RuntimeHelpers.GetHashCode(result.Connection),
-            result.Connection.State,
-            result.Connection.DataSource,
-            result.HostSpec.Host);
-        this.ThrowFailoverSuccessException();
+            var result = await this.GetReaderFailoverConnectionAsync(DateTime.UtcNow.AddMilliseconds(this.failoverTimeoutMs));
+            Logger.LogInformation(Resources.FailoverPlugin_FailoverReaderAsync_ReaderFailoverSuccessful, result.HostSpec.Host);
+
+            this.pluginService.SetCurrentConnection(result.Connection, result.HostSpec);
+            Logger.LogInformation(Resources.FailoverPlugin_FailoverReaderAsync_SetNewConnection,
+                RuntimeHelpers.GetHashCode(result.Connection),
+                result.Connection.State,
+                result.Connection.DataSource,
+                result.HostSpec.Host);
+            this.ThrowFailoverSuccessException();
+        }
+        catch (FailoverSuccessException)
+        {
+            // Expected signaling exception — failover succeeded; the exception
+            // is how we tell the caller their prior operation was interrupted.
+            this.readerFailoverSuccess.Inc();
+            failoverContext.SetSuccess(true);
+            throw;
+        }
+        catch (TransactionStateUnknownException)
+        {
+            // Also thrown by ThrowFailoverSuccessException() when failover
+            // succeeded but an open transaction was lost during the connection
+            // swap. From the failover-span perspective, the failover itself
+            // still succeeded.
+            this.readerFailoverSuccess.Inc();
+            failoverContext.SetSuccess(true);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            this.readerFailoverFailed.Inc();
+            failoverContext.SetException(ex);
+            failoverContext.SetSuccess(false);
+            throw;
+        }
+        finally
+        {
+            failoverContext.CloseContext();
+
+            // PostCopy MUST come after CloseContext — the OTLP PostCopy
+            // clones the Activity's end time, which is only populated after
+            // Activity.Stop() (invoked by CloseContext).
+            if (this.telemetryFailoverAdditionalTopTrace)
+            {
+                telemetryFactory.PostCopy(failoverContext, TelemetryTraceLevel.ForceTopLevel);
+            }
+        }
     }
 
     private async Task<ReaderFailoverResult> GetReaderFailoverConnectionAsync(DateTime failoverEndTime)
@@ -430,53 +509,95 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
     private async Task FailoverWriterAsync()
     {
-        // Force refresh host list and wait for topology to stabilize
-        await this.pluginService.ForceRefreshHostListAsync(true, this.failoverTimeoutMs);
-        var updatedHosts = this.pluginService.AllHosts;
-        var writerCandidate = updatedHosts.FirstOrDefault(x => x.Role == HostRole.Writer);
+        ITelemetryFactory telemetryFactory = this.pluginService.TelemetryFactory;
+        ITelemetryContext failoverContext = telemetryFactory.OpenTelemetryContext(
+            TelemetryWriterFailover, TelemetryTraceLevel.Nested);
+        this.writerFailoverTriggered.Inc();
 
-        if (writerCandidate == null)
-        {
-            throw new FailoverFailedException(Resources.Error_NoWriterHostFoundInUpdatedTopology);
-        }
-
-        var allowedHosts = this.pluginService.GetHosts();
-        if (!allowedHosts.Any(h => h.Host == writerCandidate.Host && h.Port == writerCandidate.Port))
-        {
-            throw new FailoverFailedException(string.Format(Resources.Error_NewWriterNotInAllowedHostsList, writerCandidate.Host, writerCandidate.Port));
-        }
-
-        DbConnection writerCandidateConn;
         try
         {
-            writerCandidateConn = await this.pluginService.OpenConnection(writerCandidate, this.props, this, true);
+            // Force refresh host list and wait for topology to stabilize
+            await this.pluginService.ForceRefreshHostListAsync(true, this.failoverTimeoutMs);
+            var updatedHosts = this.pluginService.AllHosts;
+            var writerCandidate = updatedHosts.FirstOrDefault(x => x.Role == HostRole.Writer);
+
+            if (writerCandidate == null)
+            {
+                throw new FailoverFailedException(Resources.Error_NoWriterHostFoundInUpdatedTopology);
+            }
+
+            var allowedHosts = this.pluginService.GetHosts();
+            if (!allowedHosts.Any(h => h.Host == writerCandidate.Host && h.Port == writerCandidate.Port))
+            {
+                throw new FailoverFailedException(string.Format(Resources.Error_NewWriterNotInAllowedHostsList, writerCandidate.Host, writerCandidate.Port));
+            }
+
+            DbConnection writerCandidateConn;
+            try
+            {
+                writerCandidateConn = await this.pluginService.OpenConnection(writerCandidate, this.props, this, true);
+            }
+            catch (Exception ex)
+            {
+                throw new FailoverFailedException(string.Format(Resources.Error_ExceptionConnectingToWriter, writerCandidate.Host), ex);
+            }
+
+            var role = await this.pluginService.GetHostRole(writerCandidateConn);
+            if (role != HostRole.Writer)
+            {
+                try
+                {
+                    await writerCandidateConn.DisposeAsync().ConfigureAwait(false);
+                }
+                catch (Exception)
+                {
+                    // Ignore close exception
+                }
+
+                throw new FailoverFailedException(string.Format(Resources.Error_UnexpectedRoleForWriterCandidate, writerCandidate.Host));
+            }
+
+            this.pluginService.SetCurrentConnection(writerCandidateConn, writerCandidate);
+            Logger.LogInformation(Resources.FailoverPlugin_FailoverWriterAsync_SetNewConnection,
+                RuntimeHelpers.GetHashCode(writerCandidateConn),
+                writerCandidateConn.State,
+                writerCandidate.Host);
+            this.ThrowFailoverSuccessException();
+        }
+        catch (FailoverSuccessException)
+        {
+            // Expected signaling exception — failover succeeded; the exception
+            // is how we tell the caller their prior operation was interrupted.
+            this.writerFailoverSuccess.Inc();
+            failoverContext.SetSuccess(true);
+            throw;
+        }
+        catch (TransactionStateUnknownException)
+        {
+            // Also thrown by ThrowFailoverSuccessException() when failover
+            // succeeded but an open transaction was lost. From the failover-
+            // span perspective, the failover itself still succeeded.
+            this.writerFailoverSuccess.Inc();
+            failoverContext.SetSuccess(true);
+            throw;
         }
         catch (Exception ex)
         {
-            throw new FailoverFailedException(string.Format(Resources.Error_ExceptionConnectingToWriter, writerCandidate.Host), ex);
+            this.writerFailoverFailed.Inc();
+            failoverContext.SetException(ex);
+            failoverContext.SetSuccess(false);
+            throw;
         }
-
-        var role = await this.pluginService.GetHostRole(writerCandidateConn);
-        if (role != HostRole.Writer)
+        finally
         {
-            try
-            {
-                await writerCandidateConn.DisposeAsync().ConfigureAwait(false);
-            }
-            catch (Exception)
-            {
-                // Ignore close exception
-            }
+            failoverContext.CloseContext();
 
-            throw new FailoverFailedException(string.Format(Resources.Error_UnexpectedRoleForWriterCandidate, writerCandidate.Host));
+            // PostCopy MUST come after CloseContext
+            if (this.telemetryFailoverAdditionalTopTrace)
+            {
+                telemetryFactory.PostCopy(failoverContext, TelemetryTraceLevel.ForceTopLevel);
+            }
         }
-
-        this.pluginService.SetCurrentConnection(writerCandidateConn, writerCandidate);
-        Logger.LogInformation(Resources.FailoverPlugin_FailoverWriterAsync_SetNewConnection,
-            RuntimeHelpers.GetHashCode(writerCandidateConn),
-            writerCandidateConn.State,
-            writerCandidate.Host);
-        this.ThrowFailoverSuccessException();
     }
 
     private void ThrowFailoverSuccessException()
