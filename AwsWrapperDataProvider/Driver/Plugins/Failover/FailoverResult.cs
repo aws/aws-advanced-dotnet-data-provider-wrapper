@@ -18,15 +18,15 @@ using AwsWrapperDataProvider.Driver.HostInfo;
 namespace AwsWrapperDataProvider.Driver.Plugins.Failover;
 
 /// <summary>
-/// Represents the result of a reader failover operation, containing the new connection and host specification.
+/// Represents the result of a failover operation, containing the new connection and host specification.
 /// </summary>
-public class ReaderFailoverResult
+public class FailoverResult
 {
     public DbConnection Connection { get; }
 
     public HostSpec HostSpec { get; }
 
-    public ReaderFailoverResult(DbConnection connection, HostSpec hostSpec)
+    public FailoverResult(DbConnection connection, HostSpec hostSpec)
     {
         this.Connection = connection ?? throw new ArgumentNullException(nameof(connection));
         this.HostSpec = hostSpec ?? throw new ArgumentNullException(nameof(hostSpec));
