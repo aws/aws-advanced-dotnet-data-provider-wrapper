@@ -17,6 +17,7 @@ using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Driver.Utils.Telemetry;
 using AwsWrapperDataProvider.Plugin.Iam.Utils;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
@@ -36,6 +37,14 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
     private readonly Dictionary<string, string> props = props;
 
     private readonly IIamTokenUtility iamTokenUtility = iamTokenUtility;
+
+    private readonly ITelemetryCounter fetchTokenCounter =
+        pluginService.TelemetryFactory.CreateCounter("iam.fetchToken.count");
+
+    private readonly ITelemetryGauge tokenCacheSizeGauge =
+        pluginService.TelemetryFactory.CreateGauge(
+            "iam.tokenCache.size",
+            () => (long)IamTokenCache.Count);
 
     public static readonly int DefaultIamExpirationSeconds = 870;
 
@@ -75,18 +84,11 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
         bool isCachedToken = true;
         if (!IamTokenCache.TryGetValue(cacheKey, out string? token))
         {
-            try
-            {
-                token = await this.iamTokenUtility.GenerateAuthenticationTokenAsync(iamRegion, iamHost, iamPort, iamUser);
-                int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? DefaultIamExpirationSeconds;
-                IamTokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
-                isCachedToken = false;
-                Logger.LogTrace("Generated new authentication token");
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("Could not generate authentication token for IAM user " + iamUser + ".", ex);
-            }
+            token = await this.FetchTokenAsync(iamUser, iamHost, iamPort, iamRegion);
+            int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? DefaultIamExpirationSeconds;
+            IamTokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
+            isCachedToken = false;
+            Logger.LogTrace("Generated new authentication token");
         }
         else
         {
@@ -108,22 +110,45 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
             }
 
             // should the token not work (login exception + is cached token), generate a new one and try again
-            try
-            {
-                token = await this.iamTokenUtility.GenerateAuthenticationTokenAsync(iamRegion, iamHost, iamPort, iamUser);
-                int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? DefaultIamExpirationSeconds;
-                IamTokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
-                Logger.LogTrace("Generated new authentication token");
-            }
-            catch (Exception ex2)
-            {
-                throw new Exception("Could not generate authentication token for IAM user " + iamUser + ".", ex2);
-            }
+            token = await this.FetchTokenAsync(iamUser, iamHost, iamPort, iamRegion);
+            int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? DefaultIamExpirationSeconds;
+            IamTokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
+            Logger.LogTrace("Generated new authentication token");
 
             // token is non-null here, as the above try-catch block must have succeeded
             PropertyDefinition.Password.Set(props, token);
 
             return await methodFunc();
+        }
+    }
+
+    /// <summary>
+    /// Wraps a single <see cref="IIamTokenUtility.GenerateAuthenticationTokenAsync"/>
+    /// API call in the <c>"fetch IAM token"</c> nested telemetry span and 
+    /// increments the <c>iam.fetchToken.count</c> counter. 
+    /// </summary>
+    private async Task<string> FetchTokenAsync(string iamUser, string iamHost, int iamPort, string iamRegion)
+    {
+        ITelemetryContext fetchContext = this.pluginService.TelemetryFactory
+            .OpenTelemetryContext("fetch IAM token", TelemetryTraceLevel.Nested);
+        this.fetchTokenCounter.Inc();
+        try
+        {
+            string token = await this.iamTokenUtility.GenerateAuthenticationTokenAsync(iamRegion, iamHost, iamPort, iamUser);
+            fetchContext.SetSuccess(true);
+            return token;
+        }
+        catch (Exception ex)
+        {
+            // Record the underlying exception on the span for root-cause
+            // visibility before we wrap it for the caller.
+            fetchContext.SetException(ex);
+            fetchContext.SetSuccess(false);
+            throw new Exception("Could not generate authentication token for IAM user " + iamUser + ".", ex);
+        }
+        finally
+        {
+            fetchContext.CloseContext();
         }
     }
 }
