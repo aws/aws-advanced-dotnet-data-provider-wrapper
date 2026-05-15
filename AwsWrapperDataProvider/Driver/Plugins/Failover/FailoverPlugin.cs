@@ -61,7 +61,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
     private readonly bool skipFailoverOnInterruptedThread;
     private readonly bool closedExplicitly = false;
     private readonly AuroraStaleDnsHelper auroraStaleDnsHelper;
-    
+
     private readonly ITelemetryCounter writerFailoverTriggered;
     private readonly ITelemetryCounter writerFailoverSuccess;
     private readonly ITelemetryCounter writerFailoverFailed;
