@@ -19,6 +19,7 @@ using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Driver.Utils.Telemetry;
 using AwsWrapperDataProvider.Plugin.SecretsManager.SecretsManager;
 using Moq;
 
@@ -46,6 +47,11 @@ public class SecretsManagerAuthPluginTests
     {
         this.mockPluginService = new Mock<IPluginService>();
         this.mockSecretsManagerClient = new Mock<AmazonSecretsManagerClient>(Mock.Of<Amazon.Runtime.AWSCredentials>(), new AmazonSecretsManagerConfig { RegionEndpoint = Amazon.RegionEndpoint.USEast1 });
+
+        // SecretsManagerAuthPlugin's constructor now creates a telemetry
+        // counter via pluginService.TelemetryFactory — wire the null factory
+        // singleton so all counter calls are no-op.
+        this.mockPluginService.Setup(s => s.TelemetryFactory).Returns(NullTelemetryFactory.Instance);
 
         // Setup default secret response
         var secretResponse = new GetSecretValueResponse
