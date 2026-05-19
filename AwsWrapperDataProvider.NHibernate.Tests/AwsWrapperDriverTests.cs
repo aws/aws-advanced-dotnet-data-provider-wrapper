@@ -364,13 +364,13 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
 
             string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
+            var connectionString = ConnectionStringHelper.GetUrl(Engine, ProxyClusterEndpoint, ProxyPort, Username, Password, ProxyDatabaseInfo!.DefaultDbName, 2, 10);
 
-            var connectionString = ConnectionStringHelper.GetUrl(Engine, ProxyClusterEndpoint, ProxyPort, Username, Password, DefaultDbName, 2, 10);
             var wrapperConnectionString = connectionString
                 + ";Plugins=failover;"
                 + "EnableConnectFailover=true;"
                 + "FailoverMode=StrictWriter;"
-                + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
+                + $"ClusterInstanceHostPattern=?.{ProxyDatabaseInfo!.InstanceEndpointSuffix}:{ProxyDatabaseInfo!.InstanceEndpointPort}";
             var cfg = this.GetNHibernateConfiguration(wrapperConnectionString);
 
             var sessionFactory = cfg.BuildSessionFactory();
