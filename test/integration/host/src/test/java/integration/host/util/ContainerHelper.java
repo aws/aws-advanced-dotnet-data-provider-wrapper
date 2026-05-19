@@ -106,37 +106,12 @@ public class ContainerHelper {
         assertEquals(0, exitCode, "Failed to update database with migration");
     }
 
-    // Diagnostics options (apply to both perf and non-perf invocations):
-    //   --blame-hang / --blame-hang-timeout / --blame-hang-dump-type:
-    //     If no test makes progress for the timeout, dotnet test dumps the call stacks of every running
-    //     test process and writes a full process dump under --results-directory, then kills the test host.
-    //     The timeout is set above the per-test xUnit Timeout so it only fires when the cooperative
-    //     cancellation in xUnit didn't take effect.
-    //   --logger:trx: emits a per-test TRX file alongside the console output for structured post-mortem.
-    //   --results-directory: bind-mounted out of the container so the dump and TRX survive even if
-    //     the GitHub Actions step is canceled.
-    String resultsDir = "/app/test/integration/container/reports";
-    String blameHangTimeout = "70m";
     if (task.contains("perf")) {
       exitCode = execInContainer(container, consumer, "dotnet", "test", "--filter",
-              "Category=Integration&Database=" + task + "&Engine=" + engineDeployment,
-              "--configuration", "Release",
-              "--logger:\"console;verbosity=detailed\"",
-              "--logger:\"trx;LogFileName=" + task + "-" + engineDeployment + ".trx\"",
-              "--results-directory", resultsDir,
-              "--blame-hang",
-              "--blame-hang-timeout", blameHangTimeout,
-              "--blame-hang-dump-type", "full");
+              "Category=Integration&Database=" + task + "&Engine=" + engineDeployment, "--configuration", "Release", "--logger:\"console;verbosity=detailed\"");
     } else {
       exitCode = execInContainer(container, consumer, "dotnet", "test", "--filter",
-              "Category=Integration&Database=" + task + "&Engine=" + engineDeployment,
-              "--no-build",
-              "--logger:\"console;verbosity=detailed\"",
-              "--logger:\"trx;LogFileName=" + task + "-" + engineDeployment + ".trx\"",
-              "--results-directory", resultsDir,
-              "--blame-hang",
-              "--blame-hang-timeout", blameHangTimeout,
-              "--blame-hang-dump-type", "full");
+              "Category=Integration&Database=" + task + "&Engine=" + engineDeployment, "--no-build", "--logger:\"console;verbosity=detailed\"");
     }
 
 
