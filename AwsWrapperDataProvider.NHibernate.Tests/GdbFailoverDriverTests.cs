@@ -59,7 +59,10 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
 
         /// <summary>
         /// Builds the gdbFailover wrapper connection string for tests that trigger temporary
-        /// failures through Toxiproxy on the proxied cluster endpoint.
+        /// failures through Toxiproxy. Uses the proxied instance suffix so the underlying
+        /// connection stays on the proxy and Toxiproxy outages actually break the wire
+        /// (otherwise <see cref="Driver.Plugins.AuroraStaleDns.AuroraStaleDnsHelper"/> would
+        /// reconnect the session to the non-proxied writer host and bypass the simulated outage).
         /// </summary>
         private static string GetGdbProxyWrapperConnectionString(string connectionString, string mode)
         {
@@ -68,7 +71,7 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
                 + "EnableConnectFailover=true;"
                 + $"ActiveHomeFailoverMode={mode};"
                 + $"InactiveHomeFailoverMode={mode};"
-                + $"ClusterInstanceHostPattern=?.{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointSuffix}:{TestEnvironment.Env.Info.DatabaseInfo.InstanceEndpointPort}";
+                + $"ClusterInstanceHostPattern=?.{ProxyDatabaseInfo!.InstanceEndpointSuffix}:{ProxyDatabaseInfo!.InstanceEndpointPort}";
         }
 
         /// <summary>
@@ -406,9 +409,19 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
 
             string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
+            var initialWriterInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.GetInstance(currentWriter);
 
+            // Connect directly to the proxied writer instance so AuroraStaleDnsHelper does not
+            // reconnect to the non-proxied host and bypass the Toxiproxy outage.
             var connectionString = ConnectionStringHelper.GetUrl(
-                Engine, ProxyClusterEndpoint, ProxyPort, Username, Password, DefaultDbName, 2, 10);
+                Engine,
+                initialWriterInstanceInfo.Host,
+                initialWriterInstanceInfo.Port,
+                Username,
+                Password,
+                ProxyDatabaseInfo!.DefaultDbName,
+                2,
+                10);
             var wrapperConnectionString = GetGdbProxyWrapperConnectionString(connectionString, "strict-writer");
             var cfg = this.GetNHibernateConfiguration(wrapperConnectionString);
             var sessionFactory = cfg.BuildSessionFactory();
@@ -534,9 +547,19 @@ namespace AwsWrapperDataProvider.NHibernate.Tests
             Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
 
             string currentWriter = TestEnvironment.Env.Info.ProxyDatabaseInfo!.Instances.First().InstanceId;
+            var initialWriterInstanceInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo!.GetInstance(currentWriter);
 
+            // Connect directly to the proxied writer instance so AuroraStaleDnsHelper does not
+            // reconnect to the non-proxied host and bypass the Toxiproxy outage.
             var connectionString = ConnectionStringHelper.GetUrl(
-                Engine, ProxyClusterEndpoint, ProxyPort, Username, Password, DefaultDbName, 2, 10);
+                Engine,
+                initialWriterInstanceInfo.Host,
+                initialWriterInstanceInfo.Port,
+                Username,
+                Password,
+                ProxyDatabaseInfo!.DefaultDbName,
+                2,
+                10);
             var wrapperConnectionString = GetGdbProxyWrapperConnectionString(connectionString, "home-reader-or-writer");
             var cfg = this.GetNHibernateConfiguration(wrapperConnectionString);
             var sessionFactory = cfg.BuildSessionFactory();
