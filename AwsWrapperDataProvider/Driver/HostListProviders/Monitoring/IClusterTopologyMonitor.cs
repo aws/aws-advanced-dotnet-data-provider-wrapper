@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
 
 namespace AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
@@ -41,13 +40,4 @@ public interface IClusterTopologyMonitor : IDisposable
     /// <returns>List of host specifications.</returns>
     /// <exception cref="TimeoutException">Thrown when the operation times out.</exception>
     Task<IList<HostSpec>> ForceRefreshAsync(bool writerImportant, long timeoutMs);
-
-    /// <summary>
-    /// Forces a refresh of the cluster topology using the provided connection.
-    /// </summary>
-    /// <param name="connection">The database connection to use.</param>
-    /// <param name="timeoutMs">Timeout in milliseconds.</param>
-    /// <returns>List of host specifications.</returns>
-    /// <exception cref="TimeoutException">Thrown when the operation times out.</exception>
-    Task<IList<HostSpec>> ForceRefreshAsync(DbConnection? connection, long timeoutMs);
 }

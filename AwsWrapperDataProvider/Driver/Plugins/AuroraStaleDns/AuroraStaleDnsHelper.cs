@@ -51,9 +51,10 @@ public class AuroraStaleDnsHelper
         ADONetDelegate<DbConnection> openFunc,
         IConnectionPlugin? pluginToSkip = null)
     {
-        // If this is not a writer cluster DNS, no verification needed
-        if (!RdsUtils.IsWriterClusterDns(hostSpec.Host))
+        RdsUrlType type = RdsUtils.IdentifyRdsType(hostSpec.Host);
+        if (type != RdsUrlType.RdsWriterCluster && type != RdsUrlType.RdsGlobalWriterCluster)
         {
+            // If this is not a writer cluster DNS, no verification needed
             return await openFunc();
         }
 
@@ -89,7 +90,7 @@ public class AuroraStaleDnsHelper
         HostRole connectionRole = await this.pluginService.GetHostRole(connection);
         Logger.LogTrace(Resources.AuroraStaleDnsHelper_OpenVerifiedConnectionAsync_CurrentConnectionRole, connectionRole);
 
-        await this.pluginService.ForceRefreshHostListAsync(connection);
+        await this.pluginService.ForceRefreshHostListAsync();
         Logger.LogTrace(LoggerUtils.LogTopology(this.pluginService.AllHosts, null));
 
         this.writerHostSpec = WrapperUtils.GetWriter(this.pluginService.AllHosts);

@@ -12,20 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data.Common;
-using AwsWrapperDataProvider.Driver.HostInfo;
+namespace AwsWrapperDataProvider.Driver.Dialects;
 
-namespace AwsWrapperDataProvider.Driver.HostListProviders;
-
-public interface IHostListProvider
+public interface IMultiAzClusterDialect : ITopologyDialect
 {
-    Task<IList<HostSpec>> RefreshAsync();
-
-    Task<IList<HostSpec>> ForceRefreshAsync();
-
-    Task<IList<HostSpec>> ForceRefreshAsync(bool shouldVerifyWriter, long timeoutMs);
-
-    string GetClusterId();
-
-    Task<HostSpec?> IdentifyConnectionAsync(DbConnection connection, DbTransaction? transaction = null);
+    string WriterIdColumnName { get; }
 }

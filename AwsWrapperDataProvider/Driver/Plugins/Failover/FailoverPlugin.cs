@@ -40,20 +40,20 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
     private static readonly ILogger<FailoverPlugin> Logger = LoggerUtils.GetLogger<FailoverPlugin>();
 
-    private readonly IPluginService pluginService;
-    private readonly Dictionary<string, string> props;
-    private readonly int failoverTimeoutMs;
-    private readonly string failoverReaderHostSelectorStrategy;
+    protected readonly IPluginService pluginService;
+    protected readonly Dictionary<string, string> props;
+    protected readonly int failoverTimeoutMs;
+    protected readonly string failoverReaderHostSelectorStrategy;
     private readonly bool enableConnectFailover;
     private readonly bool skipFailoverOnInterruptedThread;
     private readonly bool closedExplicitly = false;
     private readonly AuroraStaleDnsHelper auroraStaleDnsHelper;
 
-    private IHostListProviderService? hostListProviderService;
-    private RdsUrlType? rdsUrlType;
+    protected IHostListProviderService? hostListProviderService;
+    protected RdsUrlType? rdsUrlType;
 
     private bool isClosed;
-    private bool shouldThrowTransactionError = false;
+    protected bool shouldThrowTransactionError = false;
     private Exception? lastExceptionDealtWith;
     private FailoverMode? failoverMode;
 
@@ -120,7 +120,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
         throw new UnreachableException(Resources.Error_FailoverPluginShouldNotReachHere);
     }
 
-    private void InitFailoverMode()
+    protected virtual void InitFailoverMode()
     {
         if (this.rdsUrlType != null || this.failoverMode != null)
         {
@@ -216,7 +216,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
         if (isInitialConnection)
         {
-            await this.pluginService.ForceRefreshHostListAsync(connection);
+            await this.pluginService.RefreshHostListAsync();
         }
 
         Logger.LogDebug(Resources.FailoverPlugin_OpenConnection_ReturningConnection,
@@ -291,7 +291,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
         throw originalException;
     }
 
-    private async Task FailoverAsync()
+    protected virtual async Task FailoverAsync()
     {
         Logger.LogInformation(Resources.FailoverPlugin_FailoverAsync_InitiatingFailover, this.failoverMode);
 
@@ -479,7 +479,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
         this.ThrowFailoverSuccessException();
     }
 
-    private void ThrowFailoverSuccessException()
+    protected void ThrowFailoverSuccessException()
     {
         Logger.LogTrace(Resources.FailoverPlugin_ThrowFailoverSuccessException_FailoverSucceeded);
 

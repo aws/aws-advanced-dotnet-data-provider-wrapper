@@ -336,4 +336,105 @@ public class ConnectionPropertiesUtilsTests
             Assert.Equal(expectedHosts[i], result[i]);
         }
     }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void ParseHostPortPairWithRegionPrefix_RdsHost_InfersRegion()
+    {
+        var builder = new HostSpecBuilder();
+        var (region, hostSpec) = ConnectionPropertiesUtils.ParseHostPortPairWithRegionPrefix(
+            "?.XYZ.us-east-2.rds.amazonaws.com", builder);
+
+        Assert.Equal("us-east-2", region);
+        Assert.Equal("?.XYZ.us-east-2.rds.amazonaws.com", hostSpec.Host);
+        Assert.False(hostSpec.IsPortSpecified);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void ParseHostPortPairWithRegionPrefix_ExplicitRegion_UsesExplicitRegion()
+    {
+        var builder = new HostSpecBuilder();
+        var (region, hostSpec) = ConnectionPropertiesUtils.ParseHostPortPairWithRegionPrefix(
+            "[test-region]?.XYZ.us-east-2.rds.amazonaws.com", builder);
+
+        Assert.Equal("test-region", region);
+        Assert.Equal("?.XYZ.us-east-2.rds.amazonaws.com", hostSpec.Host);
+        Assert.False(hostSpec.IsPortSpecified);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void ParseHostPortPairWithRegionPrefix_RdsHostWithPort_InfersRegionAndPort()
+    {
+        var builder = new HostSpecBuilder();
+        var (region, hostSpec) = ConnectionPropertiesUtils.ParseHostPortPairWithRegionPrefix(
+            "?.XYZ.us-east-2.rds.amazonaws.com:9999", builder);
+
+        Assert.Equal("us-east-2", region);
+        Assert.Equal("?.XYZ.us-east-2.rds.amazonaws.com", hostSpec.Host);
+        Assert.True(hostSpec.IsPortSpecified);
+        Assert.Equal(9999, hostSpec.Port);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void ParseHostPortPairWithRegionPrefix_ExplicitRegionWithPort()
+    {
+        var builder = new HostSpecBuilder();
+        var (region, hostSpec) = ConnectionPropertiesUtils.ParseHostPortPairWithRegionPrefix(
+            "[test-region]?.XYZ.us-east-2.rds.amazonaws.com:9999", builder);
+
+        Assert.Equal("test-region", region);
+        Assert.Equal("?.XYZ.us-east-2.rds.amazonaws.com", hostSpec.Host);
+        Assert.True(hostSpec.IsPortSpecified);
+        Assert.Equal(9999, hostSpec.Port);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void ParseHostPortPairWithRegionPrefix_CustomDomainWithRegion()
+    {
+        var builder = new HostSpecBuilder();
+        var (region, hostSpec) = ConnectionPropertiesUtils.ParseHostPortPairWithRegionPrefix(
+            "[test-region]?.custom-domain.com", builder);
+
+        Assert.Equal("test-region", region);
+        Assert.Equal("?.custom-domain.com", hostSpec.Host);
+        Assert.False(hostSpec.IsPortSpecified);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void ParseHostPortPairWithRegionPrefix_CustomDomainWithRegionAndPort()
+    {
+        var builder = new HostSpecBuilder();
+        var (region, hostSpec) = ConnectionPropertiesUtils.ParseHostPortPairWithRegionPrefix(
+            "[test-region]?.custom-domain.com:9999", builder);
+
+        Assert.Equal("test-region", region);
+        Assert.Equal("?.custom-domain.com", hostSpec.Host);
+        Assert.True(hostSpec.IsPortSpecified);
+        Assert.Equal(9999, hostSpec.Port);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void ParseHostPortPairWithRegionPrefix_CustomDomainNoRegion_Throws()
+    {
+        var builder = new HostSpecBuilder();
+        Assert.Throws<ArgumentException>(() =>
+            ConnectionPropertiesUtils.ParseHostPortPairWithRegionPrefix(
+                "?.custom-domain.com", builder));
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void ParseHostPortPairWithRegionPrefix_CustomDomainNoRegionWithPort_Throws()
+    {
+        var builder = new HostSpecBuilder();
+        Assert.Throws<ArgumentException>(() =>
+            ConnectionPropertiesUtils.ParseHostPortPairWithRegionPrefix(
+                "?.custom-domain.com:9999", builder));
+    }
 }

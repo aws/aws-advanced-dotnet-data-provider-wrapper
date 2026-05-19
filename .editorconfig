@@ -393,6 +393,7 @@ dotnet_diagnostic.SA1402.severity = suggestion
 dotnet_diagnostic.SA1405.severity = suggestion
 dotnet_diagnostic.SA1502.severity = suggestion
 dotnet_diagnostic.SA1512.severity = suggestion
+dotnet_diagnostic.SA1515.severity = none
 dotnet_diagnostic.SA1516.severity = suggestion
 dotnet_diagnostic.SA1600.severity = suggestion
 dotnet_diagnostic.SA1601.severity = suggestion

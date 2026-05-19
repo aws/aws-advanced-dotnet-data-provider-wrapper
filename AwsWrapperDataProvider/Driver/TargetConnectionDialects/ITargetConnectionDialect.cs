@@ -71,5 +71,15 @@ public interface ITargetConnectionDialect
 
     string? MapCanonicalKeyToWrapperProperty(string canonicalKey);
 
+    /// <summary>
+    /// Ensures that monitoring connection properties contain connect and command timeout values.
+    /// If the user did not provide timeout values (under any driver-recognized alias),
+    /// the specified defaults are added using the driver's native key names.
+    /// </summary>
+    /// <param name="props">The monitoring connection properties (prefix already stripped).</param>
+    /// <param name="defaultConnectTimeoutSec">Default connect timeout in seconds.</param>
+    /// <param name="defaultCommandTimeoutSec">Default command timeout in seconds.</param>
+    void EnsureMonitoringTimeouts(Dictionary<string, string> props, int defaultConnectTimeoutSec, int defaultCommandTimeoutSec);
+
     bool IsSyntaxError(DbException ex);
 }

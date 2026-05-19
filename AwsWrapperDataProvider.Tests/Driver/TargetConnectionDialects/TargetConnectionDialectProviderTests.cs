@@ -142,6 +142,10 @@ public class TargetConnectionDialectProviderTests
             throw new NotImplementedException();
         }
 
+        public void EnsureMonitoringTimeouts(Dictionary<string, string> props, int defaultConnectTimeoutSec, int defaultCommandTimeoutSec)
+        {
+        }
+
         public bool IsSyntaxError(DbException ex)
         {
             return true;

@@ -370,3 +370,6 @@ test/integration/host/build/
 
 # Entity Framework Migrations
 AwsWrapperDataProvider.EntityFrameworkCore.*/Migrations/
+
+# Kiro related
+.kiro/

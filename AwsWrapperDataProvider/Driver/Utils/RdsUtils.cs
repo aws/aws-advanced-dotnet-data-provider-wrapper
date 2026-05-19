@@ -53,7 +53,10 @@ public static partial class RdsUtils
     [GeneratedRegex(@"^(?<instance>.+)\.(?<dns>cluster-|cluster-ro-)(?<domain>[a-zA-Z0-9]+\.(rds|rds-fips)\.(?<region>[a-zA-Z0-9\-]+)\.(amazonaws\.com\.?|c2s\.ic\.gov\.?|sc2s\.sgov\.gov\.?))$", RegexOptions.IgnoreCase, "en-CA")]
     private static partial Regex AuroraGovClusterPattern();
 
-    private static readonly Regex[] AuroraDnsPatterns = [AuroraDnsPattern(), AuroraChinaDnsPattern(), AuroraOldChinaDnsPattern(), AuroraGovDnsPattern()];
+    [GeneratedRegex(@"^(?<instance>.+)\.(?<dns>global-)?(?<domain>[a-zA-Z0-9]+\.global\.rds\.amazonaws\.com\.?)$", RegexOptions.IgnoreCase, "en-CA")]
+    private static partial Regex AuroraGlobalWriterDnsPattern();
+
+    private static readonly Regex[] AuroraDnsPatterns = [AuroraDnsPattern(), AuroraChinaDnsPattern(), AuroraOldChinaDnsPattern(), AuroraGovDnsPattern(), AuroraGlobalWriterDnsPattern()];
 
     [GeneratedRegex(@"^(([1-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){1}(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){2}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$")]
     private static partial Regex IpV4Pattern();
@@ -94,6 +97,11 @@ public static partial class RdsUtils
         if (dnsGroup is null)
         {
             return RdsUrlType.Other;
+        }
+
+        if (dnsGroup.Equals("global-", StringComparison.OrdinalIgnoreCase))
+        {
+            return RdsUrlType.RdsGlobalWriterCluster;
         }
 
         // Is RDS writer cluster DNS.
@@ -271,6 +279,12 @@ public static partial class RdsUtils
     {
         string? dnsGroup = GetDnsGroup(host);
         return dnsGroup != null && string.Equals(dnsGroup, "cluster-ro-", StringComparison.OrdinalIgnoreCase);
+    }
+
+    public static bool IsGlobalDbWriterClusterDns(string host)
+    {
+        string? dnsGroup = GetDnsGroup(host);
+        return dnsGroup != null && string.Equals(dnsGroup, "global-", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string? GetDnsGroup(string host)
