@@ -26,21 +26,21 @@ public class GlobalAuroraPgDialect : AuroraPgDialect, IGlobalAuroraTopologyDiale
         LoggerUtils.GetLogger<GlobalAuroraPgDialect>();
 
     internal static readonly string GlobalStatusFuncExistsQuery =
-        "select 'aurora_global_db_status'::regproc";
+        "select 'pg_catalog.aurora_global_db_status'::regproc";
 
     internal static readonly string GlobalInstanceStatusFuncExistsQuery =
-        "select 'aurora_global_db_instance_status'::regproc";
+        "select 'pg_catalog.aurora_global_db_instance_status'::regproc";
 
     internal static readonly string RegionCountQuery =
-        "SELECT count(1) FROM aurora_global_db_status()";
+        "SELECT count(1) FROM pg_catalog.aurora_global_db_status()";
 
     public new string TopologyQuery =>
         "SELECT SERVER_ID, CASE WHEN SESSION_ID = 'MASTER_SESSION_ID' THEN TRUE ELSE FALSE END, "
         + "VISIBILITY_LAG_IN_MSEC, AWS_REGION "
-        + "FROM aurora_global_db_instance_status()";
+        + "FROM pg_catalog.aurora_global_db_instance_status()";
 
     public string RegionByInstanceIdQuery =>
-        "SELECT AWS_REGION FROM aurora_global_db_instance_status() WHERE SERVER_ID = '{0}'";
+        "SELECT AWS_REGION FROM pg_catalog.aurora_global_db_instance_status() WHERE SERVER_ID = '{0}'";
 
     public override IList<Type> DialectUpdateCandidates { get; } = [];
 
