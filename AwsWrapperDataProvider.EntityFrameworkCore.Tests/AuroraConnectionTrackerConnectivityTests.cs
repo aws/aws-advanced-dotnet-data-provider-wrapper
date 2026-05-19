@@ -63,7 +63,7 @@ public class AuroraConnectionTrackerConnectivityTests : EFIntegrationTestBase
         return this.BuildOptionsWithLogger(wrapper, conn);
     }
 
-    [Theory]
+    [Theory(Timeout = 60 * 60 * 1000)]
     [InlineData(true)]
     [InlineData(false)]
     [Trait("Category", "Integration")]
@@ -182,7 +182,7 @@ public class AuroraConnectionTrackerConnectivityTests : EFIntegrationTestBase
         }
     }
 
-    [Theory]
+    [Theory(Timeout = 60 * 60 * 1000)]
     [InlineData(true)]
     [InlineData(false)]
     [Trait("Category", "Integration")]
@@ -301,7 +301,7 @@ public class AuroraConnectionTrackerConnectivityTests : EFIntegrationTestBase
         }
     }
 
-    [Theory]
+    [Theory(Timeout = 60 * 60 * 1000)]
     [InlineData(true)]
     [InlineData(false)]
     [Trait("Category", "Integration")]
@@ -363,7 +363,7 @@ public class AuroraConnectionTrackerConnectivityTests : EFIntegrationTestBase
                 Assert.Equal(ConnectionState.Closed, ctx.Database.GetDbConnection().State);
             }
 
-            // Idle context 0: read query should recover — verify pre-crash data is accessible.
+            // Idle context 0: read query should recover â€” verify pre-crash data is accessible.
             Assert.True(idleContexts[0].Persons.Any(p => p.FirstName == "Idle0"));
             Assert.True(idleContexts[0].Persons.Any(p => p.FirstName == "Idle1"));
 
@@ -405,7 +405,7 @@ public class AuroraConnectionTrackerConnectivityTests : EFIntegrationTestBase
         }
     }
 
-    [Theory]
+    [Theory(Timeout = 60 * 60 * 1000)]
     [InlineData(true)]
     [InlineData(false)]
     [Trait("Category", "Integration")]
@@ -467,7 +467,7 @@ public class AuroraConnectionTrackerConnectivityTests : EFIntegrationTestBase
                 Assert.Equal(ConnectionState.Closed, ctx.Database.GetDbConnection().State);
             }
 
-            // Idle context 0: read query should recover — verify pre-crash data is accessible.
+            // Idle context 0: read query should recover â€” verify pre-crash data is accessible.
             Assert.True(await idleContexts[0].Persons.AnyAsync(
                 p => p.FirstName == "Idle0", TestContext.Current.CancellationToken));
             Assert.True(await idleContexts[0].Persons.AnyAsync(

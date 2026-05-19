@@ -38,7 +38,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
     /// </summary>
     /// <param name="async">True if testing async calls, false if testing sync calls.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Theory]
+    [Theory(Timeout = 60 * 60 * 1000)]
     [InlineData(true)]
     [InlineData(false)]
     [Trait("Category", "Integration")]
@@ -89,7 +89,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
     /// Current writer dies, driver failover occurs when executing a method against the connection.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
     [Trait("Database", "pg")]
@@ -139,7 +139,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
     /// </summary>
     /// <param name="async">True if testing async calls, false if testing sync calls.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Theory]
+    [Theory(Timeout = 60 * 60 * 1000)]
     [InlineData(true)]
     [InlineData(false)]
     [Trait("Category", "Integration")]
@@ -186,7 +186,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
         Assert.True(await AuroraUtils.WaitUntilInstanceHasRoleAsync(currentConnectionId, true, TimeSpan.FromMinutes(15)));
     }
 
-    [Theory]
+    [Theory(Timeout = 60 * 60 * 1000)]
     [InlineData(true)]
     [InlineData(false)]
     [Trait("Category", "Integration")]
@@ -237,7 +237,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
         await simulationTask;
     }
 
-    [Theory]
+    [Theory(Timeout = 60 * 60 * 1000)]
     [InlineData(true)]
     [InlineData(false)]
     [Trait("Category", "Integration")]
@@ -278,7 +278,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
         });
     }
 
-    [Theory]
+    [Theory(Timeout = 60 * 60 * 1000)]
     [InlineData(true)]
     [InlineData(false)]
     [Trait("Category", "Integration")]
@@ -333,7 +333,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
         await crashTask;
     }
 
-    [Theory]
+    [Theory(Timeout = 60 * 60 * 1000)]
     [InlineData(true)]
     [InlineData(false)]
     [Trait("Category", "Integration")]
@@ -386,7 +386,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
     /// <param name="async">True if testing async calls, false if testing sync calls.</param>
     /// <param name="pooling">True if connection pooling is enabled, false if disabled.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Theory]
+    [Theory(Timeout = 60 * 60 * 1000)]
     [InlineData(true, false)]
     [InlineData(false, false)]
     [InlineData(true, true)]
@@ -467,7 +467,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
             {
                 this.logger.WriteLine($"Writer did not change, still {newWriterId}.");
 
-                // Writer didn't change — idle connections should still be open.
+                // Writer didn't change â€” idle connections should still be open.
                 foreach (var idleConn in idleConnections)
                 {
                     Assert.Equal(
@@ -479,7 +479,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
             {
                 this.logger.WriteLine($"Cluster failed over to instance {newWriterId}.");
 
-                // Writer changed — all idle connections should be closed.
+                // Writer changed â€” all idle connections should be closed.
                 foreach (var idleConn in idleConnections)
                 {
                     Assert.Equal(
@@ -510,7 +510,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
 
 public class ManualFailoverConnectivityTests
 {
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Category", "Manual")]
     public void FailoverPluginTest_WithStrictWriterMode()
@@ -525,7 +525,7 @@ public class ManualFailoverConnectivityTests
         PerformFailoverTest(connectionString);
     }
 
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Category", "Manual")]
     public void FailoverPluginTest_WithStrictReaderMode()
@@ -541,7 +541,7 @@ public class ManualFailoverConnectivityTests
         PerformFailoverTest(connectionString);
     }
 
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Category", "Manual")]
     public void FailoverPluginTest_ReadOnlyNode_WithStrictReaderMode()
@@ -557,7 +557,7 @@ public class ManualFailoverConnectivityTests
         PerformFailoverTest(connectionString);
     }
 
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Category", "Manual")]
     public void FailoverPluginTest_WithReaderOrWriterMode()
@@ -573,7 +573,7 @@ public class ManualFailoverConnectivityTests
         PerformFailoverTest(connectionString);
     }
 
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Category", "Manual")]
     public void FailoverPluginTest_WithStrictWriterMode_WithRoundRobinHostSelectorStrategy()
@@ -590,7 +590,7 @@ public class ManualFailoverConnectivityTests
         PerformFailoverTest(connectionString);
     }
 
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Category", "Manual")]
     public void FailoverPluginTest_WithStrictWriterMode_WithHighestWeightHostSelectorStrategy()
@@ -607,7 +607,7 @@ public class ManualFailoverConnectivityTests
         PerformFailoverTest(connectionString);
     }
 
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Category", "Manual")]
     public void FailoverPluginTest_WithAuroraInitialConnectionStrategyPlugin()
@@ -623,7 +623,7 @@ public class ManualFailoverConnectivityTests
         PerformFailoverTest(connectionString);
     }
 
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Category", "Manual")]
     public void FailoverPluginTest_WithIamAuth()
@@ -638,7 +638,7 @@ public class ManualFailoverConnectivityTests
         PerformFailoverTest(connectionString);
     }
 
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Category", "Manual")]
     public void FailoverPluginTest_Transaction_WithStrictWriterMode()
@@ -653,7 +653,7 @@ public class ManualFailoverConnectivityTests
         PerformTransactionFailoverTest(connectionString);
     }
 
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Category", "Manual")]
     public void FailoverPluginTest_Transaction_WithStrictReaderMode()
@@ -669,7 +669,7 @@ public class ManualFailoverConnectivityTests
         PerformTransactionFailoverTest(connectionString);
     }
 
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Category", "Manual")]
     public void FailoverPluginTest_Transaction_WithReaderOrWriterMode()
@@ -693,7 +693,7 @@ public class ManualFailoverConnectivityTests
         {
             Console.WriteLine("1. Opening initial connection...");
             connection.Open();
-            Console.WriteLine($"   ✓ Connected successfully");
+            Console.WriteLine($"   âœ“ Connected successfully");
             Console.WriteLine($"   Connection State: {connection.State}");
 
             // Get initial writer information
@@ -744,7 +744,7 @@ public class ManualFailoverConnectivityTests
 
                     if (hostInfo.Host != newHostInfo.Host || hostInfo.Port != newHostInfo.Port)
                     {
-                        Console.WriteLine("   ✓ FAILOVER DETECTED! Host changed successfully.");
+                        Console.WriteLine("   âœ“ FAILOVER DETECTED! Host changed successfully.");
                         Console.WriteLine($"   New Host: {newHostInfo.Host}:{newHostInfo.Port}");
                         Console.WriteLine($"   Current Host Name: {newHostInfo.HostName}");
                         Console.WriteLine($"   New Host Role: {newHostInfo.Role}");
@@ -752,7 +752,7 @@ public class ManualFailoverConnectivityTests
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"\n❌ Test failed with exception:");
+                    Console.WriteLine($"\nâŒ Test failed with exception:");
                     Console.WriteLine($"   Type: {ex.GetType().Name}");
                     Console.WriteLine($"   Message: {ex.Message}");
 
@@ -788,7 +788,7 @@ public class ManualFailoverConnectivityTests
                 }
             }
 
-            Console.WriteLine("\n✓ Failover test completed successfully!");
+            Console.WriteLine("\nâœ“ Failover test completed successfully!");
         }
         finally
         {
@@ -809,7 +809,7 @@ public class ManualFailoverConnectivityTests
         {
             Console.WriteLine("1. Opening initial connection...");
             connection.Open();
-            Console.WriteLine($"   ✓ Connected successfully");
+            Console.WriteLine($"   âœ“ Connected successfully");
             Console.WriteLine($"   Connection State: {connection.State}");
 
             // Get initial writer information
@@ -832,7 +832,7 @@ public class ManualFailoverConnectivityTests
                         created_at TIMESTAMP DEFAULT NOW()
                     )";
                 setupCommand.ExecuteNonQuery();
-                Console.WriteLine("   ✓ Persistent test table created");
+                Console.WriteLine("   âœ“ Persistent test table created");
             }
 
             Console.WriteLine("\n4. Starting transaction with operations that should be rolled back...");
@@ -841,7 +841,7 @@ public class ManualFailoverConnectivityTests
 
             // Start a transaction
             using var transaction = connection.BeginTransaction();
-            Console.WriteLine("   ✓ Transaction started");
+            Console.WriteLine("   âœ“ Transaction started");
 
             var startTime = DateTime.UtcNow;
             Console.WriteLine($"   Transaction started at: {startTime:HH:mm:ss}");
@@ -856,7 +856,7 @@ public class ManualFailoverConnectivityTests
                     insertCommand.Transaction = transaction;
                     insertCommand.CommandText = "INSERT INTO failover_rollback_test (test_data) VALUES ('data-that-should-be-rolled-back-1')";
                     insertCommand.ExecuteNonQuery();
-                    Console.WriteLine("   ✓ First insert completed within transaction");
+                    Console.WriteLine("   âœ“ First insert completed within transaction");
                 }
 
                 using (var insertCommand2 = connection.CreateCommand<NpgsqlCommand>())
@@ -864,7 +864,7 @@ public class ManualFailoverConnectivityTests
                     insertCommand2.Transaction = transaction;
                     insertCommand2.CommandText = "INSERT INTO failover_rollback_test (test_data) VALUES ('data-that-should-be-rolled-back-2')";
                     insertCommand2.ExecuteNonQuery();
-                    Console.WriteLine("   ✓ Second insert completed within transaction");
+                    Console.WriteLine("   âœ“ Second insert completed within transaction");
                 }
 
                 // Verify data exists within the transaction before failover
@@ -873,7 +873,7 @@ public class ManualFailoverConnectivityTests
                     preFailoverSelect.Transaction = transaction;
                     preFailoverSelect.CommandText = "SELECT COUNT(*) FROM failover_rollback_test";
                     var countBeforeFailover = (long)(preFailoverSelect.ExecuteScalar() ?? 0L);
-                    Console.WriteLine($"   ✓ Data visible within transaction: {countBeforeFailover} rows");
+                    Console.WriteLine($"   âœ“ Data visible within transaction: {countBeforeFailover} rows");
                 }
 
                 // Execute long-running query within the transaction that should trigger failover
@@ -895,12 +895,12 @@ public class ManualFailoverConnectivityTests
                 }
 
                 // If we reach here, no failover occurred during the sleep
-                Console.WriteLine("   ⚠️  No failover detected during long-running query");
+                Console.WriteLine("   âš ï¸  No failover detected during long-running query");
             }
             catch (TransactionStateUnknownException)
             {
                 failoverOccurred = true;
-                Console.WriteLine("   ✓ Failover detected during transaction!");
+                Console.WriteLine("   âœ“ Failover detected during transaction!");
 
                 var newHostInfo = GetCurrentConnectionInfo(connection);
                 Console.WriteLine("\n5. Verifying connection after failover...");
@@ -911,12 +911,12 @@ public class ManualFailoverConnectivityTests
 
                 if (hostInfo.Host != newHostInfo.Host || hostInfo.Port != newHostInfo.Port)
                 {
-                    Console.WriteLine("   ✓ FAILOVER DETECTED! Host changed successfully.");
+                    Console.WriteLine("   âœ“ FAILOVER DETECTED! Host changed successfully.");
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"   ❌ Exception during transaction: {ex.GetType().Name}: {ex.Message}");
+                Console.WriteLine($"   âŒ Exception during transaction: {ex.GetType().Name}: {ex.Message}");
             }
 
             // Now verify that the transaction was rolled back
@@ -931,11 +931,11 @@ public class ManualFailoverConnectivityTests
 
                 if (countAfterFailover == 0)
                 {
-                    Console.WriteLine("   ✓ ROLLBACK VERIFIED: All transaction data was rolled back!");
+                    Console.WriteLine("   âœ“ ROLLBACK VERIFIED: All transaction data was rolled back!");
                 }
                 else
                 {
-                    Console.WriteLine("   ❌ ROLLBACK FAILED: Transaction data was not rolled back!");
+                    Console.WriteLine("   âŒ ROLLBACK FAILED: Transaction data was not rolled back!");
 
                     // Show what data remains
                     using (var dataCommand = connection.CreateCommand<NpgsqlCommand>())
@@ -964,11 +964,11 @@ public class ManualFailoverConnectivityTests
                     newInsertCommand.Transaction = newTransaction;
                     newInsertCommand.CommandText = "INSERT INTO failover_rollback_test (test_data) VALUES ('post-failover-data')";
                     newInsertCommand.ExecuteNonQuery();
-                    Console.WriteLine("   ✓ New transaction insert successful");
+                    Console.WriteLine("   âœ“ New transaction insert successful");
                 }
 
                 newTransaction.Commit();
-                Console.WriteLine("   ✓ New transaction committed successfully");
+                Console.WriteLine("   âœ“ New transaction committed successfully");
             }
 
             // Verify the new data exists
@@ -981,14 +981,14 @@ public class ManualFailoverConnectivityTests
 
             if (failoverOccurred)
             {
-                Console.WriteLine("\n✓ Transaction rollback failover test completed successfully!");
+                Console.WriteLine("\nâœ“ Transaction rollback failover test completed successfully!");
                 Console.WriteLine("  - Failover was detected during transaction");
                 Console.WriteLine("  - Transaction was automatically rolled back");
                 Console.WriteLine("  - New transactions work correctly after failover");
             }
             else
             {
-                Console.WriteLine("\n⚠️  Test completed but no failover was detected");
+                Console.WriteLine("\nâš ï¸  Test completed but no failover was detected");
                 Console.WriteLine("   Make sure to trigger failover during the pg_sleep operation");
             }
         }
@@ -1003,18 +1003,18 @@ public class ManualFailoverConnectivityTests
                 {
                     cleanupCommand.CommandText = "DROP TABLE IF EXISTS failover_rollback_test";
                     cleanupCommand.ExecuteNonQuery();
-                    Console.WriteLine("   ✓ Test table cleaned up");
+                    Console.WriteLine("   âœ“ Test table cleaned up");
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"   ⚠️  Cleanup warning: {ex.Message}");
+                Console.WriteLine($"   âš ï¸  Cleanup warning: {ex.Message}");
             }
 
             if (connection.State == ConnectionState.Open)
             {
                 connection.Close();
-                Console.WriteLine("   ✓ Connection closed");
+                Console.WriteLine("   âœ“ Connection closed");
             }
         }
     }

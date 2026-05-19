@@ -33,7 +33,7 @@ public class GdbFailoverTests : IntegrationTestBase
     /// Writer failover using gdbFailover plugin with strict-writer mode.
     /// Current writer dies, driver failover occurs when executing a method against the connection.
     /// </summary>
-    [Theory]
+    [Theory(Timeout = 60 * 60 * 1000)]
     [InlineData(true)]
     [InlineData(false)]
     [Trait("Category", "Integration")]
@@ -86,7 +86,7 @@ public class GdbFailoverTests : IntegrationTestBase
     /// Reader failover using gdbFailover plugin with home-reader-or-writer mode.
     /// Current writer dies via network outage, driver fails over to any available host.
     /// </summary>
-    [Theory]
+    [Theory(Timeout = 60 * 60 * 1000)]
     [InlineData(true)]
     [InlineData(false)]
     [Trait("Category", "Integration")]
@@ -132,7 +132,7 @@ public class GdbFailoverTests : IntegrationTestBase
     /// Current writer dies, driver fails over to a reader instance.
     /// Asserts the connected instance after failover is a reader.
     /// </summary>
-    [Theory]
+    [Theory(Timeout = 60 * 60 * 1000)]
     [InlineData(true)]
     [InlineData(false)]
     [Trait("Category", "Integration")]
@@ -190,7 +190,7 @@ public class GdbFailoverTests : IntegrationTestBase
     /// Reader failover using gdbFailover plugin with home-reader-or-writer mode.
     /// Simulates a temporary failure so the writer is re-elected.
     /// </summary>
-    [Theory]
+    [Theory(Timeout = 60 * 60 * 1000)]
     [InlineData(true)]
     [InlineData(false)]
     [Trait("Category", "Integration")]

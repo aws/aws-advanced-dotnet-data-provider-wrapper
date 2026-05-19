@@ -74,7 +74,7 @@ public class EntityFrameworkGdbFailoverConnectivityTests : EFIntegrationTestBase
     /// the failed entity remains detached, and subsequent writes succeed on the
     /// newly elected writer.
     /// </summary>
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg-ef")]
     [Trait("Database", "mysql-ef")]
@@ -170,7 +170,7 @@ public class EntityFrameworkGdbFailoverConnectivityTests : EFIntegrationTestBase
     /// <summary>
     /// Async counterpart of <see cref="EFGdbWriterFailover_StrictWriter_FailOnExecute"/>.
     /// </summary>
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg-ef")]
     [Trait("Database", "mysql-ef")]
@@ -269,7 +269,7 @@ public class EntityFrameworkGdbFailoverConnectivityTests : EFIntegrationTestBase
     /// <see cref="FailoverSuccessException"/> and the new connection must land on
     /// a reader instance.
     /// </summary>
-    [Theory]
+    [Theory(Timeout = 60 * 60 * 1000)]
     [InlineData(true)]
     [InlineData(false)]
     [Trait("Category", "Integration")]
@@ -358,7 +358,7 @@ public class EntityFrameworkGdbFailoverConnectivityTests : EFIntegrationTestBase
     /// Simulates a network outage on the current writer so the driver falls over to
     /// any available host (reader or writer).
     /// </summary>
-    [Theory]
+    [Theory(Timeout = 60 * 60 * 1000)]
     [InlineData(true)]
     [InlineData(false)]
     [Trait("Category", "Integration")]
@@ -429,7 +429,7 @@ public class EntityFrameworkGdbFailoverConnectivityTests : EFIntegrationTestBase
     /// simulating a temporary failure of the current writer. The writer is expected to be
     /// re-elected once connectivity is restored.
     /// </summary>
-    [Theory]
+    [Theory(Timeout = 60 * 60 * 1000)]
     [InlineData(true)]
     [InlineData(false)]
     [Trait("Category", "Integration")]
@@ -505,7 +505,7 @@ public class EntityFrameworkGdbFailoverConnectivityTests : EFIntegrationTestBase
     /// failover exception, and confirms subsequent inserts persist on the new writer.
     /// Mirrors <c>EFCrashBeforeOpenWithFailoverPluginTest</c> but exercises gdbFailover.
     /// </summary>
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg-ef")]
     [Trait("Database", "mysql-ef")]
@@ -570,7 +570,7 @@ public class EntityFrameworkGdbFailoverConnectivityTests : EFIntegrationTestBase
     /// <summary>
     /// Async counterpart of <see cref="EFGdbCrashBeforeOpen_StrictWriter_Persists"/>.
     /// </summary>
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg-ef")]
     [Trait("Database", "mysql-ef")]
