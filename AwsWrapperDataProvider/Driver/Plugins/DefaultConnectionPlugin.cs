@@ -19,6 +19,7 @@ using AwsWrapperDataProvider.Driver.Exceptions;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Driver.Utils.Telemetry;
 using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
@@ -83,13 +84,30 @@ public class DefaultConnectionPlugin(
     {
         DbConnection conn = connProvider.CreateDbConnection(this.pluginService.Dialect, this.pluginService.TargetConnectionDialect, hostSpec, props);
 
-        if (async)
+        ITelemetryContext targetDriverContext = this.pluginService.TelemetryFactory
+            .OpenTelemetryContext(conn.GetType().FullName ?? "target", TelemetryTraceLevel.Nested);
+        try
         {
-            await conn.OpenAsync();
+            if (async)
+            {
+                await conn.OpenAsync();
+            }
+            else
+            {
+                conn.Open();
+            }
+
+            targetDriverContext.SetSuccess(true);
         }
-        else
+        catch (Exception ex)
         {
-            conn.Open();
+            targetDriverContext.SetException(ex);
+            targetDriverContext.SetSuccess(false);
+            throw;
+        }
+        finally
+        {
+            targetDriverContext.CloseContext();
         }
 
         Logger.LogTrace(Resources.DefaultConnectionPlugin_OpenInternal_ConnectionOpened, conn.GetType().FullName, RuntimeHelpers.GetHashCode(conn), conn.DataSource);

@@ -20,6 +20,7 @@ using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Driver.Utils.Telemetry;
 using AwsWrapperDataProvider.Plugin.FederatedAuth.Utils;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -42,6 +43,16 @@ public partial class FederatedAuthPlugin(IPluginService pluginService, Dictionar
     private readonly CredentialsProviderFactory credentialsFactory = credentialsFactory;
 
     private readonly ITokenUtility tokenUtility = tokenUtility;
+
+    // Telemetry — counts each federated-auth token fetch
+    // attempt (incremented at the top of UpdateAuthenticationTokenAsync so
+    // both the initial cache-miss fetch and the login-exception retry-fetch
+    // are captured). Uses the primary constructor's pluginService parameter;
+    // TelemetryFactory returns a no-op NullTelemetryCounter when telemetry
+    // is disabled.
+    private readonly ITelemetryCounter fetchTokenCounter =
+        pluginService.TelemetryFactory.CreateCounter("federatedAuth.fetchToken.count");
+
     public static readonly string SamlResponsePatternGroup = "saml";
 
     [GeneratedRegex("SAMLResponse\\W+value=\"(?<saml>[^\"]+)\"", RegexOptions.IgnoreCase, "en-CA")]
@@ -112,6 +123,12 @@ public partial class FederatedAuthPlugin(IPluginService pluginService, Dictionar
 
     private async Task UpdateAuthenticationTokenAsync(HostSpec? hostSpec, Dictionary<string, string> props, string host, int port, string region, string cacheKey, string dbUser)
     {
+        // Count every token-fetch attempt. Incremented before any
+        // work so both the initial cache-miss fetch and the login-exception
+        // retry-fetch are captured. Counts attempts (not successes); an
+        // exception later in the method does not roll the counter back.
+        this.fetchTokenCounter.Inc();
+
         int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? DefaultIamExpirationSeconds;
         RegionEndpoint regionEndpoint = RegionUtils.IsValidRegion(region) ? RegionEndpoint.GetBySystemName(region) : throw new Exception("Invalid region");
 

@@ -18,6 +18,7 @@ using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Driver.Utils.Telemetry;
 using AwsWrapperDataProvider.Plugin.Iam.Iam;
 using Microsoft.Extensions.Caching.Memory;
 using Moq;
@@ -49,6 +50,11 @@ public class IamAuthPluginTests
         this.props[PropertyDefinition.Plugins.Name] = "iam";
         this.props[PropertyDefinition.IamDefaultPort.Name] = Port.ToString();
         this.props[PropertyDefinition.User.Name] = User;
+
+        // IamAuthPlugin now creates telemetry instruments in its field
+        // initializers using pluginService.TelemetryFactory — wire it to
+        // the null factory singleton so all counters/gauges are no-op.
+        this.mockPluginService.Setup(s => s.TelemetryFactory).Returns(NullTelemetryFactory.Instance);
 
         this.mockIamTokenUtility.Setup(
             utility => utility.GetCacheKey(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>()))

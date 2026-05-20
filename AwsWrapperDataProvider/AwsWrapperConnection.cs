@@ -22,6 +22,7 @@ using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Driver.Utils.Telemetry;
 using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
@@ -305,16 +306,33 @@ public class AwsWrapperConnection : DbConnection, IWrapper
         ArgumentNullException.ThrowIfNull(this.PluginManager);
         ArgumentNullException.ThrowIfNull(this.hostListProviderService);
 
-        await this.PluginManager.InitHostProvider(this.connectionString!, this.ConnectionProperties!, this.hostListProviderService);
+        ITelemetryContext telemetryContext = this.pluginService.TelemetryFactory
+            .OpenTelemetryContext("DbConnection.Open", TelemetryTraceLevel.TopLevel);
+        try
+        {
+            await this.PluginManager.InitHostProvider(this.connectionString!, this.ConnectionProperties!, this.hostListProviderService);
 
-        DbConnection connection = await WrapperUtils.OpenWithPlugins(
-            this.PluginManager,
-            this.pluginService.CurrentHostSpec,
-            this.ConnectionProperties!,
-            true,
-            async);
-        this.pluginService.SetCurrentConnection(connection, this.pluginService.CurrentHostSpec);
-        await this.pluginService.RefreshHostListAsync();
+            DbConnection connection = await WrapperUtils.OpenWithPlugins(
+                this.PluginManager,
+                this.pluginService.CurrentHostSpec,
+                this.ConnectionProperties!,
+                true,
+                async);
+            this.pluginService.SetCurrentConnection(connection, this.pluginService.CurrentHostSpec);
+            await this.pluginService.RefreshHostListAsync();
+
+            telemetryContext.SetSuccess(true);
+        }
+        catch (Exception ex)
+        {
+            telemetryContext.SetException(ex);
+            telemetryContext.SetSuccess(false);
+            throw;
+        }
+        finally
+        {
+            telemetryContext.CloseContext();
+        }
     }
 
     protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel)

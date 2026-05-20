@@ -25,6 +25,7 @@ using AwsWrapperDataProvider.Driver.Plugins.ExecutionTime;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Driver.Utils.Telemetry;
 using AwsWrapperDataProvider.Plugin.FederatedAuth.FederatedAuth;
 using AwsWrapperDataProvider.Plugin.Iam.Iam;
 using AwsWrapperDataProvider.Plugin.SecretsManager.SecretsManager;
@@ -41,6 +42,12 @@ public class ConnectionPluginChainBuilderTests
     public ConnectionPluginChainBuilderTests()
     {
         this.pluginServiceMock.Setup(ps => ps.TargetConnectionDialect).Returns(new NpgsqlDialect());
+
+        // FailoverPlugin (and other plugins the chain builder might construct)
+        // read TelemetryFactory from the plugin service in their constructors
+        // to create telemetry counters. Using the null factory singleton so
+        // all created instruments are no-ops in these chain-building tests.
+        this.pluginServiceMock.Setup(ps => ps.TelemetryFactory).Returns(NullTelemetryFactory.Instance);
     }
 
     [Fact]
