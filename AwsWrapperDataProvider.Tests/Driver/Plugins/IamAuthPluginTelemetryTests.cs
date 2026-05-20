@@ -25,8 +25,7 @@ using Moq;
 namespace AwsWrapperDataProvider.Tests.Driver.Plugins;
 
 /// <summary>
-/// Unit tests for <see cref="IamAuthPlugin"/>'s telemetry wiring — per Req 16
-/// and task 14.
+/// Unit tests for <see cref="IamAuthPlugin"/>'s telemetry wiring.
 ///
 /// <para>Covers constructor-level instrument creation (counter + gauge), the
 /// gauge callback semantics, and the <c>"fetch IAM token"</c> span lifecycle
@@ -84,8 +83,7 @@ public class IamAuthPluginTelemetryTests
     {
         _ = new IamAuthPlugin(this.mockPluginService.Object, this.props, this.mockIamTokenUtility.Object);
 
-        // Req 16.1 / 16.2 — one counter + one gauge created in constructor,
-        // with the expected names.
+        // One counter + one gauge created in constructor, with the expected names.
         this.mockFactory.Verify(f => f.CreateCounter("iam.fetchToken.count"), Times.Once);
         this.mockFactory.Verify(f => f.CreateGauge("iam.tokenCache.size", It.IsAny<Func<long>>()), Times.Once);
     }
@@ -123,8 +121,8 @@ public class IamAuthPluginTelemetryTests
 
         _ = await plugin.OpenConnection(this.hostSpec, this.props, true, methodFunc.Object, true);
 
-        // Req 16.3 — one "fetch IAM token" Nested span opened per fetch,
-        // success recorded, closed in finally.
+        // One "fetch IAM token" Nested span opened per fetch, success
+        // recorded, closed in finally.
         this.mockFactory.Verify(
             f => f.OpenTelemetryContext("fetch IAM token", TelemetryTraceLevel.Nested),
             Times.Once);
@@ -132,8 +130,8 @@ public class IamAuthPluginTelemetryTests
         this.fetchTokenContext.Verify(c => c.SetException(It.IsAny<Exception>()), Times.Never);
         this.fetchTokenContext.Verify(c => c.CloseContext(), Times.Once);
 
-        // Req 16.1 — counter incremented exactly once (inside the span's
-        // try so counter/span stay paired).
+        // Counter incremented exactly once (inside the span's try so
+        // counter/span stay paired).
         this.mockCounter.Verify(c => c.Inc(), Times.Once);
     }
 

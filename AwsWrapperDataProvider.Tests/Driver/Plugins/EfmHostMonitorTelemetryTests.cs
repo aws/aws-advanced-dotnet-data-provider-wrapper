@@ -22,10 +22,9 @@ using Moq;
 namespace AwsWrapperDataProvider.Tests.Driver.Plugins;
 
 /// <summary>
-/// Unit tests for the EFM <see cref="HostMonitor"/> telemetry — per Req 10 and
-/// task 12.
+/// Unit tests for the EFM <see cref="HostMonitor"/> telemetry.
 ///
-/// <para>Covers two of the three test areas in task 12.4:</para>
+/// <para>Covers two of the three test areas:</para>
 /// <list type="bullet">
 ///   <item>Constructor creates 3 telemetry instruments (2 counters + 1 gauge)
 ///     with the expected names, including the node id baked into
@@ -38,8 +37,8 @@ namespace AwsWrapperDataProvider.Tests.Driver.Plugins;
 ///
 /// <para>The third test area — verifying the <c>"connection status check"</c>
 /// <see cref="TelemetryTraceLevel.Nested"/> span in the private
-/// <c>CheckConnectionStatusAsync</c> method — is deferred. It depends on the
-/// same private-method testing-access decision as task 11.4; see
+/// <c>CheckConnectionStatusAsync</c> method — is deferred. It depends on a
+/// private-method testing-access decision; see
 /// <c>.kiro/specs/wrapper-telemetry/deferred-decisions.md</c> for details.</para>
 ///
 /// <para>Access-to-private-state note: <c>HostMonitor</c>'s constructor spawns
@@ -75,9 +74,9 @@ public class EfmHostMonitorTelemetryTests
         HostMonitor monitor = new(mockPluginService.Object, hostSpec, new Dictionary<string, string>(), 1000, 1000, 3);
         try
         {
-            // Per Req 10.1, 10.2, 10.5 — three instruments, each created
-            // exactly once in the constructor with the expected names. The
-            // nodeUnhealthy counter name uses the HostSpec's HostId.
+            // Three instruments, each created exactly once in the
+            // constructor with the expected names. The nodeUnhealthy counter
+            // name uses the HostSpec's HostId.
             mockFactory.Verify(f => f.CreateCounter("efm.connections.aborted"), Times.Once);
             mockFactory.Verify(f => f.CreateCounter($"efm.nodeUnhealthy.count.{TestNodeId}"), Times.Once);
             mockFactory.Verify(f => f.CreateGauge("efm.activeContexts.queue.size", It.IsAny<Func<long>>()), Times.Once);

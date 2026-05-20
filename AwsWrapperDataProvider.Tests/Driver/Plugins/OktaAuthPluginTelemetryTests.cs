@@ -27,15 +27,14 @@ using Moq;
 namespace AwsWrapperDataProvider.Tests.Driver.Plugins;
 
 /// <summary>
-/// Unit tests for <see cref="OktaAuthPlugin"/>'s telemetry wiring — per Req
-/// 19 and task 17.
+/// Unit tests for <see cref="OktaAuthPlugin"/>'s telemetry wiring.
 ///
-/// <para>Req 19 calls only for a counter (no span and no gauge), so these
-/// tests cover constructor counter creation and counter increment on token
-/// fetch. Both the cache-miss path and the post-login-exception retry path
-/// route through <c>UpdateAuthenticationTokenAsync</c>, where the increment
-/// lives — the cache-miss test implicitly verifies both call sites go
-/// through the same instrumented code.</para>
+/// <para>Okta auth instruments only a counter (no span and no gauge), so
+/// these tests cover constructor counter creation and counter increment on
+/// token fetch. Both the cache-miss path and the post-login-exception retry
+/// path route through <c>UpdateAuthenticationTokenAsync</c>, where the
+/// increment lives — the cache-miss test implicitly verifies both call sites
+/// go through the same instrumented code.</para>
 /// </summary>
 public class OktaAuthPluginTelemetryTests
 {
@@ -98,7 +97,7 @@ public class OktaAuthPluginTelemetryTests
             this.mockCredentialsProviderFactory.Object,
             this.mockTokenUtility.Object);
 
-        // Req 19.1 — one counter created in constructor with expected name.
+        // One counter created in constructor with expected name.
         this.mockFactory.Verify(f => f.CreateCounter("oktaAuth.fetchToken.count"), Times.Once);
         this.mockFactory.Verify(f => f.CreateCounter(It.IsAny<string>()), Times.Once);
     }
@@ -115,8 +114,8 @@ public class OktaAuthPluginTelemetryTests
 
         _ = await plugin.OpenConnection(this.hostSpec, this.props, true, this.methodFunc, true);
 
-        // Req 19.1 — counter incremented exactly once per fetch (the
-        // cache-miss path fetches once inside UpdateAuthenticationTokenAsync).
+        // Counter incremented exactly once per fetch (the cache-miss path
+        // fetches once inside UpdateAuthenticationTokenAsync).
         this.mockCounter.Verify(c => c.Inc(), Times.Once);
     }
 

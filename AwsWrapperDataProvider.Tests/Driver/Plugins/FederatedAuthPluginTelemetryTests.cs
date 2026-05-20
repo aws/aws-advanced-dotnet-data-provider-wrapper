@@ -26,8 +26,7 @@ using Moq;
 namespace AwsWrapperDataProvider.Tests.Driver.Plugins;
 
 /// <summary>
-/// Unit tests for <see cref="FederatedAuthPlugin"/>'s telemetry wiring — per
-/// Req 18.1 and task 16.
+/// Unit tests for <see cref="FederatedAuthPlugin"/>'s telemetry wiring.
 ///
 /// <para>Covers constructor-level counter creation and increment semantics on
 /// the three code paths that land in <c>UpdateAuthenticationTokenAsync</c>:
@@ -99,8 +98,8 @@ public class FederatedAuthPluginTelemetryTests
             this.mockCredentialsFactory.Object,
             this.mockTokenUtility.Object);
 
-        // Req 18.1 — the counter is created once in the constructor with
-        // the exact name documented in the spec.
+        // The counter is created once in the constructor with the exact
+        // documented name.
         this.mockFactory.Verify(f => f.CreateCounter("federatedAuth.fetchToken.count"), Times.Once);
     }
 
@@ -119,9 +118,9 @@ public class FederatedAuthPluginTelemetryTests
 
         _ = await plugin.OpenConnection(this.hostSpec, this.props, true, methodFunc.Object, true);
 
-        // Req 18.1 — the counter fires exactly once on a cache-miss fetch,
-        // because UpdateAuthenticationTokenAsync runs once during the
-        // initial connect and increments the counter at its entry.
+        // The counter fires exactly once on a cache-miss fetch, because
+        // UpdateAuthenticationTokenAsync runs once during the initial
+        // connect and increments the counter at its entry.
         this.mockCounter.Verify(c => c.Inc(), Times.Once);
     }
 
@@ -174,8 +173,8 @@ public class FederatedAuthPluginTelemetryTests
         _ = await plugin.OpenConnection(this.hostSpec, this.props, true, methodFunc.Object, true);
         _ = await plugin.OpenConnection(this.hostSpec, this.props, true, methodFunc.Object, true);
 
-        // Req 18.1 — both the initial fetch and the retry-fetch increment
-        // the counter, so the total across both calls is 2.
+        // Both the initial fetch and the retry-fetch increment the counter,
+        // so the total across both calls is 2.
         this.mockCounter.Verify(c => c.Inc(), Times.Exactly(2));
     }
 }

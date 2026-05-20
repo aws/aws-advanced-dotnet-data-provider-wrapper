@@ -26,8 +26,7 @@ using Moq;
 namespace AwsWrapperDataProvider.Tests.Driver.Plugins;
 
 /// <summary>
-/// Unit tests for <see cref="SecretsManagerAuthPlugin"/>'s telemetry wiring —
-/// per Req 17 and task 15.
+/// Unit tests for <see cref="SecretsManagerAuthPlugin"/>'s telemetry wiring.
 ///
 /// <para>Covers constructor-level counter creation and the
 /// <c>"fetch credentials"</c> nested span lifecycle (success + exception)
@@ -73,7 +72,7 @@ public class SecretsManagerAuthPluginTelemetryTests
     {
         _ = new SecretsManagerAuthPlugin(this.mockPluginService.Object, this.props, this.mockClient.Object);
 
-        // Req 17.1 — one counter created in constructor with expected name.
+        // One counter created in constructor with expected name.
         this.mockFactory.Verify(f => f.CreateCounter("secretsManager.fetchCredentials.count"), Times.Once);
         this.mockFactory.Verify(f => f.CreateCounter(It.IsAny<string>()), Times.Once);
     }
@@ -93,8 +92,8 @@ public class SecretsManagerAuthPluginTelemetryTests
 
         _ = await plugin.OpenConnection(this.hostSpec, this.props, true, this.methodFunc, true);
 
-        // Req 17.2 — one "fetch credentials" Nested span per fetch, success
-        // recorded, closed in finally.
+        // One "fetch credentials" Nested span per fetch, success recorded,
+        // closed in finally.
         this.mockFactory.Verify(
             f => f.OpenTelemetryContext("fetch credentials", TelemetryTraceLevel.Nested),
             Times.Once);
@@ -102,7 +101,7 @@ public class SecretsManagerAuthPluginTelemetryTests
         this.fetchCredentialsContext.Verify(c => c.SetException(It.IsAny<Exception>()), Times.Never);
         this.fetchCredentialsContext.Verify(c => c.CloseContext(), Times.Once);
 
-        // Req 17.1 — counter incremented exactly once (inside the span's try).
+        // Counter incremented exactly once (inside the span's try).
         this.mockCounter.Verify(c => c.Inc(), Times.Once);
     }
 

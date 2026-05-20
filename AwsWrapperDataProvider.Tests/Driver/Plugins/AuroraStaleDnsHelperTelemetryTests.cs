@@ -20,8 +20,7 @@ using Moq;
 namespace AwsWrapperDataProvider.Tests.Driver.Plugins;
 
 /// <summary>
-/// Unit tests for <see cref="AuroraStaleDnsHelper"/>'s telemetry wiring — per
-/// Req 11.1 and task 13.
+/// Unit tests for <see cref="AuroraStaleDnsHelper"/>'s telemetry wiring.
 ///
 /// <para>This file covers the constructor-level surface only: that the
 /// <c>staleDNS.stale.detected</c> counter is created once, with the expected
@@ -53,8 +52,8 @@ public class AuroraStaleDnsHelperTelemetryTests
 
         _ = new AuroraStaleDnsHelper(mockPluginService.Object);
 
-        // Per Req 11.1 — exactly one counter is created in the constructor
-        // with the "staleDNS.stale.detected" name.
+        // Exactly one counter is created in the constructor with the
+        // "staleDNS.stale.detected" name.
         mockFactory.Verify(f => f.CreateCounter("staleDNS.stale.detected"), Times.Once);
         mockFactory.Verify(f => f.CreateCounter(It.IsAny<string>()), Times.Once);
     }

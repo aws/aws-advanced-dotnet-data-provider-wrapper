@@ -21,8 +21,7 @@ using Moq;
 namespace AwsWrapperDataProvider.Tests.Driver.Plugins.AuroraConnectionTracker;
 
 /// <summary>
-/// Unit tests for <see cref="OpenedConnectionTracker"/>'s telemetry wiring —
-/// per Req 21 and task 18.
+/// Unit tests for <see cref="OpenedConnectionTracker"/>'s telemetry wiring.
 ///
 /// <para>Covers:</para>
 /// <list type="bullet">
@@ -31,8 +30,8 @@ namespace AwsWrapperDataProvider.Tests.Driver.Plugins.AuroraConnectionTracker;
 ///     is recorded, and CloseContext is called.</item>
 ///   <item>Exception path: SetException + SetSuccess(false) are recorded, the
 ///     span is still closed, and the underlying exception propagates.</item>
-///   <item>Test-harness fallback (Req 21.3): when no plugin service is wired,
-///     or the plugin service has no telemetry factory configured,
+///   <item>Test-harness fallback: when no plugin service is wired, or the
+///     plugin service has no telemetry factory configured,
 ///     <c>InvalidateAllConnections</c> still completes without throwing —
 ///     the tracker's null-guard falls back to
 ///     <see cref="NullTelemetryFactory"/>.</item>
@@ -69,13 +68,13 @@ public class OpenedConnectionTrackerTelemetryTests
 
         tracker.InvalidateAllConnections(hostSpec);
 
-        // Per Req 21.1 — span name is "invalidate connections" at Nested
-        // level, opened exactly once per call.
+        // Span name is "invalidate connections" at Nested level, opened
+        // exactly once per call.
         mockFactory.Verify(
             f => f.OpenTelemetryContext("invalidate connections", TelemetryTraceLevel.Nested),
             Times.Once);
 
-        // Per Req 21.2 — standard success-path pattern.
+        // Standard success-path pattern.
         mockContext.Verify(c => c.SetSuccess(true), Times.Once);
         mockContext.Verify(c => c.SetException(It.IsAny<Exception>()), Times.Never);
         mockContext.Verify(c => c.SetSuccess(false), Times.Never);
@@ -105,7 +104,7 @@ public class OpenedConnectionTrackerTelemetryTests
         NullReferenceException thrown = Assert.Throws<NullReferenceException>(
             () => tracker.InvalidateAllConnections(null!));
 
-        // Per Req 21.2 — standard exception-path pattern.
+        // Standard exception-path pattern.
         mockFactory.Verify(
             f => f.OpenTelemetryContext("invalidate connections", TelemetryTraceLevel.Nested),
             Times.Once);
@@ -121,9 +120,9 @@ public class OpenedConnectionTrackerTelemetryTests
     [Trait("Category", "Unit")]
     public void InvalidateAllConnections_NoPluginServiceWired_CompletesWithoutThrowing()
     {
-        // Test-harness case per Req 21.3: no plugin service passed. The
-        // tracker's null-guard must fall back to NullTelemetryFactory.Instance
-        // so InvalidateAllConnections doesn't NRE on the null pluginService.
+        // Test-harness case: no plugin service passed. The tracker's
+        // null-guard must fall back to NullTelemetryFactory.Instance so
+        // InvalidateAllConnections doesn't NRE on the null pluginService.
         OpenedConnectionTracker tracker = new(pluginService: null);
         HostSpec hostSpec = new(TestHost, TestPort, HostRole.Writer, HostAvailability.Available);
 
@@ -135,8 +134,8 @@ public class OpenedConnectionTrackerTelemetryTests
     [Trait("Category", "Unit")]
     public void InvalidateAllConnections_NoTelemetryFactoryOnPluginService_CompletesWithoutThrowing()
     {
-        // Related test-harness case per Req 21.3: plugin service is wired but
-        // its TelemetryFactory property has no mock setup — Moq returns
+        // Related test-harness case: plugin service is wired but its
+        // TelemetryFactory property has no mock setup — Moq returns
         // default(ITelemetryFactory) == null. The null-guard must fall back
         // to NullTelemetryFactory.Instance. This is the exact shape the
         // existing OpenedConnectionTrackerTests use, so this test pins the
