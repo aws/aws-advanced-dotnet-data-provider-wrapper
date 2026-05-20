@@ -239,7 +239,7 @@ public class TestEnvironment
             return;
         }
 
-        var instancesIDs = testInfo.DatabaseInfo!.Instances.Select(i => i.InstanceId);
+        var instancesIDs = testInfo.DatabaseInfo!.Instances.Select(i => i.InstanceId).ToList();
 
         await auroraUtil.WaitUntilClusterHasRightStateAsync(testInfo.RdsDbName!);
 
@@ -250,10 +250,8 @@ public class TestEnvironment
 
         await auroraUtil.WaitUntilClusterHasRightStateAsync(testInfo.RdsDbName!);
 
-        foreach (var instanceId in instancesIDs)
-        {
-            await auroraUtil.WaitUntilInstanceHasRightStateAsync(instanceId);
-        }
+        // Wait on all instances in parallel
+        await Task.WhenAll(instancesIDs.Select(auroraUtil.WaitUntilInstanceHasRightStateAsync));
 
         await auroraUtil.MakeSureInstancesUpAsync(TimeSpan.FromMinutes(10));
     }
