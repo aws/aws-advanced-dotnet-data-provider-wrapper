@@ -19,8 +19,10 @@ namespace AwsWrapperDataProvider.Driver.Utils.Telemetry;
 
 /// <summary>
 /// Routing <see cref="ITelemetryFactory"/> that reads the telemetry-related
-/// connection properties (<c>EnableTelemetry</c> and delegates trace and metric operations
-/// to the appropriate backend factories independently.
+/// connection properties (<c>EnableTelemetry</c>, <c>TelemetryTracesBackend</c>,
+/// <c>TelemetryMetricsBackend</c>, <c>TelemetrySubmitTopLevel</c>) and delegates
+/// trace and metric operations to the appropriate backend factories
+/// independently.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -39,11 +41,30 @@ namespace AwsWrapperDataProvider.Driver.Utils.Telemetry;
 /// </list>
 /// </para>
 /// <para>
-/// The only trace-level adjustment performed here is converting
-/// <see cref="TelemetryTraceLevel.TopLevel"/> to
-/// <see cref="TelemetryTraceLevel.Nested"/> when
-/// <c>TelemetrySubmitTopLevel</c> is <c>false</c>. All parent-detection
-/// logic lives in the backend factories.
+/// Trace-level resolution is performed centrally via
+/// <see cref="ResolveLevel"/>: <see cref="DefaultTelemetryFactory"/> queries
+/// the trace backend's <see cref="ITelemetryParentContextProbe"/> (when
+/// implemented) for the current parent state, applies the
+/// <c>TelemetrySubmitTopLevel</c> matrix below, and hands the resolved level
+/// to the backend, which simply applies it. Backends that do not implement
+/// the probe are treated as having no parent.
+/// </para>
+/// <para>
+/// Effective level matrix:
+/// <code>
+/// submitTopLevel = false
+///   parent      requested=TopLevel   requested=Nested
+///   yes         Nested               Nested
+///   no          TopLevel             Nested
+///
+/// submitTopLevel = true (override)
+///   parent      requested=TopLevel   requested=Nested
+///   yes         TopLevel             Nested
+///   no          TopLevel             NoTrace
+/// </code>
+/// <see cref="TelemetryTraceLevel.ForceTopLevel"/> and
+/// <see cref="TelemetryTraceLevel.NoTrace"/> bypass the matrix and pass
+/// straight through.
 /// </para>
 /// </remarks>
 public sealed class DefaultTelemetryFactory : ITelemetryFactory
@@ -54,6 +75,7 @@ public sealed class DefaultTelemetryFactory : ITelemetryFactory
     private static readonly ConcurrentDictionary<string, ITelemetryFactory> RegisteredFactories = new();
 
     private readonly ITelemetryFactory tracesFactory;
+    private readonly ITelemetryParentContextProbe? tracesProbe;
     private readonly ITelemetryFactory metricsFactory;
     private readonly bool submitTopLevel;
 
@@ -72,6 +94,7 @@ public sealed class DefaultTelemetryFactory : ITelemetryFactory
         {
             this.tracesFactory = NullTelemetryFactory.Instance;
             this.metricsFactory = NullTelemetryFactory.Instance;
+            this.tracesProbe = this.tracesFactory as ITelemetryParentContextProbe;
             return;
         }
 
@@ -82,6 +105,10 @@ public sealed class DefaultTelemetryFactory : ITelemetryFactory
 
         this.tracesFactory = ResolveFactory(tracesBackend);
         this.metricsFactory = ResolveFactory(metricsBackend);
+
+        // Resolve the parent-context probe once per factory instance so that
+        // OpenTelemetryContext does not pay a runtime type check per call.
+        this.tracesProbe = this.tracesFactory as ITelemetryParentContextProbe;
     }
 
     /// <summary>
@@ -115,12 +142,13 @@ public sealed class DefaultTelemetryFactory : ITelemetryFactory
     /// <inheritdoc />
     public ITelemetryContext OpenTelemetryContext(string name, TelemetryTraceLevel traceLevel)
     {
-        TelemetryTraceLevel effectiveLevel = traceLevel;
-        if (!this.submitTopLevel && traceLevel == TelemetryTraceLevel.TopLevel)
-        {
-            effectiveLevel = TelemetryTraceLevel.Nested;
-        }
-
+        // Probe parent state and resolve the effective level here so backends
+        // can be straight appliers. The probe is queried at most once per
+        // OpenTelemetryContext call, immediately before delegation; any window
+        // between probe and StartActivity is closed by the AsyncLocal scoping
+        // of the underlying parent state.
+        bool parentExists = this.tracesProbe?.HasParentContext() ?? false;
+        TelemetryTraceLevel effectiveLevel = ResolveLevel(traceLevel, parentExists, this.submitTopLevel);
         return this.tracesFactory.OpenTelemetryContext(name, effectiveLevel);
     }
 
@@ -135,6 +163,60 @@ public sealed class DefaultTelemetryFactory : ITelemetryFactory
     /// <inheritdoc />
     public ITelemetryGauge CreateGauge(string name, Func<long> valueCallback)
         => this.metricsFactory.CreateGauge(name, valueCallback);
+
+    /// <summary>
+    /// Computes the effective <see cref="TelemetryTraceLevel"/> for the
+    /// requested level given the current parent state and the
+    /// <c>TelemetrySubmitTopLevel</c> setting. Encodes the matrix described
+    /// in the type-level remarks.
+    /// </summary>
+    /// <param name="requested">The level the caller asked for.</param>
+    /// <param name="parentExists">Whether the trace backend reports an
+    /// active parent span.</param>
+    /// <param name="submitTopLevel">The value of the
+    /// <c>TelemetrySubmitTopLevel</c> property.</param>
+    /// <returns>The level that should be passed to the backend.</returns>
+    internal static TelemetryTraceLevel ResolveLevel(
+        TelemetryTraceLevel requested,
+        bool parentExists,
+        bool submitTopLevel)
+    {
+        // ForceTopLevel and NoTrace bypass the matrix entirely.
+        if (requested == TelemetryTraceLevel.ForceTopLevel)
+        {
+            return TelemetryTraceLevel.ForceTopLevel;
+        }
+
+        if (requested == TelemetryTraceLevel.NoTrace)
+        {
+            return TelemetryTraceLevel.NoTrace;
+        }
+
+        if (!submitTopLevel)
+        {
+            // submitTopLevel = false: nest under any parent we find;
+            // promote a TopLevel request to root only when no parent exists.
+            if (parentExists)
+            {
+                return TelemetryTraceLevel.Nested;
+            }
+
+            return requested == TelemetryTraceLevel.TopLevel
+                ? TelemetryTraceLevel.TopLevel
+                : TelemetryTraceLevel.Nested;
+        }
+
+        // submitTopLevel = true (override): TopLevel always wins; a Nested
+        // request still requires a parent or it is dropped.
+        if (requested == TelemetryTraceLevel.TopLevel)
+        {
+            return TelemetryTraceLevel.TopLevel;
+        }
+
+        return parentExists
+            ? TelemetryTraceLevel.Nested
+            : TelemetryTraceLevel.NoTrace;
+    }
 
     private static ITelemetryFactory ResolveFactory(string backend)
     {

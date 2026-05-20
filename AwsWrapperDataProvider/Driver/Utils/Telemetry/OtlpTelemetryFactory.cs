@@ -29,8 +29,19 @@ namespace AwsWrapperDataProvider.Driver.Utils.Telemetry;
 /// The factory is a process-wide singleton. A single <see cref="ActivitySource"/>
 /// and <see cref="Meter"/> are shared across all factory operations.
 /// </para>
+/// <para>
+/// Trace-level resolution lives in <see cref="DefaultTelemetryFactory"/>;
+/// this factory simply applies whatever level it is given. A
+/// <see cref="TelemetryTraceLevel.TopLevel"/> or
+/// <see cref="TelemetryTraceLevel.ForceTopLevel"/> request always opens a
+/// root span: when an unrelated <see cref="Activity.Current"/> is present
+/// the factory detaches it for the lifetime of the root, and the resulting
+/// <see cref="OtlpTelemetryContext"/> restores it when closed so that the
+/// application's surrounding trace context is preserved across the wrapper
+/// call.
+/// </para>
 /// </remarks>
-public sealed class OtlpTelemetryFactory : ITelemetryFactory
+public sealed class OtlpTelemetryFactory : ITelemetryFactory, ITelemetryParentContextProbe
 {
     /// <summary>
     /// Name shared by the <see cref="ActivitySource"/> and the <see cref="Meter"/>.
@@ -57,35 +68,18 @@ public sealed class OtlpTelemetryFactory : ITelemetryFactory
     }
 
     /// <inheritdoc />
+    public bool HasParentContext() => Activity.Current != null;
+
+    /// <inheritdoc />
     public ITelemetryContext OpenTelemetryContext(string name, TelemetryTraceLevel traceLevel)
     {
         switch (traceLevel)
         {
             case TelemetryTraceLevel.ForceTopLevel:
             case TelemetryTraceLevel.TopLevel:
-                // TopLevel/ForceTopLevel only reach this factory on code paths
-                // where Activity.Current is expected to be null (either
-                // DefaultTelemetryFactory converts TopLevel to Nested when a
-                // parent is present, or ForceTopLevel is called from
-                // PostCopy's Task.Run on a clean thread). The defensive guard
-                // returns a no-op if the expectation is violated.
-                if (Activity.Current != null)
-                {
-                    return NullTelemetryContext.Instance;
-                }
-
-                Activity? rootActivity = TelemetryActivitySource.StartActivity(name, ActivityKind.Client);
-                return rootActivity != null
-                    ? new OtlpTelemetryContext(rootActivity, name)
-                    : NullTelemetryContext.Instance;
+                return StartRoot(name);
 
             case TelemetryTraceLevel.Nested:
-                // A nested span must attach to an existing parent.
-                if (Activity.Current == null)
-                {
-                    return NullTelemetryContext.Instance;
-                }
-
                 Activity? nestedActivity = TelemetryActivitySource.StartActivity(name, ActivityKind.Internal);
                 return nestedActivity != null
                     ? new OtlpTelemetryContext(nestedActivity, name)
@@ -166,5 +160,47 @@ public sealed class OtlpTelemetryFactory : ITelemetryFactory
                 name);
             return NullTelemetryGauge.Instance;
         }
+    }
+
+    /// <summary>
+    /// Opens a root Activity, detaching any pre-existing
+    /// <see cref="Activity.Current"/> for the duration of the new span and
+    /// arranging for the original to be restored when the span closes.
+    /// </summary>
+    /// <param name="name">The span name.</param>
+    /// <returns>An <see cref="ITelemetryContext"/> wrapping the root
+    /// Activity, or <see cref="NullTelemetryContext.Instance"/> when no
+    /// <see cref="ActivityListener"/> is sampling the source.</returns>
+    private static ITelemetryContext StartRoot(string name)
+    {
+        // Capture the application's current Activity so it can be re-attached
+        // after the wrapper's root span ends. Without this, when the new root
+        // closes Activity.Current would revert to whatever the root's parent
+        // is (null, since we cleared it), and the application would lose its
+        // surrounding trace context for any spans it opens after the wrapper
+        // call returns.
+        Activity? saved = Activity.Current;
+        if (saved != null)
+        {
+            Activity.Current = null;
+        }
+
+        Activity? rootActivity = TelemetryActivitySource.StartActivity(name, ActivityKind.Client);
+        if (rootActivity == null)
+        {
+            // No listener is sampling: restore the saved parent immediately
+            // and return a no-op context so callers see a uniform shape.
+            if (saved != null)
+            {
+                Activity.Current = saved;
+            }
+
+            return NullTelemetryContext.Instance;
+        }
+
+        // Leave the new root as Activity.Current so that nested wrapper
+        // spans created during the call (plugin chain, target driver call,
+        // etc.) attach to it rather than to the application's parent.
+        return new OtlpTelemetryContext(rootActivity, name, restoreOnClose: saved);
     }
 }

@@ -72,17 +72,21 @@ public class XRayTelemetryContextTests : IDisposable
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void Constructor_TopLevel_WithParent_ReturnsNoOp()
+    public void Constructor_TopLevel_WithParent_StartsNewSegment()
     {
-        // Defensive guard mirroring OtlpTelemetryFactory: a parent entity
-        // present when TopLevel reaches the factory is an unexpected state.
+        // Backends are now straight appliers: trace-level resolution lives in
+        // DefaultTelemetryFactory. The X-Ray SDK's BeginSegment always starts
+        // a new top-level segment regardless of any pre-existing entity, so a
+        // TopLevel request reaching the context here just succeeds.
         AWSXRayRecorder.Instance.BeginSegment("existing.parent");
         try
         {
             XRayTelemetryContext ctx = new("op.top", TelemetryTraceLevel.TopLevel);
             try
             {
-                Assert.Null(ctx.Entity);
+                Assert.NotNull(ctx.Entity);
+                Assert.IsType<Segment>(ctx.Entity);
+                Assert.True(ctx.IsSegment);
             }
             finally
             {
@@ -122,17 +126,21 @@ public class XRayTelemetryContextTests : IDisposable
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void Constructor_Nested_WithoutParent_ReturnsNoOp()
+    public void Constructor_Nested_WithoutParent_DoesNotThrow()
     {
-        XRayTelemetryContext ctx = new("op.nested", TelemetryTraceLevel.Nested);
-        try
+        // Backends are now straight appliers; routing logic for the
+        // "Nested without parent" case lives in DefaultTelemetryFactory.
+        // When the X-Ray SDK's BeginSubsegment is invoked with no parent
+        // entity, the configured ContextMissingStrategy (LOG_ERROR in the
+        // test harness) suppresses the error. The context must not throw
+        // either way; behaviour beyond that is the SDK's responsibility.
+        Exception? ex = Record.Exception(() =>
         {
-            Assert.Null(ctx.Entity);
-        }
-        finally
-        {
+            XRayTelemetryContext ctx = new("op.nested", TelemetryTraceLevel.Nested);
             ctx.CloseContext();
-        }
+        });
+
+        Assert.Null(ex);
     }
 
     [Fact]

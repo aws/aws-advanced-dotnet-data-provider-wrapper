@@ -53,7 +53,7 @@ public class OpenedConnectionTracker : IConnectionTracker
     }
 
     /// <summary>
-    /// Returns the telemetry factory associated with the owning plugin
+    /// Gets the telemetry factory associated with the owning plugin
     /// service, falling back to <see cref="NullTelemetryFactory.Instance"/>
     /// when no plugin service is wired or the plugin service's
     /// <c>TelemetryFactory</c> has not been initialized.

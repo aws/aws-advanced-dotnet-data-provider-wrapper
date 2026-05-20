@@ -77,8 +77,12 @@ public class OtlpTelemetryFactoryTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void OpenTelemetryContext_TopLevel_WithParent_ReturnsNullContext()
+    public void OpenTelemetryContext_TopLevel_WithParent_DetachesParentAndCreatesRoot()
     {
+        // The factory is now a straight applier: TopLevel always emits a
+        // root span. To make the new Activity a true root even when an
+        // unrelated app Activity is current, the factory detaches the
+        // parent for the lifetime of the root and restores it on close.
         List<Activity> started = new();
         List<Activity> stopped = new();
         using ActivityListener listener = CreateActivityListener(started, stopped);
@@ -89,11 +93,31 @@ public class OtlpTelemetryFactoryTests
             ITelemetryContext ctx = OtlpTelemetryFactory.Instance
                 .OpenTelemetryContext("op.top", TelemetryTraceLevel.TopLevel);
 
-            Assert.Same(NullTelemetryContext.Instance, ctx);
-            Assert.Empty(started);
+            Assert.IsType<OtlpTelemetryContext>(ctx);
+            Activity root = Assert.Single(started);
+            Assert.Null(root.Parent);
+            Assert.NotEqual(parent.TraceId, root.TraceId);
+
+            // While the wrapper span is open, Activity.Current is the new
+            // root so nested wrapper spans attach here, not to `parent`.
+            Assert.Same(root, Activity.Current);
+
+            ctx.CloseContext();
+
+            // After close, Activity.Current is restored to the application's
+            // original parent so subsequent app spans keep their context.
+            Assert.Same(parent, Activity.Current);
         }
         finally
         {
+            // If the test failed mid-way leaving Activity.Current pointing at
+            // the wrapper root, force-restore the test's parent so Stop()
+            // succeeds.
+            if (Activity.Current != parent)
+            {
+                Activity.Current = parent;
+            }
+
             parent.Stop();
         }
     }
@@ -119,8 +143,12 @@ public class OtlpTelemetryFactoryTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void OpenTelemetryContext_Nested_NoParent_ReturnsNullContext()
+    public void OpenTelemetryContext_Nested_NoParent_StillCreatesActivity()
     {
+        // Backends are now straight appliers; defensive parent checks live in
+        // DefaultTelemetryFactory. A bare Nested request to the OTLP backend
+        // opens an Activity as configured by the listener — it is up to the
+        // routing layer to ensure Nested is only requested when appropriate.
         Assert.Null(Activity.Current);
         List<Activity> started = new();
         List<Activity> stopped = new();
@@ -129,8 +157,11 @@ public class OtlpTelemetryFactoryTests
         ITelemetryContext ctx = OtlpTelemetryFactory.Instance
             .OpenTelemetryContext("op.nested", TelemetryTraceLevel.Nested);
 
-        Assert.Same(NullTelemetryContext.Instance, ctx);
-        Assert.Empty(started);
+        Assert.IsType<OtlpTelemetryContext>(ctx);
+        Activity created = Assert.Single(started);
+        Assert.Null(created.Parent);
+
+        ctx.CloseContext();
     }
 
     [Fact]
@@ -185,6 +216,27 @@ public class OtlpTelemetryFactoryTests
         }
 
         Assert.Empty(started);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void HasParentContext_ReflectsActivityCurrent()
+    {
+        // Probe used by DefaultTelemetryFactory.
+        Assert.Null(Activity.Current);
+        Assert.False(((ITelemetryParentContextProbe)OtlpTelemetryFactory.Instance).HasParentContext());
+
+        Activity parent = new Activity("external.parent").Start();
+        try
+        {
+            Assert.True(((ITelemetryParentContextProbe)OtlpTelemetryFactory.Instance).HasParentContext());
+        }
+        finally
+        {
+            parent.Stop();
+        }
+
+        Assert.False(((ITelemetryParentContextProbe)OtlpTelemetryFactory.Instance).HasParentContext());
     }
 
     [Fact]

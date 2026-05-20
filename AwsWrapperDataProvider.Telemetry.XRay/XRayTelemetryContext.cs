@@ -52,24 +52,26 @@ public sealed class XRayTelemetryContext : ITelemetryContext
     /// Initializes a new instance of the <see cref="XRayTelemetryContext"/>
     /// class and opens a new X-Ray segment, subsegment, or no-op context.
     /// </summary>
+    /// <remarks>
+    /// Trace-level resolution is performed by
+    /// <see cref="Driver.Utils.Telemetry.DefaultTelemetryFactory"/>; this
+    /// constructor trusts the caller's level and does not re-check parent
+    /// presence. <c>BeginSegment</c> always opens a top-level segment;
+    /// <c>BeginSubsegment</c> attaches to the current entity if one exists
+    /// or is treated by the X-Ray SDK as a context-missing condition
+    /// otherwise.
+    /// </remarks>
     /// <param name="name">The span name.</param>
     /// <param name="traceLevel">The requested trace level.</param>
     public XRayTelemetryContext(string name, TelemetryTraceLevel traceLevel)
     {
         this.name = name;
         AWSXRayRecorder recorder = AWSXRayRecorder.Instance;
-        bool parentPresent = recorder.IsEntityPresent();
 
         switch (traceLevel)
         {
             case TelemetryTraceLevel.ForceTopLevel:
             case TelemetryTraceLevel.TopLevel:
-                if (parentPresent)
-                {
-                    this.entity = null;
-                    break;
-                }
-
                 recorder.BeginSegment(name);
                 this.entity = SafeGetEntity(recorder);
                 this.isSegment = true;
@@ -77,13 +79,6 @@ public sealed class XRayTelemetryContext : ITelemetryContext
                 break;
 
             case TelemetryTraceLevel.Nested:
-                if (!parentPresent)
-                {
-                    // A nested span without a parent is meaningless in X-Ray.
-                    this.entity = null;
-                    break;
-                }
-
                 recorder.BeginSubsegment(name);
                 this.entity = SafeGetEntity(recorder);
                 this.isSegment = false;

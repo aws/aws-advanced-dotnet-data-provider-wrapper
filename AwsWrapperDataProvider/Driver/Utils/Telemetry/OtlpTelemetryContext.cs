@@ -33,6 +33,7 @@ public sealed class OtlpTelemetryContext : ITelemetryContext
 
     private readonly Activity activity;
     private readonly string name;
+    private readonly Activity? restoreOnClose;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="OtlpTelemetryContext"/>
@@ -43,9 +44,32 @@ public sealed class OtlpTelemetryContext : ITelemetryContext
     /// <see cref="ActivitySource.StartActivity(string, ActivityKind)"/>).</param>
     /// <param name="name">The span name to return from <see cref="GetName"/>.</param>
     public OtlpTelemetryContext(Activity activity, string name)
+        : this(activity, name, restoreOnClose: null)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OtlpTelemetryContext"/>
+    /// class wrapping the specified <see cref="Activity"/>, optionally
+    /// restoring a previous <see cref="Activity.Current"/> when this context
+    /// is closed.
+    /// </summary>
+    /// <param name="activity">The underlying Activity. Must already be
+    /// started.</param>
+    /// <param name="name">The span name to return from <see cref="GetName"/>.</param>
+    /// <param name="restoreOnClose">An <see cref="Activity"/> to assign back
+    /// to <see cref="Activity.Current"/> in <see cref="CloseContext"/>. Used
+    /// by <see cref="OtlpTelemetryFactory"/> when a TopLevel span is opened
+    /// while an unrelated parent Activity exists on the calling logical
+    /// thread: the parent is detached so the new Activity is a true root
+    /// and is restored when the root closes so the application's trace
+    /// context is preserved across the wrapper call. Pass
+    /// <see langword="null"/> when no restore is needed.</param>
+    public OtlpTelemetryContext(Activity activity, string name, Activity? restoreOnClose)
     {
         this.activity = activity;
         this.name = name;
+        this.restoreOnClose = restoreOnClose;
     }
 
     /// <summary>
@@ -93,6 +117,16 @@ public sealed class OtlpTelemetryContext : ITelemetryContext
     public void CloseContext()
     {
         this.activity.Stop();
+
+        // Restore the application's parent Activity that was detached when
+        // this root span was opened. Without this, Activity.Current would
+        // revert to whatever the new root's parent is (typically null), and
+        // any spans the application opens after the wrapper call returns
+        // would lose their original trace context.
+        if (this.restoreOnClose != null)
+        {
+            Activity.Current = this.restoreOnClose;
+        }
     }
 
     /// <summary>

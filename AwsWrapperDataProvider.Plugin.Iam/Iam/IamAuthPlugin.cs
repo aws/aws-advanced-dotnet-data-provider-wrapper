@@ -124,8 +124,8 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
 
     /// <summary>
     /// Wraps a single <see cref="IIamTokenUtility.GenerateAuthenticationTokenAsync"/>
-    /// API call in the <c>"fetch IAM token"</c> nested telemetry span and 
-    /// increments the <c>iam.fetchToken.count</c> counter. 
+    /// API call in the <c>"fetch IAM token"</c> nested telemetry span and
+    /// increments the <c>iam.fetchToken.count</c> counter.
     /// </summary>
     private async Task<string> FetchTokenAsync(string iamUser, string iamHost, int iamPort, string iamRegion)
     {

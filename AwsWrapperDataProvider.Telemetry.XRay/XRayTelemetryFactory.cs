@@ -31,13 +31,23 @@ namespace AwsWrapperDataProvider.Telemetry.XRay;
 /// <c>TelemetryTracesBackend=XRAY</c> routes trace contexts through this
 /// factory; metric calls are routed separately (typically to OTLP or Null).
 /// </para>
+/// <para>
+/// Trace-level resolution lives in <see cref="DefaultTelemetryFactory"/>;
+/// this factory simply applies whatever level it is given. The X-Ray SDK's
+/// <c>BeginSegment</c> always starts a new top-level segment, and
+/// <c>EndSegment</c> / <c>EndSubsegment</c> already restore the parent
+/// entity, so no manual save/restore bookkeeping is required here.
+/// </para>
 /// </remarks>
-public sealed class XRayTelemetryFactory : ITelemetryFactory
+public sealed class XRayTelemetryFactory : ITelemetryFactory, ITelemetryParentContextProbe
 {
     private const string CopyPrefix = "copy: ";
     private const string MetricsNotSupportedMessage =
         "AWS X-Ray does not support metrics. Configure a separate metrics backend "
         + "(for example TelemetryMetricsBackend=OTLP).";
+
+    /// <inheritdoc />
+    public bool HasParentContext() => AWSXRayRecorder.Instance.IsEntityPresent();
 
     /// <inheritdoc />
     public ITelemetryContext OpenTelemetryContext(string name, TelemetryTraceLevel traceLevel)
@@ -64,7 +74,6 @@ public sealed class XRayTelemetryFactory : ITelemetryFactory
             // Source was a no-op; there is nothing to copy.
             return;
         }
-
 
         CloneState state = CloneState.From(source, sourceEntity);
 

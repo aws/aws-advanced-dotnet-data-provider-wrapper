@@ -22,7 +22,7 @@ namespace AwsWrapperDataProvider.Driver.Utils.Telemetry;
 /// <remarks>
 /// This class is a stateless thread-safe singleton.
 /// </remarks>
-public sealed class NullTelemetryFactory : ITelemetryFactory
+public sealed class NullTelemetryFactory : ITelemetryFactory, ITelemetryParentContextProbe
 {
     /// <summary>
     /// Shared singleton instance.
@@ -32,6 +32,9 @@ public sealed class NullTelemetryFactory : ITelemetryFactory
     private NullTelemetryFactory()
     {
     }
+
+    /// <inheritdoc />
+    public bool HasParentContext() => false;
 
     /// <inheritdoc />
     public ITelemetryContext OpenTelemetryContext(string name, TelemetryTraceLevel traceLevel)

@@ -22,7 +22,6 @@ namespace AwsWrapperDataProvider.Telemetry.XRay;
 /// </summary>
 public static class XRayTelemetryLoader
 {
-\
     public const string BackendName = "XRAY";
 
     public static void Load()

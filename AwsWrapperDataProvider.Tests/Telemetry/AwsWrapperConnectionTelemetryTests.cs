@@ -87,6 +87,7 @@ public class AwsWrapperConnectionTelemetryTests
         Mock<ITelemetryContext> topLevelContext = new();
         Mock<ITelemetryContext> otherContext = new();
         Mock<ITelemetryFactory> mockFactory = new();
+
         // Route the "DbConnection.Open" top-level span to the context under
         // test; every other span (ConnectionPluginManager.Open /
         // .InitHostProvider middle spans, per-plugin nested spans, target-driver

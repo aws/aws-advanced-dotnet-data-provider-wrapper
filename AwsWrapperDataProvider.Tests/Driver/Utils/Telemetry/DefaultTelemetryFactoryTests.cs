@@ -326,33 +326,17 @@ public class DefaultTelemetryFactoryTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void SubmitTopLevelFalse_ConvertsTopLevelToNested()
+    public void SubmitTopLevelFalse_NoParent_TopLevelStaysTopLevel()
     {
-        string backendName = "DOWNGRADE" + Guid.NewGuid().ToString("N");
-        Mock<ITelemetryFactory> mockFactory = new();
-        mockFactory
-            .Setup(f => f.OpenTelemetryContext(It.IsAny<string>(), It.IsAny<TelemetryTraceLevel>()))
-            .Returns(NullTelemetryContext.Instance);
-
-        DefaultTelemetryFactory.RegisterTelemetryFactory(backendName, mockFactory.Object);
+        FakeProbingFactory probing = new(parentExists: false);
+        string backendName = ProbingBackend("DOWNGRADE");
+        DefaultTelemetryFactory.RegisterTelemetryFactory(backendName, probing);
         try
         {
-            Dictionary<string, string> props = new()
-            {
-                [EnableKey] = "true",
-                [TracesKey] = backendName,
-                [SubmitTopLevelKey] = "false",
-            };
-            DefaultTelemetryFactory factory = new(props);
+            DefaultTelemetryFactory factory = NewFactory(backendName, submitTopLevel: false);
             factory.OpenTelemetryContext("op", TelemetryTraceLevel.TopLevel);
 
-            // Downgrade: TopLevel passed in → Nested delegated.
-            mockFactory.Verify(
-                f => f.OpenTelemetryContext("op", TelemetryTraceLevel.Nested),
-                Times.Once);
-            mockFactory.Verify(
-                f => f.OpenTelemetryContext("op", TelemetryTraceLevel.TopLevel),
-                Times.Never);
+            Assert.Equal(TelemetryTraceLevel.TopLevel, probing.LastLevel);
         }
         finally
         {
@@ -362,29 +346,37 @@ public class DefaultTelemetryFactoryTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void SubmitTopLevelTrue_KeepsTopLevelAsTopLevel()
+    public void SubmitTopLevelFalse_WithParent_TopLevelDowngradesToNested()
     {
-        string backendName = "KEEP" + Guid.NewGuid().ToString("N");
-        Mock<ITelemetryFactory> mockFactory = new();
-        mockFactory
-            .Setup(f => f.OpenTelemetryContext(It.IsAny<string>(), It.IsAny<TelemetryTraceLevel>()))
-            .Returns(NullTelemetryContext.Instance);
-
-        DefaultTelemetryFactory.RegisterTelemetryFactory(backendName, mockFactory.Object);
+        FakeProbingFactory probing = new(parentExists: true);
+        string backendName = ProbingBackend("DOWNGRADE_PARENT");
+        DefaultTelemetryFactory.RegisterTelemetryFactory(backendName, probing);
         try
         {
-            Dictionary<string, string> props = new()
-            {
-                [EnableKey] = "true",
-                [TracesKey] = backendName,
-                [SubmitTopLevelKey] = "true",
-            };
-            DefaultTelemetryFactory factory = new(props);
+            DefaultTelemetryFactory factory = NewFactory(backendName, submitTopLevel: false);
             factory.OpenTelemetryContext("op", TelemetryTraceLevel.TopLevel);
 
-            mockFactory.Verify(
-                f => f.OpenTelemetryContext("op", TelemetryTraceLevel.TopLevel),
-                Times.Once);
+            Assert.Equal(TelemetryTraceLevel.Nested, probing.LastLevel);
+        }
+        finally
+        {
+            DefaultTelemetryFactory.UnregisterTelemetryFactory(backendName);
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void SubmitTopLevelTrue_WithParent_TopLevelOverridesParent()
+    {
+        FakeProbingFactory probing = new(parentExists: true);
+        string backendName = ProbingBackend("OVERRIDE");
+        DefaultTelemetryFactory.RegisterTelemetryFactory(backendName, probing);
+        try
+        {
+            DefaultTelemetryFactory factory = NewFactory(backendName, submitTopLevel: true);
+            factory.OpenTelemetryContext("op", TelemetryTraceLevel.TopLevel);
+
+            Assert.Equal(TelemetryTraceLevel.TopLevel, probing.LastLevel);
         }
         finally
         {
@@ -394,37 +386,163 @@ public class DefaultTelemetryFactoryTests
 
     [Theory]
     [Trait("Category", "Unit")]
-    [InlineData(TelemetryTraceLevel.ForceTopLevel)]
-    [InlineData(TelemetryTraceLevel.Nested)]
-    [InlineData(TelemetryTraceLevel.NoTrace)]
-    public void SubmitTopLevelFalse_DoesNotAffectOtherLevels(TelemetryTraceLevel level)
-    {
-        string backendName = "PASSTHROUGH" + Guid.NewGuid().ToString("N");
-        Mock<ITelemetryFactory> mockFactory = new();
-        mockFactory
-            .Setup(f => f.OpenTelemetryContext(It.IsAny<string>(), It.IsAny<TelemetryTraceLevel>()))
-            .Returns(NullTelemetryContext.Instance);
 
-        DefaultTelemetryFactory.RegisterTelemetryFactory(backendName, mockFactory.Object);
+    // Matrix #1 — submitTopLevel = false: parentExists | requested → effective
+    [InlineData(false, false, TelemetryTraceLevel.TopLevel, TelemetryTraceLevel.TopLevel)]
+    [InlineData(false, false, TelemetryTraceLevel.Nested,   TelemetryTraceLevel.Nested)]
+    [InlineData(false, true,  TelemetryTraceLevel.TopLevel, TelemetryTraceLevel.Nested)]
+    [InlineData(false, true,  TelemetryTraceLevel.Nested,   TelemetryTraceLevel.Nested)]
+
+    // Matrix #2 — submitTopLevel = true (override)
+    [InlineData(true,  false, TelemetryTraceLevel.TopLevel, TelemetryTraceLevel.TopLevel)]
+    [InlineData(true,  false, TelemetryTraceLevel.Nested,   TelemetryTraceLevel.NoTrace)]
+    [InlineData(true,  true,  TelemetryTraceLevel.TopLevel, TelemetryTraceLevel.TopLevel)]
+    [InlineData(true,  true,  TelemetryTraceLevel.Nested,   TelemetryTraceLevel.Nested)]
+    public void Matrix_TopLevelAndNested_ResolveAsExpected(
+        bool submitTopLevel,
+        bool parentExists,
+        TelemetryTraceLevel requested,
+        TelemetryTraceLevel expected)
+    {
+        FakeProbingFactory probing = new(parentExists);
+        string backendName = ProbingBackend("MATRIX");
+        DefaultTelemetryFactory.RegisterTelemetryFactory(backendName, probing);
         try
         {
-            Dictionary<string, string> props = new()
-            {
-                [EnableKey] = "true",
-                [TracesKey] = backendName,
-                [SubmitTopLevelKey] = "false",
-            };
-            DefaultTelemetryFactory factory = new(props);
-            factory.OpenTelemetryContext("op", level);
+            DefaultTelemetryFactory factory = NewFactory(backendName, submitTopLevel);
+            factory.OpenTelemetryContext("op", requested);
 
-            mockFactory.Verify(
-                f => f.OpenTelemetryContext("op", level),
-                Times.Once);
+            Assert.Equal(expected, probing.LastLevel);
         }
         finally
         {
             DefaultTelemetryFactory.UnregisterTelemetryFactory(backendName);
         }
+    }
+
+    [Theory]
+    [Trait("Category", "Unit")]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true,  false)]
+    [InlineData(true,  true)]
+    public void Matrix_ForceTopLevel_BypassesEverything(bool submitTopLevel, bool parentExists)
+    {
+        FakeProbingFactory probing = new(parentExists);
+        string backendName = ProbingBackend("FORCE");
+        DefaultTelemetryFactory.RegisterTelemetryFactory(backendName, probing);
+        try
+        {
+            DefaultTelemetryFactory factory = NewFactory(backendName, submitTopLevel);
+            factory.OpenTelemetryContext("op", TelemetryTraceLevel.ForceTopLevel);
+
+            Assert.Equal(TelemetryTraceLevel.ForceTopLevel, probing.LastLevel);
+        }
+        finally
+        {
+            DefaultTelemetryFactory.UnregisterTelemetryFactory(backendName);
+        }
+    }
+
+    [Theory]
+    [Trait("Category", "Unit")]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true,  false)]
+    [InlineData(true,  true)]
+    public void Matrix_NoTrace_BypassesEverything(bool submitTopLevel, bool parentExists)
+    {
+        FakeProbingFactory probing = new(parentExists);
+        string backendName = ProbingBackend("NOTRACE");
+        DefaultTelemetryFactory.RegisterTelemetryFactory(backendName, probing);
+        try
+        {
+            DefaultTelemetryFactory factory = NewFactory(backendName, submitTopLevel);
+            factory.OpenTelemetryContext("op", TelemetryTraceLevel.NoTrace);
+
+            Assert.Equal(TelemetryTraceLevel.NoTrace, probing.LastLevel);
+        }
+        finally
+        {
+            DefaultTelemetryFactory.UnregisterTelemetryFactory(backendName);
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void BackendWithoutProbe_TreatedAsNoParent()
+    {
+        // Mock<ITelemetryFactory> does not implement ITelemetryParentContextProbe,
+        // so DefaultTelemetryFactory must default to "no parent" for the matrix.
+        // Under submitTopLevel=true, requested=Nested, no parent → NoTrace.
+        Mock<ITelemetryFactory> mockFactory = new();
+        TelemetryTraceLevel? observed = null;
+        mockFactory
+            .Setup(f => f.OpenTelemetryContext(It.IsAny<string>(), It.IsAny<TelemetryTraceLevel>()))
+            .Callback<string, TelemetryTraceLevel>((_, l) => observed = l)
+            .Returns(NullTelemetryContext.Instance);
+
+        string backendName = "NOPROBE" + Guid.NewGuid().ToString("N");
+        DefaultTelemetryFactory.RegisterTelemetryFactory(backendName, mockFactory.Object);
+        try
+        {
+            DefaultTelemetryFactory factory = NewFactory(backendName, submitTopLevel: true);
+            factory.OpenTelemetryContext("op", TelemetryTraceLevel.Nested);
+
+            Assert.Equal(TelemetryTraceLevel.NoTrace, observed);
+        }
+        finally
+        {
+            DefaultTelemetryFactory.UnregisterTelemetryFactory(backendName);
+        }
+    }
+
+    private static string ProbingBackend(string prefix)
+        => prefix + Guid.NewGuid().ToString("N");
+
+    private static DefaultTelemetryFactory NewFactory(string backendName, bool submitTopLevel)
+    {
+        Dictionary<string, string> props = new()
+        {
+            [EnableKey] = "true",
+            [TracesKey] = backendName,
+            [SubmitTopLevelKey] = submitTopLevel ? "true" : "false",
+        };
+        return new DefaultTelemetryFactory(props);
+    }
+
+    /// <summary>
+    /// Test backend that records the level it was last called with and reports
+    /// a fixed parent-presence value via the probe interface. Used to drive
+    /// <see cref="DefaultTelemetryFactory.ResolveLevel"/> end-to-end with
+    /// known parent state without touching real OTLP / X-Ray plumbing.
+    /// </summary>
+    private sealed class FakeProbingFactory : ITelemetryFactory, ITelemetryParentContextProbe
+    {
+        private readonly bool parentExists;
+
+        public FakeProbingFactory(bool parentExists)
+        {
+            this.parentExists = parentExists;
+        }
+
+        public TelemetryTraceLevel? LastLevel { get; private set; }
+
+        public bool HasParentContext() => this.parentExists;
+
+        public ITelemetryContext OpenTelemetryContext(string name, TelemetryTraceLevel traceLevel)
+        {
+            this.LastLevel = traceLevel;
+            return NullTelemetryContext.Instance;
+        }
+
+        public void PostCopy(ITelemetryContext context, TelemetryTraceLevel traceLevel)
+        {
+        }
+
+        public ITelemetryCounter CreateCounter(string name) => NullTelemetryCounter.Instance;
+
+        public ITelemetryGauge CreateGauge(string name, Func<long> valueCallback) => NullTelemetryGauge.Instance;
     }
 
     [Fact]

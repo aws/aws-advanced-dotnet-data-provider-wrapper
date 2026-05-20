@@ -74,8 +74,8 @@ public class AwsWrapperCommandTelemetryTests
     /// a DbMocker command so that the execute methods have a working
     /// in-memory target.
     ///
-    /// <para>The factory routes the top-level command span (name = <paramref
-    /// name="topLevelSpanName"/> supplied to the harness ctor) to the context
+    /// <para>The factory routes the top-level command span (name =
+    /// <c>topLevelSpanName</c> supplied to the harness ctor) to the context
     /// exposed as <see cref="MockContext"/>; every other span (per-plugin
     /// nested spans opened by <c>ConnectionPluginManager</c>) goes to a
     /// throw-away context so lifecycle assertions on <c>MockContext</c>
