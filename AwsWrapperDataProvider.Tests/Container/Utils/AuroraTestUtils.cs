@@ -158,6 +158,11 @@ public class AuroraTestUtils
         Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Cluster {clusterId} status (after wait): {status}");
     }
 
+    public Task WaitUntilInstanceHasRightStateAsync(string instanceId)
+    {
+        return this.WaitUntilInstanceHasRightStateAsync(instanceId, "available");
+    }
+
     public async Task WaitUntilInstanceHasRightStateAsync(string instanceId, params string[] allowedStatuses)
     {
         string status = (await this.GetDBInstanceAsync(instanceId))!.DBInstanceStatus;
