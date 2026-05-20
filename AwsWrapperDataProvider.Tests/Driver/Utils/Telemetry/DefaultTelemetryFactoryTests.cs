@@ -389,15 +389,15 @@ public class DefaultTelemetryFactoryTests
 
     // Matrix #1 — submitTopLevel = false: parentExists | requested → effective
     [InlineData(false, false, TelemetryTraceLevel.TopLevel, TelemetryTraceLevel.TopLevel)]
-    [InlineData(false, false, TelemetryTraceLevel.Nested,   TelemetryTraceLevel.Nested)]
-    [InlineData(false, true,  TelemetryTraceLevel.TopLevel, TelemetryTraceLevel.Nested)]
-    [InlineData(false, true,  TelemetryTraceLevel.Nested,   TelemetryTraceLevel.Nested)]
+    [InlineData(false, false, TelemetryTraceLevel.Nested, TelemetryTraceLevel.Nested)]
+    [InlineData(false, true, TelemetryTraceLevel.TopLevel, TelemetryTraceLevel.Nested)]
+    [InlineData(false, true, TelemetryTraceLevel.Nested, TelemetryTraceLevel.Nested)]
 
     // Matrix #2 — submitTopLevel = true (override)
-    [InlineData(true,  false, TelemetryTraceLevel.TopLevel, TelemetryTraceLevel.TopLevel)]
-    [InlineData(true,  false, TelemetryTraceLevel.Nested,   TelemetryTraceLevel.NoTrace)]
-    [InlineData(true,  true,  TelemetryTraceLevel.TopLevel, TelemetryTraceLevel.TopLevel)]
-    [InlineData(true,  true,  TelemetryTraceLevel.Nested,   TelemetryTraceLevel.Nested)]
+    [InlineData(true, false, TelemetryTraceLevel.TopLevel, TelemetryTraceLevel.TopLevel)]
+    [InlineData(true, false, TelemetryTraceLevel.Nested, TelemetryTraceLevel.NoTrace)]
+    [InlineData(true, true, TelemetryTraceLevel.TopLevel, TelemetryTraceLevel.TopLevel)]
+    [InlineData(true, true, TelemetryTraceLevel.Nested, TelemetryTraceLevel.Nested)]
     public void Matrix_TopLevelAndNested_ResolveAsExpected(
         bool submitTopLevel,
         bool parentExists,
@@ -424,8 +424,8 @@ public class DefaultTelemetryFactoryTests
     [Trait("Category", "Unit")]
     [InlineData(false, false)]
     [InlineData(false, true)]
-    [InlineData(true,  false)]
-    [InlineData(true,  true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
     public void Matrix_ForceTopLevel_BypassesEverything(bool submitTopLevel, bool parentExists)
     {
         FakeProbingFactory probing = new(parentExists);
@@ -448,8 +448,8 @@ public class DefaultTelemetryFactoryTests
     [Trait("Category", "Unit")]
     [InlineData(false, false)]
     [InlineData(false, true)]
-    [InlineData(true,  false)]
-    [InlineData(true,  true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
     public void Matrix_NoTrace_BypassesEverything(bool submitTopLevel, bool parentExists)
     {
         FakeProbingFactory probing = new(parentExists);
