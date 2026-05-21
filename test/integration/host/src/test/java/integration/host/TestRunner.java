@@ -223,6 +223,38 @@ public class TestRunner {
         env.runTests("pg-rw-split-perf", "aurora");
     }
   }
+  
+  @TestTemplate
+  public void runBgdMySqlInstance(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
+
+    try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
+        env.runTests("mysql-bgd", "multi-az-instance");
+    }
+  }
+
+  @TestTemplate
+  public void runBgdMySqlAurora(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
+
+    try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
+        env.runTests("mysql-bgd", "aurora");
+    }
+  }
+
+  @TestTemplate
+  public void runBgdPgInstance(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
+
+    try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
+        env.runTests("pg-bgd", "multi-az-instance");
+    }
+  }
+
+  @TestTemplate
+  public void runBgdPgAurora(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
+
+    try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
+        env.runTests("pg-bgd", "aurora");
+    }
+  }
 
   @TestTemplate
   public void debugTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {

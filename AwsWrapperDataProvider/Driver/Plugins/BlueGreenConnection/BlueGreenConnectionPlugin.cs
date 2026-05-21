@@ -36,9 +36,9 @@ public class BlueGreenConnectionPlugin : AbstractConnectionPlugin
     private readonly Dictionary<string, string> props;
     private readonly BlueGreenProviderSupplier providerSupplier;
     private readonly string bgdId;
-    private readonly AtomicLong startTimeNano = new();
-    private readonly AtomicLong endTimeNano = new();
+    private readonly AtomicLong endTime;
 
+    private Stopwatch? stopwatch;
     private BlueGreenStatus? bgStatus;
     private string? clusterId;
 
@@ -56,6 +56,7 @@ public class BlueGreenConnectionPlugin : AbstractConnectionPlugin
         Dictionary<string, string> props,
         BlueGreenProviderSupplier providerSupplier)
     {
+        this.endTime = new AtomicLong(-1);
         this.pluginService = pluginService;
         this.props = props;
         this.providerSupplier = providerSupplier;
@@ -106,6 +107,11 @@ public class BlueGreenConnectionPlugin : AbstractConnectionPlugin
                 return await this.RegularOpenConnection(connectFunc, isInitialConnection, useForceConnect);
             }
 
+            if (hostSpec == null)
+            {
+                return await this.RegularOpenConnection(connectFunc, isInitialConnection, useForceConnect);
+            }
+
             BlueGreenRoleType? hostRole = this.bgStatus.GetRole(hostSpec);
 
             if (hostRole == null)
@@ -121,7 +127,7 @@ public class BlueGreenConnectionPlugin : AbstractConnectionPlugin
                 return await this.RegularOpenConnection(connectFunc, isInitialConnection, useForceConnect);
             }
 
-            this.startTimeNano.Set(this.GetNanoTime());
+            this.stopwatch = Stopwatch.StartNew();
 
             DbConnection? conn = null;
             while (routing != null && conn == null)
@@ -143,7 +149,7 @@ public class BlueGreenConnectionPlugin : AbstractConnectionPlugin
                 this.bgStatus = BlueGreenConnectionCache.Instance.Get<BlueGreenStatus>(this.bgdId);
                 if (this.bgStatus == null)
                 {
-                    this.endTimeNano.Set(this.GetNanoTime());
+                    this.endTime.Set(this.stopwatch?.ElapsedMilliseconds ?? 0);
                     return await this.RegularOpenConnection(connectFunc, isInitialConnection, useForceConnect);
                 }
 
@@ -151,7 +157,7 @@ public class BlueGreenConnectionPlugin : AbstractConnectionPlugin
                     .FirstOrDefault(r => r.IsMatch(hostSpec, hostRole.Value));
             }
 
-            this.endTimeNano.Set(this.GetNanoTime());
+            this.endTime.Set(this.stopwatch?.ElapsedMilliseconds ?? 0);
 
             if (conn == null)
             {
@@ -167,9 +173,9 @@ public class BlueGreenConnectionPlugin : AbstractConnectionPlugin
         }
         finally
         {
-            if (this.startTimeNano.Get() > 0)
+            if (this.stopwatch != null)
             {
-                this.endTimeNano.CompareAndSet(0, this.GetNanoTime());
+                this.endTime.CompareAndSet(0, this.stopwatch.ElapsedMilliseconds);
             }
         }
     }
@@ -201,6 +207,7 @@ public class BlueGreenConnectionPlugin : AbstractConnectionPlugin
             this.InitProvider();
 
             this.bgStatus = BlueGreenConnectionCache.Instance.Get<BlueGreenStatus>(this.bgdId);
+            Logger.LogTrace($"[BlueGreenConnectionPlugin] bgStatus: {this.bgStatus}");
 
             if (this.bgStatus == null)
             {
@@ -215,6 +222,7 @@ public class BlueGreenConnectionPlugin : AbstractConnectionPlugin
                 return await methodFunc();
             }
 
+            Logger.LogTrace($"[BlueGreenConnectionPlugin] ExecutingRoutingCount: {this.bgStatus.ExecuteRouting.Count}");
             T? result = default;
             var routing = this.bgStatus.ExecuteRouting
                 .FirstOrDefault(r => r.IsMatch(currentHostSpec, hostRole.Value));
@@ -224,7 +232,8 @@ public class BlueGreenConnectionPlugin : AbstractConnectionPlugin
                 return await methodFunc();
             }
 
-            this.startTimeNano.Set(this.GetNanoTime());
+            Logger.LogTrace($"[BlueGreenConnectionPlugin] Routing: {routing}");
+            this.stopwatch = Stopwatch.StartNew();
 
             while (routing != null && result == null)
             {
@@ -245,7 +254,7 @@ public class BlueGreenConnectionPlugin : AbstractConnectionPlugin
                 this.bgStatus = BlueGreenConnectionCache.Instance.Get<BlueGreenStatus>(this.bgdId);
                 if (this.bgStatus == null)
                 {
-                    this.endTimeNano.Set(this.GetNanoTime());
+                    this.endTime.Set(this.stopwatch.ElapsedMilliseconds);
                     return await methodFunc();
                 }
 
@@ -253,7 +262,7 @@ public class BlueGreenConnectionPlugin : AbstractConnectionPlugin
                     .FirstOrDefault(r => r.IsMatch(currentHostSpec, hostRole.Value));
             }
 
-            this.endTimeNano.Set(this.GetNanoTime());
+            this.endTime.Set(this.stopwatch.ElapsedMilliseconds);
 
             if (result != null)
             {
@@ -264,9 +273,9 @@ public class BlueGreenConnectionPlugin : AbstractConnectionPlugin
         }
         finally
         {
-            if (this.startTimeNano.Get() > 0)
+            if (this.stopwatch != null)
             {
-                this.endTimeNano.CompareAndSet(0, this.GetNanoTime());
+                this.endTime.CompareAndSet(0, this.stopwatch.ElapsedMilliseconds);
             }
         }
     }
@@ -279,6 +288,7 @@ public class BlueGreenConnectionPlugin : AbstractConnectionPlugin
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Failed to get cluster ID");
             throw new InvalidOperationException("Failed to get cluster ID", ex);
         }
 
@@ -286,14 +296,19 @@ public class BlueGreenConnectionPlugin : AbstractConnectionPlugin
             key => this.providerSupplier(this.pluginService, this.props, this.bgdId, this.clusterId));
     }
 
-    protected virtual long GetNanoTime()
+    public long GetHoldTimeMs()
     {
-        return Stopwatch.GetTimestamp();
+        if (this.stopwatch == null)
+        {
+            return 0;
+        }
+
+        return this.endTime.Get() <= 0 ? this.stopwatch.ElapsedMilliseconds : this.endTime.Get();
     }
 
     public void ResetRoutingTimeNano()
     {
-        this.startTimeNano.Set(0);
-        this.endTimeNano.Set(0);
+        this.stopwatch = null;
+        this.endTime.Set(-1);
     }
 }

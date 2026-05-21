@@ -330,7 +330,7 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to [bgdId: &apos;{0}&apos;, role: {1}] {2}.
+        ///   Looks up a localized string similar to [PrepareStatus] [bgdId: &apos;{0}&apos;, role: {1}] {2}.
         /// </summary>
         internal static string BlueGreenStatusProvider_PrepareStatus_InterimStatus {
             get {

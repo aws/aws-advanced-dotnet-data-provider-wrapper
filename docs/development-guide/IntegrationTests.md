@@ -62,6 +62,10 @@ To run the integration tests, you can select from a number of tasks:
 - `test-all-pg-multi-az-cluster-nh`: run all Postgres Aurora multi-az cluster NHibernate tests
 - `test-all-pg-multi-az-instance`: run all Postgres Aurora multi-az instance tests
 - `test-all-pg-multi-az-instance-nh`: run all Postgres Aurora multi-az instance NHibernate tests  
+- `test-bgd-mysql-rds-instance-mysql-driver`: run all MySql Blue/Green Deployment RDS instance tests with MySql driver
+- `test-bgd-mysql-aurora-mysql-driver`: run all MySql Blue/Green Deployment Aurora tests with MySql driver
+- `test-bgd-pg-aurora`: run all Postgres Blue/Green Deployment Aurora tests
+- `test-bgd-pg-rds-instance`: run all Postgres Blue/Green Deployment RDS instance tests
 
 For example, to run all MySql Aurora integration tests, you can use the following commands:
 
