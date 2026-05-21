@@ -49,6 +49,7 @@ jobs:
           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
           output-credentials: true
       - name: Run Integration Tests
+        timeout-minutes: 330
         run: |
           cd test/integration/host && ./gradlew --no-parallel --no-daemon test-all-${{ matrix.dbEngine }}-${{ matrix.deployment }}-ef --info
         env:
@@ -62,7 +63,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: integration-report-default-${{ matrix.dbEngine }}
+          name: integration-report-default-${{ matrix.dbEngine }}-${{ matrix.deployment }}
           path: ./test/integration/container/reports
           retention-days: 5
       - name: Get Github Action IP

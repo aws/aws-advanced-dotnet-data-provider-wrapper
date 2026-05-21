@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using System.Data.Common;
-using System.Linq;
 using Amazon;
 using Amazon.RDS;
 using AwsWrapperDataProvider.Driver;

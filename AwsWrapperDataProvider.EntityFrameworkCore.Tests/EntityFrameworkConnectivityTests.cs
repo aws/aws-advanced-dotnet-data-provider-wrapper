@@ -66,7 +66,7 @@ public class EntityFrameworkConnectivityTests : EFIntegrationTestBase
         return wrapperConnectionString;
     }
 
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg-ef")]
     [Trait("Database", "mysql-ef")]
@@ -100,7 +100,7 @@ public class EntityFrameworkConnectivityTests : EFIntegrationTestBase
         }
     }
 
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg-ef")]
     [Trait("Database", "mysql-ef")]
@@ -134,7 +134,7 @@ public class EntityFrameworkConnectivityTests : EFIntegrationTestBase
         }
     }
 
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg-ef")]
     [Trait("Database", "mysql-ef")]
@@ -196,7 +196,7 @@ public class EntityFrameworkConnectivityTests : EFIntegrationTestBase
         }
     }
 
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg-ef")]
     [Trait("Database", "mysql-ef")]
@@ -258,7 +258,7 @@ public class EntityFrameworkConnectivityTests : EFIntegrationTestBase
         }
     }
 
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg-ef")]
     [Trait("Database", "mysql-ef")]
@@ -343,7 +343,7 @@ public class EntityFrameworkConnectivityTests : EFIntegrationTestBase
         }
     }
 
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg-ef")]
     [Trait("Database", "mysql-ef")]
@@ -428,7 +428,7 @@ public class EntityFrameworkConnectivityTests : EFIntegrationTestBase
         }
     }
 
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg-ef")]
     [Trait("Database", "mysql-ef")]
@@ -509,7 +509,7 @@ public class EntityFrameworkConnectivityTests : EFIntegrationTestBase
         }
     }
 
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg-ef")]
     [Trait("Database", "mysql-ef")]

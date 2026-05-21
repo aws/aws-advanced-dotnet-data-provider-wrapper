@@ -316,12 +316,24 @@ public class PluginService : IPluginService, IHostListProviderService
         IConnectionPlugin? pluginToSkip,
         bool async)
     {
-        return this.pluginManager.Open(hostSpec, props, this.CurrentConnection == null, pluginToSkip, async);
+        return this.pluginManager.Open(hostSpec, props, this.IsInitialConnection(), pluginToSkip, async);
     }
 
     public Task<DbConnection> ForceOpenConnection(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin? pluginToSkip, bool async)
     {
-        return this.pluginManager.ForceOpen(hostSpec, props, this.CurrentConnection == null, pluginToSkip, async);
+        return this.pluginManager.ForceOpen(hostSpec, props, this.IsInitialConnection(), pluginToSkip, async);
+    }
+
+    /// <summary>
+    /// Returns whether the next connection opened through this service should be treated as the initial connection.
+    /// .NET wrapper pre-populates a closed placeholder connection on <see cref="AwsWrapperConnection.InitializeConnection"/>
+    /// so that <c>CreateCommand</c> can be called before <c>Open</c>. As a result, <see cref="CurrentConnection"/>
+    /// alone cannot tell us whether the wrapper has ever produced an open connection. We instead rely on
+    /// <see cref="IsDialectConfirmed"/>, which is set the first time <see cref="UpdateDialectAsync"/> runs (i.e., after the first successful open).
+    /// </summary>
+    private bool IsInitialConnection()
+    {
+        return !this.IsDialectConfirmed;
     }
 
     public async Task UpdateDialectAsync(DbConnection connection)
@@ -419,20 +431,67 @@ public class PluginService : IPluginService, IHostListProviderService
 
     private void UpdateHostAvailability(IList<HostSpec> hosts)
     {
+        // [DIAG] Dump every entry currently in HostAvailabilityExpiringCache before we mutate anything.
+        try
+        {
+            var snapshot = HostAvailabilityExpiringCache.Keys
+                .Cast<object>()
+                .Select(k => new
+                {
+                    Key = k?.ToString() ?? "(null)",
+                    Value = HostAvailabilityExpiringCache.TryGetValue(k!, out HostAvailability? v) ? v?.ToString() ?? "(null)" : "(missing)",
+                })
+                .ToList();
+            Logger.LogWarning(
+                "[DIAG] UpdateHostAvailability cache snapshot. count={Count}, entries=[{Entries}]",
+                snapshot.Count,
+                string.Join(" | ", snapshot.Select(e => $"{e.Key}={e.Value}")));
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning("[DIAG] UpdateHostAvailability failed to dump cache snapshot: {Message}", ex.Message);
+        }
+
         foreach (HostSpec host in hosts)
         {
             // First try to restore from cache by host:port (for existing hosts)
-            HostAvailabilityExpiringCache.TryGetValue(host.GetHostAndPort(), out HostAvailability? availability);
+            bool foundByHostPort = HostAvailabilityExpiringCache.TryGetValue(host.GetHostAndPort(), out HostAvailability? availability);
+
+            // [DIAG] Log the host:port lookup outcome.
+            Logger.LogWarning(
+                "[DIAG] UpdateHostAvailability lookup by host:port. key={Key}, found={Found}, cachedValue={Value}, hostId={HostId}, role={Role}, availabilityBefore={AvailBefore}",
+                host.GetHostAndPort(),
+                foundByHostPort,
+                availability?.ToString() ?? "(null)",
+                host.HostId ?? "(null)",
+                host.Role,
+                host.Availability);
 
             // If not found and host has a HostId, try to restore by HostId (for custom endpoint restrictions
             // that were set before the topology refresh created these HostSpec objects)
             if (!availability.HasValue && !string.IsNullOrEmpty(host.HostId))
             {
-                HostAvailabilityExpiringCache.TryGetValue(host.HostId, out availability);
+                bool foundByHostId = HostAvailabilityExpiringCache.TryGetValue(host.HostId, out availability);
+
+                // [DIAG] Log the HostId fallback lookup outcome.
+                Logger.LogWarning(
+                    "[DIAG] UpdateHostAvailability lookup by HostId. key={Key}, found={Found}, cachedValue={Value}",
+                    host.HostId,
+                    foundByHostId,
+                    availability?.ToString() ?? "(null)");
             }
 
             if (availability.HasValue)
             {
+                // [DIAG] Record the mutation that will overwrite the topology-provided availability.
+                Logger.LogWarning(
+                    "[DIAG] UpdateHostAvailability MUTATING. host={HostPort}, hostId={HostId}, role={Role}, from={From}, to={To}",
+                    host.GetHostAndPort(),
+                    host.HostId ?? "(null)",
+                    host.Role,
+                    host.Availability,
+                    availability.Value);
+
                 host.Availability = availability.Value;
             }
         }

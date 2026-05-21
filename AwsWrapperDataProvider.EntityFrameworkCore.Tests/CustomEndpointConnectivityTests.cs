@@ -44,7 +44,7 @@ public class CustomEndpointConnectivityTests : EFIntegrationTestBase, IClassFixt
         await base.InitializeAsync();
     }
 
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg-ef")]
     [Trait("Database", "mysql-ef")]
@@ -116,7 +116,7 @@ public class CustomEndpointConnectivityTests : EFIntegrationTestBase, IClassFixt
         });
     }
 
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg-ef")]
     [Trait("Database", "mysql-ef")]

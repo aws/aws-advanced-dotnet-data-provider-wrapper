@@ -22,7 +22,7 @@ namespace AwsWrapperDataProvider.EntityFrameworkCore.Tests;
 
 public class AwsWrapperDbContextOptionsBuilderExtensionsTests
 {
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Unit")]
     public void UseAwsWrapper_StoresRawWrapperConnectionString_OnExtension()
     {
@@ -38,7 +38,7 @@ public class AwsWrapperDbContextOptionsBuilderExtensionsTests
         Assert.Equal(wrapperConnectionString, extension.WrapperConnectionString);
     }
 
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Unit")]
     public void PomeloDialect_NormalizeConnectionString_EnforcesMandatoryMySqlOptions()
     {
@@ -50,7 +50,7 @@ public class AwsWrapperDbContextOptionsBuilderExtensionsTests
         Assert.False(Convert.ToBoolean(connectionStringBuilder["UseAffectedRows"]));
     }
 
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Unit")]
     public void GetDialect_WithPomeloUseMySql_ReturnsPomeloDialect()
     {
@@ -64,7 +64,7 @@ public class AwsWrapperDbContextOptionsBuilderExtensionsTests
         Assert.IsType<PomeloEfMySqlRelationalConnectionDialect>(dialect);
     }
 
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Unit")]
     public void GetDialect_WithNullExtension_ThrowsInvalidOperationException()
     {
