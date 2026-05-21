@@ -840,10 +840,122 @@ public class AuroraTestUtils
 
             var instancesWithoutInitialWriter = TestEnvironment.Env.Info.DatabaseInfo.Instances.Where(i => i.InstanceId != initialWriterId).ToList();
 
-            await this.MakeSureInstancesUpAsync(instancesWithoutInitialWriter, FromMinutes(5));
+            await this.MakeSureInstancesUpAsync(instancesWithoutInitialWriter, TimeSpan.FromMinutes(5));
+
+            // After Aurora failover the AWS RDS control plane and the in-cluster topology view
+            // (information_schema.replica_host_status / aurora_replica_status()) can disagree on
+            // the writer for several minutes. Tests that subsequently call
+            // GetDBClusterWriterInstanceIdAsync may otherwise pick up a stale writer id that does
+            // not match what the wrapper sees in topology, leading to flaky assertions. Wait until
+            // the two views agree before returning.
+            var engine = TestEnvironment.Env.Info.Request.Engine;
+            await this.WaitForApiAndTopologyAgreementOnWriterAsync(clusterId, engine, TimeSpan.FromMinutes(15));
         }
 
         Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Finished failover from {initialWriterId} to target: {targetWriterId}");
+    }
+
+    /// <summary>
+    /// Returns SQL that fetches the current cluster writer's instance id from the Aurora
+    /// topology view. Mirrors AuroraMySqlDialect.WriterIdQuery / AuroraPgDialect.WriterIdQuery
+    /// but drops the self-id predicate so the query can be executed from any cluster member.
+    /// Aurora-only; throws for non-Aurora deployments.
+    /// </summary>
+    private static string GetTopologyWriterIdSql(DatabaseEngine engine) => engine switch
+    {
+        DatabaseEngine.MYSQL =>
+            "SELECT SERVER_ID FROM information_schema.replica_host_status "
+            + "WHERE SESSION_ID = 'MASTER_SESSION_ID' LIMIT 1",
+        DatabaseEngine.PG =>
+            "SELECT SERVER_ID FROM pg_catalog.aurora_replica_status() "
+            + "WHERE SESSION_ID OPERATOR(pg_catalog.=) 'MASTER_SESSION_ID' LIMIT 1",
+        _ => throw new NotSupportedException(
+            $"Topology-based writer lookup not supported for engine {engine}."),
+    };
+
+    /// <summary>
+    /// Connects through the cluster endpoint (which resolves to the current writer once DNS has
+    /// caught up) and returns the writer instance id according to the Aurora topology view.
+    /// Returns null on transient errors so callers can retry.
+    /// </summary>
+    public async Task<string?> GetTopologyWriterIdAsync(DatabaseEngine engine)
+    {
+        var info = TestEnvironment.Env.Info;
+        var connectionString = ConnectionStringHelper.GetUrl(
+            engine,
+            info.DatabaseInfo.ClusterEndpoint,
+            info.DatabaseInfo.ClusterEndpointPort,
+            info.DatabaseInfo.Username,
+            info.DatabaseInfo.Password,
+            info.DatabaseInfo.DefaultDbName,
+            commandTimeout: 10,
+            connectionTimeout: 10,
+            plugins: null,
+            enablePooling: false);
+
+        try
+        {
+            await using var connection = DriverHelper.CreateUnopenedConnection(engine, connectionString);
+            await connection.OpenAsync();
+            return await this.ExecuteQuery(connection, GetTopologyWriterIdSql(engine), async: true);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Failed to read topology writer id: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Polls until the AWS RDS API view (DescribeDBClusters) and the in-cluster topology view
+    /// agree on the same writer instance id, or until the timeout elapses.
+    /// </summary>
+    public async Task WaitForApiAndTopologyAgreementOnWriterAsync(
+        string clusterId,
+        DatabaseEngine engine,
+        TimeSpan timeout)
+    {
+        var deadline = DateTime.UtcNow + timeout;
+        var pollInterval = TimeSpan.FromSeconds(5);
+        string? apiWriter = null;
+        string? topologyWriter = null;
+
+        Console.WriteLine(
+            $"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Waiting for AWS API and cluster topology to agree on the writer "
+            + $"for cluster {clusterId} (timeout {timeout.TotalMinutes:F0} min)...");
+
+        while (DateTime.UtcNow < deadline)
+        {
+            try
+            {
+                apiWriter = await this.GetDBClusterWriterInstanceIdAsync(clusterId);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} GetDBClusterWriterInstanceId transient error: {ex.Message}");
+                apiWriter = null;
+            }
+
+            topologyWriter = await this.GetTopologyWriterIdAsync(engine);
+
+            if (apiWriter != null
+                && topologyWriter != null
+                && string.Equals(apiWriter, topologyWriter, StringComparison.OrdinalIgnoreCase))
+            {
+                Console.WriteLine(
+                    $"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} AWS API and topology agree on writer: {apiWriter}");
+                return;
+            }
+
+            Console.WriteLine(
+                $"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} API writer={apiWriter ?? "(unknown)"}, "
+                + $"topology writer={topologyWriter ?? "(unknown)"}. Retrying in {pollInterval.TotalSeconds:F0}s...");
+            await Task.Delay(pollInterval);
+        }
+
+        throw new TimeoutException(
+            $"AWS API ({apiWriter ?? "(unknown)"}) and cluster topology ({topologyWriter ?? "(unknown)"}) "
+            + $"did not agree on the writer within {timeout.TotalMinutes:F0} minutes for cluster {clusterId}.");
     }
 
     public async Task FailoverClusterToTargetAsync(string clusterId, string? targetInstanceId)

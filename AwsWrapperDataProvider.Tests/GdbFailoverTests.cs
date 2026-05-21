@@ -181,7 +181,7 @@ public class GdbFailoverTests : IntegrationTestBase
         Assert.NotNull(currentConnectionId);
 
         // RDS API lags behind the writer election after a cluster failover, so we retry the check.
-        Assert.True(await AuroraUtils.WaitUntilInstanceHasRoleAsync(currentConnectionId, false, TimeSpan.FromMinutes(5)));
+        Assert.True(await AuroraUtils.WaitUntilInstanceHasRoleAsync(currentConnectionId, false, TimeSpan.FromMinutes(15)));
 
         await crashTask;
     }
