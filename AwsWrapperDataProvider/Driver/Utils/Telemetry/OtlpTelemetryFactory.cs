@@ -104,11 +104,20 @@ public sealed class OtlpTelemetryFactory : ITelemetryFactory, ITelemetryParentCo
         DateTime startTime = otlpContext.StartTime;
         DateTime endTime = otlpContext.EndTime;
 
-        // Run on a thread-pool thread where Activity.Current is null so that
-        // the copied Activity is created as an independent root span,
-        // regardless of any parent Activity on the calling thread.
+        // Run on a thread-pool thread and explicitly null Activity.Current
+        // inside the lambda so the copied Activity is created as an
+        // independent root span. Task.Run alone is not sufficient: it flows
+        // the calling ExecutionContext (and therefore Activity.Current) into
+        // the lambda, so without the explicit detach the copy would inherit
+        // any outer wrapper span still open on the caller and end up in the
+        // same trace as the original. Mirrors AWSXRayRecorder.ClearEntity()
+        // in XRayTelemetryFactory.PostCopy. The lambda's mutation of
+        // Activity.Current is scoped to the task's logical context and does
+        // not affect the calling thread.
         Task.Run(() =>
         {
+            Activity.Current = null;
+
             Activity? copyActivity = TelemetryActivitySource.StartActivity(copyName, ActivityKind.Client);
             if (copyActivity == null)
             {
