@@ -14,6 +14,7 @@
 
 using System.Diagnostics;
 using System.Text.Json;
+using AwsWrapperDataProvider.Telemetry.XRay;
 using Toxiproxy.Net;
 
 namespace AwsWrapperDataProvider.Tests.Container.Utils;
@@ -183,6 +184,21 @@ public class TestEnvironment
         {
             InitProxies(env).GetAwaiter().GetResult();
         }
+
+        // Register the wrapper's X-Ray telemetry backend exactly once per
+        // test process. The XRAY backend is keyed by the string "XRAY" in
+        // DefaultTelemetryFactory's registration table; until this call
+        // runs, TelemetryTracesBackend=XRAY would silently fall back to
+        // NullTelemetryFactory. Register unconditionally — the wrapper
+        // itself only resolves the XRAY factory when a connection's
+        // TelemetryTracesBackend property asks for it.
+        XRayTelemetryLoader.Load();
+
+        // Bootstrap the OTel SDK and the AWS X-Ray SDK to match whatever
+        // telemetry backends the host-side TestEnvironmentConfig spun up
+        // for this run. Idempotent and a no-op when neither feature flag
+        // is set.
+        TestTelemetry.Setup(env.Info);
 
         return env;
     }
