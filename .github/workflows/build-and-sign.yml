@@ -27,6 +27,7 @@ jobs:
           dotnet restore AwsWrapperDataProvider.Plugin.Iam\AwsWrapperDataProvider.Plugin.Iam.csproj /p:_IsPacking=true
           dotnet restore AwsWrapperDataProvider.Plugin.SecretsManager\AwsWrapperDataProvider.Plugin.SecretsManager.csproj /p:_IsPacking=true
           dotnet restore AwsWrapperDataProvider.Plugin.CustomEndpoint\AwsWrapperDataProvider.Plugin.CustomEndpoint.csproj /p:_IsPacking=true
+          dotnet restore AwsWrapperDataProvider.Telemetry.XRay\AwsWrapperDataProvider.Telemetry.XRay.csproj /p:_IsPacking=true
           dotnet restore AwsWrapperDataProvider.Dialect.MySqlClient\AwsWrapperDataProvider.Dialect.MySqlClient.csproj /p:_IsPacking=true
           dotnet restore AwsWrapperDataProvider.Dialect.MySqlConnector\AwsWrapperDataProvider.Dialect.MySqlConnector.csproj /p:_IsPacking=true
           dotnet restore AwsWrapperDataProvider.Dialect.Npgsql\AwsWrapperDataProvider.Dialect.Npgsql.csproj /p:_IsPacking=true
@@ -40,6 +41,7 @@ jobs:
           dotnet build AwsWrapperDataProvider.Plugin.Iam\AwsWrapperDataProvider.Plugin.Iam.csproj --configuration Release --no-restore
           dotnet build AwsWrapperDataProvider.Plugin.SecretsManager\AwsWrapperDataProvider.Plugin.SecretsManager.csproj --configuration Release --no-restore
           dotnet build AwsWrapperDataProvider.Plugin.CustomEndpoint\AwsWrapperDataProvider.Plugin.CustomEndpoint.csproj --configuration Release --no-restore
+          dotnet build AwsWrapperDataProvider.Telemetry.XRay\AwsWrapperDataProvider.Telemetry.XRay.csproj --configuration Release --no-restore
           dotnet build AwsWrapperDataProvider.Dialect.MySqlClient\AwsWrapperDataProvider.Dialect.MySqlClient.csproj --configuration Release --no-restore
           dotnet build AwsWrapperDataProvider.Dialect.MySqlConnector\AwsWrapperDataProvider.Dialect.MySqlConnector.csproj --configuration Release --no-restore
           dotnet build AwsWrapperDataProvider.Dialect.Npgsql\AwsWrapperDataProvider.Dialect.Npgsql.csproj --configuration Release --no-restore
@@ -91,6 +93,7 @@ jobs:
           dotnet pack AwsWrapperDataProvider.Plugin.Iam\AwsWrapperDataProvider.Plugin.Iam.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
           dotnet pack AwsWrapperDataProvider.Plugin.SecretsManager\AwsWrapperDataProvider.Plugin.SecretsManager.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
           dotnet pack AwsWrapperDataProvider.Plugin.CustomEndpoint\AwsWrapperDataProvider.Plugin.CustomEndpoint.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
+          dotnet pack AwsWrapperDataProvider.Telemetry.XRay\AwsWrapperDataProvider.Telemetry.XRay.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
           dotnet pack AwsWrapperDataProvider.Dialect.MySqlClient\AwsWrapperDataProvider.Dialect.MySqlClient.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
           dotnet pack AwsWrapperDataProvider.Dialect.MySqlConnector\AwsWrapperDataProvider.Dialect.MySqlConnector.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
           dotnet pack AwsWrapperDataProvider.Dialect.Npgsql\AwsWrapperDataProvider.Dialect.Npgsql.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
