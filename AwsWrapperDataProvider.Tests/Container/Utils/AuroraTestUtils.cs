@@ -730,6 +730,39 @@ public class AuroraTestUtils
         return matchedMemberList[0].DBInstanceIdentifier;
     }
 
+    /// <summary>
+    /// Calls <see cref="GetDBClusterWriterInstanceIdAsync(string)"/> repeatedly until the returned
+    /// writer satisfies <paramref name="acceptable"/> or the timeout elapses. RDS DescribeDBClusters
+    /// is eventually consistent and can briefly report a pre-failover writer even after a failover
+    /// has completed and a previous call returned the new writer; this helper smooths over those
+    /// transient stale reads.
+    /// </summary>
+    public async Task<string> GetDBClusterWriterInstanceIdAsync(
+        string clusterId,
+        Func<string, bool> acceptable,
+        TimeSpan timeout)
+    {
+        var deadline = DateTime.UtcNow + timeout;
+        string writerId;
+        while (true)
+        {
+            writerId = await this.GetDBClusterWriterInstanceIdAsync(clusterId);
+            if (acceptable(writerId))
+            {
+                return writerId;
+            }
+
+            if (DateTime.UtcNow >= deadline)
+            {
+                throw new TimeoutException(
+                    $"DescribeDBClusters did not return an acceptable writer for cluster {clusterId} "
+                    + $"within {timeout.TotalMinutes:F0} minutes (last seen: {writerId}).");
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(3));
+        }
+    }
+
     public async Task<string> GetRandomDBClusterReaderInstanceIdAsync(string clusterId)
     {
         var matchedMemberList = (await this.GetDBClusterMemberListAsync(clusterId))
