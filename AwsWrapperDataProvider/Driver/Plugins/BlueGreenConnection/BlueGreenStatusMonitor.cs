@@ -37,7 +37,7 @@ public class BlueGreenStatusMonitor
     private static readonly long DefaultCheckIntervalMs = (long)TimeSpan.FromMinutes(5).TotalMilliseconds;
     private static readonly HashSet<string> KnownVersions = [LatestKnownVersion];
 
-    private readonly IBlueGreenDialect currentDialect;
+    private readonly IBlueGreenDialect? currentDialect;
     private readonly IPluginService pluginService;
     private readonly string bgdId;
     private readonly Dictionary<string, string> props;
@@ -328,7 +328,7 @@ public class BlueGreenStatusMonitor
 
     protected async Task CollectStatus()
     {
-        if (this.connection is null or { State: ConnectionState.Closed } or { State: ConnectionState.Broken })
+        if (this.currentDialect == null || this.connection is null or { State: ConnectionState.Closed } or { State: ConnectionState.Broken })
         {
             return;
         }
@@ -477,7 +477,7 @@ public class BlueGreenStatusMonitor
                 this.InitHostListProvider();
             }
         }
-        catch (DbException e)
+        catch (Exception ex) when (ex is DbException or SocketException)
         {
             if (this.connection?.State != System.Data.ConnectionState.Closed && this.connection?.State != ConnectionState.Broken)
             {
@@ -485,13 +485,13 @@ public class BlueGreenStatusMonitor
                 // If connection isn't closed but there's an exception then let's log it.
 
                 // For PG databases
-                if (e.Message?.Contains("An error occured while retrieving the blue/green fast switchover metadata") == true)
+                if (ex.Message?.Contains("An error occured while retrieving the blue/green fast switchover metadata") == true)
                 {
                     this.currentPhase = BlueGreenPhaseType.NOT_CREATED;
                     return;
                 }
 
-                Logger.LogTrace(e, Resources.BlueGreenStatusMonitor_CollectStatus_UnhandledSqlException, this.role);
+                Logger.LogTrace(ex, Resources.BlueGreenStatusMonitor_CollectStatus_UnhandledSqlException, this.role);
             }
             else
             {
@@ -516,7 +516,7 @@ public class BlueGreenStatusMonitor
                 || conn.State == System.Data.ConnectionState.Closed
                 || conn.State == System.Data.ConnectionState.Broken;
         }
-        catch (DbException)
+        catch (Exception ex) when (ex is DbException or SocketException)
         {
             // do nothing
         }
@@ -597,6 +597,14 @@ public class BlueGreenStatusMonitor
                     Logger.LogTrace(Resources.BlueGreenStatusMonitor_OpenConnection_OpeningConnection, this.role, connectionHostSpecCopy.Host);
 
                     connectedIpAddressCopy = this.GetIpAddress(connectionHostSpecCopy.Host);
+                    if (connectedIpAddressCopy == null)
+                    {
+                        Logger.LogDebug("[OpenConnection] Unable to resolve IP for host: {Host}, role: {Role}. Skipping connection attempt.", connectionHostSpecCopy.Host, this.role);
+                        this.panicMode = true;
+                        this.NotifyChanges();
+                        return;
+                    }
+
                     this.connection = await this.pluginService.ForceOpenConnection(connectionHostSpecCopy, this.props, null, false);
                     this.connectedIpAddress = connectedIpAddressCopy;
 
@@ -607,7 +615,7 @@ public class BlueGreenStatusMonitor
                 this.panicMode = false;
                 this.NotifyChanges();
             }
-            catch (DbException ex)
+            catch (Exception ex) when (ex is DbException or SocketException)
             {
                 Logger.LogWarning(ex, "[OpenConnection] Failed to open connection for role: {Role}", this.role);
                 this.connection = null;

@@ -18,6 +18,8 @@ using AwsWrapperDataProvider.Dialect.Npgsql;
 using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.Dialects;
+using AwsWrapperDataProvider.Driver.Plugins;
+using AwsWrapperDataProvider.Driver.Plugins.Failover;
 using AwsWrapperDataProvider.Driver.Utils;
 using AwsWrapperDataProvider.Tests.Driver.Plugins;
 using MySqlConnector;
@@ -119,5 +121,121 @@ public class AwsWrapperConnectionTest
         Assert.Same(connection.TargetDbConnection, command.TargetDbCommand!.Connection);
 
         Assert.NotSame(originalTargetConnection, updatedTargetConnection);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void IsWrapperFor_MatchesTargetConnectionType()
+    {
+        var connectionString = "Server=<insert_rds_instance_here>;User ID=admin;Password=<password>;Initial Catalog=test;" +
+                "TargetConnectionType=MySqlConnector.MySqlConnection,MySqlConnector;";
+        Dictionary<string, string> props = new()
+        {
+            { "TargetConnectionType", "MySqlConnector.MySqlConnection,MySqlConnector" },
+            { "Host", "<insert_rds_instance_here>" },
+        };
+
+        ConfigurationProfile profile = new("mockFailover", [new MockFailoverPluginFactory()], props, new MySqlDialect(), new MySqlConnectorDialect(), new DbConnectionProvider());
+
+        using AwsWrapperConnection<MySqlConnection> connection = new(connectionString, profile);
+
+        Assert.True(connection.IsWrapperFor<MySqlConnection>());
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void IsWrapperFor_MatchesPluginType()
+    {
+        var connectionString = "Server=<insert_rds_instance_here>;User ID=admin;Password=<password>;Initial Catalog=test;" +
+                "TargetConnectionType=MySqlConnector.MySqlConnection,MySqlConnector;";
+        Dictionary<string, string> props = new()
+        {
+            { "TargetConnectionType", "MySqlConnector.MySqlConnection,MySqlConnector" },
+            { "Host", "<insert_rds_instance_here>" },
+        };
+
+        ConfigurationProfile profile = new("mockFailover", [new MockFailoverPluginFactory()], props, new MySqlDialect(), new MySqlConnectorDialect(), new DbConnectionProvider());
+
+        using AwsWrapperConnection<MySqlConnection> connection = new(connectionString, profile);
+
+        Assert.True(connection.IsWrapperFor<FailoverPlugin>());
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void IsWrapperFor_ReturnsFalseForUnrelatedType()
+    {
+        var connectionString = "Server=<insert_rds_instance_here>;User ID=admin;Password=<password>;Initial Catalog=test;" +
+                "TargetConnectionType=MySqlConnector.MySqlConnection,MySqlConnector;";
+        Dictionary<string, string> props = new()
+        {
+            { "TargetConnectionType", "MySqlConnector.MySqlConnection,MySqlConnector" },
+            { "Host", "<insert_rds_instance_here>" },
+        };
+
+        ConfigurationProfile profile = new("mockFailover", [new MockFailoverPluginFactory()], props, new MySqlDialect(), new MySqlConnectorDialect(), new DbConnectionProvider());
+
+        using AwsWrapperConnection<MySqlConnection> connection = new(connectionString, profile);
+
+        Assert.False(connection.IsWrapperFor<TestPluginOne>());
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void Unwrap_ReturnsTargetConnection()
+    {
+        var connectionString = "Server=<insert_rds_instance_here>;User ID=admin;Password=<password>;Initial Catalog=test;" +
+                "TargetConnectionType=MySqlConnector.MySqlConnection,MySqlConnector;";
+        Dictionary<string, string> props = new()
+        {
+            { "TargetConnectionType", "MySqlConnector.MySqlConnection,MySqlConnector" },
+            { "Host", "<insert_rds_instance_here>" },
+        };
+
+        ConfigurationProfile profile = new("mockFailover", [new MockFailoverPluginFactory()], props, new MySqlDialect(), new MySqlConnectorDialect(), new DbConnectionProvider());
+
+        using AwsWrapperConnection<MySqlConnection> connection = new(connectionString, profile);
+
+        var unwrapped = connection.Unwrap<MySqlConnection>();
+        Assert.IsType<MySqlConnection>(unwrapped);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void Unwrap_ReturnsPlugin()
+    {
+        var connectionString = "Server=<insert_rds_instance_here>;User ID=admin;Password=<password>;Initial Catalog=test;" +
+                "TargetConnectionType=MySqlConnector.MySqlConnection,MySqlConnector;";
+        Dictionary<string, string> props = new()
+        {
+            { "TargetConnectionType", "MySqlConnector.MySqlConnection,MySqlConnector" },
+            { "Host", "<insert_rds_instance_here>" },
+        };
+
+        ConfigurationProfile profile = new("mockFailover", [new MockFailoverPluginFactory()], props, new MySqlDialect(), new MySqlConnectorDialect(), new DbConnectionProvider());
+
+        using AwsWrapperConnection<MySqlConnection> connection = new(connectionString, profile);
+
+        var unwrapped = connection.Unwrap<FailoverPlugin>();
+        Assert.IsAssignableFrom<FailoverPlugin>(unwrapped);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void Unwrap_ThrowsForUnrelatedType()
+    {
+        var connectionString = "Server=<insert_rds_instance_here>;User ID=admin;Password=<password>;Initial Catalog=test;" +
+                "TargetConnectionType=MySqlConnector.MySqlConnection,MySqlConnector;";
+        Dictionary<string, string> props = new()
+        {
+            { "TargetConnectionType", "MySqlConnector.MySqlConnection,MySqlConnector" },
+            { "Host", "<insert_rds_instance_here>" },
+        };
+
+        ConfigurationProfile profile = new("mockFailover", [new MockFailoverPluginFactory()], props, new MySqlDialect(), new MySqlConnectorDialect(), new DbConnectionProvider());
+
+        using AwsWrapperConnection<MySqlConnection> connection = new(connectionString, profile);
+
+        Assert.Throws<ArgumentException>(() => connection.Unwrap<TestPluginOne>());
     }
 }

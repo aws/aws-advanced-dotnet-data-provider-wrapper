@@ -245,7 +245,7 @@ public class ConnectionPluginManagerTests
             pluginServiceMock.Object,
             props);
 
-        IList<IConnectionPlugin> plugins = TestUtils.GetNonPublicInstanceField<IList<IConnectionPlugin>>(pluginManager, "plugins")!;
+        IList<IConnectionPlugin> plugins = pluginManager.Plugins;
 
         Assert.Single(plugins);
     }

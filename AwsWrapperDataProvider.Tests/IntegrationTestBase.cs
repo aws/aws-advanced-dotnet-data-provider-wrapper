@@ -86,7 +86,7 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         }
 
         var deployment = TestEnvironment.Env.Info.Request.Deployment;
-        if (deployment == DatabaseEngineDeployment.AURORA || deployment == DatabaseEngineDeployment.AURORA_LIMITLESS || deployment == DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER)
+        if (deployment is DatabaseEngineDeployment.AURORA or DatabaseEngineDeployment.AURORA_LIMITLESS or DatabaseEngineDeployment.RDS_MULTI_AZ_CLUSTER)
         {
             int remainingTries = 3;
             bool success = false;
@@ -105,6 +105,8 @@ public abstract class IntegrationTestBase : IAsyncLifetime
                     switch (deployment)
                     {
                         case DatabaseEngineDeployment.AURORA:
+                            await TestEnvironment.RebootAllClusterInstancesAsync();
+                            break;
                         case DatabaseEngineDeployment.AURORA_LIMITLESS:
                             await TestEnvironment.RebootAllClusterInstancesAsync();
                             break;
@@ -125,6 +127,22 @@ public abstract class IntegrationTestBase : IAsyncLifetime
             }
 
             Console.WriteLine($"Cluster {TestEnvironment.Env.Info.RdsDbName} is healthy.");
+        }
+
+        if (TestEnvironment.Env.Info.Request.Features.Contains(TestEnvironmentFeatures.BLUE_GREEN_DEPLOYMENT))
+        {
+            if (!TestEnvironment.IsBlueGreenDeploymentAvailableForCluster(TestEnvironment.Env.Info.RdsDbName))
+            {
+                try
+                {
+                    TestEnvironment.Env.Info.BlueGreenDeploymentId = TestEnvironment.CreateBlueGreenDeployment(AuroraTestUtils.GetUtility()).Result;
+                    Console.WriteLine(@"Created Blue Green Deployment Environment");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($@"Failed to create Blue Green Deployment Environment due to exception: {ex.Message}");
+                }
+            }
         }
     }
 
