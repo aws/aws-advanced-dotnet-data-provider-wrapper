@@ -467,7 +467,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
             {
                 this.logger.WriteLine($"Writer did not change, still {newWriterId}.");
 
-                // Writer didn't change â€” idle connections should still be open.
+                // Writer didn't change — idle connections should still be open.
                 foreach (var idleConn in idleConnections)
                 {
                     Assert.Equal(
@@ -479,7 +479,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
             {
                 this.logger.WriteLine($"Cluster failed over to instance {newWriterId}.");
 
-                // Writer changed â€” all idle connections should be closed.
+                // Writer changed — all idle connections should be closed.
                 foreach (var idleConn in idleConnections)
                 {
                     Assert.Equal(

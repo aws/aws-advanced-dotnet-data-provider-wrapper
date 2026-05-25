@@ -442,67 +442,20 @@ public class PluginService : IPluginService, IHostListProviderService
 
     private void UpdateHostAvailability(IList<HostSpec> hosts)
     {
-        // [DIAG] Dump every entry currently in HostAvailabilityExpiringCache before we mutate anything.
-        try
-        {
-            var snapshot = HostAvailabilityExpiringCache.Keys
-                .Cast<object>()
-                .Select(k => new
-                {
-                    Key = k?.ToString() ?? "(null)",
-                    Value = HostAvailabilityExpiringCache.TryGetValue(k!, out HostAvailability? v) ? v?.ToString() ?? "(null)" : "(missing)",
-                })
-                .ToList();
-            Logger.LogWarning(
-                "[DIAG] UpdateHostAvailability cache snapshot. count={Count}, entries=[{Entries}]",
-                snapshot.Count,
-                string.Join(" | ", snapshot.Select(e => $"{e.Key}={e.Value}")));
-        }
-        catch (Exception ex)
-        {
-            Logger.LogWarning("[DIAG] UpdateHostAvailability failed to dump cache snapshot: {Message}", ex.Message);
-        }
-
         foreach (HostSpec host in hosts)
         {
             // First try to restore from cache by host:port (for existing hosts)
-            bool foundByHostPort = HostAvailabilityExpiringCache.TryGetValue(host.GetHostAndPort(), out HostAvailability? availability);
-
-            // [DIAG] Log the host:port lookup outcome.
-            Logger.LogWarning(
-                "[DIAG] UpdateHostAvailability lookup by host:port. key={Key}, found={Found}, cachedValue={Value}, hostId={HostId}, role={Role}, availabilityBefore={AvailBefore}",
-                host.GetHostAndPort(),
-                foundByHostPort,
-                availability?.ToString() ?? "(null)",
-                host.HostId ?? "(null)",
-                host.Role,
-                host.Availability);
+            HostAvailabilityExpiringCache.TryGetValue(host.GetHostAndPort(), out HostAvailability? availability);
 
             // If not found and host has a HostId, try to restore by HostId (for custom endpoint restrictions
             // that were set before the topology refresh created these HostSpec objects)
             if (!availability.HasValue && !string.IsNullOrEmpty(host.HostId))
             {
-                bool foundByHostId = HostAvailabilityExpiringCache.TryGetValue(host.HostId, out availability);
-
-                // [DIAG] Log the HostId fallback lookup outcome.
-                Logger.LogWarning(
-                    "[DIAG] UpdateHostAvailability lookup by HostId. key={Key}, found={Found}, cachedValue={Value}",
-                    host.HostId,
-                    foundByHostId,
-                    availability?.ToString() ?? "(null)");
+                HostAvailabilityExpiringCache.TryGetValue(host.HostId, out availability);
             }
 
             if (availability.HasValue)
             {
-                // [DIAG] Record the mutation that will overwrite the topology-provided availability.
-                Logger.LogWarning(
-                    "[DIAG] UpdateHostAvailability MUTATING. host={HostPort}, hostId={HostId}, role={Role}, from={From}, to={To}",
-                    host.GetHostAndPort(),
-                    host.HostId ?? "(null)",
-                    host.Role,
-                    host.Availability,
-                    availability.Value);
-
                 host.Availability = availability.Value;
             }
         }
