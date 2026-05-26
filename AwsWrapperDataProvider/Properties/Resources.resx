@@ -1250,4 +1250,19 @@
     <data name="GdbFailoverPlugin_GetAllowedFailoverConnectionAsync_FailoverReaderTimeout" xml:space="preserve">
         <value>Failover reader timeout.</value>
     </data>
+    <data name="GdbReadWriteSplittingPlugin_MissingHomeRegion" xml:space="preserve">
+        <value>Home region for the GDB Read/Write Splitting Plugin is missing and could not be derived from the initial host '{0}'. Please provide the GdbRwHomeRegion connection property.</value>
+    </data>
+    <data name="GdbReadWriteSplittingPlugin_ParameterValue" xml:space="preserve">
+        <value>{0} = {1}.</value>
+    </data>
+    <data name="GdbReadWriteSplittingPlugin_CantConnectWriterOutOfHomeRegion" xml:space="preserve">
+        <value>Cannot connect to writer host '{0}' because it is outside of the configured home region '{1}'.</value>
+    </data>
+    <data name="GdbReadWriteSplittingPlugin_NoAvailableReadersInHomeRegion" xml:space="preserve">
+        <value>No reader hosts are available in the home region '{0}'.</value>
+    </data>
+    <data name="GdbReadWriteSplittingPlugin_EnabledGwf" xml:space="preserve">
+        <value>Global Write Forwarding is enabled. Keeping reader connection in region '{0}' instead of switching to writer.</value>
+    </data>
 </root>

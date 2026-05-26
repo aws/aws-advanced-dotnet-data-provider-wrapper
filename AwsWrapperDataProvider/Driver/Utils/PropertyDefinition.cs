@@ -293,6 +293,22 @@ public static class PropertyDefinition
         "false",
         "Set to true to enable Global Write Forwarding when connected to a reader connection in a secondary global region.");
 
+    // GDB Read/Write Splitting Plugin Properties
+    public static readonly AwsWrapperProperty GdbRwHomeRegion = new(
+        "GdbRwHomeRegion",
+        null,
+        "Specifies the home region for read/write splitting.");
+
+    public static readonly AwsWrapperProperty GdbRwRestrictWriterToHomeRegion = new(
+        "GdbRwRestrictWriterToHomeRegion",
+        "true",
+        "Prevents connections to a writer node outside of the defined home region.");
+
+    public static readonly AwsWrapperProperty GdbRwRestrictReaderToHomeRegion = new(
+        "GdbRwRestrictReaderToHomeRegion",
+        "true",
+        "Prevents connections to a reader node outside of the defined home region.");
+
     // Custom Endpoint Plugin Properties
     public static readonly AwsWrapperProperty CustomEndpointInfoRefreshRateMs = new(
         "CustomEndpointInfoRefreshRateMs",
@@ -452,8 +468,13 @@ public static class PropertyDefinition
         FailoverHomeRegion,
         ActiveHomeFailoverMode,
         InactiveHomeFailoverMode,
-        GdbEnableGlobalWriteForwarding,
 
+        // GDB Read Write Splitting
+        GdbEnableGlobalWriteForwarding,
+        GdbRwHomeRegion,
+        GdbRwRestrictWriterToHomeRegion,
+        GdbRwRestrictReaderToHomeRegion,
+        
         // Telemetry Properties
         EnableTelemetry,
         TelemetryTracesBackend,

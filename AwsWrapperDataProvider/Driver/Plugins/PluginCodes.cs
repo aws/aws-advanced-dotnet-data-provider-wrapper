@@ -31,4 +31,5 @@ public static class PluginCodes
     public const string CustomEndpoint = "customEndpoint";
     public const string Limitless = "limitless";
     public const string GdbFailover = "gdbFailover";
+    public const string GdbReadWriteSplitting = "gdbReadWriteSplitting";
 }

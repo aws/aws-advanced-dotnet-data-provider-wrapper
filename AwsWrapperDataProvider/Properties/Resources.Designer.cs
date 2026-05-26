@@ -3630,5 +3630,50 @@ namespace AwsWrapperDataProvider.Properties {
                 return ResourceManager.GetString("GdbFailoverPlugin_GetAllowedFailoverConnectionAsync_FailoverReaderTimeout", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Home region for the GDB Read/Write Splitting Plugin is missing and could not be derived from the initial host '{0}'. Please provide the GdbRwHomeRegion connection property..
+        /// </summary>
+        internal static string GdbReadWriteSplittingPlugin_MissingHomeRegion {
+            get {
+                return ResourceManager.GetString("GdbReadWriteSplittingPlugin_MissingHomeRegion", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to {0} = {1}..
+        /// </summary>
+        internal static string GdbReadWriteSplittingPlugin_ParameterValue {
+            get {
+                return ResourceManager.GetString("GdbReadWriteSplittingPlugin_ParameterValue", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Cannot connect to writer host '{0}' because it is outside of the configured home region '{1}'..
+        /// </summary>
+        internal static string GdbReadWriteSplittingPlugin_CantConnectWriterOutOfHomeRegion {
+            get {
+                return ResourceManager.GetString("GdbReadWriteSplittingPlugin_CantConnectWriterOutOfHomeRegion", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to No reader hosts are available in the home region '{0}'..
+        /// </summary>
+        internal static string GdbReadWriteSplittingPlugin_NoAvailableReadersInHomeRegion {
+            get {
+                return ResourceManager.GetString("GdbReadWriteSplittingPlugin_NoAvailableReadersInHomeRegion", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Global Write Forwarding is enabled. Keeping reader connection in region '{0}' instead of switching to writer..
+        /// </summary>
+        internal static string GdbReadWriteSplittingPlugin_EnabledGwf {
+            get {
+                return ResourceManager.GetString("GdbReadWriteSplittingPlugin_EnabledGwf", resourceCulture);
+            }
+        }
     }
 }
