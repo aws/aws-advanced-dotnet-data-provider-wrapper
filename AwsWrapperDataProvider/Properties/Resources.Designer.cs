@@ -1050,6 +1050,15 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Telemetry backend &apos;{0}&apos; is not recognized or not registered; falling back to NullTelemetryFactory..
+        /// </summary>
+        internal static string DefaultTelemetryFactory_ResolveFactory_UnknownBackend {
+            get {
+                return ResourceManager.GetString("DefaultTelemetryFactory_ResolveFactory_UnknownBackend", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Guessed Known dialect: {0}..
         /// </summary>
         internal static string DialectProvider_GetDialectFromType_KnownDialect {
@@ -2847,6 +2856,24 @@ namespace AwsWrapperDataProvider.Properties {
         internal static string OpenedConnectionTracker_PruneLoop_Error {
             get {
                 return ResourceManager.GetString("OpenedConnectionTracker_PruneLoop_Error", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failed to create OTLP counter &apos;{0}&apos;; falling back to NullTelemetryCounter..
+        /// </summary>
+        internal static string OtlpTelemetryFactory_CreateCounter_Failed {
+            get {
+                return ResourceManager.GetString("OtlpTelemetryFactory_CreateCounter_Failed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failed to create OTLP gauge &apos;{0}&apos;; falling back to NullTelemetryGauge..
+        /// </summary>
+        internal static string OtlpTelemetryFactory_CreateGauge_Failed {
+            get {
+                return ResourceManager.GetString("OtlpTelemetryFactory_CreateGauge_Failed", resourceCulture);
             }
         }
         

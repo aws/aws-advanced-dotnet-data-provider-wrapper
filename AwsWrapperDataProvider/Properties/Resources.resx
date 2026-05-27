@@ -245,6 +245,9 @@
   <data name="DefaultConnectionPlugin_OpenInternal_ConnectionOpened" xml:space="preserve">
     <value>Connection {0}@{1} is opened with data source {2}.</value>
   </data>
+  <data name="DefaultTelemetryFactory_ResolveFactory_UnknownBackend" xml:space="preserve">
+    <value>Telemetry backend '{0}' is not recognized or not registered; falling back to NullTelemetryFactory.</value>
+  </data>
   <data name="DialectProvider_GetDialectFromType_KnownDialect" xml:space="preserve">
     <value>Guessed Known dialect: {0}.</value>
   </data>
@@ -1042,6 +1045,12 @@
   </data>
   <data name="OpenedConnectionTracker_LogConnectionQueue_InvalidatingConnections" xml:space="preserve">
     <value>Invalidating connections {0}</value>
+  </data>
+  <data name="OtlpTelemetryFactory_CreateCounter_Failed" xml:space="preserve">
+    <value>Failed to create OTLP counter '{0}'; falling back to NullTelemetryCounter.</value>
+  </data>
+  <data name="OtlpTelemetryFactory_CreateGauge_Failed" xml:space="preserve">
+    <value>Failed to create OTLP gauge '{0}'; falling back to NullTelemetryGauge.</value>
   </data>
   <data name="RWQueue_ThrowIfReentrant_CannotModifyDuringForEach" xml:space="preserve">
     <value>Cannot modify RWQueue during ForEach iteration on the same thread.</value>
