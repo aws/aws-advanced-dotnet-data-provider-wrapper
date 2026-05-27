@@ -14,6 +14,7 @@
 
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Utils.Telemetry;
@@ -28,17 +29,6 @@ namespace AwsWrapperDataProvider.Driver.Utils.Telemetry;
 /// <para>
 /// The factory is a process-wide singleton. A single <see cref="ActivitySource"/>
 /// and <see cref="Meter"/> are shared across all factory operations.
-/// </para>
-/// <para>
-/// Trace-level resolution lives in <see cref="DefaultTelemetryFactory"/>;
-/// this factory simply applies whatever level it is given. A
-/// <see cref="TelemetryTraceLevel.TopLevel"/> or
-/// <see cref="TelemetryTraceLevel.ForceTopLevel"/> request always opens a
-/// root span: when an unrelated <see cref="Activity.Current"/> is present
-/// the factory detaches it for the lifetime of the root, and the resulting
-/// <see cref="OtlpTelemetryContext"/> restores it when closed so that the
-/// application's surrounding trace context is preserved across the wrapper
-/// call.
 /// </para>
 /// </remarks>
 public sealed class OtlpTelemetryFactory : ITelemetryFactory, ITelemetryParentContextProbe
@@ -110,8 +100,7 @@ public sealed class OtlpTelemetryFactory : ITelemetryFactory, ITelemetryParentCo
         // the calling ExecutionContext (and therefore Activity.Current) into
         // the lambda, so without the explicit detach the copy would inherit
         // any outer wrapper span still open on the caller and end up in the
-        // same trace as the original. Mirrors AWSXRayRecorder.ClearEntity()
-        // in XRayTelemetryFactory.PostCopy. The lambda's mutation of
+        // same trace as the original. The lambda's mutation of
         // Activity.Current is scoped to the task's logical context and does
         // not affect the calling thread.
         Task.Run(() =>
@@ -145,7 +134,7 @@ public sealed class OtlpTelemetryFactory : ITelemetryFactory, ITelemetryParentCo
             // back to a no-op counter.
             Logger.LogDebug(
                 ex,
-                "Failed to create OTLP counter '{CounterName}'; falling back to NullTelemetryCounter.",
+                Resources.OtlpTelemetryFactory_CreateCounter_Failed,
                 name);
             return NullTelemetryCounter.Instance;
         }
@@ -165,7 +154,7 @@ public sealed class OtlpTelemetryFactory : ITelemetryFactory, ITelemetryParentCo
         {
             Logger.LogDebug(
                 ex,
-                "Failed to create OTLP gauge '{GaugeName}'; falling back to NullTelemetryGauge.",
+                Resources.OtlpTelemetryFactory_CreateGauge_Failed,
                 name);
             return NullTelemetryGauge.Instance;
         }

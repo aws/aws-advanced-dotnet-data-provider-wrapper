@@ -13,60 +13,15 @@
 // limitations under the License.
 
 using System.Collections.Concurrent;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Utils.Telemetry;
 
 /// <summary>
 /// Routing <see cref="ITelemetryFactory"/> that reads the telemetry-related
-/// connection properties (<c>EnableTelemetry</c>, <c>TelemetryTracesBackend</c>,
-/// <c>TelemetryMetricsBackend</c>, <c>TelemetrySubmitTopLevel</c>) and delegates
-/// trace and metric operations to the appropriate backend factories
-/// independently.
+/// connection properties and delegates trace and metric operations to the appropriate backend factories.
 /// </summary>
-/// <remarks>
-/// <para>
-/// Backend resolution:
-/// <list type="bullet">
-///   <item><description>When <c>EnableTelemetry</c> is <c>false</c>, all
-///     operations route to <see cref="NullTelemetryFactory"/>.</description></item>
-///   <item><description>Backend <c>OTLP</c> routes to
-///     <see cref="OtlpTelemetryFactory"/>.</description></item>
-///   <item><description>Any other backend name is looked up in the
-///     registration table populated by
-///     <see cref="RegisterTelemetryFactory"/> (for example, the
-///     <c>AwsWrapperDataProvider.Telemetry.XRay</c> project registers
-///     <c>"XRAY"</c>). Unregistered or unrecognized names fall back to
-///     <see cref="NullTelemetryFactory"/>.</description></item>
-/// </list>
-/// </para>
-/// <para>
-/// Trace-level resolution is performed centrally via
-/// <see cref="ResolveLevel"/>: <see cref="DefaultTelemetryFactory"/> queries
-/// the trace backend's <see cref="ITelemetryParentContextProbe"/> (when
-/// implemented) for the current parent state, applies the
-/// <c>TelemetrySubmitTopLevel</c> matrix below, and hands the resolved level
-/// to the backend, which simply applies it. Backends that do not implement
-/// the probe are treated as having no parent.
-/// </para>
-/// <para>
-/// Effective level matrix:
-/// <code>
-/// submitTopLevel = false
-///   parent      requested=TopLevel   requested=Nested
-///   yes         Nested               Nested
-///   no          TopLevel             Nested
-///
-/// submitTopLevel = true (override)
-///   parent      requested=TopLevel   requested=Nested
-///   yes         TopLevel             Nested
-///   no          TopLevel             NoTrace
-/// </code>
-/// <see cref="TelemetryTraceLevel.ForceTopLevel"/> and
-/// <see cref="TelemetryTraceLevel.NoTrace"/> bypass the matrix and pass
-/// straight through.
-/// </para>
-/// </remarks>
 public sealed class DefaultTelemetryFactory : ITelemetryFactory
 {
     private static readonly ILogger<DefaultTelemetryFactory> Logger =
@@ -167,8 +122,7 @@ public sealed class DefaultTelemetryFactory : ITelemetryFactory
     /// <summary>
     /// Computes the effective <see cref="TelemetryTraceLevel"/> for the
     /// requested level given the current parent state and the
-    /// <c>TelemetrySubmitTopLevel</c> setting. Encodes the matrix described
-    /// in the type-level remarks.
+    /// <c>TelemetrySubmitTopLevel</c> setting.
     /// </summary>
     /// <param name="requested">The level the caller asked for.</param>
     /// <param name="parentExists">Whether the trace backend reports an
@@ -207,7 +161,7 @@ public sealed class DefaultTelemetryFactory : ITelemetryFactory
         }
 
         // submitTopLevel = true (override): TopLevel always wins; a Nested
-        // request still requires a parent or it is dropped.
+        // request still requires a parent, or it is dropped.
         if (requested == TelemetryTraceLevel.TopLevel)
         {
             return TelemetryTraceLevel.TopLevel;
@@ -238,7 +192,7 @@ public sealed class DefaultTelemetryFactory : ITelemetryFactory
         if (normalized.Length > 0 && normalized != "NONE")
         {
             Logger.LogDebug(
-                "Telemetry backend '{Backend}' is not recognized or not registered; falling back to NullTelemetryFactory.",
+                Resources.DefaultTelemetryFactory_ResolveFactory_UnknownBackend,
                 backend);
         }
 

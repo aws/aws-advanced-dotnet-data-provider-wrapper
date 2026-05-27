@@ -16,19 +16,9 @@ namespace AwsWrapperDataProvider.Driver.Utils.Telemetry;
 
 /// <summary>
 /// Optional companion to <see cref="ITelemetryFactory"/>: lets a backend
-/// expose whether its native trace context currently has a parent span,
-/// so that <see cref="DefaultTelemetryFactory"/> can resolve the effective
-/// <see cref="TelemetryTraceLevel"/> centrally instead of duplicating that
-/// decision inside every backend.
+/// expose whether its native trace context currently has a parent span.
 /// </summary>
 /// <remarks>
-/// <para>
-/// "Parent" is per-backend. The OTLP backend reads
-/// <see cref="System.Diagnostics.Activity.Current"/>; the X-Ray backend reads
-/// the recorder's current entity. Backends that do not implement this
-/// interface are treated as "no parent" by
-/// <see cref="DefaultTelemetryFactory"/>.
-/// </para>
 /// <para>
 /// Implementations must be safe to call concurrently from multiple threads
 /// and must not throw.

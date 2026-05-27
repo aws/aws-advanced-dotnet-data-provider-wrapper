@@ -33,11 +33,8 @@ public interface ITelemetryFactory
     /// <param name="traceLevel">Controls whether the span is created as
     /// top-level, nested, or suppressed.</param>
     /// <returns>
-    /// A new <see cref="ITelemetryContext"/>. May be a no-op context when
-    /// telemetry is disabled or when the requested
-    /// <paramref name="traceLevel"/> is not applicable in the current trace
-    /// context (for example, a <see cref="TelemetryTraceLevel.Nested"/> span
-    /// requested when no parent span exists).
+    /// A new <see cref="ITelemetryContext"/>. Maybe a no-op context when
+    /// telemetry is disabled or when the requested.
     /// </returns>
     ITelemetryContext OpenTelemetryContext(string name, TelemetryTraceLevel traceLevel);
 

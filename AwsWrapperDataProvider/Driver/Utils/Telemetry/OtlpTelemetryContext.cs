@@ -131,8 +131,7 @@ public sealed class OtlpTelemetryContext : ITelemetryContext
 
     /// <summary>
     /// Copies every tag from the wrapped Activity onto the specified target
-    /// Activity. Used by <see cref="OtlpTelemetryFactory.PostCopy"/> to clone
-    /// attribute state onto the copied span.
+    /// Activity.
     /// </summary>
     /// <param name="target">The Activity to copy tags onto.</param>
     public void CopyAttributesTo(Activity target)
