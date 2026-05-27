@@ -398,7 +398,7 @@ public static class PropertyDefinition
         BgConnectTimeout,
         BgdId,
         BlueGreenConnectionPlugin.BgSkipRoutingInForceConnect,
-        
+
         // GDB Plugin Properties
         GlobalClusterInstanceHostPatterns
     ];
