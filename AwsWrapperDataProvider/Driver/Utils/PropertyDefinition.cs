@@ -322,7 +322,7 @@ public static class PropertyDefinition
     public static readonly AwsWrapperProperty TelemetrySubmitTopLevel = new(
         "TelemetrySubmitTopLevel",
         "false",
-        "When true, wrapper entry-point traces are submitted as top-level (root) spans when no parent span exists. When false, wrapper entry-point traces are nested under the application's existing trace context.");
+        "When true, wrapper entry-point traces are submitted as top-level (root) spans. When false, wrapper entry-point traces are nested under the application's existing trace context.");
 
     public static readonly AwsWrapperProperty TelemetryFailoverAdditionalTopTrace = new(
         "TelemetryFailoverAdditionalTopTrace",
