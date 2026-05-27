@@ -129,7 +129,7 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         }
 
         Console.WriteLine($"Monitor cache count is {RdsHostListProvider.MonitorCount()}");
-        
+
         if (TestEnvironment.Env.Info.Request.Features.Contains(TestEnvironmentFeatures.BLUE_GREEN_DEPLOYMENT))
         {
             if (!TestEnvironment.IsBlueGreenDeploymentAvailableForCluster(TestEnvironment.Env.Info.RdsDbName))
