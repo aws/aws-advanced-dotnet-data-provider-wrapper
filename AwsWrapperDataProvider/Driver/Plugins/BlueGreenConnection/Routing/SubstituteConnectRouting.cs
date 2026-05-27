@@ -54,18 +54,39 @@ public class SubstituteConnectRouting : BaseConnectRouting
 
         if (!RdsUtils.IsIp(this.substituteHostSpec.Host))
         {
-            return useForceConnect
-                ? await pluginService.ForceOpenConnection(this.substituteHostSpec, props, plugin, false)
-                : await pluginService.OpenConnection(this.substituteHostSpec, props, plugin, false);
+            try
+            {
+                return useForceConnect
+                    ? await pluginService.ForceOpenConnection(this.substituteHostSpec, props, plugin, false)
+                    : await pluginService.OpenConnection(this.substituteHostSpec, props, plugin, false);
+            }
+            catch (Exception ex) when (ex is System.Net.Sockets.SocketException or DbException || ex.InnerException is System.Net.Sockets.SocketException)
+            {
+                Logger.LogTrace("Error connecting to substitute host {Host}, falling through: {Error}", this.substituteHostSpec.Host, ex.Message);
+                return null;
+            }
         }
 
         bool iamInUse = pluginService.IsPluginInUse(PluginCodes.Iam);
 
         if (!iamInUse)
         {
-            return useForceConnect
-                ? await pluginService.ForceOpenConnection(this.substituteHostSpec, props, plugin, false)
-                : await pluginService.OpenConnection(this.substituteHostSpec, props, plugin, false);
+            try
+            {
+                return useForceConnect
+                    ? await pluginService.ForceOpenConnection(this.substituteHostSpec, props, plugin, false)
+                    : await pluginService.OpenConnection(this.substituteHostSpec, props, plugin, false);
+            }
+            catch (Exception ex)
+            {
+                if (!pluginService.IsLoginException(ex))
+                {
+                    throw;
+                }
+
+                // let another routing try
+                return null;
+            }
         }
 
         if (this.iamHosts == null || this.iamHosts.Count == 0)
@@ -119,8 +140,8 @@ public class SubstituteConnectRouting : BaseConnectRouting
             }
         }
 
-        throw new InvalidOperationException(
-            string.Format(Resources.SubstituteConnectRouting_Apply_InProgressCantOpenConnection, this.substituteHostSpec.GetHostAndPort()));
+        // returning no connection so the next routing can handle it
+        return null;
     }
 
     public override string ToString()

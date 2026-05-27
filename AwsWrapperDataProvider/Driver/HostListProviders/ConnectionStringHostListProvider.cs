@@ -61,7 +61,7 @@ public class ConnectionStringHostListProvider : IStaticHostListProvider
 
     public string GetClusterId()
     {
-        throw new NotSupportedException(Resources.Error_ConnectionStringHostListProvider_GetClusterId);
+        return "<none>";
     }
 
     public Task<HostSpec?> IdentifyConnectionAsync(DbConnection connection, DbTransaction? transaction = null)

@@ -252,6 +252,17 @@ public static partial class RdsUtils
         return host.Replace(prefix + ".", ".");
     }
 
+    public static bool IsGreenInstance(string host)
+    {
+        if (string.IsNullOrEmpty(host))
+        {
+            return false;
+        }
+
+        Match match = BgGreenHostPattern().Match(host);
+        return match.Success;
+    }
+
     public static bool IsNotOldInstance(string? host)
     {
         if (string.IsNullOrEmpty(host))
@@ -259,8 +270,20 @@ public static partial class RdsUtils
             return false;
         }
 
-        var match = BgOldHostPattern().Match(host);
+        Match match = BgOldHostPattern().Match(host);
         return !match.Success;
+    }
+
+    public static bool IsNotGreenAndOldPrefixInstance(string? host)
+    {
+        if (string.IsNullOrEmpty(host))
+        {
+            return false;
+        }
+
+        Match oldMatch = BgOldHostPattern().Match(host);
+        Match greenMatch = BgGreenHostPattern().Match(host);
+        return !oldMatch.Success && !greenMatch.Success;
     }
 
     public static bool IsRdsCustomClusterDns(string host)

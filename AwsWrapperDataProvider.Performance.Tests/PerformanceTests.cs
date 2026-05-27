@@ -48,7 +48,7 @@ public class PerformanceTests
         return Engine switch
         {
             DatabaseEngine.PG => $"SELECT pg_sleep({seconds})",
-            DatabaseEngine.MYSQL or DatabaseEngine.MARIADB => $"SELECT SLEEP({seconds})",
+            DatabaseEngine.MYSQL => $"SELECT SLEEP({seconds})",
             _ => throw new NotSupportedException($"Unsupported engine: {Engine}"),
         };
     }
