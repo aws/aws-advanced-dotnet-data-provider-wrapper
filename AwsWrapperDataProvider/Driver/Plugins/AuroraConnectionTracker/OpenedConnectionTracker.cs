@@ -160,9 +160,7 @@ public class OpenedConnectionTracker : IConnectionTracker
     public void InvalidateAllConnections(HostSpec hostSpec)
     {
         // Open a Nested "invalidate connections" span around the entire
-        // iterate-and-dispose operation (Req 21.1). The factory is obtained
-        // via the owning plugin service, with a NullTelemetryFactory fallback
-        // when no plugin service / factory is wired (Req 21.3).
+        // iterate-and-dispose operation.
         ITelemetryContext invalidateContext = this.TelemetryFactory
             .OpenTelemetryContext("invalidate connections", TelemetryTraceLevel.Nested);
         try
