@@ -58,7 +58,6 @@ public class GlobalAuroraTopologyUtils : AuroraTopologyUtils
     /// Global topology queries use <see cref="QueryForTopologyAsync(DbConnection, HostSpec, Dictionary{string, HostSpec})"/>.
     /// </summary>
     protected override Task<List<HostSpec>?> GetHostsAsync(
-        DbConnection connection,
         DbDataReader reader,
         HostSpec initialHostSpec,
         HostSpec instanceTemplate,

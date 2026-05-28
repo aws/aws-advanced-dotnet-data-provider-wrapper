@@ -63,7 +63,6 @@ public class MultiAzTopologyUtils : TopologyUtils
     }
 
     protected override async Task<List<HostSpec>?> GetHostsAsync(
-        DbConnection connection,
         DbDataReader reader,
         HostSpec initialHostSpec,
         HostSpec instanceTemplate,

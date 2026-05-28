@@ -72,7 +72,7 @@ public abstract class TopologyUtils
         }
 
         List<HostSpec>? hosts = await this.GetHostsAsync(
-            connection, reader, initialHostSpec, clusterInstanceTemplate, ct);
+            reader, initialHostSpec, clusterInstanceTemplate, ct);
         return VerifyWriter(hosts);
     }
 
@@ -80,14 +80,12 @@ public abstract class TopologyUtils
     /// Reads rows from the topology query result and constructs the list of <see cref="HostSpec"/> objects.
     /// Subclasses implement deployment-specific parsing (Aurora, Multi-AZ, Global Aurora).
     /// </summary>
-    /// <param name="connection">The connection used to run the topology query (may be used to run auxiliary queries).</param>
     /// <param name="reader">The topology query result reader.</param>
     /// <param name="initialHostSpec">The initial host specification used for connecting.</param>
     /// <param name="instanceTemplate">The cluster instance template used to construct new hosts.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A list of hosts, or null if processing fails.</returns>
     protected abstract Task<List<HostSpec>?> GetHostsAsync(
-        DbConnection connection,
         DbDataReader reader,
         HostSpec initialHostSpec,
         HostSpec instanceTemplate,

@@ -47,7 +47,6 @@ public class AuroraTopologyUtils : TopologyUtils
     }
 
     protected override async Task<List<HostSpec>?> GetHostsAsync(
-        DbConnection connection,
         DbDataReader reader,
         HostSpec initialHostSpec,
         HostSpec instanceTemplate,

@@ -648,8 +648,10 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             }
         }
 
-        // Get the first reader topology as reference
-        var readerTopologyFirstEntry = this.readerTopologiesById.Values.FirstOrDefault();
+        // Snapshot the reader topologies once. ConcurrentDictionary.Values returns a fresh copy on each call,
+        // so subsequent reads could observe different state if node monitors mutate the map concurrently.
+        var allTopologies = this.readerTopologiesById.Values.ToList();
+        var readerTopologyFirstEntry = allTopologies.FirstOrDefault();
         if (readerTopologyFirstEntry == null || readerTopologyFirstEntry.Count == 0)
         {
             Interlocked.Exchange(ref this.stableTopologiesStartTicks, 0);
@@ -662,7 +664,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             .OrderBy(t => t.Host)
             .ToList();
 
-        foreach (var topology in this.readerTopologiesById.Values.Skip(1))
+        foreach (var topology in allTopologies.Skip(1))
         {
             var key = topology
                 .Select(h => (h.Host, h.Port, h.Role, h.Availability))
@@ -677,10 +679,13 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         }
 
         // All reader topologies match
-        long startTicks = Interlocked.Read(ref this.stableTopologiesStartTicks);
+        // Atomically set startTicks to "now" only if it's still 0; otherwise read the existing value.
+        // This avoids a race where two readers could both observe 0 and overwrite each other's start time.
+        long now = DateTime.UtcNow.Ticks;
+        long startTicks = Interlocked.CompareExchange(ref this.stableTopologiesStartTicks, now, 0);
         if (startTicks == 0)
         {
-            Interlocked.Exchange(ref this.stableTopologiesStartTicks, DateTime.UtcNow.Ticks);
+            // We just initialized the start time. Wait for the next cycle to check elapsed duration.
             return;
         }
 

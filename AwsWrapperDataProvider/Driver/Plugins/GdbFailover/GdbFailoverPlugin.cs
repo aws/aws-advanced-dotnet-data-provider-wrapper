@@ -230,7 +230,10 @@ public class GdbFailoverPlugin : FailoverPlugin
                     var allowedHosts = this.pluginService.GetHosts();
                     if (!allowedHosts.Any(h => h.Host == writer.Host && h.Port == writer.Port))
                     {
-                        Logger.LogError(
+                        // Expected during failover: AllHosts may briefly report a writer that GetHosts() has
+                        // filtered out (allowed/blocked hosts, custom endpoints, stale topology, etc.). Returning
+                        // an empty set signals the retry loop to refresh topology and try again.
+                        Logger.LogTrace(
                             Resources.GdbFailoverPlugin_FailoverToWriter_NewWriterNotInAllowedHostsLog,
                             writer.Host,
                             LoggerUtils.LogTopology(allowedHosts, string.Empty));
