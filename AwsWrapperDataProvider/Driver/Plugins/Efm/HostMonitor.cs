@@ -92,11 +92,13 @@ public class HostMonitor : IHostMonitor
         this.abortedConnectionsCounter = telemetryFactory.CreateCounter("efm.connections.aborted");
 
         // Each HostMonitor is per-node — bake the node id directly into the
-        // counter name at construction time.
+        // instrument names at construction time so that multi-node clusters
+        // produce one disjoint time series per node rather than colliding
+        // under a single shared name.
         string nodeId = string.IsNullOrEmpty(hostSpec.HostId) ? hostSpec.Host : hostSpec.HostId;
         this.nodeUnhealthyCounter = telemetryFactory.CreateCounter($"efm.nodeUnhealthy.count.{nodeId}");
         this.activeContextsSizeGauge = telemetryFactory.CreateGauge(
-            "efm.activeContexts.queue.size",
+            $"efm.activeContexts.queue.size.{nodeId}",
             () => (long)this.activeContexts.Count);
 
         this.newContextRunTask = Task.Run(() => this.NewContextRun(this.cancellationTokenSource.Token));
