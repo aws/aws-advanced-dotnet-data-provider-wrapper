@@ -78,8 +78,21 @@ public sealed class DefaultTelemetryFactory : ITelemetryFactory
     /// </remarks>
     /// <param name="name">The backend name (e.g., <c>"XRAY"</c>).</param>
     /// <param name="factory">The factory implementation to register.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="name"/> or
+    /// <paramref name="factory"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException"><paramref name="name"/> is empty
+    /// or contains only whitespace.</exception>
     public static void RegisterTelemetryFactory(string name, ITelemetryFactory factory)
     {
+        ArgumentNullException.ThrowIfNull(name);
+        ArgumentNullException.ThrowIfNull(factory);
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentException(
+                Resources.DefaultTelemetryFactory_RegisterTelemetryFactory_EmptyName,
+                nameof(name));
+        }
+
         RegisteredFactories[name.ToUpperInvariant()] = factory;
     }
 

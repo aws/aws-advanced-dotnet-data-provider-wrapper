@@ -248,6 +248,9 @@
   <data name="DefaultTelemetryFactory_ResolveFactory_UnknownBackend" xml:space="preserve">
     <value>Telemetry backend '{0}' is not recognized or not registered; falling back to NullTelemetryFactory.</value>
   </data>
+  <data name="DefaultTelemetryFactory_RegisterTelemetryFactory_EmptyName" xml:space="preserve">
+    <value>Backend name must be non-empty.</value>
+  </data>
   <data name="DialectProvider_GetDialectFromType_KnownDialect" xml:space="preserve">
     <value>Guessed Known dialect: {0}.</value>
   </data>

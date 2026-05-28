@@ -264,6 +264,36 @@ public class DefaultTelemetryFactoryTests
 
     [Fact]
     [Trait("Category", "Unit")]
+    public void RegisterTelemetryFactory_NullName_ThrowsArgumentNullException()
+    {
+        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(
+            () => DefaultTelemetryFactory.RegisterTelemetryFactory(null!, Mock.Of<ITelemetryFactory>()));
+        Assert.Equal("name", ex.ParamName);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void RegisterTelemetryFactory_NullFactory_ThrowsArgumentNullException()
+    {
+        ArgumentNullException ex = Assert.Throws<ArgumentNullException>(
+            () => DefaultTelemetryFactory.RegisterTelemetryFactory("ANY", null!));
+        Assert.Equal("factory", ex.ParamName);
+    }
+
+    [Theory]
+    [Trait("Category", "Unit")]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("\t")]
+    public void RegisterTelemetryFactory_EmptyOrWhitespaceName_ThrowsArgumentException(string name)
+    {
+        ArgumentException ex = Assert.Throws<ArgumentException>(
+            () => DefaultTelemetryFactory.RegisterTelemetryFactory(name, Mock.Of<ITelemetryFactory>()));
+        Assert.Equal("name", ex.ParamName);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
     public void PostCopy_DelegatesToTracesFactory_NotMetricsFactory()
     {
         string tracesName = "TRACES" + Guid.NewGuid().ToString("N");

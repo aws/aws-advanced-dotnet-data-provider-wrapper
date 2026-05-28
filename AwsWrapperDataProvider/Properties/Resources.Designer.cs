@@ -1059,6 +1059,15 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Backend name must be non-empty..
+        /// </summary>
+        internal static string DefaultTelemetryFactory_RegisterTelemetryFactory_EmptyName {
+            get {
+                return ResourceManager.GetString("DefaultTelemetryFactory_RegisterTelemetryFactory_EmptyName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Guessed Known dialect: {0}..
         /// </summary>
         internal static string DialectProvider_GetDialectFromType_KnownDialect {
