@@ -47,20 +47,12 @@ public sealed class XRayTelemetryContext : ITelemetryContext
     private readonly string name;
     private readonly bool isSegment;
     private readonly Entity? entity;
+    private readonly Entity? restoreOnClose;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="XRayTelemetryContext"/>
     /// class and opens a new X-Ray segment, subsegment, or no-op context.
     /// </summary>
-    /// <remarks>
-    /// Trace-level resolution is performed by
-    /// <see cref="Driver.Utils.Telemetry.DefaultTelemetryFactory"/>; this
-    /// constructor trusts the caller's level and does not re-check parent
-    /// presence. <c>BeginSegment</c> always opens a top-level segment;
-    /// <c>BeginSubsegment</c> attaches to the current entity if one exists
-    /// or is treated by the X-Ray SDK as a context-missing condition
-    /// otherwise.
-    /// </remarks>
     /// <param name="name">The span name.</param>
     /// <param name="traceLevel">The requested trace level.</param>
     public XRayTelemetryContext(string name, TelemetryTraceLevel traceLevel)
@@ -72,6 +64,20 @@ public sealed class XRayTelemetryContext : ITelemetryContext
         {
             case TelemetryTraceLevel.ForceTopLevel:
             case TelemetryTraceLevel.TopLevel:
+                // Capture any pre-existing X-Ray entity on the calling
+                // logical thread and detach it before starting the new
+                // segment. Without this, BeginSegment with a parent already
+                // on the trace context replaces the parent on the AsyncLocal
+                // stack, so anything the application emits after the wrapper
+                // call returns would lose its surrounding X-Ray trace
+                // context. The captured entity is reattached in
+                // <see cref="Close"/>.
+                this.restoreOnClose = SafeGetEntity(recorder);
+                if (this.restoreOnClose != null)
+                {
+                    SafeClearEntity(recorder);
+                }
+
                 recorder.BeginSegment(name);
                 this.entity = SafeGetEntity(recorder);
                 this.isSegment = true;
@@ -202,6 +208,22 @@ public sealed class XRayTelemetryContext : ITelemetryContext
         {
             // Telemetry failures must not break database operations.
         }
+
+        // Restore the application's parent X-Ray entity that was detached
+        // when this top-level segment was opened. Without this, anything the
+        // application emits after the wrapper call returns would lose its
+        // original trace context.
+        if (this.restoreOnClose != null)
+        {
+            try
+            {
+                recorder.SetEntity(this.restoreOnClose);
+            }
+            catch
+            {
+                // Telemetry failures must not break database operations.
+            }
+        }
     }
 
     private static Entity? SafeGetEntity(AWSXRayRecorder recorder)
@@ -213,6 +235,18 @@ public sealed class XRayTelemetryContext : ITelemetryContext
         catch
         {
             return null;
+        }
+    }
+
+    private static void SafeClearEntity(AWSXRayRecorder recorder)
+    {
+        try
+        {
+            recorder.ClearEntity();
+        }
+        catch
+        {
+            // Telemetry failures must not break database operations.
         }
     }
 }

@@ -8,7 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AWSXRayRecorder.Core" Version="2.*" />
+        <PackageReference Include="AWSXRayRecorder.Core" Version="2.16.0" />
     </ItemGroup>
 
     <ItemGroup>

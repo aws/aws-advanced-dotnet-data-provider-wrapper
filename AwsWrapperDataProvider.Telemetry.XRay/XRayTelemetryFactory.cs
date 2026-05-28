@@ -24,21 +24,6 @@ namespace AwsWrapperDataProvider.Telemetry.XRay;
 /// throws <see cref="NotSupportedException"/> for metric operations as
 /// AWS X-Ray does not support metrics.
 /// </summary>
-/// <remarks>
-/// <para>
-/// Consumers register this factory under the <c>"XRAY"</c> backend name via
-/// <see cref="XRayTelemetryLoader.Load"/>. Once registered, configuring
-/// <c>TelemetryTracesBackend=XRAY</c> routes trace contexts through this
-/// factory; metric calls are routed separately (typically to OTLP or Null).
-/// </para>
-/// <para>
-/// Trace-level resolution lives in <see cref="DefaultTelemetryFactory"/>;
-/// this factory simply applies whatever level it is given. The X-Ray SDK's
-/// <c>BeginSegment</c> always starts a new top-level segment, and
-/// <c>EndSegment</c> / <c>EndSubsegment</c> already restore the parent
-/// entity, so no manual save/restore bookkeeping is required here.
-/// </para>
-/// </remarks>
 public sealed class XRayTelemetryFactory : ITelemetryFactory, ITelemetryParentContextProbe
 {
     private const string CopyPrefix = "copy: ";
