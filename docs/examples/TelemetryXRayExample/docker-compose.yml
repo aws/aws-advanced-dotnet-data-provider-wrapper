@@ -1,0 +1,33 @@
+# X-Ray daemon for the TelemetryXRayExample.
+#
+# Receives UDP segments on 127.0.0.1:2000 from the in-process AWS X-Ray
+# SDK (AWSXRayRecorder.Core) and forwards them to the AWS X-Ray service
+# over HTTPS, signed with credentials resolved from the standard AWS
+# credential chain.
+#
+# Before `docker compose up`, export AWS credentials in the host shell:
+#
+#   export AWS_ACCESS_KEY_ID=...
+#   export AWS_SECRET_ACCESS_KEY=...
+#   export AWS_SESSION_TOKEN=...   # only needed for short-lived credentials
+#
+# Required IAM permissions on the principal:
+#   - xray:PutTraceSegments
+#   - xray:PutTelemetryRecords
+# Both are covered by the AWS-managed AWSXRayDaemonWriteAccess policy.
+
+services:
+  xray-daemon:
+    image: amazon/aws-xray-daemon:latest
+    container_name: telemetry-xray-example-daemon
+    # -o : do not load a local sampling manifest, use SDK defaults
+    # -n : AWS region the daemon ships segments to
+    command: ["-o", "-n", "<region>"]
+    ports:
+      - "2000:2000/udp"
+    environment:
+      AWS_REGION: <region>
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN}
+    restart: unless-stopped

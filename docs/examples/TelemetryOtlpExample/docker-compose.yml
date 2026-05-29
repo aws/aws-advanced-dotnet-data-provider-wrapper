@@ -1,0 +1,33 @@
+# ADOT Collector for the TelemetryOtlpExample.
+#
+# Receives OTLP traffic from the sample app on :4318 (HTTP) and :4317
+# (gRPC), translates spans into AWS X-Ray segment documents, and ships
+# them to the X-Ray service in the configured region via PutTraceSegments.
+#
+# Before `docker compose up`, export AWS credentials in the host shell:
+#
+#   export AWS_ACCESS_KEY_ID=...
+#   export AWS_SECRET_ACCESS_KEY=...
+#   export AWS_SESSION_TOKEN=...   # only needed for short-lived credentials
+#
+# Required IAM permissions on the principal:
+#   - xray:PutTraceSegments
+#   - xray:PutTelemetryRecords
+# Both are covered by the AWS-managed AWSXRayDaemonWriteAccess policy.
+
+services:
+  adot-collector:
+    image: public.ecr.aws/aws-observability/aws-otel-collector:latest
+    container_name: telemetry-otlp-example-collector
+    command: ["--config=/etc/otel-config.yaml"]
+    ports:
+      - "4317:4317"   # OTLP/gRPC
+      - "4318:4318"   # OTLP/HTTP
+    environment:
+      AWS_REGION: <region>
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN}
+    volumes:
+      - ./adot-config.yaml:/etc/otel-config.yaml:ro
+    restart: unless-stopped

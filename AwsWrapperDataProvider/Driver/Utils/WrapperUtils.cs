@@ -17,23 +17,52 @@ using System.Text.RegularExpressions;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
+using AwsWrapperDataProvider.Driver.Utils.Telemetry;
 
 namespace AwsWrapperDataProvider.Driver.Utils;
 
 public partial class WrapperUtils
 {
-    public static Task<T> ExecuteWithPlugins<T>(
+    /// <summary>
+    /// Attribute key for the invoked ADO.NET method name on top-level
+    /// telemetry spans opened by <see cref="ExecuteWithPlugins{T}"/> and
+    /// <see cref="RunWithPlugins"/>. Value equals the <c>methodName</c>
+    /// argument passed at the call site.
+    /// </summary>
+    internal const string DbCallAttribute = "dbCall";
+
+    public static async Task<T> ExecuteWithPlugins<T>(
         ConnectionPluginManager connectionPluginManager,
         object methodInvokeOn,
         string methodName,
         ADONetDelegate<T> methodFunc,
         params object[] methodArgs)
     {
-        return connectionPluginManager.Execute(
-            methodInvokeOn,
-            methodName,
-            methodFunc,
-            methodArgs);
+        ITelemetryContext telemetryContext = connectionPluginManager.TelemetryFactory
+            .OpenTelemetryContext(methodName, TelemetryTraceLevel.TopLevel);
+        try
+        {
+            telemetryContext.SetAttribute(DbCallAttribute, methodName);
+
+            T result = await connectionPluginManager.Execute(
+                methodInvokeOn,
+                methodName,
+                methodFunc,
+                methodArgs);
+
+            telemetryContext.SetSuccess(true);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            telemetryContext.SetException(ex);
+            telemetryContext.SetSuccess(false);
+            throw;
+        }
+        finally
+        {
+            telemetryContext.CloseContext();
+        }
     }
 
     public static Task RunWithPlugins(

@@ -303,6 +303,34 @@ public static class PropertyDefinition
         null,
         "The region of the cluster's custom endpoints. If not specified, the region will be parsed from the URL.");
 
+    // Telemetry Properties
+    public static readonly AwsWrapperProperty EnableTelemetry = new(
+        "EnableTelemetry",
+        "false",
+        "Enable or disable telemetry (distributed traces and metrics) collection. When false, all telemetry operations are no-ops.");
+
+    public static readonly AwsWrapperProperty TelemetryTracesBackend = new(
+        "TelemetryTracesBackend",
+        "NONE",
+        "Telemetry traces backend. Allowed values: OTLP, XRAY, NONE. Unrecognized values are treated as NONE.",
+        choices: ["OTLP", "XRAY", "NONE"]);
+
+    public static readonly AwsWrapperProperty TelemetryMetricsBackend = new(
+        "TelemetryMetricsBackend",
+        "NONE",
+        "Telemetry metrics backend. Allowed values: OTLP, NONE. Unrecognized values are treated as NONE.",
+        choices: ["OTLP", "NONE"]);
+
+    public static readonly AwsWrapperProperty TelemetrySubmitTopLevel = new(
+        "TelemetrySubmitTopLevel",
+        "false",
+        "When true, wrapper entry-point traces are submitted as top-level (root) spans. When false, wrapper entry-point traces are nested under the application's existing trace context.");
+
+    public static readonly AwsWrapperProperty TelemetryFailoverAdditionalTopTrace = new(
+        "TelemetryFailoverAdditionalTopTrace",
+        "false",
+        "When true, failover traces are also submitted as independent top-level traces via PostCopy so that failover events appear as standalone traces.");
+
     /// <summary>
     /// A set of AwsWrapperProperties that is used by the wrapper and should not be passed to the target driver.
     /// </summary>
@@ -391,6 +419,13 @@ public static class PropertyDefinition
         BgSwitchoverTimeoutMs,
         BgConnectTimeout,
         BgdId,
+
+        // Telemetry Properties
+        EnableTelemetry,
+        TelemetryTracesBackend,
+        TelemetryMetricsBackend,
+        TelemetrySubmitTopLevel,
+        TelemetryFailoverAdditionalTopTrace,
         BlueGreenConnectionPlugin.BgSkipRoutingInForceConnect
     ];
 

@@ -90,8 +90,41 @@ public class ConnectionStringHelper
         if (plugins != null)
         {
             url += $"; Plugins={plugins}";
+            url += BuildTelemetrySuffix();
         }
 
         return url;
+    }
+
+    /// <summary>
+    /// Builds the wrapper-specific telemetry connection-string fragment
+    /// (with a leading separator) based on the test environment's feature
+    /// flags. Returns an empty string when telemetry features are off so
+    /// the helper is a no-op for environments that didn't spin up the
+    /// telemetry containers.
+    /// </summary>
+    private static string BuildTelemetrySuffix()
+    {
+        // TestEnvironment.Env is a lazy singleton: this property triggers
+        // env initialization on first call. By the time any helper-using
+        // test runs, the env (and therefore the X-Ray daemon address /
+        // OTel meter provider) is already wired up.
+        var features = TestEnvironment.Env.Info.Request.Features;
+        bool tracesEnabled = features.Contains(TestEnvironmentFeatures.TELEMETRY_TRACES_ENABLED);
+        bool metricsEnabled = features.Contains(TestEnvironmentFeatures.TELEMETRY_METRICS_ENABLED);
+
+        if (!tracesEnabled && !metricsEnabled)
+        {
+            return string.Empty;
+        }
+
+        // Emit a single combined fragment so the resulting connection
+        // string stays compact and human-readable in test logs.
+        string tracesBackend = tracesEnabled ? "XRAY" : "NONE";
+        string metricsBackend = metricsEnabled ? "OTLP" : "NONE";
+        return ";EnableTelemetry=true"
+            + ";TelemetrySubmitTopLevel=true"
+            + $";TelemetryTracesBackend={tracesBackend}"
+            + $";TelemetryMetricsBackend={metricsBackend}";
     }
 }

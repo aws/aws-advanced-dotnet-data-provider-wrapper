@@ -19,6 +19,7 @@ using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Driver.Utils.Telemetry;
 using AwsWrapperDataProvider.Plugin.FederatedAuth.FederatedAuth;
 using Microsoft.Extensions.Caching.Memory;
 using Moq;
@@ -56,6 +57,12 @@ public class OktaAuthPluginTests
         OktaAuthPlugin.IamTokenCache.Clear();
 
         this.mockPluginService = new Mock<IPluginService>();
+
+        // OktaAuthPlugin's constructor now creates a telemetry counter via
+        // pluginService.TelemetryFactory — wire the null factory singleton
+        // so all counter calls are no-op.
+        this.mockPluginService.Setup(s => s.TelemetryFactory).Returns(NullTelemetryFactory.Instance);
+
         this.props[PropertyDefinition.Plugins.Name] = "okta";
         this.props[PropertyDefinition.IamDefaultPort.Name] = Port.ToString();
         this.props[PropertyDefinition.IdpUsername.Name] = "idp-username";
