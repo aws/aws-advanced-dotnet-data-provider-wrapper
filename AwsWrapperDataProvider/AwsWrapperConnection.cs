@@ -464,6 +464,12 @@ public class AwsWrapperConnection : DbConnection, IWrapper
 
     public T Unwrap<T>() where T : class
     {
+        var plugin = this.PluginManager?.Plugins.OfType<T>().FirstOrDefault();
+        if (plugin != null)
+        {
+            return plugin;
+        }
+
         if (this.pluginService?.CurrentConnection is T connectionAsT)
         {
             return connectionAsT;
@@ -474,6 +480,11 @@ public class AwsWrapperConnection : DbConnection, IWrapper
 
     public bool IsWrapperFor<T>() where T : class
     {
+        if ((this.PluginManager?.Plugins!).OfType<T>().Any())
+        {
+            return true;
+        }
+
         return this.pluginService?.CurrentConnection is T;
     }
 }

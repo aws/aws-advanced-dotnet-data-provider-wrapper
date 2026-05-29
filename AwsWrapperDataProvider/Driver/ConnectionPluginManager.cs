@@ -30,7 +30,7 @@ namespace AwsWrapperDataProvider.Driver;
 public class ConnectionPluginManager
 {
     private readonly Dictionary<string, Delegate> pluginChainDelegates = [];
-    protected IList<IConnectionPlugin> plugins = [];
+    protected internal IList<IConnectionPlugin> Plugins = [];
     protected string[] activePluginCodes = [];
     protected IConnectionProvider defaultConnProvider;
     protected IConnectionProvider? effectiveConnProvider;
@@ -114,7 +114,7 @@ public class ConnectionPluginManager
     {
         this.defaultConnProvider = defaultConnectionProvider;
         this.effectiveConnProvider = effectiveConnectionProvider;
-        this.plugins = plugins;
+        this.Plugins = plugins;
         this.ConnectionWrapper = connection;
     }
 
@@ -124,7 +124,7 @@ public class ConnectionPluginManager
     {
         this.pluginService = pluginService;
         ConnectionPluginChainBuilder pluginChainBuilder = new();
-        this.plugins = pluginChainBuilder.GetPlugins(
+        this.Plugins = pluginChainBuilder.GetPlugins(
             this.pluginService,
             this.defaultConnProvider,
             this.effectiveConnProvider,
@@ -171,9 +171,9 @@ public class ConnectionPluginManager
     private PluginChainADONetDelegate<T> MakePluginChainDelegate<T>(string methodName)
     {
         PluginChainADONetDelegate<T>? pluginChainDelegate = null;
-        for (int i = this.plugins.Count - 1; i >= 0; i--)
+        for (int i = this.Plugins.Count - 1; i >= 0; i--)
         {
-            IConnectionPlugin plugin = this.plugins[i];
+            IConnectionPlugin plugin = this.Plugins[i];
             IReadOnlySet<string> subscribedMethods = plugin.SubscribedMethods;
             bool isSubscribed = subscribedMethods.Contains(AllMethods) || subscribedMethods.Contains(methodName);
 

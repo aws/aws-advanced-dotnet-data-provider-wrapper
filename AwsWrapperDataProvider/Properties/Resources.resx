@@ -1062,7 +1062,7 @@
         <value>Blue/Green Deployment switchover is in progress and a corresponding node for '{0}' is not found. The 'connect' call will be delayed.</value>
     </data>
   <data name="BlueGreenStatusProvider_PrepareStatus_InterimStatus" xml:space="preserve">
-        <value>[bgdId: '{0}', role: {1}] {2}</value>
+        <value>[PrepareStatus] [bgdId: '{0}', role: {1}] {2}</value>
     </data>
   <data name="BlueGreenStatusMonitor_CollectStatus_NoEntriesInStatusTable" xml:space="preserve">
         <value>[{0}] No entries in status table.</value>
