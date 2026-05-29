@@ -139,8 +139,6 @@ public class AwsWrapperCommandTelemetryTests
             f => f.OpenTelemetryContext(expectedSpanName, TelemetryTraceLevel.TopLevel),
             Times.Once);
 
-        // Matches JDBC's jdbcCall and Go's sqlCall: the command span carries a
-        // `dbCall` attribute equal to the span name.
         mockContext.Verify(
             c => c.SetAttribute(WrapperUtils.DbCallAttribute, expectedSpanName),
             Times.Once);

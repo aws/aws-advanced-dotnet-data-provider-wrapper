@@ -21,71 +21,28 @@ using OpenTelemetry.Resources;
 namespace AwsWrapperDataProvider.Tests.Container.Utils;
 
 /// <summary>
-/// Container-side telemetry bootstrap for integration tests. Mirrors the
-/// JDBC wrapper's <c>integration/container/TestEnvironment</c> helper:
-/// when a test environment advertises
-/// <see cref="TestEnvironmentFeatures.TELEMETRY_TRACES_ENABLED"/> or
-/// <see cref="TestEnvironmentFeatures.TELEMETRY_METRICS_ENABLED"/>, this
+/// Container-side telemetry bootstrap for integration tests. This
 /// class wires the AWS X-Ray SDK and the OpenTelemetry SDK so the spans
 /// and metrics emitted by the wrapper actually flow to the
 /// <c>otlp-daemon</c> Docker container spun up by the host-side
 /// <c>TestEnvironmentConfig</c>.
 /// </summary>
-/// <remarks>
-/// <para>
-/// <see cref="Setup"/> is intended to be called exactly once per test
-/// process (from <see cref="TestEnvironment.Create"/>'s lazy initializer).
-/// <see cref="Shutdown"/> is registered as a process-exit hook so that any
-/// buffered metrics are flushed before the runner terminates.
-/// </para>
-/// <para>
-/// The set of SDKs we bootstrap is intentionally aligned with the
-/// connection-string defaults in <see cref="ConnectionStringHelper"/>:
-/// </para>
-/// <list type="bullet">
-///   <item><description>
-///     Traces feature on  → wrapper picks <c>TelemetryTracesBackend=XRAY</c>,
-///     so we configure the AWS X-Ray daemon address. We deliberately do NOT
-///     build an OTel <c>TracerProvider</c>, because the wrapper's
-///     <c>OtlpTelemetryFactory</c> would not be exercised under the XRAY
-///     traces backend, and the host's <c>TracesTelemetryInfo</c> port is
-///     2000 (the X-Ray UDP receiver inside the otel-collector), not the
-///     OTLP gRPC port 4317.
-///   </description></item>
-///   <item><description>
-///     Metrics feature on → wrapper picks <c>TelemetryMetricsBackend=OTLP</c>,
-///     so we build an OTel <c>MeterProvider</c> with an OTLP gRPC exporter
-///     pointed at <c>MetricsTelemetryInfo</c> (otel-collector:4317).
-///   </description></item>
-/// </list>
-/// <para>
-/// This is a smoke-test helper: its job is to make sure telemetry doesn't
-/// crash the wrapper under realistic export configurations. It does not
-/// assert on what spans or metrics get exported. Tier-2 dedicated
-/// telemetry tests that exercise the OTLP traces backend bring up their
-/// own <c>TracerProvider</c> Go-style.
-/// </para>
-/// </remarks>
 internal static class TestTelemetry
 {
     /// <summary>
     /// Resource <c>service.name</c> attribute value for metrics emitted
-    /// from the integration-test process. Mirrors JDBC's
-    /// <c>AWSJDBCWrapperIntegrationTests</c>.
+    /// from the integration-test process.
     /// </summary>
     private const string ServiceName = "AwsAdvancedDotnetDataProviderWrapperIntegrationTests";
 
     /// <summary>
     /// Meter name registered by <c>OtlpTelemetryFactory</c> in the wrapper.
-    /// The OpenTelemetry SDK only listens on meters that are explicitly
-    /// added, so this must match the wrapper's instrumentation name
-    /// exactly.
     /// </summary>
     private const string InstrumentationName = "aws-advanced-dotnet-wrapper";
 
     /// <summary>
     /// How often the metrics exporter pushes accumulated metrics to the
-    /// OTLP collector. Matches the JDBC integration-test setup.
+    /// OTLP collector.
     /// </summary>
     private const int MetricExportIntervalMs = 5_000;
 

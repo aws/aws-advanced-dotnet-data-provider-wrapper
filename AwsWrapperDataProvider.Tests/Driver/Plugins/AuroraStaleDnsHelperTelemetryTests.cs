@@ -25,15 +25,6 @@ namespace AwsWrapperDataProvider.Tests.Driver.Plugins;
 /// <para>This file covers the constructor-level surface only: that the
 /// <c>staleDNS.stale.detected</c> counter is created once, with the expected
 /// name, via the plugin service's telemetry factory.</para>
-///
-/// <para>The increment-path test (verifying that
-/// <see cref="AuroraStaleDnsHelper.OpenVerifiedConnectionAsync"/> increments
-/// the counter exactly when stale DNS is detected) is deferred — see
-/// <c>.kiro/specs/wrapper-telemetry/deferred-decisions.md</c>. The stale-DNS
-/// branch depends on the private static
-/// <c>AuroraStaleDnsHelper.GetHostIpAddress</c> method performing real
-/// <c>System.Net.Dns.GetHostAddresses</c> calls, which is awkward to drive
-/// from a unit test without a refactor to introduce a DNS-resolution seam.</para>
 /// </summary>
 public class AuroraStaleDnsHelperTelemetryTests
 {

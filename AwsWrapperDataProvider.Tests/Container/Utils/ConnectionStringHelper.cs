@@ -103,36 +103,6 @@ public class ConnectionStringHelper
     /// the helper is a no-op for environments that didn't spin up the
     /// telemetry containers.
     /// </summary>
-    /// <remarks>
-    /// <para>
-    /// Mirrors JDBC's <c>ConnectionStringHelper.getDefaultProperties()</c>:
-    /// when <see cref="TestEnvironmentFeatures.TELEMETRY_TRACES_ENABLED"/> or
-    /// <see cref="TestEnvironmentFeatures.TELEMETRY_METRICS_ENABLED"/> is
-    /// set on the test request, this enables the wrapper's telemetry
-    /// pipeline and pins the backends so wrapper spans / counters actually
-    /// flow to the daemons started by the host-side
-    /// <c>TestEnvironmentConfig</c>:
-    /// </para>
-    /// <list type="bullet">
-    ///   <item><description><c>TelemetryTracesBackend=XRAY</c> when the
-    ///   traces feature is set; <c>NONE</c> otherwise.</description></item>
-    ///   <item><description><c>TelemetryMetricsBackend=OTLP</c> when the
-    ///   metrics feature is set; <c>NONE</c> otherwise.</description></item>
-    ///   <item><description><c>TelemetrySubmitTopLevel=true</c> matches
-    ///   JDBC's default and ensures wrapper entry-point spans surface as
-    ///   root spans even when the test runner has no surrounding
-    ///   Activity context (the typical case for an xUnit test
-    ///   method).</description></item>
-    /// </list>
-    /// <para>
-    /// Only emitted when the caller has passed a non-null <c>plugins</c>
-    /// argument to <see cref="GetUrl"/>: a null <c>plugins</c> is the
-    /// signal that the caller is opening a bare ADO.NET connection (e.g.,
-    /// <see cref="AuroraTestUtils"/> for cluster-health probes) where the
-    /// wrapper-only telemetry properties would be rejected by the
-    /// underlying provider's connection-string parser.
-    /// </para>
-    /// </remarks>
     private static string BuildTelemetrySuffix()
     {
         // TestEnvironment.Env is a lazy singleton: this property triggers

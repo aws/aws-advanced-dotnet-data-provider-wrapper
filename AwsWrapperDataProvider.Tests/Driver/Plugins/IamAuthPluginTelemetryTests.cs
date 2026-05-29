@@ -33,8 +33,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.Plugins;
 ///
 /// <para>The retry-fetch-path test (that span + counter fire a second time
 /// when the cached token returns a login exception on the first
-/// <c>methodFunc()</c> call) is deferred — see
-/// <c>.kiro/specs/wrapper-telemetry/deferred-decisions.md</c>.</para>
+/// <c>methodFunc()</c> call) is deferred.</para>
 /// </summary>
 public class IamAuthPluginTelemetryTests
 {

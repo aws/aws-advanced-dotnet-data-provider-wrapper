@@ -38,8 +38,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.Plugins;
 /// <para>The third test area — verifying the <c>"connection status check"</c>
 /// <see cref="TelemetryTraceLevel.Nested"/> span in the private
 /// <c>CheckConnectionStatusAsync</c> method — is deferred. It depends on a
-/// private-method testing-access decision; see
-/// <c>.kiro/specs/wrapper-telemetry/deferred-decisions.md</c> for details.</para>
+/// private-method testing-access decision.</para>
 ///
 /// <para>Access-to-private-state note: <c>HostMonitor</c>'s constructor spawns
 /// <c>Run</c> as a background <see cref="Task"/>, and there is no public
@@ -147,7 +146,7 @@ public class EfmHostMonitorTelemetryTests
 
         HostMonitor monitor = new(mockPluginService.Object, hostSpec, new Dictionary<string, string>(), 1000, 1000, 3);
 
-        // The background Run task starts immediately in the constructor but
+        // The background Run task starts immediately in the constructor, but
         // we need to give it a moment to open the span before we cancel it.
         // 50 ms is generous for a span-open + set-attribute call (both are
         // synchronous in OtlpTelemetryFactory + NullTelemetryFactory; here
