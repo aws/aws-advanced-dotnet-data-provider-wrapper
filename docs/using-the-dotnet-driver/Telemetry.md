@@ -1,7 +1,7 @@
 # Monitoring
 
 ## Availability
-The feature is available since version <VERSION>.
+The feature is available since version 1.2.0.
 
 ## Overview
 Monitoring is the ability to gather data and insights on the execution of an application. Users will also be able to inspect the gathered data and determine potential actions to take depending on the data collected.
