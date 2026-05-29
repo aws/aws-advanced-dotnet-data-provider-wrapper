@@ -72,13 +72,16 @@ public class XRayTelemetryContextTests : IDisposable
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void Constructor_TopLevel_WithParent_StartsNewSegment()
+    public void Constructor_TopLevel_WithParent_StartsNewSegment_AndRestoresParentOnClose()
     {
-        // Backends are now straight appliers: trace-level resolution lives in
-        // DefaultTelemetryFactory. The X-Ray SDK's BeginSegment always starts
-        // a new top-level segment regardless of any pre-existing entity, so a
-        // TopLevel request reaching the context here just succeeds.
+        // When TopLevel reaches the context with a parent already on the
+        // X-Ray trace context (which happens when ForceTopLevel is requested
+        // or TelemetrySubmitTopLevel=true), the context detaches the parent
+        // for the lifetime of its segment so the new segment is a true root,
+        // and re-attaches the parent on close so the application's trace
+        // context survives the wrapper call.
         AWSXRayRecorder.Instance.BeginSegment("existing.parent");
+        Entity parent = AWSXRayRecorder.Instance.GetEntity();
         try
         {
             XRayTelemetryContext ctx = new("op.top", TelemetryTraceLevel.TopLevel);
@@ -87,11 +90,21 @@ public class XRayTelemetryContextTests : IDisposable
                 Assert.NotNull(ctx.Entity);
                 Assert.IsType<Segment>(ctx.Entity);
                 Assert.True(ctx.IsSegment);
+
+                // The new segment is a root: its TraceId differs from the
+                // parent's, and the parent is detached for the duration of
+                // the wrapper segment.
+                Assert.NotEqual(parent.TraceId, ctx.Entity!.TraceId);
+                Assert.Same(ctx.Entity, AWSXRayRecorder.Instance.GetEntity());
             }
             finally
             {
                 ctx.CloseContext();
             }
+
+            // Parent is reattached after the wrapper segment closes.
+            Assert.True(AWSXRayRecorder.Instance.IsEntityPresent());
+            Assert.Same(parent, AWSXRayRecorder.Instance.GetEntity());
         }
         finally
         {

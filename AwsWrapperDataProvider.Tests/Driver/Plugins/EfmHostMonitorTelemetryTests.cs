@@ -76,10 +76,11 @@ public class EfmHostMonitorTelemetryTests
         {
             // Three instruments, each created exactly once in the
             // constructor with the expected names. The nodeUnhealthy counter
-            // name uses the HostSpec's HostId.
+            // and activeContexts queue size gauge both use the HostSpec's
+            // HostId so concurrent monitors don't collide on instrument name.
             mockFactory.Verify(f => f.CreateCounter("efm.connections.aborted"), Times.Once);
             mockFactory.Verify(f => f.CreateCounter($"efm.nodeUnhealthy.count.{TestNodeId}"), Times.Once);
-            mockFactory.Verify(f => f.CreateGauge("efm.activeContexts.queue.size", It.IsAny<Func<long>>()), Times.Once);
+            mockFactory.Verify(f => f.CreateGauge($"efm.activeContexts.queue.size.{TestNodeId}", It.IsAny<Func<long>>()), Times.Once);
         }
         finally
         {
@@ -89,7 +90,7 @@ public class EfmHostMonitorTelemetryTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task Constructor_WhenHostIdIsNull_FallsBackToHostForNodeIdInCounterName()
+    public async Task Constructor_WhenHostIdIsNull_FallsBackToHostForNodeIdInInstrumentNames()
     {
         Mock<ITelemetryFactory> mockFactory = new();
         Mock<ITelemetryCounter> mockCounter = new();
@@ -109,6 +110,7 @@ public class EfmHostMonitorTelemetryTests
         try
         {
             mockFactory.Verify(f => f.CreateCounter($"efm.nodeUnhealthy.count.{TestHost}"), Times.Once);
+            mockFactory.Verify(f => f.CreateGauge($"efm.activeContexts.queue.size.{TestHost}", It.IsAny<Func<long>>()), Times.Once);
         }
         finally
         {
