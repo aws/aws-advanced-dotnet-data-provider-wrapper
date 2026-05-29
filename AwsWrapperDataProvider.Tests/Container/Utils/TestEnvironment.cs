@@ -14,7 +14,6 @@
 
 using System.Diagnostics;
 using System.Text.Json;
-using AwsWrapperDataProvider.Telemetry.XRay;
 using Amazon.RDS.Model;
 using AwsWrapperDataProvider.Driver.Utils;
 using Microsoft.Extensions.Logging;
