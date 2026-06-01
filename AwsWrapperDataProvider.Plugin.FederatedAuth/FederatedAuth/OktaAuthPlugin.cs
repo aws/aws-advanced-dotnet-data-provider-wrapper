@@ -21,6 +21,7 @@ using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Utils;
 using AwsWrapperDataProvider.Driver.Utils.Telemetry;
 using AwsWrapperDataProvider.Plugin.FederatedAuth.Utils;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
@@ -48,6 +49,12 @@ public partial class OktaAuthPlugin(IPluginService pluginService, Dictionary<str
     private readonly ITelemetryCounter fetchTokenCounter =
         pluginService.TelemetryFactory.CreateCounter("oktaAuth.fetchToken.count");
 
+    /// <summary>
+    /// Region resolver. Reassigned per call: a <see cref="GdbRegionUtils"/> for Global Aurora
+    /// Database endpoints, otherwise the base <see cref="RegionUtils"/>.
+    /// </summary>
+    protected RegionUtils regionUtils = new();
+
     internal static readonly MemoryCache IamTokenCache = new(new MemoryCacheOptions());
 
     public static void ClearCache()
@@ -69,7 +76,23 @@ public partial class OktaAuthPlugin(IPluginService pluginService, Dictionary<str
     {
         SamlUtils.CheckIdpCredentialsWithFallback(PropertyDefinition.IdpUsername, PropertyDefinition.IdpPassword, props);
 
-        string host = PropertyDefinition.IamHost.GetString(props) ?? hostSpec?.Host ?? throw new Exception("Host not provided.");
+        // If an IamHost override is provided, build a new HostSpec by copying from the source HostSpec and overriding the host.
+        // The HostSpec is required so global endpoints can be detected and resolved via the
+        // RDS DescribeGlobalClusters API.
+        string? iamHostOverride = PropertyDefinition.IamHost.GetString(props);
+        HostSpec iamHostSpec;
+        if (!string.IsNullOrEmpty(iamHostOverride))
+        {
+            iamHostSpec = hostSpec != null
+                ? new HostSpecBuilder().CopyFrom(hostSpec).WithHost(iamHostOverride).Build()
+                : new HostSpecBuilder().WithHost(iamHostOverride).Build();
+        }
+        else
+        {
+            iamHostSpec = hostSpec ?? throw new Exception(Resources.FederatedAuthPlugin_HostNotProvided);
+        }
+
+        string host = iamHostSpec.Host;
         int port = PropertyDefinition.IamDefaultPort.GetInt(props) ?? hostSpec?.Port ?? this.pluginService.Dialect.DefaultPort;
 
         if (port <= 0)
@@ -77,8 +100,13 @@ public partial class OktaAuthPlugin(IPluginService pluginService, Dictionary<str
             port = this.pluginService.Dialect.DefaultPort;
         }
 
-        string region = RegionUtils.GetRegion(host, props, PropertyDefinition.IamRegion) ?? throw new Exception("Could not determine region.");
-        string dbUser = PropertyDefinition.DbUser.GetString(props) ?? throw new Exception("DB user not provided.");
+        // Pick the right RegionUtils implementation based on the URL type so global endpoints
+        // are resolved via the RDS DescribeGlobalClusters API.
+        RdsUrlType urlType = RdsUtils.IdentifyRdsType(host);
+        this.regionUtils = urlType == RdsUrlType.RdsGlobalWriterCluster ? new GdbRegionUtils() : new RegionUtils();
+        string region = await this.regionUtils.GetRegionAsync(iamHostSpec, props, PropertyDefinition.IamRegion)
+            ?? throw new Exception(Resources.FederatedAuthPlugin_CouldNotDetermineRegion);
+        string dbUser = PropertyDefinition.DbUser.GetString(props) ?? throw new Exception(Resources.FederatedAuthPlugin_DbUserNotProvided);
 
         string cacheKey = this.tokenUtility.GetCacheKey(dbUser, host, port, region);
         bool isCachedToken;
@@ -86,13 +114,13 @@ public partial class OktaAuthPlugin(IPluginService pluginService, Dictionary<str
         {
             props[PropertyDefinition.Password.Name] = token;
             isCachedToken = true;
-            Logger.LogTrace("Use cached authentication token");
+            Logger.LogTrace(Resources.FederatedAuthPlugin_UseCachedToken);
         }
         else
         {
             await this.UpdateAuthenticationTokenAsync(hostSpec, props, host, port, region, cacheKey, dbUser);
             isCachedToken = false;
-            Logger.LogTrace("Generated new authentication token");
+            Logger.LogTrace(Resources.FederatedAuthPlugin_GeneratedNewToken);
         }
 
         props[PropertyDefinition.User.Name] = dbUser;
@@ -124,7 +152,7 @@ public partial class OktaAuthPlugin(IPluginService pluginService, Dictionary<str
         this.fetchTokenCounter.Inc();
 
         int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? DefaultIamExpirationSeconds;
-        RegionEndpoint regionEndpoint = RegionUtils.IsValidRegion(region) ? RegionEndpoint.GetBySystemName(region) : throw new Exception("Invalid region");
+        RegionEndpoint regionEndpoint = RegionUtils.IsValidRegion(region) ? RegionEndpoint.GetBySystemName(region) : throw new Exception(Resources.FederatedAuthPlugin_InvalidRegion);
 
         AWSCredentialsProvider credentialsProvider = await this.credentialsFactory.GetAwsCredentialsProviderAsync(host, regionEndpoint, props);
         AWSCredentials credentials = credentialsProvider.GetAWSCredentials();

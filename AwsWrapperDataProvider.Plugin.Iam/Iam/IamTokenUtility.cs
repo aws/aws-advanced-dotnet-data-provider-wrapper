@@ -14,7 +14,7 @@
 
 using Amazon;
 using Amazon.RDS.Util;
-using Amazon.Runtime;
+using AwsWrapperDataProvider.Properties;
 
 namespace AwsWrapperDataProvider.Plugin.Iam.Iam;
 
@@ -34,7 +34,7 @@ public class IamTokenUtility : IIamTokenUtility
         }
         catch (Exception ex)
         {
-            throw new Exception("Couldn't generate token for IAM authentication.", ex);
+            throw new Exception(Resources.IamTokenUtility_TokenGenerationFailed, ex);
         }
     }
 }

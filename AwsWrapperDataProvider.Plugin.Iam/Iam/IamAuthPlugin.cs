@@ -19,6 +19,7 @@ using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Utils;
 using AwsWrapperDataProvider.Driver.Utils.Telemetry;
 using AwsWrapperDataProvider.Plugin.Iam.Utils;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
@@ -46,6 +47,12 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
             "iam.tokenCache.size",
             () => (long)IamTokenCache.Count);
 
+    /// <summary>
+    /// Region resolver. Reassigned per call: a <see cref="GdbRegionUtils"/> for Global Aurora
+    /// Database endpoints, otherwise the base <see cref="RegionUtils"/>.
+    /// </summary>
+    protected RegionUtils regionUtils = new();
+
     public static readonly int DefaultIamExpirationSeconds = 870;
 
     public static void ClearCache()
@@ -67,8 +74,24 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
     private async Task<DbConnection> ConnectInternal(HostSpec? hostSpec, Dictionary<string, string> props, ADONetDelegate<DbConnection> methodFunc)
     {
         string iamUser = PropertyDefinition.User.GetString(props) ??
-            throw new Exception("Could not determine user for IAM authentication.");
-        string iamHost = PropertyDefinition.IamHost.GetString(props) ?? hostSpec?.Host ?? throw new Exception("Could not determine host for IAM authentication provider.");
+            throw new Exception(Resources.IamAuthPlugin_CouldNotDetermineUser);
+
+        // If an IamHost override is provided, build a new HostSpec by copying from the source HostSpec and overriding the host;
+        // otherwise return the source HostSpec.
+        string? iamHostOverride = PropertyDefinition.IamHost.GetString(props);
+        HostSpec iamHostSpec;
+        if (!string.IsNullOrEmpty(iamHostOverride))
+        {
+            iamHostSpec = hostSpec != null
+                ? new HostSpecBuilder().CopyFrom(hostSpec).WithHost(iamHostOverride).Build()
+                : new HostSpecBuilder().WithHost(iamHostOverride).Build();
+        }
+        else
+        {
+            iamHostSpec = hostSpec ?? throw new Exception(Resources.IamAuthPlugin_CouldNotDetermineHost);
+        }
+
+        string iamHost = iamHostSpec.Host;
 
         // the default value for IamDefaultPort is -1, which should default to the other port property (?)
         int iamPort = PropertyDefinition.IamDefaultPort.GetInt(props) ?? this.pluginService.Dialect.DefaultPort;
@@ -78,7 +101,12 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
             iamPort = this.pluginService.Dialect.DefaultPort;
         }
 
-        string iamRegion = RegionUtils.GetRegion(iamHost, props, PropertyDefinition.IamRegion) ?? throw new Exception("Could not determine region for IAM authentication provider.");
+        // Pick the right RegionUtils implementation based on the URL type so global endpoints
+        // are resolved via the RDS DescribeGlobalClusters API.
+        RdsUrlType urlType = RdsUtils.IdentifyRdsType(iamHost);
+        this.regionUtils = urlType == RdsUrlType.RdsGlobalWriterCluster ? new GdbRegionUtils() : new RegionUtils();
+        string iamRegion = await this.regionUtils.GetRegionAsync(iamHostSpec, props, PropertyDefinition.IamRegion)
+            ?? throw new Exception(Resources.IamAuthPlugin_CouldNotDetermineRegion);
 
         string cacheKey = this.iamTokenUtility.GetCacheKey(iamUser, iamHost, iamPort, iamRegion);
         bool isCachedToken = true;
@@ -88,11 +116,11 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
             int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? DefaultIamExpirationSeconds;
             IamTokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
             isCachedToken = false;
-            Logger.LogTrace("Generated new authentication token");
+            Logger.LogTrace(Resources.IamAuthPlugin_GeneratedNewToken);
         }
         else
         {
-            Logger.LogTrace("Use cached authentication token");
+            Logger.LogTrace(Resources.IamAuthPlugin_UseCachedToken);
         }
 
         // token is non-null here, as the above try-catch block must have succeeded
@@ -113,7 +141,7 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
             token = await this.FetchTokenAsync(iamUser, iamHost, iamPort, iamRegion);
             int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? DefaultIamExpirationSeconds;
             IamTokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
-            Logger.LogTrace("Generated new authentication token");
+            Logger.LogTrace(Resources.IamAuthPlugin_GeneratedNewToken);
 
             // token is non-null here, as the above try-catch block must have succeeded
             PropertyDefinition.Password.Set(props, token);
@@ -144,7 +172,7 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
             // visibility before we wrap it for the caller.
             fetchContext.SetException(ex);
             fetchContext.SetSuccess(false);
-            throw new Exception("Could not generate authentication token for IAM user " + iamUser + ".", ex);
+            throw new Exception(string.Format(Resources.IamAuthPlugin_CouldNotGenerateToken, iamUser), ex);
         }
         finally
         {

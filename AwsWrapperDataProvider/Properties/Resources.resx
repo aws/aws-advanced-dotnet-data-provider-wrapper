@@ -1265,4 +1265,46 @@
     <data name="GdbReadWriteSplittingPlugin_EnabledGwf" xml:space="preserve">
         <value>Global Write Forwarding is enabled. Keeping reader connection in region '{0}' instead of switching to writer.</value>
     </data>
+    <data name="IamAuthPlugin_CouldNotDetermineUser" xml:space="preserve">
+        <value>Could not determine user for IAM authentication.</value>
+    </data>
+    <data name="IamAuthPlugin_CouldNotDetermineHost" xml:space="preserve">
+        <value>Could not determine host for IAM authentication provider.</value>
+    </data>
+    <data name="IamAuthPlugin_CouldNotDetermineRegion" xml:space="preserve">
+        <value>Could not determine region for IAM authentication provider.</value>
+    </data>
+    <data name="IamAuthPlugin_CouldNotGenerateToken" xml:space="preserve">
+        <value>Could not generate authentication token for IAM user {0}.</value>
+    </data>
+    <data name="IamAuthPlugin_GeneratedNewToken" xml:space="preserve">
+        <value>Generated new authentication token.</value>
+    </data>
+    <data name="IamAuthPlugin_UseCachedToken" xml:space="preserve">
+        <value>Use cached authentication token.</value>
+    </data>
+    <data name="IamTokenUtility_TokenGenerationFailed" xml:space="preserve">
+        <value>Couldn't generate token for IAM authentication.</value>
+    </data>
+    <data name="FederatedAuthPlugin_HostNotProvided" xml:space="preserve">
+        <value>Host not provided.</value>
+    </data>
+    <data name="FederatedAuthPlugin_CouldNotDetermineRegion" xml:space="preserve">
+        <value>Could not determine region.</value>
+    </data>
+    <data name="FederatedAuthPlugin_DbUserNotProvided" xml:space="preserve">
+        <value>DB user not provided.</value>
+    </data>
+    <data name="FederatedAuthPlugin_InvalidRegion" xml:space="preserve">
+        <value>Invalid region.</value>
+    </data>
+    <data name="FederatedAuthPlugin_GeneratedNewToken" xml:space="preserve">
+        <value>Generated new authentication token.</value>
+    </data>
+    <data name="FederatedAuthPlugin_UseCachedToken" xml:space="preserve">
+        <value>Use cached authentication token.</value>
+    </data>
+    <data name="TokenUtility_TokenGenerationFailed" xml:space="preserve">
+        <value>Couldn't generate token for AWS authentication.</value>
+    </data>
 </root>

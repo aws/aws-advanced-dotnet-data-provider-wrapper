@@ -13,14 +13,22 @@
 // limitations under the License.
 
 using Amazon;
+using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
 
 namespace AwsWrapperDataProvider.Plugin.Iam.Utils;
 
 /// <summary>
 /// Methods to get the AWS region from a variety of sources.
+/// <para>
+/// The class exposes stateless static helpers (<see cref="IsValidRegion"/>,
+/// <see cref="GetRegionFromProps"/>, <see cref="GetRegionFromHost"/>,
+/// <see cref="GetRegion(string, Dictionary{string, string}, AwsWrapperProperty)"/>) plus a
+/// virtual instance method <see cref="GetRegionAsync"/> that subclasses (e.g.
+/// <see cref="GdbRegionUtils"/>) can override to provide alternative resolution strategies.
+/// </para>
 /// </summary>
-public static partial class RegionUtils
+public partial class RegionUtils
 {
     public static bool IsValidRegion(string region)
     {
@@ -55,5 +63,23 @@ public static partial class RegionUtils
     {
         string? region = GetRegionFromProps(props, prop);
         return region ?? GetRegionFromHost(host);
+    }
+
+    /// <summary>
+    /// Determines the AWS region for the given host. The default implementation checks the
+    /// supplied props first, falling back to parsing the region from the hostname.
+    /// </summary>
+    /// <remarks>
+    /// Subclasses can override this method to provide alternative resolution (e.g.
+    /// <see cref="GdbRegionUtils"/> resolves Global Aurora Database endpoints via the
+    /// <c>DescribeGlobalClusters</c> RDS API).
+    /// </remarks>
+    /// <param name="hostSpec">The host spec from which to extract the region if not in props.</param>
+    /// <param name="props">The connection properties.</param>
+    /// <param name="prop">The region property to check first.</param>
+    /// <returns>The AWS region or null if it could not be determined.</returns>
+    public virtual Task<string?> GetRegionAsync(HostSpec hostSpec, Dictionary<string, string> props, AwsWrapperProperty prop)
+    {
+        return Task.FromResult(GetRegion(hostSpec.Host, props, prop));
     }
 }

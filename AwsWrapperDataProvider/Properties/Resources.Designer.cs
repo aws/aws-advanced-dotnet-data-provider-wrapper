@@ -3675,5 +3675,131 @@ namespace AwsWrapperDataProvider.Properties {
                 return ResourceManager.GetString("GdbReadWriteSplittingPlugin_EnabledGwf", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Could not determine user for IAM authentication..
+        /// </summary>
+        internal static string IamAuthPlugin_CouldNotDetermineUser {
+            get {
+                return ResourceManager.GetString("IamAuthPlugin_CouldNotDetermineUser", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Could not determine host for IAM authentication provider..
+        /// </summary>
+        internal static string IamAuthPlugin_CouldNotDetermineHost {
+            get {
+                return ResourceManager.GetString("IamAuthPlugin_CouldNotDetermineHost", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Could not determine region for IAM authentication provider..
+        /// </summary>
+        internal static string IamAuthPlugin_CouldNotDetermineRegion {
+            get {
+                return ResourceManager.GetString("IamAuthPlugin_CouldNotDetermineRegion", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Could not generate authentication token for IAM user {0}..
+        /// </summary>
+        internal static string IamAuthPlugin_CouldNotGenerateToken {
+            get {
+                return ResourceManager.GetString("IamAuthPlugin_CouldNotGenerateToken", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Generated new authentication token..
+        /// </summary>
+        internal static string IamAuthPlugin_GeneratedNewToken {
+            get {
+                return ResourceManager.GetString("IamAuthPlugin_GeneratedNewToken", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Use cached authentication token..
+        /// </summary>
+        internal static string IamAuthPlugin_UseCachedToken {
+            get {
+                return ResourceManager.GetString("IamAuthPlugin_UseCachedToken", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Couldn't generate token for IAM authentication..
+        /// </summary>
+        internal static string IamTokenUtility_TokenGenerationFailed {
+            get {
+                return ResourceManager.GetString("IamTokenUtility_TokenGenerationFailed", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Host not provided..
+        /// </summary>
+        internal static string FederatedAuthPlugin_HostNotProvided {
+            get {
+                return ResourceManager.GetString("FederatedAuthPlugin_HostNotProvided", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Could not determine region..
+        /// </summary>
+        internal static string FederatedAuthPlugin_CouldNotDetermineRegion {
+            get {
+                return ResourceManager.GetString("FederatedAuthPlugin_CouldNotDetermineRegion", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to DB user not provided..
+        /// </summary>
+        internal static string FederatedAuthPlugin_DbUserNotProvided {
+            get {
+                return ResourceManager.GetString("FederatedAuthPlugin_DbUserNotProvided", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Invalid region..
+        /// </summary>
+        internal static string FederatedAuthPlugin_InvalidRegion {
+            get {
+                return ResourceManager.GetString("FederatedAuthPlugin_InvalidRegion", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Generated new authentication token..
+        /// </summary>
+        internal static string FederatedAuthPlugin_GeneratedNewToken {
+            get {
+                return ResourceManager.GetString("FederatedAuthPlugin_GeneratedNewToken", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Use cached authentication token..
+        /// </summary>
+        internal static string FederatedAuthPlugin_UseCachedToken {
+            get {
+                return ResourceManager.GetString("FederatedAuthPlugin_UseCachedToken", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Couldn't generate token for AWS authentication..
+        /// </summary>
+        internal static string TokenUtility_TokenGenerationFailed {
+            get {
+                return ResourceManager.GetString("TokenUtility_TokenGenerationFailed", resourceCulture);
+            }
+        }
     }
 }
