@@ -480,7 +480,7 @@ public class AwsWrapperConnectionStringBuilder : DbConnectionStringBuilder
         get => this.GetValue(PropertyDefinition.GlobalClusterInstanceHostPatterns.Name);
         set => this.SetValue(PropertyDefinition.GlobalClusterInstanceHostPatterns.Name, value);
     }
-    
+
     public bool? EnableTelemetry
     {
         get => this.GetBoolValue(PropertyDefinition.EnableTelemetry.Name);
