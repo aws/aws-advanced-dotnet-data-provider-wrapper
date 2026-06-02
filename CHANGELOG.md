@@ -11,6 +11,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - [Telemetry](./docs/using-the-dotnet-driver/Telemetry.md) support for traces and metrics, with OTLP and AWS X-Ray backends ([PR #291](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/291)).
 - [Entity Framework Core support for PostgreSQL](./AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL/README.md) ([PR #280](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/280)).
 
+### :warning: Deprecated
+- The MySQL Entity Framework Core extension method `UseAwsWrapper` has been renamed to `UseAwsWrapperMySql`. The original name is still available but is marked `[Obsolete]` and will be removed in a future major version. Update existing call sites to `UseAwsWrapperMySql` to silence the deprecation warning ([PR #280](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/280)).
+
 ### :bug: Fixed
 - Entity Framework Core + Pomelo + MySqlConnector connection string handling: wrapper-only properties (e.g. `Plugins=`) are now filtered case-insensitively before being passed to the target driver, and required Pomelo options (`AllowUserVariables=true`, `UseAffectedRows=false`) are enforced on the wrapper connection string ([Issue #268](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/issues/268), [PR #272](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/272)).
 
