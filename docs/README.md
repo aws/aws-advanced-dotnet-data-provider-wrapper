@@ -21,11 +21,15 @@
 - [Aurora Connection Tracker Plugin](./using-the-dotnet-driver/using-plugins/UsingTheAuroraConnectionTrackerPlugin.md)
 - [Aurora Initial Connection Strategy Plugin](./using-the-dotnet-driver/using-plugins/UsingTheAuroraInitialConnectionStrategyPlugin.md)
 - [AWS Secrets Manager Plugin](./using-the-dotnet-driver/using-plugins/UsingTheAwsSecretsManagerPlugin.md)
+- [Blue/Green Deployment Plugin](./using-the-dotnet-driver/using-plugins/UsingTheBlueGreenPlugin.md)
+- [Custom Endpoint Plugin](./using-the-dotnet-driver/using-plugins/UsingTheCustomEndpointPlugin.md)
 - [Failover Plugin](./using-the-dotnet-driver/using-plugins/UsingTheFailoverPlugin.md)
 - [Federated Authentication Plugin](./using-the-dotnet-driver/using-plugins/UsingTheFederatedAuthenticationPlugin.md)
 - [Host Monitoring Plugin](./using-the-dotnet-driver/using-plugins/UsingTheHostMonitoringPlugin.md)
 - [IAM Authentication Plugin](./using-the-dotnet-driver/using-plugins/UsingTheIamAuthenticationPlugin.md)
+- [Limitless Connection Plugin](./using-the-dotnet-driver/using-plugins/UsingTheLimitlessConnectionPlugin.md)
 - [Okta Authentication Plugin](./using-the-dotnet-driver/using-plugins/UsingTheOktaAuthenticationPlugin.md)
+- [Read/Write Splitting Plugin](./using-the-dotnet-driver/using-plugins/UsingTheReadWriteSplittingPlugin.md)
 
 ## Known Limitations
 
