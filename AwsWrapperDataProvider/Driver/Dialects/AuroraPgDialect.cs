@@ -51,7 +51,7 @@ public class AuroraPgDialect : PgDialect, IAuroraLimitlessDialect, IBlueGreenDia
 
     protected static readonly string AuroraPostgreSqlBgTopologyExistsQuery = "SELECT 'pg_catalog.get_blue_green_fast_switchover_metadata'::regproc";
 
-    protected static readonly string DriverVersion = "1.0.1";
+    protected static readonly string DriverVersion = "1.2.0";
     protected static readonly string AuroraPostgreSqlBgStatusQuery = $"SELECT * FROM pg_catalog.get_blue_green_fast_switchover_metadata('aws_advanced_dotnet_data_provider_wrapper-{DriverVersion}')";
 
     public override IList<Type> DialectUpdateCandidates { get; } = [

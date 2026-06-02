@@ -9,6 +9,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - The [Blue/Green Deployment Plugin](./docs/using-the-dotnet-driver/using-plugins/UsingTheBlueGreenPlugin.md) ([PR #244](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/244)).
 - The [Aurora Connection Tracker Plugin](./docs/using-the-dotnet-driver/using-plugins/UsingTheAuroraConnectionTrackerPlugin.md) ([PR #250](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/250)).
 - [Telemetry](./docs/using-the-dotnet-driver/Telemetry.md) support for traces and metrics, with OTLP and AWS X-Ray backends ([PR #291](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/291)).
+- [Entity Framework Core support for PostgreSQL](./AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL/README.md) ([PR #280](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/280)).
+
+### :bug: Fixed
+- Entity Framework Core + Pomelo + MySqlConnector connection string handling: wrapper-only properties (e.g. `Plugins=`) are now filtered case-insensitively before being passed to the target driver, and required Pomelo options (`AllowUserVariables=true`, `UseAffectedRows=false`) are enforced on the wrapper connection string ([Issue #268](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/issues/268), [PR #272](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/272)).
 
 ## [1.1.0] - 2026-03-24
 

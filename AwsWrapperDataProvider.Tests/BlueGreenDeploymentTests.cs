@@ -35,7 +35,7 @@ namespace AwsWrapperDataProvider.Tests;
 
 public class BlueGreenDeploymentTests : IntegrationTestBase
 {
-    private const string DriverVersion = "1.1.0";
+    private const string DriverVersion = "1.2.0";
 
     private const string MysqlBgStatusQuery =
         "SELECT id, SUBSTRING_INDEX(endpoint, '.', 1) as hostId, endpoint, port, role, status, version FROM mysql.rds_topology";
