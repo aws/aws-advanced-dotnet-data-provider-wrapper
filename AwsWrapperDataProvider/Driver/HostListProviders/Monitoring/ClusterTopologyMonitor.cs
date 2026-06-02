@@ -52,10 +52,15 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
     protected readonly object topologyUpdatedLock = new();
     protected readonly ConcurrentDictionary<string, Lazy<Task>> nodeThreads = new();
     protected readonly Task monitoringTask;
+    protected static readonly TimeSpan StableTopologiesDuration = TimeSpan.FromSeconds(15);
     protected readonly object disposeLock = new();
     protected readonly SemaphoreSlim monitoringConnectionSemaphore = new(1, 1);
     protected readonly TopologyUtils topologyUtils;
     protected readonly string clusterId;
+
+    // Stable reader topology tracking
+    protected readonly ConcurrentDictionary<string, IList<HostSpec>> readerTopologiesById = new();
+    protected readonly ConcurrentDictionary<string, bool> completedOneCycle = new();
 
     protected CancellationTokenSource ctsNodeMonitoring;
     protected HostSpec? writerHostSpec;
@@ -68,11 +73,6 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
     protected DbConnection? nodeThreadsReaderConnection;
     protected volatile IList<HostSpec>? nodeThreadsLatestTopology;
     protected bool disposed = false;
-
-    // Stable reader topology tracking
-    protected readonly ConcurrentDictionary<string, IList<HostSpec>> readerTopologiesById = new();
-    protected readonly ConcurrentDictionary<string, bool> completedOneCycle = new();
-    protected static readonly TimeSpan StableTopologiesDuration = TimeSpan.FromSeconds(15);
     protected long stableTopologiesStartTicks = 0;
 
     private int requestToUpdateTopology = 0;

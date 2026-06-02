@@ -47,8 +47,6 @@ public class GdbFailoverPluginPropertyTests
     private static readonly char[] AlphaNumChars =
         "abcdefghijklmnopqrstuvwxyz0123456789".ToCharArray();
 
-    #region Generators
-
     /// <summary>
     /// Generates an alphanumeric instance name (1-20 chars), starting with a letter.
     /// </summary>
@@ -81,7 +79,7 @@ public class GdbFailoverPluginPropertyTests
 
     /// <summary>
     /// Generates a valid RDS instance endpoint with a known region.
-    /// Example: mydb.xyz123456.us-east-1.rds.amazonaws.com
+    /// Example: mydb.xyz123456.us-east-1.rds.amazonaws.com.
     /// </summary>
     private static Gen<(string Host, string Region)> RdsInstanceEndpointGen()
     {
@@ -94,7 +92,7 @@ public class GdbFailoverPluginPropertyTests
 
     /// <summary>
     /// Generates a valid RDS writer cluster endpoint with a known region.
-    /// Example: mydb.cluster-xyz123456.us-east-1.rds.amazonaws.com
+    /// Example: mydb.cluster-xyz123456.us-east-1.rds.amazonaws.com.
     /// </summary>
     private static Gen<(string Host, string Region)> RdsWriterClusterEndpointGen()
     {
@@ -107,7 +105,7 @@ public class GdbFailoverPluginPropertyTests
 
     /// <summary>
     /// Generates a valid RDS reader cluster endpoint with a known region.
-    /// Example: mydb.cluster-ro-xyz123456.us-east-1.rds.amazonaws.com
+    /// Example: mydb.cluster-ro-xyz123456.us-east-1.rds.amazonaws.com.
     /// </summary>
     private static Gen<(string Host, string Region)> RdsReaderClusterEndpointGen()
     {
@@ -131,7 +129,7 @@ public class GdbFailoverPluginPropertyTests
 
     /// <summary>
     /// Generates a global endpoint (no region).
-    /// Example: mydb.global-xyz123456.global.rds.amazonaws.com
+    /// Example: mydb.global-xyz123456.global.rds.amazonaws.com.
     /// </summary>
     private static Gen<string> GlobalEndpointGen()
     {
@@ -234,15 +232,10 @@ public class GdbFailoverPluginPropertyTests
         return hosts;
     }
 
-    #endregion
-
-    // Feature: aurora-global-database-support, Property 8: Home region auto-detection from endpoint
-
     /// <summary>
-    /// Property 8: For any RDS endpoint hostname where RdsUrlType.HasRegion is true,
+    /// For any RDS endpoint hostname where RdsUrlType.HasRegion is true,
     /// RdsUtils.GetRdsRegion returns a non-null, non-empty region string that matches
     /// the region segment in the hostname.
-    /// **Validates: Requirements 5.7, 6.6**
     /// </summary>
     [Fact]
     public void HomeRegionAutoDetection_RegionalEndpoints_ReturnCorrectRegion()
@@ -268,13 +261,10 @@ public class GdbFailoverPluginPropertyTests
         Check.One(PbtConfig, property);
     }
 
-    // Feature: aurora-global-database-support, Property 9: Missing home region throws
-
     /// <summary>
-    /// Property 9: For any endpoint where RdsUrlType.HasRegion is false (global endpoints,
+    /// For any endpoint where RdsUrlType.HasRegion is false (global endpoints,
     /// IP addresses, Other) and no explicit home region property is configured,
     /// GdbFailoverPlugin.InitFailoverMode throws an exception.
-    /// **Validates: Requirements 5.8**
     /// </summary>
     [Fact]
     public void MissingHomeRegion_NoRegionEndpoints_ThrowsException()
@@ -301,12 +291,9 @@ public class GdbFailoverPluginPropertyTests
         Check.One(PbtConfig, property);
     }
 
-    // Feature: aurora-global-database-support, Property 11: Failover mode selection by writer region
-
     /// <summary>
-    /// Property 11: When writerRegion equals homeRegion (case-insensitive),
+    /// When writerRegion equals homeRegion (case-insensitive),
     /// the active home failover mode is selected.
-    /// **Validates: Requirements 5.12**
     /// </summary>
     [Fact]
     public void FailoverModeSelection_WriterInHomeRegion_SelectsActiveMode()
@@ -329,9 +316,8 @@ public class GdbFailoverPluginPropertyTests
     }
 
     /// <summary>
-    /// Property 11 (negative): When writerRegion does NOT equal homeRegion,
+    /// When writerRegion does NOT equal homeRegion,
     /// the inactive home failover mode is selected.
-    /// **Validates: Requirements 5.12**
     /// </summary>
     [Fact]
     public void FailoverModeSelection_WriterNotInHomeRegion_SelectsInactiveMode()
@@ -353,12 +339,9 @@ public class GdbFailoverPluginPropertyTests
         Check.One(PbtConfig, property);
     }
 
-    // Feature: aurora-global-database-support, Property 12: Failover candidate filtering by mode
-
     /// <summary>
-    /// Property 12: For any topology and GlobalDbFailoverMode, the set of candidate hosts
+    /// For any topology and GlobalDbFailoverMode, the set of candidate hosts
     /// considered during failover only includes hosts satisfying the mode's constraints.
-    /// **Validates: Requirements 5.13, 5.14, 5.15, 5.16, 5.17, 5.18, 5.19**
     /// </summary>
     [Fact]
     public void FailoverCandidateFiltering_AllModes_MatchModeConstraints()
@@ -388,8 +371,7 @@ public class GdbFailoverPluginPropertyTests
     }
 
     /// <summary>
-    /// Property 12 (StrictWriter): StrictWriter mode only includes the writer.
-    /// **Validates: Requirements 5.13**
+    /// StrictWriter mode only includes the writer.
     /// </summary>
     [Fact]
     public void FailoverCandidateFiltering_StrictWriter_OnlyWriter()
@@ -411,8 +393,7 @@ public class GdbFailoverPluginPropertyTests
     }
 
     /// <summary>
-    /// Property 12 (StrictHomeReader): StrictHomeReader mode only includes readers in the home region.
-    /// **Validates: Requirements 5.14**
+    /// StrictHomeReader mode only includes readers in the home region.
     /// </summary>
     [Fact]
     public void FailoverCandidateFiltering_StrictHomeReader_OnlyHomeReaders()
@@ -436,8 +417,7 @@ public class GdbFailoverPluginPropertyTests
     }
 
     /// <summary>
-    /// Property 12 (AnyReaderOrWriter): AnyReaderOrWriter mode includes all hosts.
-    /// **Validates: Requirements 5.19**
+    /// AnyReaderOrWriter mode includes all hosts.
     /// </summary>
     [Fact]
     public void FailoverCandidateFiltering_AnyReaderOrWriter_AllHosts()
@@ -456,8 +436,6 @@ public class GdbFailoverPluginPropertyTests
 
         Check.One(PbtConfig, property);
     }
-
-    #region Filtering Logic (mirrors GdbFailoverPlugin.FailoverAsync)
 
     /// <summary>
     /// Filters candidate hosts based on the failover mode, mirroring the logic
@@ -503,7 +481,7 @@ public class GdbFailoverPluginPropertyTests
             GlobalDbFailoverMode.AnyReaderOrWriter =>
                 hosts.ToList(),
 
-            _ => throw new NotSupportedException($"Unsupported failover mode: {mode}")
+            _ => throw new NotSupportedException($"Unsupported failover mode: {mode}"),
         };
     }
 
@@ -531,7 +509,7 @@ public class GdbFailoverPluginPropertyTests
                 GlobalDbFailoverMode.HomeReaderOrWriter => isWriter || (isReader && isHome),
                 GlobalDbFailoverMode.OutOfHomeReaderOrWriter => isWriter || (isReader && !isHome),
                 GlobalDbFailoverMode.AnyReaderOrWriter => true,
-                _ => false
+                _ => false,
             };
 
             if (include)
@@ -542,6 +520,4 @@ public class GdbFailoverPluginPropertyTests
 
         return result;
     }
-
-    #endregion
 }

@@ -69,12 +69,9 @@ public class GlobalDbFailoverModePropertyTests
         return Gen.Elements(AllRdsUrlTypes);
     }
 
-    // Feature: aurora-global-database-support, Property 7: GlobalDbFailoverMode kebab-case round-trip
-
     /// <summary>
-    /// Property 7: For any GlobalDbFailoverMode enum value, converting it to its kebab-case
+    /// For any GlobalDbFailoverMode enum value, converting it to its kebab-case
     /// string representation and parsing back with FromValue returns the original enum value.
-    /// **Validates: Requirements 5.3**
     /// </summary>
     [Fact]
     public void KebabCaseRoundTrip_AllModes_ParseBackToOriginal()
@@ -91,13 +88,10 @@ public class GlobalDbFailoverModePropertyTests
         Check.One(PbtConfig, property);
     }
 
-    // Feature: aurora-global-database-support, Property 10: Failover mode defaults by endpoint type
-
     /// <summary>
-    /// Property 10: For any RdsUrlType, when ActiveHomeFailoverMode and InactiveHomeFailoverMode
+    /// For any RdsUrlType, when ActiveHomeFailoverMode and InactiveHomeFailoverMode
     /// are not explicitly set: if the type is RdsWriterCluster or RdsGlobalWriterCluster, both
     /// modes default to StrictWriter; otherwise, both default to HomeReaderOrWriter.
-    /// **Validates: Requirements 5.9, 5.10, 5.11**
     /// </summary>
     [Fact]
     public void FailoverModeDefaults_ByEndpointType_MatchExpected()
@@ -121,8 +115,7 @@ public class GlobalDbFailoverModePropertyTests
     }
 
     /// <summary>
-    /// Computes the default failover mode for a given RdsUrlType, matching the logic
-    /// specified in Requirements 5.9, 5.10, 5.11.
+    /// Computes the default failover mode for a given RdsUrlType.
     /// </summary>
     private static GlobalDbFailoverMode GetDefaultFailoverMode(RdsUrlType urlType)
     {

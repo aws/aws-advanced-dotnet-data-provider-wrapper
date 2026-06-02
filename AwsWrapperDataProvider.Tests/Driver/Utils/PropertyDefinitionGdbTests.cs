@@ -19,7 +19,6 @@ namespace AwsWrapperDataProvider.Tests.Driver.Utils;
 
 /// <summary>
 /// Unit tests for GDB property definitions and plugin codes.
-/// Requirements: 5.20, 6.12, 9.1
 /// </summary>
 public class PropertyDefinitionGdbTests
 {
@@ -29,7 +28,7 @@ public class PropertyDefinitionGdbTests
     [Trait("Category", "Unit")]
     [MemberData(nameof(GdbPropertyTestData))]
     public void GdbProperty_ShouldHaveCorrectKeyAndDefault(
-        AwsWrapperProperty property, string expectedKey, string? expectedDefault, string propertyName)
+        AwsWrapperProperty property, string expectedKey, string? expectedDefault)
     {
         Assert.Equal(expectedKey, property.Name);
         Assert.Equal(expectedDefault, property.DefaultValue);
@@ -41,55 +40,49 @@ public class PropertyDefinitionGdbTests
         {
             PropertyDefinition.GlobalClusterInstanceHostPatterns,
             "GlobalClusterInstanceHostPatterns", null,
-            nameof(PropertyDefinition.GlobalClusterInstanceHostPatterns)
         };
         yield return new object?[]
         {
             PropertyDefinition.FailoverHomeRegion,
             "FailoverHomeRegion", null,
-            nameof(PropertyDefinition.FailoverHomeRegion)
         };
         yield return new object?[]
         {
             PropertyDefinition.ActiveHomeFailoverMode,
             "ActiveHomeFailoverMode", null,
-            nameof(PropertyDefinition.ActiveHomeFailoverMode)
         };
         yield return new object?[]
         {
             PropertyDefinition.InactiveHomeFailoverMode,
             "InactiveHomeFailoverMode", null,
-            nameof(PropertyDefinition.InactiveHomeFailoverMode)
         };
         yield return new object?[]
         {
             PropertyDefinition.GdbEnableGlobalWriteForwarding,
             "GdbEnableGlobalWriteForwarding", "false",
-            nameof(PropertyDefinition.GdbEnableGlobalWriteForwarding)
         };
     }
 
-    // --- Requirement 9.1: GDB properties are in InternalWrapperProperties ---
+    // GDB properties are in InternalWrapperProperties
 
     [Theory]
     [Trait("Category", "Unit")]
     [MemberData(nameof(InternalWrapperPropertyTestData))]
-    public void InternalWrapperProperties_ShouldContainGdbProperty(
-        AwsWrapperProperty property, string propertyName)
+    public void InternalWrapperProperties_ShouldContainGdbProperty(AwsWrapperProperty property)
     {
         Assert.Contains(property, PropertyDefinition.InternalWrapperProperties);
     }
 
     public static IEnumerable<object[]> InternalWrapperPropertyTestData()
     {
-        yield return new object[] { PropertyDefinition.GlobalClusterInstanceHostPatterns, nameof(PropertyDefinition.GlobalClusterInstanceHostPatterns) };
-        yield return new object[] { PropertyDefinition.FailoverHomeRegion, nameof(PropertyDefinition.FailoverHomeRegion) };
-        yield return new object[] { PropertyDefinition.ActiveHomeFailoverMode, nameof(PropertyDefinition.ActiveHomeFailoverMode) };
-        yield return new object[] { PropertyDefinition.InactiveHomeFailoverMode, nameof(PropertyDefinition.InactiveHomeFailoverMode) };
-        yield return new object[] { PropertyDefinition.GdbEnableGlobalWriteForwarding, nameof(PropertyDefinition.GdbEnableGlobalWriteForwarding) };
+        yield return new object[] { PropertyDefinition.GlobalClusterInstanceHostPatterns };
+        yield return new object[] { PropertyDefinition.FailoverHomeRegion };
+        yield return new object[] { PropertyDefinition.ActiveHomeFailoverMode };
+        yield return new object[] { PropertyDefinition.InactiveHomeFailoverMode };
+        yield return new object[] { PropertyDefinition.GdbEnableGlobalWriteForwarding };
     }
 
-    // --- Requirement 5.20: Plugin codes ---
+    // Plugin codes
 
     [Fact]
     [Trait("Category", "Unit")]
