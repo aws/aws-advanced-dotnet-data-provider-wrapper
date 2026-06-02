@@ -16,6 +16,7 @@ using System.Collections.Concurrent;
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Driver.Utils.Telemetry;
 using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
@@ -43,13 +44,22 @@ public class OpenedConnectionTracker : IConnectionTracker
     private static CancellationTokenSource? pruneCts;
     private static Task? pruneTask;
 
-    private readonly IPluginService pluginService;
+    private readonly IPluginService? pluginService;
 
-    public OpenedConnectionTracker(IPluginService pluginService)
+    public OpenedConnectionTracker(IPluginService? pluginService)
     {
         this.pluginService = pluginService;
         EnsurePruneLoopRunning();
     }
+
+    /// <summary>
+    /// Gets the telemetry factory associated with the owning plugin
+    /// service, falling back to <see cref="NullTelemetryFactory.Instance"/>
+    /// when no plugin service is wired or the plugin service's
+    /// <c>TelemetryFactory</c> has not been initialized.
+    /// </summary>
+    private ITelemetryFactory TelemetryFactory
+        => this.pluginService?.TelemetryFactory ?? NullTelemetryFactory.Instance;
 
     private static void EnsurePruneLoopRunning()
     {
@@ -149,9 +159,27 @@ public class OpenedConnectionTracker : IConnectionTracker
     /// <param name="hostSpec">The host specification identifying the database instance.</param>
     public void InvalidateAllConnections(HostSpec hostSpec)
     {
-        var keys = new List<string> { hostSpec.AsAlias() };
-        keys.AddRange(hostSpec.GetAliases());
-        this.InvalidateAllConnections(keys.ToArray());
+        // Open a Nested "invalidate connections" span around the entire
+        // iterate-and-dispose operation.
+        ITelemetryContext invalidateContext = this.TelemetryFactory
+            .OpenTelemetryContext("invalidate connections", TelemetryTraceLevel.Nested);
+        try
+        {
+            var keys = new List<string> { hostSpec.AsAlias() };
+            keys.AddRange(hostSpec.GetAliases());
+            this.InvalidateAllConnections(keys.ToArray());
+            invalidateContext.SetSuccess(true);
+        }
+        catch (Exception ex)
+        {
+            invalidateContext.SetException(ex);
+            invalidateContext.SetSuccess(false);
+            throw;
+        }
+        finally
+        {
+            invalidateContext.CloseContext();
+        }
     }
 
     private static void InvalidateConnections(RWQueue<WeakReference<DbConnection>> queue)

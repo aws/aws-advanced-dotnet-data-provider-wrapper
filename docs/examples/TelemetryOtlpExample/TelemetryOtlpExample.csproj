@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <StartupObject>TelemetryOtlpExample.PGTelemetryOtlp</StartupObject>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Npgsql" Version="9.0.5" />
+
+        <!-- OpenTelemetry SDK + the OTLP exporter that ships spans over
+             HTTP/gRPC to a collector. -->
+        <PackageReference Include="OpenTelemetry" Version="1.15.3" />
+        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.3" />
+
+        <!-- Provides AddXRayTraceId() so spans use trace IDs that the
+             ADOT Collector's awsxrayexporter accepts. Drop this dependency
+             if your eventual backend is not AWS X-Ray. -->
+        <PackageReference Include="OpenTelemetry.Extensions.AWS" Version="1.15.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\AwsWrapperDataProvider\AwsWrapperDataProvider.csproj" />
+        <ProjectReference Include="..\..\..\AwsWrapperDataProvider.Dialect.Npgsql\AwsWrapperDataProvider.Dialect.Npgsql.csproj" />
+    </ItemGroup>
+
+</Project>

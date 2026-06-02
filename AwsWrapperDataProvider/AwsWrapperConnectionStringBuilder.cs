@@ -480,6 +480,36 @@ public class AwsWrapperConnectionStringBuilder : DbConnectionStringBuilder
         get => this.GetValue(PropertyDefinition.GlobalClusterInstanceHostPatterns.Name);
         set => this.SetValue(PropertyDefinition.GlobalClusterInstanceHostPatterns.Name, value);
     }
+    
+    public bool? EnableTelemetry
+    {
+        get => this.GetBoolValue(PropertyDefinition.EnableTelemetry.Name);
+        set => this.SetValue(PropertyDefinition.EnableTelemetry.Name, value?.ToString());
+    }
+
+    public string? TelemetryTracesBackend
+    {
+        get => this.GetValue(PropertyDefinition.TelemetryTracesBackend.Name);
+        set => this.SetValue(PropertyDefinition.TelemetryTracesBackend.Name, value);
+    }
+
+    public string? TelemetryMetricsBackend
+    {
+        get => this.GetValue(PropertyDefinition.TelemetryMetricsBackend.Name);
+        set => this.SetValue(PropertyDefinition.TelemetryMetricsBackend.Name, value);
+    }
+
+    public bool? TelemetrySubmitTopLevel
+    {
+        get => this.GetBoolValue(PropertyDefinition.TelemetrySubmitTopLevel.Name);
+        set => this.SetValue(PropertyDefinition.TelemetrySubmitTopLevel.Name, value?.ToString());
+    }
+
+    public bool? TelemetryFailoverAdditionalTopTrace
+    {
+        get => this.GetBoolValue(PropertyDefinition.TelemetryFailoverAdditionalTopTrace.Name);
+        set => this.SetValue(PropertyDefinition.TelemetryFailoverAdditionalTopTrace.Name, value?.ToString());
+    }
 
     private string? GetValue(string key)
     {

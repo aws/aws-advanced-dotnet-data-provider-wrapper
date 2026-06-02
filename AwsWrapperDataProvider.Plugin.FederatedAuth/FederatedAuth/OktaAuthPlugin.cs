@@ -19,6 +19,7 @@ using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Driver.Utils.Telemetry;
 using AwsWrapperDataProvider.Plugin.FederatedAuth.Utils;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
@@ -40,6 +41,12 @@ public partial class OktaAuthPlugin(IPluginService pluginService, Dictionary<str
     private readonly CredentialsProviderFactory credentialsFactory = credentialsFactory;
 
     private readonly ITokenUtility tokenUtility = tokenUtility;
+
+    // Telemetry — increments each time an Okta auth token is
+    // fetched (inside UpdateAuthenticationTokenAsync, so it covers both the
+    // cache-miss path and the post-login-exception retry path).
+    private readonly ITelemetryCounter fetchTokenCounter =
+        pluginService.TelemetryFactory.CreateCounter("oktaAuth.fetchToken.count");
 
     internal static readonly MemoryCache IamTokenCache = new(new MemoryCacheOptions());
 
@@ -110,6 +117,12 @@ public partial class OktaAuthPlugin(IPluginService pluginService, Dictionary<str
 
     private async Task UpdateAuthenticationTokenAsync(HostSpec? hostSpec, Dictionary<string, string> props, string host, int port, string region, string cacheKey, string dbUser)
     {
+        // Count the fetch attempt regardless of success — matches the
+        // attempt-counting semantics used by IAM and Secrets Manager
+        // telemetry. Covers both call sites in ConnectInternal
+        // (cache-miss path and post-login-exception retry).
+        this.fetchTokenCounter.Inc();
+
         int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? DefaultIamExpirationSeconds;
         RegionEndpoint regionEndpoint = RegionUtils.IsValidRegion(region) ? RegionEndpoint.GetBySystemName(region) : throw new Exception("Invalid region");
 

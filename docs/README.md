@@ -13,6 +13,7 @@
 - [Failover Configuration Guide](./using-the-dotnet-driver/FailoverConfigurationGuide.md)
 - [Reader Selection Strategies](./using-the-dotnet-driver/ReaderSelectionStrategies.md)
 - [Support For RDS Multi-Az DB Cluster](./using-the-dotnet-driver/SupportForRDSMultiAzDBCluster.md)
+- [Telemetry](./using-the-dotnet-driver/Telemetry.md)
 - [Using The .NET Data Provider Driver](./using-the-dotnet-driver/UsingTheDotNetDataProviderDriver.md)
 - [Using the Entity Framework Integration](./using-the-dotnet-driver/UsingEntityFrameworkIntegration.md)
 

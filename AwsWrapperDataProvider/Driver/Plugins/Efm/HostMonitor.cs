@@ -16,6 +16,7 @@ using System.Collections.Concurrent;
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Driver.Utils.Telemetry;
 using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
@@ -40,6 +41,12 @@ public class HostMonitor : IHostMonitor
     private readonly Task newContextRunTask;
 
     private readonly object monitorLock = new();
+
+    // Telemetry instruments
+    private readonly ITelemetryCounter abortedConnectionsCounter;
+    private readonly ITelemetryCounter nodeUnhealthyCounter;
+    private readonly ITelemetryGauge activeContextsSizeGauge;
+
     private DateTime? invalidNodeStartTime = null;
     private int failureCount = 0;
     private int nodeUnhealthy = 0;
@@ -78,6 +85,21 @@ public class HostMonitor : IHostMonitor
         this.failureDetectionTimeMs = failureDetectionTimeMs;
         this.failureDetectionIntervalMs = failureDetectionIntervalMs;
         this.failureDetectionCount = failureDetectionCount;
+
+        // Create the 3 telemetry instruments. When telemetry is disabled the
+        // factory returns Null* singletons so all of these are no-op.
+        ITelemetryFactory telemetryFactory = pluginService.TelemetryFactory;
+        this.abortedConnectionsCounter = telemetryFactory.CreateCounter("efm.connections.aborted");
+
+        // Each HostMonitor is per-node — bake the node id directly into the
+        // instrument names at construction time so that multi-node clusters
+        // produce one disjoint time series per node rather than colliding
+        // under a single shared name.
+        string nodeId = string.IsNullOrEmpty(hostSpec.HostId) ? hostSpec.Host : hostSpec.HostId;
+        this.nodeUnhealthyCounter = telemetryFactory.CreateCounter($"efm.nodeUnhealthy.count.{nodeId}");
+        this.activeContextsSizeGauge = telemetryFactory.CreateGauge(
+            $"efm.activeContexts.queue.size.{nodeId}",
+            () => (long)this.activeContexts.Count);
 
         this.newContextRunTask = Task.Run(() => this.NewContextRun(this.cancellationTokenSource.Token));
         this.runTask = Task.Run(() => this.Run(this.cancellationTokenSource.Token));
@@ -186,6 +208,17 @@ public class HostMonitor : IHostMonitor
 
     public async Task Run(CancellationToken token)
     {
+        // Open a TopLevel "monitoring thread" span for the entire run loop
+        // TopLevel is required because the monitor runs on a
+        // background thread with no caller context — this span is the root
+        // of its own trace. Note: OpenTelemetry exporters won't flush the
+        // span until CloseContext() below, so a monitor that runs for the
+        // life of the application won't emit anything until shutdown.
+        ITelemetryFactory telemetryFactory = this.pluginService.TelemetryFactory;
+        ITelemetryContext threadTraceContext = telemetryFactory.OpenTelemetryContext(
+            "monitoring thread", TelemetryTraceLevel.TopLevel);
+        threadTraceContext.SetAttribute("url", this.hostSpec.GetHostAndPort());
+
         Logger.LogTrace(string.Format(Resources.EfmHostMonitor_StartedMonitoringActiveContexts, this.hostSpec.Host));
 
         try
@@ -265,14 +298,19 @@ public class HostMonitor : IHostMonitor
 
                 await Task.Delay(delayMs, token);
             }
+
+            threadTraceContext.SetSuccess(true);
         }
         catch (OperationCanceledException)
         {
-            // ignore
+            // Expected on normal monitor shutdown via the CancellationToken.
+            threadTraceContext.SetSuccess(true);
         }
         catch (Exception ex)
         {
             Logger.LogWarning(ex, string.Format(Resources.EfmHostMonitor_ActiveContextsException, this.hostSpec.Host, ex.Message, ex.StackTrace));
+            threadTraceContext.SetException(ex);
+            threadTraceContext.SetSuccess(false);
         }
         finally
         {
@@ -295,6 +333,8 @@ public class HostMonitor : IHostMonitor
                     }
                 }
             }
+
+            threadTraceContext.CloseContext();
         }
 
         Logger.LogTrace(string.Format(Resources.EfmHostMonitor_StoppedMonitoringActiveContexts, this.hostSpec.Host));
@@ -302,6 +342,11 @@ public class HostMonitor : IHostMonitor
 
     private async Task<bool> CheckConnectionStatusAsync()
     {
+        // Open a Nested "connection status check" span around this single poll
+        // The span attaches under the "monitoring thread" TopLevel
+        // span opened by Run().
+        ITelemetryContext checkContext = this.pluginService.TelemetryFactory
+            .OpenTelemetryContext("connection status check", TelemetryTraceLevel.Nested);
         try
         {
             DbConnection? conn;
@@ -335,6 +380,7 @@ public class HostMonitor : IHostMonitor
                     conn = null;
                 }
 
+                checkContext.SetSuccess(true);
                 return true;
             }
 
@@ -347,14 +393,35 @@ public class HostMonitor : IHostMonitor
                 await validityCheckCommand.ExecuteScalarAsync();
             }
 
-            return !this.TestUnhealthyCluster;
+            bool isValid = !this.TestUnhealthyCluster;
+            if (!isValid)
+            {
+                // Per-poll unhealthy increment.
+                this.nodeUnhealthyCounter.Inc();
+            }
+
+            checkContext.SetSuccess(true);
+            return isValid;
         }
         catch (DbException ex)
         {
+            // Per-poll unhealthy increment — a DbException during
+            // the poll is equivalent to the poll returning invalid for
+            // telemetry purposes.
+            this.nodeUnhealthyCounter.Inc();
+
             Logger.LogWarning(ex, Resources.EfmHostMonitor_CheckConnectionStatusAsync_DisposingInvalidConnection);
             this.monitoringConn?.Dispose();
             this.monitoringConn = null;
+
+            // Record the exception on the span but do NOT rethrow.
+            checkContext.SetException(ex);
+            checkContext.SetSuccess(false);
             return false;
+        }
+        finally
+        {
+            checkContext.CloseContext();
         }
     }
 
@@ -423,5 +490,10 @@ public class HostMonitor : IHostMonitor
         {
             Logger.LogTrace(ex, string.Format(Resources.EfmHostMonitor_ExceptionAbortingConnection, ex.Message));
         }
+
+        // Counter increment is outside the try/catch so it fires regardless
+        // of whether the close threw — from the monitor's perspective, the
+        // abort was triggered.
+        this.abortedConnectionsCounter.Inc();
     }
 }

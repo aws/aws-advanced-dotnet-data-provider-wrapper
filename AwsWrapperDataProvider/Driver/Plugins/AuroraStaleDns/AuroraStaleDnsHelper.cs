@@ -18,6 +18,7 @@ using AwsWrapperDataProvider.Driver.Exceptions;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Driver.Utils.Telemetry;
 using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
@@ -35,12 +36,18 @@ public class AuroraStaleDnsHelper
     private static readonly ILogger<AuroraStaleDnsHelper> Logger = LoggerUtils.GetLogger<AuroraStaleDnsHelper>();
 
     private readonly IPluginService pluginService;
+
+    // Increments when a stale DNS entry is detected inside OpenVerifiedConnectionAsync.
+    private readonly ITelemetryCounter staleDnsDetectedCounter;
+
     private HostSpec? writerHostSpec;
     private string? writerHostAddress;
 
     public AuroraStaleDnsHelper(IPluginService pluginService)
     {
         this.pluginService = pluginService;
+        this.staleDnsDetectedCounter = pluginService.TelemetryFactory
+            .CreateCounter("staleDNS.stale.detected");
     }
 
     public async Task<DbConnection> OpenVerifiedConnectionAsync(
@@ -116,6 +123,7 @@ public class AuroraStaleDnsHelper
         {
             // Stale DNS detected! The cluster endpoint resolves to a different IP than the actual writer
             Logger.LogTrace(Resources.AuroraStaleDnsHelper_OpenVerifiedConnectionAsync_StaleDnsDetected, this.writerHostSpec);
+            this.staleDnsDetectedCounter.Inc();
 
             // Verify the writer is in the allowed hosts list
             var allowedHosts = this.pluginService.GetHosts();

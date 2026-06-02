@@ -25,6 +25,7 @@ using AwsWrapperDataProvider.Driver.Plugins.Efm;
 using AwsWrapperDataProvider.Plugin.FederatedAuth.FederatedAuth;
 using AwsWrapperDataProvider.Plugin.Iam.Iam;
 using AwsWrapperDataProvider.Plugin.SecretsManager.SecretsManager;
+using AwsWrapperDataProvider.Telemetry.XRay;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 
 [assembly: CollectionBehavior(DisableTestParallelization = true)]
@@ -71,6 +72,14 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         MySqlClientDialectLoader.Load();
         MySqlConnectorDialectLoader.Load();
         NpgsqlDialectLoader.Load();
+
+        // Make XRAY resolvable by DefaultTelemetryFactory and bootstrap the
+        // SDK side (X-Ray daemon address + OpenTelemetry MeterProvider) so
+        // the wrapper's spans/metrics leave the test container.
+        // Both calls are idempotent and Setup no-ops when neither
+        // TELEMETRY_TRACES_ENABLED nor TELEMETRY_METRICS_ENABLED is set.
+        XRayTelemetryLoader.Load();
+        TestTelemetry.Setup(TestEnvironment.Env.Info);
 
         // Loading Aws Authentication Plugins to Plugin Chain.
         ConnectionPluginChainBuilder.RegisterPluginFactory<IamAuthPluginFactory>(PluginCodes.Iam);

@@ -19,6 +19,7 @@ using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Driver.Utils.Telemetry;
 using AwsWrapperDataProvider.Plugin.SecretsManager.Utils;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -41,6 +42,11 @@ public class SecretsManagerAuthPlugin : AbstractConnectionPlugin
     private readonly string passwordKey;
     private readonly AmazonSecretsManagerClient client;
 
+    // Telemetry — counts each AWS Secrets Manager
+    // GetSecretValue fetch; increment sits inside the "fetch credentials"
+    // span's try so the counter and span pair cleanly.
+    private readonly ITelemetryCounter fetchCredentialsCounter;
+
     public SecretsManagerAuthPlugin(IPluginService pluginService, Dictionary<string, string> props) : this(pluginService, props, null)
     { }
 
@@ -60,6 +66,9 @@ public class SecretsManagerAuthPlugin : AbstractConnectionPlugin
         this.cacheKey = GetCacheKey(this.secretId, this.region);
 
         this.client = client ?? CreateClient(this.region, PropertyDefinition.SecretsManagerEndpoint.GetString(props) ?? string.Empty);
+
+        this.fetchCredentialsCounter = pluginService.TelemetryFactory
+            .CreateCounter("secretsManager.fetchCredentials.count");
     }
 
     private static AmazonSecretsManagerClient CreateClient(string region, string endpoint)
@@ -140,7 +149,29 @@ public class SecretsManagerAuthPlugin : AbstractConnectionPlugin
 
         if (forceReFetch || !SecretValueCache.TryGetValue(this.cacheKey, out SecretsManagerUtility.AwsRdsSecrets? secret))
         {
-            secret = await SecretsManagerUtility.GetRdsSecretFromAwsSecretsManager(this.secretId, this.usernameKey, this.passwordKey, this.client);
+            // Scope a "fetch credentials" Nested span around the AWS
+            // Secrets Manager API call. The counter increment
+            // sits inside the span's try so the counter and span pair
+            // cleanly even on API failure.
+            ITelemetryContext fetchContext = this.pluginService.TelemetryFactory
+                .OpenTelemetryContext("fetch credentials", TelemetryTraceLevel.Nested);
+            this.fetchCredentialsCounter.Inc();
+            try
+            {
+                secret = await SecretsManagerUtility.GetRdsSecretFromAwsSecretsManager(this.secretId, this.usernameKey, this.passwordKey, this.client);
+                fetchContext.SetSuccess(true);
+            }
+            catch (Exception ex)
+            {
+                fetchContext.SetException(ex);
+                fetchContext.SetSuccess(false);
+                throw;
+            }
+            finally
+            {
+                fetchContext.CloseContext();
+            }
+
             SecretValueCache.Set(this.cacheKey, secret, TimeSpan.FromSeconds(this.secretValueExpirySecs));
             secretsWasFetched = true;
         }

@@ -95,8 +95,6 @@ tasks.register<Test>("test-all-mysql-aurora") {
         systemProperty("test-no-multi-az-instance", "true")
         systemProperty("test-no-aurora-limitless", "true")
         systemProperty("test-no-bg", "true")
-        systemProperty("test-no-traces-telemetry", "true")
-        systemProperty("test-no-metrics-telemetry", "true")
     }
 }
 
@@ -113,8 +111,6 @@ tasks.register<Test>("test-all-mysql-aurora-ef") {
         systemProperty("test-no-multi-az-instance", "true")
         systemProperty("test-no-aurora-limitless", "true")
         systemProperty("test-no-bg", "true")
-        systemProperty("test-no-traces-telemetry", "true")
-        systemProperty("test-no-metrics-telemetry", "true")
     }
 }
 
@@ -131,8 +127,6 @@ tasks.register<Test>("test-all-mysql-aurora-nh") {
         systemProperty("test-no-multi-az-instance", "true")
         systemProperty("test-no-aurora-limitless", "true")
         systemProperty("test-no-bg", "true")
-        systemProperty("test-no-traces-telemetry", "true")
-        systemProperty("test-no-metrics-telemetry", "true")
     }
 }
 
@@ -149,8 +143,6 @@ tasks.register<Test>("test-all-mysql-multi-az-cluster-ef") {
         systemProperty("test-no-multi-az-instance", "true")
         systemProperty("test-no-aurora-limitless", "true")
         systemProperty("test-no-bg", "true")
-        systemProperty("test-no-traces-telemetry", "true")
-        systemProperty("test-no-metrics-telemetry", "true")
     }
 }
 
@@ -167,8 +159,6 @@ tasks.register<Test>("test-all-mysql-multi-az-cluster-nh") {
         systemProperty("test-no-multi-az-instance", "true")
         systemProperty("test-no-aurora-limitless", "true")
         systemProperty("test-no-bg", "true")
-        systemProperty("test-no-traces-telemetry", "true")
-        systemProperty("test-no-metrics-telemetry", "true")
     }
 }
 
@@ -185,8 +175,6 @@ tasks.register<Test>("test-all-mysql-multi-az-instance-ef") {
         systemProperty("test-no-multi-az-cluster", "true")
         systemProperty("test-no-aurora-limitless", "true")
         systemProperty("test-no-bg", "true")
-        systemProperty("test-no-traces-telemetry", "true")
-        systemProperty("test-no-metrics-telemetry", "true")
     }
 }
 
@@ -203,8 +191,6 @@ tasks.register<Test>("test-all-mysql-multi-az-instance-nh") {
         systemProperty("test-no-multi-az-cluster", "true")
         systemProperty("test-no-aurora-limitless", "true")
         systemProperty("test-no-bg", "true")
-        systemProperty("test-no-traces-telemetry", "true")
-        systemProperty("test-no-metrics-telemetry", "true")
     }
 }
 
@@ -222,8 +208,6 @@ tasks.register<Test>("test-all-pg-aurora") {
         systemProperty("test-no-multi-az-instance", "true")
         systemProperty("test-no-aurora-limitless", "true")
         systemProperty("test-no-bg", "true")
-        systemProperty("test-no-traces-telemetry", "true")
-        systemProperty("test-no-metrics-telemetry", "true")
     }
 }
 
@@ -241,8 +225,6 @@ tasks.register<Test>("test-all-pg-aurora-ef") {
         systemProperty("test-no-multi-az-instance", "true")
         systemProperty("test-no-aurora-limitless", "true")
         systemProperty("test-no-bg", "true")
-        systemProperty("test-no-traces-telemetry", "true")
-        systemProperty("test-no-metrics-telemetry", "true")
     }
 }
 
@@ -261,8 +243,6 @@ tasks.register<Test>("test-all-pg-aurora-limitless") {
         systemProperty("test-no-multi-az-cluster", "true")
         systemProperty("test-no-multi-az-instance", "true")
         systemProperty("test-no-bg", "true")
-        systemProperty("test-no-traces-telemetry", "true")
-        systemProperty("test-no-metrics-telemetry", "true")
     }
 }
 
@@ -281,8 +261,6 @@ tasks.register<Test>("test-all-pg-aurora-nh") {
         systemProperty("test-no-multi-az-instance", "true")
         systemProperty("test-no-aurora-limitless", "true")
         systemProperty("test-no-bg", "true")
-        systemProperty("test-no-traces-telemetry", "true")
-        systemProperty("test-no-metrics-telemetry", "true")
     }
 }
 
@@ -300,8 +278,6 @@ tasks.register<Test>("test-all-pg-multi-az-cluster") {
         systemProperty("test-no-multi-az-instance", "true")
         systemProperty("test-no-aurora-limitless", "true")
         systemProperty("test-no-bg", "true")
-        systemProperty("test-no-traces-telemetry", "true")
-        systemProperty("test-no-metrics-telemetry", "true")
     }
 }
 
@@ -319,8 +295,6 @@ tasks.register<Test>("test-all-pg-multi-az-cluster-ef") {
         systemProperty("test-no-multi-az-instance", "true")
         systemProperty("test-no-aurora-limitless", "true")
         systemProperty("test-no-bg", "true")
-        systemProperty("test-no-traces-telemetry", "true")
-        systemProperty("test-no-metrics-telemetry", "true")
     }
 }
 
@@ -338,8 +312,6 @@ tasks.register<Test>("test-all-pg-multi-az-cluster-nh") {
         systemProperty("test-no-multi-az-instance", "true")
         systemProperty("test-no-aurora-limitless", "true")
         systemProperty("test-no-bg", "true")
-        systemProperty("test-no-traces-telemetry", "true")
-        systemProperty("test-no-metrics-telemetry", "true")
     }
 }
 
@@ -356,8 +328,6 @@ tasks.register<Test>("test-all-mysql-multi-az-cluster") {
         systemProperty("test-no-multi-az-instance", "true")
         systemProperty("test-no-aurora-limitless", "true")
         systemProperty("test-no-bg", "true")
-        systemProperty("test-no-traces-telemetry", "true")
-        systemProperty("test-no-metrics-telemetry", "true")
     }
 }
 
@@ -375,8 +345,6 @@ tasks.register<Test>("test-all-pg-multi-az-instance") {
         systemProperty("test-no-multi-az-cluster", "true")
         systemProperty("test-no-aurora-limitless", "true")
         systemProperty("test-no-bg", "true")
-        systemProperty("test-no-traces-telemetry", "true")
-        systemProperty("test-no-metrics-telemetry", "true")
     }
 }
 
@@ -394,8 +362,6 @@ tasks.register<Test>("test-all-pg-multi-az-instance-ef") {
         systemProperty("test-no-multi-az-cluster", "true")
         systemProperty("test-no-aurora-limitless", "true")
         systemProperty("test-no-bg", "true")
-        systemProperty("test-no-traces-telemetry", "true")
-        systemProperty("test-no-metrics-telemetry", "true")
     }
 }
 
@@ -413,8 +379,6 @@ tasks.register<Test>("test-all-pg-multi-az-instance-nh") {
         systemProperty("test-no-multi-az-cluster", "true")
         systemProperty("test-no-aurora-limitless", "true")
         systemProperty("test-no-bg", "true")
-        systemProperty("test-no-traces-telemetry", "true")
-        systemProperty("test-no-metrics-telemetry", "true")
     }
 }
 
@@ -433,8 +397,6 @@ tasks.register<Test>("test-all-pg-aurora-limitless-nh") {
         systemProperty("test-no-multi-az-cluster", "true")
         systemProperty("test-no-multi-az-instance", "true")
         systemProperty("test-no-bg", "true")
-        systemProperty("test-no-traces-telemetry", "true")
-        systemProperty("test-no-metrics-telemetry", "true")
     }
 }
 
@@ -451,8 +413,6 @@ tasks.register<Test>("test-all-mysql-multi-az-instance") {
         systemProperty("test-no-multi-az-cluster", "true")
         systemProperty("test-no-aurora-limitless", "true")
         systemProperty("test-no-bg", "true")
-        systemProperty("test-no-traces-telemetry", "true")
-        systemProperty("test-no-metrics-telemetry", "true")
     }
 }
 

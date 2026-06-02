@@ -20,6 +20,7 @@ using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
+using AwsWrapperDataProvider.Driver.Utils.Telemetry;
 
 namespace AwsWrapperDataProvider.Driver;
 
@@ -47,6 +48,15 @@ public interface IPluginService : IExceptionHandlerService
     IHostListProvider? HostListProvider { get; }
 
     HostSpecBuilder HostSpecBuilder { get; }
+
+    /// <summary>
+    /// Gets the telemetry factory used to produce trace contexts and metric
+    /// instruments for the wrapper and its plugins. When telemetry is
+    /// disabled via the <c>EnableTelemetry</c> connection property, this
+    /// returns a no-op <see cref="NullTelemetryFactory"/> singleton so that
+    /// plugin code can call telemetry APIs unconditionally.
+    /// </summary>
+    ITelemetryFactory TelemetryFactory { get; }
 
     /// <summary>
     /// Sets the current connection and associated host specification.
