@@ -89,12 +89,9 @@ public class RdsUtilsGlobalPropertyTests
             Gen.Constant("192.168.1.1"));
     }
 
-    // Feature: aurora-global-database-support, Property 1: Global endpoint recognition
-
     /// <summary>
-    /// Property 1: For any hostname of the form {name}.global-{id}.global.rds.amazonaws.com,
+    /// For any hostname of the form {name}.global-{id}.global.rds.amazonaws.com,
     /// IsGlobalDbWriterClusterDns returns true.
-    /// Validates: Requirements 1.3, 1.4.
     /// </summary>
     [Fact]
     public void GlobalEndpointRecognition_ValidEndpoints_ReturnTrue()
@@ -107,9 +104,8 @@ public class RdsUtilsGlobalPropertyTests
     }
 
     /// <summary>
-    /// Property 1 (negative): For any hostname NOT matching the global endpoint pattern,
+    /// For any hostname NOT matching the global endpoint pattern,
     /// IsGlobalDbWriterClusterDns returns false.
-    /// Validates: Requirements 1.3, 1.4.
     /// </summary>
     [Fact]
     public void GlobalEndpointRecognition_NonGlobalEndpoints_ReturnFalse()
@@ -121,12 +117,9 @@ public class RdsUtilsGlobalPropertyTests
         Check.One(PbtConfig, property);
     }
 
-    // Feature: aurora-global-database-support, Property 2: Global endpoint classification
-
     /// <summary>
-    /// Property 2: For any hostname matching the global endpoint pattern,
+    /// For any hostname matching the global endpoint pattern,
     /// IdentifyRdsType returns RdsUrlType.RdsGlobalWriterCluster.
-    /// Validates: Requirements 1.5, 1.6.
     /// </summary>
     [Fact]
     public void GlobalEndpointClassification_ValidEndpoints_ReturnRdsGlobalWriterCluster()
@@ -139,9 +132,8 @@ public class RdsUtilsGlobalPropertyTests
     }
 
     /// <summary>
-    /// Property 2 (negative): For non-global endpoints, IdentifyRdsType does NOT return
+    /// For non-global endpoints, IdentifyRdsType does NOT return
     /// RdsGlobalWriterCluster.
-    /// Validates: Requirements 1.5, 1.6.
     /// </summary>
     [Fact]
     public void GlobalEndpointClassification_NonGlobalEndpoints_DoNotReturnRdsGlobalWriterCluster()

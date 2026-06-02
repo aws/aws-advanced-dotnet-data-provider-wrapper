@@ -18,11 +18,10 @@ namespace AwsWrapperDataProvider.Tests.Driver.Utils;
 
 /// <summary>
 /// Unit tests for RdsUrlType and RdsUtils global database extensions.
-/// Requirements: 1.1, 1.2, 1.5, 1.6.
 /// </summary>
 public class RdsUrlTypeGlobalTests
 {
-    // --- Requirement 1.1: RdsGlobalWriterCluster properties ---
+    // RdsGlobalWriterCluster properties
 
     [Fact]
     [Trait("Category", "Unit")]
@@ -45,7 +44,7 @@ public class RdsUrlTypeGlobalTests
         Assert.False(RdsUrlType.RdsGlobalWriterCluster.HasRegion);
     }
 
-    // --- Requirement 1.2: HasRegion is correct for all existing RdsUrlType values ---
+    // HasRegion is correct for all existing RdsUrlType values
 
     [Theory]
     [Trait("Category", "Unit")]
@@ -73,7 +72,7 @@ public class RdsUrlTypeGlobalTests
         yield return new object[] { RdsUrlType.Other, false, nameof(RdsUrlType.Other) };
     }
 
-    // --- Requirements 1.5, 1.6: IdentifyRdsType returns RdsGlobalWriterCluster for global endpoints ---
+    // IdentifyRdsType returns RdsGlobalWriterCluster for global endpoints
 
     [Theory]
     [Trait("Category", "Unit")]
@@ -86,7 +85,7 @@ public class RdsUrlTypeGlobalTests
         Assert.Equal(RdsUrlType.RdsGlobalWriterCluster, result);
     }
 
-    // --- Requirements 1.5, 1.6: IdentifyRdsType does NOT return RdsGlobalWriterCluster for regional endpoints ---
+    // IdentifyRdsType does NOT return RdsGlobalWriterCluster for regional endpoints
 
     [Theory]
     [Trait("Category", "Unit")]

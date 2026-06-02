@@ -98,13 +98,10 @@ public class GlobalAuroraTopologyUtilsPropertyTests
             select (region, $"[{region}]?.{domainId}.{region}.rds.amazonaws.com");
     }
 
-    // Feature: aurora-global-database-support, Property 3: Topology endpoint construction
-
     /// <summary>
-    /// Property 3: For any topology query result row with instance name N and region R,
+    /// For any topology query result row with instance name N and region R,
     /// where R exists in the region-to-template map with template T,
     /// the constructed HostSpec.Host equals T.Replace("?", N).
-    /// **Validates: Requirements 3.1, 3.2**.
     /// </summary>
     [Fact]
     public void TopologyEndpointConstruction_ReplacesPlaceholderWithInstanceName()
@@ -139,12 +136,9 @@ public class GlobalAuroraTopologyUtilsPropertyTests
         Check.One(PbtConfig, property);
     }
 
-    // Feature: aurora-global-database-support, Property 4: Missing region template throws
-
     /// <summary>
-    /// Property 4: For any topology query result row with a region R that does NOT exist
+    /// For any topology query result row with a region R that does NOT exist
     /// in the region-to-template map, an exception is thrown.
-    /// **Validates: Requirements 3.3**.
     /// </summary>
     [Fact]
     public void MissingRegionTemplate_ThrowsException()
@@ -181,14 +175,11 @@ public class GlobalAuroraTopologyUtilsPropertyTests
         Check.One(PbtConfig, property);
     }
 
-    // Feature: aurora-global-database-support, Property 5: Instance template parsing round-trip
-
     /// <summary>
-    /// Property 5: For any valid set of region-template pairs (using either bracket format
+    /// For any valid set of region-template pairs (using either bracket format
     /// or standard RDS format), formatting them as a comma-separated string and parsing
     /// with ParseInstanceTemplates produces a dictionary where each region key maps to
     /// a HostSpec with the correct host pattern.
-    /// **Validates: Requirements 3.4, 3.5, 3.6**.
     /// </summary>
     [Fact]
     public void ParseInstanceTemplates_StandardFormat_RoundTrip()
@@ -219,9 +210,8 @@ public class GlobalAuroraTopologyUtilsPropertyTests
     }
 
     /// <summary>
-    /// Property 5 (bracket format): For bracket-format templates [region]?.host,
+    /// For bracket-format templates [region]?.host,
     /// ParseInstanceTemplates extracts the region from the bracket prefix.
-    /// **Validates: Requirements 3.4, 3.5, 3.6**.
     /// </summary>
     [Fact]
     public void ParseInstanceTemplates_BracketFormat_RoundTrip()
@@ -255,9 +245,8 @@ public class GlobalAuroraTopologyUtilsPropertyTests
     }
 
     /// <summary>
-    /// Property 5 (multi-region): For multiple comma-separated region-template pairs,
+    /// For multiple comma-separated region-template pairs,
     /// ParseInstanceTemplates produces a dictionary with all regions.
-    /// **Validates: Requirements 3.4, 3.5, 3.6**.
     /// </summary>
     [Fact]
     public void ParseInstanceTemplates_MultipleRegions_AllParsed()
@@ -299,12 +288,9 @@ public class GlobalAuroraTopologyUtilsPropertyTests
         Check.One(PbtConfig, property);
     }
 
-    // Feature: aurora-global-database-support, Property 6: Empty instance host patterns throws
-
     /// <summary>
-    /// Property 6: For any null, empty, or whitespace-only value of the
+    /// For any null, empty, or whitespace-only value of the
     /// GlobalClusterInstanceHostPatterns property, initialization throws an exception.
-    /// **Validates: Requirements 4.3**.
     /// </summary>
     [Fact]
     public void EmptyInstanceHostPatterns_ThrowsException()
