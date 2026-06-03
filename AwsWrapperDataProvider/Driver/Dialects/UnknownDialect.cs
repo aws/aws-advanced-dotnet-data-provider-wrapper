@@ -16,6 +16,7 @@ using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Exceptions;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
+using AwsWrapperDataProvider.Properties;
 
 namespace AwsWrapperDataProvider.Driver.Dialects;
 
@@ -59,5 +60,10 @@ public class UnknownDialect : IDialect
     public void PrepareConnectionProperties(Dictionary<string, string> props, HostSpec hostSpec)
     {
         // Do nothing.
+    }
+
+    public Task<HostRole> GetHostRoleAsync(DbConnection connection)
+    {
+        throw new NotSupportedException(Resources.Error_UnableToDetermineHostRole);
     }
 }

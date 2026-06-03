@@ -27,8 +27,8 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
 {
     private static readonly ILogger<ReadWriteSplittingPlugin> Logger = LoggerUtils.GetLogger<ReadWriteSplittingPlugin>();
 
-    private readonly IPluginService pluginService;
-    private readonly Dictionary<string, string> props;
+    protected readonly IPluginService pluginService;
+    protected readonly Dictionary<string, string> props;
     private readonly string readerHostSelectorStrategy;
 
     private int inReadWriteSplit = 0;
@@ -218,7 +218,7 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
         Logger.LogTrace(Resources.ReadWriteSplittingPlugin_SwitchedFromReaderToWriter, writerHost.ToString());
     }
 
-    private void SwitchCurrentConnectionTo(DbConnection? newConnection, HostSpec newConnectionHost)
+    protected void SwitchCurrentConnectionTo(DbConnection? newConnection, HostSpec newConnectionHost)
     {
         if (this.pluginService.CurrentConnection == newConnection)
         {
@@ -229,7 +229,7 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
         Logger.LogTrace(Resources.ReadWriteSplittingPlugin_SettingCurrentConnection, newConnectionHost.ToString());
     }
 
-    private async Task InitializeWriterConnection(HostSpec writerHost)
+    protected virtual async Task InitializeWriterConnection(HostSpec writerHost)
     {
         var connection = await this.pluginService.OpenConnection(writerHost, this.props, this, true);
         Logger.LogInformation(Resources.ReadWriteSplittingPlugin_SetWriterConnection, writerHost.ToString());
@@ -264,14 +264,20 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
         }
     }
 
+    protected virtual IList<HostSpec> GetReaderHostCandidates()
+    {
+        return this.pluginService.GetHosts();
+    }
+
     private async Task OpenNewReaderConnection()
     {
         DbConnection? connection = null;
         HostSpec? readerHost = null;
-        int attempts = this.pluginService.GetHosts().Count * 2;
+        var hostCandidates = this.GetReaderHostCandidates();
+        int attempts = hostCandidates.Count * 2;
         for (int i = 0; i < attempts; i++)
         {
-            HostSpec hostSpec = this.pluginService.GetHostSpecByStrategy(HostRole.Reader, this.readerHostSelectorStrategy);
+            HostSpec hostSpec = this.pluginService.GetHostSpecByStrategy(hostCandidates.ToList(), HostRole.Reader, this.readerHostSelectorStrategy);
             try
             {
                 connection = await this.pluginService.OpenConnection(hostSpec, this.props, this, true);

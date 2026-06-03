@@ -41,6 +41,8 @@ public class PgDialect : IDialect
 
     internal static readonly string ReadWriteQuery = "set session characteristics as transaction read write";
 
+    private static readonly string IsReaderQuery = "SELECT pg_catalog.pg_is_in_recovery()";
+
     public IExceptionHandler ExceptionHandler { get; } = new PgExceptionHandler();
 
     public virtual IList<Type> DialectUpdateCandidates { get; } =
@@ -57,33 +59,13 @@ public class PgDialect : IDialect
 
     public virtual async Task<bool> IsDialect(DbConnection conn)
     {
-        try
+        if (conn.State != ConnectionState.Open)
         {
-            if (conn.State != ConnectionState.Open)
-            {
-                Logger.LogWarning(Resources.Error_ConnectionNotOpenWhenChecking, nameof(PgDialect));
-                return false;
-            }
-
-            await using var command = conn.CreateCommand();
-            command.CommandText = PGSelect1Query;
-            await using var reader = await command.ExecuteReaderAsync();
-
-            if (await reader.ReadAsync())
-            {
-                return true;
-            }
-        }
-        catch (Exception ex) when (this.ExceptionHandler.IsSyntaxError(ex))
-        {
-            // Syntax error - expected when querying against incorrect dialect
-        }
-        catch (Exception ex)
-        {
-            Logger.LogTrace(ex, Resources.Error_CantCheckDialect, nameof(PgDialect));
+            Logger.LogWarning(Resources.Error_ConnectionNotOpenWhenChecking, nameof(PgDialect));
+            return false;
         }
 
-        return false;
+        return await DialectUtils.CheckExistenceQueries(conn, this.ExceptionHandler, Logger, PGSelect1Query);
     }
 
     public virtual void PrepareConnectionProperties(Dictionary<string, string> connectionpProps, HostSpec hostSpec)
@@ -111,5 +93,10 @@ public class PgDialect : IDialect
         }
 
         return (false, false);
+    }
+
+    public virtual Task<HostRole> GetHostRoleAsync(DbConnection connection)
+    {
+        return DialectUtils.GetHostRoleAsync(connection, IsReaderQuery);
     }
 }

@@ -475,6 +475,12 @@ public class AwsWrapperConnectionStringBuilder : DbConnectionStringBuilder
         set => this.SetValue(PropertyDefinition.BgConnectTimeout.Name, value?.ToString());
     }
 
+    public string? GlobalClusterInstanceHostPatterns
+    {
+        get => this.GetValue(PropertyDefinition.GlobalClusterInstanceHostPatterns.Name);
+        set => this.SetValue(PropertyDefinition.GlobalClusterInstanceHostPatterns.Name, value);
+    }
+
     public bool? EnableTelemetry
     {
         get => this.GetBoolValue(PropertyDefinition.EnableTelemetry.Name);
