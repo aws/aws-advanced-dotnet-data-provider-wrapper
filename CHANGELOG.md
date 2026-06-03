@@ -3,6 +3,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/#semantic-versioning-200).
 
+## [1.2.0] - 2026-06-02
+
+### :magic_wand: Added
+- The [Blue/Green Deployment Plugin](./docs/using-the-dotnet-driver/using-plugins/UsingTheBlueGreenPlugin.md) ([PR #244](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/244)).
+- The [Aurora Connection Tracker Plugin](./docs/using-the-dotnet-driver/using-plugins/UsingTheAuroraConnectionTrackerPlugin.md) ([PR #250](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/250)).
+- [Telemetry](./docs/using-the-dotnet-driver/Telemetry.md) support for traces and metrics, with OTLP and AWS X-Ray backends ([PR #291](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/291)).
+- [Entity Framework Core support for PostgreSQL](./AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL/README.md) ([PR #280](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/280)).
+
+### :warning: Deprecated
+- The MySQL Entity Framework Core extension method `UseAwsWrapper` has been renamed to `UseAwsWrapperMySql`. The original name is still available but is marked `[Obsolete]` and will be removed in a future major version. Update existing call sites to `UseAwsWrapperMySql` to silence the deprecation warning ([PR #280](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/280)).
+
+### :bug: Fixed
+- Entity Framework Core + Pomelo + MySqlConnector connection string handling: wrapper-only properties (e.g. `Plugins=`) are now filtered case-insensitively before being passed to the target driver, and required Pomelo options (`AllowUserVariables=true`, `UseAffectedRows=false`) are enforced on the wrapper connection string ([Issue #268](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/issues/268), [PR #272](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/272)).
+
 ## [1.1.0] - 2026-03-24
 
 ### :magic_wand: Added
@@ -37,3 +51,4 @@ The AWS Advanced .NET Data Provider Wrapper is complementary to existing .NET da
 [1.0.0]: https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/releases/tag/1.0.0
 [1.0.1]: https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/compare/1.0.0...1.0.1
 [1.1.0]: https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/compare/1.0.1...1.1.0
+[1.2.0]: https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/compare/1.1.0...1.2.0
