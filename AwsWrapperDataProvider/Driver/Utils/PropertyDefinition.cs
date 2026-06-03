@@ -474,7 +474,7 @@ public static class PropertyDefinition
         GdbRwHomeRegion,
         GdbRwRestrictWriterToHomeRegion,
         GdbRwRestrictReaderToHomeRegion,
-        
+
         // Telemetry Properties
         EnableTelemetry,
         TelemetryTracesBackend,

@@ -130,12 +130,6 @@ public class PluginService : IPluginService, IHostListProviderService
         return this.HostListProvider is IStaticHostListProvider;
     }
 
-    public HostSpec GetInitialConnectionHostSpec()
-    {
-        // TODO implement stub method.
-        throw new NotImplementedException();
-    }
-
     public void SetCurrentConnection(DbConnection? connection, HostSpec? hostSpec)
     {
         lock (this.connectionSwitchLock)
