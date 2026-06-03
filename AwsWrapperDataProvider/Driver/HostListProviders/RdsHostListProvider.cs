@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Collections.Concurrent;
 using System.Data.Common;
 using System.Globalization;
 using AwsWrapperDataProvider.Driver.HostInfo;
@@ -26,13 +25,11 @@ namespace AwsWrapperDataProvider.Driver.HostListProviders;
 
 public class RdsHostListProvider : IDynamicHostListProvider
 {
+    public const string DefaultClusterId = "1";
     protected const int DefaultTopologyQueryTimeoutSec = 5;
 
     private static readonly ILogger<RdsHostListProvider> Logger = LoggerUtils.GetLogger<RdsHostListProvider>();
     internal static readonly MemoryCache TopologyCache = new(new MemoryCacheOptions());
-    internal static readonly MemoryCache PrimaryClusterIdCache = new(new MemoryCacheOptions());
-    internal static readonly MemoryCache SuggestedPrimaryClusterIdCache = new(new MemoryCacheOptions());
-    protected static readonly TimeSpan SuggestedClusterIdRefreshRate = TimeSpan.FromMinutes(10);
 
     protected static readonly TimeSpan MonitorExpirationTime = TimeSpan.FromMinutes(15);
     protected static readonly TimeSpan TopologyCacheExpirationTime = TimeSpan.FromMinutes(5);
@@ -44,13 +41,6 @@ public class RdsHostListProvider : IDynamicHostListProvider
     {
         SizeLimit = 100,
     });
-
-    /// <summary>
-    /// Tracks cluster IDs whose monitor entries are being transferred to a new cluster ID.
-    /// While a key is in this set, <see cref="OnMonitorEvicted"/> skips disposing the monitor
-    /// because the monitor is still referenced by another cache entry.
-    /// </summary>
-    private static readonly ConcurrentDictionary<string, byte> TransferringClusterIds = new();
 
     protected readonly Lazy<object> init;
     protected readonly Dictionary<string, string> properties;
@@ -69,10 +59,6 @@ public class RdsHostListProvider : IDynamicHostListProvider
     internal string ClusterId = string.Empty;
     protected RdsUrlType rdsUrlType = RdsUrlType.Other;
     protected TimeSpan topologyRefreshRate = TimeSpan.FromMilliseconds(30000);
-
-    // A primary ClusterId is a ClusterId that is based off of a cluster endpoint URL
-    // (rather than a GUID or a value provided by the user).
-    internal bool IsPrimaryClusterId = false;
 
     public RdsHostListProvider(
         Dictionary<string, string> properties,
@@ -98,12 +84,41 @@ public class RdsHostListProvider : IDynamicHostListProvider
     public static void ClearAll()
     {
         TopologyCache.Clear();
-        PrimaryClusterIdCache.Clear();
-        SuggestedPrimaryClusterIdCache.Clear();
     }
 
     public static void CloseAllMonitors()
     {
+        // Snapshot and dispose each monitor synchronously BEFORE clearing caches.
+        // MemoryCache.Clear() dispatches post-eviction callbacks to the thread pool,
+        // so relying on them would leave background RunMonitoringLoop tasks running
+        // that can write stale topology back into TopologyCache after it is cleared.
+        // Disposing first cancels each monitor's loop and waits for it to terminate.
+        List<Lazy<IClusterTopologyMonitor>> snapshot = [];
+        foreach (var key in Monitors.Keys)
+        {
+            if (Monitors.TryGetValue(key, out var value) && value is Lazy<IClusterTopologyMonitor> lazyMonitor)
+            {
+                snapshot.Add(lazyMonitor);
+            }
+        }
+
+        foreach (var lazyMonitor in snapshot)
+        {
+            if (!lazyMonitor.IsValueCreated)
+            {
+                continue;
+            }
+
+            try
+            {
+                lazyMonitor.Value.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(Resources.MonitoringRdsHostListProvider_OnMonitorEvicted_Error, ex.Message);
+            }
+        }
+
         Monitors.Clear();
         ClearAll();
     }
@@ -138,8 +153,7 @@ public class RdsHostListProvider : IDynamicHostListProvider
 
         this.initialHostSpec = this.initialHostList[0];
         this.hostListProviderService.InitialConnectionHostSpec = this.initialHostSpec;
-        this.ClusterId = Guid.NewGuid().ToString();
-        this.IsPrimaryClusterId = false;
+        this.ClusterId = PropertyDefinition.ClusterId.GetString(this.properties) ?? DefaultClusterId;
         this.topologyRefreshRate = TimeSpan.FromMilliseconds(PropertyDefinition.ClusterTopologyRefreshRateMs.GetLong(this.properties) ?? 30000);
 
         HostSpecBuilder hostSpecBuilder = this.hostListProviderService.HostSpecBuilder;
@@ -154,69 +168,6 @@ public class RdsHostListProvider : IDynamicHostListProvider
         Logger.LogDebug(Resources.RdsHostListProvider_Init_ClusterInstanceTemplate, this.clusterInstanceTemplate.Host, this.initialHostSpec.Host);
         this.ValidateHostPattern(this.clusterInstanceTemplate.Host);
         this.rdsUrlType = RdsUtils.IdentifyRdsType(this.initialHostSpec.Host);
-        string clusterIdSetting = PropertyDefinition.ClusterId.GetString(this.properties) ?? string.Empty;
-        if (!string.IsNullOrEmpty(clusterIdSetting))
-        {
-            this.ClusterId = clusterIdSetting;
-        }
-        else if (this.rdsUrlType == RdsUrlType.RdsProxy)
-        {
-            this.ClusterId = this.initialHostSpec.GetHostAndPort();
-        }
-        else if (this.rdsUrlType.IsRds)
-        {
-            ClusterSuggestedResult? clusterSuggestedResult = this.GetSuggestedClusterId(this.initialHostSpec.GetHostAndPort());
-            if (clusterSuggestedResult != null && !string.IsNullOrEmpty(clusterSuggestedResult.Value.ClusterId))
-            {
-                this.ClusterId = clusterSuggestedResult.Value.ClusterId;
-                this.IsPrimaryClusterId = clusterSuggestedResult.Value.IsPrimaryClusterId;
-            }
-            else
-            {
-                string? clusterRdsHostUrl = RdsUtils.GetRdsClusterHostUrl(this.initialHostSpec.Host);
-                if (!string.IsNullOrEmpty(clusterRdsHostUrl))
-                {
-                    this.ClusterId = this.clusterInstanceTemplate.IsPortSpecified ?
-                        $"{clusterRdsHostUrl}:{this.clusterInstanceTemplate.Port}" :
-                        clusterRdsHostUrl;
-                    this.IsPrimaryClusterId = true;
-                    PrimaryClusterIdCache.Set(this.ClusterId, true, SuggestedClusterIdRefreshRate);
-                }
-            }
-        }
-    }
-
-    protected ClusterSuggestedResult? GetSuggestedClusterId(string url)
-    {
-        foreach (string clusterId in TopologyCache.Keys.Cast<string>())
-        {
-            List<HostSpec>? hosts = TopologyCache.Get<List<HostSpec>>(clusterId);
-            bool isPrimaryCluster = PrimaryClusterIdCache.GetOrCreate(clusterId, entry =>
-            {
-                entry.AbsoluteExpirationRelativeToNow = SuggestedClusterIdRefreshRate;
-                return false;
-            });
-
-            if (clusterId.Equals(url))
-            {
-                return new ClusterSuggestedResult(url, isPrimaryCluster);
-            }
-
-            if (hosts == null)
-            {
-                continue;
-            }
-
-            foreach (HostSpec hostSpec in hosts)
-            {
-                if (hostSpec.GetHostAndPort().Equals(url))
-                {
-                    return new ClusterSuggestedResult(clusterId, isPrimaryCluster);
-                }
-            }
-        }
-
-        return null;
     }
 
     protected void ValidateHostPattern(string hostPattern)
@@ -303,61 +254,8 @@ public class RdsHostListProvider : IDynamicHostListProvider
             this.topologyUtils);
     }
 
-    protected virtual void ClusterIdChanged(string oldClusterId)
-    {
-        Logger.LogTrace(Resources.MonitoringRdsHostListProvider_ClusterIdChanged, oldClusterId);
-        this.TransferExistingMonitor(oldClusterId);
-        this.TransferCachedTopology(oldClusterId);
-    }
-
-    private void TransferExistingMonitor(string oldClusterId)
-    {
-        Logger.LogTrace(Resources.MonitoringRdsHostListProvider_TransferExistingMonitor, oldClusterId);
-        var existingLazyMonitor = Monitors.Get<Lazy<IClusterTopologyMonitor>>(oldClusterId);
-        if (existingLazyMonitor == null)
-        {
-            return;
-        }
-
-        var cacheOptions = this.CreateCacheEntryOptions();
-        Monitors.Set(this.ClusterId, existingLazyMonitor, cacheOptions);
-        if (existingLazyMonitor.IsValueCreated)
-        {
-            existingLazyMonitor.Value.SetClusterId(this.ClusterId);
-        }
-
-        // Mark the old key as "in transfer" so the eviction callback does not dispose
-        // the monitor that is now owned by the new cache entry.
-        TransferringClusterIds.TryAdd(oldClusterId, 0);
-        try
-        {
-            Monitors.Remove(oldClusterId);
-        }
-        finally
-        {
-            TransferringClusterIds.TryRemove(oldClusterId, out _);
-        }
-    }
-
-    private void TransferCachedTopology(string oldClusterId)
-    {
-        Logger.LogTrace(Resources.MonitoringRdsHostListProvider_TransferCachedTopology, oldClusterId);
-        if (TopologyCache.TryGetValue(oldClusterId, out List<HostSpec>? existingHosts) && existingHosts != null)
-        {
-            TopologyCache.Set(this.ClusterId, existingHosts, TopologyCacheExpirationTime);
-        }
-    }
-
     private void OnMonitorEvicted(object key, object? value, EvictionReason reason, object? state)
     {
-        // If this key is currently being transferred to a new cluster ID, the monitor is
-        // still in use under the new key and must not be disposed.
-        if (key is string keyString && TransferringClusterIds.ContainsKey(keyString))
-        {
-            Logger.LogTrace(Resources.MonitoringRdsHostListProvider_OnMonitorEvicted_SkipTransfer, key, reason);
-            return;
-        }
-
         if (value is Lazy<IClusterTopologyMonitor> lazyMonitor && lazyMonitor.IsValueCreated)
         {
             try
@@ -466,15 +364,6 @@ public class RdsHostListProvider : IDynamicHostListProvider
     {
         this.EnsureInitialized();
 
-        string? suggestedPrimaryClusterId = SuggestedPrimaryClusterIdCache.Get<string>(this.ClusterId);
-        if (!string.IsNullOrEmpty(suggestedPrimaryClusterId) && !this.ClusterId.Equals(suggestedPrimaryClusterId))
-        {
-            Logger.LogDebug(Resources.RdsHostListProvider_GetTopologyAsync_ClusterIdChanged, this.ClusterId, suggestedPrimaryClusterId);
-            this.ClusterIdChanged(this.ClusterId);
-            this.ClusterId = suggestedPrimaryClusterId;
-            this.IsPrimaryClusterId = true;
-        }
-
         List<HostSpec>? storedHosts = TopologyCache.Get<List<HostSpec>>(this.ClusterId);
         if (storedHosts == null)
         {
@@ -504,13 +393,6 @@ public class RdsHostListProvider : IDynamicHostListProvider
 
         Logger.LogTrace(Resources.RdsHostListProvider_GetTopologyAsync_CachedTopology, LoggerUtils.LogTopology(storedHosts, "From cache"));
         return new FetchTopologyResult(true, storedHosts);
-    }
-
-    protected readonly struct ClusterSuggestedResult(string clusterId, bool isPrimaryClusterId)
-    {
-        public string ClusterId { get; } = clusterId;
-
-        public bool IsPrimaryClusterId { get; } = isPrimaryClusterId;
     }
 
     internal class FetchTopologyResult(bool isCachedData, List<HostSpec> hosts)

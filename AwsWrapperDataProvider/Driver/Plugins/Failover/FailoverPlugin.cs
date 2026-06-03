@@ -401,7 +401,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
         }
     }
 
-    private async Task<ReaderFailoverResult> GetReaderFailoverConnectionAsync(DateTime failoverEndTime)
+    private async Task<FailoverResult> GetReaderFailoverConnectionAsync(DateTime failoverEndTime)
     {
         var hosts = this.pluginService.GetHosts();
         Logger.LogDebug(LoggerUtils.LogTopology(hosts, $"All hosts: "));
@@ -439,7 +439,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
                     if (role == HostRole.Reader || this.failoverMode != FailoverMode.StrictReader)
                     {
                         var updatedHostSpec = new HostSpec(readerCandidate, role);
-                        return new ReaderFailoverResult(candidateConn, updatedHostSpec);
+                        return new FailoverResult(candidateConn, updatedHostSpec);
                     }
 
                     // The role is Writer or Unknown, and we are in StrictReader mode
@@ -481,7 +481,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
                     if (role == HostRole.Reader || this.failoverMode != FailoverMode.StrictReader)
                     {
                         var updatedHostSpec = new HostSpec(originalWriter, role);
-                        return new ReaderFailoverResult(candidateConn, updatedHostSpec);
+                        return new FailoverResult(candidateConn, updatedHostSpec);
                     }
 
                     await candidateConn.DisposeAsync().ConfigureAwait(false);
@@ -554,7 +554,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
                     // Ignore close exception
                 }
 
-                throw new FailoverFailedException(string.Format(Resources.Error_UnexpectedRoleForWriterCandidate, writerCandidate.Host));
+                throw new FailoverFailedException(string.Format(Resources.Error_UnexpectedRoleForWriterCandidate, role, writerCandidate.Host));
             }
 
             this.pluginService.SetCurrentConnection(writerCandidateConn, writerCandidate);

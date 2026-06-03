@@ -25,6 +25,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.HostListProviders;
 public class RdsHostListProviderTest : IDisposable
 {
     private const string ClusterA = "cluster-a.cluster-xyz.us-east-2.rds.amazonaws.com";
+    private const string ClusterB = "cluster-b.cluster-xyz.us-east-2.rds.amazonaws.com";
     private const string Instance1 = "instance-a-1.xyz.us-east-2.rds.amazonaws.com";
     private const string Instance2 = "instance-a-2.xyz.us-east-2.rds.amazonaws.com";
     private const string Instance3 = "instance-a-3.xyz.us-east-2.rds.amazonaws.com";
@@ -59,17 +60,28 @@ public class RdsHostListProviderTest : IDisposable
 
     private Mock<RdsHostListProvider> GetRdsHostListProviderSpy()
     {
-        return this.GetRdsHostListProviderSpy(null);
+        return this.GetRdsHostListProviderSpy(null, null);
     }
 
     private Mock<RdsHostListProvider> GetRdsHostListProviderSpy(string? host)
     {
+        return this.GetRdsHostListProviderSpy(host, null);
+    }
+
+    private Mock<RdsHostListProvider> GetRdsHostListProviderSpy(string? host, string? clusterId)
+    {
+        var props = new Dictionary<string, string>(this.properties);
         if (host != null)
         {
-            this.properties[PropertyDefinition.Host.Name] = host;
+            props[PropertyDefinition.Host.Name] = host;
         }
 
-        var rdsHostListProviderSpy = new Mock<RdsHostListProvider>(this.properties, this.mockHostListProviderService.Object, "bar", this.mockPluginService.Object, new AuroraTopologyUtils(new HostSpecBuilder(), Mock.Of<ITopologyDialect>(d => d.TopologyQuery == "foo" && d.WriterIdQuery == "qux")))
+        if (clusterId != null)
+        {
+            props[PropertyDefinition.ClusterId.Name] = clusterId;
+        }
+
+        var rdsHostListProviderSpy = new Mock<RdsHostListProvider>(props, this.mockHostListProviderService.Object, "bar", this.mockPluginService.Object, new AuroraTopologyUtils(new HostSpecBuilder(), Mock.Of<ITopologyDialect>(d => d.TopologyQuery == "foo" && d.WriterIdQuery == "qux")))
         {
             CallBase = true,
         };
@@ -122,97 +134,78 @@ public class RdsHostListProviderTest : IDisposable
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task Refresh_SuggestedClusterIdForRds()
+    public async Task TopologyCache_DefaultClusterIdIsShared()
     {
+        // Without an explicit clusterId, the default value "1" is used, so providers that point
+        // to different clusters share a topology cache. This is the behavior documented in
+        // PR #1476: users who want to connect to multiple clusters must specify a distinct clusterId.
         RdsHostListProvider.ClearAll();
+
         var rdsHostListProviderSpy1 = this.GetRdsHostListProviderSpy(ClusterA);
-
-        // Pre-populate the topology cache to simulate the monitor having fetched topology
         RdsHostListProvider.TopologyCache.Set(rdsHostListProviderSpy1.Object.ClusterId, this.clusterAHosts, this.topologyRefreshRate);
-
         var provider1Hosts = await rdsHostListProviderSpy1.Object.RefreshAsync();
         Assert.Equal(this.clusterAHosts, provider1Hosts);
 
-        var rdsHostListProviderSpy2 = this.GetRdsHostListProviderSpy(ClusterA);
+        var rdsHostListProviderSpy2 = this.GetRdsHostListProviderSpy(ClusterB);
 
         Assert.Equal(rdsHostListProviderSpy1.Object.ClusterId, rdsHostListProviderSpy2.Object.ClusterId);
-        Assert.True(rdsHostListProviderSpy1.Object.IsPrimaryClusterId);
-        Assert.True(rdsHostListProviderSpy2.Object.IsPrimaryClusterId);
-
-        var provider2Hosts = await rdsHostListProviderSpy2.Object.RefreshAsync();
-        Assert.Equal(this.clusterAHosts, provider2Hosts);
+        var provider2Topology = await rdsHostListProviderSpy2.Object.GetTopologyAsync();
+        Assert.NotNull(provider2Topology);
 
         Assert.Equal(1, RdsHostListProvider.TopologyCache.Count);
     }
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task Refresh_SuggestedClusterIdForInstance()
+    public async Task TopologyCache_ExplicitClusterIdIsolatesClusters()
     {
+        // When a user provides distinct clusterId values, the cached topologies do not collide.
         RdsHostListProvider.ClearAll();
-        var rdsHostListProviderSpy1 = this.GetRdsHostListProviderSpy(ClusterA);
 
-        // Pre-populate the topology cache to simulate the monitor having fetched topology
+        var rdsHostListProviderSpy1 = this.GetRdsHostListProviderSpy(ClusterA, "clusterA");
         RdsHostListProvider.TopologyCache.Set(rdsHostListProviderSpy1.Object.ClusterId, this.clusterAHosts, this.topologyRefreshRate);
-
         var provider1Hosts = await rdsHostListProviderSpy1.Object.RefreshAsync();
         Assert.Equal(this.clusterAHosts, provider1Hosts);
 
-        var rdsHostListProviderSpy2 = this.GetRdsHostListProviderSpy(Instance3);
-
-        Assert.Equal(rdsHostListProviderSpy1.Object.ClusterId, rdsHostListProviderSpy2.Object.ClusterId);
-        Assert.True(rdsHostListProviderSpy1.Object.IsPrimaryClusterId);
-        Assert.True(rdsHostListProviderSpy2.Object.IsPrimaryClusterId);
-
-        var provider2Hosts = await rdsHostListProviderSpy2.Object.RefreshAsync();
-        Assert.Equal(this.clusterAHosts, provider2Hosts);
-
-        Assert.Equal(1, RdsHostListProvider.TopologyCache.Count);
-    }
-
-    [Fact]
-    [Trait("Category", "Unit")]
-    public async Task Refresh_AcceptSuggestion()
-    {
-        RdsHostListProvider.ClearAll();
-        var rdsHostListProviderSpy1 = this.GetRdsHostListProviderSpy(Instance2);
-
-        // Mock ForceRefreshMonitorAsync to return clusterAHosts and populate the cache
-        rdsHostListProviderSpy1.Setup(r => r.ForceRefreshMonitorAsync(It.IsAny<bool>(), It.IsAny<long>()))
-            .ReturnsAsync((IList<HostSpec>)this.clusterAHosts)
-            .Callback(() =>
-            {
-                RdsHostListProvider.TopologyCache.Set(rdsHostListProviderSpy1.Object.ClusterId, this.clusterAHosts, this.topologyRefreshRate);
-            });
-
-        Assert.Equal(0, RdsHostListProvider.TopologyCache.Count);
-
-        var provider1Hosts = await rdsHostListProviderSpy1.Object.RefreshAsync();
-        Assert.Equal(this.clusterAHosts, provider1Hosts);
-
-        var rdsHostListProviderSpy2 = this.GetRdsHostListProviderSpy(ClusterA);
-        // Pre-populate cache for provider2
-        RdsHostListProvider.TopologyCache.Set(rdsHostListProviderSpy2.Object.ClusterId, this.clusterAHosts, this.topologyRefreshRate);
-
-        var provider2Hosts = await rdsHostListProviderSpy2.Object.RefreshAsync();
-        Assert.Equal(this.clusterAHosts, provider2Hosts);
+        var rdsHostListProviderSpy2 = this.GetRdsHostListProviderSpy(ClusterB, "clusterB");
 
         Assert.NotEqual(rdsHostListProviderSpy1.Object.ClusterId, rdsHostListProviderSpy2.Object.ClusterId);
-        Assert.False(rdsHostListProviderSpy1.Object.IsPrimaryClusterId);
-        Assert.True(rdsHostListProviderSpy2.Object.IsPrimaryClusterId);
 
-        // Simulate the suggestion that would normally be set by the monitor/topology flow
-        RdsHostListProvider.SuggestedPrimaryClusterIdCache.Set(
-            rdsHostListProviderSpy1.Object.ClusterId,
-            ClusterA,
-            TimeSpan.FromMinutes(10));
-        Assert.Equal(ClusterA, RdsHostListProvider.SuggestedPrimaryClusterIdCache.Get<string>(rdsHostListProviderSpy1.Object.ClusterId));
+        var clusterBHosts = new List<HostSpec>
+        {
+            new HostSpecBuilder().WithHost("instance-b-1.domain.com").WithRole(HostRole.Writer).Build(),
+            new HostSpecBuilder().WithHost("instance-b-2.domain.com").WithRole(HostRole.Reader).Build(),
+            new HostSpecBuilder().WithHost("instance-b-3.domain.com").WithRole(HostRole.Reader).Build(),
+        };
+        RdsHostListProvider.TopologyCache.Set(rdsHostListProviderSpy2.Object.ClusterId, clusterBHosts, this.topologyRefreshRate);
 
-        // RefreshAsync calls GetTopologyAsync which picks up the suggested primary cluster ID
-        provider1Hosts = await rdsHostListProviderSpy1.Object.RefreshAsync();
-        Assert.Equal(rdsHostListProviderSpy1.Object.ClusterId, rdsHostListProviderSpy2.Object.ClusterId);
-        Assert.True(rdsHostListProviderSpy1.Object.IsPrimaryClusterId);
-        Assert.True(rdsHostListProviderSpy2.Object.IsPrimaryClusterId);
+        var provider2Hosts = await rdsHostListProviderSpy2.Object.RefreshAsync();
+        Assert.Equal(clusterBHosts, provider2Hosts);
+
+        Assert.Equal(2, RdsHostListProvider.TopologyCache.Count);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void ClusterId_DefaultsToOne()
+    {
+        // If no clusterId is provided, the default value is "1" (see PR #1476).
+        RdsHostListProvider.ClearAll();
+
+        var rdsHostListProviderSpy = this.GetRdsHostListProviderSpy(ClusterA);
+
+        Assert.Equal("1", rdsHostListProviderSpy.Object.ClusterId);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void ClusterId_UsesExplicitValue()
+    {
+        RdsHostListProvider.ClearAll();
+
+        var rdsHostListProviderSpy = this.GetRdsHostListProviderSpy(ClusterA, "my-cluster-id");
+
+        Assert.Equal("my-cluster-id", rdsHostListProviderSpy.Object.ClusterId);
     }
 
     [Fact]
@@ -288,31 +281,5 @@ public class RdsHostListProviderTest : IDisposable
 
         var result = await rdsHostListProviderSpy.Object.GetTopologyAsync();
         Assert.Equal(expectedWriterHost.Host, result.Hosts.First().Host);
-    }
-
-    [Fact]
-    [Trait("Category", "Unit")]
-    public async Task ClusterUrlUsedAsDefaultClusterId()
-    {
-        string readerClusterUrl = "mycluster.cluster-ro-XYZ.us-east-1.rds.amazonaws.com";
-        string expectedClusterId = "mycluster.cluster-XYZ.us-east-1.rds.amazonaws.com";
-        var rdsHostListProviderSpy1 = this.GetRdsHostListProviderSpy(readerClusterUrl);
-
-        Assert.Equal(expectedClusterId, rdsHostListProviderSpy1.Object.ClusterId);
-
-        List<HostSpec> mockTopology = [
-            new HostSpecBuilder().WithHost("host").Build(),
-        ];
-
-        // Pre-populate the topology cache to simulate the monitor having fetched topology
-        RdsHostListProvider.TopologyCache.Set(rdsHostListProviderSpy1.Object.ClusterId, mockTopology, this.topologyRefreshRate);
-
-        await rdsHostListProviderSpy1.Object.RefreshAsync();
-
-        Assert.Equal(mockTopology, RdsHostListProvider.TopologyCache.Get<List<HostSpec>>(rdsHostListProviderSpy1.Object.ClusterId));
-
-        var rdsHostListProviderSpy2 = this.GetRdsHostListProviderSpy(readerClusterUrl);
-        Assert.Equal(expectedClusterId, rdsHostListProviderSpy2.Object.ClusterId);
-        Assert.Equal(mockTopology, RdsHostListProvider.TopologyCache.Get<List<HostSpec>>(rdsHostListProviderSpy2.Object.ClusterId));
     }
 }

@@ -174,7 +174,10 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
             await AuroraUtils.SetReadOnly(connection, Engine, false, true);
         });
 
-        var writerId = await AuroraUtils.GetDBClusterWriterInstanceIdAsync(TestEnvironment.Env.Info.RdsDbName!);
+        var writerId = await AuroraUtils.GetDBClusterWriterInstanceIdAsync(
+            TestEnvironment.Env.Info.RdsDbName!,
+            id => id != originalReaderId,
+            TimeSpan.FromMinutes(15));
         await AuroraUtils.ModifyDBClusterEndpointAsync(this._fixture.EndpointId, [originalReaderId!, writerId]);
 
         try
@@ -250,7 +253,10 @@ public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixtur
         var newInstanceId = await AuroraUtils.QueryInstanceId(connection, true);
         Assert.Equal(originalWriterId, newInstanceId);
 
-        var writerId = await AuroraUtils.GetDBClusterWriterInstanceIdAsync(TestEnvironment.Env.Info.RdsDbName!);
+        var writerId = await AuroraUtils.GetDBClusterWriterInstanceIdAsync(
+            TestEnvironment.Env.Info.RdsDbName!,
+            id => id == originalWriterId,
+            TimeSpan.FromMinutes(15));
         string readerIdToAdd = TestEnvironment.Env.Info.DatabaseInfo.Instances
             .First(i => i.InstanceId != writerId).InstanceId;
 

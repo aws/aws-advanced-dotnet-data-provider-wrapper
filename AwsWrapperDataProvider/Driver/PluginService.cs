@@ -327,12 +327,24 @@ public class PluginService : IPluginService, IHostListProviderService
         IConnectionPlugin? pluginToSkip,
         bool async)
     {
-        return this.pluginManager.Open(hostSpec, props, this.CurrentConnection == null, pluginToSkip, async);
+        return this.pluginManager.Open(hostSpec, props, this.IsInitialConnection(), pluginToSkip, async);
     }
 
     public Task<DbConnection> ForceOpenConnection(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin? pluginToSkip, bool async)
     {
-        return this.pluginManager.ForceOpen(hostSpec, props, this.CurrentConnection == null, pluginToSkip, async);
+        return this.pluginManager.ForceOpen(hostSpec, props, this.IsInitialConnection(), pluginToSkip, async);
+    }
+
+    /// <summary>
+    /// Returns whether the next connection opened through this service should be treated as the initial connection.
+    /// .NET wrapper pre-populates a closed placeholder connection on <see cref="AwsWrapperConnection.InitializeConnection"/>
+    /// so that <c>CreateCommand</c> can be called before <c>Open</c>. As a result, <see cref="CurrentConnection"/>
+    /// alone cannot tell us whether the wrapper has ever produced an open connection. We instead rely on
+    /// <see cref="IsDialectConfirmed"/>, which is set the first time <see cref="UpdateDialectAsync"/> runs (i.e., after the first successful open).
+    /// </summary>
+    private bool IsInitialConnection()
+    {
+        return !this.IsDialectConfirmed;
     }
 
     public async Task UpdateDialectAsync(DbConnection connection)

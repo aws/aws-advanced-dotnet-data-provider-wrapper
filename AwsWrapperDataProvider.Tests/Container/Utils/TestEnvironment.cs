@@ -239,7 +239,7 @@ public class TestEnvironment
             return;
         }
 
-        var instancesIDs = testInfo.DatabaseInfo!.Instances.Select(i => i.InstanceId);
+        var instancesIDs = testInfo.DatabaseInfo!.Instances.Select(i => i.InstanceId).ToList();
 
         await auroraUtil.WaitUntilClusterHasRightStateAsync(testInfo.RdsDbName!);
 
@@ -250,10 +250,8 @@ public class TestEnvironment
 
         await auroraUtil.WaitUntilClusterHasRightStateAsync(testInfo.RdsDbName!);
 
-        foreach (var instanceId in instancesIDs)
-        {
-            await auroraUtil.WaitUntilInstanceHasRightStateAsync(instanceId);
-        }
+        // Wait on all instances in parallel
+        await Task.WhenAll(instancesIDs.Select(auroraUtil.WaitUntilInstanceHasRightStateAsync));
 
         await auroraUtil.MakeSureInstancesUpAsync(TimeSpan.FromMinutes(10));
     }
@@ -304,6 +302,15 @@ public class TestEnvironment
         if (env.Info.Request!.Features.Contains(TestEnvironmentFeatures.NETWORK_OUTAGES_ENABLED))
         {
             InitProxies(env).GetAwaiter().GetResult();
+
+            // Proxied hosts append a ".proxied" suffix to the real RDS hostname, which breaks
+            // the RDS DNS regex patterns (IdentifyRdsType, GetRdsRegion, etc.). Strip the suffix
+            // before any regex-based lookup so proxied hosts are recognized as Aurora endpoints.
+
+            RdsUtils.SetPrepareHostFunc(host =>
+                host.EndsWith(".proxied", StringComparison.Ordinal)
+                    ? host[..^".proxied".Length]
+                    : host);
         }
 
         return env;
