@@ -535,6 +535,24 @@ public class AwsWrapperConnectionStringBuilder : DbConnectionStringBuilder
         set => this.SetValue(PropertyDefinition.GdbEnableGlobalWriteForwarding.Name, value);
     }
 
+    public string? GdbRwHomeRegion
+    {
+        get => this.GetValue(PropertyDefinition.GdbRwHomeRegion.Name);
+        set => this.SetValue(PropertyDefinition.GdbRwHomeRegion.Name, value);
+    }
+
+    public string? GdbRwRestrictWriterToHomeRegion
+    {
+        get => this.GetValue(PropertyDefinition.GdbRwRestrictWriterToHomeRegion.Name);
+        set => this.SetValue(PropertyDefinition.GdbRwRestrictWriterToHomeRegion.Name, value);
+    }
+
+    public string? GdbRwRestrictReaderToHomeRegion
+    {
+        get => this.GetValue(PropertyDefinition.GdbRwRestrictReaderToHomeRegion.Name);
+        set => this.SetValue(PropertyDefinition.GdbRwRestrictReaderToHomeRegion.Name, value);
+    }
+
     private string? GetValue(string key)
     {
         return this.TryGetValue(key, out object? value) ? value?.ToString() : null;
