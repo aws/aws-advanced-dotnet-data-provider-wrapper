@@ -45,8 +45,8 @@ IAM database authentication use is limited to certain database engines. For more
 | `IamExpiration`  | Integer |    No    | This property determines how long an IAM token is kept in the driver cache before a new one is generated. The default expiration time is set to 14 minutes and 30 seconds. Note that IAM database authentication tokens have a lifetime of 15 minutes.                                                 | `600`                                               |
 
 ## Examples
-[PG Iam Authentication](../../examples/PGIamAuthentication.cs)
-[MySql Iam Authentication](../../examples/MySqlIamAuthentication.cs)
+[PG Iam Authentication](../../examples/AwsWrapperDataProviderExample/PGIamAuthentication.cs)
+[MySql Iam Authentication](../../examples/AwsWrapperDataProviderExample/MySqlIamAuthentication.cs)
 
 ## Using IAM Authentication with Global Databases
 

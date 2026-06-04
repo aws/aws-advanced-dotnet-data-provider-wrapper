@@ -54,8 +54,8 @@ ConnectionPluginChainBuilder.RegisterPluginFactory<FederatedAuthPluginFactory>(P
 | `SSLInsecure`              | Boolean |    No    | When set to true, disables server certificate verification. This poses significant security risks and should never be used in production environments.                                                                                                                                                                                                             | `false`                  | `false`                                                |
 
 ## Examples
-[PG Federated Authentication](../../examples/PGFederatedAuthentication.cs)
-[MySql Federated Authentication](../../examples/MySqlFederatedAuthentication.cs)
+[PG Federated Authentication](../../examples/AwsWrapperDataProviderExample/PGFederatedAuthentication.cs)
+[MySql Federated Authentication](../../examples/AwsWrapperDataProviderExample/MySqlFederatedAuthentication.cs)
 
 ## Using Federated Authentication with Global Databases
 
@@ -77,6 +77,3 @@ Example IAM policy:
     ]
 }
 ```
-
-> [!NOTE]
-> The credentials used by the wrapper to call `DescribeGlobalClusters` are resolved from the AWS SDK's default credentials chain — separately from the federated/SAML-derived credentials used to generate the database authentication token.

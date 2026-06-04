@@ -52,8 +52,8 @@ ConnectionPluginChainBuilder.RegisterPluginFactory<OktaAuthPluginFactory>(Plugin
 | `SSLInsecure`              | Boolean |    No    | When set to true, disables server certificate verification. This poses significant security risks and should never be used in production environments.                                                                                                                                                                                                             | `false`       | `false`                                                |
 
 ## Examples
-[PG Okta Authentication](../../examples/PGOktaAuthentication.cs)
-[MySql Okta Authentication](../../examples/MySqlOktaAuthentication.cs)
+[PG Okta Authentication](../../examples/AwsWrapperDataProviderExample/PGOktaAuthentication.cs)
+[MySql Okta Authentication](../../examples/AwsWrapperDataProviderExample/MySqlOktaAuthentication.cs)
 
 ## Using Okta Authentication with Global Databases
 
@@ -75,6 +75,3 @@ Example IAM policy:
     ]
 }
 ```
-
-> [!NOTE]
-> The credentials used by the wrapper to call `DescribeGlobalClusters` are resolved from the AWS SDK's default credentials chain — separately from the Okta/SAML-derived credentials used to generate the database authentication token.
