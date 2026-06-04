@@ -9,6 +9,7 @@
 - [Plugin Service](./development-guide/PluginService.md)
 
 ## Using the .NET Wrapper
+- [Aurora Global Databases](./using-the-dotnet-driver/GlobalDatabases.md)
 - [Custom Dialects](./using-the-dotnet-driver/CustomDialects.md)
 - [Failover Configuration Guide](./using-the-dotnet-driver/FailoverConfigurationGuide.md)
 - [Reader Selection Strategies](./using-the-dotnet-driver/ReaderSelectionStrategies.md)
@@ -25,6 +26,8 @@
 - [Custom Endpoint Plugin](./using-the-dotnet-driver/using-plugins/UsingTheCustomEndpointPlugin.md)
 - [Failover Plugin](./using-the-dotnet-driver/using-plugins/UsingTheFailoverPlugin.md)
 - [Federated Authentication Plugin](./using-the-dotnet-driver/using-plugins/UsingTheFederatedAuthenticationPlugin.md)
+- [GDB Failover Plugin](./using-the-dotnet-driver/using-plugins/UsingTheGdbFailoverPlugin.md)
+- [GDB Read/Write Splitting Plugin](./using-the-dotnet-driver/using-plugins/UsingTheGdbReadWriteSplittingPlugin.md)
 - [Host Monitoring Plugin](./using-the-dotnet-driver/using-plugins/UsingTheHostMonitoringPlugin.md)
 - [IAM Authentication Plugin](./using-the-dotnet-driver/using-plugins/UsingTheIamAuthenticationPlugin.md)
 - [Limitless Connection Plugin](./using-the-dotnet-driver/using-plugins/UsingTheLimitlessConnectionPlugin.md)
@@ -36,7 +39,3 @@
 ### EFM Plugin Incompatibility with MySQL Drivers
 The EFM plugin is designed to proactively terminate database connections when failure conditions are detected, even if a query is currently executing. This requires the ability to abort a connection from a separate thread safely and reliably.
 Both drivers lack support for safe, asynchronous connection abortion, the EFM plugin cannot be used with MySQL. This limitation is inherent to the driver implementations and not specific to the plugin itself.
-
-### Amazon Aurora Global Databases Support
-
-This wrapper currently does not support planned failover or switchover of Amazon Aurora Global Databases. Full Support for Amazon Aurora Global Databases is in the backlog, but we cannot comment on a timeline right now.
