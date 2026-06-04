@@ -15,6 +15,7 @@
 using System.Text.RegularExpressions;
 using Amazon.RDS;
 using Amazon.RDS.Model;
+using Amazon.Runtime;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
 
@@ -29,8 +30,10 @@ namespace AwsWrapperDataProvider.Plugin.FederatedAuth.Utils;
 /// invoking this must have the <c>rds:DescribeGlobalClusters</c> permission.
 /// </para>
 /// <para>
-/// The RDS client uses the AWS SDK's default credentials chain — separate from any
-/// federated/SAML-derived credentials used to generate the database authentication token.
+/// For federated authentication (ADFS/Okta), the federated/SAML-derived credentials must be
+/// supplied via the <see cref="GdbRegionUtils(AWSCredentials)"/> constructor so the
+/// <c>DescribeGlobalClusters</c> call is authenticated with them. When no credentials are
+/// supplied, the RDS client falls back to the AWS SDK's default credentials chain.
 /// </para>
 /// </summary>
 public partial class GdbRegionUtils : RegionUtils
@@ -42,8 +45,10 @@ public partial class GdbRegionUtils : RegionUtils
 
     private readonly IAmazonRDS? rdsClient;
 
+    private readonly AWSCredentials? credentials;
+
     public GdbRegionUtils()
-        : this(null)
+        : this((IAmazonRDS?)null)
     {
     }
 
@@ -54,6 +59,18 @@ public partial class GdbRegionUtils : RegionUtils
     public GdbRegionUtils(IAmazonRDS? rdsClient)
     {
         this.rdsClient = rdsClient;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GdbRegionUtils"/> class that authenticates the
+    /// <c>DescribeGlobalClusters</c> call with the supplied credentials. Used for federated
+    /// authentication (ADFS/Okta) where the temporary, SAML-derived credentials are obtained before
+    /// the region is known, instead of relying on the SDK's default credentials chain.
+    /// </summary>
+    /// <param name="credentials">The credentials used to build the RDS client; if null, the SDK's default credentials chain is used.</param>
+    public GdbRegionUtils(AWSCredentials? credentials)
+    {
+        this.credentials = credentials;
     }
 
     /// <inheritdoc/>
@@ -72,7 +89,9 @@ public partial class GdbRegionUtils : RegionUtils
         }
 
         bool ownsClient = this.rdsClient == null;
-        IAmazonRDS client = this.rdsClient ?? new AmazonRDSClient();
+        IAmazonRDS client = this.rdsClient ?? (this.credentials != null
+            ? new AmazonRDSClient(this.credentials)
+            : new AmazonRDSClient());
         try
         {
             string? writerClusterArn = await FindWriterClusterArnAsync(client, clusterId);

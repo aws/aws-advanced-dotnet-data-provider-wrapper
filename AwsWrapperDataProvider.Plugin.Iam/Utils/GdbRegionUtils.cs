@@ -44,7 +44,7 @@ public partial class GdbRegionUtils : RegionUtils
     }
 
     /// <summary>
-    /// Creates a new <see cref="GdbRegionUtils"/>.
+    /// Initializes a new instance of the <see cref="GdbRegionUtils"/> class.
     /// </summary>
     /// <param name="rdsClient">Optional RDS client; if null, a new <see cref="AmazonRDSClient"/> is created using the SDK's default credentials chain on each call.</param>
     public GdbRegionUtils(IAmazonRDS? rdsClient)
