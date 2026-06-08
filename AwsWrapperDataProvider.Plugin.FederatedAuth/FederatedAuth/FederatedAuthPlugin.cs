@@ -22,8 +22,8 @@ namespace AwsWrapperDataProvider.Plugin.FederatedAuth.FederatedAuth;
 /// <see cref="BaseSamlAuthPlugin"/>; this type only supplies the ADFS-specific telemetry counter
 /// name and token cache.
 /// </summary>
-public class FederatedAuthPlugin(IPluginService pluginService, Dictionary<string, string> props, CredentialsProviderFactory credentialsFactory, ITokenUtility tokenUtility)
-    : BaseSamlAuthPlugin(pluginService, props, credentialsFactory, tokenUtility, "federatedAuth.fetchToken.count", "federatedAuth.tokenCache.size", IamTokenCache)
+public class FederatedAuthPlugin(IPluginService pluginService, CredentialsProviderFactory credentialsFactory, ITokenUtility tokenUtility)
+    : BaseSamlAuthPlugin(pluginService, credentialsFactory, tokenUtility, "federatedAuth.fetchToken.count", "federatedAuth.tokenCache.size", IamTokenCache)
 {
     private static readonly MemoryCache IamTokenCache = new(new MemoryCacheOptions());
 

@@ -22,8 +22,8 @@ namespace AwsWrapperDataProvider.Plugin.FederatedAuth.FederatedAuth;
 /// <see cref="BaseSamlAuthPlugin"/>; this type only supplies the Okta-specific telemetry counter
 /// name and token cache.
 /// </summary>
-public class OktaAuthPlugin(IPluginService pluginService, Dictionary<string, string> props, CredentialsProviderFactory credentialsFactory, ITokenUtility tokenUtility)
-    : BaseSamlAuthPlugin(pluginService, props, credentialsFactory, tokenUtility, "oktaAuth.fetchToken.count", "oktaAuth.tokenCache.size", IamTokenCache)
+public class OktaAuthPlugin(IPluginService pluginService, CredentialsProviderFactory credentialsFactory, ITokenUtility tokenUtility)
+    : BaseSamlAuthPlugin(pluginService, credentialsFactory, tokenUtility, "oktaAuth.fetchToken.count", "oktaAuth.tokenCache.size", IamTokenCache)
 {
     internal static readonly MemoryCache IamTokenCache = new(new MemoryCacheOptions());
 

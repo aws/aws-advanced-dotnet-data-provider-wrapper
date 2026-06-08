@@ -76,7 +76,6 @@ public abstract partial class BaseSamlAuthPlugin : AbstractConnectionPlugin
     /// Initializes a new instance of the <see cref="BaseSamlAuthPlugin"/> class.
     /// </summary>
     /// <param name="pluginService">The plugin service.</param>
-    /// <param name="props">The connection properties (consumed per-call via the connect delegates).</param>
     /// <param name="credentialsFactory">Factory that produces the IdP-derived AWS credentials.</param>
     /// <param name="tokenUtility">Utility used to build cache keys and generate authentication tokens.</param>
     /// <param name="fetchTokenCounterName">Name of the telemetry counter incremented on each token fetch attempt.</param>
@@ -84,7 +83,6 @@ public abstract partial class BaseSamlAuthPlugin : AbstractConnectionPlugin
     /// <param name="tokenCache">The token cache shared across instances of the concrete plugin.</param>
     protected BaseSamlAuthPlugin(
         IPluginService pluginService,
-        Dictionary<string, string> props,
         CredentialsProviderFactory credentialsFactory,
         ITokenUtility tokenUtility,
         string fetchTokenCounterName,
