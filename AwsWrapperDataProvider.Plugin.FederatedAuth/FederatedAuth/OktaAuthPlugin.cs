@@ -12,125 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data.Common;
-using Amazon;
-using Amazon.Runtime;
 using AwsWrapperDataProvider.Driver;
-using AwsWrapperDataProvider.Driver.HostInfo;
-using AwsWrapperDataProvider.Driver.Plugins;
-using AwsWrapperDataProvider.Driver.Utils;
-using AwsWrapperDataProvider.Driver.Utils.Telemetry;
-using AwsWrapperDataProvider.Plugin.FederatedAuth.Utils;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Plugin.FederatedAuth.FederatedAuth;
 
-public partial class OktaAuthPlugin(IPluginService pluginService, Dictionary<string, string> props, CredentialsProviderFactory credentialsFactory, ITokenUtility tokenUtility) : AbstractConnectionPlugin
+/// <summary>
+/// Federated authentication plugin for Okta. The connection flow is implemented by
+/// <see cref="BaseSamlAuthPlugin"/>; this type only supplies the Okta-specific telemetry counter
+/// name and token cache.
+/// </summary>
+public class OktaAuthPlugin(IPluginService pluginService, CredentialsProviderFactory credentialsFactory, ITokenUtility tokenUtility)
+    : BaseSamlAuthPlugin(pluginService, credentialsFactory, tokenUtility, "oktaAuth.fetchToken.count", "oktaAuth.tokenCache.size", IamTokenCache)
 {
-    public static readonly int DefaultIamExpirationSeconds = 870;
-
-    private static readonly ILogger<OktaAuthPlugin> Logger = LoggerUtils.GetLogger<OktaAuthPlugin>();
-
-    public override IReadOnlySet<string> SubscribedMethods { get; } = new HashSet<string> { "DbConnection.Open", "DbConnection.OpenAsync", "DbConnection.ForceOpen" };
-
-    private readonly IPluginService pluginService = pluginService;
-
-    private readonly Dictionary<string, string> props = props;
-
-    private readonly CredentialsProviderFactory credentialsFactory = credentialsFactory;
-
-    private readonly ITokenUtility tokenUtility = tokenUtility;
-
-    // Telemetry — increments each time an Okta auth token is
-    // fetched (inside UpdateAuthenticationTokenAsync, so it covers both the
-    // cache-miss path and the post-login-exception retry path).
-    private readonly ITelemetryCounter fetchTokenCounter =
-        pluginService.TelemetryFactory.CreateCounter("oktaAuth.fetchToken.count");
-
     internal static readonly MemoryCache IamTokenCache = new(new MemoryCacheOptions());
 
     public static void ClearCache()
     {
         IamTokenCache.Clear();
-    }
-
-    public override async Task<DbConnection> OpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc, bool async)
-    {
-        return await this.ConnectInternal(hostSpec, props, methodFunc);
-    }
-
-    public override async Task<DbConnection> ForceOpenConnection(HostSpec? hostSpec, Dictionary<string, string> props, bool isInitialConnection, ADONetDelegate<DbConnection> methodFunc, bool async)
-    {
-        return await this.ConnectInternal(hostSpec, props, methodFunc);
-    }
-
-    private async Task<DbConnection> ConnectInternal(HostSpec? hostSpec, Dictionary<string, string> props, ADONetDelegate<DbConnection> methodFunc)
-    {
-        SamlUtils.CheckIdpCredentialsWithFallback(PropertyDefinition.IdpUsername, PropertyDefinition.IdpPassword, props);
-
-        string host = PropertyDefinition.IamHost.GetString(props) ?? hostSpec?.Host ?? throw new Exception("Host not provided.");
-        int port = PropertyDefinition.IamDefaultPort.GetInt(props) ?? hostSpec?.Port ?? this.pluginService.Dialect.DefaultPort;
-
-        if (port <= 0)
-        {
-            port = this.pluginService.Dialect.DefaultPort;
-        }
-
-        string region = RegionUtils.GetRegion(host, props, PropertyDefinition.IamRegion) ?? throw new Exception("Could not determine region.");
-        string dbUser = PropertyDefinition.DbUser.GetString(props) ?? throw new Exception("DB user not provided.");
-
-        string cacheKey = this.tokenUtility.GetCacheKey(dbUser, host, port, region);
-        bool isCachedToken;
-        if (IamTokenCache.TryGetValue(cacheKey, out string? token) && token != null)
-        {
-            props[PropertyDefinition.Password.Name] = token;
-            isCachedToken = true;
-            Logger.LogTrace("Use cached authentication token");
-        }
-        else
-        {
-            await this.UpdateAuthenticationTokenAsync(hostSpec, props, host, port, region, cacheKey, dbUser);
-            isCachedToken = false;
-            Logger.LogTrace("Generated new authentication token");
-        }
-
-        props[PropertyDefinition.User.Name] = dbUser;
-
-        try
-        {
-            return await methodFunc();
-        }
-        catch (Exception ex)
-        {
-            if (!this.pluginService.IsLoginException(ex) || !isCachedToken)
-            {
-                throw;
-            }
-
-            // should the token not work (login exception + is cached token), generate a new one and try again
-            await this.UpdateAuthenticationTokenAsync(hostSpec, props, host, port, region, cacheKey, dbUser);
-
-            return await methodFunc();
-        }
-    }
-
-    private async Task UpdateAuthenticationTokenAsync(HostSpec? hostSpec, Dictionary<string, string> props, string host, int port, string region, string cacheKey, string dbUser)
-    {
-        // Count the fetch attempt regardless of success — matches the
-        // attempt-counting semantics used by IAM and Secrets Manager
-        // telemetry. Covers both call sites in ConnectInternal
-        // (cache-miss path and post-login-exception retry).
-        this.fetchTokenCounter.Inc();
-
-        int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? DefaultIamExpirationSeconds;
-        RegionEndpoint regionEndpoint = RegionUtils.IsValidRegion(region) ? RegionEndpoint.GetBySystemName(region) : throw new Exception("Invalid region");
-
-        AWSCredentialsProvider credentialsProvider = await this.credentialsFactory.GetAwsCredentialsProviderAsync(host, regionEndpoint, props);
-        AWSCredentials credentials = credentialsProvider.GetAWSCredentials();
-
-        string token = await this.tokenUtility.GenerateAuthenticationTokenAsync(region, host, port, dbUser, credentials);
-        props[PropertyDefinition.Password.Name] = token;
-        IamTokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
     }
 }

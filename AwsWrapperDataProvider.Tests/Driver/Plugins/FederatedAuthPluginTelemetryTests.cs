@@ -94,7 +94,6 @@ public class FederatedAuthPluginTelemetryTests
     {
         _ = new FederatedAuthPlugin(
             this.mockPluginService.Object,
-            this.props,
             this.mockCredentialsFactory.Object,
             this.mockTokenUtility.Object);
 
@@ -112,7 +111,6 @@ public class FederatedAuthPluginTelemetryTests
 
         FederatedAuthPlugin plugin = new(
             this.mockPluginService.Object,
-            this.props,
             this.mockCredentialsFactory.Object,
             this.mockTokenUtility.Object);
 
@@ -133,7 +131,6 @@ public class FederatedAuthPluginTelemetryTests
 
         FederatedAuthPlugin plugin = new(
             this.mockPluginService.Object,
-            this.props,
             this.mockCredentialsFactory.Object,
             this.mockTokenUtility.Object);
 
@@ -166,7 +163,6 @@ public class FederatedAuthPluginTelemetryTests
 
         FederatedAuthPlugin plugin = new(
             this.mockPluginService.Object,
-            this.props,
             this.mockCredentialsFactory.Object,
             this.mockTokenUtility.Object);
 

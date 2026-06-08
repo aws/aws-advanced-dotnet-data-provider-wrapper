@@ -93,7 +93,7 @@ public partial class OktaCredentialsProviderFactory(IPluginService pluginService
     {
         try
         {
-            int connectionTimeoutMs = PropertyDefinition.HttpClientConnectTimeout.GetInt(props) ?? FederatedAuthPlugin.DefaultHttpTimeoutMs;
+            int connectionTimeoutMs = PropertyDefinition.HttpClientConnectTimeout.GetInt(props) ?? BaseSamlAuthPlugin.DefaultHttpTimeoutMs;
             using HttpClient httpClient = HttpClientFactory.GetDisposableHttpClient(connectionTimeoutMs);
             string sessionToken = await GetSessionTokenAsync(httpClient, props);
             string baseUri = GetSamlUrl(props);

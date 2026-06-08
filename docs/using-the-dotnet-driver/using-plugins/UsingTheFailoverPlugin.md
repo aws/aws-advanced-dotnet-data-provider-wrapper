@@ -99,5 +99,5 @@ When telemetry is enabled (see [Telemetry](../Telemetry.md)), the Failover Plugi
 By default these spans are nested under the parent ADO.NET call's top-level span. Setting `TelemetryFailoverAdditionalTopTrace=true` causes the wrapper to also re-emit the closed failover span as an independent top-level trace, so failover events surface directly in trace dashboards (for example, the X-Ray console) without navigating into the parent ADO.NET call.
 
 ## Examples
-[PG Failover](../../examples/PGFailover.cs)
-[MySql Failover](../../examples/MySqlFailover.cs)
+[PG Failover](../../examples/AwsWrapperDataProviderExample/PGFailover.cs)
+[MySql Failover](../../examples/AwsWrapperDataProviderExample/MySqlFailover.cs)

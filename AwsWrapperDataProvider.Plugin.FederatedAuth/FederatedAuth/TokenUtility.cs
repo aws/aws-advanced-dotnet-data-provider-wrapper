@@ -15,6 +15,7 @@
 using Amazon;
 using Amazon.RDS.Util;
 using Amazon.Runtime;
+using AwsWrapperDataProvider.Properties;
 
 namespace AwsWrapperDataProvider.Plugin.FederatedAuth.FederatedAuth;
 
@@ -43,7 +44,7 @@ public class TokenUtility : ITokenUtility
         }
         catch (Exception ex)
         {
-            throw new Exception("Couldn't generate token for Aws authentication.", ex);
+            throw new Exception(Resources.TokenUtility_TokenGenerationFailed, ex);
         }
     }
 }

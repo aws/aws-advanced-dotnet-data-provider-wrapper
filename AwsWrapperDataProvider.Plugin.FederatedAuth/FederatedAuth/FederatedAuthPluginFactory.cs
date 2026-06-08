@@ -25,6 +25,6 @@ public class FederatedAuthPluginFactory : IConnectionPluginFactory
 
         return credentialsProviderFactory == null
             ? throw new Exception("Could not create credentials provider factory for federated authentication")
-            : (IConnectionPlugin)new FederatedAuthPlugin(pluginService, props, credentialsProviderFactory, new TokenUtility());
+            : (IConnectionPlugin)new FederatedAuthPlugin(pluginService, credentialsProviderFactory, new TokenUtility());
     }
 }

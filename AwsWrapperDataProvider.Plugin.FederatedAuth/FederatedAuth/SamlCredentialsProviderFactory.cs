@@ -32,13 +32,19 @@ public abstract class SamlCredentialsProviderFactory : CredentialsProviderFactor
         }
     }
 
-    public override async Task<AWSCredentialsProvider> GetAwsCredentialsProviderAsync(string host, RegionEndpoint region, Dictionary<string, string> props)
+    public override async Task<AWSCredentialsProvider> GetAwsCredentialsProviderAsync(string host, RegionEndpoint? region, Dictionary<string, string> props)
     {
         string samlAssertion = await this.GetSamlAssertionAsync(props);
         string roleArn = PropertyDefinition.IamRoleArn.GetString(props) ?? throw new Exception("Missing IAM role ARN");
         string principalArn = PropertyDefinition.IamIdpArn.GetString(props) ?? throw new Exception("Missing IAM IDP ARN");
 
-        AmazonSecurityTokenServiceClient client = new(region);
+        // The region may be null when credentials are fetched before the region is resolved
+        // (e.g. for a Global Aurora Database endpoint, where the region is determined via the
+        // RDS DescribeGlobalClusters API using these credentials). In that case let the STS
+        // client use its default region resolution.
+        AmazonSecurityTokenServiceClient client = region != null
+            ? new AmazonSecurityTokenServiceClient(region)
+            : new AmazonSecurityTokenServiceClient();
 
         AssumeRoleWithSAMLResponse result = await client.AssumeRoleWithSAMLAsync(
             new AssumeRoleWithSAMLRequest { SAMLAssertion = samlAssertion, RoleArn = roleArn, PrincipalArn = principalArn });
