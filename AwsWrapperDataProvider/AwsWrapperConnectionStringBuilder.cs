@@ -511,6 +511,18 @@ public class AwsWrapperConnectionStringBuilder : DbConnectionStringBuilder
         set => this.SetValue(PropertyDefinition.TelemetryFailoverAdditionalTopTrace.Name, value?.ToString());
     }
 
+    public bool? HostCacheEnabled
+    {
+        get => this.GetBoolValue(PropertyDefinition.HostCacheEnabled.Name);
+        set => this.SetValue(PropertyDefinition.HostCacheEnabled.Name, value?.ToString());
+    }
+
+    public string? HostCacheRegexp
+    {
+        get => this.GetValue(PropertyDefinition.HostCacheRegexp.Name);
+        set => this.SetValue(PropertyDefinition.HostCacheRegexp.Name, value);
+    }
+
     public string? FailoverHomeRegion
     {
         get => this.GetValue(PropertyDefinition.FailoverHomeRegion.Name);

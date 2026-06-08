@@ -19,6 +19,7 @@ using System.Runtime.CompilerServices;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
+using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -318,7 +319,10 @@ public class AwsWrapperConnection : DbConnection, IWrapper
                 this.ConnectionProperties!,
                 true,
                 async);
-            this.pluginService.SetCurrentConnection(connection, this.pluginService.CurrentHostSpec);
+
+            HostSpec? connectedHostSpec = this.pluginService.RoutedHostSpec ?? this.pluginService.CurrentHostSpec;
+            this.pluginService.SetCurrentConnection(connection, connectedHostSpec);
+            this.pluginService.RoutedHostSpec = null;
             await this.pluginService.RefreshHostListAsync();
 
             telemetryContext.SetSuccess(true);

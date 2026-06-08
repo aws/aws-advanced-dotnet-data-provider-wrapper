@@ -80,38 +80,30 @@ public class OpenedConnectionTracker : IConnectionTracker
     /// <param name="connection">The database connection to track.</param>
     public void PopulateOpenedConnectionQueue(HostSpec hostSpec, DbConnection connection)
     {
+        if (hostSpec == null || connection == null)
+        {
+            return;
+        }
+
         EnsurePruneLoopRunning();
 
         // Check if the connection was established using an instance endpoint
         if (RdsUtils.IsRdsInstance(hostSpec.Host))
         {
-            TrackConnection(hostSpec.AsAlias(), connection);
+            TrackConnection(hostSpec.GetHostAndPort(), connection);
             this.LogOpenedConnections();
             return;
         }
 
-        var aliases = hostSpec.AsAliases();
-
-        // Find the instance endpoint from aliases
-        string? instanceEndpoint = aliases
-            .Where(alias => RdsUtils.IsRdsInstance(RdsUtils.RemovePort(alias)))
-            .MaxBy(alias => alias, StringComparer.OrdinalIgnoreCase);
-
-        if (instanceEndpoint != null)
+        // It might be a custom domain name. Let's track by hostId and custom domain name.
+        if (!string.IsNullOrEmpty(hostSpec.HostId))
         {
-            TrackConnection(instanceEndpoint, connection);
-            this.LogOpenedConnections();
-            return;
+            TrackConnection(hostSpec.HostId, connection);
         }
 
-        // No RDS instance host found. It might be a custom domain name. Track by all aliases.
-        Logger.LogDebug(
-            Resources.OpenedConnectionTracker_PopulateOpenedConnectionQueue_TrackingByAllAliases,
-            hostSpec.Host);
-
-        foreach (string alias in aliases)
+        if (!string.IsNullOrEmpty(hostSpec.GetHostAndPort()))
         {
-            TrackConnection(alias, connection);
+            TrackConnection(hostSpec.GetHostAndPort(), connection);
         }
 
         this.LogOpenedConnections();
@@ -132,20 +124,19 @@ public class OpenedConnectionTracker : IConnectionTracker
     /// <param name="connection">The database connection to remove from tracking.</param>
     public void RemoveConnectionTracking(HostSpec hostSpec, DbConnection? connection)
     {
-        string? host = RdsUtils.IsRdsInstance(hostSpec.Host)
-            ? hostSpec.AsAlias()
-            : hostSpec.GetAliases()
-                .FirstOrDefault(alias => RdsUtils.IsRdsInstance(RdsUtils.RemovePort(alias)));
+        string? hostAndPort = RdsUtils.IsRdsInstance(hostSpec.Host)
+            ? hostSpec.GetHostAndPort()
+            : null;
 
-        if (string.IsNullOrEmpty(host))
+        if (string.IsNullOrEmpty(hostAndPort))
         {
-            // Connections tracked under custom domain aliases are not individually
-            // removed here as iterating all alias keys is expensive. They will be
-            // cleaned up by the background pruning loop once garbage-collected.
+            // Connections tracked under custom domain names are not individually
+            // removed here. They will be cleaned up by the background pruning loop
+            // once garbage-collected.
             return;
         }
 
-        if (!OpenedConnections.TryGetValue(host, out var queue))
+        if (!OpenedConnections.TryGetValue(hostAndPort, out var queue))
         {
             return;
         }
@@ -165,9 +156,7 @@ public class OpenedConnectionTracker : IConnectionTracker
             .OpenTelemetryContext("invalidate connections", TelemetryTraceLevel.Nested);
         try
         {
-            var keys = new List<string> { hostSpec.AsAlias() };
-            keys.AddRange(hostSpec.GetAliases());
-            this.InvalidateAllConnections(keys.ToArray());
+            this.InvalidateAllConnections(hostSpec.GetHostAndPort(), hostSpec.Host, hostSpec.HostId);
             invalidateContext.SetSuccess(true);
         }
         catch (Exception ex)
@@ -211,10 +200,15 @@ public class OpenedConnectionTracker : IConnectionTracker
     /// <summary>
     /// Invalidates all tracked connections for the given keys.
     /// </summary>
-    private void InvalidateAllConnections(params string[] keys)
+    private void InvalidateAllConnections(params string?[] keys)
     {
-        foreach (string key in keys)
+        foreach (string? key in keys)
         {
+            if (key == null)
+            {
+                continue;
+            }
+
             try
             {
                 if (!OpenedConnections.TryGetValue(key, out var queue))

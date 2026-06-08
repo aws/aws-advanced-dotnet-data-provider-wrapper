@@ -101,7 +101,6 @@ public class SubstituteConnectRouting : BaseConnectRouting
                 .WithHostId(iamHost.HostId)
                 .WithAvailability(HostAvailability.Available)
                 .Build();
-            reroutedHostSpec.AddAlias(iamHost.Host);
 
             var rerouteProperties = new Dictionary<string, string>(props) { [PropertyDefinition.IamHost.Name] = iamHost.Host };
             if (iamHost.IsPortSpecified)

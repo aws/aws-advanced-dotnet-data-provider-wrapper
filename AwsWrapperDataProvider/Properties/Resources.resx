@@ -1019,9 +1019,6 @@
   <data name="Error_WeightedRandomUnableToGetHost" xml:space="preserve">
     <value>Unable to get host for role: {0}.</value>
   </data>
-  <data name="OpenedConnectionTracker_PopulateOpenedConnectionQueue_TrackingByAllAliases" xml:space="preserve">
-    <value>No RDS instance host found for '{0}'. This may be a custom domain. Tracking connection by all aliases.</value>
-  </data>
   <data name="OpenedConnectionTracker_PruneLoop_Error" xml:space="preserve">
     <value>Background connection tracker pruning task encountered an error while removing stale connection references.</value>
   </data>

@@ -787,11 +787,11 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                         try
                         {
                             connection = await monitor.pluginService.ForceOpenConnection(hostSpec, monitor.properties, null, true);
-                            monitor.pluginService.SetAvailability(hostSpec.AsAliases(), HostAvailability.Available);
+                            monitor.pluginService.SetAvailability(hostSpec, HostAvailability.Available);
                         }
                         catch (Exception ex) when (ex is DbException or EndOfStreamException)
                         {
-                            monitor.pluginService.SetAvailability(hostSpec.AsAliases(), HostAvailability.Unavailable);
+                            monitor.pluginService.SetAvailability(hostSpec, HostAvailability.Unavailable);
                             await monitor.DisposeConnectionAsync(connection);
                             connection = null;
                             monitor.completedOneCycle[hostSpec.HostId!] = true;
