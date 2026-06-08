@@ -82,7 +82,7 @@ public class OktaAuthPluginTests
             utility => utility.GenerateAuthenticationTokenAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<AWSCredentials?>()))
             .ReturnsAsync(() => this.iamTokenUtilityGeneratedToken);
 
-        this.oktaAuthPlugin = new(this.mockPluginService.Object, this.props, this.mockCredentialsProviderFactory.Object, this.mockTokenUtility.Object);
+        this.oktaAuthPlugin = new(this.mockPluginService.Object, this.mockCredentialsProviderFactory.Object, this.mockTokenUtility.Object);
 
         this.methodFunc = () => Task.FromResult(new Mock<DbConnection>().Object);
     }
