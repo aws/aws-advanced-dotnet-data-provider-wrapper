@@ -3506,6 +3506,15 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Failover procedure completed in {0} ms..
+        /// </summary>
+        internal static string GdbFailoverPlugin_FailoverAsync_FailoverElapsed {
+            get {
+                return ResourceManager.GetString("GdbFailoverPlugin_FailoverAsync_FailoverElapsed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Unable to refresh host list..
         /// </summary>
         internal static string GdbFailoverPlugin_FailoverAsync_UnableToRefreshHostList {

@@ -1208,6 +1208,9 @@
     <data name="GdbFailoverPlugin_FailoverAsync_StartingFailover" xml:space="preserve">
         <value>Starting failover procedure.</value>
     </data>
+    <data name="GdbFailoverPlugin_FailoverAsync_FailoverElapsed" xml:space="preserve">
+        <value>Failover procedure completed in {0} ms.</value>
+    </data>
     <data name="GdbFailoverPlugin_FailoverAsync_UnableToRefreshHostList" xml:space="preserve">
         <value>Unable to refresh host list.</value>
     </data>

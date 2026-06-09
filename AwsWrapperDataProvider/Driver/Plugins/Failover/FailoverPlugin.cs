@@ -62,16 +62,16 @@ public class FailoverPlugin : AbstractConnectionPlugin
     private readonly bool closedExplicitly = false;
     private readonly AuroraStaleDnsHelper auroraStaleDnsHelper;
 
+    protected readonly ITelemetryCounter writerFailoverTriggered;
+    protected readonly ITelemetryCounter writerFailoverSuccess;
+    protected readonly ITelemetryCounter writerFailoverFailed;
+    protected readonly ITelemetryCounter readerFailoverTriggered;
+    protected readonly ITelemetryCounter readerFailoverSuccess;
+    protected readonly ITelemetryCounter readerFailoverFailed;
+    protected readonly bool telemetryFailoverAdditionalTopTrace;
+
     protected IHostListProviderService? hostListProviderService;
     protected RdsUrlType? rdsUrlType;
-
-    private readonly ITelemetryCounter writerFailoverTriggered;
-    private readonly ITelemetryCounter writerFailoverSuccess;
-    private readonly ITelemetryCounter writerFailoverFailed;
-    private readonly ITelemetryCounter readerFailoverTriggered;
-    private readonly ITelemetryCounter readerFailoverSuccess;
-    private readonly ITelemetryCounter readerFailoverFailed;
-    private readonly bool telemetryFailoverAdditionalTopTrace;
 
     private bool isClosed;
     protected bool shouldThrowTransactionError = false;
