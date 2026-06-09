@@ -93,7 +93,6 @@ public class OktaAuthPluginTelemetryTests
     {
         _ = new OktaAuthPlugin(
             this.mockPluginService.Object,
-            this.props,
             this.mockCredentialsProviderFactory.Object,
             this.mockTokenUtility.Object);
 
@@ -108,7 +107,6 @@ public class OktaAuthPluginTelemetryTests
     {
         OktaAuthPlugin plugin = new(
             this.mockPluginService.Object,
-            this.props,
             this.mockCredentialsProviderFactory.Object,
             this.mockTokenUtility.Object);
 
@@ -130,7 +128,6 @@ public class OktaAuthPluginTelemetryTests
 
         OktaAuthPlugin plugin = new(
             this.mockPluginService.Object,
-            this.props,
             this.mockCredentialsProviderFactory.Object,
             this.mockTokenUtility.Object);
 

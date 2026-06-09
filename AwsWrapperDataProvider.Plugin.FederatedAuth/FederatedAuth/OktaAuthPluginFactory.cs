@@ -25,6 +25,6 @@ public class OktaAuthPluginFactory : IConnectionPluginFactory
 
         return credentialsProviderFactory == null
             ? throw new Exception("Could not create credentials provider factory for federated authentication")
-            : (IConnectionPlugin)new OktaAuthPlugin(pluginService, props, credentialsProviderFactory, new TokenUtility());
+            : (IConnectionPlugin)new OktaAuthPlugin(pluginService, credentialsProviderFactory, new TokenUtility());
     }
 }

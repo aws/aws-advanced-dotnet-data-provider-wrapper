@@ -45,5 +45,29 @@ IAM database authentication use is limited to certain database engines. For more
 | `IamExpiration`  | Integer |    No    | This property determines how long an IAM token is kept in the driver cache before a new one is generated. The default expiration time is set to 14 minutes and 30 seconds. Note that IAM database authentication tokens have a lifetime of 15 minutes.                                                 | `600`                                               |
 
 ## Examples
-[PG Iam Authentication](../../examples/PGIamAuthentication.cs)
-[MySql Iam Authentication](../../examples/MySqlIamAuthentication.cs)
+[PG Iam Authentication](../../examples/AwsWrapperDataProviderExample/PGIamAuthentication.cs)
+[MySql Iam Authentication](../../examples/AwsWrapperDataProviderExample/MySqlIamAuthentication.cs)
+
+## Using IAM Authentication with Global Databases
+
+When using IAM authentication with [Amazon Aurora Global Databases](https://aws.amazon.com/rds/aurora/global-database/), the IAM user or role requires the additional `rds:DescribeGlobalClusters` permission. This permission allows the driver to resolve the Global Database endpoint to the appropriate regional cluster for IAM token generation.
+
+Example IAM policy:
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "rds-db:connect",
+                "rds:DescribeGlobalClusters"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+```
+
+> [!NOTE]
+> The credentials used by the wrapper to call `DescribeGlobalClusters` are resolved from the AWS SDK's default credentials chain (environment variables, shared profile, instance profile, etc.) — separately from the database-side IAM user.
