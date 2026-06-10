@@ -322,7 +322,6 @@ public class AwsWrapperConnection : DbConnection, IWrapper
 
             HostSpec? connectedHostSpec = this.pluginService.RoutedHostSpec ?? this.pluginService.CurrentHostSpec;
             this.pluginService.SetCurrentConnection(connection, connectedHostSpec);
-            this.pluginService.RoutedHostSpec = null;
             await this.pluginService.RefreshHostListAsync();
 
             telemetryContext.SetSuccess(true);
@@ -335,6 +334,7 @@ public class AwsWrapperConnection : DbConnection, IWrapper
         }
         finally
         {
+            this.pluginService.RoutedHostSpec = null;
             telemetryContext.CloseContext();
         }
     }

@@ -71,16 +71,15 @@ public class HostIdCacheService : IHostIdCacheService
         if (!Cache.TryGetValue(connectionHostSpec.Host, out CachedHostIdentity? cached))
         {
             HostSpec? identified = await pluginService.IdentifyConnectionAsync(connection, transaction);
-            cached = identified == null
-                ? new CachedHostIdentity(null, null)
-                : new CachedHostIdentity(identified.HostId, identified.Host);
-            Cache[connectionHostSpec.Host] = cached;
-        }
+            if (identified == null)
+            {
+                // Couldn't identify the connection (e.g. topology isn't available yet).
+                // Don't cache the miss so a later call can retry the identification.
+                return null;
+            }
 
-        if (cached.HostId == null && cached.Host == null)
-        {
-            // We've already tried to identify the connection, but we got nothing.
-            return null;
+            cached = new CachedHostIdentity(identified.HostId, identified.Host);
+            Cache[connectionHostSpec.Host] = cached;
         }
 
         IList<HostSpec> topology = pluginService.AllHosts;

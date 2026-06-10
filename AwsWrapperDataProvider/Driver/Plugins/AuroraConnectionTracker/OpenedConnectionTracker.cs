@@ -78,7 +78,7 @@ public class OpenedConnectionTracker : IConnectionTracker
     /// </summary>
     /// <param name="hostSpec">The host specification identifying the database instance.</param>
     /// <param name="connection">The database connection to track.</param>
-    public void PopulateOpenedConnectionQueue(HostSpec hostSpec, DbConnection connection)
+    public void PopulateOpenedConnectionQueue(HostSpec? hostSpec, DbConnection? connection)
     {
         if (hostSpec == null || connection == null)
         {
