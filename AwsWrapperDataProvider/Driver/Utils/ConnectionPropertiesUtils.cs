@@ -40,12 +40,29 @@ internal static class ConnectionPropertiesUtils
             throw new ArgumentNullException(nameof(connectionString));
         }
 
+        // Split each pair on the FIRST '=' only. Splitting on every '=' would discard any value
+        // that legitimately contains '=' (for example an AssemblyQualifiedName such as
+        // "...Version=1.0.0.0, Culture=neutral, PublicKeyToken=null", or a password/token that
+        // contains '='). A pair is considered valid only when it contains a '=' and has a
+        // non-empty key.
         var props = connectionString
             .Split(";", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
-            .Select(x => x.Split("=", StringSplitOptions.TrimEntries))
-            .Where(pairs => pairs.Length == 2 && !string.IsNullOrEmpty(pairs[0]))
-            .GroupBy(pairs => pairs[0], StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(g => g.Key, g => g.Last()[1], StringComparer.OrdinalIgnoreCase);
+            .Select(x =>
+            {
+                int separatorIndex = x.IndexOf('=');
+                if (separatorIndex < 0)
+                {
+                    return (Key: string.Empty, Value: string.Empty, HasSeparator: false);
+                }
+
+                return (
+                    Key: x[..separatorIndex].Trim(),
+                    Value: x[(separatorIndex + 1)..].Trim(),
+                    HasSeparator: true);
+            })
+            .Where(pair => pair.HasSeparator && !string.IsNullOrEmpty(pair.Key))
+            .GroupBy(pair => pair.Key, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.Last().Value, StringComparer.OrdinalIgnoreCase);
 
         return props;
     }
