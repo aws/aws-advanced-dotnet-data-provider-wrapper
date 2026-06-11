@@ -30,4 +30,4 @@ The dialect enables support for:
 
 ## Documentation
 
-For comprehensive information about the AWS Advanced .NET Data Provider Wrapper, visit the [main documentation](../docs/). For dialect-specific information, see [Custom Dialects](../docs/using-the-dotnet-driver/CustomDialects.md).
+For comprehensive information about the AWS Advanced .NET Data Provider Wrapper, visit the [main documentation](../docs/). For dialect-specific information, see [Target Connection Dialects](../docs/using-the-dotnet-driver/TargetConnectionDialects.md).

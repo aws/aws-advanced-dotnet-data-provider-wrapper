@@ -59,6 +59,35 @@ public class ConnectionPropertiesUtilsTests
         Assert.True(result.ContainsKey("NoValue"));
     }
 
+    [Theory]
+    [Trait("Category", "Unit")]
+    [InlineData("Host=myhost.example.com;CustomDialect=MyNs.MyDialect, MyAsm, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null", "MyNs.MyDialect, MyAsm, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null")]
+    [InlineData("Host=myhost.example.com;Password=p=ssw0rd=", "p=ssw0rd=")]
+    public void ParseConnectionStringParameters_WithEqualsInValue_PreservesValue(string connectionString, string expectedValue)
+    {
+        var result = ConnectionPropertiesUtils.ParseConnectionStringParameters(connectionString);
+
+        Assert.NotNull(result);
+        Assert.Equal("myhost.example.com", result["Host"]);
+        var actualValue = result.ContainsKey("CustomDialect") ? result["CustomDialect"] : result["Password"];
+        Assert.Equal(expectedValue, actualValue);
+    }
+
+    [Theory]
+    [Trait("Category", "Unit")]
+    // DbConnectionStringBuilder double-quotes values containing reserved characters such as '='.
+    [InlineData("Host=myhost.example.com;CustomDialect=\"MyNs.MyDialect, MyAsm, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null\"", "CustomDialect", "MyNs.MyDialect, MyAsm, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null")]
+    // Single-quoted values are also unwrapped.
+    [InlineData("Host=myhost.example.com;ApplicationName='myapp'", "ApplicationName", "myapp")]
+    public void ParseConnectionStringParameters_WithQuotedValue_StripsSurroundingQuotes(string connectionString, string key, string expectedValue)
+    {
+        var result = ConnectionPropertiesUtils.ParseConnectionStringParameters(connectionString);
+
+        Assert.NotNull(result);
+        Assert.Equal("myhost.example.com", result["Host"]);
+        Assert.Equal(expectedValue, result[key]);
+    }
+
     [Fact]
     [Trait("Category", "Unit")]
     public void ParseConnectionStringParameters_WithExtraWhitespace_TrimsValues()

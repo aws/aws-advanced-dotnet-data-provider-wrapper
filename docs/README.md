@@ -11,7 +11,8 @@
 ## Using the .NET Wrapper
 - [Aurora Global Databases](./using-the-dotnet-driver/GlobalDatabases.md)
 - [Cluster Id](./using-the-dotnet-driver/ClusterId.md)
-- [Custom Dialects](./using-the-dotnet-driver/CustomDialects.md)
+- [Database Dialects](./using-the-dotnet-driver/DatabaseDialects.md)
+- [Target Connection Dialects](./using-the-dotnet-driver/TargetConnectionDialects.md)
 - [Failover Configuration Guide](./using-the-dotnet-driver/FailoverConfigurationGuide.md)
 - [Reader Selection Strategies](./using-the-dotnet-driver/ReaderSelectionStrategies.md)
 - [Support For RDS Multi-Az DB Cluster](./using-the-dotnet-driver/SupportForRDSMultiAzDBCluster.md)
