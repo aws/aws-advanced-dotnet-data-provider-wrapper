@@ -73,6 +73,21 @@ public class ConnectionPropertiesUtilsTests
         Assert.Equal(expectedValue, actualValue);
     }
 
+    [Theory]
+    [Trait("Category", "Unit")]
+    // DbConnectionStringBuilder double-quotes values containing reserved characters such as '='.
+    [InlineData("Host=myhost.example.com;CustomDialect=\"MyNs.MyDialect, MyAsm, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null\"", "CustomDialect", "MyNs.MyDialect, MyAsm, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null")]
+    // Single-quoted values are also unwrapped.
+    [InlineData("Host=myhost.example.com;ApplicationName='myapp'", "ApplicationName", "myapp")]
+    public void ParseConnectionStringParameters_WithQuotedValue_StripsSurroundingQuotes(string connectionString, string key, string expectedValue)
+    {
+        var result = ConnectionPropertiesUtils.ParseConnectionStringParameters(connectionString);
+
+        Assert.NotNull(result);
+        Assert.Equal("myhost.example.com", result["Host"]);
+        Assert.Equal(expectedValue, result[key]);
+    }
+
     [Fact]
     [Trait("Category", "Unit")]
     public void ParseConnectionStringParameters_WithExtraWhitespace_TrimsValues()

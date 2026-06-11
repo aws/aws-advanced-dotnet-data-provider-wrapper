@@ -57,7 +57,7 @@ internal static class ConnectionPropertiesUtils
 
                 return (
                     Key: x[..separatorIndex].Trim(),
-                    Value: x[(separatorIndex + 1)..].Trim(),
+                    Value: StripSurroundingQuotes(x[(separatorIndex + 1)..].Trim()),
                     HasSeparator: true);
             })
             .Where(pair => pair.HasSeparator && !string.IsNullOrEmpty(pair.Key))
@@ -65,6 +65,25 @@ internal static class ConnectionPropertiesUtils
             .ToDictionary(g => g.Key, g => g.Last().Value, StringComparer.OrdinalIgnoreCase);
 
         return props;
+    }
+
+    /// <summary>
+    /// Removes a single matching pair of surrounding single or double quotes from a connection
+    /// string value. ADO.NET's <see cref="System.Data.Common.DbConnectionStringBuilder"/> quotes
+    /// values that contain reserved characters such as '=' or ';' when it serializes a connection
+    /// string (e.g. an AssemblyQualifiedName), so values that originate from a builder may arrive
+    /// wrapped in quotes. Mirroring the driver behavior, the surrounding quotes are stripped.
+    /// </summary>
+    private static string StripSurroundingQuotes(string value)
+    {
+        if (value.Length >= 2 &&
+            ((value[0] == '"' && value[^1] == '"') ||
+             (value[0] == '\'' && value[^1] == '\'')))
+        {
+            return value[1..^1];
+        }
+
+        return value;
     }
 
     internal static void NormalizeConnectionPropertyKeys(ITargetConnectionDialect dialect, Dictionary<string, string> props)
