@@ -16,6 +16,7 @@ using System.Data.Common;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Driver.Utils.Telemetry;
 using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
@@ -27,6 +28,8 @@ namespace AwsWrapperDataProvider.Driver.Plugins.GdbFailover;
 /// </summary>
 public class GdbFailoverPlugin : FailoverPlugin
 {
+    private const string TelemetryFailover = "failover";
+
     private static readonly ILogger<GdbFailoverPlugin> Logger = LoggerUtils.GetLogger<GdbFailoverPlugin>();
 
     protected GlobalDbFailoverMode? activeHomeFailoverMode;
@@ -99,109 +102,156 @@ public class GdbFailoverPlugin : FailoverPlugin
 
     protected override async Task FailoverAsync()
     {
-        var failoverEndTime = DateTime.UtcNow.AddMilliseconds(this.failoverTimeoutMs);
+        ITelemetryFactory telemetryFactory = this.pluginService.TelemetryFactory;
+        ITelemetryContext telemetryContext = telemetryFactory.OpenTelemetryContext(
+            TelemetryFailover, TelemetryTraceLevel.Nested);
 
-        Logger.LogInformation(Resources.GdbFailoverPlugin_FailoverAsync_StartingFailover);
+        var failoverStartTime = DateTime.UtcNow;
+        var failoverEndTime = failoverStartTime.AddMilliseconds(this.failoverTimeoutMs);
 
-        if (!await this.pluginService.ForceRefreshHostListAsync(true, this.failoverTimeoutMs))
+        try
         {
-            Logger.LogError(Resources.GdbFailoverPlugin_FailoverAsync_UnableToRefreshHostList);
-            throw new FailoverFailedException(Resources.GdbFailoverPlugin_FailoverAsync_UnableToRefreshHostList);
-        }
+            Logger.LogInformation(Resources.GdbFailoverPlugin_FailoverAsync_StartingFailover);
 
-        var updatedHosts = this.pluginService.AllHosts;
-        var writerCandidate = updatedHosts.FirstOrDefault(x => x.Role == HostRole.Writer);
+            if (!await this.pluginService.ForceRefreshHostListAsync(true, this.failoverTimeoutMs))
+            {
+                // Let's assume it's a writer failover.
+                this.writerFailoverTriggered.Inc();
+                this.writerFailoverFailed.Inc();
+                Logger.LogError(Resources.GdbFailoverPlugin_FailoverAsync_UnableToRefreshHostList);
+                throw new FailoverFailedException(Resources.GdbFailoverPlugin_FailoverAsync_UnableToRefreshHostList);
+            }
 
-        if (writerCandidate == null)
-        {
-            var message = LoggerUtils.LogTopology(
-                updatedHosts, Resources.GdbFailoverPlugin_FailoverAsync_NoWriterFoundInTopology);
-            Logger.LogError("{Message}", message);
-            throw new FailoverFailedException(message);
-        }
+            var updatedHosts = this.pluginService.AllHosts;
+            var writerCandidate = updatedHosts.FirstOrDefault(x => x.Role == HostRole.Writer);
 
-        // Determine writer region and select failover mode
-        var writerRegion = RdsUtils.GetRdsRegion(writerCandidate.Host);
-        var isHomeRegion = this.homeRegion!.Equals(writerRegion, StringComparison.OrdinalIgnoreCase);
-        Logger.LogDebug(Resources.GdbFailoverPlugin_FailoverAsync_IsHomeRegion, isHomeRegion);
+            if (writerCandidate == null)
+            {
+                this.writerFailoverTriggered.Inc();
+                this.writerFailoverFailed.Inc();
+                var message = LoggerUtils.LogTopology(
+                    updatedHosts, Resources.GdbFailoverPlugin_FailoverAsync_NoWriterFoundInTopology);
+                Logger.LogError("{Message}", message);
+                throw new FailoverFailedException(message);
+            }
 
-        var currentFailoverMode = isHomeRegion
-            ? this.activeHomeFailoverMode!.Value
-            : this.inactiveHomeFailoverMode!.Value;
-        Logger.LogDebug(Resources.GdbFailoverPlugin_FailoverAsync_CurrentFailoverMode, currentFailoverMode);
+            // Determine writer region and select failover mode
+            var writerRegion = RdsUtils.GetRdsRegion(writerCandidate.Host);
+            var isHomeRegion = this.homeRegion!.Equals(writerRegion, StringComparison.OrdinalIgnoreCase);
+            Logger.LogDebug(Resources.GdbFailoverPlugin_FailoverAsync_IsHomeRegion, isHomeRegion);
 
-        switch (currentFailoverMode)
-        {
-            case GlobalDbFailoverMode.StrictWriter:
-                await this.FailoverToWriter(failoverEndTime);
-                break;
-            case GlobalDbFailoverMode.StrictHomeReader:
-                await this.FailoverToAllowedHost(
-                    () => this.pluginService.GetHosts()
-                        .Where(x => x.Role == HostRole.Reader
-                                    && this.homeRegion.Equals(
-                                        RdsUtils.GetRdsRegion(x.Host), StringComparison.OrdinalIgnoreCase))
-                        .ToHashSet(),
-                    HostRole.Reader,
-                    failoverEndTime);
-                break;
-            case GlobalDbFailoverMode.StrictOutOfHomeReader:
-                await this.FailoverToAllowedHost(
-                    () => this.pluginService.GetHosts()
-                        .Where(x => x.Role == HostRole.Reader
-                                    && !this.homeRegion.Equals(
-                                        RdsUtils.GetRdsRegion(x.Host), StringComparison.OrdinalIgnoreCase))
-                        .ToHashSet(),
-                    HostRole.Reader,
-                    failoverEndTime);
-                break;
-            case GlobalDbFailoverMode.StrictAnyReader:
-                await this.FailoverToAllowedHost(
-                    () => this.pluginService.GetHosts()
-                        .Where(x => x.Role == HostRole.Reader)
-                        .ToHashSet(),
-                    HostRole.Reader,
-                    failoverEndTime);
-                break;
-            case GlobalDbFailoverMode.HomeReaderOrWriter:
-                await this.FailoverToAllowedHost(
-                    () => this.pluginService.GetHosts()
-                        .Where(x => x.Role == HostRole.Writer
-                                    || (x.Role == HostRole.Reader
+            var currentFailoverMode = isHomeRegion
+                ? this.activeHomeFailoverMode!.Value
+                : this.inactiveHomeFailoverMode!.Value;
+            Logger.LogDebug(Resources.GdbFailoverPlugin_FailoverAsync_CurrentFailoverMode, currentFailoverMode);
+
+            switch (currentFailoverMode)
+            {
+                case GlobalDbFailoverMode.StrictWriter:
+                    await this.FailoverToWriter(failoverEndTime);
+                    break;
+                case GlobalDbFailoverMode.StrictHomeReader:
+                    await this.FailoverToAllowedHost(
+                        () => this.pluginService.GetHosts()
+                            .Where(x => x.Role == HostRole.Reader
                                         && this.homeRegion.Equals(
-                                            RdsUtils.GetRdsRegion(x.Host), StringComparison.OrdinalIgnoreCase)))
-                        .ToHashSet(),
-                    null,
-                    failoverEndTime);
-                break;
-            case GlobalDbFailoverMode.OutOfHomeReaderOrWriter:
-                await this.FailoverToAllowedHost(
-                    () => this.pluginService.GetHosts()
-                        .Where(x => x.Role == HostRole.Writer
-                                    || (x.Role == HostRole.Reader
+                                            RdsUtils.GetRdsRegion(x.Host), StringComparison.OrdinalIgnoreCase))
+                            .ToHashSet(),
+                        HostRole.Reader,
+                        failoverEndTime);
+                    break;
+                case GlobalDbFailoverMode.StrictOutOfHomeReader:
+                    await this.FailoverToAllowedHost(
+                        () => this.pluginService.GetHosts()
+                            .Where(x => x.Role == HostRole.Reader
                                         && !this.homeRegion.Equals(
-                                            RdsUtils.GetRdsRegion(x.Host), StringComparison.OrdinalIgnoreCase)))
-                        .ToHashSet(),
-                    null,
-                    failoverEndTime);
-                break;
-            case GlobalDbFailoverMode.AnyReaderOrWriter:
-                await this.FailoverToAllowedHost(
-                    () => this.pluginService.GetHosts().ToHashSet(),
-                    null,
-                    failoverEndTime);
-                break;
-            default:
-                throw new NotSupportedException(
-                    string.Format(
-                        Resources.GdbFailoverPlugin_FailoverAsync_UnsupportedFailoverMode,
-                        currentFailoverMode));
-        }
+                                            RdsUtils.GetRdsRegion(x.Host), StringComparison.OrdinalIgnoreCase))
+                            .ToHashSet(),
+                        HostRole.Reader,
+                        failoverEndTime);
+                    break;
+                case GlobalDbFailoverMode.StrictAnyReader:
+                    await this.FailoverToAllowedHost(
+                        () => this.pluginService.GetHosts()
+                            .Where(x => x.Role == HostRole.Reader)
+                            .ToHashSet(),
+                        HostRole.Reader,
+                        failoverEndTime);
+                    break;
+                case GlobalDbFailoverMode.HomeReaderOrWriter:
+                    await this.FailoverToAllowedHost(
+                        () => this.pluginService.GetHosts()
+                            .Where(x => x.Role == HostRole.Writer
+                                        || (x.Role == HostRole.Reader
+                                            && this.homeRegion.Equals(
+                                                RdsUtils.GetRdsRegion(x.Host), StringComparison.OrdinalIgnoreCase)))
+                            .ToHashSet(),
+                        null,
+                        failoverEndTime);
+                    break;
+                case GlobalDbFailoverMode.OutOfHomeReaderOrWriter:
+                    await this.FailoverToAllowedHost(
+                        () => this.pluginService.GetHosts()
+                            .Where(x => x.Role == HostRole.Writer
+                                        || (x.Role == HostRole.Reader
+                                            && !this.homeRegion.Equals(
+                                                RdsUtils.GetRdsRegion(x.Host), StringComparison.OrdinalIgnoreCase)))
+                            .ToHashSet(),
+                        null,
+                        failoverEndTime);
+                    break;
+                case GlobalDbFailoverMode.AnyReaderOrWriter:
+                    await this.FailoverToAllowedHost(
+                        () => this.pluginService.GetHosts().ToHashSet(),
+                        null,
+                        failoverEndTime);
+                    break;
+                default:
+                    throw new NotSupportedException(
+                        string.Format(
+                            Resources.GdbFailoverPlugin_FailoverAsync_UnsupportedFailoverMode,
+                            currentFailoverMode));
+            }
 
-        Logger.LogInformation(
-            Resources.GdbFailoverPlugin_FailoverAsync_EstablishedConnection,
-            this.pluginService.CurrentHostSpec);
-        this.ThrowFailoverSuccessException();
+            Logger.LogInformation(
+                Resources.GdbFailoverPlugin_FailoverAsync_EstablishedConnection,
+                this.pluginService.CurrentHostSpec);
+            this.ThrowFailoverSuccessException();
+        }
+        catch (FailoverSuccessException ex)
+        {
+            telemetryContext.SetSuccess(true);
+            telemetryContext.SetException(ex);
+            throw;
+        }
+        catch (TransactionStateUnknownException ex)
+        {
+            // Failover succeeded but an open transaction was lost. From the
+            // failover-span perspective the failover itself still succeeded.
+            telemetryContext.SetSuccess(true);
+            telemetryContext.SetException(ex);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            telemetryContext.SetSuccess(false);
+            telemetryContext.SetException(ex);
+            throw;
+        }
+        finally
+        {
+            Logger.LogTrace(
+                Resources.GdbFailoverPlugin_FailoverAsync_FailoverElapsed,
+                (long)(DateTime.UtcNow - failoverStartTime).TotalMilliseconds);
+
+            telemetryContext.CloseContext();
+
+            // PostCopy MUST come after CloseContext.
+            if (this.telemetryFailoverAdditionalTopTrace)
+            {
+                telemetryFactory.PostCopy(telemetryContext, TelemetryTraceLevel.ForceTopLevel);
+            }
+        }
     }
 
     /// <summary>
@@ -214,6 +264,8 @@ public class GdbFailoverPlugin : FailoverPlugin
     /// </summary>
     protected virtual async Task FailoverToWriter(DateTime failoverEndTime)
     {
+        this.writerFailoverTriggered.Inc();
+
         FailoverResult? result = null;
         try
         {
@@ -249,9 +301,11 @@ public class GdbFailoverPlugin : FailoverPlugin
                 Resources.GdbFailoverPlugin_FailoverToWriter_ConnectedToWriter,
                 result.HostSpec.Host);
             result = null; // Prevent connection from being closed in finally block
+            this.writerFailoverSuccess.Inc();
         }
         catch (TimeoutException)
         {
+            this.writerFailoverFailed.Inc();
             var allHosts = this.pluginService.AllHosts;
             var writer = allHosts.FirstOrDefault(x => x.Role == HostRole.Writer);
             var writerHost = writer?.Host ?? string.Empty;
@@ -262,6 +316,11 @@ public class GdbFailoverPlugin : FailoverPlugin
                 string.Format(
                     Resources.GdbFailoverPlugin_FailoverToWriter_ExceptionConnectingToWriter,
                     writerHost));
+        }
+        catch (Exception)
+        {
+            this.writerFailoverFailed.Inc();
+            throw;
         }
         finally
         {
@@ -284,6 +343,8 @@ public class GdbFailoverPlugin : FailoverPlugin
         HostRole? verifyRole,
         DateTime failoverEndTime)
     {
+        this.readerFailoverTriggered.Inc();
+
         FailoverResult? result = null;
         try
         {
@@ -291,12 +352,19 @@ public class GdbFailoverPlugin : FailoverPlugin
                 allowedHostsSupplier, verifyRole, failoverEndTime);
             this.pluginService.SetCurrentConnection(result.Connection, result.HostSpec);
             result = null; // Prevent connection from being closed in finally block
+            this.readerFailoverSuccess.Inc();
         }
         catch (TimeoutException)
         {
+            this.readerFailoverFailed.Inc();
             Logger.LogError(Resources.GdbFailoverPlugin_FailoverToAllowedHost_UnableToConnectToReader);
             throw new FailoverFailedException(
                 Resources.GdbFailoverPlugin_FailoverToAllowedHost_UnableToConnectToReader);
+        }
+        catch (Exception)
+        {
+            this.readerFailoverFailed.Inc();
+            throw;
         }
         finally
         {

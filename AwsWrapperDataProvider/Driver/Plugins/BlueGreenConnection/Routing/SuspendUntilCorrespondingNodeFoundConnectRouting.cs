@@ -16,6 +16,7 @@ using System.Data.Common;
 using System.Diagnostics;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Driver.Utils.Telemetry;
 using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
@@ -24,6 +25,7 @@ namespace AwsWrapperDataProvider.Driver.Plugins.BlueGreenConnection.Routing;
 public class SuspendUntilCorrespondingNodeFoundConnectRouting : BaseConnectRouting
 {
     private const long SleepTimeMs = 100L;
+    private const string TelemetrySwitchover = "Blue/Green switchover";
 
     private static readonly ILogger<SuspendUntilCorrespondingNodeFoundConnectRouting> Logger = LoggerUtils.GetLogger<SuspendUntilCorrespondingNodeFoundConnectRouting>();
 
@@ -51,6 +53,9 @@ public class SuspendUntilCorrespondingNodeFoundConnectRouting : BaseConnectRouti
 
         Logger.LogTrace(Resources.SuspendUntilCorrespondingNodeFoundConnectRouting_Apply_WaitConnectUntilCorrespondingNodeFound, hostSpec.Host);
 
+        ITelemetryContext telemetryContext = pluginService.TelemetryFactory
+            .OpenTelemetryContext(TelemetrySwitchover, TelemetryTraceLevel.Nested);
+
         var bgStatus = BlueGreenConnectionCache.Instance.Get<BlueGreenStatus>(this.bgdId);
         var correspondingPair = bgStatus?.CorrespondingNodes.GetValueOrDefault(hostSpec.Host);
 
@@ -61,38 +66,45 @@ public class SuspendUntilCorrespondingNodeFoundConnectRouting : BaseConnectRouti
 
         try
         {
-            while (stopwatch.ElapsedMilliseconds <= timeoutMs
-                   && bgStatus != null
-                   && bgStatus.CurrentPhase != BlueGreenPhaseType.COMPLETED
-                   && (correspondingPair?.Green == null)
-                   && !cts.Token.IsCancellationRequested)
+            try
             {
-                await this.Delay(SleepTimeMs, bgStatus, this.bgdId, cts.Token);
+                while (stopwatch.ElapsedMilliseconds <= timeoutMs
+                       && bgStatus != null
+                       && bgStatus.CurrentPhase != BlueGreenPhaseType.COMPLETED
+                       && (correspondingPair?.Green == null)
+                       && !cts.Token.IsCancellationRequested)
+                {
+                    await this.Delay(SleepTimeMs, bgStatus, this.bgdId, cts.Token);
 
-                bgStatus = BlueGreenConnectionCache.Instance.Get<BlueGreenStatus>(this.bgdId);
-                correspondingPair = bgStatus?.CorrespondingNodes.GetValueOrDefault(hostSpec.Host);
+                    bgStatus = BlueGreenConnectionCache.Instance.Get<BlueGreenStatus>(this.bgdId);
+                    correspondingPair = bgStatus?.CorrespondingNodes.GetValueOrDefault(hostSpec.Host);
+                }
             }
-        }
-        catch (OperationCanceledException)
-        {
-            throw new TimeoutException(string.Format(
-                Resources.SuspendUntilCorrespondingNodeFoundConnectRouting_Apply_CorrespondingNodeNotFoundTryConnectLater, hostSpec.Host, timeoutMs));
-        }
+            catch (OperationCanceledException)
+            {
+                throw new TimeoutException(string.Format(
+                    Resources.SuspendUntilCorrespondingNodeFoundConnectRouting_Apply_CorrespondingNodeNotFoundTryConnectLater, hostSpec.Host, timeoutMs));
+            }
 
-        if (bgStatus == null || bgStatus.CurrentPhase == BlueGreenPhaseType.COMPLETED)
-        {
-            Logger.LogTrace(Resources.SuspendUntilCorrespondingNodeFoundConnectRouting_Apply_CompletedContinueWithConnect, stopwatch.ElapsedMilliseconds);
+            if (bgStatus == null || bgStatus.CurrentPhase == BlueGreenPhaseType.COMPLETED)
+            {
+                Logger.LogTrace(Resources.SuspendUntilCorrespondingNodeFoundConnectRouting_Apply_CompletedContinueWithConnect, stopwatch.ElapsedMilliseconds);
+                return null;
+            }
+
+            if (stopwatch.ElapsedMilliseconds > timeoutMs || cts.Token.IsCancellationRequested)
+            {
+                throw new TimeoutException(string.Format(
+                    Resources.SuspendUntilCorrespondingNodeFoundConnectRouting_Apply_CorrespondingNodeNotFoundTryConnectLater, hostSpec.Host, timeoutMs));
+            }
+
+            Logger.LogTrace(Resources.SuspendUntilCorrespondingNodeFoundConnectRouting_Apply_CorrespondingNodeFoundContinueWithConnect, hostSpec.Host, stopwatch.ElapsedMilliseconds);
+
             return null;
         }
-
-        if (stopwatch.ElapsedMilliseconds > timeoutMs || cts.Token.IsCancellationRequested)
+        finally
         {
-            throw new TimeoutException(string.Format(
-                Resources.SuspendUntilCorrespondingNodeFoundConnectRouting_Apply_CorrespondingNodeNotFoundTryConnectLater, hostSpec.Host, timeoutMs));
+            telemetryContext.CloseContext();
         }
-
-        Logger.LogTrace(Resources.SuspendUntilCorrespondingNodeFoundConnectRouting_Apply_CorrespondingNodeFoundContinueWithConnect, hostSpec.Host, stopwatch.ElapsedMilliseconds);
-
-        return null;
     }
 }
