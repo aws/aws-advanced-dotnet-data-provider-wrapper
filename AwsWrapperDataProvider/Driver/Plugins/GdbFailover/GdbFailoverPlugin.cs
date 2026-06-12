@@ -317,6 +317,11 @@ public class GdbFailoverPlugin : FailoverPlugin
                     Resources.GdbFailoverPlugin_FailoverToWriter_ExceptionConnectingToWriter,
                     writerHost));
         }
+        catch (Exception)
+        {
+            this.writerFailoverFailed.Inc();
+            throw;
+        }
         finally
         {
             if (result != null && result.Connection != this.pluginService.CurrentConnection)
