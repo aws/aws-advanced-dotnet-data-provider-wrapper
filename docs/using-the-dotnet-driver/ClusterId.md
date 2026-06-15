@@ -45,7 +45,7 @@ The wrapper uses `ClusterId` as a cache key for topology information and monitor
 
 The following diagram shows how connections with the same `ClusterId` share cached resources:
 
-![Single Cluster Example](../images/cluster_id_one_cluster_example.jpg)
+![Single Cluster Example](../images/cluster_id_one_cluster_example_dotnet.jpg)
 
 **Key Points:**
 - Three connections use different connection strings (custom endpoint, IP address, cluster endpoint) but all specify **`ClusterId: "foo"`**
@@ -59,7 +59,7 @@ The following diagram shows how connections with the same `ClusterId` share cach
 
 The following diagram shows how different `ClusterId` values maintain separate caches for different clusters.
 
-![Two Cluster Example](../images/cluster_id_two_cluster_example.jpg)
+![Two Cluster Example](../images/cluster_id_two_cluster_example_dotnet.jpg)
 
 **Key Points:**
 - Connection 1 and Connection 3 use **`ClusterId: "foo"`** and share the same cache entries
