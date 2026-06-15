@@ -320,8 +320,7 @@ public class AwsWrapperConnection : DbConnection, IWrapper
                 true,
                 async);
 
-            HostSpec? connectedHostSpec = this.pluginService.RoutedHostSpec ?? this.pluginService.CurrentHostSpec;
-            this.pluginService.SetCurrentConnection(connection, connectedHostSpec);
+            this.pluginService.SetCurrentConnection(connection, this.pluginService.CurrentHostSpec);
             await this.pluginService.RefreshHostListAsync();
 
             telemetryContext.SetSuccess(true);
