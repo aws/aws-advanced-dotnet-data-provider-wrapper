@@ -119,14 +119,19 @@ public class AuroraConnectionTrackerPlugin : AbstractConnectionPlugin
             return conn;
         }
 
-        var rdsUrlType = RdsUtils.IdentifyRdsType(hostSpec.Host);
+        HostSpec connectionHostSpec = this.pluginService.RoutedHostSpec ?? hostSpec;
+        var rdsUrlType = RdsUtils.IdentifyRdsType(connectionHostSpec.Host);
         if (rdsUrlType.IsRdsCluster || rdsUrlType == RdsUrlType.Other || rdsUrlType == RdsUrlType.IpAddress)
         {
-            hostSpec.ResetAliases();
-            await this.pluginService.FillAliasesAsync(conn, hostSpec);
+            HostSpec? identifiedHostSpec = await this.pluginService.IdentifyConnectionAsync(conn, connectionHostSpec);
+            if (identifiedHostSpec != null)
+            {
+                connectionHostSpec = identifiedHostSpec;
+                this.pluginService.RoutedHostSpec = identifiedHostSpec;
+            }
         }
 
-        this.tracker.PopulateOpenedConnectionQueue(hostSpec, conn);
+        this.tracker.PopulateOpenedConnectionQueue(connectionHostSpec, conn);
 
         return conn;
     }

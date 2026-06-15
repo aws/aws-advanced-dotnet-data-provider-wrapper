@@ -145,10 +145,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
                         continue;
                     }
 
-                    if (isInitialConnection)
-                    {
-                        this.hostListProviderService.InitialConnectionHostSpec = writerCandidate;
-                    }
+                    this.pluginService.RoutedHostSpec = writerCandidate;
 
                     return writerConnectionCandidate;
                 }
@@ -163,10 +160,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
                     continue;
                 }
 
-                if (isInitialConnection)
-                {
-                    this.hostListProviderService.InitialConnectionHostSpec = writerCandidate;
-                }
+                this.pluginService.RoutedHostSpec = writerCandidate;
 
                 return writerConnectionCandidate;
             }
@@ -180,7 +174,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
 
                 if (writerCandidate != null)
                 {
-                    this.pluginService.SetAvailability(writerCandidate.AsAliases(), HostAvailability.Unavailable);
+                    this.pluginService.SetAvailability(writerCandidate, HostAvailability.Unavailable);
                 }
             }
             catch
@@ -245,10 +239,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
                     {
                         if (this.HasNoReader())
                         {
-                            if (isInitialConnection)
-                            {
-                                this.hostListProviderService.InitialConnectionHostSpec = readerCandidate;
-                            }
+                            this.pluginService.RoutedHostSpec = readerCandidate;
 
                             return readerConnectionCandidate;
                         }
@@ -258,10 +249,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
                         continue;
                     }
 
-                    if (isInitialConnection)
-                    {
-                        this.hostListProviderService.InitialConnectionHostSpec = readerCandidate;
-                    }
+                    this.pluginService.RoutedHostSpec = readerCandidate;
 
                     return readerConnectionCandidate;
                 }
@@ -274,10 +262,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
 
                     if (this.HasNoReader())
                     {
-                        if (isInitialConnection)
-                        {
-                            this.hostListProviderService.InitialConnectionHostSpec = readerCandidate;
-                        }
+                        this.pluginService.RoutedHostSpec = readerCandidate;
 
                         return readerConnectionCandidate;
                     }
@@ -287,10 +272,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
                     continue;
                 }
 
-                if (isInitialConnection)
-                {
-                    this.hostListProviderService.InitialConnectionHostSpec = readerCandidate;
-                }
+                this.pluginService.RoutedHostSpec = readerCandidate;
 
                 return readerConnectionCandidate;
             }
@@ -304,7 +286,7 @@ public class AuroraInitialConnectionStrategyPlugin : AbstractConnectionPlugin
 
                 if (readerCandidate != null)
                 {
-                    this.pluginService.SetAvailability(readerCandidate.AsAliases(), HostAvailability.Unavailable);
+                    this.pluginService.SetAvailability(readerCandidate, HostAvailability.Unavailable);
                 }
             }
             catch

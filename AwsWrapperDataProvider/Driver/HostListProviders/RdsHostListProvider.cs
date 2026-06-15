@@ -141,7 +141,6 @@ public class RdsHostListProvider : IDynamicHostListProvider
                 false));
         if (this.initialHostList.Count == 0)
         {
-            // TODO: move error string to resx file.
             throw new InvalidOperationException(string.Format(Resources.Error_NotFoundInConnectionString, "primaryClusterHosts"));
         }
 

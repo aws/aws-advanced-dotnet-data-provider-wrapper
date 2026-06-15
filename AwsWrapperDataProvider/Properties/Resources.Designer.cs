@@ -2824,15 +2824,6 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to No RDS instance host found for &apos;{0}&apos;. This may be a custom domain. Tracking connection by all aliases..
-        /// </summary>
-        internal static string OpenedConnectionTracker_PopulateOpenedConnectionQueue_TrackingByAllAliases {
-            get {
-                return ResourceManager.GetString("OpenedConnectionTracker_PopulateOpenedConnectionQueue_TrackingByAllAliases", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Background connection tracker pruning task encountered an error while removing stale connection references..
         /// </summary>
         internal static string OpenedConnectionTracker_PruneLoop_Error {

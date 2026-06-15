@@ -218,7 +218,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
                     throw;
                 }
 
-                this.pluginService.SetAvailability(hostSpec.AsAliases(), HostAvailability.Unavailable);
+                this.pluginService.SetAvailability(hostSpec, HostAvailability.Unavailable);
 
                 try
                 {
@@ -315,7 +315,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
             if (this.pluginService.CurrentHostSpec != null)
             {
                 Logger.LogInformation(Resources.FailoverPlugin_DealWithOriginalExceptionAsync_MarkingHostUnavailable, this.pluginService.CurrentHostSpec.Host);
-                this.pluginService.SetAvailability(this.pluginService.CurrentHostSpec.AsAliases(), HostAvailability.Unavailable);
+                this.pluginService.SetAvailability(this.pluginService.CurrentHostSpec, HostAvailability.Unavailable);
             }
 
             await this.PickNewConnectionAsync();
@@ -413,7 +413,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
             // Update reader candidates, topology may have changed
             await this.pluginService.ForceRefreshHostListAsync(false, 10000);
             hosts = this.pluginService.GetHosts();
-            hosts.ToList().ForEach(hostSpec => this.pluginService.SetAvailability(hostSpec.AsAliases(), HostAvailability.Available));
+            hosts.ToList().ForEach(hostSpec => this.pluginService.SetAvailability(hostSpec, HostAvailability.Available));
             var readerCandidates = hosts.Where(h => h.Role == HostRole.Reader).ToHashSet();
 
             // First, try all original readers

@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Collections.Concurrent;
-
 namespace AwsWrapperDataProvider.Driver.HostInfo;
 
 /// <summary>
@@ -22,13 +20,13 @@ namespace AwsWrapperDataProvider.Driver.HostInfo;
 /// </summary>
 public class HostSpec
 {
-    private readonly ConcurrentDictionary<string, byte> aliases = new();
-    private readonly ConcurrentDictionary<string, byte> allAliases = new();
-
     public const int NoPort = -1;
     public const long DefaultWeight = 100;
 
+    /// <summary>Gets the host id. Could be a node name, node domain name, or some gibberish code.</summary>
     public string? HostId { get; }
+
+    /// <summary>Gets the full domain name.</summary>
     public string Host { get; }
     public int Port { get; }
     public bool IsPortSpecified => this.Port != NoPort;
@@ -86,8 +84,6 @@ public class HostSpec
         this.RawAvailability = availability;
         this.Weight = weight;
         this.LastUpdateTime = lastUpdateTime;
-
-        this.allAliases.TryAdd(this.AsAlias(), 0);
     }
 
     public HostSpec(HostSpec copyHost, HostRole role)
@@ -103,62 +99,6 @@ public class HostSpec
     }
 
     public string GetHostAndPort() => this.IsPortSpecified ? $"{this.Host}:{this.Port}" : this.Host;
-
-    public string AsAlias()
-    {
-        return this.GetHostAndPort();
-    }
-
-    public ICollection<string> AsAliases()
-    {
-        return this.allAliases.Keys;
-    }
-
-    public ICollection<string> GetAliases()
-    {
-        return this.aliases.Keys;
-    }
-
-    public void AddAlias(params string[] aliases)
-    {
-        if (aliases == null || aliases.Length == 0)
-        {
-            return;
-        }
-
-        foreach (string alias in aliases)
-        {
-            if (!string.IsNullOrEmpty(alias))
-            {
-                this.aliases.TryAdd(alias, 0);
-                this.allAliases.TryAdd(alias, 0);
-            }
-        }
-    }
-
-    public void RemoveAlias(params string[] aliases)
-    {
-        if (aliases == null || aliases.Length == 0)
-        {
-            return;
-        }
-
-        foreach (string alias in aliases)
-        {
-            if (!string.IsNullOrEmpty(alias))
-            {
-                this.aliases.TryRemove(alias, out _);
-                this.allAliases.TryRemove(alias, out _);
-            }
-        }
-    }
-
-    public void ResetAliases()
-    {
-        this.aliases.Clear();
-        this.allAliases.Clear();
-        this.allAliases.TryAdd(this.AsAlias(), 0);
-    }
 
     public override bool Equals(object? obj)
     {
@@ -200,8 +140,6 @@ public class HostSpec
 
     public HostSpec Clone()
     {
-        HostSpec copy = new(this.Host, this.Port, this.HostId, this.Role, this.RawAvailability, this.Weight, this.LastUpdateTime);
-        copy.AddAlias(this.aliases.Keys.ToArray());
-        return copy;
+        return new(this.Host, this.Port, this.HostId, this.Role, this.RawAvailability, this.Weight, this.LastUpdateTime);
     }
 }
