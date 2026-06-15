@@ -112,12 +112,16 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
 
         if (hostSpec != null)
         {
-            RdsUrlType type = RdsUtils.IdentifyRdsType(hostSpec.Host);
+            HostSpec connectionHostSpec = this.pluginService.RoutedHostSpec ?? hostSpec;
+            RdsUrlType type = RdsUtils.IdentifyRdsType(connectionHostSpec.Host);
 
             if (type.IsRdsCluster)
             {
-                hostSpec.ResetAliases();
-                await this.pluginService.FillAliasesAsync(conn, hostSpec);
+                HostSpec? identifiedHostSpec = await this.pluginService.IdentifyConnectionAsync(conn, connectionHostSpec);
+                if (identifiedHostSpec != null)
+                {
+                    this.pluginService.RoutedHostSpec = identifiedHostSpec;
+                }
             }
         }
 
@@ -133,21 +137,24 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
     {
         if (this.monitoringHostSpec == null)
         {
-            this.monitoringHostSpec = this.pluginService.CurrentHostSpec!;
+            this.monitoringHostSpec = this.pluginService.RoutedHostSpec ?? this.pluginService.CurrentHostSpec!;
             RdsUrlType rdsUrlType = RdsUtils.IdentifyRdsType(this.monitoringHostSpec.Host);
 
             try
             {
-                if (rdsUrlType.IsRdsCluster)
+                if (rdsUrlType != RdsUrlType.RdsInstance)
                 {
                     Logger.LogTrace(Resources.EfmHostMonitoringPlugin_GetMonitoringHostSpec_ClusterEndpointIdentification);
-                    this.monitoringHostSpec = await this.pluginService.IdentifyConnectionAsync(this.pluginService.CurrentConnection!, this.pluginService.CurrentTransaction);
-                    if (this.monitoringHostSpec == null)
+                    HostSpec? identifiedHostSpec = await this.pluginService.IdentifyConnectionAsync(
+                        this.pluginService.CurrentConnection!,
+                        this.pluginService.CurrentHostSpec!,
+                        this.pluginService.CurrentTransaction);
+                    if (identifiedHostSpec != null)
                     {
-                        throw new Exception(Resources.Error_UnableToIdentifyConnectionAndGatherMonitoringHostSpec);
+                        // Update identified HostSpec for the current connection.
+                        this.monitoringHostSpec = identifiedHostSpec;
+                        this.pluginService.SetCurrentConnection(this.pluginService.CurrentConnection, this.monitoringHostSpec);
                     }
-
-                    await this.pluginService.FillAliasesAsync(this.pluginService.CurrentConnection!, this.monitoringHostSpec, this.pluginService.CurrentTransaction);
                 }
             }
             catch (Exception ex)

@@ -47,6 +47,7 @@ public class PluginService : IPluginService, IHostListProviderService
     private readonly ConnectionPluginManager pluginManager;
     private readonly Dictionary<string, string> props;
     private readonly DialectProvider dialectProvider;
+    private readonly IHostIdCacheService hostIdCacheService = new HostIdCacheService();
     private volatile IHostListProvider hostListProvider;
     private HostSpec? currentHostSpec;
 
@@ -59,6 +60,7 @@ public class PluginService : IPluginService, IHostListProviderService
     public bool IsDialectConfirmed { get; private set; }
     public ITargetConnectionDialect TargetConnectionDialect { get; }
     public HostSpec? InitialConnectionHostSpec { get; set; }
+    public HostSpec? RoutedHostSpec { get; set; }
     public HostSpec? CurrentHostSpec { get => this.currentHostSpec ?? this.GetCurrentHostSpec(); }
     public IList<HostSpec> AllHosts { get; private set; } = [];
     public IHostListProvider? HostListProvider { get => this.hostListProvider; set => this.hostListProvider = value ?? throw new ArgumentNullException(nameof(value)); }
@@ -221,16 +223,11 @@ public class PluginService : IPluginService, IHostListProviderService
         AllowedAndBlockedHostsCache.Set(connectionUrl, allowedAndBlockedHosts, DefaultHostAvailabilityCacheExpiration);
     }
 
-    public void SetAvailability(ICollection<string> hostAliases, HostAvailability availability)
+    public void SetAvailability(HostSpec hostSpec, HostAvailability availability)
     {
-        if (hostAliases.Count == 0)
-        {
-            return;
-        }
-
         List<HostSpec> hostsToChange = this.AllHosts
-            .Where(host => hostAliases.Contains(host.AsAlias())
-                        || host.GetAliases().Any(alias => hostAliases.Contains(alias)))
+            .Where(host => (hostSpec.HostId != null && hostSpec.HostId == host.HostId)
+                        || (hostSpec.Host != null && string.Equals(hostSpec.Host, host.Host, StringComparison.OrdinalIgnoreCase)))
             .Distinct()
             .ToList();
 
@@ -362,41 +359,9 @@ public class PluginService : IPluginService, IHostListProviderService
         return this.hostListProvider.IdentifyConnectionAsync(connection, transaction);
     }
 
-    public async Task FillAliasesAsync(DbConnection connection, HostSpec hostSpec, DbTransaction? transaction = null)
+    public Task<HostSpec?> IdentifyConnectionAsync(DbConnection connection, HostSpec connectionHostSpec, DbTransaction? transaction = null)
     {
-        if (hostSpec.GetAliases().Count > 0)
-        {
-            return;
-        }
-
-        hostSpec.AddAlias(hostSpec.AsAlias());
-        try
-        {
-            await using var command = connection.CreateCommand();
-            command.CommandText = this.Dialect.HostAliasQuery;
-            command.Transaction = transaction;
-
-            await using var resultSet = await command.ExecuteReaderAsync();
-            while (await resultSet.ReadAsync())
-            {
-                string alias = resultSet.GetString(0);
-                hostSpec.AddAlias(alias);
-            }
-        }
-        catch
-        {
-            // ignore
-        }
-
-        HostSpec? existingHostSpec = await this.IdentifyConnectionAsync(connection, transaction);
-        if (existingHostSpec != null)
-        {
-            var aliases = existingHostSpec.AsAliases();
-            foreach (string alias in aliases)
-            {
-                hostSpec.AddAlias(alias);
-            }
-        }
+        return this.hostIdCacheService.IdentifyConnectionAsync(connection, connectionHostSpec, this, transaction);
     }
 
     public IConnectionProvider GetConnectionProvider()

@@ -142,7 +142,7 @@ public class DefaultConnectionPlugin(
             await this.pluginService.UpdateDialectAsync(conn);
         }
 
-        this.pluginService.SetAvailability(hostSpec!.AsAliases(), HostAvailability.Available);
+        this.pluginService.SetAvailability(hostSpec!, HostAvailability.Available);
 
         return conn;
     }

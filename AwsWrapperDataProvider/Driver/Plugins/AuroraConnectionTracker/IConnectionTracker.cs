@@ -22,7 +22,7 @@ namespace AwsWrapperDataProvider.Driver.Plugins.AuroraConnectionTracker;
 /// </summary>
 public interface IConnectionTracker
 {
-    void PopulateOpenedConnectionQueue(HostSpec hostSpec, DbConnection connection);
+    void PopulateOpenedConnectionQueue(HostSpec? hostSpec, DbConnection? connection);
 
     void InvalidateAllConnections(HostSpec hostSpec);
 

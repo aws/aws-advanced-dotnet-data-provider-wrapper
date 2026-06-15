@@ -43,6 +43,13 @@ public interface IPluginService : IExceptionHandlerService
 
     HostSpec? InitialConnectionHostSpec { get; }
 
+    /// <summary>
+    /// Gets or sets the host specification recorded when a connection is routed to a host that differs from the
+    /// originally requested host (for example by AuroraInitialConnectionStrategy or Limitless plugins). This is used
+    /// to identify the actual host the current connection points to.
+    /// </summary>
+    HostSpec? RoutedHostSpec { get; set; }
+
     IList<HostSpec> AllHosts { get; }
 
     IHostListProvider? HostListProvider { get; }
@@ -79,11 +86,12 @@ public interface IPluginService : IExceptionHandlerService
     Task<HostRole> GetHostRole(DbConnection? connection);
 
     /// <summary>
-    /// Sets the availability of hosts.
+    /// Sets the availability of the host matching the given host specification.
+    /// Hosts are matched by host id or host name.
     /// </summary>
-    /// <param name="hostAliases">Set of host aliases.</param>
+    /// <param name="hostSpec">The host specification identifying the host(s) to update.</param>
     /// <param name="availability">The availability status.</param>
-    void SetAvailability(ICollection<string> hostAliases, HostAvailability availability);
+    void SetAvailability(HostSpec hostSpec, HostAvailability availability);
 
     /// <summary>
     /// Sets the allowed and blocked hosts for the given connection URL.
@@ -150,13 +158,13 @@ public interface IPluginService : IExceptionHandlerService
     Task<HostSpec?> IdentifyConnectionAsync(DbConnection connection, DbTransaction? transaction = null);
 
     /// <summary>
-    /// Fills in aliases for the given host specification using the connection.
+    /// Identifies the host associated with the given connection, using the host id cache when available.
     /// </summary>
     /// <param name="connection">The database connection.</param>
-    /// <param name="hostSpec">The host specification.</param>
+    /// <param name="connectionHostSpec">The host specification of the provided connection.</param>
     /// <param name="transaction">The database transaction.</param>
-    /// <returns>The task.</returns>
-    Task FillAliasesAsync(DbConnection connection, HostSpec hostSpec, DbTransaction? transaction = null);
+    /// <returns>The identified host specification, or null if it cannot be identified.</returns>
+    Task<HostSpec?> IdentifyConnectionAsync(DbConnection connection, HostSpec connectionHostSpec, DbTransaction? transaction = null);
 
     /// <summary>
     /// Gets the connection provider.

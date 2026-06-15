@@ -96,7 +96,7 @@ public class OpenedConnectionTrackerTelemetryTests
 
         OpenedConnectionTracker tracker = new(mockPluginService.Object);
 
-        // Passing null forces hostSpec.AsAlias() inside the try block to
+        // Passing null forces hostSpec.GetHostAndPort() inside the try block to
         // throw — a deterministic way to exercise the catch branch without
         // invasive mock surgery. The public contract is non-null; this test
         // verifies the telemetry wrap records and rethrows rather than
