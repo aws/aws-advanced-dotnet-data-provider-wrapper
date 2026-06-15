@@ -373,17 +373,6 @@ public static class PropertyDefinition
         "false",
         "When true, failover traces are also submitted as independent top-level traces via PostCopy so that failover events appear as standalone traces.");
 
-    // Host Id Cache Properties
-    public static readonly AwsWrapperProperty HostCacheEnabled = new(
-        "HostCacheEnabled",
-        "true",
-        "Enables caching of host identification results by the connection host name. When enabled, subsequent calls to identify a connection for the same host will use the cached result instead of querying the database again.");
-
-    public static readonly AwsWrapperProperty HostCacheRegexp = new(
-        "HostCacheRegexp",
-        ".*",
-        "A regular expression controlling which host names are eligible for host identification caching. Only hosts whose names match this regular expression will have their identification results cached or retrieved from the cache.");
-
     /// <summary>
     /// A set of AwsWrapperProperties that is used by the wrapper and should not be passed to the target driver.
     /// </summary>
@@ -492,10 +481,6 @@ public static class PropertyDefinition
         TelemetryMetricsBackend,
         TelemetrySubmitTopLevel,
         TelemetryFailoverAdditionalTopTrace,
-
-        // Host Id Cache Properties
-        HostCacheEnabled,
-        HostCacheRegexp,
     ];
 
     public static readonly string EfmMonitoringPropertyPrefix = "monitoring-";

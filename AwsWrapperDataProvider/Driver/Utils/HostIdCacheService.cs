@@ -30,13 +30,24 @@ namespace AwsWrapperDataProvider.Driver.Utils;
 /// </summary>
 public class HostIdCacheService : IHostIdCacheService
 {
+    // Application-wide configuration read once per process from environment variables. These are
+    // intentionally NOT connection-string properties: the cache below is a process-wide static shared
+    // by every connection, so a single global toggle/regex governs it.
+    public const string EnvEnabled = "AWS_DOTNET_HOST_CACHE_ENABLED";
+    public const string EnvRegexp = "AWS_DOTNET_HOST_CACHE_REGEXP";
+
+    private static readonly bool IsEnabled =
+        !bool.TryParse(Environment.GetEnvironmentVariable(EnvEnabled), out bool enabled) || enabled;
+
+    private static readonly string HostRegexp =
+        Environment.GetEnvironmentVariable(EnvRegexp) is { Length: > 0 } regexp ? regexp : ".*";
+
     private static readonly ConcurrentDictionary<string, CachedHostIdentity> Cache = new();
 
     public async Task<HostSpec?> IdentifyConnectionAsync(
         DbConnection connection,
         HostSpec connectionHostSpec,
         IPluginService pluginService,
-        Dictionary<string, string> props,
         DbTransaction? transaction = null)
     {
         RdsUrlType urlType = RdsUtils.IdentifyRdsType(connectionHostSpec.Host);
@@ -48,9 +59,7 @@ public class HostIdCacheService : IHostIdCacheService
 
         if (urlType == RdsUrlType.IpAddress || urlType == RdsUrlType.Other)
         {
-            bool isEnabled = PropertyDefinition.HostCacheEnabled.GetBoolean(props);
-            string hostRegexp = PropertyDefinition.HostCacheRegexp.GetString(props) ?? ".*";
-            if (isEnabled && Regex.IsMatch(connectionHostSpec.Host, hostRegexp))
+            if (IsEnabled && Regex.IsMatch(connectionHostSpec.Host, HostRegexp))
             {
                 return await this.GetCachedHostSpecAsync(connection, connectionHostSpec, pluginService, transaction);
             }

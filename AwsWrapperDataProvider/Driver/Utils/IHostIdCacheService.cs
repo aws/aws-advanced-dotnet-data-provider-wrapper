@@ -29,13 +29,11 @@ public interface IHostIdCacheService
     /// <param name="connection">The connection to be identified.</param>
     /// <param name="connectionHostSpec">The host specification of the provided connection.</param>
     /// <param name="pluginService">The plugin service instance.</param>
-    /// <param name="props">The connection properties.</param>
     /// <param name="transaction">The database transaction.</param>
     /// <returns>The identified host specification for the connection, or null if it cannot be identified.</returns>
     Task<HostSpec?> IdentifyConnectionAsync(
         DbConnection connection,
         HostSpec connectionHostSpec,
         IPluginService pluginService,
-        Dictionary<string, string> props,
         DbTransaction? transaction = null);
 }

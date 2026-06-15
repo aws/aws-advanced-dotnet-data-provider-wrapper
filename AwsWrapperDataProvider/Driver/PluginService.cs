@@ -361,7 +361,7 @@ public class PluginService : IPluginService, IHostListProviderService
 
     public Task<HostSpec?> IdentifyConnectionAsync(DbConnection connection, HostSpec connectionHostSpec, DbTransaction? transaction = null)
     {
-        return this.hostIdCacheService.IdentifyConnectionAsync(connection, connectionHostSpec, this, this.props, transaction);
+        return this.hostIdCacheService.IdentifyConnectionAsync(connection, connectionHostSpec, this, transaction);
     }
 
     public IConnectionProvider GetConnectionProvider()
