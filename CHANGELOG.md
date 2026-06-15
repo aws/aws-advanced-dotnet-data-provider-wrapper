@@ -31,12 +31,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - The [Global Database Failover Plugin](./docs/using-the-dotnet-driver/using-plugins/UsingTheGdbFailoverPlugin.md) (`gdbFailover`), introducing home-region awareness and configurable failover logic for in-home and out-of-home scenarios ([PR #292](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/292)).
 - The [Global Database Read/Write Splitting Plugin](./docs/using-the-dotnet-driver/using-plugins/UsingTheGdbReadWriteSplittingPlugin.md) (`gdbReadWriteSplitting`), introducing home-region restrictions and optional global write forwarding for read/write splitting connections ([PR #293](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/293)).
 - IAM and federated (ADFS/Okta) authentication support for Aurora Global Database endpoints, resolving the region via the `DescribeGlobalClusters` RDS API ([PR #297](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/297)).
+- Telemetry for the Global Database and Blue/Green plugins ([PR #303](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/303)).
 - Documentation:
   - [ClusterId](./docs/using-the-dotnet-driver/ClusterId.md), [Aurora Global Databases](./docs/using-the-dotnet-driver/GlobalDatabases.md), and the GDB plugins ([PR #300](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/300)).
   - [Database Dialects](./docs/using-the-dotnet-driver/DatabaseDialects.md) and [Target Connection Dialects](./docs/using-the-dotnet-driver/TargetConnectionDialects.md) ([PR #304](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/304)).
-
-### :crab: Changed
-- Added missing telemetry for the Global Database and Blue/Green plugins ([PR #303](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/303)).
 
 ## [1.2.0] - 2026-06-02
 
