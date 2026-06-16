@@ -23,11 +23,11 @@ namespace AwsWrapperDataProvider.Driver.Exceptions;
 
 public class PgExceptionHandler : GenericExceptionHandler
 {
-    private static readonly ILogger<PgExceptionHandler> Logger = LoggerUtils.GetLogger<PgExceptionHandler>();
-
     // SQLSTATE 25006 - read-only SQL transaction. Raised when a write is attempted against a
     // node that is in read-only mode (e.g. a former writer demoted to reader after a failover).
     private const string ReadOnlyConnectionSqlState = "25006";
+
+    private static readonly ILogger<PgExceptionHandler> Logger = LoggerUtils.GetLogger<PgExceptionHandler>();
 
     protected override IReadOnlySet<string> NetworkErrorStates { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {

@@ -23,6 +23,9 @@ namespace AwsWrapperDataProvider.Driver.Exceptions;
 
 public class MySqlExceptionHandler : GenericExceptionHandler
 {
+    // SQLSTATE 25006 - read-only SQL transaction (reported by MySqlConnector for read-only writes).
+    private const string ReadOnlyConnectionSqlState = "25006";
+
     private static readonly ILogger<MySqlExceptionHandler> Logger = LoggerUtils.GetLogger<MySqlExceptionHandler>();
 
     private static bool IsMySqlException(Exception exception)
@@ -66,9 +69,6 @@ public class MySqlExceptionHandler : GenericExceptionHandler
         1064, // ER_PARSE_ERROR
         1049, // ER_BAD_DB_ERROR
     };
-
-    // SQLSTATE 25006 - read-only SQL transaction (reported by MySqlConnector for read-only writes).
-    private const string ReadOnlyConnectionSqlState = "25006";
 
     // MySQL server error numbers that indicate the connection/server is in read-only mode.
     private static IReadOnlySet<int> ReadOnlyConnectionErrorNumbers { get; } = new HashSet<int>()

@@ -313,11 +313,21 @@ public class AwsWrapperConnection : DbConnection, IWrapper
         {
             await this.PluginManager.InitHostProvider(this.connectionString!, this.ConnectionProperties!, this.hostListProviderService);
 
-            // Always open against the originally configured endpoint (typically the cluster endpoint), not the
-            // previously resolved/pinned instance. This mirrors the JDBC wrapper, whose initial-connection strategy
-            // always receives originalConnectHost. Reusing the pinned instance host here would bypass writer
-            // re-resolution on a fresh open after a failover, landing on a demoted (now read-only) instance.
-            HostSpec? connectHostSpec = this.pluginService.OriginalHostSpec ?? this.pluginService.CurrentHostSpec;
+            // Decide which host a fresh open should connect against.
+            //
+            // When the configured endpoint is a cluster endpoint, always reconnect through it (the original
+            // configured host) rather than a previously resolved/pinned instance. This lets writer re-resolution
+            // (or Aurora DNS) route to the current writer after a failover instead of landing on a demoted,
+            // now read-only instance.
+            //
+            // When the configured endpoint is an instance endpoint, keep using CurrentHostSpec: it reflects the
+            // instance the connection currently points to, including the new writer selected by an in-flight
+            // failover. Reconnecting to the original instance endpoint would ignore that and land on the old node.
+            HostSpec? originalHostSpec = this.pluginService.OriginalHostSpec;
+            HostSpec? connectHostSpec =
+                originalHostSpec != null && RdsUtils.IdentifyRdsType(originalHostSpec.Host).IsRdsCluster
+                    ? originalHostSpec
+                    : this.pluginService.CurrentHostSpec;
 
             DbConnection connection = await WrapperUtils.OpenWithPlugins(
                 this.PluginManager,

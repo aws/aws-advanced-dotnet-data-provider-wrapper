@@ -117,7 +117,7 @@ public class EntityFrameworkGdbFailoverConnectivityTests : EFIntegrationTestBase
             await db.Database.CloseConnectionAsync();
 
             Person john = new() { FirstName = "John", LastName = "Smith" };
-            await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
+            await AssertFailoverSuccessAsync(async () =>
             {
                 var connection = db.Database.GetDbConnection();
                 try
@@ -213,7 +213,7 @@ public class EntityFrameworkGdbFailoverConnectivityTests : EFIntegrationTestBase
             await db.Database.CloseConnectionAsync();
 
             Person john = new() { FirstName = "John", LastName = "Smith" };
-            await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
+            await AssertFailoverSuccessAsync(async () =>
             {
                 var connection = db.Database.GetDbConnection();
                 try
@@ -328,7 +328,7 @@ public class EntityFrameworkGdbFailoverConnectivityTests : EFIntegrationTestBase
         // Wait for simulation to start
         await tcs.Task;
 
-        await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
+        await AssertFailoverSuccessAsync(async () =>
         {
             this.Logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Executing instance ID query to trigger failover...");
             await AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, async);
@@ -403,7 +403,7 @@ public class EntityFrameworkGdbFailoverConnectivityTests : EFIntegrationTestBase
 
         try
         {
-            await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
+            await AssertFailoverSuccessAsync(async () =>
             {
                 this.Logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Executing instance ID query to trigger failover...");
                 await AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, async);
@@ -478,7 +478,7 @@ public class EntityFrameworkGdbFailoverConnectivityTests : EFIntegrationTestBase
 
         try
         {
-            await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
+            await AssertFailoverSuccessAsync(async () =>
             {
                 this.Logger.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Executing instance ID query to trigger failover...");
                 await AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, async);

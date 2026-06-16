@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using AwsWrapperDataProvider.Driver.Plugins.Failover;
 using AwsWrapperDataProvider.Tests;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 using Microsoft.EntityFrameworkCore;
@@ -104,5 +105,51 @@ public abstract class EFIntegrationTestBase : IntegrationTestBase
         }
 
         throw new InvalidOperationException($"Unsupported engine {Engine}");
+    }
+
+    /// <summary>
+    /// Asserts that executing <paramref name="action"/> surfaces a successful-failover signal.
+    /// Failover that completes successfully throws <see cref="FailoverSuccessException"/> when no transaction
+    /// is in progress, or <see cref="TransactionStateUnknownException"/> when it interrupts an in-flight
+    /// transaction (for example a Pomelo MySQL <c>SaveChanges</c>, which wraps the write in an explicit
+    /// transaction). EF Core also wraps exceptions thrown during <c>SaveChanges</c> in a
+    /// <see cref="DbUpdateException"/>, so the signal may arrive directly or nested in an outer exception.
+    /// This helper accepts all of those shapes and walks the inner-exception chain.
+    /// </summary>
+    protected static async Task AssertFailoverSuccessAsync(Func<Task> action)
+    {
+        try
+        {
+            await action();
+        }
+        catch (Exception ex)
+        {
+            Assert.True(
+                ContainsFailoverSuccess(ex),
+                $"Expected a {nameof(FailoverSuccessException)} or {nameof(TransactionStateUnknownException)} "
+                + $"(possibly wrapped by EF), but got: {ex}");
+            return;
+        }
+
+        Assert.Fail(
+            $"Expected a {nameof(FailoverSuccessException)} or {nameof(TransactionStateUnknownException)} "
+            + "but no exception was thrown.");
+    }
+
+    private static bool ContainsFailoverSuccess(Exception? exception)
+    {
+        while (exception != null)
+        {
+            // Both indicate failover completed successfully; TransactionStateUnknownException is raised
+            // instead of FailoverSuccessException when failover interrupted an in-flight transaction.
+            if (exception is FailoverSuccessException or TransactionStateUnknownException)
+            {
+                return true;
+            }
+
+            exception = exception.InnerException;
+        }
+
+        return false;
     }
 }
