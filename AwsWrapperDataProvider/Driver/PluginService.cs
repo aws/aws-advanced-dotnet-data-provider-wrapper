@@ -444,4 +444,9 @@ public class PluginService : IPluginService, IHostListProviderService
     {
         return this.Dialect.ExceptionHandler.IsNetworkException(sqlState);
     }
+
+    public bool IsReadOnlyConnectionException(Exception exception)
+    {
+        return this.Dialect.ExceptionHandler.IsReadOnlyConnectionException(exception);
+    }
 }

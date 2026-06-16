@@ -39,6 +39,8 @@ public class GenericExceptionHandler : IExceptionHandler
 
     public virtual bool IsLoginException(Exception exception) => this.ExceptionHasSqlState(exception, this.LoginErrorStates);
 
+    public virtual bool IsReadOnlyConnectionException(Exception exception) => false;
+
     protected bool ExceptionHasSqlState(Exception exception, IEnumerable<string> sqlStates)
     {
         Exception? currException = exception;

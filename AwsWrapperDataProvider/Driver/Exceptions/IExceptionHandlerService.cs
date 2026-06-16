@@ -48,4 +48,12 @@ public interface IExceptionHandlerService
     /// <param name="sqlState">The SQL state code.</param>
     /// <returns>True if it's a network exception, false otherwise.</returns>
     bool IsNetworkException(string sqlState);
+
+    /// <summary>
+    /// Determines if the given exception indicates that the connection is in read-only mode
+    /// (for example, a write attempted against a node that is no longer the writer after a failover).
+    /// </summary>
+    /// <param name="exception">The exception to check.</param>
+    /// <returns>True if it's a read-only connection exception, false otherwise.</returns>
+    bool IsReadOnlyConnectionException(Exception exception);
 }
