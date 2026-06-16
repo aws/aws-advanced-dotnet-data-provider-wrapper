@@ -50,6 +50,8 @@ public class PluginService : IPluginService, IHostListProviderService
     private readonly IHostIdCacheService hostIdCacheService = new HostIdCacheService();
     private volatile IHostListProvider hostListProvider;
     private HostSpec? currentHostSpec;
+    private HostSpec? initialConnectionHostSpec;
+    private HostSpec? originalHostSpec;
 
     private DbTransaction? transaction;
 
@@ -59,7 +61,30 @@ public class PluginService : IPluginService, IHostListProviderService
     public IDialect Dialect { get; private set; }
     public bool IsDialectConfirmed { get; private set; }
     public ITargetConnectionDialect TargetConnectionDialect { get; }
-    public HostSpec? InitialConnectionHostSpec { get; set; }
+    public HostSpec? InitialConnectionHostSpec
+    {
+        get => this.initialConnectionHostSpec;
+        set
+        {
+            this.initialConnectionHostSpec = value;
+
+            // Capture the originally configured host (the connection-string endpoint) the first
+            // time it is established. Plugins (e.g. AuroraStaleDns, ReadWriteSplitting) may later
+            // reassign InitialConnectionHostSpec to a resolved instance, but OriginalHostSpec must
+            // remain the configured endpoint so that re-opens can re-resolve topology (e.g. route to
+            // the new writer after a failover) instead of reconnecting to a pinned, stale instance.
+            this.originalHostSpec ??= value;
+        }
+    }
+
+    /// <summary>
+    /// Gets the originally configured connection host (the connection-string endpoint, typically a
+    /// cluster endpoint). Unlike <see cref="CurrentHostSpec"/> and <see cref="InitialConnectionHostSpec"/>,
+    /// this value is never mutated by routing/failover. It is the host a fresh <c>Open</c> should connect against so that
+    /// the initial-connection strategy and Aurora DNS can re-resolve the current writer.
+    /// </summary>
+    public HostSpec? OriginalHostSpec => this.originalHostSpec;
+
     public HostSpec? RoutedHostSpec { get; set; }
     public HostSpec? CurrentHostSpec { get => this.currentHostSpec ?? this.GetCurrentHostSpec(); }
     public IList<HostSpec> AllHosts { get; private set; } = [];

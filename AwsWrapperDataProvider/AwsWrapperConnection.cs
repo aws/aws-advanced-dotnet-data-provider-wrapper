@@ -313,9 +313,15 @@ public class AwsWrapperConnection : DbConnection, IWrapper
         {
             await this.PluginManager.InitHostProvider(this.connectionString!, this.ConnectionProperties!, this.hostListProviderService);
 
+            // Always open against the originally configured endpoint (typically the cluster endpoint), not the
+            // previously resolved/pinned instance. This mirrors the JDBC wrapper, whose initial-connection strategy
+            // always receives originalConnectHost. Reusing the pinned instance host here would bypass writer
+            // re-resolution on a fresh open after a failover, landing on a demoted (now read-only) instance.
+            HostSpec? connectHostSpec = this.pluginService.OriginalHostSpec ?? this.pluginService.CurrentHostSpec;
+
             DbConnection connection = await WrapperUtils.OpenWithPlugins(
                 this.PluginManager,
-                this.pluginService.CurrentHostSpec,
+                connectHostSpec,
                 this.ConnectionProperties!,
                 true,
                 async);
