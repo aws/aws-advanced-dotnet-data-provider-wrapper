@@ -35,7 +35,7 @@ namespace AwsWrapperDataProvider.Plugin.FederatedAuth.FederatedAuth;
 /// authentication token, and retrying once on a login failure with a freshly generated token.
 /// <para>
 /// Subclasses supply their own telemetry counter name and token cache so each IdP keeps its own
-/// metric and cache, mirroring the JDBC wrapper's <c>BaseSamlAuthPlugin</c>.
+/// metric and cache.
 /// </para>
 /// </summary>
 public abstract partial class BaseSamlAuthPlugin : AbstractConnectionPlugin

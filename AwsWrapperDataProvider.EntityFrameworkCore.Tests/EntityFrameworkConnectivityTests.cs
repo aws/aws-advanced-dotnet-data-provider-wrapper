@@ -292,7 +292,7 @@ public class EntityFrameworkConnectivityTests : EFIntegrationTestBase
             await db.Database.CloseConnectionAsync();
 
             Person john = new() { FirstName = "John", LastName = "Smith" };
-            await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
+            await AssertFailoverSuccessAsync(async () =>
             {
                 var connection = db.Database.GetDbConnection();
                 try
@@ -377,7 +377,7 @@ public class EntityFrameworkConnectivityTests : EFIntegrationTestBase
             await db.Database.CloseConnectionAsync();
 
             Person john = new() { FirstName = "John", LastName = "Smith" };
-            await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
+            await AssertFailoverSuccessAsync(async () =>
             {
                 var connection = db.Database.GetDbConnection();
                 try
@@ -456,7 +456,7 @@ public class EntityFrameworkConnectivityTests : EFIntegrationTestBase
             db.SaveChanges();
 
             Person john = new() { FirstName = "John", LastName = "Smith" };
-            await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
+            await AssertFailoverSuccessAsync(async () =>
             {
                 var connection = db.Database.GetDbConnection();
                 Task? clusterFailureTask = null;
@@ -537,7 +537,7 @@ public class EntityFrameworkConnectivityTests : EFIntegrationTestBase
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             Person john = new() { FirstName = "John", LastName = "Smith" };
-            await Assert.ThrowsAsync<FailoverSuccessException>(async () =>
+            await AssertFailoverSuccessAsync(async () =>
             {
                 var connection = db.Database.GetDbConnection();
                 Task? clusterFailureTask = null;

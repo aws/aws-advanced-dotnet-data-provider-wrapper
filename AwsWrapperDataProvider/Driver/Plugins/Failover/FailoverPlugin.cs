@@ -680,7 +680,20 @@ public class FailoverPlugin : AbstractConnectionPlugin
             return false;
         }
 
-        return this.pluginService.IsNetworkException(exception);
+        if (this.pluginService.IsNetworkException(exception))
+        {
+            return true;
+        }
+
+        // In strict-writer failover mode, a read-only connection exception means the current connection
+        // points to a node that is no longer the writer (e.g. a former writer demoted to reader after a
+        // failover). Treat it as a failover trigger so the wrapper reconnects to the new writer.
+        return this.IsStrictWriterFailoverMode() && this.pluginService.IsReadOnlyConnectionException(exception);
+    }
+
+    protected virtual bool IsStrictWriterFailoverMode()
+    {
+        return this.failoverMode == FailoverMode.StrictWriter;
     }
 
     private bool CanDirectExecute(string methodName)

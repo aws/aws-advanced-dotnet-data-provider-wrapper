@@ -107,6 +107,41 @@ namespace AwsWrapperDataProvider.Tests.Driver.Exceptions
             Assert.Equal(expected, result);
         }
 
+        [Theory]
+        [Trait("Category", "Unit")]
+        [InlineData("25006", true)]
+        [InlineData("08", false)]
+        [InlineData("28000", false)]
+        [InlineData("23505", false)]
+        public void IsReadOnlyConnectionException_WithPostgresException_ReturnsExpectedResult(string sqlState, bool expected)
+        {
+            var exception = new PostgresException("error", "sev", "invariant sev", sqlState);
+            var result = this._handler.IsReadOnlyConnectionException(exception);
+            Assert.Equal(expected, result);
+        }
+
+        [Theory]
+        [Trait("Category", "Unit")]
+        [InlineData("25006", true)]
+        [InlineData("08", false)]
+        public void IsReadOnlyConnectionException_WithNestedPostgresException_ReturnsExpectedResult(string sqlState, bool expected)
+        {
+            var innerException = new PostgresException("error", "sev", "invariant sev", sqlState);
+            var exception = new Exception("Outer exception", innerException);
+
+            var result = this._handler.IsReadOnlyConnectionException(exception);
+            Assert.Equal(expected, result);
+        }
+
+        [Fact]
+        [Trait("Category", "Unit")]
+        public void IsReadOnlyConnectionException_WithNonDbException_ReturnsFalse()
+        {
+            var exception = new Exception("Not a DB exception");
+            var result = this._handler.IsReadOnlyConnectionException(exception);
+            Assert.False(result);
+        }
+
         [Fact]
         [Trait("Category", "Unit")]
         public void IsNetworkException_WithEndOfStreamException_ReturnsTrue()

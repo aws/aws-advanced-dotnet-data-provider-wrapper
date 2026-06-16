@@ -123,6 +123,15 @@ namespace AwsWrapperDataProvider.Tests.Driver.Exceptions
             Assert.False(result);
         }
 
+        [Fact]
+        [Trait("Category", "Unit")]
+        public void IsReadOnlyConnectionException_ByDefault_ReturnsFalse()
+        {
+            // The generic handler has no read-only states; it should always return false.
+            Assert.False(this._handler.IsReadOnlyConnectionException(new TestDbException("25006")));
+            Assert.False(this._handler.IsReadOnlyConnectionException(new Exception("Not a DB exception")));
+        }
+
         private class TestDbException : DbException
         {
             private readonly string _sqlState;

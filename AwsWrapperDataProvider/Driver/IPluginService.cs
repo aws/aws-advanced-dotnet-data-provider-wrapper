@@ -44,6 +44,14 @@ public interface IPluginService : IExceptionHandlerService
     HostSpec? InitialConnectionHostSpec { get; }
 
     /// <summary>
+    /// Gets the originally configured connection host (the connection-string endpoint, typically a cluster endpoint).
+    /// Unlike <see cref="CurrentHostSpec"/> and <see cref="InitialConnectionHostSpec"/>, this value is never mutated by
+    /// routing or failover. It is the host a fresh open should
+    /// connect against so the initial-connection strategy and Aurora DNS can re-resolve the current writer.
+    /// </summary>
+    HostSpec? OriginalHostSpec { get; }
+
+    /// <summary>
     /// Gets or sets the host specification recorded when a connection is routed to a host that differs from the
     /// originally requested host (for example by AuroraInitialConnectionStrategy or Limitless plugins). This is used
     /// to identify the actual host the current connection points to.

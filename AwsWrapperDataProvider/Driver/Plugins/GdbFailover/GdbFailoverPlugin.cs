@@ -100,6 +100,21 @@ public class GdbFailoverPlugin : FailoverPlugin
             this.inactiveHomeFailoverMode);
     }
 
+    protected override bool IsStrictWriterFailoverMode()
+    {
+        if (this.pluginService.CurrentHostSpec == null || this.homeRegion == null)
+        {
+            return false;
+        }
+
+        var currentRegion = RdsUtils.GetRdsRegion(this.pluginService.CurrentHostSpec.Host);
+        var isHomeRegion = this.homeRegion.Equals(currentRegion, StringComparison.OrdinalIgnoreCase);
+
+        return isHomeRegion
+            ? this.activeHomeFailoverMode == GlobalDbFailoverMode.StrictWriter
+            : this.inactiveHomeFailoverMode == GlobalDbFailoverMode.StrictWriter;
+    }
+
     protected override async Task FailoverAsync()
     {
         ITelemetryFactory telemetryFactory = this.pluginService.TelemetryFactory;
