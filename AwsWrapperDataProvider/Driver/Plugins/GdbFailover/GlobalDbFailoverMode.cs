@@ -12,11 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using AwsWrapperDataProvider.Driver.HostInfo;
+namespace AwsWrapperDataProvider.Driver.Plugins.GdbFailover;
 
-namespace AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
-
-public interface IBlockingHostListProvider : IHostListProvider
+/// <summary>
+/// Enumeration of global database failover modes that determine the behavior
+/// during failover scenarios in Aurora Global Databases.
+/// </summary>
+public enum GlobalDbFailoverMode
 {
-    Task<IList<HostSpec>> ForceRefreshAsync(bool shouldVerifyWriter, long timeoutMs);
+    StrictWriter,
+    StrictHomeReader,
+    StrictOutOfHomeReader,
+    StrictAnyReader,
+    HomeReaderOrWriter,
+    OutOfHomeReaderOrWriter,
+    AnyReaderOrWriter,
 }

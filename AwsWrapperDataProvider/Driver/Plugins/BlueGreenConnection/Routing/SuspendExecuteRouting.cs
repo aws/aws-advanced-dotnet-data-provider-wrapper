@@ -14,6 +14,7 @@
 
 using System.Diagnostics;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Driver.Utils.Telemetry;
 using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
@@ -22,6 +23,7 @@ namespace AwsWrapperDataProvider.Driver.Plugins.BlueGreenConnection.Routing;
 public class SuspendExecuteRouting : BaseExecuteRouting
 {
     private const long SleepTimeMs = 100L;
+    private const string TelemetrySwitchover = "Blue/Green switchover";
 
     private static readonly ILogger<SuspendExecuteRouting> Logger = LoggerUtils.GetLogger<SuspendExecuteRouting>();
 
@@ -44,6 +46,9 @@ public class SuspendExecuteRouting : BaseExecuteRouting
     {
         Logger.LogTrace(Resources.SuspendExecuteRouting_Apply_InProgressSuspendMethod, methodName);
 
+        ITelemetryContext telemetryContext = pluginService.TelemetryFactory
+            .OpenTelemetryContext(TelemetrySwitchover, TelemetryTraceLevel.Nested);
+
         var bgStatus = BlueGreenConnectionCache.Instance.Get<BlueGreenStatus>(this.bgdId);
 
         long? timeoutMs = PropertyDefinition.BgConnectTimeout.GetLong(props);
@@ -60,18 +65,22 @@ public class SuspendExecuteRouting : BaseExecuteRouting
                 await this.Delay(SleepTimeMs, bgStatus, this.bgdId, cts.Token);
                 bgStatus = BlueGreenConnectionCache.Instance.Get<BlueGreenStatus>(this.bgdId);
             }
+
+            if (bgStatus is { CurrentPhase: BlueGreenPhaseType.IN_PROGRESS })
+            {
+                throw new TimeoutException(string.Format(Resources.SuspendExecuteRouting_Apply_StillInProgressTryMethodLater, timeoutMs, methodName));
+            }
+
+            Logger.LogTrace(Resources.SuspendExecuteRouting_Apply_SwitchoverCompletedContinueWithMethod, methodName, stopwatch.ElapsedMilliseconds);
         }
         catch (OperationCanceledException)
         {
             throw new TimeoutException(string.Format(Resources.SuspendExecuteRouting_Apply_SwitchoverCompletedContinueWithMethod, methodName, stopwatch.ElapsedMilliseconds));
         }
-
-        if (bgStatus is { CurrentPhase: BlueGreenPhaseType.IN_PROGRESS })
+        finally
         {
-            throw new TimeoutException(string.Format(Resources.SuspendExecuteRouting_Apply_StillInProgressTryMethodLater, timeoutMs, methodName));
+            telemetryContext.CloseContext();
         }
-
-        Logger.LogTrace(Resources.SuspendExecuteRouting_Apply_SwitchoverCompletedContinueWithMethod, methodName, stopwatch.ElapsedMilliseconds);
 
         return default;
     }

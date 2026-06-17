@@ -38,7 +38,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
     /// </summary>
     /// <param name="async">True if testing async calls, false if testing sync calls.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Theory]
+    [Theory(Timeout = 60 * 60 * 1000)]
     [InlineData(true)]
     [InlineData(false)]
     [Trait("Category", "Integration")]
@@ -89,7 +89,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
     /// Current writer dies, driver failover occurs when executing a method against the connection.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Database", "mysql")]
     [Trait("Database", "pg")]
@@ -139,7 +139,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
     /// </summary>
     /// <param name="async">True if testing async calls, false if testing sync calls.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Theory]
+    [Theory(Timeout = 60 * 60 * 1000)]
     [InlineData(true)]
     [InlineData(false)]
     [Trait("Category", "Integration")]
@@ -183,10 +183,10 @@ public class FailoverConnectivityTests : IntegrationTestBase
         var currentConnectionId = await AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, async);
         Assert.NotNull(currentConnectionId);
         Assert.Equal(currentWriter, currentConnectionId);
-        Assert.True(await AuroraUtils.IsDBInstanceWriterAsync(currentConnectionId));
+        Assert.True(await AuroraUtils.WaitUntilInstanceHasRoleAsync(currentConnectionId, true, TimeSpan.FromMinutes(15)));
     }
 
-    [Theory]
+    [Theory(Timeout = 60 * 60 * 1000)]
     [InlineData(true)]
     [InlineData(false)]
     [Trait("Category", "Integration")]
@@ -233,11 +233,11 @@ public class FailoverConnectivityTests : IntegrationTestBase
         var currentConnectionId = await AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, async);
         Assert.NotNull(currentConnectionId);
         Assert.Equal(currentWriter, currentConnectionId);
-        Assert.True(await AuroraUtils.IsDBInstanceWriterAsync(currentConnectionId));
+        Assert.True(await AuroraUtils.WaitUntilInstanceHasRoleAsync(currentConnectionId, true, TimeSpan.FromMinutes(15)));
         await simulationTask;
     }
 
-    [Theory]
+    [Theory(Timeout = 60 * 60 * 1000)]
     [InlineData(true)]
     [InlineData(false)]
     [Trait("Category", "Integration")]
@@ -278,7 +278,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
         });
     }
 
-    [Theory]
+    [Theory(Timeout = 60 * 60 * 1000)]
     [InlineData(true)]
     [InlineData(false)]
     [Trait("Category", "Integration")]
@@ -328,12 +328,12 @@ public class FailoverConnectivityTests : IntegrationTestBase
         // Assert that we are currently connected to the reader instance.
         var currentConnectionId = await AuroraUtils.ExecuteInstanceIdQuery(connection, Engine, Deployment, async);
         Assert.NotNull(currentConnectionId);
-        Assert.False(await AuroraUtils.IsDBInstanceWriterAsync(currentConnectionId));
+        Assert.True(await AuroraUtils.WaitUntilInstanceHasRoleAsync(currentConnectionId, expectedWriter: false, TimeSpan.FromMinutes(15)));
 
         await crashTask;
     }
 
-    [Theory]
+    [Theory(Timeout = 60 * 60 * 1000)]
     [InlineData(true)]
     [InlineData(false)]
     [Trait("Category", "Integration")]
@@ -386,7 +386,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
     /// <param name="async">True if testing async calls, false if testing sync calls.</param>
     /// <param name="pooling">True if connection pooling is enabled, false if disabled.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Theory]
+    [Theory(Timeout = 60 * 60 * 1000)]
     [InlineData(true, false)]
     [InlineData(false, false)]
     [InlineData(true, true)]
@@ -510,7 +510,7 @@ public class FailoverConnectivityTests : IntegrationTestBase
 
 public class ManualFailoverConnectivityTests
 {
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Category", "Manual")]
     public void FailoverPluginTest_WithStrictWriterMode()
@@ -525,7 +525,7 @@ public class ManualFailoverConnectivityTests
         PerformFailoverTest(connectionString);
     }
 
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Category", "Manual")]
     public void FailoverPluginTest_WithStrictReaderMode()
@@ -541,7 +541,7 @@ public class ManualFailoverConnectivityTests
         PerformFailoverTest(connectionString);
     }
 
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Category", "Manual")]
     public void FailoverPluginTest_ReadOnlyNode_WithStrictReaderMode()
@@ -557,7 +557,7 @@ public class ManualFailoverConnectivityTests
         PerformFailoverTest(connectionString);
     }
 
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Category", "Manual")]
     public void FailoverPluginTest_WithReaderOrWriterMode()
@@ -573,7 +573,7 @@ public class ManualFailoverConnectivityTests
         PerformFailoverTest(connectionString);
     }
 
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Category", "Manual")]
     public void FailoverPluginTest_WithStrictWriterMode_WithRoundRobinHostSelectorStrategy()
@@ -590,7 +590,7 @@ public class ManualFailoverConnectivityTests
         PerformFailoverTest(connectionString);
     }
 
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Category", "Manual")]
     public void FailoverPluginTest_WithStrictWriterMode_WithHighestWeightHostSelectorStrategy()
@@ -607,7 +607,7 @@ public class ManualFailoverConnectivityTests
         PerformFailoverTest(connectionString);
     }
 
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Category", "Manual")]
     public void FailoverPluginTest_WithAuroraInitialConnectionStrategyPlugin()
@@ -623,7 +623,7 @@ public class ManualFailoverConnectivityTests
         PerformFailoverTest(connectionString);
     }
 
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Category", "Manual")]
     public void FailoverPluginTest_WithIamAuth()
@@ -638,7 +638,7 @@ public class ManualFailoverConnectivityTests
         PerformFailoverTest(connectionString);
     }
 
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Category", "Manual")]
     public void FailoverPluginTest_Transaction_WithStrictWriterMode()
@@ -653,7 +653,7 @@ public class ManualFailoverConnectivityTests
         PerformTransactionFailoverTest(connectionString);
     }
 
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Category", "Manual")]
     public void FailoverPluginTest_Transaction_WithStrictReaderMode()
@@ -669,7 +669,7 @@ public class ManualFailoverConnectivityTests
         PerformTransactionFailoverTest(connectionString);
     }
 
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Category", "Manual")]
     public void FailoverPluginTest_Transaction_WithReaderOrWriterMode()
@@ -895,7 +895,7 @@ public class ManualFailoverConnectivityTests
                 }
 
                 // If we reach here, no failover occurred during the sleep
-                Console.WriteLine("   ⚠️  No failover detected during long-running query");
+                Console.WriteLine("   ⚠️¸  No failover detected during long-running query");
             }
             catch (TransactionStateUnknownException)
             {
@@ -988,7 +988,7 @@ public class ManualFailoverConnectivityTests
             }
             else
             {
-                Console.WriteLine("\n⚠️  Test completed but no failover was detected");
+                Console.WriteLine("\n⚠️¸  Test completed but no failover was detected");
                 Console.WriteLine("   Make sure to trigger failover during the pg_sleep operation");
             }
         }
@@ -1008,7 +1008,7 @@ public class ManualFailoverConnectivityTests
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"   ⚠️  Cleanup warning: {ex.Message}");
+                Console.WriteLine($"   ⚠️¸  Cleanup warning: {ex.Message}");
             }
 
             if (connection.State == ConnectionState.Open)

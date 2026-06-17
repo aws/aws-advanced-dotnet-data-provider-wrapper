@@ -73,6 +73,14 @@ public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
 
     public abstract string? MapCanonicalKeyToWrapperProperty(string canonicalKey);
 
+    public virtual void EnsureMonitoringTimeouts(
+        Dictionary<string, string> props,
+        int defaultConnectTimeoutSec,
+        int defaultCommandTimeoutSec)
+    {
+        // Default no-op. Driver-specific dialects override this.
+    }
+
     public bool IsSyntaxError(DbException ex)
     {
         return ex.SqlState != null && ex.SqlState.StartsWith("42");
@@ -108,7 +116,15 @@ public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
 
         foreach (var kvp in props)
         {
-            builder[kvp.Key] = kvp.Value;
+            try
+            {
+                builder[kvp.Key] = kvp.Value;
+            }
+            catch (ArgumentException)
+            {
+                // Key not recognized by the driver's connection string builder — skip it.
+                // This can happen for wrapper-internal properties like ConnectTimeout/CommandTimeout.
+            }
         }
 
         return builder.ConnectionString;

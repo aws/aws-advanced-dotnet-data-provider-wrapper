@@ -59,6 +59,13 @@ public interface IDialect
     /// </returns>
     /// <param name="query">Query string.</param>
     (bool ReadOnly, bool Found) DoesStatementSetReadOnly(string query);
+
+    /// <summary>
+    /// Evaluates the database role of the given connection, either Writer or Reader.
+    /// </summary>
+    /// <param name="connection">The database connection.</param>
+    /// <returns>The host role of the given connection.</returns>
+    Task<HostRole> GetHostRoleAsync(DbConnection connection);
 }
 
 /// <summary>

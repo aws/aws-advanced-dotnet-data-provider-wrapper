@@ -798,6 +798,15 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The topologies detected by the reader monitors have been consistent for {0}ms, so their topology will be assumed to be correct..
+        /// </summary>
+        internal static string ClusterTopologyMonitor_MatchingReaderTopologies {
+            get {
+                return ResourceManager.GetString("ClusterTopologyMonitor_MatchingReaderTopologies", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Waiting for topology update with timeout {0}ms, will stop waiting at {1}..
         /// </summary>
         internal static string ClusterTopologyMonitor_WaitTillTopologyGetsUpdated_EndTime {
@@ -2013,15 +2022,6 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to [PluginService] Required IBlockingHostListProvider..
-        /// </summary>
-        internal static string Error_RequiredIBlockingHostListProvider {
-            get {
-                return ResourceManager.GetString("Error_RequiredIBlockingHostListProvider", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Should not be called.
         /// </summary>
         internal static string Error_ShouldNotBeCalled {
@@ -2680,15 +2680,6 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cluster Id changed, old cluster id: {0}..
-        /// </summary>
-        internal static string MonitoringRdsHostListProvider_ClusterIdChanged {
-            get {
-                return ResourceManager.GetString("MonitoringRdsHostListProvider_ClusterIdChanged", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Initializing new cluster topology monitor for clusterId: {0}..
         /// </summary>
         internal static string MonitoringRdsHostListProvider_InitMonitor {
@@ -2721,24 +2712,6 @@ namespace AwsWrapperDataProvider.Properties {
         internal static string MonitoringRdsHostListProvider_QueryForTopologyAsync_TimedOut {
             get {
                 return ResourceManager.GetString("MonitoringRdsHostListProvider_QueryForTopologyAsync_TimedOut", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Cluster Id transferred cache topology, old cluster id: {0}..
-        /// </summary>
-        internal static string MonitoringRdsHostListProvider_TransferCachedTopology {
-            get {
-                return ResourceManager.GetString("MonitoringRdsHostListProvider_TransferCachedTopology", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Cluster Id transferred, old cluster id: {0}..
-        /// </summary>
-        internal static string MonitoringRdsHostListProvider_TransferExistingMonitor {
-            get {
-                return ResourceManager.GetString("MonitoringRdsHostListProvider_TransferExistingMonitor", resourceCulture);
             }
         }
         
@@ -2847,15 +2820,6 @@ namespace AwsWrapperDataProvider.Properties {
         internal static string OpenedConnectionTracker_LogOpenedConnections_Tracking {
             get {
                 return ResourceManager.GetString("OpenedConnectionTracker_LogOpenedConnections_Tracking", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to No RDS instance host found for &apos;{0}&apos;. This may be a custom domain. Tracking connection by all aliases..
-        /// </summary>
-        internal static string OpenedConnectionTracker_PopulateOpenedConnectionQueue_TrackingByAllAliases {
-            get {
-                return ResourceManager.GetString("OpenedConnectionTracker_PopulateOpenedConnectionQueue_TrackingByAllAliases", resourceCulture);
             }
         }
         
@@ -3040,15 +3004,6 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to ClusterId changed: {0} -&gt; {1}..
-        /// </summary>
-        internal static string RdsHostListProvider_GetTopologyAsync_ClusterIdChanged {
-            get {
-                return ResourceManager.GetString("RdsHostListProvider_GetTopologyAsync_ClusterIdChanged", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Connection unavailable (State={0}), falling back to initial hosts..
         /// </summary>
         internal static string RdsHostListProvider_GetTopologyAsync_ConnectionUnavailable {
@@ -3117,15 +3072,6 @@ namespace AwsWrapperDataProvider.Properties {
         internal static string RdsHostListProvider_QueryForTopologyAsync {
             get {
                 return ResourceManager.GetString("RdsHostListProvider_QueryForTopologyAsync", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to No writer node found in the result of the fetchWriterNodeQuery. Ensure that the query is correct and that the database is configured properly..
-        /// </summary>
-        internal static string RdsMultiAzDbClusterListProvider_ProcessWriterNodeId_NoWriterNodesFound {
-            get {
-                return ResourceManager.GetString("RdsMultiAzDbClusterListProvider_ProcessWriterNodeId_NoWriterNodesFound", resourceCulture);
             }
         }
         
@@ -3439,6 +3385,420 @@ namespace AwsWrapperDataProvider.Properties {
             get {
                 return ResourceManager.GetString("SuspendUntilCorrespondingNodeFoundConnectRouting_Apply_WaitConnectUntilCorrespond" +
                         "ingNodeFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cannot find instance template for region: {0}..
+        /// </summary>
+        internal static string Error_CannotFindInstanceTemplateForRegion {
+            get {
+                return ResourceManager.GetString("Error_CannotFindInstanceTemplateForRegion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to GlobalClusterInstanceHostPatterns is required for Global Aurora Databases..
+        /// </summary>
+        internal static string Error_GlobalClusterInstanceHostPatternsRequired {
+            get {
+                return ResourceManager.GetString("Error_GlobalClusterInstanceHostPatternsRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unable to determine host role, connected to unknown DB type..
+        /// </summary>
+        internal static string Error_UnableToDetermineHostRole {
+            get {
+                return ResourceManager.GetString("Error_UnableToDetermineHostRole", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cannot parse URL: {0}..
+        /// </summary>
+        internal static string Error_CannotParseUrl {
+            get {
+                return ResourceManager.GetString("Error_CannotParseUrl", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cannot parse host from URL: {0}..
+        /// </summary>
+        internal static string Error_CannotParseHostFromUrl {
+            get {
+                return ResourceManager.GetString("Error_CannotParseHostFromUrl", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cannot parse AWS region from URL: {0}..
+        /// </summary>
+        internal static string Error_CannotParseRegionFromUrl {
+            get {
+                return ResourceManager.GetString("Error_CannotParseRegionFromUrl", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Detected global database instance patterns: {0}..
+        /// </summary>
+        internal static string GlobalAuroraTopologyUtils_DetectedGdbPatterns {
+            get {
+                return ResourceManager.GetString("GlobalAuroraTopologyUtils_DetectedGdbPatterns", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Initializing GlobalAuroraTopologyMonitor for cluster: {0}..
+        /// </summary>
+        internal static string GlobalAuroraHostListProvider_InitMonitor_Initializing {
+            get {
+                return ResourceManager.GetString("GlobalAuroraHostListProvider_InitMonitor_Initializing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failover home region should be provided..
+        /// </summary>
+        internal static string GdbFailoverPlugin_InitFailoverMode_MissingHomeRegion {
+            get {
+                return ResourceManager.GetString("GdbFailoverPlugin_InitFailoverMode_MissingHomeRegion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failover home region: {0}..
+        /// </summary>
+        internal static string GdbFailoverPlugin_InitFailoverMode_FailoverHomeRegion {
+            get {
+                return ResourceManager.GetString("GdbFailoverPlugin_InitFailoverMode_FailoverHomeRegion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Active home failover mode: {0}, inactive home failover mode: {1}..
+        /// </summary>
+        internal static string GdbFailoverPlugin_InitFailoverMode_FailoverModes {
+            get {
+                return ResourceManager.GetString("GdbFailoverPlugin_InitFailoverMode_FailoverModes", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Starting failover procedure..
+        /// </summary>
+        internal static string GdbFailoverPlugin_FailoverAsync_StartingFailover {
+            get {
+                return ResourceManager.GetString("GdbFailoverPlugin_FailoverAsync_StartingFailover", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failover procedure completed in {0} ms..
+        /// </summary>
+        internal static string GdbFailoverPlugin_FailoverAsync_FailoverElapsed {
+            get {
+                return ResourceManager.GetString("GdbFailoverPlugin_FailoverAsync_FailoverElapsed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unable to refresh host list..
+        /// </summary>
+        internal static string GdbFailoverPlugin_FailoverAsync_UnableToRefreshHostList {
+            get {
+                return ResourceManager.GetString("GdbFailoverPlugin_FailoverAsync_UnableToRefreshHostList", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to No writer host found in updated topology..
+        /// </summary>
+        internal static string GdbFailoverPlugin_FailoverAsync_NoWriterFoundInTopology {
+            get {
+                return ResourceManager.GetString("GdbFailoverPlugin_FailoverAsync_NoWriterFoundInTopology", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to GDB primary region is home region: {0}..
+        /// </summary>
+        internal static string GdbFailoverPlugin_FailoverAsync_IsHomeRegion {
+            get {
+                return ResourceManager.GetString("GdbFailoverPlugin_FailoverAsync_IsHomeRegion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failover mode in effect: {0}..
+        /// </summary>
+        internal static string GdbFailoverPlugin_FailoverAsync_CurrentFailoverMode {
+            get {
+                return ResourceManager.GetString("GdbFailoverPlugin_FailoverAsync_CurrentFailoverMode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unsupported failover mode: {0}..
+        /// </summary>
+        internal static string GdbFailoverPlugin_FailoverAsync_UnsupportedFailoverMode {
+            get {
+                return ResourceManager.GetString("GdbFailoverPlugin_FailoverAsync_UnsupportedFailoverMode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Established connection to {0}..
+        /// </summary>
+        internal static string GdbFailoverPlugin_FailoverAsync_EstablishedConnection {
+            get {
+                return ResourceManager.GetString("GdbFailoverPlugin_FailoverAsync_EstablishedConnection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to New writer {0} is not in allowed hosts list. {1}.
+        /// </summary>
+        internal static string GdbFailoverPlugin_FailoverToWriter_NewWriterNotInAllowedHostsLog {
+            get {
+                return ResourceManager.GetString("GdbFailoverPlugin_FailoverToWriter_NewWriterNotInAllowedHostsLog", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to New writer {0} is not in allowed hosts list..
+        /// </summary>
+        internal static string GdbFailoverPlugin_FailoverToWriter_NewWriterNotInAllowedHosts {
+            get {
+                return ResourceManager.GetString("GdbFailoverPlugin_FailoverToWriter_NewWriterNotInAllowedHosts", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Exception connecting to writer {0}..
+        /// </summary>
+        internal static string GdbFailoverPlugin_FailoverToWriter_ExceptionConnectingToWriter {
+            get {
+                return ResourceManager.GetString("GdbFailoverPlugin_FailoverToWriter_ExceptionConnectingToWriter", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unexpected role {0} for writer candidate {1}..
+        /// </summary>
+        internal static string GdbFailoverPlugin_FailoverToWriter_UnexpectedRole {
+            get {
+                return ResourceManager.GetString("GdbFailoverPlugin_FailoverToWriter_UnexpectedRole", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Connected to writer {0}..
+        /// </summary>
+        internal static string GdbFailoverPlugin_FailoverToWriter_ConnectedToWriter {
+            get {
+                return ResourceManager.GetString("GdbFailoverPlugin_FailoverToWriter_ConnectedToWriter", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unable to connect to reader within timeout..
+        /// </summary>
+        internal static string GdbFailoverPlugin_FailoverToAllowedHost_UnableToConnectToReader {
+            get {
+                return ResourceManager.GetString("GdbFailoverPlugin_FailoverToAllowedHost_UnableToConnectToReader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to No candidate found for role {0}. Retrying..
+        /// </summary>
+        internal static string GdbFailoverPlugin_GetAllowedFailoverConnectionAsync_NoCandidateFound {
+            get {
+                return ResourceManager.GetString("GdbFailoverPlugin_GetAllowedFailoverConnectionAsync_NoCandidateFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failover reader timeout..
+        /// </summary>
+        internal static string GdbFailoverPlugin_GetAllowedFailoverConnectionAsync_FailoverReaderTimeout {
+            get {
+                return ResourceManager.GetString("GdbFailoverPlugin_GetAllowedFailoverConnectionAsync_FailoverReaderTimeout", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Home region for the GDB Read/Write Splitting Plugin is missing and could not be derived from the initial host '{0}'. Please provide the GdbRwHomeRegion connection property..
+        /// </summary>
+        internal static string GdbReadWriteSplittingPlugin_MissingHomeRegion {
+            get {
+                return ResourceManager.GetString("GdbReadWriteSplittingPlugin_MissingHomeRegion", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to {0} = {1}..
+        /// </summary>
+        internal static string GdbReadWriteSplittingPlugin_ParameterValue {
+            get {
+                return ResourceManager.GetString("GdbReadWriteSplittingPlugin_ParameterValue", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Cannot connect to writer host '{0}' because it is outside of the configured home region '{1}'..
+        /// </summary>
+        internal static string GdbReadWriteSplittingPlugin_CantConnectWriterOutOfHomeRegion {
+            get {
+                return ResourceManager.GetString("GdbReadWriteSplittingPlugin_CantConnectWriterOutOfHomeRegion", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to No reader hosts are available in the home region '{0}'..
+        /// </summary>
+        internal static string GdbReadWriteSplittingPlugin_NoAvailableReadersInHomeRegion {
+            get {
+                return ResourceManager.GetString("GdbReadWriteSplittingPlugin_NoAvailableReadersInHomeRegion", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Global Write Forwarding is enabled. Keeping reader connection in region '{0}' instead of switching to writer..
+        /// </summary>
+        internal static string GdbReadWriteSplittingPlugin_EnabledGwf {
+            get {
+                return ResourceManager.GetString("GdbReadWriteSplittingPlugin_EnabledGwf", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Could not determine user for IAM authentication..
+        /// </summary>
+        internal static string IamAuthPlugin_CouldNotDetermineUser {
+            get {
+                return ResourceManager.GetString("IamAuthPlugin_CouldNotDetermineUser", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Could not determine host for IAM authentication provider..
+        /// </summary>
+        internal static string IamAuthPlugin_CouldNotDetermineHost {
+            get {
+                return ResourceManager.GetString("IamAuthPlugin_CouldNotDetermineHost", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Could not determine region for IAM authentication provider..
+        /// </summary>
+        internal static string IamAuthPlugin_CouldNotDetermineRegion {
+            get {
+                return ResourceManager.GetString("IamAuthPlugin_CouldNotDetermineRegion", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Could not generate authentication token for IAM user {0}..
+        /// </summary>
+        internal static string IamAuthPlugin_CouldNotGenerateToken {
+            get {
+                return ResourceManager.GetString("IamAuthPlugin_CouldNotGenerateToken", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Generated new authentication token..
+        /// </summary>
+        internal static string IamAuthPlugin_GeneratedNewToken {
+            get {
+                return ResourceManager.GetString("IamAuthPlugin_GeneratedNewToken", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Use cached authentication token..
+        /// </summary>
+        internal static string IamAuthPlugin_UseCachedToken {
+            get {
+                return ResourceManager.GetString("IamAuthPlugin_UseCachedToken", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Couldn't generate token for IAM authentication..
+        /// </summary>
+        internal static string IamTokenUtility_TokenGenerationFailed {
+            get {
+                return ResourceManager.GetString("IamTokenUtility_TokenGenerationFailed", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Host not provided..
+        /// </summary>
+        internal static string FederatedAuthPlugin_HostNotProvided {
+            get {
+                return ResourceManager.GetString("FederatedAuthPlugin_HostNotProvided", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Could not determine region..
+        /// </summary>
+        internal static string FederatedAuthPlugin_CouldNotDetermineRegion {
+            get {
+                return ResourceManager.GetString("FederatedAuthPlugin_CouldNotDetermineRegion", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to DB user not provided..
+        /// </summary>
+        internal static string FederatedAuthPlugin_DbUserNotProvided {
+            get {
+                return ResourceManager.GetString("FederatedAuthPlugin_DbUserNotProvided", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Invalid region..
+        /// </summary>
+        internal static string FederatedAuthPlugin_InvalidRegion {
+            get {
+                return ResourceManager.GetString("FederatedAuthPlugin_InvalidRegion", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Generated new authentication token..
+        /// </summary>
+        internal static string FederatedAuthPlugin_GeneratedNewToken {
+            get {
+                return ResourceManager.GetString("FederatedAuthPlugin_GeneratedNewToken", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Use cached authentication token..
+        /// </summary>
+        internal static string FederatedAuthPlugin_UseCachedToken {
+            get {
+                return ResourceManager.GetString("FederatedAuthPlugin_UseCachedToken", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Couldn't generate token for AWS authentication..
+        /// </summary>
+        internal static string TokenUtility_TokenGenerationFailed {
+            get {
+                return ResourceManager.GetString("TokenUtility_TokenGenerationFailed", resourceCulture);
             }
         }
     }

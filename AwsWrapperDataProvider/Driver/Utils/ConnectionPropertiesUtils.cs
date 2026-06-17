@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Text.RegularExpressions;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Utils;
@@ -22,6 +24,12 @@ internal static class ConnectionPropertiesUtils
 {
     private const string HostSeperator = ",";
     private const string HostPortSeperator = ":";
+
+    // Regex to parse optional [region] prefix, domain, and optional :port
+    // Matches: [region]?.host.com:port  or  ?.host.com:port  or  ?.host.com
+    private static readonly Regex UrlWithRegionPattern = new(
+        @"^(\[(?<region>.+)\])?(?<domain>[a-zA-Z0-9\?\.\-]+)(:(?<port>[0-9]+))?$",
+        RegexOptions.Compiled);
 
     private static readonly ILogger<AwsWrapperProperty> Logger = LoggerUtils.GetLogger<AwsWrapperProperty>();
 
@@ -32,14 +40,50 @@ internal static class ConnectionPropertiesUtils
             throw new ArgumentNullException(nameof(connectionString));
         }
 
+        // Split each pair on the FIRST '=' only. Splitting on every '=' would discard any value
+        // that legitimately contains '=' (for example an AssemblyQualifiedName such as
+        // "...Version=1.0.0.0, Culture=neutral, PublicKeyToken=null", or a password/token that
+        // contains '='). A pair is considered valid only when it contains a '=' and has a
+        // non-empty key.
         var props = connectionString
             .Split(";", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
-            .Select(x => x.Split("=", StringSplitOptions.TrimEntries))
-            .Where(pairs => pairs.Length == 2 && !string.IsNullOrEmpty(pairs[0]))
-            .GroupBy(pairs => pairs[0], StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(g => g.Key, g => g.Last()[1], StringComparer.OrdinalIgnoreCase);
+            .Select(x =>
+            {
+                int separatorIndex = x.IndexOf('=');
+                if (separatorIndex < 0)
+                {
+                    return (Key: string.Empty, Value: string.Empty, HasSeparator: false);
+                }
+
+                return (
+                    Key: x[..separatorIndex].Trim(),
+                    Value: StripSurroundingQuotes(x[(separatorIndex + 1)..].Trim()),
+                    HasSeparator: true);
+            })
+            .Where(pair => pair.HasSeparator && !string.IsNullOrEmpty(pair.Key))
+            .GroupBy(pair => pair.Key, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.Last().Value, StringComparer.OrdinalIgnoreCase);
 
         return props;
+    }
+
+    /// <summary>
+    /// Removes a single matching pair of surrounding single or double quotes from a connection
+    /// string value. ADO.NET's <see cref="System.Data.Common.DbConnectionStringBuilder"/> quotes
+    /// values that contain reserved characters such as '=' or ';' when it serializes a connection
+    /// string (e.g. an AssemblyQualifiedName), so values that originate from a builder may arrive
+    /// wrapped in quotes. Mirroring the driver behavior, the surrounding quotes are stripped.
+    /// </summary>
+    private static string StripSurroundingQuotes(string value)
+    {
+        if (value.Length >= 2 &&
+            ((value[0] == '"' && value[^1] == '"') ||
+             (value[0] == '\'' && value[^1] == '\'')))
+        {
+            return value[1..^1];
+        }
+
+        return value;
     }
 
     internal static void NormalizeConnectionPropertyKeys(ITargetConnectionDialect dialect, Dictionary<string, string> props)
@@ -142,5 +186,51 @@ internal static class ConnectionPropertiesUtils
             .WithHostId(hostId)
             .WithRole(hostRole)
             .Build();
+    }
+
+    internal static (string Region, HostSpec HostSpec) ParseHostPortPairWithRegionPrefix(
+        string urlWithRegionPrefix,
+        HostSpecBuilder hostSpecBuilder)
+    {
+        var match = UrlWithRegionPattern.Match(urlWithRegionPrefix);
+        if (!match.Success)
+        {
+            throw new ArgumentException(string.Format(Resources.Error_CannotParseUrl, urlWithRegionPrefix));
+        }
+
+        string? awsRegion = match.Groups["region"].Success ? match.Groups["region"].Value : null;
+        string host = match.Groups["domain"].Value;
+        string? portStr = match.Groups["port"].Success ? match.Groups["port"].Value : null;
+
+        if (string.IsNullOrEmpty(host))
+        {
+            throw new ArgumentException(string.Format(Resources.Error_CannotParseHostFromUrl, urlWithRegionPrefix));
+        }
+
+        if (string.IsNullOrEmpty(awsRegion))
+        {
+            awsRegion = RdsUtils.GetRdsRegion(host);
+            if (string.IsNullOrEmpty(awsRegion))
+            {
+                throw new ArgumentException(string.Format(Resources.Error_CannotParseRegionFromUrl, urlWithRegionPrefix));
+            }
+        }
+
+        RdsUrlType urlType = RdsUtils.IdentifyRdsType(host);
+        HostRole hostRole = RdsUrlType.RdsReaderCluster.Equals(urlType) ? HostRole.Reader : HostRole.Writer;
+
+        int port = HostSpec.NoPort;
+        if (!string.IsNullOrEmpty(portStr) && int.TryParse(portStr, out int parsedPort))
+        {
+            port = parsedPort;
+        }
+
+        HostSpec hostSpec = hostSpecBuilder
+            .WithHost(host)
+            .WithPort(port)
+            .WithRole(hostRole)
+            .Build();
+
+        return (awsRegion, hostSpec);
     }
 }

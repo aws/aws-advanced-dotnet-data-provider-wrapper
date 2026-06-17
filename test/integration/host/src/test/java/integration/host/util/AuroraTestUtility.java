@@ -778,24 +778,83 @@ public class AuroraTestUtility {
    */
   public void deleteAuroraLimitlessCluster(String identifier, boolean waitForCompletion) {
     final String shardGroupIdentifier = identifier + "-shard-group";
-    int remainingAttempts = 5;
 
-    // Delete the shard group first
-    while (--remainingAttempts > 0) {
-      try {
-        DeleteDbShardGroupResponse response = rdsClient.deleteDBShardGroup(
-            (builder -> builder.dbShardGroupIdentifier(shardGroupIdentifier)));
-        if (response.sdkHttpResponse().isSuccessful()) {
-          break;
-        }
-        TimeUnit.SECONDS.sleep(30);
-      } catch (Exception ex) {
-        // ignore and continue - shard group might not exist or already deleted
-      }
-    }
+    // The shard group must be fully deleted before the cluster can be deleted, otherwise the cluster
+    // delete fails with InvalidDbClusterStateException ("It still contains DB shard groups in a
+    // non-deleting state."). deleteDBShardGroup is asynchronous and is only accepted once the shard
+    // group reaches a deletable state, so we retry the delete request and then poll until it is gone.
+    deleteAuroraLimitlessShardGroup(shardGroupIdentifier);
 
     // Then delete the cluster
     deleteAuroraCluster(identifier, waitForCompletion);
+  }
+
+  /**
+   * Requests deletion of the given Limitless shard group and waits until it no longer exists.
+   * The delete request is retried because a shard group that is still creating/modifying cannot be
+   * deleted yet, and the subsequent poll guarantees the cluster delete will not race the shard-group
+   * delete.
+   *
+   * @param shardGroupIdentifier the shard group identifier to delete
+   */
+  private void deleteAuroraLimitlessShardGroup(String shardGroupIdentifier) {
+    final long deadline = System.nanoTime() + Duration.ofMinutes(60).toNanos();
+    boolean deleteRequested = false;
+
+    while (System.nanoTime() < deadline) {
+      if (!shardGroupExists(shardGroupIdentifier)) {
+        return;
+      }
+
+      if (!deleteRequested) {
+        try {
+          rdsClient.deleteDBShardGroup(
+              (builder -> builder.dbShardGroupIdentifier(shardGroupIdentifier)));
+          deleteRequested = true;
+        } catch (DbShardGroupNotFoundException ex) {
+          // Already gone.
+          return;
+        } catch (InvalidDbShardGroupStateException ex) {
+          // Shard group is not in a deletable state yet (e.g. creating/modifying). Retry after a
+          // backoff once it settles.
+          LOGGER.finest("Shard group '" + shardGroupIdentifier
+              + "' not yet deletable, will retry: " + ex.getMessage());
+        } catch (Exception ex) {
+          LOGGER.finest("Error requesting deletion of shard group '"
+              + shardGroupIdentifier + "': " + ex.getMessage());
+        }
+      }
+
+      try {
+        TimeUnit.SECONDS.sleep(30);
+      } catch (InterruptedException ex) {
+        Thread.currentThread().interrupt();
+        return;
+      }
+    }
+
+    LOGGER.warning("Timed out waiting for shard group '" + shardGroupIdentifier + "' to be deleted.");
+  }
+
+  /**
+   * Checks whether the given Limitless shard group still exists.
+   *
+   * @param shardGroupIdentifier the shard group identifier to check
+   * @return true if the shard group exists, false otherwise
+   */
+  private boolean shardGroupExists(String shardGroupIdentifier) {
+    try {
+      DescribeDbShardGroupsResponse response = rdsClient.describeDBShardGroups(
+          (builder -> builder.dbShardGroupIdentifier(shardGroupIdentifier)));
+      return !response.dbShardGroups().isEmpty();
+    } catch (DbShardGroupNotFoundException ex) {
+      return false;
+    } catch (Exception ex) {
+      LOGGER.finest("Error describing shard group '"
+          + shardGroupIdentifier + "': " + ex.getMessage());
+      // Assume it still exists so we keep retrying rather than prematurely deleting the cluster.
+      return true;
+    }
   }
 
   /**
@@ -1214,6 +1273,10 @@ public class AuroraTestUtility {
 
     final List<DBInstance> dbClusterList = dbInstanceResult.dbInstances();
     return dbClusterList.get(0);
+  }
+
+  public void waitUntilInstanceHasRightState(String instanceId) throws InterruptedException {
+    waitUntilInstanceHasRightState(instanceId, "available");
   }
 
   public void waitUntilInstanceHasRightState(String instanceId, String... allowedStatuses) throws InterruptedException {

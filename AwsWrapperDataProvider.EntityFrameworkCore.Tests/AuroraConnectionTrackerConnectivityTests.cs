@@ -63,7 +63,7 @@ public class AuroraConnectionTrackerConnectivityTests : EFIntegrationTestBase
         return this.BuildOptionsWithLogger(wrapper, conn);
     }
 
-    [Theory]
+    [Theory(Timeout = 60 * 60 * 1000)]
     [InlineData(true)]
     [InlineData(false)]
     [Trait("Category", "Integration")]
@@ -182,7 +182,7 @@ public class AuroraConnectionTrackerConnectivityTests : EFIntegrationTestBase
         }
     }
 
-    [Theory]
+    [Theory(Timeout = 60 * 60 * 1000)]
     [InlineData(true)]
     [InlineData(false)]
     [Trait("Category", "Integration")]
@@ -301,7 +301,7 @@ public class AuroraConnectionTrackerConnectivityTests : EFIntegrationTestBase
         }
     }
 
-    [Theory]
+    [Theory(Timeout = 60 * 60 * 1000)]
     [InlineData(true)]
     [InlineData(false)]
     [Trait("Category", "Integration")]
@@ -405,7 +405,7 @@ public class AuroraConnectionTrackerConnectivityTests : EFIntegrationTestBase
         }
     }
 
-    [Theory]
+    [Theory(Timeout = 60 * 60 * 1000)]
     [InlineData(true)]
     [InlineData(false)]
     [Trait("Category", "Integration")]

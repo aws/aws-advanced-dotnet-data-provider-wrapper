@@ -2,8 +2,11 @@
 
 | Release Date     | Release                                                                                              |
 |------------------|------------------------------------------------------------------------------------------------------|
-| November 6, 2022 | [Release 1.0.0](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/releases/tag/1.0.0) |  
-| November 7, 2023 | [Release 1.0.1](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/releases/tag/1.0.1) | 
+| November 6, 2025 | [Release 1.0.0](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/releases/tag/1.0.0) |
+| November 7, 2025 | [Release 1.0.1](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/releases/tag/1.0.1) |
+| March 24, 2026   | [Release 1.1.0](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/releases/tag/1.1.0) |
+| June 2, 2026     | [Release 1.2.0](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/releases/tag/1.2.0) |
+| June 16, 2026    | [Release 2.0.0](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/releases/tag/2.0.0) |
 
 
 `aws-advanced-dotnet-data-provider-wrapper` [follows semver](https://semver.org/#semantic-versioning-200) which means we will only
@@ -56,6 +59,7 @@ That said, PRs with said back-ports are welcome and will follow the project's re
 No new releases will result from these changes, but interested parties can create their own distribution
 from the updated source after the PRs are merged.
 
-| Major Version | Latest Minor Version | Status  | Initial Release | Maintenance Window Start | Maintenance Window End |
-|---------------|----------------------|---------|-----------------|--------------------------|------------------------|
-| 1             | 1.0.1                | Current | Nov 6, 2025     | Nov 6, 2025              |                        | 
+| Major Version | Latest Minor Version | Status      | Initial Release | Maintenance Window Start | Maintenance Window End |
+|---------------|----------------------|-------------|-----------------|--------------------------|------------------------|
+| 1             | 1.2.0                | Maintenance | Nov 6, 2025     | Jun 16, 2026             | Jun 16, 2027           |
+| 2             | 2.0.0                | Current     | Jun 16, 2026    | N/A                      | N/A                    |

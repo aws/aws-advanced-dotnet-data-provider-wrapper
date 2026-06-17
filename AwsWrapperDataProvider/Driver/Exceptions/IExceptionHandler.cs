@@ -53,4 +53,12 @@ public interface IExceptionHandler
     /// <param name="exception">The exception to check.</param>
     /// <returns>True if it's a syntax exception, false otherwise.</returns>
     bool IsSyntaxError(Exception exception);
+
+    /// <summary>
+    /// Determines if the given exception indicates that the connection is in read-only mode
+    /// (for example, a write was attempted against a node that is no longer the writer after a failover).
+    /// </summary>
+    /// <param name="exception">The exception to check.</param>
+    /// <returns>True if it's a read-only connection exception, false otherwise.</returns>
+    bool IsReadOnlyConnectionException(Exception exception);
 }

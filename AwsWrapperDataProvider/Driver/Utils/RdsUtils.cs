@@ -53,7 +53,10 @@ public static partial class RdsUtils
     [GeneratedRegex(@"^(?<instance>.+)\.(?<dns>cluster-|cluster-ro-)(?<domain>[a-zA-Z0-9]+\.(rds|rds-fips)\.(?<region>[a-zA-Z0-9\-]+)\.(amazonaws\.com\.?|c2s\.ic\.gov\.?|sc2s\.sgov\.gov\.?))$", RegexOptions.IgnoreCase, "en-CA")]
     private static partial Regex AuroraGovClusterPattern();
 
-    private static readonly Regex[] AuroraDnsPatterns = [AuroraDnsPattern(), AuroraChinaDnsPattern(), AuroraOldChinaDnsPattern(), AuroraGovDnsPattern()];
+    [GeneratedRegex(@"^(?<instance>.+)\.(?<dns>global-)?(?<domain>[a-zA-Z0-9]+\.global\.rds\.amazonaws\.com\.?)$", RegexOptions.IgnoreCase, "en-CA")]
+    private static partial Regex AuroraGlobalWriterDnsPattern();
+
+    private static readonly Regex[] AuroraDnsPatterns = [AuroraDnsPattern(), AuroraChinaDnsPattern(), AuroraOldChinaDnsPattern(), AuroraGovDnsPattern(), AuroraGlobalWriterDnsPattern()];
 
     [GeneratedRegex(@"^(([1-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){1}(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){2}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$")]
     private static partial Regex IpV4Pattern();
@@ -76,6 +79,41 @@ public static partial class RdsUtils
     // Cache for DNS patterns to improve performance
     private static readonly ConcurrentDictionary<string, Match> CachedPatterns = new();
 
+    // Optional function to pre-process a host before regex matching (for example,
+    // to strip test-only suffixes such as ".proxied").
+    private static Func<string, string>? prepareHostFunc;
+
+    /// <summary>
+    /// Registers a function that is applied to every host before it is matched against
+    /// the RDS/Aurora DNS patterns.
+    /// Intended for integration-test use (for example, to remove a proxy suffix so that
+    /// proxied hosts are still recognized as valid Aurora endpoints).
+    /// </summary>
+    public static void SetPrepareHostFunc(Func<string, string>? func)
+    {
+        prepareHostFunc = func;
+        CachedPatterns.Clear();
+    }
+
+    /// <summary>
+    /// Clears the prepare-host function registered by <see cref="SetPrepareHostFunc"/>.
+    /// </summary>
+    public static void ResetPrepareHostFunc()
+    {
+        SetPrepareHostFunc(null);
+    }
+
+    private static string GetPreparedHost(string host)
+    {
+        var func = prepareHostFunc;
+        if (func == null)
+        {
+            return host;
+        }
+
+        return func(host) ?? host;
+    }
+
     public static RdsUrlType IdentifyRdsType(string? host)
     {
         if (string.IsNullOrEmpty(host))
@@ -94,6 +132,11 @@ public static partial class RdsUtils
         if (dnsGroup is null)
         {
             return RdsUrlType.Other;
+        }
+
+        if (dnsGroup.Equals("global-", StringComparison.OrdinalIgnoreCase))
+        {
+            return RdsUrlType.RdsGlobalWriterCluster;
         }
 
         // Is RDS writer cluster DNS.
@@ -164,29 +207,31 @@ public static partial class RdsUtils
 
     public static string? GetRdsClusterHostUrl(string host)
     {
-        if (AuroraClusterPattern().IsMatch(host))
+        var preparedHost = GetPreparedHost(host);
+
+        if (AuroraClusterPattern().IsMatch(preparedHost))
         {
-            return AuroraClusterPattern().Replace(host, "${instance}.cluster-${domain}");
+            return AuroraClusterPattern().Replace(preparedHost, "${instance}.cluster-${domain}");
         }
 
-        if (AuroraChinaClusterPattern().IsMatch(host))
+        if (AuroraChinaClusterPattern().IsMatch(preparedHost))
         {
-            return AuroraChinaClusterPattern().Replace(host, "${instance}.cluster-${domain}");
+            return AuroraChinaClusterPattern().Replace(preparedHost, "${instance}.cluster-${domain}");
         }
 
-        if (AuroraOldChinaClusterPattern().IsMatch(host))
+        if (AuroraOldChinaClusterPattern().IsMatch(preparedHost))
         {
-            return AuroraOldChinaClusterPattern().Replace(host, "${instance}.cluster-${domain}");
+            return AuroraOldChinaClusterPattern().Replace(preparedHost, "${instance}.cluster-${domain}");
         }
 
-        if (AuroraGovClusterPattern().IsMatch(host))
+        if (AuroraGovClusterPattern().IsMatch(preparedHost))
         {
-            return AuroraGovClusterPattern().Replace(host, "${instance}.cluster-${domain}");
+            return AuroraGovClusterPattern().Replace(preparedHost, "${instance}.cluster-${domain}");
         }
 
-        if (AuroraLimitlessClusterPattern().IsMatch(host))
+        if (AuroraLimitlessClusterPattern().IsMatch(preparedHost))
         {
-            return AuroraLimitlessClusterPattern().Replace(host, "${instance}.shardgrp-${domain}");
+            return AuroraLimitlessClusterPattern().Replace(preparedHost, "${instance}.shardgrp-${domain}");
         }
 
         return null;
@@ -262,7 +307,7 @@ public static partial class RdsUtils
             return false;
         }
 
-        Match match = BgOldHostPattern().Match(host);
+        Match match = BgOldHostPattern().Match(GetPreparedHost(host));
         return !match.Success;
     }
 
@@ -296,6 +341,12 @@ public static partial class RdsUtils
         return dnsGroup != null && string.Equals(dnsGroup, "cluster-ro-", StringComparison.OrdinalIgnoreCase);
     }
 
+    public static bool IsGlobalDbWriterClusterDns(string host)
+    {
+        string? dnsGroup = GetDnsGroup(host);
+        return dnsGroup != null && string.Equals(dnsGroup, "global-", StringComparison.OrdinalIgnoreCase);
+    }
+
     private static string? GetDnsGroup(string host)
     {
         return CacheMatcher(host, AuroraDnsPatterns)?.Groups[DnsGroup].Value;
@@ -303,18 +354,20 @@ public static partial class RdsUtils
 
     private static Match? CacheMatcher(string host, params Regex[] patterns)
     {
-        if (CachedPatterns.TryGetValue(host, out Match? cachedMatch))
+        var preparedHost = GetPreparedHost(host);
+
+        if (CachedPatterns.TryGetValue(preparedHost, out Match? cachedMatch))
         {
             return cachedMatch;
         }
 
         var match = patterns
-            .Select(p => p.Match(host))
+            .Select(p => p.Match(preparedHost))
             .FirstOrDefault(m => m.Success);
 
         if (match != null)
         {
-            CachedPatterns[host] = match;
+            CachedPatterns[preparedHost] = match;
         }
 
         return match;

@@ -87,8 +87,8 @@ public static class PropertyDefinition
 
     public static readonly AwsWrapperProperty ClusterId = new(
         "ClusterId",
-        string.Empty,
-        "A unique identifier for the cluster. Connections with the same cluster id share a cluster topology cache. If unspecified, a cluster id is automatically created for AWS RDS clusters.");
+        "1",
+        "A unique identifier for the cluster. Connections with the same cluster id share a cluster topology cache. If unspecified, a cluster id is '1'.");
 
     public static readonly AwsWrapperProperty SecretsManagerSecretId = new(
         "SecretsManagerSecretId", null, "The name or the ARN of the secret to retrieve.");
@@ -267,6 +267,48 @@ public static class PropertyDefinition
         "30000",
         "Connect timeout (in millisecond) during Blue/Green Deployment switchover.");
 
+    // GDB Plugin Properties
+    public static readonly AwsWrapperProperty GlobalClusterInstanceHostPatterns = new(
+        "GlobalClusterInstanceHostPatterns",
+        null,
+        "Comma-separated list of the cluster instance DNS patterns that will be used to build a complete instance endpoints. A '?' character in these patterns should be used as a placeholder for cluster instance names. This parameter is required for Global Aurora Databases. Each region in the Global Aurora Database should be specified in the list.");
+
+    public static readonly AwsWrapperProperty FailoverHomeRegion = new(
+        "FailoverHomeRegion",
+        null,
+        "Set home region for failover.");
+
+    public static readonly AwsWrapperProperty ActiveHomeFailoverMode = new(
+        "ActiveHomeFailoverMode",
+        null,
+        "Set node role to follow during failover when GDB primary region is in home region.");
+
+    public static readonly AwsWrapperProperty InactiveHomeFailoverMode = new(
+        "InactiveHomeFailoverMode",
+        null,
+        "Set node role to follow during failover when GDB primary region is not in home region.");
+
+    public static readonly AwsWrapperProperty GdbEnableGlobalWriteForwarding = new(
+        "GdbEnableGlobalWriteForwarding",
+        "false",
+        "Set to true to enable Global Write Forwarding when connected to a reader connection in a secondary global region.");
+
+    // GDB Read/Write Splitting Plugin Properties
+    public static readonly AwsWrapperProperty GdbRwHomeRegion = new(
+        "GdbRwHomeRegion",
+        null,
+        "Specifies the home region for read/write splitting.");
+
+    public static readonly AwsWrapperProperty GdbRwRestrictWriterToHomeRegion = new(
+        "GdbRwRestrictWriterToHomeRegion",
+        "true",
+        "Prevents connections to a writer node outside of the defined home region.");
+
+    public static readonly AwsWrapperProperty GdbRwRestrictReaderToHomeRegion = new(
+        "GdbRwRestrictReaderToHomeRegion",
+        "true",
+        "Prevents connections to a reader node outside of the defined home region.");
+
     // Custom Endpoint Plugin Properties
     public static readonly AwsWrapperProperty CustomEndpointInfoRefreshRateMs = new(
         "CustomEndpointInfoRefreshRateMs",
@@ -419,6 +461,19 @@ public static class PropertyDefinition
         BgSwitchoverTimeoutMs,
         BgConnectTimeout,
         BgdId,
+        BlueGreenConnectionPlugin.BgSkipRoutingInForceConnect,
+
+        // GDB Plugin Properties
+        GlobalClusterInstanceHostPatterns,
+        FailoverHomeRegion,
+        ActiveHomeFailoverMode,
+        InactiveHomeFailoverMode,
+
+        // GDB Read Write Splitting
+        GdbEnableGlobalWriteForwarding,
+        GdbRwHomeRegion,
+        GdbRwRestrictWriterToHomeRegion,
+        GdbRwRestrictReaderToHomeRegion,
 
         // Telemetry Properties
         EnableTelemetry,
@@ -426,7 +481,6 @@ public static class PropertyDefinition
         TelemetryMetricsBackend,
         TelemetrySubmitTopLevel,
         TelemetryFailoverAdditionalTopTrace,
-        BlueGreenConnectionPlugin.BgSkipRoutingInForceConnect
     ];
 
     public static readonly string EfmMonitoringPropertyPrefix = "monitoring-";

@@ -44,7 +44,7 @@ public class CustomEndpointConnectivityTests : EFIntegrationTestBase, IClassFixt
         await base.InitializeAsync();
     }
 
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg-ef")]
     [Trait("Database", "mysql-ef")]
@@ -88,7 +88,10 @@ public class CustomEndpointConnectivityTests : EFIntegrationTestBase, IClassFixt
             await AuroraUtils.SetReadOnly(connection, Engine, false, true);
         });
 
-        var writerId = await AuroraUtils.GetDBClusterWriterInstanceIdAsync(TestEnvironment.Env.Info.RdsDbName!);
+        var writerId = await AuroraUtils.GetDBClusterWriterInstanceIdAsync(
+            TestEnvironment.Env.Info.RdsDbName!,
+            id => id != originalReaderId,
+            TimeSpan.FromMinutes(15));
         await AuroraUtils.ModifyDBClusterEndpointAsync(this.fixture.EndpointId, new List<string> { originalReaderId!, writerId });
 
         try
@@ -116,7 +119,7 @@ public class CustomEndpointConnectivityTests : EFIntegrationTestBase, IClassFixt
         });
     }
 
-    [Fact]
+    [Fact(Timeout = 60 * 60 * 1000)]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg-ef")]
     [Trait("Database", "mysql-ef")]
@@ -159,7 +162,10 @@ public class CustomEndpointConnectivityTests : EFIntegrationTestBase, IClassFixt
         var newInstanceId = await AuroraUtils.QueryInstanceId(connection, true);
         Assert.Equal(originalWriterId, newInstanceId);
 
-        var writerId = await AuroraUtils.GetDBClusterWriterInstanceIdAsync(TestEnvironment.Env.Info.RdsDbName!);
+        var writerId = await AuroraUtils.GetDBClusterWriterInstanceIdAsync(
+            TestEnvironment.Env.Info.RdsDbName!,
+            id => id == originalWriterId,
+            TimeSpan.FromMinutes(15));
         string readerIdToAdd = TestEnvironment.Env.Info.DatabaseInfo.Instances
             .First(i => i.InstanceId != writerId).InstanceId;
 

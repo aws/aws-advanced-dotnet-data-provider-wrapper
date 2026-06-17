@@ -23,6 +23,10 @@ namespace AwsWrapperDataProvider.Driver.Exceptions;
 
 public class PgExceptionHandler : GenericExceptionHandler
 {
+    // SQLSTATE 25006 - read-only SQL transaction. Raised when a write is attempted against a
+    // node that is in read-only mode (e.g. a former writer demoted to reader after a failover).
+    private const string ReadOnlyConnectionSqlState = "25006";
+
     private static readonly ILogger<PgExceptionHandler> Logger = LoggerUtils.GetLogger<PgExceptionHandler>();
 
     protected override IReadOnlySet<string> NetworkErrorStates { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -87,6 +91,24 @@ public class PgExceptionHandler : GenericExceptionHandler
         }
 
         Logger.LogDebug(Resources.MySqlExceptionHandler_IsNetworkException_InvalidNetworkException);
+        return false;
+    }
+
+    public override bool IsReadOnlyConnectionException(Exception exception)
+    {
+        Exception? currException = exception;
+
+        while (currException is not null)
+        {
+            if (currException is DbException dbException
+                && string.Equals(dbException.SqlState, ReadOnlyConnectionSqlState, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            currException = currException.InnerException;
+        }
+
         return false;
     }
 }

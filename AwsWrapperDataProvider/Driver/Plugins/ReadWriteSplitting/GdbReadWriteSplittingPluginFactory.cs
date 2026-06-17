@@ -12,23 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Data.Common;
-using AwsWrapperDataProvider.Driver.HostInfo;
-
-namespace AwsWrapperDataProvider.Driver.Plugins.Failover;
+namespace AwsWrapperDataProvider.Driver.Plugins.ReadWriteSplitting;
 
 /// <summary>
-/// Represents the result of a reader failover operation, containing the new connection and host specification.
+/// Factory for creating <see cref="GdbReadWriteSplittingPlugin"/> instances.
 /// </summary>
-public class ReaderFailoverResult
+public class GdbReadWriteSplittingPluginFactory : IConnectionPluginFactory
 {
-    public DbConnection Connection { get; }
-
-    public HostSpec HostSpec { get; }
-
-    public ReaderFailoverResult(DbConnection connection, HostSpec hostSpec)
+    public IConnectionPlugin GetInstance(IPluginService pluginService, Dictionary<string, string> props)
     {
-        this.Connection = connection ?? throw new ArgumentNullException(nameof(connection));
-        this.HostSpec = hostSpec ?? throw new ArgumentNullException(nameof(hostSpec));
+        return new GdbReadWriteSplittingPlugin(pluginService, props);
     }
 }

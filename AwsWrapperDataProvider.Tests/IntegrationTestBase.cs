@@ -19,10 +19,10 @@ using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo.HostSelectors;
 using AwsWrapperDataProvider.Driver.HostListProviders;
-using AwsWrapperDataProvider.Driver.HostListProviders.Monitoring;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Plugins.AuroraConnectionTracker;
 using AwsWrapperDataProvider.Driver.Plugins.Efm;
+using AwsWrapperDataProvider.Driver.Utils;
 using AwsWrapperDataProvider.Plugin.FederatedAuth.FederatedAuth;
 using AwsWrapperDataProvider.Plugin.Iam.Iam;
 using AwsWrapperDataProvider.Plugin.SecretsManager.SecretsManager;
@@ -138,6 +138,8 @@ public abstract class IntegrationTestBase : IAsyncLifetime
             Console.WriteLine($"Cluster {TestEnvironment.Env.Info.RdsDbName} is healthy.");
         }
 
+        Console.WriteLine($"Monitor cache count is {RdsHostListProvider.MonitorCount()}");
+
         if (TestEnvironment.Env.Info.Request.Features.Contains(TestEnvironmentFeatures.BLUE_GREEN_DEPLOYMENT))
         {
             if (!TestEnvironment.IsBlueGreenDeploymentAvailableForCluster(TestEnvironment.Env.Info.RdsDbName))
@@ -158,8 +160,10 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     public ValueTask DisposeAsync()
     {
         Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Clearing all cache for each integration test.");
+        Console.WriteLine($"Topology monitor cache count before cleaning is {RdsHostListProvider.MonitorCount()}");
         RdsHostListProvider.ClearAll();
-        MonitoringRdsHostListProvider.CloseAllMonitors();
+        RdsHostListProvider.CloseAllMonitors();
+        Console.WriteLine($"Topology monitor cache count after cleaning is {RdsHostListProvider.MonitorCount()}");
         HostMonitorService.CloseAllMonitors();
         PluginService.ClearCache();
         DialectProvider.ResetEndpointCache();
@@ -168,6 +172,7 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         IamAuthPlugin.ClearCache();
         OktaAuthPlugin.ClearCache();
         RoundRobinHostSelector.ClearCache();
+        HostIdCacheService.ClearCache();
         OpenedConnectionTracker.ReleaseResources();
         Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Done Clearing all cache for each integration test.");
         return ValueTask.CompletedTask;

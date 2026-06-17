@@ -59,21 +59,22 @@ public class OpenedConnectionTrackerTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void PopulateOpenedConnectionQueue_NonRdsHostWithRdsAlias_TracksUnderAliasKey()
+    public void PopulateOpenedConnectionQueue_NonRdsHostWithHostId_TracksUnderHostIdAndHostPort()
     {
         var mockConnection = new Mock<DbConnection>();
         var hostSpec = new HostSpec(
             "cluster-endpoint.cluster-xyz.us-east-1.rds.amazonaws.com",
             5432,
+            "test-instance-1",
             HostRole.Writer,
             HostAvailability.Available);
-        hostSpec.AddAlias("test-instance-1.xyz.us-east-1.rds.amazonaws.com:5432");
 
         this.tracker.PopulateOpenedConnectionQueue(hostSpec, mockConnection.Object);
 
-        Assert.Single(OpenedConnectionTracker.OpenedConnections);
-        Assert.True(OpenedConnectionTracker.OpenedConnections.ContainsKey("test-instance-1.xyz.us-east-1.rds.amazonaws.com:5432"));
-        Assert.False(OpenedConnectionTracker.OpenedConnections.ContainsKey("cluster-endpoint.cluster-xyz.us-east-1.rds.amazonaws.com:5432"));
+        // A non-RDS-instance host is tracked by both hostId and host:port.
+        Assert.Equal(2, OpenedConnectionTracker.OpenedConnections.Count);
+        Assert.True(OpenedConnectionTracker.OpenedConnections.ContainsKey("test-instance-1"));
+        Assert.True(OpenedConnectionTracker.OpenedConnections.ContainsKey("cluster-endpoint.cluster-xyz.us-east-1.rds.amazonaws.com:5432"));
     }
 
     [Fact]
@@ -230,27 +231,25 @@ public class OpenedConnectionTrackerTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void PopulateOpenedConnectionQueue_CustomDomainMultipleAliases_TracksUnderEachAlias()
+    public void PopulateOpenedConnectionQueue_CustomDomainWithHostId_TracksUnderHostIdAndHostPort()
     {
         var mockConnection = new Mock<DbConnection>();
         var hostSpec = new HostSpec(
             "my-custom-db.company.com",
             5432,
+            "custom-instance-1",
             HostRole.Writer,
             HostAvailability.Available);
-        hostSpec.AddAlias("custom-alias-1.company.com:5432");
-        hostSpec.AddAlias("custom-alias-2.company.com:3306");
 
         this.tracker.PopulateOpenedConnectionQueue(hostSpec, mockConnection.Object);
 
-        // Should track under all 3 aliases: host:port + 2 added aliases.
-        Assert.Equal(3, OpenedConnectionTracker.OpenedConnections.Count);
+        // Custom domain is tracked under both hostId and host:port.
+        Assert.Equal(2, OpenedConnectionTracker.OpenedConnections.Count);
+        Assert.True(OpenedConnectionTracker.OpenedConnections.ContainsKey("custom-instance-1"));
         Assert.True(OpenedConnectionTracker.OpenedConnections.ContainsKey("my-custom-db.company.com:5432"));
-        Assert.True(OpenedConnectionTracker.OpenedConnections.ContainsKey("custom-alias-1.company.com:5432"));
-        Assert.True(OpenedConnectionTracker.OpenedConnections.ContainsKey("custom-alias-2.company.com:3306"));
 
-        // Each alias queue should hold the same connection.
-        foreach (string key in new[] { "my-custom-db.company.com:5432", "custom-alias-1.company.com:5432", "custom-alias-2.company.com:3306" })
+        // Each key's queue should hold the same connection.
+        foreach (string key in new[] { "custom-instance-1", "my-custom-db.company.com:5432" })
         {
             var queue = OpenedConnectionTracker.OpenedConnections[key];
             var items = new List<WeakReference<DbConnection>>();
@@ -269,16 +268,16 @@ public class OpenedConnectionTrackerTests
         var hostSpec = new HostSpec(
             "my-custom-db.company.com",
             5432,
+            "custom-instance-1",
             HostRole.Writer,
             HostAvailability.Available);
-        hostSpec.AddAlias("custom-alias.company.com:5432");
 
         this.tracker.PopulateOpenedConnectionQueue(hostSpec, mockConnection.Object);
         Assert.Equal(2, OpenedConnectionTracker.OpenedConnections.Count);
 
         this.tracker.InvalidateAllConnections(hostSpec);
 
-        // Close is called once per alias queue that held the connection.
+        // Close is called once per key (hostId and host:port) that held the connection.
         mockConnection.Verify(x => x.Close(), Times.Exactly(2));
     }
 }

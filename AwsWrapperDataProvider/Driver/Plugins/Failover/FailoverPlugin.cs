@@ -53,28 +53,28 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
     private static readonly ILogger<FailoverPlugin> Logger = LoggerUtils.GetLogger<FailoverPlugin>();
 
-    private readonly IPluginService pluginService;
-    private readonly Dictionary<string, string> props;
-    private readonly int failoverTimeoutMs;
-    private readonly string failoverReaderHostSelectorStrategy;
+    protected readonly IPluginService pluginService;
+    protected readonly Dictionary<string, string> props;
+    protected readonly int failoverTimeoutMs;
+    protected readonly string failoverReaderHostSelectorStrategy;
     private readonly bool enableConnectFailover;
     private readonly bool skipFailoverOnInterruptedThread;
     private readonly bool closedExplicitly = false;
     private readonly AuroraStaleDnsHelper auroraStaleDnsHelper;
 
-    private readonly ITelemetryCounter writerFailoverTriggered;
-    private readonly ITelemetryCounter writerFailoverSuccess;
-    private readonly ITelemetryCounter writerFailoverFailed;
-    private readonly ITelemetryCounter readerFailoverTriggered;
-    private readonly ITelemetryCounter readerFailoverSuccess;
-    private readonly ITelemetryCounter readerFailoverFailed;
-    private readonly bool telemetryFailoverAdditionalTopTrace;
+    protected readonly ITelemetryCounter writerFailoverTriggered;
+    protected readonly ITelemetryCounter writerFailoverSuccess;
+    protected readonly ITelemetryCounter writerFailoverFailed;
+    protected readonly ITelemetryCounter readerFailoverTriggered;
+    protected readonly ITelemetryCounter readerFailoverSuccess;
+    protected readonly ITelemetryCounter readerFailoverFailed;
+    protected readonly bool telemetryFailoverAdditionalTopTrace;
 
-    private IHostListProviderService? hostListProviderService;
-    private RdsUrlType? rdsUrlType;
+    protected IHostListProviderService? hostListProviderService;
+    protected RdsUrlType? rdsUrlType;
 
     private bool isClosed;
-    private bool shouldThrowTransactionError = false;
+    protected bool shouldThrowTransactionError = false;
     private Exception? lastExceptionDealtWith;
     private FailoverMode? failoverMode;
 
@@ -154,7 +154,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
         throw new UnreachableException(Resources.Error_FailoverPluginShouldNotReachHere);
     }
 
-    private void InitFailoverMode()
+    protected virtual void InitFailoverMode()
     {
         if (this.rdsUrlType != null || this.failoverMode != null)
         {
@@ -218,7 +218,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
                     throw;
                 }
 
-                this.pluginService.SetAvailability(hostSpec.AsAliases(), HostAvailability.Unavailable);
+                this.pluginService.SetAvailability(hostSpec, HostAvailability.Unavailable);
 
                 try
                 {
@@ -250,7 +250,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
 
         if (isInitialConnection)
         {
-            await this.pluginService.ForceRefreshHostListAsync(connection);
+            await this.pluginService.RefreshHostListAsync();
         }
 
         Logger.LogDebug(Resources.FailoverPlugin_OpenConnection_ReturningConnection,
@@ -315,7 +315,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
             if (this.pluginService.CurrentHostSpec != null)
             {
                 Logger.LogInformation(Resources.FailoverPlugin_DealWithOriginalExceptionAsync_MarkingHostUnavailable, this.pluginService.CurrentHostSpec.Host);
-                this.pluginService.SetAvailability(this.pluginService.CurrentHostSpec.AsAliases(), HostAvailability.Unavailable);
+                this.pluginService.SetAvailability(this.pluginService.CurrentHostSpec, HostAvailability.Unavailable);
             }
 
             await this.PickNewConnectionAsync();
@@ -325,7 +325,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
         throw originalException;
     }
 
-    private async Task FailoverAsync()
+    protected virtual async Task FailoverAsync()
     {
         Logger.LogInformation(Resources.FailoverPlugin_FailoverAsync_InitiatingFailover, this.failoverMode);
 
@@ -401,7 +401,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
         }
     }
 
-    private async Task<ReaderFailoverResult> GetReaderFailoverConnectionAsync(DateTime failoverEndTime)
+    private async Task<FailoverResult> GetReaderFailoverConnectionAsync(DateTime failoverEndTime)
     {
         var hosts = this.pluginService.GetHosts();
         Logger.LogDebug(LoggerUtils.LogTopology(hosts, $"All hosts: "));
@@ -413,7 +413,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
             // Update reader candidates, topology may have changed
             await this.pluginService.ForceRefreshHostListAsync(false, 10000);
             hosts = this.pluginService.GetHosts();
-            hosts.ToList().ForEach(hostSpec => this.pluginService.SetAvailability(hostSpec.AsAliases(), HostAvailability.Available));
+            hosts.ToList().ForEach(hostSpec => this.pluginService.SetAvailability(hostSpec, HostAvailability.Available));
             var readerCandidates = hosts.Where(h => h.Role == HostRole.Reader).ToHashSet();
 
             // First, try all original readers
@@ -439,7 +439,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
                     if (role == HostRole.Reader || this.failoverMode != FailoverMode.StrictReader)
                     {
                         var updatedHostSpec = new HostSpec(readerCandidate, role);
-                        return new ReaderFailoverResult(candidateConn, updatedHostSpec);
+                        return new FailoverResult(candidateConn, updatedHostSpec);
                     }
 
                     // The role is Writer or Unknown, and we are in StrictReader mode
@@ -481,7 +481,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
                     if (role == HostRole.Reader || this.failoverMode != FailoverMode.StrictReader)
                     {
                         var updatedHostSpec = new HostSpec(originalWriter, role);
-                        return new ReaderFailoverResult(candidateConn, updatedHostSpec);
+                        return new FailoverResult(candidateConn, updatedHostSpec);
                     }
 
                     await candidateConn.DisposeAsync().ConfigureAwait(false);
@@ -554,7 +554,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
                     // Ignore close exception
                 }
 
-                throw new FailoverFailedException(string.Format(Resources.Error_UnexpectedRoleForWriterCandidate, writerCandidate.Host));
+                throw new FailoverFailedException(string.Format(Resources.Error_UnexpectedRoleForWriterCandidate, role, writerCandidate.Host));
             }
 
             this.pluginService.SetCurrentConnection(writerCandidateConn, writerCandidate);
@@ -600,7 +600,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
         }
     }
 
-    private void ThrowFailoverSuccessException()
+    protected void ThrowFailoverSuccessException()
     {
         Logger.LogTrace(Resources.FailoverPlugin_ThrowFailoverSuccessException_FailoverSucceeded);
 
@@ -680,7 +680,20 @@ public class FailoverPlugin : AbstractConnectionPlugin
             return false;
         }
 
-        return this.pluginService.IsNetworkException(exception);
+        if (this.pluginService.IsNetworkException(exception))
+        {
+            return true;
+        }
+
+        // In strict-writer failover mode, a read-only connection exception means the current connection
+        // points to a node that is no longer the writer (e.g. a former writer demoted to reader after a
+        // failover). Treat it as a failover trigger so the wrapper reconnects to the new writer.
+        return this.IsStrictWriterFailoverMode() && this.pluginService.IsReadOnlyConnectionException(exception);
+    }
+
+    protected virtual bool IsStrictWriterFailoverMode()
+    {
+        return this.failoverMode == FailoverMode.StrictWriter;
     }
 
     private bool CanDirectExecute(string methodName)

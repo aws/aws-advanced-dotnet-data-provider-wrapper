@@ -3,6 +3,54 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/#semantic-versioning-200).
 
+## [2.0.0] - 2026-06-16
+
+### :crab: Breaking Changes
+> [!WARNING]\
+> 2.0 removes the suggested ClusterId functionality ([PR #290](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/290)).
+> #### Suggested ClusterId Functionality
+> Prior to this change, the wrapper would generate a unique cluster id based on the connection string and the cluster topology; however, in some cases (such as custom endpoints, IP addresses, and CNAME aliases), the wrapper would generate an incorrect identifier. This change was needed to prevent applications with several clusters from accidentally relying on incorrect topology during failover, which could result in the wrapper failing to complete failover successfully. The `ClusterId` parameter now defaults to `1`, so connections that do not specify a `ClusterId` share a single topology cache.
+> #### Migration
+> | Number of Database Clusters in Use | Requires Changes | Action Items                                                                                                                                                                                              |
+> |------------------------------------|------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+> | Single database cluster            | No               | No changes required.                                                                                                                                                                                       |
+> | Multiple database clusters         | Yes              | Review all connection strings and add the mandatory `ClusterId` parameter. See the [ClusterId documentation](./docs/using-the-dotnet-driver/ClusterId.md) for configuration guidance.                      |
+
+> [!WARNING]\
+> This breaking change only impacts customers implementing their own custom plugins. Otherwise no changes are required. 2.0 removes aliases from `HostSpec` and related APIs ([PR #302](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/302)).
+> #### Alias Removal
+> - Removed aliases from `HostSpec`.
+> - Removed `IPluginService.FillAliasesAsync()`; use `IPluginService.IdentifyConnectionAsync()` instead.
+> - Changed `IPluginService.SetAvailability()` signature to accept a `HostSpec` instead of a collection of host aliases.
+> - Added `IPluginService.RoutedHostSpec` to record connection routing events and use it for the current connection info.
+>
+> If you have custom plugins that use `FillAliasesAsync()` or rely on `HostSpec` aliases, update them to use `IdentifyConnectionAsync()` and the new `RoutedHostSpec` property.
+
+### :magic_wand: Added
+- Support for [Amazon Aurora Global Databases](./docs/using-the-dotnet-driver/GlobalDatabases.md), including multi-region topology awareness and global writer cluster endpoint recognition ([PR #290](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/290)).
+- The [Global Database Failover Plugin](./docs/using-the-dotnet-driver/using-plugins/UsingTheGdbFailoverPlugin.md) (`gdbFailover`), introducing home-region awareness and configurable failover logic for in-home and out-of-home scenarios ([PR #292](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/292)).
+- The [Global Database Read/Write Splitting Plugin](./docs/using-the-dotnet-driver/using-plugins/UsingTheGdbReadWriteSplittingPlugin.md) (`gdbReadWriteSplitting`), introducing home-region restrictions and optional global write forwarding for read/write splitting connections ([PR #293](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/293)).
+- IAM and federated (ADFS/Okta) authentication support for Aurora Global Database endpoints, resolving the region via the `DescribeGlobalClusters` RDS API ([PR #297](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/297)).
+- Telemetry for the Global Database and Blue/Green plugins ([PR #303](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/303)).
+- Automatically trigger writer failover when connections are incorrectly established as read-only connections ([PR #306](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/306)).
+- Documentation:
+  - [ClusterId](./docs/using-the-dotnet-driver/ClusterId.md), [Aurora Global Databases](./docs/using-the-dotnet-driver/GlobalDatabases.md), and the GDB plugins ([PR #300](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/300)).
+  - [Database Dialects](./docs/using-the-dotnet-driver/DatabaseDialects.md) and [Target Connection Dialects](./docs/using-the-dotnet-driver/TargetConnectionDialects.md) ([PR #304](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/304)).
+
+## [1.2.0] - 2026-06-02
+
+### :magic_wand: Added
+- The [Blue/Green Deployment Plugin](./docs/using-the-dotnet-driver/using-plugins/UsingTheBlueGreenPlugin.md) ([PR #244](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/244)).
+- The [Aurora Connection Tracker Plugin](./docs/using-the-dotnet-driver/using-plugins/UsingTheAuroraConnectionTrackerPlugin.md) ([PR #250](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/250)).
+- [Telemetry](./docs/using-the-dotnet-driver/Telemetry.md) support for traces and metrics, with OTLP and AWS X-Ray backends ([PR #291](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/291)).
+- [Entity Framework Core support for PostgreSQL](./AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL/README.md) ([PR #280](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/280)).
+
+### :warning: Deprecated
+- The MySQL Entity Framework Core extension method `UseAwsWrapper` has been renamed to `UseAwsWrapperMySql`. The original name is still available but is marked `[Obsolete]` and will be removed in a future major version. Update existing call sites to `UseAwsWrapperMySql` to silence the deprecation warning ([PR #280](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/280)).
+
+### :bug: Fixed
+- Entity Framework Core + Pomelo + MySqlConnector connection string handling: wrapper-only properties (e.g. `Plugins=`) are now filtered case-insensitively before being passed to the target driver, and required Pomelo options (`AllowUserVariables=true`, `UseAffectedRows=false`) are enforced on the wrapper connection string ([Issue #268](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/issues/268), [PR #272](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/272)).
+
 ## [1.1.0] - 2026-03-24
 
 ### :magic_wand: Added
@@ -37,3 +85,5 @@ The AWS Advanced .NET Data Provider Wrapper is complementary to existing .NET da
 [1.0.0]: https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/releases/tag/1.0.0
 [1.0.1]: https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/compare/1.0.0...1.0.1
 [1.1.0]: https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/compare/1.0.1...1.1.0
+[1.2.0]: https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/compare/1.1.0...1.2.0
+[2.0.0]: https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/compare/1.2.0...2.0.0

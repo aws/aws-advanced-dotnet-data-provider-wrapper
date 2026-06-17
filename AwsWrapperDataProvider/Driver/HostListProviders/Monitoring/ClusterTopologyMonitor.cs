@@ -31,6 +31,8 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 {
     private static readonly ILogger<ClusterTopologyMonitor> Logger = LoggerUtils.GetLogger<ClusterTopologyMonitor>();
     protected const int DefaultTopologyQueryTimeoutSec = 1;
+    protected const int DefaultConnectTimeout = 5;
+    protected const int DefaultCommandTimeout = 5;
 
     // Keep monitoring topology with a high rate for 30s after failover
     protected static readonly TimeSpan HighRefreshPeriodAfterPanic = TimeSpan.FromSeconds(30);
@@ -43,20 +45,24 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
     protected readonly IPluginService pluginService;
     protected readonly HostSpec initialHostSpec;
     protected readonly MemoryCache topologyMap;
-    protected readonly string topologyQuery;
     protected readonly string nodeIdQuery;
-    protected readonly string writerTopologyQuery;
     protected readonly IHostListProviderService hostListProviderService;
     protected readonly HostSpec clusterInstanceTemplate;
     protected readonly CancellationTokenSource ctsTopologyMonitoring = new();
     protected readonly object topologyUpdatedLock = new();
     protected readonly ConcurrentDictionary<string, Lazy<Task>> nodeThreads = new();
     protected readonly Task monitoringTask;
+    protected static readonly TimeSpan StableTopologiesDuration = TimeSpan.FromSeconds(15);
     protected readonly object disposeLock = new();
     protected readonly SemaphoreSlim monitoringConnectionSemaphore = new(1, 1);
+    protected readonly TopologyUtils topologyUtils;
+    protected readonly string clusterId;
+
+    // Stable reader topology tracking
+    protected readonly ConcurrentDictionary<string, IList<HostSpec>> readerTopologiesById = new();
+    protected readonly ConcurrentDictionary<string, bool> completedOneCycle = new();
 
     protected CancellationTokenSource ctsNodeMonitoring;
-    protected string clusterId;
     protected HostSpec? writerHostSpec;
     protected DbConnection? monitoringConnection;
     protected bool isVerifiedWriterConnection;
@@ -65,8 +71,9 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
     protected DbConnection? nodeThreadsWriterConnection;
     protected HostSpec? nodeThreadsWriterHostSpec;
     protected DbConnection? nodeThreadsReaderConnection;
-    protected IList<HostSpec>? nodeThreadsLatestTopology;
+    protected volatile IList<HostSpec>? nodeThreadsLatestTopology;
     protected bool disposed = false;
+    protected long stableTopologiesStartTicks = 0;
 
     private int requestToUpdateTopology = 0;
     private int nodeThreadsStop = 0;
@@ -94,9 +101,8 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         TimeSpan refreshRate,
         TimeSpan highRefreshRate,
         TimeSpan topologyCacheExpiration,
-        string topologyQuery,
-        string writerTopologyQuery,
-        string nodeIdQuery)
+        string nodeIdQuery,
+        TopologyUtils topologyUtils)
     {
         this.clusterId = clusterId;
         this.topologyMap = topologyMap;
@@ -107,9 +113,8 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         this.refreshRate = refreshRate;
         this.highRefreshRate = highRefreshRate;
         this.topologyCacheExpiration = topologyCacheExpiration;
-        this.topologyQuery = topologyQuery;
-        this.writerTopologyQuery = writerTopologyQuery;
         this.nodeIdQuery = nodeIdQuery;
+        this.topologyUtils = topologyUtils;
 
         Dictionary<string, string> monitoringConnProperties = new(properties);
 
@@ -125,6 +130,9 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
         this.properties = monitoringConnProperties;
 
+        // Ensure monitoring connection has connect and command timeout defaults
+        this.pluginService.TargetConnectionDialect.EnsureMonitoringTimeouts(this.properties, DefaultConnectTimeout, DefaultCommandTimeout);
+
         // Make sure node monitoring tasks are cancelled once topology monitoring task is cancelled
         this.ctsNodeMonitoring = CancellationTokenSource.CreateLinkedTokenSource(this.ctsTopologyMonitoring.Token);
 
@@ -132,11 +140,6 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
     }
 
     public bool CanDispose => true;
-
-    public void SetClusterId(string clusterId)
-    {
-        this.clusterId = clusterId;
-    }
 
     public async Task RunMonitoringLoop()
     {
@@ -215,6 +218,9 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                             this.ctsNodeMonitoring.Cancel();
                             Logger.LogTrace(Resources.ClusterTopologyMonitor_RunMonitoringLoop_Clearing);
                             this.nodeThreads.Clear();
+                            this.stableTopologiesStartTicks = 0;
+                            this.readerTopologiesById.Clear();
+                            this.completedOneCycle.Clear();
                             continue;
                         }
 
@@ -242,6 +248,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                         }
                     }
 
+                    this.CheckForStableReaderTopologies();
                     await this.DelayAsync(true);
                 }
                 else
@@ -254,6 +261,9 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                         this.ctsNodeMonitoring.Cancel();
                         Logger.LogTrace(Resources.ClusterTopologyMonitor_RunMonitoringLoop_Clearing);
                         this.nodeThreads.Clear();
+                        this.stableTopologiesStartTicks = 0;
+                        this.readerTopologiesById.Clear();
+                        this.completedOneCycle.Clear();
                     }
 
                     var hosts = await this.FetchTopologyAndUpdateCacheAsync(this.monitoringConnection);
@@ -343,18 +353,6 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         return this.WaitTillTopologyGetsUpdated(timeoutMs);
     }
 
-    public async Task<IList<HostSpec>> ForceRefreshAsync(DbConnection? connection, long timeoutMs)
-    {
-        if (this.isVerifiedWriterConnection)
-        {
-            // Push monitoring thread to refresh topology with a verified connection
-            return this.WaitTillTopologyGetsUpdated(timeoutMs);
-        }
-
-        // Otherwise use provided unverified connection to update topology
-        return await this.FetchTopologyAndUpdateCacheAsync(connection) ?? [];
-    }
-
     protected IList<HostSpec> WaitTillTopologyGetsUpdated(long timeoutMs)
     {
         this.topologyMap.TryGetValue(this.clusterId, out IList<HostSpec>? currentHosts);
@@ -437,7 +435,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                 {
                     Logger.LogTrace(string.Format(Resources.ClusterTopologyMonitor_OpenedMonitoringConnection, RuntimeHelpers.GetHashCode(this.monitoringConnection), this.initialHostSpec.Host));
 
-                    if (!string.IsNullOrEmpty(await this.GetWriterNodeIdAsync(this.monitoringConnection)))
+                    if (await this.topologyUtils.IsWriterInstanceAsync(this.monitoringConnection, this.ctsTopologyMonitoring.Token))
                     {
                         this.isVerifiedWriterConnection = true;
                         writerVerifiedByThisThread = true;
@@ -453,7 +451,8 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                             var (nodeId, nodeName) = await this.GetNodeIdAsync(this.monitoringConnection);
                             if (!string.IsNullOrEmpty(nodeId) && !string.IsNullOrEmpty(nodeName))
                             {
-                                this.writerHostSpec = this.CreateHost(nodeName, nodeId, true, 0, null);
+                                HostSpec instanceTemplate = await this.GetInstanceTemplateAsync(nodeName, this.monitoringConnection);
+                                this.writerHostSpec = this.topologyUtils.CreateHost(nodeId, nodeName, true, 0, null, this.initialHostSpec, instanceTemplate);
                                 Logger.LogTrace(string.Format(Resources.ClusterTopologyMonitor_WriterMonitoringConnection, this.writerHostSpec));
                             }
                         }
@@ -510,47 +509,6 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         return hosts;
     }
 
-    protected virtual HostSpec CreateHost(DbDataReader reader, string? suggestedWriterNodeId)
-    {
-        string hostName = reader.GetString(0);
-        bool isWriter = reader.GetBoolean(1);
-        double cpuUtilization = reader.GetDouble(2);
-        double nodeLag = reader.GetDouble(3);
-        DateTime lastUpdateTime = reader.IsDBNull(4)
-            ? DateTime.UtcNow
-            : reader.GetDateTime(4);
-
-        long weight = (long)((Math.Round(nodeLag) * 100L) + Math.Round(cpuUtilization));
-
-        return this.CreateHost(hostName, hostName, isWriter, weight, lastUpdateTime);
-    }
-
-    protected HostSpec CreateHost(
-        string nodeName,
-        string nodeId,
-        bool isWriter,
-        long weight,
-        DateTime? lastUpdateTime)
-    {
-        string endpoint = this.clusterInstanceTemplate.Host.Replace("?", nodeName);
-        int port = this.clusterInstanceTemplate.IsPortSpecified
-            ? this.clusterInstanceTemplate.Port
-            : this.initialHostSpec.Port;
-
-        HostSpec host = this.hostListProviderService.HostSpecBuilder
-            .WithHost(endpoint)
-            .WithHostId(nodeId)
-            .WithPort(port)
-            .WithRole(isWriter ? HostRole.Writer : HostRole.Reader)
-            .WithAvailability(HostAvailability.Available)
-            .WithWeight(weight)
-            .WithLastUpdateTime(lastUpdateTime)
-            .Build();
-
-        host.AddAlias(nodeName);
-        return host;
-    }
-
     protected async Task<(string? NodeId, string? NodeName)> GetNodeIdAsync(DbConnection connection)
     {
         await this.monitoringConnectionSemaphore.WaitAsync();
@@ -580,33 +538,14 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         return (null, null);
     }
 
-    protected virtual async Task<string?> GetWriterNodeIdAsync(DbConnection connection)
+    /// <summary>
+    /// Returns the instance template for the given node.
+    /// Overridden by <see cref="GlobalAuroraTopologyMonitor"/> to resolve region-specific templates.
+    /// </summary>
+    protected virtual Task<HostSpec> GetInstanceTemplateAsync(string instanceId, DbConnection connection)
     {
-        await this.monitoringConnectionSemaphore.WaitAsync();
-        try
-        {
-            await using var command = connection.CreateCommand();
-            command.CommandText = this.writerTopologyQuery;
-            await using var reader = await command.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
-            if (await reader.ReadAsync(this.ctsTopologyMonitoring.Token))
-            {
-                return reader.GetString(0);
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogWarning(ex, Resources.ClusterTopologyMonitor_ExceptionIgnoredTopologyMonitoringConnection, RuntimeHelpers.GetHashCode(connection));
-            throw;
-        }
-        finally
-        {
-            this.monitoringConnectionSemaphore.Release();
-        }
-
-        return null;
+        return Task.FromResult(this.clusterInstanceTemplate);
     }
-
-    protected virtual Task<string?> GetSuggestedWriterNodeIdAsync(DbConnection connection) => Task.FromResult<string?>(null);
 
     protected async Task DisposeConnectionAsync(DbConnection? connection)
     {
@@ -684,62 +623,96 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         }
     }
 
-    protected async Task<IList<HostSpec>?> QueryForTopologyAsync(DbConnection connection)
+    /// <summary>
+    /// Checks whether all reader node monitors report a consistent topology for a sustained period.
+    /// If so, updates the topology cache — unblocking <see cref="WaitTillTopologyGetsUpdated"/>.
+    /// This handles the case where the writer is unreachable but no actual failover occurred.
+    /// </summary>
+    protected void CheckForStableReaderTopologies()
+    {
+        var latestHosts = this.topologyMap.Get<IList<HostSpec>>(this.clusterId);
+        if (latestHosts == null || latestHosts.Count == 0)
+        {
+            Interlocked.Exchange(ref this.stableTopologiesStartTicks, 0);
+            return;
+        }
+
+        // Ensure all node monitors have completed at least one cycle
+        var readerIds = latestHosts.Select(h => h.HostId).Where(id => id != null).ToList();
+        foreach (var id in readerIds)
+        {
+            if (!this.completedOneCycle.GetValueOrDefault(id!, false))
+            {
+                Interlocked.Exchange(ref this.stableTopologiesStartTicks, 0);
+                return;
+            }
+        }
+
+        // Snapshot the reader topologies once. ConcurrentDictionary.Values returns a fresh copy on each call,
+        // so subsequent reads could observe different state if node monitors mutate the map concurrently.
+        var allTopologies = this.readerTopologiesById.Values.ToList();
+        var readerTopologyFirstEntry = allTopologies.FirstOrDefault();
+        if (readerTopologyFirstEntry == null || readerTopologyFirstEntry.Count == 0)
+        {
+            Interlocked.Exchange(ref this.stableTopologiesStartTicks, 0);
+            return;
+        }
+
+        // Check whether all reader topologies match (comparing host, port, role, availability)
+        var referenceKey = readerTopologyFirstEntry
+            .Select(h => (h.Host, h.Port, h.Role, h.Availability))
+            .OrderBy(t => t.Host)
+            .ToList();
+
+        foreach (var topology in allTopologies.Skip(1))
+        {
+            var key = topology
+                .Select(h => (h.Host, h.Port, h.Role, h.Availability))
+                .OrderBy(t => t.Host)
+                .ToList();
+
+            if (!referenceKey.SequenceEqual(key))
+            {
+                Interlocked.Exchange(ref this.stableTopologiesStartTicks, 0);
+                return;
+            }
+        }
+
+        // All reader topologies match
+        // Atomically set startTicks to "now" only if it's still 0; otherwise read the existing value.
+        // This avoids a race where two readers could both observe 0 and overwrite each other's start time.
+        long now = DateTime.UtcNow.Ticks;
+        long startTicks = Interlocked.CompareExchange(ref this.stableTopologiesStartTicks, now, 0);
+        if (startTicks == 0)
+        {
+            // We just initialized the start time. Wait for the next cycle to check elapsed duration.
+            return;
+        }
+
+        var elapsed = DateTime.UtcNow - new DateTime(startTicks, DateTimeKind.Utc);
+        if (elapsed >= StableTopologiesDuration)
+        {
+            Interlocked.Exchange(ref this.stableTopologiesStartTicks, 0);
+            Logger.LogDebug(
+                Resources.ClusterTopologyMonitor_MatchingReaderTopologies,
+                (long)elapsed.TotalMilliseconds);
+            this.UpdateTopologyCache(readerTopologyFirstEntry);
+        }
+    }
+
+    protected virtual async Task<IList<HostSpec>?> QueryForTopologyAsync(DbConnection connection)
     {
         await this.monitoringConnectionSemaphore.WaitAsync();
         try
         {
-            string? suggestedWriterNodeId = await this.GetSuggestedWriterNodeIdAsync(connection);
+            Logger.LogDebug(Resources.ClusterTopologyMonitor_QueryForTopologyAsync, DefaultTopologyQueryTimeoutSec);
 
-            await using var command = connection.CreateCommand();
-            if (this.properties.TryGetValue("CommandTimeout", out string? value))
-            {
-                command.CommandTimeout = int.Parse(value, CultureInfo.InvariantCulture);
-            }
-
-            if (command.CommandTimeout == 0)
-            {
-                command.CommandTimeout = DefaultTopologyQueryTimeoutSec;
-            }
-
-            Logger.LogDebug(Resources.ClusterTopologyMonitor_QueryForTopologyAsync, command.CommandTimeout);
-
-            command.CommandText = this.topologyQuery;
-            await using var reader = await command.ExecuteReaderAsync(this.ctsTopologyMonitoring.Token);
-
-            var hosts = new List<HostSpec>();
-            var writers = new List<HostSpec>();
-
-            while (await reader.ReadAsync(this.ctsTopologyMonitoring.Token))
-            {
-                try
-                {
-                    HostSpec hostSpec = this.CreateHost(reader, suggestedWriterNodeId);
-                    (hostSpec.Role == HostRole.Writer ? writers : hosts).Add(hostSpec);
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogTrace(string.Format(Resources.ClusterTopologyMonitor_ErrorProcessingQueryResults, ex));
-                    return null;
-                }
-            }
-
-            if (writers.Count == 0)
-            {
-                Logger.LogWarning(Resources.ClusterTopologyMonitor_InvalidTopology);
-                hosts.Clear();
-            }
-            else if (writers.Count == 1)
-            {
-                hosts.Add(writers[0]);
-            }
-            else
-            {
-                // Take the latest updated writer node as the current writer
-                hosts.Add(writers.MaxBy(x => x.LastUpdateTime)!);
-            }
-
-            return hosts;
+            return await this.topologyUtils.QueryForTopologyAsync(
+                connection,
+                this.initialHostSpec,
+                this.clusterInstanceTemplate,
+                this.hostListProviderService,
+                this.ctsTopologyMonitoring.Token);
         }
         catch (Exception ex)
         {
@@ -814,22 +787,24 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                         try
                         {
                             connection = await monitor.pluginService.ForceOpenConnection(hostSpec, monitor.properties, null, true);
-                            monitor.pluginService.SetAvailability(hostSpec.AsAliases(), HostAvailability.Available);
+                            monitor.pluginService.SetAvailability(hostSpec, HostAvailability.Available);
                         }
                         catch (Exception ex) when (ex is DbException or EndOfStreamException)
                         {
-                            monitor.pluginService.SetAvailability(hostSpec.AsAliases(), HostAvailability.Unavailable);
+                            monitor.pluginService.SetAvailability(hostSpec, HostAvailability.Unavailable);
                             await monitor.DisposeConnectionAsync(connection);
                             connection = null;
+                            monitor.completedOneCycle[hostSpec.HostId!] = true;
+                            monitor.readerTopologiesById.TryRemove(hostSpec.HostId!, out _);
                         }
                     }
 
                     if (connection != null)
                     {
-                        string? writerId = null;
+                        bool isWriter = false;
                         try
                         {
-                            writerId = await monitor.GetWriterNodeIdAsync(connection);
+                            isWriter = await monitor.topologyUtils.IsWriterInstanceAsync(connection, token);
                         }
                         catch (Exception ex) when (ex is DbException or EndOfStreamException)
                         {
@@ -837,12 +812,35 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                             connection = null;
                         }
 
-                        if (!string.IsNullOrEmpty(writerId))
+                        if (isWriter && connection != null)
+                        {
+                            try
+                            {
+                                if (await monitor.pluginService.GetHostRole(connection) != HostRole.Writer)
+                                {
+                                    // The first connection after failover may be stale.
+                                    isWriter = false;
+                                }
+                            }
+                            catch (DbException)
+                            {
+                                // Invalid connection, retry on the next loop iteration.
+                                await monitor.DisposeConnectionAsync(connection);
+                                connection = null;
+                                monitor.completedOneCycle[hostSpec.HostId!] = true;
+                                monitor.readerTopologiesById.TryRemove(hostSpec.HostId!, out _);
+                                await Task.Delay(100, token);
+                                continue;
+                            }
+                        }
+
+                        if (isWriter)
                         {
                             if (Interlocked.CompareExchange(ref monitor.nodeThreadsWriterConnection, connection, null) == null)
                             {
-                                LoggerUtils.MonitoringLogWithHost(hostSpec, NodeMonitorLogger, LogLevel.Information, string.Format(Resources.NodeMonitoringTask_DetectedWriter, writerId));
+                                LoggerUtils.MonitoringLogWithHost(hostSpec, NodeMonitorLogger, LogLevel.Information, string.Format(Resources.NodeMonitoringTask_DetectedWriter, hostSpec.Host));
                                 await monitor.FetchTopologyAndUpdateCacheAsync(connection);
+                                hostSpec.Availability = HostAvailability.Available;
                                 monitor.nodeThreadsWriterHostSpec = hostSpec;
                                 monitor.NodeThreadsStop = true;
                             }
@@ -868,10 +866,15 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                                     updateTopology = true;
                                     await this.ReaderThreadFetchTopologyAsync(connection);
                                 }
+                                else
+                                {
+                                    await this.ReaderThreadFetchTopologyAsync(connection);
+                                }
                             }
                         }
                     }
 
+                    monitor.completedOneCycle[hostSpec.HostId!] = true;
                     await Task.Delay(100, token);
                 }
             }
@@ -886,6 +889,8 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             }
             finally
             {
+                monitor.completedOneCycle[hostSpec.HostId!] = true;
+                monitor.readerTopologiesById.TryRemove(hostSpec.HostId!, out _);
                 await monitor.DisposeConnectionAsync(connection);
                 LoggerUtils.MonitoringLogWithHost(hostSpec, NodeMonitorLogger, LogLevel.Trace, string.Format(Resources.NodeMonitoringTask_ThreadCompleted, RuntimeHelpers.GetHashCode(this), (DateTime.UtcNow - start).TotalMilliseconds));
             }
@@ -901,14 +906,15 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                     return;
                 }
 
+                monitor.nodeThreadsLatestTopology = hosts;
+                monitor.readerTopologiesById[hostSpec.HostId!] = hosts;
+                var latestWriterHostSpec = hosts.FirstOrDefault(x => x.Role == HostRole.Writer);
+
                 if (this.writerChanged)
                 {
                     monitor.UpdateTopologyCache(hosts);
                     return;
                 }
-
-                monitor.nodeThreadsLatestTopology = hosts;
-                var latestWriterHostSpec = hosts.FirstOrDefault(x => x.Role == HostRole.Writer);
 
                 if (latestWriterHostSpec != null && writerHostSpec != null &&
                     latestWriterHostSpec.GetHostAndPort() != writerHostSpec.GetHostAndPort())

@@ -58,7 +58,7 @@ public class AuroraConnectionTrackerPluginTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task OpenConnection_WithRdsInstanceHost_CallsPopulateAndSkipsFillAliases()
+    public async Task OpenConnection_WithRdsInstanceHost_CallsPopulateAndSkipsIdentifyConnection()
     {
         var hostSpec = new HostSpec(
             "instance1.xyz.us-east-1.rds.amazonaws.com",
@@ -78,7 +78,7 @@ public class AuroraConnectionTrackerPluginTests
 
         Assert.Equal(this.mockConnection.Object, conn);
         this.mockPluginService.Verify(
-            x => x.FillAliasesAsync(It.IsAny<DbConnection>(), It.IsAny<HostSpec>(), It.IsAny<DbTransaction>()),
+            x => x.IdentifyConnectionAsync(It.IsAny<DbConnection>(), It.IsAny<HostSpec>(), It.IsAny<DbTransaction>()),
             Times.Never);
         this.mockTracker.Verify(
             x => x.PopulateOpenedConnectionQueue(hostSpec, this.mockConnection.Object),
@@ -87,13 +87,24 @@ public class AuroraConnectionTrackerPluginTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task OpenConnection_WithClusterHost_CallsFillAliasesAndPopulate()
+    public async Task OpenConnection_WithClusterHost_CallsIdentifyConnectionAndPopulate()
     {
         var hostSpec = new HostSpec(
             "test-cluster.cluster-xyz.us-east-1.rds.amazonaws.com",
             5432,
             HostRole.Writer,
             HostAvailability.Available);
+
+        var identifiedHostSpec = new HostSpec(
+            "instance1.xyz.us-east-1.rds.amazonaws.com",
+            5432,
+            "instance1",
+            HostRole.Writer,
+            HostAvailability.Available);
+
+        this.mockPluginService
+            .Setup(x => x.IdentifyConnectionAsync(this.mockConnection.Object, hostSpec, It.IsAny<DbTransaction>()))
+            .ReturnsAsync(identifiedHostSpec);
 
         var mockMethodFunc = new Mock<ADONetDelegate<DbConnection>>();
         mockMethodFunc.Setup(x => x.Invoke()).ReturnsAsync(this.mockConnection.Object);
@@ -107,10 +118,13 @@ public class AuroraConnectionTrackerPluginTests
 
         Assert.Equal(this.mockConnection.Object, conn);
         this.mockPluginService.Verify(
-            x => x.FillAliasesAsync(this.mockConnection.Object, hostSpec, null),
+            x => x.IdentifyConnectionAsync(this.mockConnection.Object, hostSpec, It.IsAny<DbTransaction>()),
+            Times.Once);
+        this.mockPluginService.VerifySet(
+            x => x.RoutedHostSpec = identifiedHostSpec,
             Times.Once);
         this.mockTracker.Verify(
-            x => x.PopulateOpenedConnectionQueue(hostSpec, this.mockConnection.Object),
+            x => x.PopulateOpenedConnectionQueue(identifiedHostSpec, this.mockConnection.Object),
             Times.Once);
     }
 

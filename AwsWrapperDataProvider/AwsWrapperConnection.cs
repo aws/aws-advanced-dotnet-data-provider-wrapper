@@ -19,6 +19,7 @@ using System.Runtime.CompilerServices;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
+using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -312,13 +313,31 @@ public class AwsWrapperConnection : DbConnection, IWrapper
         {
             await this.PluginManager.InitHostProvider(this.connectionString!, this.ConnectionProperties!, this.hostListProviderService);
 
+            // Decide which host a fresh open should connect against.
+            //
+            // When the configured endpoint is a cluster endpoint, always reconnect through it (the original
+            // configured host) rather than a previously resolved/pinned instance. This lets writer re-resolution
+            // (or Aurora DNS) route to the current writer after a failover instead of landing on a demoted,
+            // now read-only instance.
+            //
+            // When the configured endpoint is an instance endpoint, keep using CurrentHostSpec: it reflects the
+            // instance the connection currently points to, including the new writer selected by an in-flight
+            // failover. Reconnecting to the original instance endpoint would ignore that and land on the old node.
+            HostSpec? originalHostSpec = this.pluginService.OriginalHostSpec;
+            HostSpec? connectHostSpec =
+                originalHostSpec != null && RdsUtils.IdentifyRdsType(originalHostSpec.Host).IsRdsCluster
+                    ? originalHostSpec
+                    : this.pluginService.CurrentHostSpec;
+
             DbConnection connection = await WrapperUtils.OpenWithPlugins(
                 this.PluginManager,
-                this.pluginService.CurrentHostSpec,
+                connectHostSpec,
                 this.ConnectionProperties!,
                 true,
                 async);
-            this.pluginService.SetCurrentConnection(connection, this.pluginService.CurrentHostSpec);
+
+            HostSpec? connectedHostSpec = this.pluginService.RoutedHostSpec ?? this.pluginService.CurrentHostSpec;
+            this.pluginService.SetCurrentConnection(connection, connectedHostSpec);
             await this.pluginService.RefreshHostListAsync();
 
             telemetryContext.SetSuccess(true);
@@ -331,6 +350,7 @@ public class AwsWrapperConnection : DbConnection, IWrapper
         }
         finally
         {
+            this.pluginService.RoutedHostSpec = null;
             telemetryContext.CloseContext();
         }
     }

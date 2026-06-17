@@ -21,13 +21,9 @@ public interface IHostListProvider
 {
     Task<IList<HostSpec>> RefreshAsync();
 
-    Task<IList<HostSpec>> RefreshAsync(DbConnection? connection);
-
     Task<IList<HostSpec>> ForceRefreshAsync();
 
-    Task<IList<HostSpec>> ForceRefreshAsync(DbConnection? connection);
-
-    Task<HostRole> GetHostRoleAsync(DbConnection connection);
+    Task<IList<HostSpec>> ForceRefreshAsync(bool shouldVerifyWriter, long timeoutMs);
 
     string GetClusterId();
 

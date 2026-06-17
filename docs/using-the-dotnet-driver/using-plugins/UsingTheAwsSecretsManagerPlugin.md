@@ -63,5 +63,5 @@ AwsWrapperConnection<NpgsqlConnection> connection = new(
 ```
 
 For more examples: 
-[PG Secret Manager Authentication](../../examples/PGIamAuthentication.cs)
-[MySql Secret Manager Authentication](../../examples/MySqlIamAuthentication.cs)
+[PG Secret Manager Authentication](../../examples/AwsWrapperDataProviderExample/PGIamAuthentication.cs)
+[MySql Secret Manager Authentication](../../examples/AwsWrapperDataProviderExample/MySqlIamAuthentication.cs)

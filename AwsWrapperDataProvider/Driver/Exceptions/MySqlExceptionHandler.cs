@@ -23,6 +23,9 @@ namespace AwsWrapperDataProvider.Driver.Exceptions;
 
 public class MySqlExceptionHandler : GenericExceptionHandler
 {
+    // SQLSTATE 25006 - read-only SQL transaction (reported by MySqlConnector for read-only writes).
+    private const string ReadOnlyConnectionSqlState = "25006";
+
     private static readonly ILogger<MySqlExceptionHandler> Logger = LoggerUtils.GetLogger<MySqlExceptionHandler>();
 
     private static bool IsMySqlException(Exception exception)
@@ -65,6 +68,14 @@ public class MySqlExceptionHandler : GenericExceptionHandler
     {
         1064, // ER_PARSE_ERROR
         1049, // ER_BAD_DB_ERROR
+    };
+
+    // MySQL server error numbers that indicate the connection/server is in read-only mode.
+    private static IReadOnlySet<int> ReadOnlyConnectionErrorNumbers { get; } = new HashSet<int>()
+    {
+        1290, // ER_OPTION_PREVENTS_STATEMENT: server running with the --read-only option
+        1792, // ER_CANT_EXECUTE_IN_READ_ONLY_TRANSACTION: cannot execute statement in a READ ONLY transaction
+        1836, // ER_READ_ONLY_MODE: running in read-only mode
     };
 
     public override bool IsLoginException(Exception exception)
@@ -157,5 +168,30 @@ public class MySqlExceptionHandler : GenericExceptionHandler
         }
 
         return IsMySqlException(exception) && SyntaxErrorNumbers.Contains(GetMySqlExceptionNumber(exception));
+    }
+
+    public override bool IsReadOnlyConnectionException(Exception exception)
+    {
+        Exception? currException = exception;
+
+        while (currException is not null)
+        {
+            if (currException is DbException dbException)
+            {
+                if (string.Equals(dbException.SqlState, ReadOnlyConnectionSqlState, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+
+                if (IsMySqlException(dbException) && ReadOnlyConnectionErrorNumbers.Contains(GetMySqlExceptionNumber(dbException)))
+                {
+                    return true;
+                }
+            }
+
+            currException = currException.InnerException;
+        }
+
+        return false;
     }
 }

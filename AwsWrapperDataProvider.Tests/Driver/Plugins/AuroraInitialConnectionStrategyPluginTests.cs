@@ -136,7 +136,7 @@ public class AuroraInitialConnectionStrategyPluginTests
             { PropertyDefinition.InitialConnectionReaderHostSelectorStrategy.Name, "random" },
         };
         var pluginWithVerify = new AuroraInitialConnectionStrategyPlugin(this.mockPluginService.Object, props);
-        var hostSpec = new HostSpec("regular-host.us-east-1.rds.amazonaws.com", 5432, null, HostRole.Writer, HostAvailability.Available);
+        var hostSpec = new HostSpec("test-cluster.cluster-xyz.us-east-1.rds.amazonaws.com", 5432, null, HostRole.Writer, HostAvailability.Available);
         var methodFunc = new Mock<ADONetDelegate<DbConnection>>();
         var writerHost = new HostSpec("writer-host", 5432, null, HostRole.Writer, HostAvailability.Available);
 
@@ -163,7 +163,7 @@ public class AuroraInitialConnectionStrategyPluginTests
             { PropertyDefinition.InitialConnectionReaderHostSelectorStrategy.Name, "random" },
         };
         var pluginWithVerify = new AuroraInitialConnectionStrategyPlugin(this.mockPluginService.Object, props);
-        var hostSpec = new HostSpec("regular-host.us-east-1.rds.amazonaws.com", 5432, null, HostRole.Reader, HostAvailability.Available);
+        var hostSpec = new HostSpec("test-cluster.cluster-ro-xyz.us-east-1.rds.amazonaws.com", 5432, null, HostRole.Reader, HostAvailability.Available);
         var methodFunc = new Mock<ADONetDelegate<DbConnection>>();
         var readerHost = new HostSpec("reader-host", 5432, null, HostRole.Reader, HostAvailability.Available);
 
@@ -204,7 +204,7 @@ public class AuroraInitialConnectionStrategyPluginTests
 
         await this.plugin.OpenConnection(writerHost, props, true, methodFunc.Object, true);
 
-        this.mockPluginService.Verify(x => x.ForceRefreshHostListAsync(It.IsAny<DbConnection>()), Times.Once);
+        this.mockPluginService.Verify(x => x.ForceRefreshHostListAsync(), Times.Once);
         this.mockPluginService.Verify(x => x.IdentifyConnectionAsync(It.IsAny<DbConnection>(), It.IsAny<DbTransaction>()), Times.Once);
     }
 
@@ -234,8 +234,8 @@ public class AuroraInitialConnectionStrategyPluginTests
 
         await this.plugin.OpenConnection(readerHost, props, true, methodFunc.Object, true);
 
-        this.mockPluginService.Verify(x => x.ForceRefreshHostListAsync(It.IsAny<DbConnection>()), Times.Once);
-        this.mockHostListProviderService.VerifySet(x => x.InitialConnectionHostSpec = It.IsAny<HostSpec>(), Times.Once);
+        this.mockPluginService.Verify(x => x.ForceRefreshHostListAsync(), Times.Once);
+        this.mockPluginService.VerifySet(x => x.RoutedHostSpec = It.IsAny<HostSpec>(), Times.Once);
     }
 
     [Fact]
@@ -266,7 +266,7 @@ public class AuroraInitialConnectionStrategyPluginTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task OpenConnection_WithInitialConnection_SetsInitialConnectionHostSpec()
+    public async Task OpenConnection_WithInitialConnection_SetsRoutedHostSpec()
     {
         var hostSpec = new HostSpec("test-cluster.cluster-xyz.us-east-1.rds.amazonaws.com", 5432, null, HostRole.Writer, HostAvailability.Available);
         var methodFunc = new Mock<ADONetDelegate<DbConnection>>();
@@ -281,6 +281,6 @@ public class AuroraInitialConnectionStrategyPluginTests
 
         await this.plugin.OpenConnection(hostSpec, this.defaultProps, true, methodFunc.Object, true);
 
-        this.mockHostListProviderService.VerifySet(x => x.InitialConnectionHostSpec = It.IsAny<HostSpec>(), Times.Once);
+        this.mockPluginService.VerifySet(x => x.RoutedHostSpec = It.IsAny<HostSpec>(), Times.Once);
     }
 }

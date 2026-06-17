@@ -230,6 +230,9 @@
   <data name="ClusterTopologyMonitor_UpdateTopologyCache_TopologyUpdate" xml:space="preserve">
     <value>UpdateTopologyCache:</value>
   </data>
+  <data name="ClusterTopologyMonitor_MatchingReaderTopologies" xml:space="preserve">
+    <value>The topologies detected by the reader monitors have been consistent for {0}ms, so their topology will be assumed to be correct.</value>
+  </data>
   <data name="ClusterTopologyMonitor_WaitTillTopologyGetsUpdated_EndTime" xml:space="preserve">
     <value>Waiting for topology update with timeout {0}ms, will stop waiting at {1}.</value>
   </data>
@@ -557,9 +560,6 @@
   <data name="Error_ProvidedTypeDoesntImplementIDbCommand" xml:space="preserve">
     <value>Provided type doesn't implement IDbCommand.</value>
   </data>
-  <data name="Error_RequiredIBlockingHostListProvider" xml:space="preserve">
-    <value>[PluginService] Required IBlockingHostListProvider.</value>
-  </data>
   <data name="Error_ShouldNotBeCalled" xml:space="preserve">
     <value>Should not be called</value>
   </data>
@@ -701,9 +701,6 @@
   <data name="FailoverPlugin_ThrowFailoverSuccessException_FailoverSucceeded" xml:space="preserve">
     <value>Failover succeeded.</value>
   </data>
-  <data name="MonitoringRdsHostListProvider_ClusterIdChanged" xml:space="preserve">
-    <value>Cluster Id changed, old cluster id: {0}.</value>
-  </data>
   <data name="MonitoringRdsHostListProvider_InitMonitor" xml:space="preserve">
     <value>Initializing new cluster topology monitor for clusterId: {0}.</value>
   </data>
@@ -715,12 +712,6 @@
   </data>
   <data name="MonitoringRdsHostListProvider_QueryForTopologyAsync_TimedOut" xml:space="preserve">
     <value>Query for topology async for MonitoringRdsHostListProvider timed out for connection: {0}.</value>
-  </data>
-  <data name="MonitoringRdsHostListProvider_TransferCachedTopology" xml:space="preserve">
-    <value>Cluster Id transferred cache topology, old cluster id: {0}.</value>
-  </data>
-  <data name="MonitoringRdsHostListProvider_TransferExistingMonitor" xml:space="preserve">
-    <value>Cluster Id transferred, old cluster id: {0}.</value>
   </data>
   <data name="MultiAzClusterTopologyMonitor_GetSuggestedWriterNodeIdAsync_Error" xml:space="preserve">
     <value>Error getting suggested writer node ID: {0}.</value>
@@ -800,9 +791,6 @@
   <data name="RdsHostListProvider_GetTopologyAsync_CachedTopology" xml:space="preserve">
     <value>Cached topology: {0}.</value>
   </data>
-  <data name="RdsHostListProvider_GetTopologyAsync_ClusterIdChanged" xml:space="preserve">
-    <value>ClusterId changed: {0} -&gt; {1}.</value>
-  </data>
   <data name="RdsHostListProvider_GetTopologyAsync_ConnectionUnavailable" xml:space="preserve">
     <value>Connection unavailable (State={0}), falling back to initial hosts.</value>
   </data>
@@ -826,9 +814,6 @@
   </data>
   <data name="RdsHostListProvider_QueryForTopologyAsync" xml:space="preserve">
     <value>QueryForTopology: hostName={0}, template={1}, endpoint={2}.</value>
-  </data>
-  <data name="RdsMultiAzDbClusterListProvider_ProcessWriterNodeId_NoWriterNodesFound" xml:space="preserve">
-    <value>No writer node found in the result of the fetchWriterNodeQuery. Ensure that the query is correct and that the database is configured properly.</value>
   </data>
   <data name="RdsMultiAzDbClusterMySqlDialect_IsDialect_AsyncReader" xml:space="preserve">
     <value>Reader no result set left in {0}.</value>
@@ -1034,9 +1019,6 @@
   <data name="Error_WeightedRandomUnableToGetHost" xml:space="preserve">
     <value>Unable to get host for role: {0}.</value>
   </data>
-  <data name="OpenedConnectionTracker_PopulateOpenedConnectionQueue_TrackingByAllAliases" xml:space="preserve">
-    <value>No RDS instance host found for '{0}'. This may be a custom domain. Tracking connection by all aliases.</value>
-  </data>
   <data name="OpenedConnectionTracker_PruneLoop_Error" xml:space="preserve">
     <value>Background connection tracker pruning task encountered an error while removing stale connection references.</value>
   </data>
@@ -1186,5 +1168,143 @@
     </data>
     <data name="BlueGreenStatusMonitor_UnsupportedDialect" xml:space="preserve">
         <value>Dialect {0} is not supported by Blue Green Connection Plugin</value>
+    </data>
+    <data name="Error_CannotFindInstanceTemplateForRegion" xml:space="preserve">
+        <value>Cannot find instance template for region: {0}.</value>
+    </data>
+    <data name="Error_GlobalClusterInstanceHostPatternsRequired" xml:space="preserve">
+        <value>GlobalClusterInstanceHostPatterns is required for Global Aurora Databases.</value>
+    </data>
+    <data name="Error_UnableToDetermineHostRole" xml:space="preserve">
+        <value>Unable to determine host role, connected to unknown DB type.</value>
+    </data>
+    <data name="Error_CannotParseUrl" xml:space="preserve">
+        <value>Cannot parse URL: {0}.</value>
+    </data>
+    <data name="Error_CannotParseHostFromUrl" xml:space="preserve">
+        <value>Cannot parse host from URL: {0}.</value>
+    </data>
+    <data name="Error_CannotParseRegionFromUrl" xml:space="preserve">
+        <value>Cannot parse AWS region from URL: {0}.</value>
+    </data>
+    <data name="GlobalAuroraTopologyUtils_DetectedGdbPatterns" xml:space="preserve">
+        <value>Detected global database instance patterns: {0}.</value>
+    </data>
+    <data name="GlobalAuroraHostListProvider_InitMonitor_Initializing" xml:space="preserve">
+        <value>Initializing GlobalAuroraTopologyMonitor for cluster: {0}.</value>
+    </data>
+    <data name="GdbFailoverPlugin_InitFailoverMode_MissingHomeRegion" xml:space="preserve">
+        <value>Failover home region should be provided.</value>
+    </data>
+    <data name="GdbFailoverPlugin_InitFailoverMode_FailoverHomeRegion" xml:space="preserve">
+        <value>Failover home region: {0}.</value>
+    </data>
+    <data name="GdbFailoverPlugin_InitFailoverMode_FailoverModes" xml:space="preserve">
+        <value>Active home failover mode: {0}, inactive home failover mode: {1}.</value>
+    </data>
+    <data name="GdbFailoverPlugin_FailoverAsync_StartingFailover" xml:space="preserve">
+        <value>Starting failover procedure.</value>
+    </data>
+    <data name="GdbFailoverPlugin_FailoverAsync_FailoverElapsed" xml:space="preserve">
+        <value>Failover procedure completed in {0} ms.</value>
+    </data>
+    <data name="GdbFailoverPlugin_FailoverAsync_UnableToRefreshHostList" xml:space="preserve">
+        <value>Unable to refresh host list.</value>
+    </data>
+    <data name="GdbFailoverPlugin_FailoverAsync_NoWriterFoundInTopology" xml:space="preserve">
+        <value>No writer host found in updated topology.</value>
+    </data>
+    <data name="GdbFailoverPlugin_FailoverAsync_IsHomeRegion" xml:space="preserve">
+        <value>GDB primary region is home region: {0}.</value>
+    </data>
+    <data name="GdbFailoverPlugin_FailoverAsync_CurrentFailoverMode" xml:space="preserve">
+        <value>Failover mode in effect: {0}.</value>
+    </data>
+    <data name="GdbFailoverPlugin_FailoverAsync_UnsupportedFailoverMode" xml:space="preserve">
+        <value>Unsupported failover mode: {0}.</value>
+    </data>
+    <data name="GdbFailoverPlugin_FailoverAsync_EstablishedConnection" xml:space="preserve">
+        <value>Established connection to {0}.</value>
+    </data>
+    <data name="GdbFailoverPlugin_FailoverToWriter_NewWriterNotInAllowedHostsLog" xml:space="preserve">
+        <value>New writer {0} is not in allowed hosts list. {1}</value>
+    </data>
+    <data name="GdbFailoverPlugin_FailoverToWriter_NewWriterNotInAllowedHosts" xml:space="preserve">
+        <value>New writer {0} is not in allowed hosts list.</value>
+    </data>
+    <data name="GdbFailoverPlugin_FailoverToWriter_ExceptionConnectingToWriter" xml:space="preserve">
+        <value>Exception connecting to writer {0}.</value>
+    </data>
+    <data name="GdbFailoverPlugin_FailoverToWriter_UnexpectedRole" xml:space="preserve">
+        <value>Unexpected role {0} for writer candidate {1}.</value>
+    </data>
+    <data name="GdbFailoverPlugin_FailoverToWriter_ConnectedToWriter" xml:space="preserve">
+        <value>Connected to writer {0}.</value>
+    </data>
+    <data name="GdbFailoverPlugin_FailoverToAllowedHost_UnableToConnectToReader" xml:space="preserve">
+        <value>Unable to connect to reader within timeout.</value>
+    </data>
+    <data name="GdbFailoverPlugin_GetAllowedFailoverConnectionAsync_NoCandidateFound" xml:space="preserve">
+        <value>No candidate found for role {0}. Retrying.</value>
+    </data>
+    <data name="GdbFailoverPlugin_GetAllowedFailoverConnectionAsync_FailoverReaderTimeout" xml:space="preserve">
+        <value>Failover reader timeout.</value>
+    </data>
+    <data name="GdbReadWriteSplittingPlugin_MissingHomeRegion" xml:space="preserve">
+        <value>Home region for the GDB Read/Write Splitting Plugin is missing and could not be derived from the initial host '{0}'. Please provide the GdbRwHomeRegion connection property.</value>
+    </data>
+    <data name="GdbReadWriteSplittingPlugin_ParameterValue" xml:space="preserve">
+        <value>{0} = {1}.</value>
+    </data>
+    <data name="GdbReadWriteSplittingPlugin_CantConnectWriterOutOfHomeRegion" xml:space="preserve">
+        <value>Cannot connect to writer host '{0}' because it is outside of the configured home region '{1}'.</value>
+    </data>
+    <data name="GdbReadWriteSplittingPlugin_NoAvailableReadersInHomeRegion" xml:space="preserve">
+        <value>No reader hosts are available in the home region '{0}'.</value>
+    </data>
+    <data name="GdbReadWriteSplittingPlugin_EnabledGwf" xml:space="preserve">
+        <value>Global Write Forwarding is enabled. Keeping reader connection in region '{0}' instead of switching to writer.</value>
+    </data>
+    <data name="IamAuthPlugin_CouldNotDetermineUser" xml:space="preserve">
+        <value>Could not determine user for IAM authentication.</value>
+    </data>
+    <data name="IamAuthPlugin_CouldNotDetermineHost" xml:space="preserve">
+        <value>Could not determine host for IAM authentication provider.</value>
+    </data>
+    <data name="IamAuthPlugin_CouldNotDetermineRegion" xml:space="preserve">
+        <value>Could not determine region for IAM authentication provider.</value>
+    </data>
+    <data name="IamAuthPlugin_CouldNotGenerateToken" xml:space="preserve">
+        <value>Could not generate authentication token for IAM user {0}.</value>
+    </data>
+    <data name="IamAuthPlugin_GeneratedNewToken" xml:space="preserve">
+        <value>Generated new authentication token.</value>
+    </data>
+    <data name="IamAuthPlugin_UseCachedToken" xml:space="preserve">
+        <value>Use cached authentication token.</value>
+    </data>
+    <data name="IamTokenUtility_TokenGenerationFailed" xml:space="preserve">
+        <value>Couldn't generate token for IAM authentication.</value>
+    </data>
+    <data name="FederatedAuthPlugin_HostNotProvided" xml:space="preserve">
+        <value>Host not provided.</value>
+    </data>
+    <data name="FederatedAuthPlugin_CouldNotDetermineRegion" xml:space="preserve">
+        <value>Could not determine region.</value>
+    </data>
+    <data name="FederatedAuthPlugin_DbUserNotProvided" xml:space="preserve">
+        <value>DB user not provided.</value>
+    </data>
+    <data name="FederatedAuthPlugin_InvalidRegion" xml:space="preserve">
+        <value>Invalid region.</value>
+    </data>
+    <data name="FederatedAuthPlugin_GeneratedNewToken" xml:space="preserve">
+        <value>Generated new authentication token.</value>
+    </data>
+    <data name="FederatedAuthPlugin_UseCachedToken" xml:space="preserve">
+        <value>Use cached authentication token.</value>
+    </data>
+    <data name="TokenUtility_TokenGenerationFailed" xml:space="preserve">
+        <value>Couldn't generate token for AWS authentication.</value>
     </data>
 </root>
