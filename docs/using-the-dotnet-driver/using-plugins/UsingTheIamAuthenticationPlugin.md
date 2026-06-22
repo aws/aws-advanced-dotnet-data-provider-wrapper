@@ -44,6 +44,21 @@ IAM database authentication use is limited to certain database engines. For more
 | `IamRegion`      | String  |    No    | This property will override the default region that is used to generate the IAM token. The default region is parsed from the connection string.                                                                                                                                                        | `us-east-2`                                         |
 | `IamExpiration`  | Integer |    No    | This property determines how long an IAM token is kept in the driver cache before a new one is generated. The default expiration time is set to 14 minutes and 30 seconds. Note that IAM database authentication tokens have a lifetime of 15 minutes.                                                 | `600`                                               |
 
+## Connection Pool Stability and Limitations
+
+IAM authentication tokens are short-lived (about 15 minutes) and are regenerated on each rotation. Because the community drivers key their internal connection pool on the connection string, injecting a rotated token directly into the connection string would change the pool key on every rotation, fragmenting the pool (creating new pools, causing cold starts, and increasing connection/memory usage).
+
+To avoid this, the wrapper supplies the rotated token to the target driver through its native password-provider mechanism — keeping the password out of the connection string so the pool key stays stable across rotations:
+
+| Target driver | Password delivery | Pool stable across token rotation? |
+|---|---|---|
+| `Npgsql.NpgsqlConnection` | `NpgsqlDataSourceBuilder.UsePeriodicPasswordProvider` | Yes |
+| `MySqlConnector.MySqlConnection` | `MySqlConnection.ProvidePasswordCallback` | Yes |
+| `MySql.Data.MySqlClient.MySqlConnection` | Injected into the connection string | **No** |
+
+> [!WARNING]\
+> **`MySql.Data` (Oracle Connector/NET) does not provide a dynamic password mechanism.** With this driver the IAM token is injected into the connection string, so each token rotation produces a new connection string and a new connection pool. This causes pool fragmentation under IAM token rotation. If you require a stable connection pool with IAM authentication on MySQL, use the `MySqlConnector.MySqlConnection` target driver instead.
+
 ## Examples
 [PG Iam Authentication](../../examples/AwsWrapperDataProviderExample/PGIamAuthentication.cs)
 [MySql Iam Authentication](../../examples/AwsWrapperDataProviderExample/MySqlIamAuthentication.cs)

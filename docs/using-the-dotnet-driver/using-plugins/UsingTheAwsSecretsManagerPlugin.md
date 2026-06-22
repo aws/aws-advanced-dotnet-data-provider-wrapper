@@ -62,6 +62,16 @@ AwsWrapperConnection<NpgsqlConnection> connection = new(
 );
 ```
 
+## Connection Pool Stability and Limitations
+
+A Secrets Manager secret may be rotated, changing the cached credentials. Because the community drivers key their internal connection pool on the connection string, the wrapper supplies the rotated **password** to the target driver through its native password-provider mechanism (`NpgsqlDataSourceBuilder.UsePeriodicPasswordProvider` for `Npgsql`, `MySqlConnection.ProvidePasswordCallback` for `MySqlConnector`) so the password is kept out of the connection string. With these drivers, **password** rotation does not fragment the connection pool.
+
+> [!WARNING]\
+> **The username is always part of the connection string and is not pool-stable.** A Secrets Manager secret contains both a username and a password, and either can change on rotation. Only the password is supplied out-of-band; the username (`SecretsManagerSecretUsernameProperty`, default `username`) is written into the connection string. If a rotation changes the **username**, the connection string changes and a new connection pool is created — fragmenting the pool. This is acceptable for the common case of AWS-managed RDS credential rotation, which keeps the username stable and rotates only the password. If your rotation strategy changes the username, expect pool fragmentation on each username change.
+
+> [!WARNING]\
+> **`MySql.Data` (Oracle Connector/NET) does not provide a dynamic password mechanism.** With this target driver, both the username and password are injected into the connection string, so **any** secret rotation (password or username) produces a new connection string and a new connection pool, fragmenting it. If you require a stable connection pool with rotating secrets on MySQL, use the `MySqlConnector.MySqlConnection` target driver instead.
+
 For more examples: 
 [PG Secret Manager Authentication](../../examples/AwsWrapperDataProviderExample/PGIamAuthentication.cs)
 [MySql Secret Manager Authentication](../../examples/AwsWrapperDataProviderExample/MySqlIamAuthentication.cs)

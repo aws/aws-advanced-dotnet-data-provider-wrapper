@@ -114,7 +114,7 @@ public class IamConnectivityTests : IntegrationTestBase
 
                 await using var command = connection.CreateCommand<NpgsqlCommand>();
                 command.CommandText = "SELECT 1";
-                Assert.Equal(1, Convert.ToInt32(await command.ExecuteScalarAsync()));
+                Assert.Equal(1, Convert.ToInt32(await command.ExecuteScalarAsync(TestContext.Current.CancellationToken)));
             }
         }
 
