@@ -109,9 +109,16 @@ public class TargetConnectionDialectProviderTests
     {
         public Type DriverConnectionType => typeof(NpgsqlConnection);
 
+        public bool SupportsPasswordProvider => false;
+
         public Dictionary<string, string[]> AwsWrapperPropertyNameAliasesMap { get; } = new();
 
         public bool IsDialect(Type connectionType) => connectionType == typeof(NpgsqlConnection);
+
+        public DbConnection CreateConnection(Type connectionType, string connectionString, Dictionary<string, string> props)
+        {
+            return (DbConnection)Activator.CreateInstance(connectionType, connectionString)!;
+        }
 
         public string? GetSqlState(DbException exception) => string.Empty;
 

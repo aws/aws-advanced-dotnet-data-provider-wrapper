@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections.Concurrent;
 using System.Data;
 using System.Data.Common;
+using AwsWrapperDataProvider.Driver.Auth;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
@@ -24,7 +26,65 @@ namespace AwsWrapperDataProvider.Dialect.Npgsql;
 
 public class NpgsqlDialect : AbstractTargetConnectionDialect
 {
+    /// <summary>
+    /// Cache of <see cref="NpgsqlDataSource"/> instances keyed by the (password-less) connection
+    /// string. Each data source owns its own connection pool and a background password-refresh timer
+    /// configured via <c>UsePeriodicPasswordProvider</c>, so a rotating token never changes the
+    /// connection string and the pool key stays stable. Process-lifetime and bounded by the number
+    /// of distinct endpoints.
+    /// </summary>
+    private static readonly ConcurrentDictionary<string, NpgsqlDataSource> DataSources = new();
+
     public override Type DriverConnectionType { get; } = typeof(NpgsqlConnection);
+
+    public override bool SupportsPasswordProvider => true;
+
+    public override DbConnection CreateConnection(Type connectionType, string connectionString, Dictionary<string, string> props)
+    {
+        string? key = props.GetValueOrDefault(PasswordProviderRegistry.ProviderKeyPropertyName);
+        if (key == null
+            || !PasswordProviderRegistry.TryGet(key, out PasswordProviderRegistration? registration)
+            || registration == null)
+        {
+            return base.CreateConnection(connectionType, connectionString, props);
+        }
+
+        // The connection string carries no password (the auth plugin removed it), so the periodic
+        // password provider is authoritative. The data source is cached by connection string so the
+        // same pool is reused across token rotations.
+        NpgsqlDataSource dataSource = DataSources.GetOrAdd(connectionString, cs =>
+        {
+            var builder = new NpgsqlDataSourceBuilder(cs);
+            builder.UsePeriodicPasswordProvider(
+                (_, ct) => registration.Provider(ct),
+                registration.SuccessRefreshInterval,
+                registration.FailureRefreshInterval);
+            return builder.Build();
+        });
+
+        return dataSource.CreateConnection();
+    }
+
+    /// <summary>
+    /// Gets the number of cached <see cref="NpgsqlDataSource"/> instances. Because each data source
+    /// owns one connection pool keyed by the (password-less) connection string, this is the number
+    /// of distinct pools the dialect has created — used by tests to assert that token rotation does
+    /// not fragment the pool.
+    /// </summary>
+    internal static int DataSourceCount => DataSources.Count;
+
+    /// <summary>
+    /// Disposes and clears all cached data sources. Intended for test isolation.
+    /// </summary>
+    internal static void ClearDataSources()
+    {
+        foreach (NpgsqlDataSource dataSource in DataSources.Values)
+        {
+            dataSource.Dispose();
+        }
+
+        DataSources.Clear();
+    }
 
     public override DbConnectionStringBuilder CreateConnectionStringBuilder()
     {

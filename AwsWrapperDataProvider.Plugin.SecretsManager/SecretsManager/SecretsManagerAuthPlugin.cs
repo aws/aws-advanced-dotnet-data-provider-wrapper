@@ -16,6 +16,7 @@ using System.Data.Common;
 using Amazon;
 using Amazon.SecretsManager;
 using AwsWrapperDataProvider.Driver;
+using AwsWrapperDataProvider.Driver.Auth;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -123,7 +124,21 @@ public class SecretsManagerAuthPlugin : AbstractConnectionPlugin
     private async Task<DbConnection> ConnectInternal(HostSpec? hostSpec, Dictionary<string, string> props, ADONetDelegate<DbConnection> methodFunc)
     {
         bool secretsWasFetched = await this.UpdateSecrets(false);
-        this.ApplySecretToProperties(props);
+
+        // When the target driver supports a native password provider, keep the password out of the
+        // connection string (and therefore out of the driver's pool key) and instead register a
+        // durable provider keyed by the secret cache key. The username is still written into the
+        // connection string: a username change does produce a new pool, but RDS-managed rotation
+        // keeps the username stable and rotates only the password, so password rotation stays
+        // pool-stable.
+        bool useProvider = this.pluginService.TargetConnectionDialect?.SupportsPasswordProvider == true;
+
+        this.ApplySecretToProperties(props, useProvider);
+        if (useProvider)
+        {
+            this.RegisterPasswordProvider();
+            props[PasswordProviderRegistry.ProviderKeyPropertyName] = this.cacheKey;
+        }
 
         try
         {
@@ -138,7 +153,7 @@ public class SecretsManagerAuthPlugin : AbstractConnectionPlugin
 
             // should the token not work (login exception + is cached token), generate a new one and try again
             await this.UpdateSecrets(true);
-            this.ApplySecretToProperties(props);
+            this.ApplySecretToProperties(props, useProvider);
             return await methodFunc();
         }
     }
@@ -180,9 +195,46 @@ public class SecretsManagerAuthPlugin : AbstractConnectionPlugin
         return secretsWasFetched;
     }
 
-    private void ApplySecretToProperties(Dictionary<string, string> props)
+    private void ApplySecretToProperties(Dictionary<string, string> props, bool useProvider)
     {
         props[PropertyDefinition.User.Name] = this.secret?.Username ?? throw new Exception("Could not receive secrets from secrets manager.");
-        props[PropertyDefinition.Password.Name] = this.secret?.Password ?? throw new Exception("Could not receive secrets from secrets manager.");
+
+        // Validate that a password is present even when using the provider path, preserving the
+        // original throw-on-missing-secret behavior.
+        string password = this.secret?.Password ?? throw new Exception("Could not receive secrets from secrets manager.");
+
+        if (useProvider)
+        {
+            PropertyDefinition.Password.Set(props, null);
+        }
+        else
+        {
+            props[PropertyDefinition.Password.Name] = password;
+        }
+    }
+
+    /// <summary>
+    /// Registers a durable <see cref="WrapperPasswordProvider"/> for the secret in the
+    /// <see cref="PasswordProviderRegistry"/>. The delegate serves the password from the shared
+    /// secret cache and only re-fetches the secret on a cache miss, so it is safe to be invoked by
+    /// the target driver on any future physical connection open.
+    /// </summary>
+    private void RegisterPasswordProvider()
+    {
+        PasswordProviderRegistry.Register(
+            this.cacheKey,
+            new PasswordProviderRegistration(
+                async _ =>
+                {
+                    if (!SecretValueCache.TryGetValue(this.cacheKey, out SecretsManagerUtility.AwsRdsSecrets? secret) || secret == null)
+                    {
+                        await this.UpdateSecrets(true);
+                        secret = this.secret;
+                    }
+
+                    return secret?.Password ?? throw new Exception("Could not receive secrets from secrets manager.");
+                },
+                successRefreshInterval: TimeSpan.FromSeconds(Math.Max(this.secretValueExpirySecs - 60, 60)),
+                failureRefreshInterval: TimeSpan.FromSeconds(30)));
     }
 }

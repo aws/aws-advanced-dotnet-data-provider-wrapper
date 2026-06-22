@@ -14,6 +14,7 @@
 
 using System.Data;
 using System.Data.Common;
+using AwsWrapperDataProvider.Driver.Auth;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
@@ -28,6 +29,29 @@ public class MySqlConnectorDialect : AbstractTargetConnectionDialect
     private const string DefaultPluginCode = "initialConnection,auroraConnectionTracker,failover";
 
     public override Type DriverConnectionType { get; } = typeof(MySqlConnection);
+
+    public override bool SupportsPasswordProvider => true;
+
+    public override DbConnection CreateConnection(Type connectionType, string connectionString, Dictionary<string, string> props)
+    {
+        DbConnection connection = base.CreateConnection(connectionType, connectionString, props);
+
+        string? key = props.GetValueOrDefault(PasswordProviderRegistry.ProviderKeyPropertyName);
+        if (connection is MySqlConnection mySqlConnection
+            && key != null
+            && PasswordProviderRegistry.TryGet(key, out PasswordProviderRegistration? registration)
+            && registration != null)
+        {
+            // MySqlConnector keeps the password out of the connection string and serves multiple
+            // passwords from a single pool via this callback, so the pool key stays stable across
+            // token rotations. The callback is synchronous; the provider returns from its in-memory
+            // cache on the common path, so blocking here does not perform I/O in the typical case.
+            mySqlConnection.ProvidePasswordCallback = _ =>
+                registration.Provider(CancellationToken.None).AsTask().GetAwaiter().GetResult();
+        }
+
+        return connection;
+    }
 
     public override DbConnectionStringBuilder CreateConnectionStringBuilder()
     {

@@ -17,6 +17,7 @@ using System.Text.RegularExpressions;
 using Amazon;
 using Amazon.Runtime;
 using AwsWrapperDataProvider.Driver;
+using AwsWrapperDataProvider.Driver.Auth;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -164,21 +165,44 @@ public abstract partial class BaseSamlAuthPlugin : AbstractConnectionPlugin
         string dbUser = PropertyDefinition.DbUser.GetString(props) ?? throw new Exception(Resources.FederatedAuthPlugin_DbUserNotProvided);
 
         string cacheKey = this.tokenUtility.GetCacheKey(dbUser, host, port, region);
+        int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? DefaultIamExpirationSeconds;
+
+        // When the target driver supports a native password provider, keep the token out of the
+        // connection string (and therefore out of the driver's pool key) and instead register a
+        // durable provider keyed by the endpoint cache key. The driver fetches the current token
+        // from the shared token cache on each new physical connection, so token rotation no longer
+        // fragments the connection pool. The database user is stable and stays in the connection
+        // string.
+        bool useProvider = this.pluginService.TargetConnectionDialect?.SupportsPasswordProvider == true;
+
         bool isCachedToken;
         if (this.tokenCache.TryGetValue(cacheKey, out string? token) && token != null)
         {
-            props[PropertyDefinition.Password.Name] = token;
+            if (!useProvider)
+            {
+                props[PropertyDefinition.Password.Name] = token;
+            }
+
             isCachedToken = true;
             Logger.LogTrace(Resources.FederatedAuthPlugin_UseCachedToken);
         }
         else
         {
-            await this.UpdateAuthenticationTokenAsync(props, host, port, region, cacheKey, dbUser, credentialsProvider);
+            await this.UpdateAuthenticationTokenAsync(props, host, port, region, cacheKey, dbUser, credentialsProvider, useProvider);
             isCachedToken = false;
             Logger.LogTrace(Resources.FederatedAuthPlugin_GeneratedNewToken);
         }
 
         props[PropertyDefinition.User.Name] = dbUser;
+
+        if (useProvider)
+        {
+            // Snapshot the properties before removing the password so the background refresh delegate
+            // can re-authenticate with the IdP (which needs the IdP credentials carried in props).
+            this.RegisterPasswordProvider(cacheKey, host, port, region, dbUser, tokenExpirationSeconds, new Dictionary<string, string>(props));
+            props[PasswordProviderRegistry.ProviderKeyPropertyName] = cacheKey;
+            PropertyDefinition.Password.Set(props, null);
+        }
 
         try
         {
@@ -192,13 +216,13 @@ public abstract partial class BaseSamlAuthPlugin : AbstractConnectionPlugin
             }
 
             // should the token not work (login exception + is cached token), generate a new one and try again
-            await this.UpdateAuthenticationTokenAsync(props, host, port, region, cacheKey, dbUser, credentialsProvider);
+            await this.UpdateAuthenticationTokenAsync(props, host, port, region, cacheKey, dbUser, credentialsProvider, useProvider);
 
             return await methodFunc();
         }
     }
 
-    private async Task UpdateAuthenticationTokenAsync(Dictionary<string, string> props, string host, int port, string region, string cacheKey, string dbUser, AWSCredentialsProvider? credentialsProvider = null)
+    private async Task UpdateAuthenticationTokenAsync(Dictionary<string, string> props, string host, int port, string region, string cacheKey, string dbUser, AWSCredentialsProvider? credentialsProvider = null, bool useProvider = false)
     {
         // Count every token-fetch attempt. Incremented before any work so both the initial
         // cache-miss fetch and the login-exception retry-fetch are captured. Counts attempts
@@ -214,7 +238,47 @@ public abstract partial class BaseSamlAuthPlugin : AbstractConnectionPlugin
         AWSCredentials credentials = credentialsProvider.GetAWSCredentials();
 
         string token = await this.tokenUtility.GenerateAuthenticationTokenAsync(region, host, port, dbUser, credentials);
-        props[PropertyDefinition.Password.Name] = token;
+
+        // For the provider path the token is served to the driver via the registered delegate, so it
+        // must not be written into the connection string (which would re-fragment the pool).
+        if (!useProvider)
+        {
+            props[PropertyDefinition.Password.Name] = token;
+        }
+
         this.tokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
+    }
+
+    /// <summary>
+    /// Registers a durable <see cref="WrapperPasswordProvider"/> for the given endpoint in the
+    /// <see cref="PasswordProviderRegistry"/>. The delegate serves the token from this plugin's token
+    /// cache and only generates a new token on a cache miss, so it is safe to be invoked by the
+    /// target driver on any future physical connection open.
+    /// </summary>
+    private void RegisterPasswordProvider(string cacheKey, string host, int port, string region, string dbUser, int tokenExpirationSeconds, Dictionary<string, string> propsSnapshot)
+    {
+        PasswordProviderRegistry.Register(
+            cacheKey,
+            new PasswordProviderRegistration(
+                async _ =>
+                {
+                    if (this.tokenCache.TryGetValue(cacheKey, out string? token) && token != null)
+                    {
+                        return token;
+                    }
+
+                    this.fetchTokenCounter.Inc();
+                    RegionEndpoint regionEndpoint = RegionUtils.IsValidRegion(region)
+                        ? RegionEndpoint.GetBySystemName(region)
+                        : throw new Exception(Resources.FederatedAuthPlugin_InvalidRegion);
+                    AWSCredentialsProvider credentialsProvider =
+                        await this.credentialsFactory.GetAwsCredentialsProviderAsync(host, regionEndpoint, propsSnapshot);
+                    AWSCredentials credentials = credentialsProvider.GetAWSCredentials();
+                    string newToken = await this.tokenUtility.GenerateAuthenticationTokenAsync(region, host, port, dbUser, credentials);
+                    this.tokenCache.Set(cacheKey, newToken, TimeSpan.FromSeconds(tokenExpirationSeconds));
+                    return newToken;
+                },
+                successRefreshInterval: TimeSpan.FromSeconds(Math.Max(tokenExpirationSeconds - 60, 60)),
+                failureRefreshInterval: TimeSpan.FromSeconds(30)));
     }
 }

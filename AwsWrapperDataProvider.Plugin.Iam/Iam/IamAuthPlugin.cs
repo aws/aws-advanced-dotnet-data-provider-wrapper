@@ -14,6 +14,7 @@
 
 using System.Data.Common;
 using AwsWrapperDataProvider.Driver;
+using AwsWrapperDataProvider.Driver.Auth;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Utils;
@@ -109,11 +110,11 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
             ?? throw new Exception(Resources.IamAuthPlugin_CouldNotDetermineRegion);
 
         string cacheKey = this.iamTokenUtility.GetCacheKey(iamUser, iamHost, iamPort, iamRegion);
+        int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? DefaultIamExpirationSeconds;
         bool isCachedToken = true;
         if (!IamTokenCache.TryGetValue(cacheKey, out string? token))
         {
             token = await this.FetchTokenAsync(iamUser, iamHost, iamPort, iamRegion);
-            int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? DefaultIamExpirationSeconds;
             IamTokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
             isCachedToken = false;
             Logger.LogTrace(Resources.IamAuthPlugin_GeneratedNewToken);
@@ -123,8 +124,23 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
             Logger.LogTrace(Resources.IamAuthPlugin_UseCachedToken);
         }
 
-        // token is non-null here, as the above try-catch block must have succeeded
-        PropertyDefinition.Password.Set(props, token);
+        // When the target driver supports a native password provider, keep the token out of the
+        // connection string (and therefore out of the driver's pool key) and instead register a
+        // durable provider keyed by the endpoint cache key. The driver fetches the current token
+        // from the shared IamTokenCache on each new physical connection, so token rotation no longer
+        // fragments the connection pool.
+        bool useProvider = this.pluginService.TargetConnectionDialect?.SupportsPasswordProvider == true;
+        if (useProvider)
+        {
+            this.RegisterPasswordProvider(cacheKey, iamUser, iamHost, iamPort, iamRegion, tokenExpirationSeconds);
+            props[PasswordProviderRegistry.ProviderKeyPropertyName] = cacheKey;
+            PropertyDefinition.Password.Set(props, null);
+        }
+        else
+        {
+            // token is non-null here, as the above try-catch block must have succeeded
+            PropertyDefinition.Password.Set(props, token);
+        }
 
         try
         {
@@ -139,15 +155,44 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
 
             // should the token not work (login exception + is cached token), generate a new one and try again
             token = await this.FetchTokenAsync(iamUser, iamHost, iamPort, iamRegion);
-            int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? DefaultIamExpirationSeconds;
             IamTokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
             Logger.LogTrace(Resources.IamAuthPlugin_GeneratedNewToken);
 
-            // token is non-null here, as the above try-catch block must have succeeded
-            PropertyDefinition.Password.Set(props, token);
+            // For the provider path the registered delegate reads the refreshed token from the cache
+            // on the next physical open, so only the legacy path needs to re-set the password here.
+            if (!useProvider)
+            {
+                // token is non-null here, as the above try-catch block must have succeeded
+                PropertyDefinition.Password.Set(props, token);
+            }
 
             return await methodFunc();
         }
+    }
+
+    /// <summary>
+    /// Registers a durable <see cref="WrapperPasswordProvider"/> for the given endpoint in the
+    /// <see cref="PasswordProviderRegistry"/>. The delegate serves the token from the shared
+    /// <see cref="IamTokenCache"/> and only fetches a new token on a cache miss, so it is safe to be
+    /// invoked by the target driver on any future physical connection open.
+    /// </summary>
+    private void RegisterPasswordProvider(string cacheKey, string iamUser, string iamHost, int iamPort, string iamRegion, int tokenExpirationSeconds)
+    {
+        PasswordProviderRegistry.Register(
+            cacheKey,
+            new PasswordProviderRegistration(
+                async _ =>
+                {
+                    if (!IamTokenCache.TryGetValue(cacheKey, out string? token) || token == null)
+                    {
+                        token = await this.FetchTokenAsync(iamUser, iamHost, iamPort, iamRegion);
+                        IamTokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
+                    }
+
+                    return token!;
+                },
+                successRefreshInterval: TimeSpan.FromSeconds(Math.Max(tokenExpirationSeconds - 60, 60)),
+                failureRefreshInterval: TimeSpan.FromSeconds(30)));
     }
 
     /// <summary>

@@ -30,6 +30,30 @@ public interface ITargetConnectionDialect
     Type DriverConnectionType { get; }
 
     /// <summary>
+    /// Gets a value indicating whether this driver supports a native dynamic password provider that
+    /// keeps the password out of the connection string (and therefore out of the driver's pool key).
+    /// When <see langword="true"/>, token-based auth plugins register a
+    /// <see cref="HostInfo.HostSpec"/>-independent password provider instead of injecting the token
+    /// into the <c>Password</c> connection property.
+    /// </summary>
+    bool SupportsPasswordProvider { get; }
+
+    /// <summary>
+    /// Creates an unopened target <see cref="DbConnection"/> for the given connection string.
+    /// <para>
+    /// Implementations may consult <paramref name="props"/> for a registered dynamic password
+    /// provider (see <c>PasswordProviderRegistry.ProviderKeyPropertyName</c>) and wire it into the driver's
+    /// native password-provider mechanism. The default implementation simply constructs the
+    /// connection from <paramref name="connectionType"/> and <paramref name="connectionString"/>.
+    /// </para>
+    /// </summary>
+    /// <param name="connectionType">The concrete target connection type to instantiate.</param>
+    /// <param name="connectionString">The prepared connection string (may be empty).</param>
+    /// <param name="props">The full connection properties, including wrapper-internal keys.</param>
+    /// <returns>An unopened target connection.</returns>
+    DbConnection CreateConnection(Type connectionType, string connectionString, Dictionary<string, string> props);
+
+    /// <summary>
     /// Determines if the given connection type matches this dialect.
     /// </summary>
     /// <param name="connectionType">The connection type.</param>

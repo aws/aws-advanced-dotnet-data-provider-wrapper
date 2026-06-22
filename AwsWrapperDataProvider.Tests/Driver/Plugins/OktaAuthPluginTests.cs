@@ -16,8 +16,10 @@ using System.Data.Common;
 using Amazon;
 using Amazon.Runtime;
 using AwsWrapperDataProvider.Driver;
+using AwsWrapperDataProvider.Driver.Auth;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
+using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
 using AwsWrapperDataProvider.Driver.Utils.Telemetry;
 using AwsWrapperDataProvider.Plugin.FederatedAuth.FederatedAuth;
@@ -55,6 +57,7 @@ public class OktaAuthPluginTests
     public OktaAuthPluginTests()
     {
         OktaAuthPlugin.IamTokenCache.Clear();
+        PasswordProviderRegistry.Clear();
 
         this.mockPluginService = new Mock<IPluginService>();
 
@@ -130,6 +133,30 @@ public class OktaAuthPluginTests
 
         Assert.Equal("db-user", this.props[PropertyDefinition.User.Name]);
         Assert.Equal("generated-token", this.props[PropertyDefinition.Password.Name]);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task OpenConnection_WithPasswordProviderDialect_RegistersProviderAndRemovesPassword()
+    {
+        var mockDialect = new Mock<ITargetConnectionDialect>();
+        mockDialect.Setup(d => d.SupportsPasswordProvider).Returns(true);
+        this.mockPluginService.Setup(s => s.TargetConnectionDialect).Returns(mockDialect.Object);
+
+        this.props[PropertyDefinition.DbUser.Name] = "db-user";
+        this.iamTokenUtilityGeneratedToken = "generated-token";
+
+        _ = await this.oktaAuthPlugin.OpenConnection(new HostSpec(Host, Port, HostRole.Writer, HostAvailability.Available), this.props, true, this.methodFunc, true);
+
+        // Database user stays in the connection props; password is removed (kept out of the pool key).
+        Assert.Equal("db-user", this.props[PropertyDefinition.User.Name]);
+        Assert.False(this.props.ContainsKey(PropertyDefinition.Password.Name));
+
+        string cacheKey = CacheKey("db-user", Host, Port, Region);
+        Assert.Equal(cacheKey, this.props[PasswordProviderRegistry.ProviderKeyPropertyName]);
+        Assert.True(PasswordProviderRegistry.TryGet(cacheKey, out var registration));
+        Assert.NotNull(registration);
+        Assert.Equal("generated-token", await registration!.Provider(CancellationToken.None));
     }
 
     private static string CacheKey(string user, string hostname, int port, string region)

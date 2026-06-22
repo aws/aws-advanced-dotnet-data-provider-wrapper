@@ -16,8 +16,10 @@ using System.Data.Common;
 using Amazon.SecretsManager;
 using Amazon.SecretsManager.Model;
 using AwsWrapperDataProvider.Driver;
+using AwsWrapperDataProvider.Driver.Auth;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
+using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
 using AwsWrapperDataProvider.Driver.Utils.Telemetry;
 using AwsWrapperDataProvider.Plugin.SecretsManager.SecretsManager;
@@ -74,6 +76,7 @@ public class SecretsManagerAuthPluginTests
         this.methodFunc = () => Task.FromResult(new Mock<DbConnection>().Object);
 
         SecretsManagerAuthPlugin.ClearCache();
+        PasswordProviderRegistry.Clear();
     }
 
     [Fact]
@@ -89,6 +92,28 @@ public class SecretsManagerAuthPluginTests
         this.mockSecretsManagerClient.Verify(
             client => client.GetSecretValueAsync(It.IsAny<GetSecretValueRequest>(), It.IsAny<CancellationToken>()),
             Times.Once);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task OpenConnection_WithPasswordProviderDialect_RegistersProviderAndKeepsUsername()
+    {
+        var mockDialect = new Mock<ITargetConnectionDialect>();
+        mockDialect.Setup(d => d.SupportsPasswordProvider).Returns(true);
+        this.mockPluginService.Setup(s => s.TargetConnectionDialect).Returns(mockDialect.Object);
+
+        _ = await this.secretsManagerAuthPlugin.OpenConnection(new HostSpec(Host, Port, HostRole.Writer, HostAvailability.Available), this.props, true, this.methodFunc, true);
+
+        // Username stays in the connection props; password is removed (kept out of the pool key).
+        Assert.Equal("test-user", this.props[PropertyDefinition.User.Name]);
+        Assert.False(this.props.ContainsKey(PropertyDefinition.Password.Name));
+
+        // A provider keyed by "<secretId>:<region>" was registered and serves the password.
+        string cacheKey = $"{SecretId}:{Region}";
+        Assert.Equal(cacheKey, this.props[PasswordProviderRegistry.ProviderKeyPropertyName]);
+        Assert.True(PasswordProviderRegistry.TryGet(cacheKey, out var registration));
+        Assert.NotNull(registration);
+        Assert.Equal("test-password", await registration!.Provider(CancellationToken.None));
     }
 
     [Fact]

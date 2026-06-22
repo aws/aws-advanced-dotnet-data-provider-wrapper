@@ -16,7 +16,6 @@ using System.Text.RegularExpressions;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Properties;
-using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Utils;
 
@@ -30,8 +29,6 @@ internal static class ConnectionPropertiesUtils
     private static readonly Regex UrlWithRegionPattern = new(
         @"^(\[(?<region>.+)\])?(?<domain>[a-zA-Z0-9\?\.\-]+)(:(?<port>[0-9]+))?$",
         RegexOptions.Compiled);
-
-    private static readonly ILogger<AwsWrapperProperty> Logger = LoggerUtils.GetLogger<AwsWrapperProperty>();
 
     internal static Dictionary<string, string> ParseConnectionStringParameters(string connectionString)
     {
@@ -60,7 +57,12 @@ internal static class ConnectionPropertiesUtils
                     Value: StripSurroundingQuotes(x[(separatorIndex + 1)..].Trim()),
                     HasSeparator: true);
             })
-            .Where(pair => pair.HasSeparator && !string.IsNullOrEmpty(pair.Key))
+            // Drop any "__"-prefixed key. These are reserved internal runtime handles (e.g. the
+            // dynamic password provider key) that trusted plugins set programmatically during
+            // OpenConnection — never via the connection string. Rejecting them here prevents a user
+            // from injecting one through their connection string.
+            .Where(pair => pair.HasSeparator && !string.IsNullOrEmpty(pair.Key)
+                           && !pair.Key.StartsWith(AbstractTargetConnectionDialect.ReservedPropertyPrefix, StringComparison.Ordinal))
             .GroupBy(pair => pair.Key, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(g => g.Key, g => g.Last().Value, StringComparer.OrdinalIgnoreCase);
 
