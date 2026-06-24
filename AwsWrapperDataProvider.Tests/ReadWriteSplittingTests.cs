@@ -18,6 +18,7 @@ using AwsWrapperDataProvider.Driver.Plugins.ReadWriteSplitting;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 
 namespace AwsWrapperDataProvider.Tests;
+
 public class ReadWriteSplittingTests : IntegrationTestBase
 {
     private readonly ITestOutputHelper logger;

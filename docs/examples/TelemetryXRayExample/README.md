@@ -36,7 +36,7 @@ to your target AWS region (for example `us-east-1`).
 
 ## Prerequisites
 
-- .NET 8 SDK
+- .NET 10 SDK
 - Docker
 - AWS credentials in the host shell with permission to write to AWS
   X-Ray (`xray:PutTraceSegments`, `xray:PutTelemetryRecords` — both

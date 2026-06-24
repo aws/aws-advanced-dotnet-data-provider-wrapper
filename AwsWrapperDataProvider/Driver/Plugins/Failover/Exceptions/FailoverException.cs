@@ -15,6 +15,7 @@
 using System.Data.Common;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.Failover.Exceptions;
+
 public class FailoverException : DbException
 {
     public FailoverException() : base()

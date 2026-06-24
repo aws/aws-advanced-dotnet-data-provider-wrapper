@@ -20,6 +20,7 @@ using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 
 namespace AwsWrapperDataProvider.Tests;
+
 public class ReadWriteSplittingPerformanceTests : IntegrationTestBase
 {
     private static readonly int RepeatTimes =
