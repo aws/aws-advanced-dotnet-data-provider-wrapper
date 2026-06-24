@@ -13,12 +13,12 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: '10.0.x'
 
       - name: Restore dependencies
         run: |
@@ -51,7 +51,7 @@ jobs:
           dotnet build AwsWrapperDataProvider.NHibernate\AwsWrapperDataProvider.NHibernate.csproj --configuration Release --no-restore
 
       - name: Configure A AWS credentials
-        uses: aws-actions/configure-aws-credentials@v5.1.0
+        uses: aws-actions/configure-aws-credentials@v6.2.0
         with:
           role-skip-session-tagging: true
           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
@@ -60,7 +60,7 @@ jobs:
           role-session-name: aws-dotnet-win-signer
 
       - name: Configure Signer AWS credentials
-        uses: aws-actions/configure-aws-credentials@v5.1.0
+        uses: aws-actions/configure-aws-credentials@v6.2.0
         with:
           role-skip-session-tagging: true
           role-chaining: true
@@ -104,7 +104,7 @@ jobs:
           dotnet pack AwsWrapperDataProvider.NHibernate\AwsWrapperDataProvider.NHibernate.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
 
       - name: Upload packages as artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: nuget-packages
           path: .\packages\*.nupkg

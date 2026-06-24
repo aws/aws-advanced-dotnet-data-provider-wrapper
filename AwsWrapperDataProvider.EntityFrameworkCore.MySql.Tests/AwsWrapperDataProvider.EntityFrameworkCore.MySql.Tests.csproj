@@ -1,0 +1,59 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    MySQL EF Core integration tests. Pinned to EF Core 9 / Pomelo 9 because Pomelo has no
+    EF Core 10 release (https://github.com/PomeloFoundation/Pomelo.EntityFrameworkCore.MySql/issues/2007);
+    Pomelo 9 / EF Core 9 run on the .NET 10 runtime per the maintainer. The PostgreSQL test project
+    (EF Core 10) owns the shared EF test sources physically; this project links the same files so a
+    single copy is maintained. MySQL-only sources (migrations, the Pomelo dialect unit test, the MySQL
+    EngineTestConfig shim) live here. The two assemblies cannot be merged: EF Core 9 and 10 cannot
+    coexist in one assembly (NuGet NU1605 downgrade).
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <OutputType>Exe</OutputType>
+    <!-- Shared sources are linked from the PostgreSQL test project. -->
+    <SharedTestRoot>..\AwsWrapperDataProvider.EntityFrameworkCore.Tests</SharedTestRoot>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="10.0.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.17" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.17">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.17" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.7.0" />
+    <PackageReference Include="xunit.v3" Version="3.2.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector\AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.csproj" />
+    <ProjectReference Include="..\AwsWrapperDataProvider.Dialect.MySqlConnector\AwsWrapperDataProvider.Dialect.MySqlConnector.csproj" />
+    <ProjectReference Include="..\AwsWrapperDataProvider.Tests\AwsWrapperDataProvider.Tests.csproj" />
+  </ItemGroup>
+
+  <!-- Shared EF test sources, owned by the PostgreSQL test project and linked here. -->
+  <ItemGroup>
+    <Compile Include="$(SharedTestRoot)\EFIntegrationTestBase.cs" Link="Shared\EFIntegrationTestBase.cs" />
+    <Compile Include="$(SharedTestRoot)\PersonDbContext.cs" Link="Shared\PersonDbContext.cs" />
+    <Compile Include="$(SharedTestRoot)\PersonDbContextFactory.cs" Link="Shared\PersonDbContextFactory.cs" />
+    <Compile Include="$(SharedTestRoot)\Person.cs" Link="Shared\Person.cs" />
+    <Compile Include="$(SharedTestRoot)\EFUtils.cs" Link="Shared\EFUtils.cs" />
+    <Compile Include="$(SharedTestRoot)\EntityFrameworkConnectivityTests.cs" Link="Shared\EntityFrameworkConnectivityTests.cs" />
+    <Compile Include="$(SharedTestRoot)\EntityFrameworkGdbFailoverConnectivityTests.cs" Link="Shared\EntityFrameworkGdbFailoverConnectivityTests.cs" />
+    <Compile Include="$(SharedTestRoot)\AuroraConnectionTrackerConnectivityTests.cs" Link="Shared\AuroraConnectionTrackerConnectivityTests.cs" />
+    <Compile Include="$(SharedTestRoot)\CustomEndpointConnectivityTests.cs" Link="Shared\CustomEndpointConnectivityTests.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>

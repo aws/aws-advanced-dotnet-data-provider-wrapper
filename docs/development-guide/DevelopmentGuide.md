@@ -4,7 +4,7 @@
 
 Before you begin, ensure you have the following installed:
 
-- [.NET SDK](https://dotnet.microsoft.com/download) (version 8.0 recommended)
+- [.NET SDK](https://dotnet.microsoft.com/download) (version 10.0 recommended)
 
 ### Setup
 Clone the AWS Advanced .NET Data Provider Wrapper repository:

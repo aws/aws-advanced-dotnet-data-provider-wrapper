@@ -39,6 +39,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AwsWrapperDataProvider.Perf
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AwsWrapperDataProvider.EntityFrameworkCore.Tests", "AwsWrapperDataProvider.EntityFrameworkCore.Tests\AwsWrapperDataProvider.EntityFrameworkCore.Tests.csproj", "{EF51CF13-9B0D-4CC4-9563-874925D868CA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AwsWrapperDataProvider.EntityFrameworkCore.MySql.Tests", "AwsWrapperDataProvider.EntityFrameworkCore.MySql.Tests\AwsWrapperDataProvider.EntityFrameworkCore.MySql.Tests.csproj", "{A822FDE2-C591-4AC0-88B6-1D2A7E477C93}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -101,6 +103,10 @@ Global
 		{EF51CF13-9B0D-4CC4-9563-874925D868CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EF51CF13-9B0D-4CC4-9563-874925D868CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EF51CF13-9B0D-4CC4-9563-874925D868CA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A822FDE2-C591-4AC0-88B6-1D2A7E477C93}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A822FDE2-C591-4AC0-88B6-1D2A7E477C93}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A822FDE2-C591-4AC0-88B6-1D2A7E477C93}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A822FDE2-C591-4AC0-88B6-1D2A7E477C93}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

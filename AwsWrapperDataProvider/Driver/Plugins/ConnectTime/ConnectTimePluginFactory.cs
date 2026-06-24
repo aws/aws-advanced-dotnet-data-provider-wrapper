@@ -13,6 +13,7 @@
 // limitations under the License.
 
 namespace AwsWrapperDataProvider.Driver.Plugins.ConnectTime;
+
 public class ConnectTimePluginFactory : IConnectionPluginFactory
 {
     public IConnectionPlugin GetInstance(IPluginService pluginService, Dictionary<string, string> props)

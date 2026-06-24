@@ -20,6 +20,7 @@ using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.ConnectTime;
+
 public class ConnectTimePlugin : AbstractConnectionPlugin
 {
     private static readonly ILogger<ConnectTimePlugin> Logger = LoggerUtils.GetLogger<ConnectTimePlugin>();
