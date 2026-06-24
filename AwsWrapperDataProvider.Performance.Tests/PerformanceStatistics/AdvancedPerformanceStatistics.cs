@@ -13,6 +13,7 @@
 // limitations under the License.
 
 namespace AwsWrapperDataProvider.Performance.Tests.PerformanceStatistics;
+
 using NPOI.SS.UserModel;
 
 public class AdvancedPerformanceStatistics : IPerformanceStatistics

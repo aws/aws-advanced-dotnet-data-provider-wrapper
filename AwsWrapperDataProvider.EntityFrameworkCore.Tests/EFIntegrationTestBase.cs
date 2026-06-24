@@ -14,7 +14,6 @@
 
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
 using AwsWrapperDataProvider.Tests;
-using AwsWrapperDataProvider.Tests.Container.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
@@ -51,60 +50,30 @@ public abstract class EFIntegrationTestBase : IntegrationTestBase
         });
     }
 
+    /// <summary>
+    /// Skips the current test when the runtime engine does not match the engine this test
+    /// assembly is wired for. The shared EF test sources are linked into both the PostgreSQL
+    /// (EF Core 10) and MySQL (EF Core 9) assemblies, and CI runs <c>dotnet test --filter</c>
+    /// solution-wide, so each assembly is asked to run the other engine's selection too. The
+    /// non-matching assembly skips, which counts as a pass.
+    /// </summary>
+    protected void SkipIfNotThisEngine()
+        => Assert.SkipUnless(
+            Engine == EngineTestConfig.ThisEngine,
+            $"Test selected for {Engine}; this assembly is wired for {EngineTestConfig.ThisEngine}.");
+
     protected DbContextOptions<PersonDbContext> BuildOptions(
         string wrapperConnectionString, string connectionString)
     {
-        if (Engine == DatabaseEngine.PG)
-        {
-            return new DbContextOptionsBuilder<PersonDbContext>()
-                .UseAwsWrapperNpgsql(
-                    wrapperConnectionString,
-                    wrappedOptionBuilder => wrappedOptionBuilder.UseNpgsql(connectionString))
-                .LogTo(Console.WriteLine)
-                .Options;
-        }
-
-        if (Engine == DatabaseEngine.MYSQL)
-        {
-            return new DbContextOptionsBuilder<PersonDbContext>()
-                .UseAwsWrapperMySql(
-                    wrapperConnectionString,
-                    wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)))
-                .LogTo(Console.WriteLine)
-                .Options;
-        }
-
-        throw new InvalidOperationException($"Unsupported engine {Engine}");
+        this.SkipIfNotThisEngine();
+        return EngineTestConfig.BuildPersonOptions(wrapperConnectionString, connectionString);
     }
 
     protected DbContextOptions<PersonDbContext> BuildOptionsWithLogger(
         string wrapperConnectionString, string connectionString)
     {
-        if (Engine == DatabaseEngine.PG)
-        {
-            return new DbContextOptionsBuilder<PersonDbContext>()
-                .UseLoggerFactory(this.LoggerFactory)
-                .UseAwsWrapperNpgsql(
-                    wrapperConnectionString,
-                    wrappedOptionBuilder => wrappedOptionBuilder
-                        .UseLoggerFactory(this.LoggerFactory)
-                        .UseNpgsql(connectionString))
-                .Options;
-        }
-
-        if (Engine == DatabaseEngine.MYSQL)
-        {
-            return new DbContextOptionsBuilder<PersonDbContext>()
-                .UseLoggerFactory(this.LoggerFactory)
-                .UseAwsWrapperMySql(
-                    wrapperConnectionString,
-                    wrappedOptionBuilder => wrappedOptionBuilder
-                        .UseLoggerFactory(this.LoggerFactory)
-                        .UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)))
-                .Options;
-        }
-
-        throw new InvalidOperationException($"Unsupported engine {Engine}");
+        this.SkipIfNotThisEngine();
+        return EngineTestConfig.BuildPersonOptionsWithLogger(wrapperConnectionString, connectionString, this.LoggerFactory);
     }
 
     /// <summary>

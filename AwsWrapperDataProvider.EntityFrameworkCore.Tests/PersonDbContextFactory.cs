@@ -12,9 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using AwsWrapperDataProvider.Dialect.MySqlConnector;
-using AwsWrapperDataProvider.Dialect.Npgsql;
-using AwsWrapperDataProvider.Tests.Container.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
@@ -24,37 +21,9 @@ public class PersonDbContextFactory : IDesignTimeDbContextFactory<PersonDbContex
 {
     public PersonDbContext CreateDbContext(string[] args)
     {
-        var engine = TestEnvironment.Env.Info.Request.Engine;
-
-        DbContextOptions<PersonDbContext> options;
-        if (engine == DatabaseEngine.PG)
-        {
-            NpgsqlDialectLoader.Load();
-            var connectionString = EFUtils.GetNpgsqlConnectionString();
-            options = new DbContextOptionsBuilder<PersonDbContext>()
-                .UseAwsWrapperNpgsql(
-                    connectionString,
-                    wrappedOptionBuilder => wrappedOptionBuilder.UseNpgsql(connectionString))
-                .LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Trace)
-                .Options;
-        }
-        else if (engine == DatabaseEngine.MYSQL)
-        {
-            MySqlConnectorDialectLoader.Load();
-            var connectionString = EFUtils.GetMySqlConnectionString();
-            var version = ServerVersion.AutoDetect(connectionString);
-            options = new DbContextOptionsBuilder<PersonDbContext>()
-                .UseAwsWrapperMySql(
-                    connectionString,
-                    wrappedOptionBuilder => wrappedOptionBuilder.UseMySql(connectionString, version))
-                .LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Trace)
-                .Options;
-        }
-        else
-        {
-            throw new InvalidOperationException($"Unsupported engine {engine}");
-        }
-
+        EngineTestConfig.LoadDialect();
+        var connectionString = EngineTestConfig.GetConnectionString();
+        var options = EngineTestConfig.BuildDesignTimeOptions(connectionString);
         return new PersonDbContext(options);
     }
 }
