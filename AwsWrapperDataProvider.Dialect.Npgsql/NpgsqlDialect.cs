@@ -33,7 +33,7 @@ public class NpgsqlDialect : AbstractTargetConnectionDialect
     /// connection string and the pool key stays stable. Process-lifetime and bounded by the number
     /// of distinct endpoints.
     /// </summary>
-    private static readonly ConcurrentDictionary<string, NpgsqlDataSource> DataSources = new();
+    private static readonly ConcurrentDictionary<string, Lazy<NpgsqlDataSource>> DataSources = new();
 
     public override Type DriverConnectionType { get; } = typeof(NpgsqlConnection);
 
@@ -51,18 +51,20 @@ public class NpgsqlDialect : AbstractTargetConnectionDialect
 
         // The connection string carries no password (the auth plugin removed it), so the periodic
         // password provider is authoritative. The data source is cached by connection string so the
-        // same pool is reused across token rotations.
-        NpgsqlDataSource dataSource = DataSources.GetOrAdd(connectionString, cs =>
-        {
-            var builder = new NpgsqlDataSourceBuilder(cs);
-            builder.UsePeriodicPasswordProvider(
-                (_, ct) => registration.Provider(ct),
-                registration.SuccessRefreshInterval,
-                registration.FailureRefreshInterval);
-            return builder.Build();
-        });
+        // same pool is reused across token rotations. The Lazy wrapper ensures Build() runs exactly
+        // once per connection string even if multiple threads race here (see DataSources remarks).
+        Lazy<NpgsqlDataSource> dataSource = DataSources.GetOrAdd(connectionString, cs =>
+            new Lazy<NpgsqlDataSource>(() =>
+            {
+                var builder = new NpgsqlDataSourceBuilder(cs);
+                builder.UsePeriodicPasswordProvider(
+                    (_, ct) => registration.Provider(ct),
+                    registration.SuccessRefreshInterval,
+                    registration.FailureRefreshInterval);
+                return builder.Build();
+            }));
 
-        return dataSource.CreateConnection();
+        return dataSource.Value.CreateConnection();
     }
 
     /// <summary>
@@ -78,9 +80,14 @@ public class NpgsqlDialect : AbstractTargetConnectionDialect
     /// </summary>
     internal static void ClearDataSources()
     {
-        foreach (NpgsqlDataSource dataSource in DataSources.Values)
+        foreach (Lazy<NpgsqlDataSource> dataSource in DataSources.Values)
         {
-            dataSource.Dispose();
+            // Only dispose data sources that were actually built; forcing .Value here would
+            // needlessly construct a data source (and its pool/timer) just to dispose it.
+            if (dataSource.IsValueCreated)
+            {
+                dataSource.Value.Dispose();
+            }
         }
 
         DataSources.Clear();
