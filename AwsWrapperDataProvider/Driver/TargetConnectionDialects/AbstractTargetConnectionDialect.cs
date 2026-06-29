@@ -17,6 +17,7 @@ using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 
 namespace AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 
@@ -26,11 +27,29 @@ public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
 
     protected const string DefaultPoolingParameterName = "Pooling";
 
+    /// <summary>
+    /// Prefix marking a connection property as an internal runtime handle (e.g. the dynamic password
+    /// provider key). Keys with this prefix are never emitted into a target connection string, and
+    /// are rejected from user-supplied connection strings when they are parsed.
+    /// </summary>
+    internal const string ReservedPropertyPrefix = "__";
+
     public abstract Type DriverConnectionType { get; }
+
+    public virtual bool SupportsPasswordProvider => false;
 
     public bool IsDialect(Type connectionType)
     {
         return connectionType == this.DriverConnectionType;
+    }
+
+    public virtual DbConnection CreateConnection(Type connectionType, string connectionString, Dictionary<string, string> props)
+    {
+        DbConnection? connection = string.IsNullOrWhiteSpace(connectionString)
+            ? (DbConnection?)Activator.CreateInstance(connectionType)
+            : (DbConnection?)Activator.CreateInstance(connectionType, connectionString);
+
+        return connection ?? throw new InvalidCastException(Resources.Error_InvalidConnection);
     }
 
     public abstract string PrepareConnectionString(IDialect dialect, HostSpec? hostSpec, Dictionary<string, string> props, bool isForcedOpen = false);
@@ -92,6 +111,7 @@ public abstract class AbstractTargetConnectionDialect : ITargetConnectionDialect
     {
         Dictionary<string, string> targetConnectionParameters = props
             .Where(x => !PropertyDefinition.IsInternalWrapperPropertyKey(x.Key)
+                        && !x.Key.StartsWith(ReservedPropertyPrefix, StringComparison.Ordinal)
                         && !PropertyDefinition.MonitoringPropertyPrefixes.Any(prefix => x.Key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)))
             .ToDictionary(x => x.Key, x => x.Value);
 

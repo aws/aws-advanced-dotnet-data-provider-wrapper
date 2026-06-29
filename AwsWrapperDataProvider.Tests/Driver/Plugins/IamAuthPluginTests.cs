@@ -15,8 +15,10 @@
 using System.Data.Common;
 using Amazon.Runtime;
 using AwsWrapperDataProvider.Driver;
+using AwsWrapperDataProvider.Driver.Auth;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
+using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
 using AwsWrapperDataProvider.Driver.Utils.Telemetry;
 using AwsWrapperDataProvider.Plugin.Iam.Iam;
@@ -44,6 +46,7 @@ public class IamAuthPluginTests
     public IamAuthPluginTests()
     {
         IamAuthPlugin.ClearCache();
+        PasswordProviderRegistry.Clear();
 
         this.mockPluginService = new Mock<IPluginService>();
         this.mockIamTokenUtility = new Mock<IIamTokenUtility>();
@@ -122,6 +125,51 @@ public class IamAuthPluginTests
         Assert.Equal("generated-token", this.props[PropertyDefinition.Password.Name]);
         Assert.Equal(1, IamAuthPlugin.IamTokenCache.Count);
         Assert.Equal("generated-token", IamAuthPlugin.IamTokenCache.Get<string>(this.cacheKey));
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task OpenConnection_WithPasswordProviderDialect_RegistersProviderAndRemovesPassword()
+    {
+        var mockDialect = new Mock<ITargetConnectionDialect>();
+        mockDialect.Setup(d => d.SupportsPasswordProvider).Returns(true);
+        this.mockPluginService.Setup(s => s.TargetConnectionDialect).Returns(mockDialect.Object);
+
+        _ = await this.iamAuthPlugin.OpenConnection(this.hostSpec, this.props, true, this.methodFunc.Object, true);
+
+        // Password must not be in the connection props (kept out of the pool key).
+        Assert.False(this.props.ContainsKey(PropertyDefinition.Password.Name));
+        // The provider key points at the endpoint cache key.
+        Assert.Equal(this.cacheKey, this.props[PasswordProviderRegistry.ProviderKeyPropertyName]);
+        // The token was still primed in the shared cache.
+        Assert.Equal("generated-token", IamAuthPlugin.IamTokenCache.Get<string>(this.cacheKey));
+
+        // A durable provider was registered and returns the cached token.
+        Assert.True(PasswordProviderRegistry.TryGet(this.cacheKey, out var registration));
+        Assert.NotNull(registration);
+        Assert.Equal("generated-token", await registration!.Provider(CancellationToken.None));
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task OpenConnection_WithPasswordProviderDialectAndLoginError_RefreshesCachedToken()
+    {
+        var mockDialect = new Mock<ITargetConnectionDialect>();
+        mockDialect.Setup(d => d.SupportsPasswordProvider).Returns(true);
+        this.mockPluginService.Setup(s => s.TargetConnectionDialect).Returns(mockDialect.Object);
+
+        IamAuthPlugin.IamTokenCache.Set(this.cacheKey, "stale-token", TimeSpan.FromDays(999));
+        this.methodFunc.SetupSequence(f => f())
+            .Throws(new Exception("Error"))
+            .Returns(Task.FromResult(new Mock<DbConnection>().Object));
+        this.mockPluginService.Setup(s => s.IsLoginException(It.IsAny<Exception>())).Returns(true);
+
+        _ = await this.iamAuthPlugin.OpenConnection(this.hostSpec, this.props, true, this.methodFunc.Object, true);
+
+        // The retry refreshed the cache; the registered provider serves the new token.
+        Assert.Equal("generated-token", IamAuthPlugin.IamTokenCache.Get<string>(this.cacheKey));
+        Assert.True(PasswordProviderRegistry.TryGet(this.cacheKey, out var registration));
+        Assert.Equal("generated-token", await registration!.Provider(CancellationToken.None));
     }
 
     private static string GetCacheKey(string user, string hostname, int port, string region)
