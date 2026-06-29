@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 
 namespace AwsWrapperDataProvider.Driver.Auth;
 
@@ -60,7 +61,7 @@ public static class PasswordProviderRegistry
     /// <param name="key">The endpoint key.</param>
     /// <param name="registration">The registration if found; otherwise <see langword="null"/>.</param>
     /// <returns><see langword="true"/> if a registration was found; otherwise <see langword="false"/>.</returns>
-    public static bool TryGet(string key, out PasswordProviderRegistration? registration)
+    public static bool TryGet(string key, [NotNullWhen(true)] out PasswordProviderRegistration? registration)
     {
         return Providers.TryGetValue(key, out registration);
     }

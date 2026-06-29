@@ -19,7 +19,7 @@ namespace AwsWrapperDataProvider.Tests.Driver.Auth;
 public class PasswordProviderRegistryTests
 {
     private static PasswordProviderRegistration Registration(string token) =>
-        new(_ => new ValueTask<string>(token), TimeSpan.FromMinutes(10), TimeSpan.FromSeconds(30));
+        new(_ => new ValueTask<string>(token));
 
     [Fact]
     [Trait("Category", "Unit")]
@@ -31,8 +31,6 @@ public class PasswordProviderRegistryTests
         Assert.True(PasswordProviderRegistry.TryGet("key-1", out var registration));
         Assert.NotNull(registration);
         Assert.Equal("token-1", await registration!.Provider(CancellationToken.None));
-        Assert.Equal(TimeSpan.FromMinutes(10), registration.SuccessRefreshInterval);
-        Assert.Equal(TimeSpan.FromSeconds(30), registration.FailureRefreshInterval);
     }
 
     [Fact]

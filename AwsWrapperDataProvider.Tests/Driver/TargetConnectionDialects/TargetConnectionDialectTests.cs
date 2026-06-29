@@ -282,9 +282,7 @@ public class TargetConnectionDialectTests
         PasswordProviderRegistry.Register(
             key,
             new PasswordProviderRegistration(
-                _ => new ValueTask<string>("rotating-token"),
-                TimeSpan.FromMinutes(10),
-                TimeSpan.FromSeconds(30)));
+                _ => new ValueTask<string>("rotating-token")));
 
         var connectionDialect = new MySqlConnectorDialect();
         var props = new Dictionary<string, string>

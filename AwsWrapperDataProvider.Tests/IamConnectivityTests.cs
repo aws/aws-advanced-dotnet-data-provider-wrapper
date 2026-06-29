@@ -152,7 +152,7 @@ public class IamConnectivityTests : IntegrationTestBase
         Assert.Equal(ConnectionState.Open, connection.State);
 
         // ...yet the underlying driver connection string carries no password (the token is supplied
-        // out-of-band via UsePeriodicPasswordProvider). Parse with the driver's own builder so the
+        // out-of-band via UsePasswordProvider). Parse with the driver's own builder so the
         // assertion resolves every password alias (Password/pwd/...) to the canonical property.
         Console.WriteLine($"Target connection string: {connection.ConnectionString}");
         var builder = new NpgsqlConnectionStringBuilder(connection.ConnectionString);

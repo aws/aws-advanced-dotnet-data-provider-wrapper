@@ -233,8 +233,6 @@ public class SecretsManagerAuthPlugin : AbstractConnectionPlugin
                     }
 
                     return secret?.Password ?? throw new Exception("Could not receive secrets from secrets manager.");
-                },
-                successRefreshInterval: TimeSpan.FromSeconds(Math.Max(this.secretValueExpirySecs - 60, 60)),
-                failureRefreshInterval: TimeSpan.FromSeconds(30)));
+                }));
     }
 }

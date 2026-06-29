@@ -277,8 +277,6 @@ public abstract partial class BaseSamlAuthPlugin : AbstractConnectionPlugin
                     string newToken = await this.tokenUtility.GenerateAuthenticationTokenAsync(region, host, port, dbUser, credentials);
                     this.tokenCache.Set(cacheKey, newToken, TimeSpan.FromSeconds(tokenExpirationSeconds));
                     return newToken;
-                },
-                successRefreshInterval: TimeSpan.FromSeconds(Math.Max(tokenExpirationSeconds - 60, 60)),
-                failureRefreshInterval: TimeSpan.FromSeconds(30)));
+                }));
     }
 }

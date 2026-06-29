@@ -190,9 +190,7 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
                     }
 
                     return token!;
-                },
-                successRefreshInterval: TimeSpan.FromSeconds(Math.Max(tokenExpirationSeconds - 60, 60)),
-                failureRefreshInterval: TimeSpan.FromSeconds(30)));
+                }));
     }
 
     /// <summary>

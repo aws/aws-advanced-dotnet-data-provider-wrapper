@@ -28,10 +28,10 @@ public class NpgsqlDialect : AbstractTargetConnectionDialect
 {
     /// <summary>
     /// Cache of <see cref="NpgsqlDataSource"/> instances keyed by the (password-less) connection
-    /// string. Each data source owns its own connection pool and a background password-refresh timer
-    /// configured via <c>UsePeriodicPasswordProvider</c>, so a rotating token never changes the
-    /// connection string and the pool key stays stable. Process-lifetime and bounded by the number
-    /// of distinct endpoints.
+    /// string. Each data source owns its own connection pool and a password provider (configured via
+    /// <c>UsePasswordProvider</c>) that supplies the current token when a new physical connection is
+    /// opened, so a rotating token never changes the connection string and the pool key stays stable.
+    /// Process-lifetime and bounded by the number of distinct endpoints.
     /// </summary>
     private static readonly ConcurrentDictionary<string, Lazy<NpgsqlDataSource>> DataSources = new();
 
@@ -43,24 +43,24 @@ public class NpgsqlDialect : AbstractTargetConnectionDialect
     {
         string? key = props.GetValueOrDefault(PasswordProviderRegistry.ProviderKeyPropertyName);
         if (key == null
-            || !PasswordProviderRegistry.TryGet(key, out PasswordProviderRegistration? registration)
-            || registration == null)
+            || !PasswordProviderRegistry.TryGet(key, out PasswordProviderRegistration? registration))
         {
             return base.CreateConnection(connectionType, connectionString, props);
         }
 
-        // The connection string carries no password (the auth plugin removed it), so the periodic
-        // password provider is authoritative. The data source is cached by connection string so the
-        // same pool is reused across token rotations. The Lazy wrapper ensures Build() runs exactly
-        // once per connection string even if multiple threads race here (see DataSources remarks).
+        // The connection string carries no password (the auth plugin removed it), so the password
+        // provider is authoritative. The provider is invoked on each new physical connection open and
+        // serves the current token from the auth plugin's in-memory cache, so it returns quickly on
+        // the common path. The data source is cached by connection string so the same pool is reused
+        // across token rotations. The Lazy wrapper ensures Build() runs exactly once per connection
+        // string even if multiple threads race here (see DataSources remarks).
         Lazy<NpgsqlDataSource> dataSource = DataSources.GetOrAdd(connectionString, cs =>
             new Lazy<NpgsqlDataSource>(() =>
             {
                 var builder = new NpgsqlDataSourceBuilder(cs);
-                builder.UsePeriodicPasswordProvider(
-                    (_, ct) => registration.Provider(ct),
-                    registration.SuccessRefreshInterval,
-                    registration.FailureRefreshInterval);
+                builder.UsePasswordProvider(
+                    _ => registration.Provider(CancellationToken.None).AsTask().GetAwaiter().GetResult(),
+                    (_, ct) => registration.Provider(ct));
                 return builder.Build();
             }));
 

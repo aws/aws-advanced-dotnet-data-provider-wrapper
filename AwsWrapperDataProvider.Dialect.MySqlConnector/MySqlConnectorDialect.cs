@@ -39,8 +39,7 @@ public class MySqlConnectorDialect : AbstractTargetConnectionDialect
         string? key = props.GetValueOrDefault(PasswordProviderRegistry.ProviderKeyPropertyName);
         if (connection is MySqlConnection mySqlConnection
             && key != null
-            && PasswordProviderRegistry.TryGet(key, out PasswordProviderRegistration? registration)
-            && registration != null)
+            && PasswordProviderRegistry.TryGet(key, out PasswordProviderRegistration? registration))
         {
             // MySqlConnector keeps the password out of the connection string and serves multiple
             // passwords from a single pool via this callback, so the pool key stays stable across
