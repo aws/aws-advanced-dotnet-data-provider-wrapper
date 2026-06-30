@@ -995,8 +995,12 @@ public class AuroraTestUtils
     {
         await this.WaitUntilClusterHasRightStateAsync(clusterId);
 
-        int remainingAttempts = 10;
-        while (--remainingAttempts > 0)
+        // This loop only needs to get the failover request accepted; waiting for failover to
+        // complete happens downstream. Aurora failover typically takes ~30s, during which the
+        // cluster reports "failing-over". A 60s deadline comfortably covers transient errors and
+        // the brief race where the cluster state flips after the pre-check above.
+        var deadline = DateTime.UtcNow + FromSeconds(60);
+        while (DateTime.UtcNow < deadline)
         {
             try
             {
@@ -1012,7 +1016,18 @@ public class AuroraTestUtils
             catch (Exception ex)
             {
                 Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} FailoverDBCluster request to {targetInstanceId} failed: {ex.Message}");
-                await Task.Delay(1000);
+
+                // A FailoverDBCluster call can return an error to the client even though the request
+                // was accepted server-side (e.g. a transient 500). Check the cluster's actual state:
+                // if it is already failing over, the failover is in progress, so stop retrying.
+                var status = (await this.GetDBClusterAsync(clusterId))?.Status;
+                if (string.Equals(status, "failing-over", StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Cluster {clusterId} is already failing over; failover triggered.");
+                    return;
+                }
+
+                await Task.Delay(FromSeconds(2));
             }
         }
 
