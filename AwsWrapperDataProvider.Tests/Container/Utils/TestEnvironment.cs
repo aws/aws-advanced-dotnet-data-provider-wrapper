@@ -245,6 +245,19 @@ public class TestEnvironment
 
         foreach (var instanceId in instancesIDs)
         {
+            // The cluster reporting "available" does not guarantee that each individual
+            // instance is in a reboot-eligible state - an instance can still be "rebooting"
+            // (e.g. from a prior recovery round). RebootDBInstance only accepts instances in
+            // one of the states below, so wait for the instance before issuing the reboot to
+            // avoid a spurious "Can only reboot db instances with state in: ..." failure.
+            await auroraUtil.WaitUntilInstanceHasRightStateAsync(
+                instanceId,
+                "available",
+                "storage-optimization",
+                "storage-initialization",
+                "incompatible-credentials",
+                "incompatible-parameters");
+
             await auroraUtil.RebootInstanceAsync(instanceId);
         }
 

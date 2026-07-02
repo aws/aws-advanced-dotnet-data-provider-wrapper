@@ -405,7 +405,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
     {
         var hosts = this.pluginService.GetHosts();
         Logger.LogDebug(LoggerUtils.LogTopology(hosts, $"All hosts: "));
-        var originalWriter = hosts.FirstOrDefault(h => h.Role == HostRole.Writer);
+        HostSpec? originalWriter = null;
         bool isOriginalWriterStillWriter = false;
 
         do
@@ -415,6 +415,19 @@ public class FailoverPlugin : AbstractConnectionPlugin
             hosts = this.pluginService.GetHosts();
             hosts.ToList().ForEach(hostSpec => this.pluginService.SetAvailability(hostSpec, HostAvailability.Available));
             var readerCandidates = hosts.Where(h => h.Role == HostRole.Reader).ToHashSet();
+
+            // Capture the original writer from the freshly refreshed topology. This must be done inside
+            // the loop because the host list can be empty before cluster topology is discovered — most
+            // notably with a custom endpoint, whose host list is filtered to its members and stays empty
+            // until the topology monitor populates it.
+            if (originalWriter == null)
+            {
+                originalWriter = hosts.FirstOrDefault(h => h.Role == HostRole.Writer);
+                if (originalWriter != null)
+                {
+                    isOriginalWriterStillWriter = false;
+                }
+            }
 
             // First, try all original readers
             var remainingReaders = new HashSet<HostSpec>(readerCandidates);
