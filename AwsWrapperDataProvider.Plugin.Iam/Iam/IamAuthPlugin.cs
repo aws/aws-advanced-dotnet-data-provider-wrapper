@@ -111,18 +111,8 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
 
         string cacheKey = this.iamTokenUtility.GetCacheKey(iamUser, iamHost, iamPort, iamRegion);
         int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? DefaultIamExpirationSeconds;
-        bool isCachedToken = true;
-        if (!IamTokenCache.TryGetValue(cacheKey, out string? token))
-        {
-            token = await this.FetchTokenAsync(iamUser, iamHost, iamPort, iamRegion);
-            IamTokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
-            isCachedToken = false;
-            Logger.LogTrace(Resources.IamAuthPlugin_GeneratedNewToken);
-        }
-        else
-        {
-            Logger.LogTrace(Resources.IamAuthPlugin_UseCachedToken);
-        }
+        (string token, bool isCachedToken) = await this.GetOrFetchTokenAsync(
+            iamUser, iamHost, iamPort, iamRegion, cacheKey, tokenExpirationSeconds, forceRefresh: false);
 
         // When the target driver supports a native password provider, keep the token out of the
         // connection string (and therefore out of the driver's pool key) and instead register a
@@ -138,7 +128,6 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
         }
         else
         {
-            // token is non-null here, as the above try-catch block must have succeeded
             PropertyDefinition.Password.Set(props, token);
         }
 
@@ -153,21 +142,43 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
                 throw;
             }
 
-            // should the token not work (login exception + is cached token), generate a new one and try again
-            token = await this.FetchTokenAsync(iamUser, iamHost, iamPort, iamRegion);
-            IamTokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
-            Logger.LogTrace(Resources.IamAuthPlugin_GeneratedNewToken);
+            // The cached token was rejected, so force a fresh one (overwriting the cache) and retry.
+            (token, _) = await this.GetOrFetchTokenAsync(
+                iamUser, iamHost, iamPort, iamRegion, cacheKey, tokenExpirationSeconds, forceRefresh: true);
 
             // For the provider path the registered delegate reads the refreshed token from the cache
             // on the next physical open, so only the legacy path needs to re-set the password here.
             if (!useProvider)
             {
-                // token is non-null here, as the above try-catch block must have succeeded
                 PropertyDefinition.Password.Set(props, token);
             }
 
             return await methodFunc();
         }
+    }
+
+    /// <summary>
+    /// Returns the current token for the endpoint, serving it from the shared
+    /// <see cref="IamTokenCache"/> on a hit and generating (and caching) a new one on a miss or when
+    /// <paramref name="forceRefresh"/> is set. The login-failure retry passes
+    /// <paramref name="forceRefresh"/> so it never reuses the rejected cached token. Never writes to
+    /// the connection properties — the caller decides whether the token goes into the connection
+    /// string or is served via the registered provider.
+    /// </summary>
+    /// <returns>The current token and whether it came from the cache.</returns>
+    private async Task<(string Token, bool WasCached)> GetOrFetchTokenAsync(
+        string iamUser, string iamHost, int iamPort, string iamRegion, string cacheKey, int tokenExpirationSeconds, bool forceRefresh)
+    {
+        if (!forceRefresh && IamTokenCache.TryGetValue(cacheKey, out string? cached) && cached != null)
+        {
+            Logger.LogTrace(Resources.IamAuthPlugin_UseCachedToken);
+            return (cached, true);
+        }
+
+        string token = await this.FetchTokenAsync(iamUser, iamHost, iamPort, iamRegion);
+        IamTokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
+        Logger.LogTrace(Resources.IamAuthPlugin_GeneratedNewToken);
+        return (token, false);
     }
 
     /// <summary>
@@ -181,16 +192,8 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
         PasswordProviderRegistry.Register(
             cacheKey,
             new PasswordProviderRegistration(
-                async _ =>
-                {
-                    if (!IamTokenCache.TryGetValue(cacheKey, out string? token) || token == null)
-                    {
-                        token = await this.FetchTokenAsync(iamUser, iamHost, iamPort, iamRegion);
-                        IamTokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
-                    }
-
-                    return token!;
-                }));
+                async _ => (await this.GetOrFetchTokenAsync(
+                    iamUser, iamHost, iamPort, iamRegion, cacheKey, tokenExpirationSeconds, forceRefresh: false)).Token));
     }
 
     /// <summary>
