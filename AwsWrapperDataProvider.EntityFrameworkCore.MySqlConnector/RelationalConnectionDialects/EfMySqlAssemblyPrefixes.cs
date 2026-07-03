@@ -16,5 +16,9 @@ namespace AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.RelationalCo
 
 public static class EfMySqlAssemblyPrefixes
 {
-    public static string Pomelo = "Pomelo.EntityFrameworkCore.MySql";
+    // The EF Core MySQL provider is the Microting fork of Pomelo.EntityFrameworkCore.MySql, which is
+    // required for EF Core 10 support (upstream Pomelo has no EF Core 10 release). The fork renamed
+    // its assembly and namespaces from "Pomelo.EntityFrameworkCore.MySql" to
+    // "Microting.EntityFrameworkCore.MySql"; the dialect is selected by matching this assembly name.
+    public static string Pomelo = "Microting.EntityFrameworkCore.MySql";
 }
