@@ -1,13 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    MySQL EF Core integration tests. Pinned to EF Core 9 / Pomelo 9 because Pomelo has no
-    EF Core 10 release (https://github.com/PomeloFoundation/Pomelo.EntityFrameworkCore.MySql/issues/2007);
-    Pomelo 9 / EF Core 9 run on the .NET 10 runtime per the maintainer. The PostgreSQL test project
-    (EF Core 10) owns the shared EF test sources physically; this project links the same files so a
-    single copy is maintained. MySQL-only sources (migrations, the Pomelo dialect unit test, the MySQL
-    EngineTestConfig shim) live here. The two assemblies cannot be merged: EF Core 9 and 10 cannot
-    coexist in one assembly (NuGet NU1605 downgrade).
+    MySQL EF Core integration tests. Targets EF Core 10 via the Microting fork of
+    Pomelo.EntityFrameworkCore.MySql (Microting.EntityFrameworkCore.MySql), because upstream Pomelo
+    has no EF Core 10 release (https://github.com/PomeloFoundation/Pomelo.EntityFrameworkCore.MySql/issues/2007).
+    The PostgreSQL test project owns the shared EF test sources physically; this project links the
+    same files so a single copy is maintained. MySQL-only sources (the Pomelo dialect unit test, the
+    MySQL EngineTestConfig shim) live here.
   -->
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -22,12 +21,12 @@
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="10.0.1" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.17" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.17">
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.9" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.9">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.17" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.9" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.7.0" />
     <PackageReference Include="xunit.v3" Version="3.2.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
