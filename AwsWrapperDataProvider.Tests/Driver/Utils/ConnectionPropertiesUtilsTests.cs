@@ -45,6 +45,19 @@ public class ConnectionPropertiesUtilsTests
 
     [Theory]
     [Trait("Category", "Unit")]
+    [InlineData("Host=myhost.example.com;__awsWrapperPasswordProviderKey=user:host:5432:us-east-1")]
+    [InlineData("Host=myhost.example.com;__anythingReserved=value")]
+    public void ParseConnectionStringParameters_DropsReservedPrefixedKeys(string connectionString)
+    {
+        var result = ConnectionPropertiesUtils.ParseConnectionStringParameters(connectionString);
+
+        Assert.NotNull(result);
+        Assert.Equal("myhost.example.com", result["Host"]);
+        Assert.DoesNotContain(result.Keys, k => k.StartsWith("__", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [Trait("Category", "Unit")]
     [InlineData("Host=myhost.example.com;InvalidPair;=;Port=5432;=NoKey;NoValue=", 3)]
     [InlineData("Host=myhost.example.com;=NoKey;NoValue=", 2)]
     public void ParseConnectionStringParameters_WithMalformedPairs_SkipsInvalidPairs(string connectionString, int expectedCount)

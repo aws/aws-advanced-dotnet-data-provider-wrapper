@@ -15,9 +15,11 @@
 using AwsWrapperDataProvider.Dialect.MySqlClient;
 using AwsWrapperDataProvider.Dialect.MySqlConnector;
 using AwsWrapperDataProvider.Dialect.Npgsql;
+using AwsWrapperDataProvider.Driver.Auth;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
+using MySqlConnector;
 
 namespace AwsWrapperDataProvider.Tests.Driver.TargetConnectionDialects;
 
@@ -229,5 +231,99 @@ public class TargetConnectionDialectTests
         Assert.Contains("database=testdb", connectionString);
         Assert.DoesNotContain(PropertyDefinition.TargetConnectionType.Name, connectionString);
         Assert.DoesNotContain(PropertyDefinition.CustomTargetConnectionDialect.Name, connectionString);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void SupportsPasswordProvider_MatchesDriverCapability()
+    {
+        Assert.True(new NpgsqlDialect().SupportsPasswordProvider);
+        Assert.True(new MySqlConnectorDialect().SupportsPasswordProvider);
+        Assert.False(new MySqlClientDialect().SupportsPasswordProvider);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void CreateConnection_WithoutProviderKey_FallsBackToReflection()
+    {
+        PasswordProviderRegistry.Clear();
+        var connectionDialect = new MySqlConnectorDialect();
+        var props = new Dictionary<string, string>();
+
+        using var connection = connectionDialect.CreateConnection(typeof(MySqlConnection), "Server=test-host;", props);
+
+        var mySql = Assert.IsType<MySqlConnection>(connection);
+        Assert.Null(mySql.ProvidePasswordCallback);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void CreateConnection_WithUnregisteredProviderKey_DoesNotSetCallback()
+    {
+        PasswordProviderRegistry.Clear();
+        var connectionDialect = new MySqlConnectorDialect();
+        var props = new Dictionary<string, string>
+        {
+            { PasswordProviderRegistry.ProviderKeyPropertyName, "missing-key" },
+        };
+
+        using var connection = connectionDialect.CreateConnection(typeof(MySqlConnection), "Server=test-host;", props);
+
+        var mySql = Assert.IsType<MySqlConnection>(connection);
+        Assert.Null(mySql.ProvidePasswordCallback);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void MySqlConnector_CreateConnection_WithRegisteredProvider_SetsCallbackReturningToken()
+    {
+        PasswordProviderRegistry.Clear();
+        const string key = "mysql-endpoint-key";
+        PasswordProviderRegistry.Register(
+            key,
+            new PasswordProviderRegistration(
+                _ => new ValueTask<string>("rotating-token")));
+
+        var connectionDialect = new MySqlConnectorDialect();
+        var props = new Dictionary<string, string>
+        {
+            { PasswordProviderRegistry.ProviderKeyPropertyName, key },
+        };
+
+        using var connection = connectionDialect.CreateConnection(typeof(MySqlConnection), "Server=test-host;", props);
+
+        var mySql = Assert.IsType<MySqlConnection>(connection);
+        Assert.NotNull(mySql.ProvidePasswordCallback);
+
+        // The callback ignores its context argument and serves the registered provider's token.
+        Assert.Equal("rotating-token", mySql.ProvidePasswordCallback!(null!));
+
+        PasswordProviderRegistry.Clear();
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void PgConnectionString_IsByteIdenticalAcrossTokenRotations()
+    {
+        // Regression for issue #301: with the password supplied via a provider (and therefore absent
+        // from the connection string), the prepared string — and thus the driver's pool key — must
+        // be identical regardless of the current token value.
+        var connectionDialect = new NpgsqlDialect();
+        var dialect = new PgDialect();
+
+        var propsRotation1 = new Dictionary<string, string>
+        {
+            { "Database", "testdb" },
+            { "uid", "testuser" },
+            { PasswordProviderRegistry.ProviderKeyPropertyName, "endpoint-key" },
+        };
+        var propsRotation2 = new Dictionary<string, string>(propsRotation1);
+
+        var first = connectionDialect.PrepareConnectionString(dialect, HostWithPort, propsRotation1);
+        var second = connectionDialect.PrepareConnectionString(dialect, HostWithPort, propsRotation2);
+
+        Assert.Equal(first, second);
+        Assert.DoesNotContain("Password=", first);
+        Assert.DoesNotContain(PasswordProviderRegistry.ProviderKeyPropertyName, first);
     }
 }
