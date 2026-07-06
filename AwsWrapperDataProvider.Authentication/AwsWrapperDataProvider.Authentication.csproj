@@ -1,21 +1,18 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <RootNamespace>AwsWrapperDataProvider.Plugin.CustomEndpoint</RootNamespace>
+        <RootNamespace>AwsWrapperDataProvider.Authentication</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AWSSDK.RDS" Version="4.0.21.4" />
-        <PackageReference Include="AWSSDK.SecurityToken" Version="4.0.7.5" />
-        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.17" />
+        <PackageReference Include="AWSSDK.Core" Version="4.0.100.2" />
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\AwsWrapperDataProvider\AwsWrapperDataProvider.csproj" />
-        <ProjectReference Include="..\AwsWrapperDataProvider.Authentication\AwsWrapperDataProvider.Authentication.csproj" />
     </ItemGroup>
 
     <ItemGroup>
@@ -34,12 +31,12 @@
     <PropertyGroup Condition=" '$(_IsPacking)' == 'true' ">
         <!-- NuGet packages -->
         <IsPackable>true</IsPackable>
-        <PackageId>AWS.AdvancedDotnetDataProviderWrapper.Plugin.CustomEndpoint</PackageId>
+        <PackageId>AWS.AdvancedDotnetDataProviderWrapper.Authentication</PackageId>
         <PackageProjectUrl>https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/</PackageProjectUrl>
         <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageReleaseNotes>See release notes at https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/releases</PackageReleaseNotes>
-        <PackageTags>AWS</PackageTags>
+        <PackageTags>AWS;Authentication;Credentials</PackageTags>
         <RepositoryType>git</RepositoryType>
         <RepositoryUrl>https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper.git</RepositoryUrl>
         <PackageIcon>AwsIcon.png</PackageIcon>

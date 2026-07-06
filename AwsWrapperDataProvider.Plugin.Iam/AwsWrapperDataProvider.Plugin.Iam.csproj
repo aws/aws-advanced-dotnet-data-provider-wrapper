@@ -13,6 +13,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\AwsWrapperDataProvider\AwsWrapperDataProvider.csproj" />
+        <ProjectReference Include="..\AwsWrapperDataProvider.Authentication\AwsWrapperDataProvider.Authentication.csproj" />
     </ItemGroup>
 
   <ItemGroup>

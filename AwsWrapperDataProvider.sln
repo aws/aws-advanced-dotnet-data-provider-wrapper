@@ -39,6 +39,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AwsWrapperDataProvider.Perf
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AwsWrapperDataProvider.EntityFrameworkCore.Tests", "AwsWrapperDataProvider.EntityFrameworkCore.Tests\AwsWrapperDataProvider.EntityFrameworkCore.Tests.csproj", "{EF51CF13-9B0D-4CC4-9563-874925D868CA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AwsWrapperDataProvider.Authentication", "AwsWrapperDataProvider.Authentication\AwsWrapperDataProvider.Authentication.csproj", "{AFDE2298-5829-43A6-AB05-3D0DB174F4E8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -101,6 +103,10 @@ Global
 		{EF51CF13-9B0D-4CC4-9563-874925D868CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EF51CF13-9B0D-4CC4-9563-874925D868CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EF51CF13-9B0D-4CC4-9563-874925D868CA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AFDE2298-5829-43A6-AB05-3D0DB174F4E8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AFDE2298-5829-43A6-AB05-3D0DB174F4E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AFDE2298-5829-43A6-AB05-3D0DB174F4E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AFDE2298-5829-43A6-AB05-3D0DB174F4E8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

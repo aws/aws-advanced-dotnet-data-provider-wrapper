@@ -41,6 +41,7 @@
     <ProjectReference Include="..\AwsWrapperDataProvider.Plugin.CustomEndpoint\AwsWrapperDataProvider.Plugin.CustomEndpoint.csproj" />
     <ProjectReference Include="..\AwsWrapperDataProvider.Telemetry.XRay\AwsWrapperDataProvider.Telemetry.XRay.csproj" />
     <ProjectReference Include="..\AwsWrapperDataProvider\AwsWrapperDataProvider.csproj" />
+    <ProjectReference Include="..\AwsWrapperDataProvider.Authentication\AwsWrapperDataProvider.Authentication.csproj" />
   </ItemGroup>
 
     <ItemGroup>
