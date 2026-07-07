@@ -17,6 +17,7 @@ using System.Data.Common;
 using Amazon.Runtime;
 using Amazon.Runtime.Credentials;
 using AwsWrapperDataProvider.Authentication;
+using AwsWrapperDataProvider.Dialect.Npgsql;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Plugin.Iam.Iam;
 using AwsWrapperDataProvider.Tests.Container.Utils;
@@ -57,13 +58,26 @@ public class AwsCredentialsManagerConnectivityTests : IntegrationTestBase
         // on dispose, so resetting the handler at the start of each test fully isolates them.
         AwsCredentialsManager.ResetCustomHandler();
         IamAuthPlugin.ClearCache();
+
+        // For the PG dialect, the wrapper caches an NpgsqlDataSource (and its periodic password
+        // provider) keyed by the connection string; clear it so a data source built by an earlier test
+        // cannot serve a stale token. No-op for MySQL (which uses ProvidePasswordCallback, not a cache).
+        NpgsqlDialect.ClearDataSources();
     }
 
     private static string GetIamConnectionString()
     {
         var iamUser = TestEnvironment.Env.Info.IamUsername;
         var iamRegion = TestEnvironment.Env.Info.Region;
-        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, iamUser, null, DefaultDbName);
+
+        // Pooling MUST be disabled. These tests share an identical connection string (same user/host and
+        // no password — the IAM token is supplied out-of-band via the driver's password provider), so
+        // the target driver's native pool key is identical across tests. With pooling on, a connection
+        // authenticated by an earlier test (e.g. the valid-credentials case) is handed back from the
+        // pool without re-authenticating, so the password provider never fires and the invalid-token
+        // test would wrongly succeed. Disabling pooling forces a fresh physical authentication on every
+        // open, which is what actually exercises the handler-supplied credentials.
+        var connectionString = ConnectionStringHelper.GetUrl(Engine, Endpoint, Port, iamUser, null, DefaultDbName, enablePooling: false);
         return connectionString + $";Plugins=iam;IamRegion={iamRegion}";
     }
 
