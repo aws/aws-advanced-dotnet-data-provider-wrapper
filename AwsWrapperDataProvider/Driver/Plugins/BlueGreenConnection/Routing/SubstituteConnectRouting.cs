@@ -54,17 +54,9 @@ public class SubstituteConnectRouting : BaseConnectRouting
 
         if (!RdsUtils.IsIp(this.substituteHostSpec.Host))
         {
-            try
-            {
-                return useForceConnect
-                    ? await pluginService.ForceOpenConnection(this.substituteHostSpec, props, plugin, false)
-                    : await pluginService.OpenConnection(this.substituteHostSpec, props, plugin, false);
-            }
-            catch (Exception ex) when (ex is System.Net.Sockets.SocketException or DbException || ex.InnerException is System.Net.Sockets.SocketException)
-            {
-                Logger.LogTrace("Error connecting to substitute host {Host}, falling through: {Error}", this.substituteHostSpec.Host, ex.Message);
-                return null;
-            }
+            return useForceConnect
+                ? await pluginService.ForceOpenConnection(this.substituteHostSpec, props, plugin, false)
+                : await pluginService.OpenConnection(this.substituteHostSpec, props, plugin, false);
         }
 
         bool iamInUse = pluginService.IsPluginInUse(PluginCodes.Iam);
