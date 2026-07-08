@@ -239,6 +239,25 @@ public class RdsUtilsTests
 
     [Fact]
     [Trait("Category", "Unit")]
+    public void GetRdsInstanceHostPattern_ForGreenHost_NotPoisonedByRemoveGreenInstancePrefix()
+    {
+        // Regression: a green Blue/Green host run through RemoveGreenInstancePrefix (which
+        // matches a pattern without a "domain" group) must not corrupt the cached Match used
+        // by GetRdsInstanceHostPattern for the same host. Previously the shared cache returned
+        // "?" for green instances, producing bare, unresolvable green endpoints after switchover.
+        const string greenHost = "instance-test-name-green-abc123.XYZ.us-east-2.rds.amazonaws.com";
+
+        RdsUtils.ClearCache();
+
+        // Prime the cache via the green-prefix path first (as the Blue/Green plugin does).
+        Assert.True(RdsUtils.IsGreenInstance(greenHost));
+        RdsUtils.RemoveGreenInstancePrefix(greenHost);
+
+        Assert.Equal("?.XYZ.us-east-2.rds.amazonaws.com", RdsUtils.GetRdsInstanceHostPattern(greenHost));
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
     public void GetRdsInstanceId_WithElbUrl_ShouldReturnNull()
     {
         var result = RdsUtils.GetRdsInstanceId(UsEastRegionElbUrl);
