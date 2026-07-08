@@ -461,22 +461,15 @@ public class FailoverConnectivityTests : IntegrationTestBase
 
             // Query the RDS API to determine the current writer.
             var clusterId = TestEnvironment.Env.Info.RdsDbName!;
-            var newWriterId = await AuroraUtils.GetDBClusterWriterInstanceIdAsync(clusterId);
 
-            if (currentWriter == newWriterId)
+            if (Deployment == DatabaseEngineDeployment.AURORA)
             {
-                this.logger.WriteLine($"Writer did not change, still {newWriterId}.");
-
-                // Writer didn't change — idle connections should still be open.
-                foreach (var idleConn in idleConnections)
-                {
-                    Assert.Equal(
-                        ConnectionState.Open,
-                        idleConn.State);
-                }
-            }
-            else
-            {
+                // On Aurora, CrashInstance performs a confirmed failover, so the writer changed.
+                // DescribeDBClusters is eventually consistent and can briefly regress to the
+                // pre-failover writer, so poll until the API catches up rather than trusting a
+                // single stale read.
+                var newWriterId = await AuroraUtils.GetDBClusterWriterInstanceIdAsync(
+                    clusterId, id => id != currentWriter, TimeSpan.FromMinutes(5));
                 this.logger.WriteLine($"Cluster failed over to instance {newWriterId}.");
 
                 // Writer changed — all idle connections should be closed.
@@ -485,6 +478,37 @@ public class FailoverConnectivityTests : IntegrationTestBase
                     Assert.Equal(
                         ConnectionState.Closed,
                         idleConn.State);
+                }
+            }
+            else
+            {
+                // On RDS_MULTI_AZ_CLUSTER, CrashInstance only induces a transient network blip and
+                // the writer may or may not change, so the assertion depends on the actual writer.
+                var newWriterId = await AuroraUtils.GetDBClusterWriterInstanceIdAsync(clusterId);
+
+                if (currentWriter == newWriterId)
+                {
+                    this.logger.WriteLine($"Writer did not change, still {newWriterId}.");
+
+                    // Writer didn't change — idle connections should still be open.
+                    foreach (var idleConn in idleConnections)
+                    {
+                        Assert.Equal(
+                            ConnectionState.Open,
+                            idleConn.State);
+                    }
+                }
+                else
+                {
+                    this.logger.WriteLine($"Cluster failed over to instance {newWriterId}.");
+
+                    // Writer changed — all idle connections should be closed.
+                    foreach (var idleConn in idleConnections)
+                    {
+                        Assert.Equal(
+                            ConnectionState.Closed,
+                            idleConn.State);
+                    }
                 }
             }
         }

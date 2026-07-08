@@ -138,8 +138,7 @@ public class AuroraConnectionTrackerConnectivityTests : NHibernateTestBase
             await Task.Delay(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
 
             var clusterId = TestEnvironment.Env.Info.RdsDbName!;
-            var newWriterId = await AuroraUtils.GetDBClusterWriterInstanceIdAsync(clusterId);
-            Assert.SkipWhen(currentWriter == newWriterId, "Writer did not change after failover; cannot verify tracker invalidation.");
+            var newWriterId = await AuroraUtils.GetDBClusterWriterInstanceIdAsync(clusterId, id => id != currentWriter, TimeSpan.FromMinutes(5));
 
             this.logger.WriteLine($"Cluster failed over from {currentWriter} to {newWriterId}.");
 
@@ -251,8 +250,7 @@ public class AuroraConnectionTrackerConnectivityTests : NHibernateTestBase
             await Task.Delay(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
 
             var clusterId = TestEnvironment.Env.Info.RdsDbName!;
-            var newWriterId = await AuroraUtils.GetDBClusterWriterInstanceIdAsync(clusterId);
-            Assert.SkipWhen(currentWriter == newWriterId, "Writer did not change after failover; cannot verify recovery.");
+            var newWriterId = await AuroraUtils.GetDBClusterWriterInstanceIdAsync(clusterId, id => id != currentWriter, TimeSpan.FromMinutes(5));
 
             this.logger.WriteLine($"Cluster failed over from {currentWriter} to {newWriterId}.");
 
