@@ -84,7 +84,7 @@ public class ReadWriteSplittingPluginTests
         this.mockPluginService.Setup(x => x.RefreshHostListAsync()).Returns(Task.CompletedTask);
 
         // The dialect recognizes the command as a "set read only = true" statement so that Execute routes
-        // through SwitchConnectionIfRequired (the .NET equivalent of JDBC's switchConnectionIfRequired(true)).
+        // through SwitchConnectionIfRequired.
         this.mockDialect.Setup(x => x.DoesStatementSetReadOnly(It.IsAny<string>())).Returns((true, true));
     }
 

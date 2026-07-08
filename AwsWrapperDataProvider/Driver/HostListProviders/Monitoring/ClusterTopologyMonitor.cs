@@ -616,7 +616,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
     /// availability cache. A reader is Available when a node monitor currently tracks a topology for it
     /// (<see cref="readerTopologiesById"/> contains its host id); otherwise it is Unavailable. This keeps
     /// monitor-observed availability transient and recomputed on every publish, so a momentary probe failure
-    /// never overrides a fresh topology on an unrelated connection (see JDBC ClusterTopologyMonitorImpl.updateHostsAvailability).
+    /// never overrides a fresh topology on an unrelated connection.
     /// </summary>
     protected void UpdateHostsAvailability(IList<HostSpec>? hosts)
     {

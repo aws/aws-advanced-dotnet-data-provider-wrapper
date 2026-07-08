@@ -421,8 +421,6 @@ public class PluginService : IPluginService, IHostListProviderService
     {
         foreach (HostSpec host in hosts)
         {
-            // Restore availability from the cache by host:port only (matching JDBC's host.getUrl() keying).
-            // See SetAvailability for why we do not fall back to a HostId-keyed lookup.
             HostAvailabilityExpiringCache.TryGetValue(host.GetHostAndPort(), out HostAvailability? availability);
 
             if (availability.HasValue)

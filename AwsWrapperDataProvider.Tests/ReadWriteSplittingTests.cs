@@ -602,7 +602,6 @@ public class ReadWriteSplittingTests : IntegrationTestBase
     [Trait("Engine", "aurora")]
     public async Task ConnectToProxyWriter_SwitchToReadOnly_OneReaderDown_FallsBackToWriter(bool async)
     {
-        // Reproduces https://github.com/aws/aws-advanced-jdbc-wrapper/issues/1324 (ported from PR #1966).
         // In a 2-node cluster (1 writer, 1 reader), when the single reader becomes unreachable, SetReadOnly(true)
         // should fall back to the writer instead of getting stuck retrying the unreachable reader. Once the reader
         // becomes reachable again, SetReadOnly(true) should use it without any availability cache reset, since the
