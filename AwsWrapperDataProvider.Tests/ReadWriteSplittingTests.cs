@@ -592,4 +592,71 @@ public class ReadWriteSplittingTests : IntegrationTestBase
 
         await ProxyHelper.EnableAllConnectivityAsync();
     }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    [Trait("Category", "Integration")]
+    [Trait("Database", "mysql")]
+    [Trait("Database", "pg")]
+    [Trait("Engine", "aurora")]
+    public async Task ConnectToProxyWriter_SwitchToReadOnly_OneReaderDown_FallsBackToWriter(bool async)
+    {
+        // Reproduces https://github.com/aws/aws-advanced-jdbc-wrapper/issues/1324 (ported from PR #1966).
+        // In a 2-node cluster (1 writer, 1 reader), when the single reader becomes unreachable, SetReadOnly(true)
+        // should fall back to the writer instead of getting stuck retrying the unreachable reader. Once the reader
+        // becomes reachable again, SetReadOnly(true) should use it without any availability cache reset, since the
+        // plugin tracks failed readers only locally per call and never marks a host Unavailable globally.
+        Assert.SkipWhen(NumberOfInstances != 2, "Skipped due to test requiring number of database instances = 2.");
+        var proxyDatabaseInfo = ProxyDatabaseInfo ?? throw new InvalidOperationException("Proxy database info must be configured for read/write splitting tests.");
+        var proxyWriter = proxyDatabaseInfo.Instances.First();
+        var connectionString = ConnectionStringHelper.GetUrl(
+            Engine,
+            proxyWriter.Host,
+            proxyWriter.Port,
+            Username,
+            Password,
+            DefaultDbName,
+            3,
+            10,
+            "readWriteSplitting");
+        connectionString += $"; ClusterInstanceHostPattern=?.{proxyDatabaseInfo.InstanceEndpointSuffix}:{proxyDatabaseInfo.InstanceEndpointPort}";
+
+        using AwsWrapperConnection connection = AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
+        await AuroraUtils.OpenDbConnection(connection, async);
+        Assert.Equal(ConnectionState.Open, connection.State);
+
+        var writerConnectionId = await AuroraUtils.QueryInstanceId(connection, async);
+
+        // Confirm the reader is reachable while connectivity is up.
+        await AuroraUtils.SetReadOnly(connection, Engine, true, async);
+        var readerConnectionId = await AuroraUtils.QueryInstanceId(connection, async);
+        Assert.NotEqual(writerConnectionId, readerConnectionId);
+
+        await AuroraUtils.SetReadOnly(connection, Engine, false, async);
+        Assert.Equal(writerConnectionId, await AuroraUtils.QueryInstanceId(connection, async));
+
+        // Disable connectivity to the single reader instance (and the read-only cluster endpoint that routes to it).
+        await ProxyHelper.DisableConnectivityAsync(proxyDatabaseInfo.ClusterReadOnlyEndpoint);
+        await ProxyHelper.DisableConnectivityAsync(readerConnectionId!);
+
+        // SetReadOnly(true) must not get stuck and must fall back to the writer.
+        await AuroraUtils.SetReadOnly(connection, Engine, true, async);
+        Assert.Equal(writerConnectionId, await AuroraUtils.QueryInstanceId(connection, async));
+
+        // A subsequent SetReadOnly(true) should still fall back to the writer without throwing.
+        await AuroraUtils.SetReadOnly(connection, Engine, false, async);
+        Assert.Equal(writerConnectionId, await AuroraUtils.QueryInstanceId(connection, async));
+        await AuroraUtils.SetReadOnly(connection, Engine, true, async);
+        Assert.Equal(writerConnectionId, await AuroraUtils.QueryInstanceId(connection, async));
+
+        // Restore connectivity. The reader should be usable again on the next request without any availability
+        // cache reset, since the plugin does not mark hosts Unavailable globally.
+        await ProxyHelper.EnableAllConnectivityAsync();
+
+        await AuroraUtils.SetReadOnly(connection, Engine, false, async);
+        Assert.Equal(writerConnectionId, await AuroraUtils.QueryInstanceId(connection, async));
+        await AuroraUtils.SetReadOnly(connection, Engine, true, async);
+        Assert.Equal(readerConnectionId, await AuroraUtils.QueryInstanceId(connection, async));
+    }
 }

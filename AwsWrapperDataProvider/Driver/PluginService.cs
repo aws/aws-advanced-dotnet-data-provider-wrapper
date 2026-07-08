@@ -270,13 +270,6 @@ public class PluginService : IPluginService, IHostListProviderService
             host.Availability = availability;
             HostAvailabilityExpiringCache.Set(host.GetHostAndPort(), availability, DefaultHostAvailabilityCacheExpiration);
 
-            // Also store by HostId so availability can be restored when new HostSpec objects are created
-            // during topology refresh (e.g., for custom endpoint restrictions set before topology is populated)
-            if (!string.IsNullOrEmpty(host.HostId))
-            {
-                HostAvailabilityExpiringCache.Set(host.HostId, availability, DefaultHostAvailabilityCacheExpiration);
-            }
-
             if (currentAvailability != availability)
             {
                 Logger.LogTrace(Resources.PluginService_SetAvailability_HostAvailabilityChanged, host, currentAvailability, availability);
@@ -428,15 +421,9 @@ public class PluginService : IPluginService, IHostListProviderService
     {
         foreach (HostSpec host in hosts)
         {
-            // First try to restore from cache by host:port (for existing hosts)
+            // Restore availability from the cache by host:port only (matching JDBC's host.getUrl() keying).
+            // See SetAvailability for why we do not fall back to a HostId-keyed lookup.
             HostAvailabilityExpiringCache.TryGetValue(host.GetHostAndPort(), out HostAvailability? availability);
-
-            // If not found and host has a HostId, try to restore by HostId (for custom endpoint restrictions
-            // that were set before the topology refresh created these HostSpec objects)
-            if (!availability.HasValue && !string.IsNullOrEmpty(host.HostId))
-            {
-                HostAvailabilityExpiringCache.TryGetValue(host.HostId, out availability);
-            }
 
             if (availability.HasValue)
             {

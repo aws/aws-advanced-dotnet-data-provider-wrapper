@@ -611,6 +611,28 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         }
     }
 
+    /// <summary>
+    /// Derives each host's availability from the node monitors' own bookkeeping rather than from the shared
+    /// availability cache. A reader is Available when a node monitor currently tracks a topology for it
+    /// (<see cref="readerTopologiesById"/> contains its host id); otherwise it is Unavailable. This keeps
+    /// monitor-observed availability transient and recomputed on every publish, so a momentary probe failure
+    /// never overrides a fresh topology on an unrelated connection (see JDBC ClusterTopologyMonitorImpl.updateHostsAvailability).
+    /// </summary>
+    protected void UpdateHostsAvailability(IList<HostSpec>? hosts)
+    {
+        if (hosts == null || hosts.Count == 0)
+        {
+            return;
+        }
+
+        foreach (HostSpec host in hosts)
+        {
+            host.Availability = host.HostId != null && this.readerTopologiesById.ContainsKey(host.HostId)
+                ? HostAvailability.Available
+                : HostAvailability.Unavailable;
+        }
+    }
+
     protected void UpdateTopologyCache(IList<HostSpec> hosts)
     {
         lock (this.topologyUpdatedLock)
@@ -696,6 +718,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             Logger.LogDebug(
                 Resources.ClusterTopologyMonitor_MatchingReaderTopologies,
                 (long)elapsed.TotalMilliseconds);
+            this.UpdateHostsAvailability(readerTopologyFirstEntry);
             this.UpdateTopologyCache(readerTopologyFirstEntry);
         }
     }
@@ -787,11 +810,9 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                         try
                         {
                             connection = await monitor.pluginService.ForceOpenConnection(hostSpec, monitor.properties, null, true);
-                            monitor.pluginService.SetAvailability(hostSpec, HostAvailability.Available);
                         }
                         catch (Exception ex) when (ex is DbException or EndOfStreamException)
                         {
-                            monitor.pluginService.SetAvailability(hostSpec, HostAvailability.Unavailable);
                             await monitor.DisposeConnectionAsync(connection);
                             connection = null;
                             monitor.completedOneCycle[hostSpec.HostId!] = true;
@@ -912,6 +933,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
                 if (this.writerChanged)
                 {
+                    monitor.UpdateHostsAvailability(hosts);
                     monitor.UpdateTopologyCache(hosts);
                     return;
                 }
@@ -925,6 +947,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                         latestWriterHostSpec.Host));
 
                     this.writerChanged = true;
+                    monitor.UpdateHostsAvailability(hosts);
                     monitor.UpdateTopologyCache(hosts);
                 }
             }
