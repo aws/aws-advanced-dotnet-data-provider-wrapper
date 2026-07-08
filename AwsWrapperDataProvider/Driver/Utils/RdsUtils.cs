@@ -267,12 +267,17 @@ public static partial class RdsUtils
             return host ?? string.Empty;
         }
 
-        Match? match = CacheMatcher(host, BgGreenHostPattern());
+        // Match directly (not via CacheMatcher): the green-host patterns have no "domain"
+        // group, so caching their Match under the shared host key would poison later
+        // AuroraDnsPatterns lookups (for example GetRdsInstanceHostPattern returning "?").
+        // This mirrors the JDBC reference and the sibling helpers (IsGreenInstance etc.).
+        string preparedHost = GetPreparedHost(host);
+        Match match = BgGreenHostPattern().Match(preparedHost);
 
-        if (match is null or { Success: false })
+        if (!match.Success)
         {
-            Match? hostIdMatch = CacheMatcher(host, BgGreenHostIdPattern());
-            if (hostIdMatch is null or { Success: false })
+            Match hostIdMatch = BgGreenHostIdPattern().Match(preparedHost);
+            if (!hostIdMatch.Success)
             {
                 return host;
             }
@@ -352,6 +357,10 @@ public static partial class RdsUtils
         return CacheMatcher(host, AuroraDnsPatterns)?.Groups[DnsGroup].Value;
     }
 
+    // NOTE: the cache is keyed on the (prepared) host only, so all callers MUST pass the
+    // same pattern family (AuroraDnsPatterns). Passing a different pattern set here would
+    // cache a Match with different named groups and corrupt later lookups for that host.
+    // Green/old host-prefix patterns are matched directly by their callers, not cached here.
     private static Match? CacheMatcher(string host, params Regex[] patterns)
     {
         var preparedHost = GetPreparedHost(host);
