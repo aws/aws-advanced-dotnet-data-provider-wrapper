@@ -126,23 +126,12 @@ public class AuroraConnectionTrackerConnectivityTests : EFIntegrationTestBase
             await Task.Delay(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
 
             var clusterId = TestEnvironment.Env.Info.RdsDbName!;
-            var newWriterId = await AuroraUtils.GetDBClusterWriterInstanceIdAsync(clusterId);
+            var newWriterId = await AuroraUtils.GetDBClusterWriterInstanceIdAsync(clusterId, id => id != currentWriter, TimeSpan.FromMinutes(5));
 
-            if (currentWriter == newWriterId)
+            this.Logger.WriteLine($"Cluster failed over to instance {newWriterId}.");
+            foreach (var ctx in idleContexts)
             {
-                this.Logger.WriteLine($"Writer did not change, still {newWriterId}.");
-                foreach (var ctx in idleContexts)
-                {
-                    Assert.Equal(ConnectionState.Open, ctx.Database.GetDbConnection().State);
-                }
-            }
-            else
-            {
-                this.Logger.WriteLine($"Cluster failed over to instance {newWriterId}.");
-                foreach (var ctx in idleContexts)
-                {
-                    Assert.Equal(ConnectionState.Closed, ctx.Database.GetDbConnection().State);
-                }
+                Assert.Equal(ConnectionState.Closed, ctx.Database.GetDbConnection().State);
             }
 
             // Verify all data committed before the crash is still present.
@@ -245,23 +234,12 @@ public class AuroraConnectionTrackerConnectivityTests : EFIntegrationTestBase
             await Task.Delay(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
 
             var clusterId = TestEnvironment.Env.Info.RdsDbName!;
-            var newWriterId = await AuroraUtils.GetDBClusterWriterInstanceIdAsync(clusterId);
+            var newWriterId = await AuroraUtils.GetDBClusterWriterInstanceIdAsync(clusterId, id => id != currentWriter, TimeSpan.FromMinutes(5));
 
-            if (currentWriter == newWriterId)
+            this.Logger.WriteLine($"Cluster failed over to instance {newWriterId}.");
+            foreach (var ctx in idleContexts)
             {
-                this.Logger.WriteLine($"Writer did not change, still {newWriterId}.");
-                foreach (var ctx in idleContexts)
-                {
-                    Assert.Equal(ConnectionState.Open, ctx.Database.GetDbConnection().State);
-                }
-            }
-            else
-            {
-                this.Logger.WriteLine($"Cluster failed over to instance {newWriterId}.");
-                foreach (var ctx in idleContexts)
-                {
-                    Assert.Equal(ConnectionState.Closed, ctx.Database.GetDbConnection().State);
-                }
+                Assert.Equal(ConnectionState.Closed, ctx.Database.GetDbConnection().State);
             }
 
             // Verify all data committed before the crash is still present.
@@ -352,8 +330,7 @@ public class AuroraConnectionTrackerConnectivityTests : EFIntegrationTestBase
             await Task.Delay(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
 
             var clusterId = TestEnvironment.Env.Info.RdsDbName!;
-            var newWriterId = await AuroraUtils.GetDBClusterWriterInstanceIdAsync(clusterId);
-            Assert.SkipWhen(currentWriter == newWriterId, "Writer did not change after failover; cannot verify recovery.");
+            var newWriterId = await AuroraUtils.GetDBClusterWriterInstanceIdAsync(clusterId, id => id != currentWriter, TimeSpan.FromMinutes(5));
 
             this.Logger.WriteLine($"Cluster failed over to instance {newWriterId}.");
 
@@ -456,8 +433,7 @@ public class AuroraConnectionTrackerConnectivityTests : EFIntegrationTestBase
             await Task.Delay(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
 
             var clusterId = TestEnvironment.Env.Info.RdsDbName!;
-            var newWriterId = await AuroraUtils.GetDBClusterWriterInstanceIdAsync(clusterId);
-            Assert.SkipWhen(currentWriter == newWriterId, "Writer did not change after failover; cannot verify recovery.");
+            var newWriterId = await AuroraUtils.GetDBClusterWriterInstanceIdAsync(clusterId, id => id != currentWriter, TimeSpan.FromMinutes(5));
 
             this.Logger.WriteLine($"Cluster failed over to instance {newWriterId}.");
 
