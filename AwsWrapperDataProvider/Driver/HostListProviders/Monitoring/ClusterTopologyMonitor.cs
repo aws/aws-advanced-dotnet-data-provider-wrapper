@@ -618,7 +618,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
     /// monitor-observed availability transient and recomputed on every publish, so a momentary probe failure
     /// never overrides a fresh topology on an unrelated connection.
     /// </summary>
-    protected void UpdateHostsAvailability(IList<HostSpec>? hosts)
+    protected void UpdateReaderHostsAvailability(IList<HostSpec>? hosts)
     {
         if (hosts == null || hosts.Count == 0)
         {
@@ -718,7 +718,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
             Logger.LogDebug(
                 Resources.ClusterTopologyMonitor_MatchingReaderTopologies,
                 (long)elapsed.TotalMilliseconds);
-            this.UpdateHostsAvailability(readerTopologyFirstEntry);
+            this.UpdateReaderHostsAvailability(readerTopologyFirstEntry);
             this.UpdateTopologyCache(readerTopologyFirstEntry);
         }
     }
@@ -933,7 +933,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
 
                 if (this.writerChanged)
                 {
-                    monitor.UpdateHostsAvailability(hosts);
+                    monitor.UpdateReaderHostsAvailability(hosts);
                     monitor.UpdateTopologyCache(hosts);
                     return;
                 }
@@ -947,7 +947,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                         latestWriterHostSpec.Host));
 
                     this.writerChanged = true;
-                    monitor.UpdateHostsAvailability(hosts);
+                    monitor.UpdateReaderHostsAvailability(hosts);
                     monitor.UpdateTopologyCache(hosts);
                 }
             }
