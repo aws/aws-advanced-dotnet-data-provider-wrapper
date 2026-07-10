@@ -906,7 +906,7 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
 
                 while (!stopToken.IsCancellationRequested)
                 {
-                    string token = iamTokenUtility.GenerateAuthenticationTokenAsync(info.Region!, iamTokenHost, this.GetPort(), info.IamUsername!).GetAwaiter().GetResult();
+                    string token = iamTokenUtility.GenerateAuthenticationTokenAsync(info.Region!, iamTokenHost, this.GetPort(), info.IamUsername!, null).GetAwaiter().GetResult();
 
                     string connectionString = ConnectionStringHelper.GetUrl(
                         Engine, greenNodeConnectIp, port, info.IamUsername, token, dbName, 10, 10, null, false);

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data.Common;
+using Amazon.Runtime;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
@@ -110,7 +111,7 @@ public class IamAuthPluginTelemetryTests
     {
         const string generatedToken = "generated-token";
         this.mockIamTokenUtility
-            .Setup(u => u.GenerateAuthenticationTokenAsync(Region, Host, Port, User))
+            .Setup(u => u.GenerateAuthenticationTokenAsync(Region, Host, Port, User, It.IsAny<AWSCredentials?>()))
             .ReturnsAsync(generatedToken);
 
         Mock<ADONetDelegate<DbConnection>> methodFunc = new();
@@ -140,7 +141,7 @@ public class IamAuthPluginTelemetryTests
     {
         InvalidOperationException underlying = new("AWS STS failure");
         this.mockIamTokenUtility
-            .Setup(u => u.GenerateAuthenticationTokenAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>()))
+            .Setup(u => u.GenerateAuthenticationTokenAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<AWSCredentials?>()))
             .ThrowsAsync(underlying);
 
         Mock<ADONetDelegate<DbConnection>> methodFunc = new();

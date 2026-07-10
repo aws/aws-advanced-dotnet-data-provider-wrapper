@@ -229,6 +229,7 @@ public class ContainerHelper {
         .withFileSystemBind("../../../AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector", "/app/AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector", BindMode.READ_WRITE)
         .withFileSystemBind("../../../AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL", "/app/AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL", BindMode.READ_WRITE)
         .withFileSystemBind("../../../AwsWrapperDataProvider", "/app/AwsWrapperDataProvider", BindMode.READ_WRITE)
+        .withFileSystemBind("../../../AwsWrapperDataProvider.Authentication", "/app/AwsWrapperDataProvider.Authentication", BindMode.READ_WRITE)
         .withFileSystemBind("../../../AwsWrapperDataProvider.Plugin.Iam", "/app/AwsWrapperDataProvider.Plugin.Iam", BindMode.READ_WRITE)
         .withFileSystemBind("../../../AwsWrapperDataProvider.Plugin.SecretsManager", "/app/AwsWrapperDataProvider.Plugin.SecretsManager", BindMode.READ_WRITE)
         .withFileSystemBind("../../../AwsWrapperDataProvider.Plugin.FederatedAuth", "/app/AwsWrapperDataProvider.Plugin.FederatedAuth", BindMode.READ_WRITE)

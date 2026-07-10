@@ -15,6 +15,8 @@
 using System.Data.Common;
 using Amazon;
 using Amazon.RDS;
+using Amazon.Runtime;
+using AwsWrapperDataProvider.Authentication;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
@@ -113,8 +115,22 @@ public class CustomEndpointPlugin : AbstractConnectionPlugin
     public CustomEndpointPlugin(IPluginService pluginService, Dictionary<string, string> props) : this(
         pluginService,
         props,
-        region => new AmazonRDSClient(region))
+        region => CreateRdsClient(region, props))
     {
+    }
+
+    /// <summary>
+    /// Builds the RDS client used by the custom-endpoint monitor, honoring consumer-supplied AWS
+    /// credentials registered with the <see cref="AwsCredentialsManager"/>. Custom-endpoint discovery
+    /// is scoped to a cluster/region rather than a database host, so no <c>HostSpec</c> is passed.
+    /// Falls back to the AWS SDK default credentials chain when no handler is registered.
+    /// </summary>
+    private static AmazonRDSClient CreateRdsClient(RegionEndpoint region, Dictionary<string, string> props)
+    {
+        AWSCredentials? credentials = AwsCredentialsManager.GetCredentials(null, props);
+        return credentials != null
+            ? new AmazonRDSClient(credentials, region)
+            : new AmazonRDSClient(region);
     }
 
     public CustomEndpointPlugin(

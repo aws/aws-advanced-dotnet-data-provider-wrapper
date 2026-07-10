@@ -13,6 +13,8 @@
 // limitations under the License.
 
 using System.Data.Common;
+using Amazon.Runtime;
+using AwsWrapperDataProvider.Authentication;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Auth;
 using AwsWrapperDataProvider.Driver.HostInfo;
@@ -103,16 +105,29 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
         }
 
         // Pick the right RegionUtils implementation based on the URL type so global endpoints
-        // are resolved via the RDS DescribeGlobalClusters API.
+        // are resolved via the RDS DescribeGlobalClusters API. For a Global Aurora Database endpoint
+        // the region cannot be parsed from the hostname, so we resolve the consumer-supplied
+        // credentials up front and use them both to authenticate the DescribeGlobalClusters call and,
+        // later, to generate the database authentication token.
         RdsUrlType urlType = RdsUtils.IdentifyRdsType(iamHost);
-        this.regionUtils = urlType == RdsUrlType.RdsGlobalWriterCluster ? new GdbRegionUtils() : new RegionUtils();
+        AWSCredentials? credentials = null;
+        if (urlType == RdsUrlType.RdsGlobalWriterCluster)
+        {
+            credentials = AwsCredentialsManager.GetCredentials(iamHostSpec, props);
+            this.regionUtils = new GdbRegionUtils(credentials);
+        }
+        else
+        {
+            this.regionUtils = new RegionUtils();
+        }
+
         string iamRegion = await this.regionUtils.GetRegionAsync(iamHostSpec, props, PropertyDefinition.IamRegion)
             ?? throw new Exception(Resources.IamAuthPlugin_CouldNotDetermineRegion);
 
         string cacheKey = this.iamTokenUtility.GetCacheKey(iamUser, iamHost, iamPort, iamRegion);
         int tokenExpirationSeconds = PropertyDefinition.IamExpiration.GetInt(props) ?? DefaultIamExpirationSeconds;
         (string token, bool isCachedToken) = await this.GetOrFetchTokenAsync(
-            iamUser, iamHost, iamPort, iamRegion, cacheKey, tokenExpirationSeconds, forceRefresh: false);
+            props, iamHostSpec, iamUser, iamHost, iamPort, iamRegion, cacheKey, tokenExpirationSeconds, credentials, forceRefresh: false);
 
         // When the target driver supports a native password provider, keep the token out of the
         // connection string (and therefore out of the driver's pool key) and instead register a
@@ -122,7 +137,9 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
         bool useProvider = this.pluginService.TargetConnectionDialect?.SupportsPasswordProvider == true;
         if (useProvider)
         {
-            this.RegisterPasswordProvider(cacheKey, iamUser, iamHost, iamPort, iamRegion, tokenExpirationSeconds);
+            // Snapshot the properties so the background refresh delegate can re-resolve the consumer
+            // credentials on any future physical open.
+            this.RegisterPasswordProvider(cacheKey, iamUser, iamHost, iamPort, iamRegion, tokenExpirationSeconds, new Dictionary<string, string>(props));
             props[PasswordProviderRegistry.ProviderKeyPropertyName] = cacheKey;
             PropertyDefinition.Password.Set(props, null);
         }
@@ -143,8 +160,10 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
             }
 
             // The cached token was rejected, so force a fresh one (overwriting the cache) and retry.
+            // Reuse the credentials resolved above for global endpoints; otherwise the fetch path
+            // re-resolves them.
             (token, _) = await this.GetOrFetchTokenAsync(
-                iamUser, iamHost, iamPort, iamRegion, cacheKey, tokenExpirationSeconds, forceRefresh: true);
+                props, iamHostSpec, iamUser, iamHost, iamPort, iamRegion, cacheKey, tokenExpirationSeconds, credentials, forceRefresh: true);
 
             // For the provider path the registered delegate reads the refreshed token from the cache
             // on the next physical open, so only the legacy path needs to re-set the password here.
@@ -167,7 +186,7 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
     /// </summary>
     /// <returns>The current token and whether it came from the cache.</returns>
     private async Task<(string Token, bool WasCached)> GetOrFetchTokenAsync(
-        string iamUser, string iamHost, int iamPort, string iamRegion, string cacheKey, int tokenExpirationSeconds, bool forceRefresh)
+        IReadOnlyDictionary<string, string> props, HostSpec iamHostSpec, string iamUser, string iamHost, int iamPort, string iamRegion, string cacheKey, int tokenExpirationSeconds, AWSCredentials? credentials, bool forceRefresh)
     {
         if (!forceRefresh && IamTokenCache.TryGetValue(cacheKey, out string? cached) && cached != null)
         {
@@ -175,7 +194,12 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
             return (cached, true);
         }
 
-        string token = await this.FetchTokenAsync(iamUser, iamHost, iamPort, iamRegion);
+        // Resolve the consumer-supplied credentials lazily, only when a token is actually generated,
+        // so a registered handler never runs on the cache-hit path. Reuse the credentials passed in
+        // (resolved earlier for global endpoints); otherwise resolve them now.
+        credentials ??= AwsCredentialsManager.GetCredentials(iamHostSpec, props);
+
+        string token = await this.FetchTokenAsync(iamUser, iamHost, iamPort, iamRegion, credentials);
         IamTokenCache.Set(cacheKey, token, TimeSpan.FromSeconds(tokenExpirationSeconds));
         Logger.LogTrace(Resources.IamAuthPlugin_GeneratedNewToken);
         return (token, false);
@@ -187,13 +211,14 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
     /// <see cref="IamTokenCache"/> and only fetches a new token on a cache miss, so it is safe to be
     /// invoked by the target driver on any future physical connection open.
     /// </summary>
-    private void RegisterPasswordProvider(string cacheKey, string iamUser, string iamHost, int iamPort, string iamRegion, int tokenExpirationSeconds)
+    private void RegisterPasswordProvider(string cacheKey, string iamUser, string iamHost, int iamPort, string iamRegion, int tokenExpirationSeconds, Dictionary<string, string> propsSnapshot)
     {
+        HostSpec iamHostSpec = new HostSpecBuilder().WithHost(iamHost).WithPort(iamPort).Build();
         PasswordProviderRegistry.Register(
             cacheKey,
             new PasswordProviderRegistration(
                 async _ => (await this.GetOrFetchTokenAsync(
-                    iamUser, iamHost, iamPort, iamRegion, cacheKey, tokenExpirationSeconds, forceRefresh: false)).Token));
+                    propsSnapshot, iamHostSpec, iamUser, iamHost, iamPort, iamRegion, cacheKey, tokenExpirationSeconds, credentials: null, forceRefresh: false)).Token));
     }
 
     /// <summary>
@@ -201,14 +226,14 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
     /// API call in the <c>"fetch IAM token"</c> nested telemetry span and
     /// increments the <c>iam.fetchToken.count</c> counter.
     /// </summary>
-    private async Task<string> FetchTokenAsync(string iamUser, string iamHost, int iamPort, string iamRegion)
+    private async Task<string> FetchTokenAsync(string iamUser, string iamHost, int iamPort, string iamRegion, AWSCredentials? credentials)
     {
         ITelemetryContext fetchContext = this.pluginService.TelemetryFactory
             .OpenTelemetryContext("fetch IAM token", TelemetryTraceLevel.Nested);
         this.fetchTokenCounter.Inc();
         try
         {
-            string token = await this.iamTokenUtility.GenerateAuthenticationTokenAsync(iamRegion, iamHost, iamPort, iamUser);
+            string token = await this.iamTokenUtility.GenerateAuthenticationTokenAsync(iamRegion, iamHost, iamPort, iamUser, credentials);
             fetchContext.SetSuccess(true);
             return token;
         }
