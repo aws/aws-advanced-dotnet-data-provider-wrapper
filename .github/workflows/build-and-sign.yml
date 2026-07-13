@@ -23,6 +23,7 @@ jobs:
       - name: Restore dependencies
         run: |
           dotnet restore AwsWrapperDataProvider\AwsWrapperDataProvider.csproj /p:_IsPacking=true
+          dotnet restore AwsWrapperDataProvider.Authentication\AwsWrapperDataProvider.Authentication.csproj /p:_IsPacking=true
           dotnet restore AwsWrapperDataProvider.Plugin.FederatedAuth\AwsWrapperDataProvider.Plugin.FederatedAuth.csproj /p:_IsPacking=true
           dotnet restore AwsWrapperDataProvider.Plugin.Iam\AwsWrapperDataProvider.Plugin.Iam.csproj /p:_IsPacking=true
           dotnet restore AwsWrapperDataProvider.Plugin.SecretsManager\AwsWrapperDataProvider.Plugin.SecretsManager.csproj /p:_IsPacking=true
@@ -38,6 +39,7 @@ jobs:
       - name: Build projects
         run: |
           dotnet build AwsWrapperDataProvider\AwsWrapperDataProvider.csproj --configuration Release --no-restore
+          dotnet build AwsWrapperDataProvider.Authentication\AwsWrapperDataProvider.Authentication.csproj --configuration Release --no-restore
           dotnet build AwsWrapperDataProvider.Plugin.FederatedAuth\AwsWrapperDataProvider.Plugin.FederatedAuth.csproj --configuration Release --no-restore
           dotnet build AwsWrapperDataProvider.Plugin.Iam\AwsWrapperDataProvider.Plugin.Iam.csproj --configuration Release --no-restore
           dotnet build AwsWrapperDataProvider.Plugin.SecretsManager\AwsWrapperDataProvider.Plugin.SecretsManager.csproj --configuration Release --no-restore
@@ -91,6 +93,7 @@ jobs:
       - name: Pack NuGet packages
         run: |
           dotnet pack AwsWrapperDataProvider\AwsWrapperDataProvider.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
+          dotnet pack AwsWrapperDataProvider.Authentication\AwsWrapperDataProvider.Authentication.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
           dotnet pack AwsWrapperDataProvider.Plugin.FederatedAuth\AwsWrapperDataProvider.Plugin.FederatedAuth.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
           dotnet pack AwsWrapperDataProvider.Plugin.Iam\AwsWrapperDataProvider.Plugin.Iam.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages
           dotnet pack AwsWrapperDataProvider.Plugin.SecretsManager\AwsWrapperDataProvider.Plugin.SecretsManager.csproj --configuration Release --no-build /p:PackageVersion=${{ env.RELEASE_VERSION }} --output ./packages

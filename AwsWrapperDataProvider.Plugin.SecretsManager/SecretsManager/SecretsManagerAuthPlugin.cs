@@ -14,7 +14,9 @@
 
 using System.Data.Common;
 using Amazon;
+using Amazon.Runtime;
 using Amazon.SecretsManager;
+using AwsWrapperDataProvider.Authentication;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Auth;
 using AwsWrapperDataProvider.Driver.HostInfo;
@@ -66,27 +68,34 @@ public class SecretsManagerAuthPlugin : AbstractConnectionPlugin
         this.secretValueExpirySecs = PropertyDefinition.SecretsManagerExpirationSecs.GetInt(props) ?? 870;
         this.cacheKey = GetCacheKey(this.secretId, this.region);
 
-        this.client = client ?? CreateClient(this.region, PropertyDefinition.SecretsManagerEndpoint.GetString(props) ?? string.Empty);
+        // Resolve consumer-supplied credentials (if a handler is registered). Secrets Manager access is
+        // scoped by secret/region rather than by database host, so no HostSpec is passed.
+        AWSCredentials? credentials = AwsCredentialsManager.GetCredentials(null, props);
+
+        this.client = client ?? CreateClient(this.region, PropertyDefinition.SecretsManagerEndpoint.GetString(props) ?? string.Empty, credentials);
 
         this.fetchCredentialsCounter = pluginService.TelemetryFactory
             .CreateCounter("secretsManager.fetchCredentials.count");
     }
 
-    private static AmazonSecretsManagerClient CreateClient(string region, string endpoint)
+    private static AmazonSecretsManagerClient CreateClient(string region, string endpoint, AWSCredentials? credentials)
     {
         try
         {
+            RegionEndpoint regionEndpoint = RegionEndpoint.GetBySystemName(region);
+
+            // When the consumer supplies their own credentials, build a dedicated client for them and
+            // do NOT store it in the shared per-region cache: the cache is keyed by region only, so
+            // caching a credential-bound client there would leak one consumer's credentials to another
+            // connection targeting the same region.
+            if (credentials != null)
+            {
+                return BuildClient(regionEndpoint, endpoint, credentials);
+            }
+
             if (!Clients.TryGetValue(region, out var client))
             {
-                RegionEndpoint regionEndpoint = RegionEndpoint.GetBySystemName(region);
-                var config = new AmazonSecretsManagerConfig { RegionEndpoint = regionEndpoint };
-
-                if (!string.IsNullOrEmpty(endpoint))
-                {
-                    config.ServiceURL = endpoint;
-                }
-
-                client = new AmazonSecretsManagerClient(config);
+                client = BuildClient(regionEndpoint, endpoint, null);
                 Clients[region] = client;
             }
 
@@ -96,6 +105,20 @@ public class SecretsManagerAuthPlugin : AbstractConnectionPlugin
         {
             throw new Exception("Couldn't create AWS Secrets Manager client.", ex);
         }
+    }
+
+    private static AmazonSecretsManagerClient BuildClient(RegionEndpoint regionEndpoint, string endpoint, AWSCredentials? credentials)
+    {
+        var config = new AmazonSecretsManagerConfig { RegionEndpoint = regionEndpoint };
+
+        if (!string.IsNullOrEmpty(endpoint))
+        {
+            config.ServiceURL = endpoint;
+        }
+
+        return credentials != null
+            ? new AmazonSecretsManagerClient(credentials, config)
+            : new AmazonSecretsManagerClient(config);
     }
 
     private SecretsManagerUtility.AwsRdsSecrets? secret;

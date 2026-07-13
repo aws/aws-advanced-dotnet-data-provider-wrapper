@@ -9,6 +9,8 @@ AWS Identity and Access Management (IAM) grants users access control across all 
 
 The IAM Authentication plugin requires authentication via AWS Credentials. These credentials can be defined in `~/.aws/credentials` or set as environment variables. All users must set `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`. Users who are using temporary security credentials will also need to additionally set `AWS_SESSION_TOKEN`.
 
+Alternatively, you can supply and manage your own AWS credentials (for example an `AssumeRoleAWSCredentials` instance) by registering a custom handler with the `AwsCredentialsManager`. See [AWS Credentials Provider Configuration](../custom-configuration/AwsCredentialsConfiguration.md).
+
 To enable the IAM Authentication Connection Plugin, add the plugin code `iam` to the [`Plugins`](../UsingTheDotNetDataProviderDriver.md#connection-plugin-manager-parameters) parameter.
 
 In addition, the following line of code must be added before using the AWS Iam Connection Plugin in addition to importing the `AwsWrapperDataProvider.Plugin.Iam` package.
@@ -85,4 +87,4 @@ Example IAM policy:
 ```
 
 > [!NOTE]
-> The credentials used by the wrapper to call `DescribeGlobalClusters` are resolved from the AWS SDK's default credentials chain (environment variables, shared profile, instance profile, etc.) — separately from the database-side IAM user.
+> The credentials used by the wrapper to call `DescribeGlobalClusters` are resolved from a custom handler registered with the [`AwsCredentialsManager`](../custom-configuration/AwsCredentialsConfiguration.md) if one is present, and otherwise from the AWS SDK's default credentials chain (environment variables, shared profile, instance profile, etc.) — separately from the database-side IAM user.

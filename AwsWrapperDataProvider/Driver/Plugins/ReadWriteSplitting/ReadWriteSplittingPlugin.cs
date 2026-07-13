@@ -273,11 +273,32 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
     {
         DbConnection? connection = null;
         HostSpec? readerHost = null;
-        var hostCandidates = this.GetReaderHostCandidates();
-        int attempts = hostCandidates.Count * 2;
-        for (int i = 0; i < attempts; i++)
+
+        // Work on a local, mutable copy of the candidate hosts. When a connection attempt to a reader
+        // fails (for a non-login reason), the host is removed from this local list so it is not retried
+        // within this call. This is a local, per-call view of host availability and intentionally has
+        // no global side effects (it does not mark the host Unavailable in the shared availability
+        // cache), so a host that recovers is immediately eligible again on the next request.
+        var hostCandidates = this.GetReaderHostCandidates().ToList();
+
+        // Bound the number of attempts by the initial candidate count so a host selector that keeps
+        // returning the same host can never cause an infinite loop.
+        int maxAttempts = hostCandidates.Count;
+        for (int i = 0; i < maxAttempts && hostCandidates.Count > 0; i++)
         {
-            HostSpec hostSpec = this.pluginService.GetHostSpecByStrategy(hostCandidates.ToList(), HostRole.Reader, this.readerHostSelectorStrategy);
+            HostSpec hostSpec;
+            try
+            {
+                hostSpec = this.pluginService.GetHostSpecByStrategy(hostCandidates, HostRole.Reader, this.readerHostSelectorStrategy);
+            }
+            catch (InvalidOperationException)
+            {
+                // No eligible reader is left (the selector found no available reader among the remaining
+                // candidates). Stop retrying and fall back to the writer instead of continuing to spend the
+                // connect timeout on hosts that are already known to be unreachable.
+                break;
+            }
+
             try
             {
                 connection = await this.pluginService.OpenConnection(hostSpec, this.props, this, true);
@@ -286,6 +307,16 @@ public class ReadWriteSplittingPlugin : AbstractConnectionPlugin
             }
             catch (DbException ex)
             {
+                // A login/authentication failure (e.g. wrong credentials, expired IAM token) is a
+                // showstopper: retrying other readers won't help, so rethrow immediately.
+                if (this.pluginService.IsLoginException(ex))
+                {
+                    throw;
+                }
+
+                // Remove the failed reader from the local candidate list so it is not retried again during
+                // this call, then continue trying the remaining readers.
+                hostCandidates.Remove(hostSpec);
                 Logger.LogWarning(ex, string.Format(Resources.ReadWriteSplittingPlugin_FailedToConnectToReader, hostSpec));
             }
         }

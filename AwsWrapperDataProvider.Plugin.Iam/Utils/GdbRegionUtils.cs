@@ -15,6 +15,7 @@
 using System.Text.RegularExpressions;
 using Amazon.RDS;
 using Amazon.RDS.Model;
+using Amazon.Runtime;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
 
@@ -28,6 +29,11 @@ namespace AwsWrapperDataProvider.Plugin.Iam.Utils;
 /// (<c>&lt;cluster&gt;.global-&lt;id&gt;.global.rds.amazonaws.com</c>). The IAM user or role
 /// invoking this must have the <c>rds:DescribeGlobalClusters</c> permission.
 /// </para>
+/// <para>
+/// When consumer-supplied credentials are provided via the <see cref="GdbRegionUtils(AWSCredentials)"/>
+/// constructor, the <c>DescribeGlobalClusters</c> call is authenticated with them; otherwise the RDS
+/// client falls back to the AWS SDK's default credentials chain.
+/// </para>
 /// </summary>
 public partial class GdbRegionUtils : RegionUtils
 {
@@ -38,8 +44,10 @@ public partial class GdbRegionUtils : RegionUtils
 
     private readonly IAmazonRDS? rdsClient;
 
+    private readonly AWSCredentials? credentials;
+
     public GdbRegionUtils()
-        : this(null)
+        : this((IAmazonRDS?)null)
     {
     }
 
@@ -50,6 +58,19 @@ public partial class GdbRegionUtils : RegionUtils
     public GdbRegionUtils(IAmazonRDS? rdsClient)
     {
         this.rdsClient = rdsClient;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GdbRegionUtils"/> class that authenticates the
+    /// <c>DescribeGlobalClusters</c> call with the supplied credentials. Used when a consumer registers
+    /// custom AWS credentials via the <see cref="Authentication.AwsCredentialsManager"/>, so global-DB
+    /// region discovery uses the same credentials as the IAM token generation instead of the SDK's
+    /// default credentials chain.
+    /// </summary>
+    /// <param name="credentials">The credentials used to build the RDS client; if null, the SDK's default credentials chain is used.</param>
+    public GdbRegionUtils(AWSCredentials? credentials)
+    {
+        this.credentials = credentials;
     }
 
     /// <inheritdoc/>
@@ -68,7 +89,9 @@ public partial class GdbRegionUtils : RegionUtils
         }
 
         bool ownsClient = this.rdsClient == null;
-        IAmazonRDS client = this.rdsClient ?? new AmazonRDSClient();
+        IAmazonRDS client = this.rdsClient ?? (this.credentials != null
+            ? new AmazonRDSClient(this.credentials)
+            : new AmazonRDSClient());
         try
         {
             string? writerClusterArn = await FindWriterClusterArnAsync(client, clusterId);

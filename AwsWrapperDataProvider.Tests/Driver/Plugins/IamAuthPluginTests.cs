@@ -14,6 +14,7 @@
 
 using System.Data.Common;
 using Amazon.Runtime;
+using AwsWrapperDataProvider.Authentication;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Auth;
 using AwsWrapperDataProvider.Driver.HostInfo;
@@ -27,7 +28,7 @@ using Moq;
 
 namespace AwsWrapperDataProvider.Tests.Driver.Plugins;
 
-public class IamAuthPluginTests
+public class IamAuthPluginTests : IDisposable
 {
     private static readonly string User = "iam-user";
     private static readonly string Region = "us-east-2";
@@ -47,6 +48,7 @@ public class IamAuthPluginTests
     {
         IamAuthPlugin.ClearCache();
         PasswordProviderRegistry.Clear();
+        AwsCredentialsManager.ResetCustomHandler();
 
         this.mockPluginService = new Mock<IPluginService>();
         this.mockIamTokenUtility = new Mock<IIamTokenUtility>();
@@ -63,7 +65,7 @@ public class IamAuthPluginTests
             utility => utility.GetCacheKey(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>()))
             .Returns((string user, string hostname, int port, string region) => GetCacheKey(user, hostname, port, region));
         this.mockIamTokenUtility.Setup(
-            utility => utility.GenerateAuthenticationTokenAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>()))
+            utility => utility.GenerateAuthenticationTokenAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<AWSCredentials?>()))
             .ReturnsAsync(() => this.iamTokenUtilityGeneratedToken);
 
         this.iamAuthPlugin = new(this.mockPluginService.Object, this.props, this.mockIamTokenUtility.Object);
@@ -170,6 +172,90 @@ public class IamAuthPluginTests
         Assert.Equal("generated-token", IamAuthPlugin.IamTokenCache.Get<string>(this.cacheKey));
         Assert.True(PasswordProviderRegistry.TryGet(this.cacheKey, out var registration));
         Assert.Equal("generated-token", await registration!.Provider(CancellationToken.None));
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task OpenConnection_WithNoHandler_PassesNullCredentials()
+    {
+        _ = await this.iamAuthPlugin.OpenConnection(this.hostSpec, this.props, true, this.methodFunc.Object, true);
+
+        // With no registered handler, the token is generated using the SDK default credentials chain,
+        // which the utility receives as null credentials.
+        this.mockIamTokenUtility.Verify(
+            utility => utility.GenerateAuthenticationTokenAsync(Region, Host, Port, User, null),
+            Times.Once);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task OpenConnection_WithCustomHandler_PassesHandlerCredentials()
+    {
+        var sentinel = new BasicAWSCredentials("access", "secret");
+        AwsCredentialsManager.SetCustomHandler((_, _) => sentinel);
+
+        _ = await this.iamAuthPlugin.OpenConnection(this.hostSpec, this.props, true, this.methodFunc.Object, true);
+
+        this.mockIamTokenUtility.Verify(
+            utility => utility.GenerateAuthenticationTokenAsync(
+                Region, Host, Port, User, It.Is<AWSCredentials>(c => ReferenceEquals(c, sentinel))),
+            Times.Once);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task OpenConnection_WithCachedToken_DoesNotInvokeHandler()
+    {
+        IamAuthPlugin.IamTokenCache.Set(this.cacheKey, "cached-token", TimeSpan.FromDays(999));
+
+        bool handlerInvoked = false;
+        AwsCredentialsManager.SetCustomHandler((_, _) =>
+        {
+            handlerInvoked = true;
+            return new BasicAWSCredentials("access", "secret");
+        });
+
+        _ = await this.iamAuthPlugin.OpenConnection(this.hostSpec, this.props, true, this.methodFunc.Object, true);
+
+        // The token came from the cache, so the credentials handler must never run.
+        Assert.False(handlerInvoked);
+        this.mockIamTokenUtility.Verify(
+            utility => utility.GenerateAuthenticationTokenAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<AWSCredentials?>()),
+            Times.Never);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task PasswordProvider_Refresh_ReinvokesHandler()
+    {
+        var mockDialect = new Mock<ITargetConnectionDialect>();
+        mockDialect.Setup(d => d.SupportsPasswordProvider).Returns(true);
+        this.mockPluginService.Setup(s => s.TargetConnectionDialect).Returns(mockDialect.Object);
+
+        int handlerInvocations = 0;
+        AwsCredentialsManager.SetCustomHandler((_, _) =>
+        {
+            handlerInvocations++;
+            return new BasicAWSCredentials("access", "secret");
+        });
+
+        _ = await this.iamAuthPlugin.OpenConnection(this.hostSpec, this.props, true, this.methodFunc.Object, true);
+        Assert.True(PasswordProviderRegistry.TryGet(this.cacheKey, out var registration));
+
+        // Prime a cache miss so the provider must generate a fresh token, which re-resolves credentials
+        // through the manager rather than reusing a captured value.
+        IamAuthPlugin.ClearCache();
+        int invocationsBeforeRefresh = handlerInvocations;
+
+        Assert.Equal("generated-token", await registration!.Provider(CancellationToken.None));
+        Assert.True(handlerInvocations > invocationsBeforeRefresh);
+    }
+
+    public void Dispose()
+    {
+        AwsCredentialsManager.ResetCustomHandler();
+        GC.SuppressFinalize(this);
     }
 
     private static string GetCacheKey(string user, string hostname, int port, string region)
