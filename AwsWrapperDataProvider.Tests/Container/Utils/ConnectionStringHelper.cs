@@ -47,8 +47,17 @@ public class ConnectionStringHelper
                     mySqlConnectionStringBuilder.Database = dbName;
                 }
 
-                mySqlConnectionStringBuilder.DefaultCommandTimeout = (uint)commandTimeout;
-                mySqlConnectionStringBuilder.ConnectionTimeout = (uint)connectionTimeout;
+                // A value of 0 means "leave unset" so the driver default applies.
+                if (commandTimeout > 0)
+                {
+                    mySqlConnectionStringBuilder.DefaultCommandTimeout = (uint)commandTimeout;
+                }
+
+                if (connectionTimeout > 0)
+                {
+                    mySqlConnectionStringBuilder.ConnectionTimeout = (uint)connectionTimeout;
+                }
+
                 mySqlConnectionStringBuilder.Pooling = enablePooling;
 
                 url = mySqlConnectionStringBuilder.ConnectionString;
@@ -76,8 +85,17 @@ public class ConnectionStringHelper
                     npgsqlConnectionStringBuilder.Database = dbName;
                 }
 
-                npgsqlConnectionStringBuilder.Timeout = connectionTimeout;
-                npgsqlConnectionStringBuilder.CommandTimeout = commandTimeout;
+                // A value of 0 means "leave unset" so the driver default applies.
+                if (connectionTimeout > 0)
+                {
+                    npgsqlConnectionStringBuilder.Timeout = connectionTimeout;
+                }
+
+                if (commandTimeout > 0)
+                {
+                    npgsqlConnectionStringBuilder.CommandTimeout = commandTimeout;
+                }
+
                 npgsqlConnectionStringBuilder.Pooling = enablePooling;
                 npgsqlConnectionStringBuilder.SslMode = SslMode.Require;
 
