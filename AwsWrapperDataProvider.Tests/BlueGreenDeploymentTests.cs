@@ -173,6 +173,27 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
         Logger.LogTrace("Completed");
     }
 
+    /// <summary>
+    /// Creates a worker thread that (1) sets <see cref="Thread.Name"/> so the physical thread is
+    /// identifiable, and (2) opens a logging scope for the duration of the body. Because ILogger
+    /// scopes flow via AsyncLocal, the scope tag is attached to every log line emitted while the
+    /// worker's synchronous call chain runs — including driver/plugin lines nested inside a
+    /// connect/execute call. (Detached background monitors run outside this chain and are not tagged.)
+    /// </summary>
+    private static Thread NamedThread(string name, Action body)
+    {
+        return new Thread(() =>
+        {
+            using (Logger.BeginScope("worker={Worker}", name))
+            {
+                body();
+            }
+        })
+        {
+            Name = name,
+        };
+    }
+
     private Thread GetDirectBlueConnectivityMonitoringThread(
         string hostId,
         string url,
@@ -183,7 +204,7 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
         AtomicReference<CountdownEvent> finishLatch,
         BlueGreenResults currentResults)
     {
-        return new Thread(() =>
+        return NamedThread($"DirectBlueConnectivity@{hostId}", () =>
         {
             DbConnection? conn = null;
             try
@@ -243,7 +264,7 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
         AtomicReference<CountdownEvent> finishLatch,
         BlueGreenResults currentResults)
     {
-        return new Thread(() =>
+        return NamedThread($"WrapperBlueExecute@{hostId}", () =>
         {
             AwsWrapperConnection? conn = null;
             BlueGreenConnectionPlugin bgPlugin;
@@ -363,7 +384,7 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
         AtomicReference<CountdownEvent> finishLatch,
         BlueGreenResults currentResults)
     {
-        return new Thread(() =>
+        return NamedThread($"WrapperBlueNewConnection@{hostId}", () =>
         {
             AwsWrapperConnection? conn = null;
             BlueGreenConnectionPlugin? bgPlugin = null;
@@ -455,7 +476,7 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
         AtomicReference<CountdownEvent> finishLatch,
         BlueGreenResults results)
     {
-        return new Thread(() =>
+        return NamedThread($"WrapperBlueHostVerification@{hostId}", () =>
         {
             DbConnection? conn = null;
             string? originalBlueIp;
@@ -547,7 +568,7 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
         AtomicReference<CountdownEvent> finishLatch,
         BlueGreenResults currentResults)
     {
-        return new Thread(() =>
+        return NamedThread($"GreenDNS@{hostId}", () =>
         {
             try
             {
@@ -596,7 +617,7 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
         AtomicReference<CountdownEvent> finishLatch,
         BlueGreenResults currentResults)
     {
-        return new Thread(() =>
+        return NamedThread($"BlueDNS@{hostId}", () =>
         {
             try
             {
@@ -655,7 +676,7 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
         AtomicReference<CountdownEvent> finishLatch,
         BlueGreenResults currentResults)
     {
-        return new Thread(() =>
+        return NamedThread($"DirectTopology@{hostId}", () =>
         {
             DbConnection? conn = null;
 
@@ -759,7 +780,7 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
         AtomicReference<CountdownEvent> finishLatch,
         BlueGreenResults currentResults)
     {
-        return new Thread(() =>
+        return NamedThread($"WrapperGreenConnectivity@{hostId}", () =>
         {
             AwsWrapperConnection? conn = null;
             try
@@ -834,7 +855,7 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
         AtomicReference<CountdownEvent> finishLatch,
         ConcurrentDictionary<string, BlueGreenResults> currentResults)
     {
-        return new Thread(() =>
+        return NamedThread("Switchover", () =>
         {
             try
             {
@@ -890,7 +911,7 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
         bool notifyOnFirstError,
         bool exitOnFirstSuccess)
     {
-        return new Thread(() =>
+        return NamedThread($"DirectGreenIamIp{threadPrefix}@{hostId}", () =>
         {
             DbConnection? conn = null;
             try
@@ -1110,7 +1131,7 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
         CancellationToken stopToken,
         AtomicReference<CountdownEvent> finishLatch)
     {
-        return new Thread(() =>
+        return NamedThread("RollbackDetection", () =>
         {
             try
             {
