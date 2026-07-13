@@ -323,6 +323,9 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
                     catch (Exception ex) when (ex is DbException or InvalidOperationException or SocketException)
                     {
                         long holdTime = bgPlugin?.GetHoldTimeMs() ?? 0;
+                        Logger.LogTrace(
+                            "[WrapperBlueExecute @ {HostId}] Post-switchover execution failed at {StartTime} ms (hold {HoldTime} ms): {Error}",
+                            hostId, startTime, holdTime, ex.Message);
                         currentResults.BlueWrapperPostSwitchoverExecuteTimes.Enqueue(
                             new TimeHolder(startTime, 0, holdTime, ex.Message));
                         this.CloseConnection(conn);
