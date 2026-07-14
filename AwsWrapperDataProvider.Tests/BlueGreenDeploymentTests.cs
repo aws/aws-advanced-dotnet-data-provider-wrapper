@@ -1009,8 +1009,8 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
                 info.Request.Features.Contains(TestEnvironmentFeatures.IAM) ? info.IamUsername : Username,
                 info.Request.Features.Contains(TestEnvironmentFeatures.IAM) ? null : Password,
                 dbName,
-                0,
-                0,
+                null,
+                null,
                 bgPlugin ? GetWrapperConnectionPlugins() : GetDefaultConnectionPlugins(),
                 false);
 
@@ -1083,7 +1083,7 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
     private static DbConnection DirectOpenConnectionWithRetry(string url, int port, string dbName)
     {
         string connectionString = ConnectionStringHelper.GetUrl(
-            Engine, url, port, Username, Password, dbName, 0, 0, null, false);
+            Engine, url, port, Username, Password, dbName, null, null, null, false);
         DbConnection? connection = null;
         int connectCount = 0;
 

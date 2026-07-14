@@ -19,7 +19,7 @@ namespace AwsWrapperDataProvider.Tests.Container.Utils;
 
 public class ConnectionStringHelper
 {
-    public static string GetUrl(DatabaseEngine engine, string host, int? port, string? username, string? password, string? dbName, int commandTimeout = 30, int connectionTimeout = 30, string? plugins = null, bool enablePooling = true)
+    public static string GetUrl(DatabaseEngine engine, string host, int? port, string? username, string? password, string? dbName, int? commandTimeout = 30, int? connectionTimeout = 30, string? plugins = null, bool enablePooling = true)
     {
         string url;
         switch (engine)
@@ -47,13 +47,13 @@ public class ConnectionStringHelper
                     mySqlConnectionStringBuilder.Database = dbName;
                 }
 
-                // A value of 0 means "leave unset" so the driver default applies.
-                if (commandTimeout > 0)
+                // null means "leave unset" so the driver default applies.
+                if (commandTimeout != null)
                 {
                     mySqlConnectionStringBuilder.DefaultCommandTimeout = (uint)commandTimeout;
                 }
 
-                if (connectionTimeout > 0)
+                if (connectionTimeout != null)
                 {
                     mySqlConnectionStringBuilder.ConnectionTimeout = (uint)connectionTimeout;
                 }
@@ -85,15 +85,15 @@ public class ConnectionStringHelper
                     npgsqlConnectionStringBuilder.Database = dbName;
                 }
 
-                // A value of 0 means "leave unset" so the driver default applies.
-                if (connectionTimeout > 0)
+                // null means "leave unset" so the driver default applies.
+                if (connectionTimeout != null)
                 {
-                    npgsqlConnectionStringBuilder.Timeout = connectionTimeout;
+                    npgsqlConnectionStringBuilder.Timeout = (int)connectionTimeout;
                 }
 
-                if (commandTimeout > 0)
+                if (commandTimeout != null)
                 {
-                    npgsqlConnectionStringBuilder.CommandTimeout = commandTimeout;
+                    npgsqlConnectionStringBuilder.CommandTimeout = (int)commandTimeout;
                 }
 
                 npgsqlConnectionStringBuilder.Pooling = enablePooling;
