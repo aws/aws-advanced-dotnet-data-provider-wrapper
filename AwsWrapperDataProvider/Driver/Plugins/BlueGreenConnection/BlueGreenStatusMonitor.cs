@@ -615,8 +615,13 @@ public class BlueGreenStatusMonitor
                 this.panicMode = false;
                 this.NotifyChanges();
             }
-            catch (Exception ex) when (ex is DbException or SocketException)
+            catch (Exception ex)
             {
+                // Catch all: any failure to open the monitoring connection should set panic mode
+                // and let the loop retry. This runs on a fire-and-forget task, so an unfiltered
+                // exception (for example an AggregateException wrapping an IO/auth failure when a
+                // connect is cancelled mid-SSL-handshake) would otherwise fault the task and surface
+                // as an unobserved task exception.
                 Logger.LogWarning(ex, "[OpenConnection] Failed to open connection for role: {Role}", this.role);
                 this.connection = null;
                 this.panicMode = true;
