@@ -49,7 +49,7 @@ public class BlueGreenStatusMonitor
     private readonly ConcurrentDictionary<string, string?> currentIpAddressesByHostMap = new();
 
     private CancellationTokenSource cancellationTokenSource = new();
-    private TaskCompletionSource<bool> stateChangedTcs = new();
+    private TaskCompletionSource<bool> stateChangedTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private Task? monitoringTask;
     private Task? openConnectionTask;
 
@@ -666,7 +666,11 @@ public class BlueGreenStatusMonitor
 
     private void NotifyChanges()
     {
-        var oldTcs = Interlocked.Exchange(ref this.stateChangedTcs, new TaskCompletionSource<bool>());
+        // RunContinuationsAsynchronously keeps TrySetResult from running the waiter's
+        // continuation inline on the notifying thread (async equivalent of Monitor.PulseAll).
+        var oldTcs = Interlocked.Exchange(
+            ref this.stateChangedTcs,
+            new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously));
         oldTcs.TrySetResult(true);
     }
 }
