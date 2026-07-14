@@ -1647,10 +1647,14 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
         var connectTimes = this.results.Values.SelectMany(r => r.BlueWrapperConnectTimes).ToList();
         var postSwitchoverExecuteTimes = this.results.Values.SelectMany(r => r.BlueWrapperPostSwitchoverExecuteTimes).ToList();
 
+        // Count executions the same way as connections: only operations after switchover completes.
+        // Failures during the switchover window (e.g. a query killed mid-flight, or transient IAM/PAM
+        // auth rejections while the green node's identity is still settling) are expected and the
+        // wrapper recovers from them. A failure after switchoverCompleteTime is still a real defect.
         long successfulConnections = this.CountSuccessfulOperationsAfterSwitchover(connectTimes, bgTriggerTime, switchoverCompleteTime);
-        long successfulExecutions = this.CountSuccessfulOperations(postSwitchoverExecuteTimes);
+        long successfulExecutions = this.CountSuccessfulOperationsAfterSwitchover(postSwitchoverExecuteTimes, bgTriggerTime, switchoverCompleteTime);
         long unsuccessfulConnections = this.CountUnsuccessfulOperationsAfterSwitchover(connectTimes, bgTriggerTime, switchoverCompleteTime);
-        long unsuccessfulExecutions = this.CountUnsuccessfulOperations(postSwitchoverExecuteTimes);
+        long unsuccessfulExecutions = this.CountUnsuccessfulOperationsAfterSwitchover(postSwitchoverExecuteTimes, bgTriggerTime, switchoverCompleteTime);
 
         Logger.LogTrace("Successful wrapper connections after switchover: {Count}", successfulConnections);
         Logger.LogTrace("Successful wrapper executions after switchover: {Count}", successfulExecutions);
@@ -1664,7 +1668,7 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
 
         if (unsuccessfulExecutions > 0)
         {
-            this.LogUnsuccessfulOperations(postSwitchoverExecuteTimes, "execution");
+            this.LogUnsuccessfulOperationsAfterSwitchover(postSwitchoverExecuteTimes, bgTriggerTime, switchoverCompleteTime, "execution");
         }
 
         Assert.Equal(0L, unsuccessfulConnections);
@@ -1827,16 +1831,6 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
         return times.Count(t => this.GetTimeOffsetMs(t.StartTime, bgTriggerTime) > switchoverCompleteTime && t.ErrorMessage != null);
     }
 
-    private long CountSuccessfulOperations(IEnumerable<TimeHolder> times)
-    {
-        return times.Count(t => t.ErrorMessage == null);
-    }
-
-    private long CountUnsuccessfulOperations(IEnumerable<TimeHolder> times)
-    {
-        return times.Count(t => t.ErrorMessage != null);
-    }
-
     private void LogUnsuccessfulOperationsAfterSwitchover(
         IEnumerable<TimeHolder> times,
         long bgTriggerTime,
@@ -1851,14 +1845,6 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
                 this.GetTimeOffsetMs(t.StartTime, bgTriggerTime),
                 switchoverCompleteTime,
                 t.ErrorMessage);
-        }
-    }
-
-    private void LogUnsuccessfulOperations(IEnumerable<TimeHolder> times, string operationType)
-    {
-        foreach (var t in times.Where(t => t.ErrorMessage != null))
-        {
-            Logger.LogInformation("Unsuccessful {OperationType}: {Error}", operationType, t.ErrorMessage);
         }
     }
 
