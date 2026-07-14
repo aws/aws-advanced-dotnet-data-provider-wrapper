@@ -346,7 +346,10 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
                         long holdTime = bgPlugin?.GetHoldTimeMs() ?? 0;
                         Logger.LogTrace(
                             "[WrapperBlueExecute @ {HostId}] Post-switchover execution failed at {StartTime} ms (hold {HoldTime} ms): {Error}",
-                            hostId, startTime, holdTime, ex.Message);
+                            hostId,
+                            startTime,
+                            holdTime,
+                            ex.Message);
                         currentResults.BlueWrapperPostSwitchoverExecuteTimes.Enqueue(
                             new TimeHolder(startTime, 0, holdTime, ex.Message));
                         this.CloseConnection(conn);
@@ -414,14 +417,20 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
                     {
                         Logger.LogTrace(
                             "[WrapperBlueNewConnection @ {HostId}] (TimeoutException) connect failed at {StartTime} ms after {Duration} ms: {Error}",
-                            hostId, startTime, currentStopwatch.ElapsedMilliseconds, ex.Message);
+                            hostId,
+                            startTime,
+                            currentStopwatch.ElapsedMilliseconds,
+                            ex.Message);
                         RecordConnectionError(conn, currentResults, bgPlugin, startTime, currentStopwatch.ElapsedMilliseconds, ex.Message);
                     }
                     catch (Exception ex) when (ex is DbException or InvalidOperationException or SocketException)
                     {
                         Logger.LogTrace(
                             "[WrapperBlueNewConnection @ {HostId}] connect failed at {StartTime} ms after {Duration} ms: {Error}",
-                            hostId, startTime, currentStopwatch.ElapsedMilliseconds, ex.Message);
+                            hostId,
+                            startTime,
+                            currentStopwatch.ElapsedMilliseconds,
+                            ex.Message);
                         RecordConnectionError(conn, currentResults, bgPlugin, startTime, currentStopwatch.ElapsedMilliseconds, ex.Message);
                     }
 
