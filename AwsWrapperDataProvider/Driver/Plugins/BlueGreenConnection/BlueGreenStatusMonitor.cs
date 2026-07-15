@@ -49,7 +49,7 @@ public class BlueGreenStatusMonitor
     private readonly ConcurrentDictionary<string, string?> currentIpAddressesByHostMap = new();
 
     private CancellationTokenSource cancellationTokenSource = new();
-    private TaskCompletionSource<bool> stateChangedTcs = new();
+    private TaskCompletionSource<bool> stateChangedTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private Task? monitoringTask;
     private Task? openConnectionTask;
 
@@ -615,8 +615,13 @@ public class BlueGreenStatusMonitor
                 this.panicMode = false;
                 this.NotifyChanges();
             }
-            catch (Exception ex) when (ex is DbException or SocketException)
+            catch (Exception ex)
             {
+                // Catch all: any failure to open the monitoring connection should set panic mode
+                // and let the loop retry. This runs on a fire-and-forget task, so an unfiltered
+                // exception (for example an AggregateException wrapping an IO/auth failure when a
+                // connect is cancelled mid-SSL-handshake) would otherwise fault the task and surface
+                // as an unobserved task exception.
                 Logger.LogWarning(ex, "[OpenConnection] Failed to open connection for role: {Role}", this.role);
                 this.connection = null;
                 this.panicMode = true;
@@ -661,7 +666,11 @@ public class BlueGreenStatusMonitor
 
     private void NotifyChanges()
     {
-        var oldTcs = Interlocked.Exchange(ref this.stateChangedTcs, new TaskCompletionSource<bool>());
+        // RunContinuationsAsynchronously keeps TrySetResult from running the waiter's
+        // continuation inline on the notifying thread (async equivalent of Monitor.PulseAll).
+        var oldTcs = Interlocked.Exchange(
+            ref this.stateChangedTcs,
+            new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously));
         oldTcs.TrySetResult(true);
     }
 }

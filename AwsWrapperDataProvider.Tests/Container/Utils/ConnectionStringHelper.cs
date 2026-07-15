@@ -19,7 +19,7 @@ namespace AwsWrapperDataProvider.Tests.Container.Utils;
 
 public class ConnectionStringHelper
 {
-    public static string GetUrl(DatabaseEngine engine, string host, int? port, string? username, string? password, string? dbName, int commandTimeout = 30, int connectionTimeout = 30, string? plugins = null, bool enablePooling = true)
+    public static string GetUrl(DatabaseEngine engine, string host, int? port, string? username, string? password, string? dbName, int? commandTimeout = 30, int? connectionTimeout = 30, string? plugins = null, bool enablePooling = true)
     {
         string url;
         switch (engine)
@@ -47,8 +47,17 @@ public class ConnectionStringHelper
                     mySqlConnectionStringBuilder.Database = dbName;
                 }
 
-                mySqlConnectionStringBuilder.DefaultCommandTimeout = (uint)commandTimeout;
-                mySqlConnectionStringBuilder.ConnectionTimeout = (uint)connectionTimeout;
+                // null means "leave unset" so the driver default applies.
+                if (commandTimeout != null)
+                {
+                    mySqlConnectionStringBuilder.DefaultCommandTimeout = (uint)commandTimeout;
+                }
+
+                if (connectionTimeout != null)
+                {
+                    mySqlConnectionStringBuilder.ConnectionTimeout = (uint)connectionTimeout;
+                }
+
                 mySqlConnectionStringBuilder.Pooling = enablePooling;
 
                 url = mySqlConnectionStringBuilder.ConnectionString;
@@ -76,8 +85,17 @@ public class ConnectionStringHelper
                     npgsqlConnectionStringBuilder.Database = dbName;
                 }
 
-                npgsqlConnectionStringBuilder.Timeout = connectionTimeout;
-                npgsqlConnectionStringBuilder.CommandTimeout = commandTimeout;
+                // null means "leave unset" so the driver default applies.
+                if (connectionTimeout != null)
+                {
+                    npgsqlConnectionStringBuilder.Timeout = (int)connectionTimeout;
+                }
+
+                if (commandTimeout != null)
+                {
+                    npgsqlConnectionStringBuilder.CommandTimeout = (int)commandTimeout;
+                }
+
                 npgsqlConnectionStringBuilder.Pooling = enablePooling;
                 npgsqlConnectionStringBuilder.SslMode = SslMode.Require;
 

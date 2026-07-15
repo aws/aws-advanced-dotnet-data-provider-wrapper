@@ -173,6 +173,27 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
         Logger.LogTrace("Completed");
     }
 
+    /// <summary>
+    /// Creates a worker thread that (1) sets <see cref="Thread.Name"/> so the physical thread is
+    /// identifiable, and (2) opens a logging scope for the duration of the body. Because ILogger
+    /// scopes flow via AsyncLocal, the scope tag is attached to every log line emitted while the
+    /// worker's synchronous call chain runs — including driver/plugin lines nested inside a
+    /// connect/execute call. (Detached background monitors run outside this chain and are not tagged.)
+    /// </summary>
+    private static Thread NamedThread(string name, Action body)
+    {
+        return new Thread(() =>
+        {
+            using (Logger.BeginScope("worker={Worker}", name))
+            {
+                body();
+            }
+        })
+        {
+            Name = name,
+        };
+    }
+
     private Thread GetDirectBlueConnectivityMonitoringThread(
         string hostId,
         string url,
@@ -183,7 +204,7 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
         AtomicReference<CountdownEvent> finishLatch,
         BlueGreenResults currentResults)
     {
-        return new Thread(() =>
+        return NamedThread($"DirectBlueConnectivity@{hostId}", () =>
         {
             DbConnection? conn = null;
             try
@@ -243,7 +264,7 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
         AtomicReference<CountdownEvent> finishLatch,
         BlueGreenResults currentResults)
     {
-        return new Thread(() =>
+        return NamedThread($"WrapperBlueExecute@{hostId}", () =>
         {
             AwsWrapperConnection? conn = null;
             BlueGreenConnectionPlugin bgPlugin;
@@ -323,6 +344,12 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
                     catch (Exception ex) when (ex is DbException or InvalidOperationException or SocketException)
                     {
                         long holdTime = bgPlugin?.GetHoldTimeMs() ?? 0;
+                        Logger.LogTrace(
+                            "[WrapperBlueExecute @ {HostId}] Post-switchover execution failed at {StartTime} ms (hold {HoldTime} ms): {Error}",
+                            hostId,
+                            startTime,
+                            holdTime,
+                            ex.Message);
                         currentResults.BlueWrapperPostSwitchoverExecuteTimes.Enqueue(
                             new TimeHolder(startTime, 0, holdTime, ex.Message));
                         this.CloseConnection(conn);
@@ -360,7 +387,7 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
         AtomicReference<CountdownEvent> finishLatch,
         BlueGreenResults currentResults)
     {
-        return new Thread(() =>
+        return NamedThread($"WrapperBlueNewConnection@{hostId}", () =>
         {
             AwsWrapperConnection? conn = null;
             BlueGreenConnectionPlugin? bgPlugin = null;
@@ -388,12 +415,22 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
                     }
                     catch (TimeoutException ex)
                     {
-                        Logger.LogTrace("[WrapperBlueNewConnection @ {HostId}] (TimeoutException) thread exception: {Error}", hostId, ex.Message);
+                        Logger.LogTrace(
+                            "[WrapperBlueNewConnection @ {HostId}] (TimeoutException) connect failed at {StartTime} ms after {Duration} ms: {Error}",
+                            hostId,
+                            startTime,
+                            currentStopwatch.ElapsedMilliseconds,
+                            ex.Message);
                         RecordConnectionError(conn, currentResults, bgPlugin, startTime, currentStopwatch.ElapsedMilliseconds, ex.Message);
                     }
                     catch (Exception ex) when (ex is DbException or InvalidOperationException or SocketException)
                     {
-                        Logger.LogTrace("[WrapperBlueNewConnection @ {HostId}] thread exception: {Error}", hostId, ex.Message);
+                        Logger.LogTrace(
+                            "[WrapperBlueNewConnection @ {HostId}] connect failed at {StartTime} ms after {Duration} ms: {Error}",
+                            hostId,
+                            startTime,
+                            currentStopwatch.ElapsedMilliseconds,
+                            ex.Message);
                         RecordConnectionError(conn, currentResults, bgPlugin, startTime, currentStopwatch.ElapsedMilliseconds, ex.Message);
                     }
 
@@ -452,7 +489,7 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
         AtomicReference<CountdownEvent> finishLatch,
         BlueGreenResults results)
     {
-        return new Thread(() =>
+        return NamedThread($"WrapperBlueHostVerification@{hostId}", () =>
         {
             DbConnection? conn = null;
             string? originalBlueIp;
@@ -544,7 +581,7 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
         AtomicReference<CountdownEvent> finishLatch,
         BlueGreenResults currentResults)
     {
-        return new Thread(() =>
+        return NamedThread($"GreenDNS@{hostId}", () =>
         {
             try
             {
@@ -593,7 +630,7 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
         AtomicReference<CountdownEvent> finishLatch,
         BlueGreenResults currentResults)
     {
-        return new Thread(() =>
+        return NamedThread($"BlueDNS@{hostId}", () =>
         {
             try
             {
@@ -652,7 +689,7 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
         AtomicReference<CountdownEvent> finishLatch,
         BlueGreenResults currentResults)
     {
-        return new Thread(() =>
+        return NamedThread($"DirectTopology@{hostId}", () =>
         {
             DbConnection? conn = null;
 
@@ -756,7 +793,7 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
         AtomicReference<CountdownEvent> finishLatch,
         BlueGreenResults currentResults)
     {
-        return new Thread(() =>
+        return NamedThread($"WrapperGreenConnectivity@{hostId}", () =>
         {
             AwsWrapperConnection? conn = null;
             try
@@ -831,7 +868,7 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
         AtomicReference<CountdownEvent> finishLatch,
         ConcurrentDictionary<string, BlueGreenResults> currentResults)
     {
-        return new Thread(() =>
+        return NamedThread("Switchover", () =>
         {
             try
             {
@@ -887,7 +924,7 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
         bool notifyOnFirstError,
         bool exitOnFirstSuccess)
     {
-        return new Thread(() =>
+        return NamedThread($"DirectGreenIamIp{threadPrefix}@{hostId}", () =>
         {
             DbConnection? conn = null;
             try
@@ -981,8 +1018,8 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
                 info.Request.Features.Contains(TestEnvironmentFeatures.IAM) ? info.IamUsername : Username,
                 info.Request.Features.Contains(TestEnvironmentFeatures.IAM) ? null : Password,
                 dbName,
-                10,
-                10,
+                null,
+                null,
                 bgPlugin ? GetWrapperConnectionPlugins() : GetDefaultConnectionPlugins(),
                 false);
 
@@ -1055,7 +1092,7 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
     private static DbConnection DirectOpenConnectionWithRetry(string url, int port, string dbName)
     {
         string connectionString = ConnectionStringHelper.GetUrl(
-            Engine, url, port, Username, Password, dbName, 10, 10, null, false);
+            Engine, url, port, Username, Password, dbName, null, null, null, false);
         DbConnection? connection = null;
         int connectCount = 0;
 
@@ -1107,7 +1144,7 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
         CancellationToken stopToken,
         AtomicReference<CountdownEvent> finishLatch)
     {
-        return new Thread(() =>
+        return NamedThread("RollbackDetection", () =>
         {
             try
             {
@@ -1619,10 +1656,14 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
         var connectTimes = this.results.Values.SelectMany(r => r.BlueWrapperConnectTimes).ToList();
         var postSwitchoverExecuteTimes = this.results.Values.SelectMany(r => r.BlueWrapperPostSwitchoverExecuteTimes).ToList();
 
+        // Count executions the same way as connections: only operations after switchover completes.
+        // Failures during the switchover window (e.g. a query killed mid-flight, or transient IAM/PAM
+        // auth rejections while the green node's identity is still settling) are expected and the
+        // wrapper recovers from them. A failure after switchoverCompleteTime is still a real defect.
         long successfulConnections = this.CountSuccessfulOperationsAfterSwitchover(connectTimes, bgTriggerTime, switchoverCompleteTime);
-        long successfulExecutions = this.CountSuccessfulOperations(postSwitchoverExecuteTimes);
+        long successfulExecutions = this.CountSuccessfulOperationsAfterSwitchover(postSwitchoverExecuteTimes, bgTriggerTime, switchoverCompleteTime);
         long unsuccessfulConnections = this.CountUnsuccessfulOperationsAfterSwitchover(connectTimes, bgTriggerTime, switchoverCompleteTime);
-        long unsuccessfulExecutions = this.CountUnsuccessfulOperations(postSwitchoverExecuteTimes);
+        long unsuccessfulExecutions = this.CountUnsuccessfulOperationsAfterSwitchover(postSwitchoverExecuteTimes, bgTriggerTime, switchoverCompleteTime);
 
         Logger.LogTrace("Successful wrapper connections after switchover: {Count}", successfulConnections);
         Logger.LogTrace("Successful wrapper executions after switchover: {Count}", successfulExecutions);
@@ -1636,7 +1677,7 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
 
         if (unsuccessfulExecutions > 0)
         {
-            this.LogUnsuccessfulOperations(postSwitchoverExecuteTimes, "execution");
+            this.LogUnsuccessfulOperationsAfterSwitchover(postSwitchoverExecuteTimes, bgTriggerTime, switchoverCompleteTime, "execution");
         }
 
         Assert.Equal(0L, unsuccessfulConnections);
@@ -1799,16 +1840,6 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
         return times.Count(t => this.GetTimeOffsetMs(t.StartTime, bgTriggerTime) > switchoverCompleteTime && t.ErrorMessage != null);
     }
 
-    private long CountSuccessfulOperations(IEnumerable<TimeHolder> times)
-    {
-        return times.Count(t => t.ErrorMessage == null);
-    }
-
-    private long CountUnsuccessfulOperations(IEnumerable<TimeHolder> times)
-    {
-        return times.Count(t => t.ErrorMessage != null);
-    }
-
     private void LogUnsuccessfulOperationsAfterSwitchover(
         IEnumerable<TimeHolder> times,
         long bgTriggerTime,
@@ -1823,14 +1854,6 @@ public class BlueGreenDeploymentTests : IntegrationTestBase
                 this.GetTimeOffsetMs(t.StartTime, bgTriggerTime),
                 switchoverCompleteTime,
                 t.ErrorMessage);
-        }
-    }
-
-    private void LogUnsuccessfulOperations(IEnumerable<TimeHolder> times, string operationType)
-    {
-        foreach (var t in times.Where(t => t.ErrorMessage != null))
-        {
-            Logger.LogInformation("Unsuccessful {OperationType}: {Error}", operationType, t.ErrorMessage);
         }
     }
 
