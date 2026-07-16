@@ -13,13 +13,13 @@
 
         <!-- OpenTelemetry SDK + the OTLP exporter that ships spans over
              HTTP/gRPC to a collector. -->
-        <PackageReference Include="OpenTelemetry" Version="1.15.3" />
-        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.3" />
+        <PackageReference Include="OpenTelemetry" Version="1.16.0" />
+        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.16.0" />
 
         <!-- Provides AddXRayTraceId() so spans use trace IDs that the
              ADOT Collector's awsxrayexporter accepts. Drop this dependency
              if your eventual backend is not AWS X-Ray. -->
-        <PackageReference Include="OpenTelemetry.Extensions.AWS" Version="1.15.0" />
+        <PackageReference Include="OpenTelemetry.Extensions.AWS" Version="1.16.0" />
     </ItemGroup>
 
     <ItemGroup>

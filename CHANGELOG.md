@@ -3,6 +3,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/#semantic-versioning-200).
 
+## [2.1.0] - 2026-07-16
+
+### :magic_wand: Added
+- The `AwsCredentialsManager` in the new [AWS.AdvancedDotnetDataProviderWrapper.Authentication](./AwsWrapperDataProvider.Authentication/README.md) package, which lets applications supply and manage their own AWS credentials (e.g. an `AssumeRoleAWSCredentials`) for the AWS API calls made by the IAM Authentication, AWS Secrets Manager Authentication, and Custom Endpoint plugins. When no handler is registered (or the handler returns `null`), the AWS SDK default credentials chain is used as before. See the [AWS Credentials Provider Configuration documentation](./docs/using-the-dotnet-driver/custom-configuration/AwsCredentialsConfiguration.md) ([PR #320](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/320)).
+- Connection pool stability under credential rotation for the token-based authentication plugins (IAM, AWS Secrets Manager, and federated ADFS/Okta): rotating tokens and passwords are now supplied to the target driver through its native password-provider mechanism (`NpgsqlDataSourceBuilder.UsePasswordProvider` for Npgsql, `MySqlConnection.ProvidePasswordCallback` for MySqlConnector) instead of the connection string, so rotation no longer fragments the driver's connection pool. `MySql.Data` does not offer a dynamic password mechanism and still uses connection-string injection. See the [IAM Authentication](./docs/using-the-dotnet-driver/using-plugins/UsingTheIamAuthenticationPlugin.md#connection-pool-stability-and-limitations) and [AWS Secrets Manager](./docs/using-the-dotnet-driver/using-plugins/UsingTheAwsSecretsManagerPlugin.md#connection-pool-stability-and-limitations) plugin documentation for details and limitations ([PR #314](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/314)).
+
+### :bug: Fixed
+- Reader failover when connecting through a custom endpoint: the original writer was resolved from the host list before topology discovery, which is empty for custom endpoints until the topology monitor populates it; it is now captured from the freshly refreshed topology inside the failover loop ([PR #315](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/315)).
+- Blue/Green Deployment Plugin: green host names are now matched directly instead of through the shared regex match cache (preventing corrupted DNS pattern lookups for the same host), connection failures to substitute hosts during switchover are surfaced to the caller instead of being silently retried, and the Blue/Green status monitor no longer faults its background task on unexpected connection errors ([PR #299](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/299)).
+- Read/Write Splitting Plugin: reader connection attempts now rethrow login/authentication failures immediately, readers that already failed in the same call are not retried, and transient topology-probe failures no longer mark hosts globally unavailable ([PR #322](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/322)).
+
 ## [2.0.0] - 2026-06-16
 
 ### :crab: Breaking Changes
@@ -87,3 +98,4 @@ The AWS Advanced .NET Data Provider Wrapper is complementary to existing .NET da
 [1.1.0]: https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/compare/1.0.1...1.1.0
 [1.2.0]: https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/compare/1.1.0...1.2.0
 [2.0.0]: https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/compare/1.2.0...2.0.0
+[2.1.0]: https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/compare/2.0.0...2.1.0
