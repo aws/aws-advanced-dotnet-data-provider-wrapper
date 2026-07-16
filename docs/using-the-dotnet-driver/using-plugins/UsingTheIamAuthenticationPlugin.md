@@ -54,7 +54,7 @@ To avoid this, the wrapper supplies the rotated token to the target driver throu
 
 | Target driver | Password delivery | Pool stable across token rotation? |
 |---|---|---|
-| `Npgsql.NpgsqlConnection` | `NpgsqlDataSourceBuilder.UsePeriodicPasswordProvider` | Yes |
+| `Npgsql.NpgsqlConnection` | `NpgsqlDataSourceBuilder.UsePasswordProvider` | Yes |
 | `MySqlConnector.MySqlConnection` | `MySqlConnection.ProvidePasswordCallback` | Yes |
 | `MySql.Data.MySqlClient.MySqlConnection` | Injected into the connection string | **No** |
 
