@@ -852,7 +852,8 @@ public class AuroraTestUtils
             Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Cluster endpoint resolves to: {clusterIp}");
             var newClusterIp = this.HostToIP(clusterEndpoint, true);
 
-            var deadline = DateTime.UtcNow + FromMinutes(10);
+            var clusterEndpointResolutionTimeout = FromMinutes(10);
+            var deadline = DateTime.UtcNow + clusterEndpointResolutionTimeout;
             while (clusterIp != null
                    && clusterIp == newClusterIp
                    && DateTime.UtcNow < deadline)
@@ -862,6 +863,15 @@ public class AuroraTestUtils
             }
 
             Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Cluster endpoint resolves to (after wait): {newClusterIp}");
+
+            if (clusterIp != null && clusterIp == newClusterIp)
+            {
+                throw new InvalidOperationException(
+                    $"RDS did not perform a real failover for cluster '{clusterId}': the cluster endpoint "
+                    + $"still resolves to the original writer IP ({clusterIp}) after waiting {clusterEndpointResolutionTimeout.TotalMinutes} minutes. "
+                    + "This indicates the accepted FailoverDBCluster request was a no-op on the control plane "
+                    + "(not a wrapper bug); re-run the test.");
+            }
 
             // Wait for initial writer instance to be verified as not writer.
             deadline = DateTime.UtcNow + FromMinutes(10);
