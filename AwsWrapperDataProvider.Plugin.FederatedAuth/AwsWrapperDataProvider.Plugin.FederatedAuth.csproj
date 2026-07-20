@@ -9,7 +9,7 @@
 
     <ItemGroup>
         <PackageReference Include="AWSSDK.RDS" Version="4.0.102" />
-        <PackageReference Include="AWSSDK.SecurityToken" Version="4.0.100.4" />
+        <PackageReference Include="AWSSDK.SecurityToken" Version="4.0.100.5" />
     </ItemGroup>
 
     <ItemGroup>
