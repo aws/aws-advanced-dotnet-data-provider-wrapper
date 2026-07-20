@@ -475,6 +475,12 @@ public class AwsWrapperConnectionStringBuilder : DbConnectionStringBuilder
         set => this.SetValue(PropertyDefinition.BgConnectTimeout.Name, value?.ToString());
     }
 
+    public bool? BgDropBlueConnections
+    {
+        get => this.GetBoolValue(PropertyDefinition.BgDropBlueConnections.Name);
+        set => this.SetValue(PropertyDefinition.BgDropBlueConnections.Name, value?.ToString());
+    }
+
     public string? GlobalClusterInstanceHostPatterns
     {
         get => this.GetValue(PropertyDefinition.GlobalClusterInstanceHostPatterns.Name);
