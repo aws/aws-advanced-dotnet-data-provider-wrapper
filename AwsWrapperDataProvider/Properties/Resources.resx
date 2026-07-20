@@ -1134,6 +1134,9 @@
   <data name="BlueGreenStatusProvider_ResetContext" xml:space="preserve">
         <value>Resetting context.</value>
     </data>
+  <data name="BlueGreenStatusProvider_FailedDropBlueConnections" xml:space="preserve">
+        <value>[bgdId: '{0}'] Failed to drop blue connections.</value>
+    </data>
   <data name="BlueGreenStatusProvider_UnsupportedDialect" xml:space="preserve">
         <value>[bgdId: '{0}'] Blue/Green Deployments isn't supported by database dialect {1}.</value>
     </data>

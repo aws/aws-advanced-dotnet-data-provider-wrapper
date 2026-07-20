@@ -267,6 +267,11 @@ public static class PropertyDefinition
         "30000",
         "Connect timeout (in millisecond) during Blue/Green Deployment switchover.");
 
+    public static readonly AwsWrapperProperty BgDropBlueConnections = new(
+        "BgDropBlueConnections",
+        "true",
+        "If set to true, drops all connections to the blue cluster when a Blue/Green switchover starts.");
+
     // GDB Plugin Properties
     public static readonly AwsWrapperProperty GlobalClusterInstanceHostPatterns = new(
         "GlobalClusterInstanceHostPatterns",
@@ -460,6 +465,7 @@ public static class PropertyDefinition
         BgIntervalHighMs,
         BgSwitchoverTimeoutMs,
         BgConnectTimeout,
+        BgDropBlueConnections,
         BgdId,
         BlueGreenConnectionPlugin.BgSkipRoutingInForceConnect,
 

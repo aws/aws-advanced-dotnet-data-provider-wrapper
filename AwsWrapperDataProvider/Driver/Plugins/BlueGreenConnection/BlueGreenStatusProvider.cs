@@ -16,6 +16,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
+using AwsWrapperDataProvider.Driver.Plugins.AuroraConnectionTracker;
 using AwsWrapperDataProvider.Driver.Plugins.BlueGreenConnection.Routing;
 using AwsWrapperDataProvider.Driver.Utils;
 using AwsWrapperDataProvider.Properties;
@@ -47,6 +48,9 @@ public class BlueGreenStatusProvider
     private readonly AtomicBool monitorResetOnTopologyCompleted = new();
     private readonly string clusterId;
     private readonly ConcurrentDictionary<string, PhaseTimeInfo> phaseTimeNano = new();
+    private readonly bool dropBlueConnectionsSetting;
+    private readonly OpenedConnectionTracker? tracker;
+    private bool blueConnectionsDropped;
 
     private BlueGreenInterimStatus?[] interimStatuses = { null, null };
     private int[] interimStatusHashes = { 0, 0 };
@@ -96,6 +100,12 @@ public class BlueGreenStatusProvider
         else
         {
             Logger.LogWarning(Resources.BlueGreenStatusProvider_UnsupportedDialect, this.bgdId, dialect.GetType().Name);
+        }
+
+        this.dropBlueConnectionsSetting = PropertyDefinition.BgDropBlueConnections.GetBoolean(props);
+        if (this.dropBlueConnectionsSetting)
+        {
+            this.tracker = new OpenedConnectionTracker(this.pluginService);
         }
     }
 
@@ -392,6 +402,7 @@ public class BlueGreenStatusProvider
                 this.UpdateDnsFlags(role, interimStatus);
                 this.summaryStatus = this.GetStatusOfInProgress();
                 this.ResetMonitors(this.monitorResetOnInProgressCompleted, "- start");
+                this.DropBlueConnections();
                 break;
             case BlueGreenPhaseType.POST:
                 this.UpdateDnsFlags(role, interimStatus);
@@ -539,6 +550,40 @@ public class BlueGreenStatusProvider
 
             // TODO: Reset monitors with blueEndpoints
             this.StoreMonitorResetTime(eventName);
+        }
+    }
+
+    private void DropBlueConnections()
+    {
+        if (!this.dropBlueConnectionsSetting || this.blueConnectionsDropped || this.tracker == null)
+        {
+            return;
+        }
+
+        BlueGreenInterimStatus? sourceInterimStatus = this.interimStatuses[(int)BlueGreenRoleType.SOURCE];
+        if (sourceInterimStatus == null || sourceInterimStatus.StartTopology?.Any() != true)
+        {
+            return;
+        }
+
+        try
+        {
+            foreach (HostSpec host in sourceInterimStatus.StartTopology)
+            {
+                this.tracker.InvalidateAllConnections(host);
+            }
+
+            this.phaseTimeNano.TryAdd(
+                "Blue connections dropped",
+                new PhaseTimeInfo(DateTime.UtcNow, this.GetNanoTime(), null));
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, Resources.BlueGreenStatusProvider_FailedDropBlueConnections, this.bgdId);
+        }
+        finally
+        {
+            this.blueConnectionsDropped = true;
         }
     }
 
@@ -1040,6 +1085,7 @@ public class BlueGreenStatusProvider
         this.greenNodeChangeNameTimes.Clear();
         this.monitorResetOnInProgressCompleted.Set(false);
         this.monitorResetOnTopologyCompleted.Set(false);
+        this.blueConnectionsDropped = false;
 
         this.InitMonitoring();
     }

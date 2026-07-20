@@ -355,6 +355,15 @@ namespace AwsWrapperDataProvider.Properties {
                 return ResourceManager.GetString("BlueGreenStatusProvider_ResetContext", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to [bgdId: &apos;{0}&apos;] Failed to drop blue connections..
+        /// </summary>
+        internal static string BlueGreenStatusProvider_FailedDropBlueConnections {
+            get {
+                return ResourceManager.GetString("BlueGreenStatusProvider_FailedDropBlueConnections", resourceCulture);
+            }
+        }
         
         /// <summary>
         ///   Looks up a localized string similar to Blue/Green switchover has timed out..
