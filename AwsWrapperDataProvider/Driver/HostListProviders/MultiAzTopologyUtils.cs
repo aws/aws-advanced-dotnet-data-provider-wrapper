@@ -1,4 +1,4 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -104,14 +104,13 @@ public class MultiAzTopologyUtils : TopologyUtils
         DbConnection connection,
         HostSpec initialHostSpec,
         HostSpec clusterInstanceTemplate,
-        IHostListProviderService hostListProviderService,
         CancellationToken ct = default)
     {
         // Get writer ID first, before opening the topology reader
         this.cachedWriterId = await this.GetWriterIdAsync(connection, ct);
 
         // Now run the base implementation which will open the topology reader and call GetHostsAsync
-        return await base.QueryForTopologyAsync(connection, initialHostSpec, clusterInstanceTemplate, hostListProviderService, ct);
+        return await base.QueryForTopologyAsync(connection, initialHostSpec, clusterInstanceTemplate, ct);
     }
 
     protected HostSpec CreateHost(

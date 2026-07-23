@@ -38,6 +38,7 @@ public class BlueGreenStatusMonitor
     private static readonly HashSet<string> KnownVersions = [LatestKnownVersion];
 
     private readonly IBlueGreenDialect? currentDialect;
+    private readonly FullServicesContainer servicesContainer;
     private readonly IPluginService pluginService;
     private readonly string bgdId;
     private readonly Dictionary<string, string> props;
@@ -81,7 +82,7 @@ public class BlueGreenStatusMonitor
         BlueGreenRoleType role,
         string bgdId,
         HostSpec initialHostSpec,
-        IPluginService pluginService,
+        FullServicesContainer servicesContainer,
         Dictionary<string, string> props,
         Dictionary<BlueGreenIntervalRate, long> statusCheckIntervalMap,
         OnBlueGreenStatusChange onBlueGreenStatusChange)
@@ -89,7 +90,8 @@ public class BlueGreenStatusMonitor
         this.role = role;
         this.bgdId = bgdId;
         this.initialHostSpec = initialHostSpec;
-        this.pluginService = pluginService;
+        this.servicesContainer = servicesContainer;
+        this.pluginService = servicesContainer.PluginService;
         this.props = props;
         this.statusCheckIntervalMap = statusCheckIntervalMap;
         this.onBlueGreenStatusChange = onBlueGreenStatusChange;
@@ -656,7 +658,7 @@ public class BlueGreenStatusMonitor
         {
             hostListProperties[PropertyDefinition.Host.Name] = this.connectionHostSpec.Host;
             hostListProperties[PropertyDefinition.Port.Name] = this.connectionHostSpec.Port.ToString();
-            this.hostListProvider = this.pluginService.Dialect.HostListProviderSupplier(hostListProperties, (IHostListProviderService)this.pluginService, this.pluginService);
+            this.hostListProvider = this.pluginService.Dialect.HostListProviderSupplier(hostListProperties, this.servicesContainer);
         }
         else
         {

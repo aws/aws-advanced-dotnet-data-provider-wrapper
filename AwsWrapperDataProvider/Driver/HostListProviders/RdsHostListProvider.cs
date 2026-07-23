@@ -48,6 +48,7 @@ public class RdsHostListProvider : IDynamicHostListProvider
     protected readonly string nodeIdQuery;
 
     protected readonly IPluginService pluginService;
+    private readonly FullServicesContainer? servicesContainer;
     protected readonly TimeSpan highRefreshRate;
 
     protected readonly TopologyUtils topologyUtils;
@@ -66,12 +67,39 @@ public class RdsHostListProvider : IDynamicHostListProvider
         string nodeIdQuery,
         IPluginService pluginService,
         TopologyUtils topologyUtils)
+        : this(properties, hostListProviderService, nodeIdQuery, pluginService, topologyUtils, null)
+    {
+    }
+
+    internal RdsHostListProvider(
+        Dictionary<string, string> properties,
+        string nodeIdQuery,
+        TopologyUtils topologyUtils,
+        FullServicesContainer servicesContainer)
+        : this(
+            properties,
+            servicesContainer.HostListProviderService,
+            nodeIdQuery,
+            servicesContainer.PluginService,
+            topologyUtils,
+            servicesContainer)
+    {
+    }
+
+    private protected RdsHostListProvider(
+        Dictionary<string, string> properties,
+        IHostListProviderService hostListProviderService,
+        string nodeIdQuery,
+        IPluginService pluginService,
+        TopologyUtils topologyUtils,
+        FullServicesContainer? servicesContainer)
     {
         this.properties = properties;
         this.hostListProviderService = hostListProviderService;
         this.nodeIdQuery = nodeIdQuery;
         this.pluginService = pluginService;
         this.topologyUtils = topologyUtils;
+        this.servicesContainer = servicesContainer;
         this.highRefreshRate = TimeSpan.FromMilliseconds(PropertyDefinition.ClusterTopologyHighRefreshRateMs.GetLong(this.properties) ?? 100);
         this.init = new Lazy<object>(() =>
         {
@@ -243,14 +271,43 @@ public class RdsHostListProvider : IDynamicHostListProvider
             TopologyCache,
             this.initialHostSpec!,
             this.properties,
-            this.pluginService,
-            this.hostListProviderService,
+            this.CreateMonitorServicesContainer(),
             this.clusterInstanceTemplate!,
             this.topologyRefreshRate,
             this.highRefreshRate,
             TopologyCacheExpirationTime,
             this.nodeIdQuery,
             this.topologyUtils);
+    }
+
+    /// <summary>
+    /// Creates the monitor-scoped services container for a topology monitor. Monitors are cached
+    /// process-wide (see <see cref="Monitors"/>) and outlive the connection that created them, so
+    /// they must not capture this provider's per-connection <see cref="IPluginService"/> — that
+    /// would pin the creating connection's plugin chain and state for the monitor's whole lifetime.
+    /// Monitor creation only happens after the dialect is confirmed (<see cref="ForceRefreshAsync(bool, long)"/>
+    /// and <see cref="GetTopologyAsync"/> guard on <see cref="IPluginService.IsDialectConfirmed"/>),
+    /// so the confirmed dialect is snapshotted into the minimal container.
+    /// </summary>
+    protected internal virtual FullServicesContainer CreateMonitorServicesContainer()
+    {
+        if (this.servicesContainer != null)
+        {
+            return ServiceUtility.CreateMinimalContainer(
+                this.servicesContainer,
+                new Dictionary<string, string>(this.properties),
+                this.pluginService.Dialect,
+                this.pluginService.TargetConnectionDialect);
+        }
+
+        // No container was supplied (providers constructed via the public constructor, e.g. in
+        // tests); monitors then share the creating service as before, wrapped in a bare container.
+        FullServicesContainer sharedContainer = new(new ConnectionProviders.DbConnectionProvider(), new HostIdCacheService(), null)
+        {
+            PluginService = this.pluginService,
+            HostListProviderService = this.hostListProviderService,
+        };
+        return sharedContainer;
     }
 
     private void OnMonitorEvicted(object key, object? value, EvictionReason reason, object? state)

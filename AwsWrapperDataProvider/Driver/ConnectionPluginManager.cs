@@ -1,4 +1,4 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -36,7 +36,8 @@ public class ConnectionPluginManager
     protected IConnectionProvider? effectiveConnProvider;
     protected ConfigurationProfile? configurationProfile;
 
-    protected AwsWrapperConnection ConnectionWrapper { get; }
+    // Null for monitor-scoped plugin managers, which have no owning wrapper connection.
+    protected AwsWrapperConnection? ConnectionWrapper { get; }
 
     protected IPluginService? pluginService;
 
@@ -45,6 +46,8 @@ public class ConnectionPluginManager
     /// </summary>
     internal ITelemetryFactory TelemetryFactory
         => this.pluginService?.TelemetryFactory ?? NullTelemetryFactory.Instance;
+
+    internal IConnectionProvider DefaultConnectionProvider => this.defaultConnProvider;
 
     private const string AllMethods = "*";
     private const string GetHostSpecByStrategyMethod = "GetHostSpecByStrategy";
@@ -103,6 +106,15 @@ public class ConnectionPluginManager
         this.effectiveConnProvider = effectiveConnectionProvider;
         this.configurationProfile = configurationProfile;
         this.ConnectionWrapper = connection;
+    }
+
+    // For monitor-scoped plugin managers created via ServiceUtility.CreateMinimalContainer.
+    internal ConnectionPluginManager(
+        IConnectionProvider defaultConnectionProvider,
+        ConfigurationProfile? configurationProfile)
+    {
+        this.defaultConnProvider = defaultConnectionProvider;
+        this.configurationProfile = configurationProfile;
     }
 
     // for testing purpose only

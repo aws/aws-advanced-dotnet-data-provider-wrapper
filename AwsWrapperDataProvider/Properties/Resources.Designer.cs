@@ -1761,6 +1761,24 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to {0} was accessed before the connection bootstrap assigned it to the FullServicesContainer..
+        /// </summary>
+        internal static string Error_FullServicesContainerSlotNotInitialized {
+            get {
+                return ResourceManager.GetString("Error_FullServicesContainerSlotNotInitialized", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to {0} is not supported by the monitor-scoped PartialPluginService; it requires an owning wrapper connection..
+        /// </summary>
+        internal static string Error_PartialPluginServiceMethodNotSupported {
+            get {
+                return ResourceManager.GetString("Error_PartialPluginServiceMethodNotSupported", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to Function should not be called..
         /// </summary>
         internal static string Error_FunctionShouldNotBeCalled {

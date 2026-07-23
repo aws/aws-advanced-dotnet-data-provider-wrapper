@@ -1,4 +1,4 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ public class CustomEndpointPluginTests : IDisposable
     private readonly HostSpec writerClusterHost;
     private readonly HostSpec customEndpointHost;
     private readonly Mock<ADONetDelegate<DbConnection>> mockConnectFunc;
-    private readonly Mock<ADONetDelegate<object>> mockJdbcMethodFunc;
+    private readonly Mock<ADONetDelegate<object>> mockMethodFunc;
     private readonly Mock<DbConnection> mockConnection;
     private readonly Mock<ICustomEndpointMonitor> mockMonitor;
 
@@ -45,12 +45,12 @@ public class CustomEndpointPluginTests : IDisposable
         this.writerClusterHost = new HostSpec(WriterClusterUrl, 5432, "writer", HostRole.Writer, HostAvailability.Available, HostSpec.DefaultWeight, DateTime.UtcNow);
         this.customEndpointHost = new HostSpec(CustomEndpointUrl, 5432, "custom", HostRole.Writer, HostAvailability.Available, HostSpec.DefaultWeight, DateTime.UtcNow);
         this.mockConnectFunc = new Mock<ADONetDelegate<DbConnection>>();
-        this.mockJdbcMethodFunc = new Mock<ADONetDelegate<object>>();
+        this.mockMethodFunc = new Mock<ADONetDelegate<object>>();
         this.mockConnection = new Mock<DbConnection>();
         this.mockMonitor = new Mock<ICustomEndpointMonitor>();
 
         this.mockConnectFunc.Setup(f => f()).ReturnsAsync(this.mockConnection.Object);
-        this.mockJdbcMethodFunc.Setup(f => f()).ReturnsAsync(new object());
+        this.mockMethodFunc.Setup(f => f()).ReturnsAsync(new object());
         this.mockMonitor.Setup(m => m.HasCustomEndpointInfo()).Returns(true);
     }
 
@@ -167,10 +167,10 @@ public class CustomEndpointPluginTests : IDisposable
         _ = await plugin.Execute(
             this.mockConnection.Object,
             "Connection.createStatement",
-            this.mockJdbcMethodFunc.Object);
+            this.mockMethodFunc.Object);
 
         Assert.Equal(0, plugin.CreateMonitorIfAbsentCallCount);
-        this.mockJdbcMethodFunc.Verify(f => f(), Times.Once);
+        this.mockMethodFunc.Verify(f => f(), Times.Once);
     }
 
     [Fact]
@@ -190,10 +190,10 @@ public class CustomEndpointPluginTests : IDisposable
         _ = await plugin.Execute(
             this.mockConnection.Object,
             "Connection.createStatement",
-            this.mockJdbcMethodFunc.Object);
+            this.mockMethodFunc.Object);
 
         Assert.True(plugin.CreateMonitorIfAbsentCallCount >= 1);
-        this.mockJdbcMethodFunc.Verify(f => f(), Times.Once);
+        this.mockMethodFunc.Verify(f => f(), Times.Once);
     }
 
     [Fact]

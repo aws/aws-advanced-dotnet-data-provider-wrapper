@@ -1,4 +1,4 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -28,8 +28,7 @@ public class MockDialect : IDialect
     public IList<Type> DialectUpdateCandidates { get; } = [];
 
     public HostListProviderSupplier HostListProviderSupplier { get; } = (props,
-        hostListProviderService,
-        pluginService) => new ConnectionStringHostListProvider(props, hostListProviderService);
+        servicesContainer) => new ConnectionStringHostListProvider(props, servicesContainer.HostListProviderService);
 
     public IExceptionHandler ExceptionHandler { get; } = new GenericExceptionHandler();
 

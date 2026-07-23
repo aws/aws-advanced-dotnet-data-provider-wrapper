@@ -1,4 +1,4 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -44,8 +44,8 @@ public class UnknownDialect : IDialect
 
     public HostListProviderSupplier HostListProviderSupplier { get; } = (
         Dictionary<string, string> props,
-        IHostListProviderService hostListProviderService,
-        IPluginService pluginService) => new ConnectionStringHostListProvider(props, hostListProviderService);
+        FullServicesContainer servicesContainer) =>
+        new ConnectionStringHostListProvider(props, servicesContainer.HostListProviderService);
 
     public (bool ReadOnly, bool Found) DoesStatementSetReadOnly(string query)
     {

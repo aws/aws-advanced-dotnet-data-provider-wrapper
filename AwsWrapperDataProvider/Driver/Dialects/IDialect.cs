@@ -69,13 +69,14 @@ public interface IDialect
 }
 
 /// <summary>
-/// Delegate for creating host list providers.
+/// Delegate for creating host list providers. The <paramref name="servicesContainer"/> exposes the
+/// plugin service, host list provider service, and other services the provider needs; obtain them
+/// via <see cref="FullServicesContainer.PluginService"/> and
+/// <see cref="FullServicesContainer.HostListProviderService"/>.
 /// </summary>
 /// <param name="props">Connection properties.</param>
-/// <param name="hostListProviderService">The host list provider service.</param>
-/// <param name="pluginService">The plugin service.</param>
+/// <param name="servicesContainer">The container holding the connection's services.</param>
 /// <returns>A host list provider.</returns>
 public delegate IHostListProvider? HostListProviderSupplier(
     Dictionary<string, string> props,
-    IHostListProviderService hostListProviderService,
-    IPluginService pluginService);
+    FullServicesContainer servicesContainer);

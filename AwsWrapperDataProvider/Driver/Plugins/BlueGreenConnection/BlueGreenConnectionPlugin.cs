@@ -17,6 +17,7 @@ using System.Data.Common;
 using System.Diagnostics;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.BlueGreenConnection;
@@ -47,7 +48,7 @@ public class BlueGreenConnectionPlugin : AbstractConnectionPlugin
     public BlueGreenConnectionPlugin(
         IPluginService pluginService,
         Dictionary<string, string> props)
-        : this(pluginService, props, (svc, p, bgdIdParam, clusterIdParam) => new BlueGreenStatusProvider(svc, p, bgdIdParam, clusterIdParam))
+        : this(pluginService, props, (container, p, bgdIdParam, clusterIdParam) => new BlueGreenStatusProvider(container, p, bgdIdParam, clusterIdParam))
     {
     }
 
@@ -292,8 +293,13 @@ public class BlueGreenConnectionPlugin : AbstractConnectionPlugin
             throw new InvalidOperationException("Failed to get cluster ID", ex);
         }
 
+        // Plugins are constructed with only an IPluginService (IConnectionPluginFactory.GetInstance),
+        // so the container is derived here once and passed down the provider/monitor chain.
+        FullServicesContainer servicesContainer = ServiceUtility.FromPluginService(this.pluginService)
+            ?? throw new InvalidOperationException(
+                string.Format(Resources.Error_FullServicesContainerSlotNotInitialized, nameof(FullServicesContainer)));
         Provider.GetOrAdd(this.bgdId,
-            key => this.providerSupplier(this.pluginService, this.props, this.bgdId, this.clusterId));
+            key => this.providerSupplier(servicesContainer, this.props, this.bgdId, this.clusterId));
     }
 
     public long GetHoldTimeMs()
