@@ -41,16 +41,17 @@ public class FullServicesContainer
     private ConnectionPluginManager? connectionPluginManager;
     private IPluginService? pluginService;
     private IHostListProviderService? hostListProviderService;
-    private ITelemetryFactory? telemetryFactory;
 
     internal FullServicesContainer(
         IConnectionProvider defaultConnectionProvider,
         IHostIdCacheService hostIdCacheService,
-        ConfigurationProfile? configurationProfile)
+        ConfigurationProfile? configurationProfile,
+        ITelemetryFactory telemetryFactory)
     {
         this.DefaultConnectionProvider = defaultConnectionProvider ?? throw new ArgumentNullException(nameof(defaultConnectionProvider));
         this.HostIdCacheService = hostIdCacheService ?? throw new ArgumentNullException(nameof(hostIdCacheService));
         this.ConfigurationProfile = configurationProfile;
+        this.TelemetryFactory = telemetryFactory ?? throw new ArgumentNullException(nameof(telemetryFactory));
     }
 
     public IConnectionProvider DefaultConnectionProvider { get; }
@@ -58,6 +59,10 @@ public class FullServicesContainer
     public IHostIdCacheService HostIdCacheService { get; }
 
     public ConfigurationProfile? ConfigurationProfile { get; }
+
+    // The telemetry factory is created at the connection bootstrap and owned here; the plugin
+    // service reads it back rather than building its own.
+    public ITelemetryFactory TelemetryFactory { get; }
 
     // The slots below are late-bound because the connection bootstrap creates their services in
     // stages that reference each other (the plugin manager and plugin service must each see the
@@ -80,12 +85,6 @@ public class FullServicesContainer
     {
         get => this.hostListProviderService ?? throw UninitializedSlot(nameof(this.HostListProviderService));
         internal set => this.hostListProviderService = value;
-    }
-
-    public ITelemetryFactory TelemetryFactory
-    {
-        get => this.telemetryFactory ?? throw UninitializedSlot(nameof(this.TelemetryFactory));
-        internal set => this.telemetryFactory = value;
     }
 
     private static InvalidOperationException UninitializedSlot(string slotName)

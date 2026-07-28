@@ -25,10 +25,11 @@ public class FullServicesContainerTests
 {
     private readonly IConnectionProvider mockConnectionProvider = Mock.Of<IConnectionProvider>();
     private readonly IHostIdCacheService mockHostIdCacheService = Mock.Of<IHostIdCacheService>();
+    private readonly ITelemetryFactory mockTelemetryFactory = Mock.Of<ITelemetryFactory>();
 
     private FullServicesContainer CreateContainer()
     {
-        return new FullServicesContainer(this.mockConnectionProvider, this.mockHostIdCacheService, null);
+        return new FullServicesContainer(this.mockConnectionProvider, this.mockHostIdCacheService, null, this.mockTelemetryFactory);
     }
 
     [Fact]
@@ -39,6 +40,7 @@ public class FullServicesContainerTests
 
         Assert.Same(this.mockConnectionProvider, container.DefaultConnectionProvider);
         Assert.Same(this.mockHostIdCacheService, container.HostIdCacheService);
+        Assert.Same(this.mockTelemetryFactory, container.TelemetryFactory);
         Assert.Null(container.ConfigurationProfile);
     }
 
@@ -47,9 +49,11 @@ public class FullServicesContainerTests
     public void TestNullRequiredSlotsThrow()
     {
         Assert.Throws<ArgumentNullException>(
-            () => new FullServicesContainer(null!, this.mockHostIdCacheService, null));
+            () => new FullServicesContainer(null!, this.mockHostIdCacheService, null, this.mockTelemetryFactory));
         Assert.Throws<ArgumentNullException>(
-            () => new FullServicesContainer(this.mockConnectionProvider, null!, null));
+            () => new FullServicesContainer(this.mockConnectionProvider, null!, null, this.mockTelemetryFactory));
+        Assert.Throws<ArgumentNullException>(
+            () => new FullServicesContainer(this.mockConnectionProvider, this.mockHostIdCacheService, null, null!));
     }
 
     [Fact]
@@ -61,7 +65,6 @@ public class FullServicesContainerTests
         Assert.Throws<InvalidOperationException>(() => container.ConnectionPluginManager);
         Assert.Throws<InvalidOperationException>(() => container.PluginService);
         Assert.Throws<InvalidOperationException>(() => container.HostListProviderService);
-        Assert.Throws<InvalidOperationException>(() => container.TelemetryFactory);
     }
 
     [Fact]
@@ -71,14 +74,11 @@ public class FullServicesContainerTests
         FullServicesContainer container = this.CreateContainer();
         IPluginService pluginService = Mock.Of<IPluginService>();
         IHostListProviderService hostListProviderService = Mock.Of<IHostListProviderService>();
-        ITelemetryFactory telemetryFactory = Mock.Of<ITelemetryFactory>();
 
         container.PluginService = pluginService;
         container.HostListProviderService = hostListProviderService;
-        container.TelemetryFactory = telemetryFactory;
 
         Assert.Same(pluginService, container.PluginService);
         Assert.Same(hostListProviderService, container.HostListProviderService);
-        Assert.Same(telemetryFactory, container.TelemetryFactory);
     }
 }

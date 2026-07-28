@@ -49,7 +49,10 @@ public class PluginService : IPluginService, IHostListProviderService
     private readonly Dictionary<string, string> props;
     private readonly DialectProvider dialectProvider;
     private readonly IHostIdCacheService hostIdCacheService;
-    private volatile IHostListProvider hostListProvider;
+    // Assigned by InitHostListProvider immediately after construction (see ServiceUtility); the
+    // supplier that builds it reads this service back off the container, so it cannot run until the
+    // container's slots are populated.
+    private volatile IHostListProvider hostListProvider = null!;
     private HostSpec? currentHostSpec;
     private HostSpec? initialConnectionHostSpec;
     private HostSpec? originalHostSpec;
@@ -97,7 +100,7 @@ public class PluginService : IPluginService, IHostListProviderService
     /// Gets the telemetry factory used to produce trace contexts and metric
     /// instruments. Initialized in the primary constructor.
     /// </summary>
-    public ITelemetryFactory TelemetryFactory { get; private set; } = NullTelemetryFactory.Instance;
+    public ITelemetryFactory TelemetryFactory { get; } = NullTelemetryFactory.Instance;
 
     public DbTransaction? CurrentTransaction
     {
@@ -120,23 +123,6 @@ public class PluginService : IPluginService, IHostListProviderService
         }
     }
 
-    public PluginService(
-        AwsWrapperConnection wrapperConnection,
-        ConnectionPluginManager pluginManager,
-        Dictionary<string, string> props,
-        ITargetConnectionDialect? targetConnectionDialect,
-        ConfigurationProfile? configurationProfile)
-        : this(
-            new FullServicesContainer(pluginManager.DefaultConnectionProvider, new HostIdCacheService(), configurationProfile)
-            {
-                ConnectionPluginManager = pluginManager,
-            },
-            wrapperConnection,
-            props,
-            targetConnectionDialect)
-    {
-    }
-
     internal PluginService(
         FullServicesContainer servicesContainer,
         AwsWrapperConnection wrapperConnection,
@@ -148,23 +134,22 @@ public class PluginService : IPluginService, IHostListProviderService
         this.wrapperConnection = wrapperConnection;
         this.pluginManager = servicesContainer.ConnectionPluginManager;
         this.hostIdCacheService = servicesContainer.HostIdCacheService;
+        this.TelemetryFactory = servicesContainer.TelemetryFactory;
         this.props = props;
         this.TargetConnectionDialect = configurationProfile?.TargetConnectionDialect ?? targetConnectionDialect ?? throw new ArgumentNullException(nameof(targetConnectionDialect));
         this.dialectProvider = new(this, this.props);
         this.Dialect = configurationProfile?.Dialect ?? this.dialectProvider.GuessDialect();
+    }
 
-        this.TelemetryFactory = PropertyDefinition.EnableTelemetry.GetBoolean(this.props)
-            ? new DefaultTelemetryFactory(this.props)
-            : NullTelemetryFactory.Instance;
-
-        // Register in the container before invoking the host list provider supplier, which reads
-        // the plugin/host-list services back off the container.
-        servicesContainer.PluginService = this;
-        servicesContainer.HostListProviderService = this;
-        servicesContainer.TelemetryFactory = this.TelemetryFactory;
-
+    /// <summary>
+    /// Builds this service's host list provider. Separate from the constructor because the
+    /// supplier reads the plugin and host list provider services back off the container, so the
+    /// caller must register this service into the container's slots first.
+    /// </summary>
+    internal void InitHostListProvider()
+    {
         this.hostListProvider =
-            this.Dialect.HostListProviderSupplier(this.props, servicesContainer)
+            this.Dialect.HostListProviderSupplier(this.props, this.servicesContainer!)
             ?? throw new InvalidOperationException(); // TODO : throw proper error
     }
 

@@ -140,17 +140,16 @@ public class AwsWrapperConnection : DbConnection, IWrapper
         ConnectionPropertiesUtils.NormalizeConnectionPropertyKeys(connectionDialect, this.ConnectionProperties);
 
         DbConnectionProvider connectionProvider = new();
-        FullServicesContainer servicesContainer = new(connectionProvider, new HostIdCacheService(), profile);
+        FullServicesContainer servicesContainer = ServiceUtility.CreateStandardContainer(
+            this,
+            connectionProvider,
+            this.ConnectionProperties,
+            connectionDialect,
+            profile);
 
-        this.PluginManager = new(connectionProvider, null, this, profile);
-        servicesContainer.ConnectionPluginManager = this.PluginManager;
-
-        PluginService pluginService = new(servicesContainer, this, this.ConnectionProperties, connectionDialect);
-
-        this.pluginService = pluginService;
-        this.hostListProviderService = pluginService;
-
-        this.PluginManager.InitConnectionPluginChain(servicesContainer, this.ConnectionProperties);
+        this.PluginManager = servicesContainer.ConnectionPluginManager;
+        this.pluginService = servicesContainer.PluginService;
+        this.hostListProviderService = servicesContainer.HostListProviderService;
 
         this.pluginService.RefreshHostListAsync().GetAwaiter().GetResult();
         this.pluginService.SetCurrentConnection(

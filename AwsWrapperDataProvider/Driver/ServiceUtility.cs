@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Driver.Utils.Telemetry;
 
 namespace AwsWrapperDataProvider.Driver;
 
@@ -26,6 +28,36 @@ namespace AwsWrapperDataProvider.Driver;
 /// </summary>
 internal static class ServiceUtility
 {
+    /// <summary>
+    /// Builds the container for a new wrapper connection: creates the telemetry factory, plugin
+    /// manager, and <see cref="PluginService"/>, registers them into the container, then
+    /// initializes the plugin chain and the plugin service's host list provider.
+    /// </summary>
+    public static FullServicesContainer CreateStandardContainer(
+        AwsWrapperConnection connection,
+        IConnectionProvider defaultConnectionProvider,
+        Dictionary<string, string> props,
+        ITargetConnectionDialect targetConnectionDialect,
+        ConfigurationProfile? configurationProfile)
+    {
+        ITelemetryFactory telemetryFactory = PropertyDefinition.EnableTelemetry.GetBoolean(props)
+            ? new DefaultTelemetryFactory(props)
+            : NullTelemetryFactory.Instance;
+
+        FullServicesContainer container = new(defaultConnectionProvider, new HostIdCacheService(), configurationProfile, telemetryFactory)
+        {
+            ConnectionPluginManager = new ConnectionPluginManager(defaultConnectionProvider, null, connection, configurationProfile),
+        };
+
+        PluginService pluginService = new(container, connection, props, targetConnectionDialect);
+        container.PluginService = pluginService;
+        container.HostListProviderService = pluginService;
+        pluginService.InitHostListProvider();
+
+        container.ConnectionPluginManager.InitConnectionPluginChain(container, props);
+        return container;
+    }
+
     /// <summary>
     /// Creates a monitor-scoped container from a connection's container. Shared background
     /// monitors must not capture the creating connection's <see cref="Driver.PluginService"/>
@@ -41,16 +73,18 @@ internal static class ServiceUtility
         IDialect dialect,
         ITargetConnectionDialect targetConnectionDialect)
     {
-        FullServicesContainer container = new(source.DefaultConnectionProvider, source.HostIdCacheService, source.ConfigurationProfile)
+        FullServicesContainer container = new(source.DefaultConnectionProvider, source.HostIdCacheService, source.ConfigurationProfile, source.TelemetryFactory)
         {
             ConnectionPluginManager = new ConnectionPluginManager(source.DefaultConnectionProvider, source.ConfigurationProfile),
-            TelemetryFactory = source.TelemetryFactory,
         };
 
-        // Constructed for its side effect: the constructor registers itself into the container's
-        // PluginService and HostListProviderService slots (which the chain initialization below
-        // reads back), then builds this monitor-scoped service's own host list provider.
-        _ = new PartialPluginService(container, props, dialect, targetConnectionDialect);
+        // Register the monitor-scoped service into the container before building its host list
+        // provider and plugin chain, both of which read the service back off the container.
+        PartialPluginService pluginService = new(container, props, dialect, targetConnectionDialect);
+        container.PluginService = pluginService;
+        container.HostListProviderService = pluginService;
+        pluginService.InitHostListProvider();
+
         container.ConnectionPluginManager.InitConnectionPluginChain(container, props);
         return container;
     }
@@ -78,7 +112,7 @@ internal static class ServiceUtility
                 pluginService.TargetConnectionDialect);
         }
 
-        FullServicesContainer sharedContainer = new(new DbConnectionProvider(), new HostIdCacheService(), null)
+        FullServicesContainer sharedContainer = new(new DbConnectionProvider(), new HostIdCacheService(), null, pluginService.TelemetryFactory ?? NullTelemetryFactory.Instance)
         {
             PluginService = pluginService,
         };

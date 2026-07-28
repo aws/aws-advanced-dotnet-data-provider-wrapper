@@ -42,7 +42,8 @@ internal class PartialPluginService : IPluginService, IHostListProviderService
     private readonly FullServicesContainer servicesContainer;
     private readonly ConnectionPluginManager pluginManager;
     private readonly Dictionary<string, string> props;
-    private volatile IHostListProvider hostListProvider;
+    // Assigned by InitHostListProvider immediately after construction (see ServiceUtility).
+    private volatile IHostListProvider hostListProvider = null!;
     private HostSpec? initialConnectionHostSpec;
 
     public PartialPluginService(
@@ -57,12 +58,17 @@ internal class PartialPluginService : IPluginService, IHostListProviderService
         this.Dialect = dialect;
         this.TargetConnectionDialect = targetConnectionDialect;
         this.TelemetryFactory = servicesContainer.TelemetryFactory;
+    }
 
-        servicesContainer.PluginService = this;
-        servicesContainer.HostListProviderService = this;
-
+    /// <summary>
+    /// Builds this service's host list provider. Separate from the constructor because the
+    /// supplier reads the plugin and host list provider services back off the container, so the
+    /// caller must register this service into the container's slots first.
+    /// </summary>
+    internal void InitHostListProvider()
+    {
         this.hostListProvider =
-            this.Dialect.HostListProviderSupplier(this.props, servicesContainer)
+            this.Dialect.HostListProviderSupplier(this.props, this.servicesContainer)
             ?? throw new InvalidOperationException();
     }
 

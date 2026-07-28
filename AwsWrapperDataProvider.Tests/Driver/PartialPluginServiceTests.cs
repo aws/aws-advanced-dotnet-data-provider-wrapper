@@ -42,25 +42,29 @@ public class PartialPluginServiceTests
             .Returns("executionTime");
     }
 
+    // Mirrors the register-then-init sequence ServiceUtility performs: construct, register into
+    // the container's slots, then build the host list provider.
     private PartialPluginService CreatePartialPluginService(FullServicesContainer? container = null)
     {
-        container ??= new FullServicesContainer(this.mockConnectionProvider, this.mockHostIdCacheService, null)
+        container ??= new FullServicesContainer(this.mockConnectionProvider, this.mockHostIdCacheService, null, NullTelemetryFactory.Instance)
         {
             ConnectionPluginManager = new ConnectionPluginManager(this.mockConnectionProvider, null),
-            TelemetryFactory = NullTelemetryFactory.Instance,
         };
 
-        return new PartialPluginService(container, [], this.mockDialect.Object, this.mockTargetDialect.Object);
+        PartialPluginService partialPluginService = new(container, [], this.mockDialect.Object, this.mockTargetDialect.Object);
+        container.PluginService = partialPluginService;
+        container.HostListProviderService = partialPluginService;
+        partialPluginService.InitHostListProvider();
+        return partialPluginService;
     }
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void TestRegistersItselfInContainer()
+    public void TestRegisteredInContainer()
     {
-        FullServicesContainer container = new(this.mockConnectionProvider, this.mockHostIdCacheService, null)
+        FullServicesContainer container = new(this.mockConnectionProvider, this.mockHostIdCacheService, null, NullTelemetryFactory.Instance)
         {
             ConnectionPluginManager = new ConnectionPluginManager(this.mockConnectionProvider, null),
-            TelemetryFactory = NullTelemetryFactory.Instance,
         };
 
         PartialPluginService partialPluginService = this.CreatePartialPluginService(container);
@@ -132,10 +136,9 @@ public class PartialPluginServiceTests
     [Trait("Category", "Unit")]
     public void TestCreateMinimalContainerBuildsIndependentGraph()
     {
-        FullServicesContainer source = new(this.mockConnectionProvider, this.mockHostIdCacheService, null)
+        FullServicesContainer source = new(this.mockConnectionProvider, this.mockHostIdCacheService, null, NullTelemetryFactory.Instance)
         {
             ConnectionPluginManager = new ConnectionPluginManager(this.mockConnectionProvider, null),
-            TelemetryFactory = NullTelemetryFactory.Instance,
         };
         PluginService fullPluginService = new();
         source.PluginService = fullPluginService;
