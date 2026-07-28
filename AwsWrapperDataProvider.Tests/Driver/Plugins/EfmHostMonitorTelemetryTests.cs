@@ -1,4 +1,4 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -70,7 +70,7 @@ public class EfmHostMonitorTelemetryTests
 
         HostSpec hostSpec = new(TestHost, TestPort, TestNodeId, HostRole.Writer, HostAvailability.Available);
 
-        HostMonitor monitor = new(mockPluginService.Object, hostSpec, new Dictionary<string, string>(), 1000, 1000, 3);
+        HostMonitor monitor = new(ServiceUtility.CreateMonitorContainer(null, mockPluginService.Object, []), hostSpec, new Dictionary<string, string>(), 1000, 1000, 3);
         try
         {
             // Three instruments, each created exactly once in the
@@ -105,7 +105,7 @@ public class EfmHostMonitorTelemetryTests
         // HostId is null — counter name should use Host instead.
         HostSpec hostSpec = new(TestHost, TestPort, null, HostRole.Writer, HostAvailability.Available);
 
-        HostMonitor monitor = new(mockPluginService.Object, hostSpec, new Dictionary<string, string>(), 1000, 1000, 3);
+        HostMonitor monitor = new(ServiceUtility.CreateMonitorContainer(null, mockPluginService.Object, []), hostSpec, new Dictionary<string, string>(), 1000, 1000, 3);
         try
         {
             mockFactory.Verify(f => f.CreateCounter($"efm.nodeUnhealthy.count.{TestHost}"), Times.Once);
@@ -144,7 +144,7 @@ public class EfmHostMonitorTelemetryTests
 
         HostSpec hostSpec = new(TestHost, TestPort, TestNodeId, HostRole.Writer, HostAvailability.Available);
 
-        HostMonitor monitor = new(mockPluginService.Object, hostSpec, new Dictionary<string, string>(), 1000, 1000, 3);
+        HostMonitor monitor = new(ServiceUtility.CreateMonitorContainer(null, mockPluginService.Object, []), hostSpec, new Dictionary<string, string>(), 1000, 1000, 3);
 
         // The background Run task starts immediately in the constructor, but
         // we need to give it a moment to open the span before we cancel it.

@@ -242,7 +242,7 @@ public class ConnectionPluginManagerTests
         pluginServiceMock.Setup(ps => ps.TargetConnectionDialect).Returns(new MySqlClientDialect());
 
         pluginManager.InitConnectionPluginChain(
-            pluginServiceMock.Object,
+            ServiceUtility.CreateMonitorContainer(null, pluginServiceMock.Object, props),
             props);
 
         IList<IConnectionPlugin> plugins = pluginManager.Plugins;

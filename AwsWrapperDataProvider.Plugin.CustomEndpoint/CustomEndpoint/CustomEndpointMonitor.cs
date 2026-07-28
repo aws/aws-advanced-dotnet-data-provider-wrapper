@@ -1,4 +1,4 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ public class CustomEndpointMonitor : ICustomEndpointMonitor
     private int disposed;
 
     public CustomEndpointMonitor(
-        IPluginService pluginService,
+        FullServicesContainer servicesContainer,
         HostSpec customEndpointHostSpec,
         string endpointIdentifier,
         RegionEndpoint region,
@@ -67,7 +67,7 @@ public class CustomEndpointMonitor : ICustomEndpointMonitor
         TimeSpan maxRefreshRate,
         Func<RegionEndpoint, AmazonRDSClient> rdsClientFunc)
     {
-        this.pluginService = pluginService;
+        this.pluginService = servicesContainer.PluginService;
         this.customEndpointHostSpec = customEndpointHostSpec;
         this.endpointIdentifier = endpointIdentifier;
         this.region = region;

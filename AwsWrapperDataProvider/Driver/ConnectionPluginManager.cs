@@ -131,18 +131,18 @@ public class ConnectionPluginManager
     }
 
     public void InitConnectionPluginChain(
-        IPluginService pluginService,
+        FullServicesContainer servicesContainer,
         Dictionary<string, string> props)
     {
-        this.pluginService = pluginService;
+        this.pluginService = servicesContainer.PluginService;
         ConnectionPluginChainBuilder pluginChainBuilder = new();
         this.Plugins = pluginChainBuilder.GetPlugins(
-            this.pluginService,
+            servicesContainer,
             this.defaultConnProvider,
             this.effectiveConnProvider,
             props,
             this.configurationProfile);
-        this.activePluginCodes = pluginChainBuilder.GetPluginCodes(this.pluginService, props);
+        this.activePluginCodes = pluginChainBuilder.GetPluginCodes(servicesContainer, props);
     }
 
     private async Task<T> ExecuteWithSubscribedPlugins<T>(

@@ -58,7 +58,7 @@ public class ConnectionPluginChainBuilderTests
         ConnectionPluginChainBuilder pluginChainBuilder = new();
 
         IList<IConnectionPlugin> plugins = pluginChainBuilder.GetPlugins(
-            this.pluginServiceMock.Object,
+            ServiceUtility.CreateMonitorContainer(null, this.pluginServiceMock.Object, []),
             this.connectionProviderMock.Object,
             null,
             props,
@@ -95,7 +95,7 @@ public class ConnectionPluginChainBuilderTests
         ConnectionPluginChainBuilder pluginChainBuilder = new();
 
         IList<IConnectionPlugin> plugins = pluginChainBuilder.GetPlugins(
-            this.pluginServiceMock.Object,
+            ServiceUtility.CreateMonitorContainer(null, this.pluginServiceMock.Object, []),
             this.connectionProviderMock.Object,
             null,
             props,
@@ -117,7 +117,7 @@ public class ConnectionPluginChainBuilderTests
         ConnectionPluginChainBuilder pluginChainBuilder = new();
 
         IList<IConnectionPlugin> plugins = pluginChainBuilder.GetPlugins(
-            this.pluginServiceMock.Object,
+            ServiceUtility.CreateMonitorContainer(null, this.pluginServiceMock.Object, []),
             this.connectionProviderMock.Object,
             null,
             props,
@@ -138,7 +138,7 @@ public class ConnectionPluginChainBuilderTests
         ConnectionPluginChainBuilder pluginChainBuilder = new();
 
         IList<IConnectionPlugin> plugins = pluginChainBuilder.GetPlugins(
-            this.pluginServiceMock.Object,
+            ServiceUtility.CreateMonitorContainer(null, this.pluginServiceMock.Object, []),
             this.connectionProviderMock.Object,
             null,
             props,
@@ -159,7 +159,7 @@ public class ConnectionPluginChainBuilderTests
         ConnectionPluginChainBuilder pluginChainBuilder = new();
 
         IList<IConnectionPlugin> plugins = pluginChainBuilder.GetPlugins(
-            this.pluginServiceMock.Object,
+            ServiceUtility.CreateMonitorContainer(null, this.pluginServiceMock.Object, []),
             this.connectionProviderMock.Object,
             null,
             props,
@@ -179,7 +179,7 @@ public class ConnectionPluginChainBuilderTests
         ConnectionPluginChainBuilder pluginChainBuilder = new();
 
         IList<IConnectionPlugin> plugins = pluginChainBuilder.GetPlugins(
-            this.pluginServiceMock.Object,
+            ServiceUtility.CreateMonitorContainer(null, this.pluginServiceMock.Object, []),
             this.connectionProviderMock.Object,
             null,
             [],
@@ -202,7 +202,7 @@ public class ConnectionPluginChainBuilderTests
         ConnectionPluginChainBuilder pluginChainBuilder = new();
 
         IList<IConnectionPlugin> plugins = pluginChainBuilder.GetPlugins(
-            this.pluginServiceMock.Object,
+            ServiceUtility.CreateMonitorContainer(null, this.pluginServiceMock.Object, []),
             this.connectionProviderMock.Object,
             null,
             props,
@@ -221,7 +221,7 @@ public class ConnectionPluginChainBuilderTests
         ConnectionPluginChainBuilder pluginChainBuilder = new();
 
         Assert.Throws<Exception>(() => pluginChainBuilder.GetPlugins(
-            this.pluginServiceMock.Object,
+            ServiceUtility.CreateMonitorContainer(null, this.pluginServiceMock.Object, []),
             this.connectionProviderMock.Object,
             null,
             props,
@@ -238,7 +238,7 @@ public class ConnectionPluginChainBuilderTests
         ConnectionPluginChainBuilder pluginChainBuilder = new();
 
         IList<IConnectionPlugin> plugins = pluginChainBuilder.GetPlugins(
-            this.pluginServiceMock.Object,
+            ServiceUtility.CreateMonitorContainer(null, this.pluginServiceMock.Object, []),
             this.connectionProviderMock.Object,
             null,
             [],
@@ -269,7 +269,7 @@ public class ConnectionPluginChainBuilderTests
 
         var exception = Assert.Throws<InvalidOperationException>(() =>
             pluginChainBuilder.GetPlugins(
-                this.pluginServiceMock.Object,
+                ServiceUtility.CreateMonitorContainer(null, this.pluginServiceMock.Object, []),
                 this.connectionProviderMock.Object,
                 null,
                 props,
@@ -284,7 +284,7 @@ public class ConnectionPluginChainBuilderTests
         ConnectionPluginChainBuilder pluginChainBuilder = new();
 
         IList<IConnectionPlugin> plugins = pluginChainBuilder.GetPlugins(
-            this.pluginServiceMock.Object,
+            ServiceUtility.CreateMonitorContainer(null, this.pluginServiceMock.Object, []),
             this.connectionProviderMock.Object,
             null,
             props,

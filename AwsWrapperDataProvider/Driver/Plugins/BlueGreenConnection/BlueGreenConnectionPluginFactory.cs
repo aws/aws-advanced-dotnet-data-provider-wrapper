@@ -16,8 +16,8 @@ namespace AwsWrapperDataProvider.Driver.Plugins.BlueGreenConnection;
 
 public class BlueGreenConnectionPluginFactory : IConnectionPluginFactory
 {
-    public IConnectionPlugin GetInstance(IPluginService pluginService, Dictionary<string, string> props)
+    public IConnectionPlugin GetInstance(FullServicesContainer servicesContainer, Dictionary<string, string> props)
     {
-        return new BlueGreenConnectionPlugin(pluginService, props);
+        return new BlueGreenConnectionPlugin(servicesContainer, props);
     }
 }

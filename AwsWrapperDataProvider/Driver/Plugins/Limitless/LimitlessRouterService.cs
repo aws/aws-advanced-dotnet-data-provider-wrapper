@@ -1,4 +1,4 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -45,15 +45,18 @@ public class LimitlessRouterService : ILimitlessRouterService
         ForceGetLimitlessRoutersLockMap.Clear();
     }
 
-    public LimitlessRouterService(IPluginService pluginService)
-        : this(pluginService,
-            new LimitlessQueryHelper(pluginService),
+    // The monitor initializer builds a monitor-scoped container because the monitor is cached
+    // process-wide and outlives the creating connection; it must not capture this connection's
+    // plugin service or chain.
+    public LimitlessRouterService(FullServicesContainer servicesContainer)
+        : this(servicesContainer.PluginService,
+            new LimitlessQueryHelper(servicesContainer.PluginService),
             (hostSpec,
                 routerCache,
                 routerCacheKey,
                 properties,
                 intervalMs) => new LimitlessRouterMonitor(
-                pluginService,
+                ServiceUtility.CreateMonitorContainer(servicesContainer, servicesContainer.PluginService, properties),
                 hostSpec,
                 routerCache,
                 routerCacheKey,

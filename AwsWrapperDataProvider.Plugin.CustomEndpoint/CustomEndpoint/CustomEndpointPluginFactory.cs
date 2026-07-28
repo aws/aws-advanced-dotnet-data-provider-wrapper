@@ -1,4 +1,4 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ namespace AwsWrapperDataProvider.Plugin.CustomEndpoint.CustomEndpoint;
 
 public class CustomEndpointPluginFactory : IConnectionPluginFactory
 {
-    public IConnectionPlugin GetInstance(IPluginService pluginService, Dictionary<string, string> props)
+    public IConnectionPlugin GetInstance(FullServicesContainer servicesContainer, Dictionary<string, string> props)
     {
         try
         {
@@ -31,6 +31,6 @@ public class CustomEndpointPluginFactory : IConnectionPluginFactory
             throw new InvalidOperationException(Resources.CustomEndpointPluginFactory_AwsSdkNotInClasspath);
         }
 
-        return new CustomEndpointPlugin(pluginService, props);
+        return new CustomEndpointPlugin(servicesContainer, props);
     }
 }

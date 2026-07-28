@@ -1,4 +1,4 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -12,8 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.Dialects;
+using AwsWrapperDataProvider.Driver.HostListProviders;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
+using AwsWrapperDataProvider.Driver.Utils;
 
 namespace AwsWrapperDataProvider.Driver;
 
@@ -44,26 +47,46 @@ internal static class ServiceUtility
             TelemetryFactory = source.TelemetryFactory,
         };
 
-        PartialPluginService partialPluginService = new(container, props, dialect, targetConnectionDialect);
-        container.ConnectionPluginManager.InitConnectionPluginChain(partialPluginService, props);
+        // Constructed for its side effect: the constructor registers itself into the container's
+        // PluginService and HostListProviderService slots (which the chain initialization below
+        // reads back), then builds this monitor-scoped service's own host list provider.
+        _ = new PartialPluginService(container, props, dialect, targetConnectionDialect);
+        container.ConnectionPluginManager.InitConnectionPluginChain(container, props);
         return container;
     }
 
     /// <summary>
-    /// Recovers the backing container from a core plugin service. Plugins receive only an
-    /// <see cref="IPluginService"/> through the public <c>IConnectionPluginFactory.GetInstance</c>
-    /// (unchanged until a major version threads the container through it), so a plugin that needs
-    /// the container must derive it from its plugin service. Returns null for services not backed
-    /// by a container (e.g. test mocks). Unlike the host list provider supplier — which receives
-    /// the container directly — this bridge exists solely for the plugin construction boundary.
+    /// Creates the container for a shared background monitor: a minimal container (see
+    /// <see cref="CreateMinimalContainer"/>) cloned from the creating connection's container, so
+    /// the monitor gets its own plugin chain instead of pinning the creating connection's. When no
+    /// source container exists (components constructed directly with a plugin service, e.g. test
+    /// mocks), the creating service is shared instead, wrapped in a bare container so monitors have
+    /// one constructor shape. The dialect is snapshotted from the creating service and must already
+    /// be confirmed.
     /// </summary>
-    public static FullServicesContainer? FromPluginService(IPluginService? pluginService)
+    public static FullServicesContainer CreateMonitorContainer(
+        FullServicesContainer? source,
+        IPluginService pluginService,
+        Dictionary<string, string> props)
     {
-        return pluginService switch
+        if (source != null)
         {
-            PluginService fullService => fullService.ServicesContainer,
-            PartialPluginService partialService => partialService.ServicesContainer,
-            _ => null,
+            return CreateMinimalContainer(
+                source,
+                new Dictionary<string, string>(props),
+                pluginService.Dialect,
+                pluginService.TargetConnectionDialect);
+        }
+
+        FullServicesContainer sharedContainer = new(new DbConnectionProvider(), new HostIdCacheService(), null)
+        {
+            PluginService = pluginService,
         };
+        if (pluginService is IHostListProviderService hostListProviderService)
+        {
+            sharedContainer.HostListProviderService = hostListProviderService;
+        }
+
+        return sharedContainer;
     }
 }

@@ -38,7 +38,7 @@ public class GlobalAuroraHostListProvider : RdsHostListProvider
         string nodeIdQuery,
         IPluginService pluginService,
         GlobalAuroraTopologyUtils topologyUtils)
-        : base(properties, hostListProviderService, nodeIdQuery, pluginService, topologyUtils, null)
+        : base(properties, hostListProviderService, nodeIdQuery, pluginService, topologyUtils)
     {
         this.topologyUtils = topologyUtils;
     }
@@ -48,13 +48,7 @@ public class GlobalAuroraHostListProvider : RdsHostListProvider
         string nodeIdQuery,
         GlobalAuroraTopologyUtils topologyUtils,
         FullServicesContainer servicesContainer)
-        : base(
-            properties,
-            servicesContainer.HostListProviderService,
-            nodeIdQuery,
-            servicesContainer.PluginService,
-            topologyUtils,
-            servicesContainer)
+        : base(properties, nodeIdQuery, topologyUtils, servicesContainer)
     {
         this.topologyUtils = topologyUtils;
     }

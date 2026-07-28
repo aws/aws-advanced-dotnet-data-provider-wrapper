@@ -1,4 +1,4 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -39,19 +39,19 @@ public class LimitlessRouterMonitor : IDisposable
     private DbConnection? _monitoringConn;
 
     public LimitlessRouterMonitor(
-        IPluginService pluginService,
+        FullServicesContainer servicesContainer,
         HostSpec hostSpec,
         MemoryCache limitlessRouterCache,
         string limitlessRouterCacheKey,
         Dictionary<string, string> properties,
         int intervalMs)
     {
-        this._pluginService = pluginService;
+        this._pluginService = servicesContainer.PluginService;
         this._hostSpec = hostSpec;
         this._limitlessRouterCache = limitlessRouterCache;
         this._limitlessRouterCacheKey = limitlessRouterCacheKey;
         this._intervalMs = intervalMs;
-        this._queryHelper = new LimitlessQueryHelper(pluginService);
+        this._queryHelper = new LimitlessQueryHelper(this._pluginService);
         this._cancellationTokenSource = new CancellationTokenSource();
 
         // Copy properties and process monitoring-specific properties

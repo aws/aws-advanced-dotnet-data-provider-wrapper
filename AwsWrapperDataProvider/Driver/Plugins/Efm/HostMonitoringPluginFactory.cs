@@ -16,8 +16,8 @@ namespace AwsWrapperDataProvider.Driver.Plugins.Efm;
 
 public class HostMonitoringPluginFactory : IConnectionPluginFactory
 {
-    public IConnectionPlugin GetInstance(IPluginService pluginService, Dictionary<string, string> props)
+    public IConnectionPlugin GetInstance(FullServicesContainer servicesContainer, Dictionary<string, string> props)
     {
-        return new HostMonitoringPlugin(pluginService, props);
+        return new HostMonitoringPlugin(servicesContainer, props);
     }
 }

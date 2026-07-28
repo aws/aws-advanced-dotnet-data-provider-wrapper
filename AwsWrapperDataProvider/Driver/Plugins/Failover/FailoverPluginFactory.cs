@@ -22,11 +22,12 @@ public class FailoverPluginFactory : IConnectionPluginFactory
     /// <summary>
     /// Creates a new instance of the FailoverPlugin.
     /// </summary>
-    /// <param name="pluginService">The plugin service.</param>
+    /// <param name="servicesContainer">The container holding the connection's services.</param>
     /// <param name="props">Connection properties.</param>
     /// <returns>A new FailoverPlugin instance.</returns>
-    public IConnectionPlugin GetInstance(IPluginService pluginService, Dictionary<string, string> props)
+    public IConnectionPlugin GetInstance(FullServicesContainer servicesContainer, Dictionary<string, string> props)
     {
+        IPluginService pluginService = servicesContainer.PluginService;
         return new FailoverPlugin(pluginService, props);
     }
 }

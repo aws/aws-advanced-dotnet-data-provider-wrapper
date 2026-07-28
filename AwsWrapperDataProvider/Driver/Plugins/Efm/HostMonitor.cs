@@ -1,4 +1,4 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -72,14 +72,14 @@ public class HostMonitor : IHostMonitor
     /// <param name="failureDetectionIntervalMs">A failure detection interval in millis.</param>
     /// <param name="failureDetectionCount">A failure detection count.</param>
     public HostMonitor(
-        IPluginService pluginService,
+        FullServicesContainer servicesContainer,
         HostSpec hostSpec,
         Dictionary<string, string> properties,
         int failureDetectionTimeMs,
         int failureDetectionIntervalMs,
         int failureDetectionCount)
     {
-        this.pluginService = pluginService;
+        this.pluginService = servicesContainer.PluginService;
         this.hostSpec = hostSpec;
         this.properties = properties;
         this.failureDetectionTimeMs = failureDetectionTimeMs;
@@ -88,7 +88,7 @@ public class HostMonitor : IHostMonitor
 
         // Create the 3 telemetry instruments. When telemetry is disabled the
         // factory returns Null* singletons so all of these are no-op.
-        ITelemetryFactory telemetryFactory = pluginService.TelemetryFactory;
+        ITelemetryFactory telemetryFactory = this.pluginService.TelemetryFactory;
         this.abortedConnectionsCounter = telemetryFactory.CreateCounter("efm.connections.aborted");
 
         // Each HostMonitor is per-node — bake the node id directly into the

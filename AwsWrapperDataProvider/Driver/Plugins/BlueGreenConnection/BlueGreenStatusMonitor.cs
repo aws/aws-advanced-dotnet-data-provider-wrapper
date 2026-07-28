@@ -95,7 +95,7 @@ public class BlueGreenStatusMonitor
         this.props = props;
         this.statusCheckIntervalMap = statusCheckIntervalMap;
         this.onBlueGreenStatusChange = onBlueGreenStatusChange;
-        IDialect dialect = pluginService.Dialect;
+        IDialect dialect = this.pluginService.Dialect;
         if (DialectUtils.IsBlueGreenConnectionDialect(dialect))
         {
             this.currentDialect = (IBlueGreenDialect)dialect;

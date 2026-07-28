@@ -150,7 +150,7 @@ public class AwsWrapperConnection : DbConnection, IWrapper
         this.pluginService = pluginService;
         this.hostListProviderService = pluginService;
 
-        this.PluginManager.InitConnectionPluginChain(this.pluginService, this.ConnectionProperties);
+        this.PluginManager.InitConnectionPluginChain(servicesContainer, this.ConnectionProperties);
 
         this.pluginService.RefreshHostListAsync().GetAwaiter().GetResult();
         this.pluginService.SetCurrentConnection(

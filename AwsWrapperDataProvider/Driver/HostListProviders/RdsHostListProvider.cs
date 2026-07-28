@@ -67,8 +67,19 @@ public class RdsHostListProvider : IDynamicHostListProvider
         string nodeIdQuery,
         IPluginService pluginService,
         TopologyUtils topologyUtils)
-        : this(properties, hostListProviderService, nodeIdQuery, pluginService, topologyUtils, null)
     {
+        this.properties = properties;
+        this.hostListProviderService = hostListProviderService;
+        this.nodeIdQuery = nodeIdQuery;
+        this.pluginService = pluginService;
+        this.topologyUtils = topologyUtils;
+        this.highRefreshRate = TimeSpan.FromMilliseconds(PropertyDefinition.ClusterTopologyHighRefreshRateMs.GetLong(this.properties) ?? 100);
+        this.init = new Lazy<object>(() =>
+        {
+            this.Init();
+            return default!;
+        },
+        isThreadSafe: true);
     }
 
     internal RdsHostListProvider(
@@ -81,32 +92,9 @@ public class RdsHostListProvider : IDynamicHostListProvider
             servicesContainer.HostListProviderService,
             nodeIdQuery,
             servicesContainer.PluginService,
-            topologyUtils,
-            servicesContainer)
+            topologyUtils)
     {
-    }
-
-    private protected RdsHostListProvider(
-        Dictionary<string, string> properties,
-        IHostListProviderService hostListProviderService,
-        string nodeIdQuery,
-        IPluginService pluginService,
-        TopologyUtils topologyUtils,
-        FullServicesContainer? servicesContainer)
-    {
-        this.properties = properties;
-        this.hostListProviderService = hostListProviderService;
-        this.nodeIdQuery = nodeIdQuery;
-        this.pluginService = pluginService;
-        this.topologyUtils = topologyUtils;
         this.servicesContainer = servicesContainer;
-        this.highRefreshRate = TimeSpan.FromMilliseconds(PropertyDefinition.ClusterTopologyHighRefreshRateMs.GetLong(this.properties) ?? 100);
-        this.init = new Lazy<object>(() =>
-        {
-            this.Init();
-            return default!;
-        },
-        isThreadSafe: true);
     }
 
     public static void ClearAll()
@@ -291,23 +279,7 @@ public class RdsHostListProvider : IDynamicHostListProvider
     /// </summary>
     protected internal virtual FullServicesContainer CreateMonitorServicesContainer()
     {
-        if (this.servicesContainer != null)
-        {
-            return ServiceUtility.CreateMinimalContainer(
-                this.servicesContainer,
-                new Dictionary<string, string>(this.properties),
-                this.pluginService.Dialect,
-                this.pluginService.TargetConnectionDialect);
-        }
-
-        // No container was supplied (providers constructed via the public constructor, e.g. in
-        // tests); monitors then share the creating service as before, wrapped in a bare container.
-        FullServicesContainer sharedContainer = new(new ConnectionProviders.DbConnectionProvider(), new HostIdCacheService(), null)
-        {
-            PluginService = this.pluginService,
-            HostListProviderService = this.hostListProviderService,
-        };
-        return sharedContainer;
+        return ServiceUtility.CreateMonitorContainer(this.servicesContainer, this.pluginService, this.properties);
     }
 
     private void OnMonitorEvicted(object key, object? value, EvictionReason reason, object? state)
