@@ -30,7 +30,6 @@ using AwsWrapperDataProvider.Telemetry.XRay;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 
 [assembly: CollectionBehavior(DisableTestParallelization = true)]
-[assembly: CaptureConsole]
 
 namespace AwsWrapperDataProvider.Tests;
 

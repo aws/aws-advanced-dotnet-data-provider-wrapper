@@ -63,13 +63,16 @@ jobs:
           AWS_RDS_MONITORING_ROLE_ARN: ${{ secrets.AWS_RDS_MONITORING_ROLE_ARN }}
           MYSQL_VERSION: "default"
           PG_VERSION: "default"
-      - name: Archive results
+          ENABLED_FILE_LOG: "true"
+          LOG_DIRECTORY_PATH: "/app/test/integration/container/logs"
+      - name: Archive wrapper logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: integration-report-default-${{ matrix.dbEngine }}-${{ matrix.deployment }}
-          path: ./test/integration/container/reports
+          name: integration-logs-default-${{ matrix.dbEngine }}-${{ matrix.deployment }}
+          path: ./test/integration/container/logs
           retention-days: 5
+          if-no-files-found: ignore
       - name: Get Github Action IP
         if: always()
         id: ip

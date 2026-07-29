@@ -1125,6 +1125,16 @@ public class TestEnvironmentConfig implements AutoCloseable {
         .withEnv("TEST_ENV_INFO_JSON", getEnvironmentInfoAsString(env))
         .withEnv("TEST_ENV_DESCRIPTION", env.info.getRequest().getDisplayName());
 
+    // Forward file-logging configuration so the wrapper writes logs to a directory bound to the
+    // host (see the /app/test/integration/container bind in ContainerHelper), letting CI upload
+    // them as an artifact. Only set when provided so local runs are unaffected.
+    if (!StringUtils.isNullOrEmpty(System.getenv("ENABLED_FILE_LOG"))) {
+      env.testContainer.withEnv("ENABLED_FILE_LOG", System.getenv("ENABLED_FILE_LOG"));
+    }
+    if (!StringUtils.isNullOrEmpty(System.getenv("LOG_DIRECTORY_PATH"))) {
+      env.testContainer.withEnv("LOG_DIRECTORY_PATH", System.getenv("LOG_DIRECTORY_PATH"));
+    }
+
     if (env.info
         .getRequest()
         .getFeatures()
