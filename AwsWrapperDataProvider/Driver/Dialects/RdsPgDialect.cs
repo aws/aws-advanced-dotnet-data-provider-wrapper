@@ -21,12 +21,12 @@ namespace AwsWrapperDataProvider.Driver.Dialects;
 
 public class RdsPgDialect : PgDialect, IBlueGreenDialect
 {
-    internal const string ExtensionsSql = "SELECT (setting LIKE '%rds_tools%') AS rds_tools, "
-                                         + "(setting LIKE '%aurora_stat_utils%') AS aurora_stat_utils "
+    internal const string ExtensionsSql = "SELECT (setting OPERATOR(pg_catalog.~~) '%rds_tools%') AS rds_tools, "
+                                         + "(setting OPERATOR(pg_catalog.~~) '%aurora_stat_utils%') AS aurora_stat_utils "
                                          + "FROM pg_catalog.pg_settings "
                                          + "WHERE name OPERATOR(pg_catalog.=) 'rds.extensions'";
 
-    protected static readonly string RdsPgTopologyTableExistsQuery = "SELECT 'rds_tools.show_topology'::regproc";
+    protected static readonly string RdsPgTopologyTableExistsQuery = "SELECT 'rds_tools.show_topology'::pg_catalog.regproc";
 
     protected static readonly string RdsPgBgStatusQuery = "SELECT * FROM rds_tools.show_topology('aws_advanced_dotnet_data_provider_wrapper')";
 
