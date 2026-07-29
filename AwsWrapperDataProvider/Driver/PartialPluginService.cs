@@ -131,7 +131,41 @@ internal class PartialPluginService : IPluginService, IHostListProviderService
 
     public IList<HostSpec> GetHosts()
     {
-        return this.AllHosts;
+        // Mirror PluginService.GetHosts: filter AllHosts through the AllowedAndBlockedHosts
+        // restrictions plugins like CustomEndpoint publish, keyed by the initial host.
+        if (this.initialConnectionHostSpec == null)
+        {
+            return this.AllHosts;
+        }
+
+        var hostPermissions = PluginService.AllowedAndBlockedHostsCache.Get<AllowedAndBlockedHosts>(this.initialConnectionHostSpec.Host);
+        if (hostPermissions == null)
+        {
+            return this.AllHosts;
+        }
+
+        IList<HostSpec> filteredHosts = this.AllHosts;
+        var allowedHostIds = hostPermissions.AllowedHostIds;
+        var blockedHostIds = hostPermissions.BlockedHostIds;
+        var requiredRole = hostPermissions.RequiredRole;
+
+        if (allowedHostIds != null && allowedHostIds.Count > 0)
+        {
+            filteredHosts = filteredHosts
+                .Where(host => !string.IsNullOrEmpty(host.HostId) && allowedHostIds.Contains(host.HostId))
+                .Where(host => requiredRole == null || host.Role == requiredRole)
+                .ToList();
+        }
+
+        if (blockedHostIds != null && blockedHostIds.Count > 0)
+        {
+            filteredHosts = filteredHosts
+                .Where(host => string.IsNullOrEmpty(host.HostId) || !blockedHostIds.Contains(host.HostId))
+                .Where(host => requiredRole == null || host.Role == requiredRole)
+                .ToList();
+        }
+
+        return filteredHosts;
     }
 
     public async Task<HostRole> GetHostRole(DbConnection? connection)
@@ -163,7 +197,9 @@ internal class PartialPluginService : IPluginService, IHostListProviderService
 
     public async Task RefreshHostListAsync()
     {
-        this.AllHosts = await this.hostListProvider.RefreshAsync();
+        IList<HostSpec> updateHostList = await this.hostListProvider.RefreshAsync();
+        UpdateHostAvailability(updateHostList);
+        this.AllHosts = updateHostList;
     }
 
     public async Task ForceRefreshHostListAsync()
@@ -175,7 +211,9 @@ internal class PartialPluginService : IPluginService, IHostListProviderService
     {
         try
         {
-            this.AllHosts = await this.hostListProvider.ForceRefreshAsync(shouldVerifyWriter, timeoutMs);
+            IList<HostSpec> updateHostList = await this.hostListProvider.ForceRefreshAsync(shouldVerifyWriter, timeoutMs);
+            UpdateHostAvailability(updateHostList);
+            this.AllHosts = updateHostList;
             return true;
         }
         catch (TimeoutException)
@@ -185,13 +223,25 @@ internal class PartialPluginService : IPluginService, IHostListProviderService
         }
     }
 
-    // Monitor connections are never the wrapper's initial connection, so isInitialConnection is
-    // pinned to false: the dialect is already confirmed and must not be re-guessed here.
-    public Task<DbConnection> OpenConnection(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin? pluginToSkip, bool async)
+    // Restore each refreshed host's availability from the shared cache, matching PluginService.
+    private static void UpdateHostAvailability(IList<HostSpec> hosts)
     {
-        return this.pluginManager.Open(hostSpec, props, false, pluginToSkip, async);
+        foreach (HostSpec host in hosts)
+        {
+            if (PluginService.HostAvailabilityExpiringCache.TryGetValue(host.GetHostAndPort(), out HostAvailability? availability) && availability.HasValue)
+            {
+                host.Availability = availability.Value;
+            }
+        }
     }
 
+    // Monitors open probe connections only via ForceOpenConnection; the normal open path is unused.
+    public Task<DbConnection> OpenConnection(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin? pluginToSkip, bool async)
+    {
+        throw MethodNotSupported(nameof(this.OpenConnection));
+    }
+
+    // isInitialConnection is pinned false: the dialect is already confirmed and must not be re-guessed.
     public Task<DbConnection> ForceOpenConnection(HostSpec hostSpec, Dictionary<string, string> props, IConnectionPlugin? pluginToSkip, bool async)
     {
         return this.pluginManager.ForceOpen(hostSpec, props, false, pluginToSkip, async);
@@ -219,7 +269,7 @@ internal class PartialPluginService : IPluginService, IHostListProviderService
 
     public bool AcceptsStrategy(string strategy)
     {
-        return this.pluginManager.AcceptsStrategy(strategy);
+        throw MethodNotSupported(nameof(this.AcceptsStrategy));
     }
 
     public HostSpec GetHostSpecByStrategy(HostRole hostRole, string strategy)

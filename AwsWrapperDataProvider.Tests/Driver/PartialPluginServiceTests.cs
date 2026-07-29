@@ -149,10 +149,11 @@ public class PartialPluginServiceTests
             this.mockDialect.Object,
             this.mockTargetDialect.Object);
 
-        // The minimal container shares the universal slots but must NOT share the per-connection ones.
+        // The minimal container shares the universal slots but must NOT share the per-connection ones
+        // (plugin manager, plugin service, host id cache).
         Assert.Same(source.DefaultConnectionProvider, minimal.DefaultConnectionProvider);
-        Assert.Same(source.HostIdCacheService, minimal.HostIdCacheService);
         Assert.Same(source.TelemetryFactory, minimal.TelemetryFactory);
+        Assert.NotSame(source.HostIdCacheService, minimal.HostIdCacheService);
         Assert.NotSame(source.ConnectionPluginManager, minimal.ConnectionPluginManager);
         Assert.NotSame(source.PluginService, minimal.PluginService);
         Assert.IsType<PartialPluginService>(minimal.PluginService);

@@ -73,7 +73,8 @@ internal static class ServiceUtility
         IDialect dialect,
         ITargetConnectionDialect targetConnectionDialect)
     {
-        FullServicesContainer container = new(source.DefaultConnectionProvider, source.HostIdCacheService, source.ConfigurationProfile, source.TelemetryFactory)
+        // A fresh HostIdCacheService per minimal container keeps each monitor's cache isolated.
+        FullServicesContainer container = new(source.DefaultConnectionProvider, new HostIdCacheService(), source.ConfigurationProfile, source.TelemetryFactory)
         {
             ConnectionPluginManager = new ConnectionPluginManager(source.DefaultConnectionProvider, source.ConfigurationProfile),
         };
@@ -90,28 +91,33 @@ internal static class ServiceUtility
     }
 
     /// <summary>
-    /// Creates the container for a shared background monitor: a minimal container (see
-    /// <see cref="CreateMinimalContainer"/>) cloned from the creating connection's container, so
-    /// the monitor gets its own plugin chain instead of pinning the creating connection's. When no
-    /// source container exists (components constructed directly with a plugin service, e.g. test
-    /// mocks), the creating service is shared instead, wrapped in a bare container so monitors have
-    /// one constructor shape. The dialect is snapshotted from the creating service and must already
-    /// be confirmed.
+    /// Creates the container for a shared background monitor. In production <paramref name="source"/>
+    /// is always the creating connection's container, so the monitor gets its own minimal container
+    /// with an isolated <see cref="PartialPluginService"/> (see <see cref="CreateMinimalContainer"/>)
+    /// rather than pinning the creating connection's. The dialect is snapshotted from the creating
+    /// service and must already be confirmed. A null <paramref name="source"/> only occurs in tests
+    /// that construct a component around a mock plugin service; that path shares the plugin service
+    /// and must never be reached in production.
     /// </summary>
     public static FullServicesContainer CreateMonitorContainer(
         FullServicesContainer? source,
         IPluginService pluginService,
         Dictionary<string, string> props)
     {
-        if (source != null)
-        {
-            return CreateMinimalContainer(
+        return source != null
+            ? CreateMinimalContainer(
                 source,
                 new Dictionary<string, string>(props),
                 pluginService.Dialect,
-                pluginService.TargetConnectionDialect);
-        }
+                pluginService.TargetConnectionDialect)
+            : CreateSharedContainerForTest(pluginService);
+    }
 
+    // Test-only: wraps a mock plugin service in a bare container so monitors keep one constructor
+    // shape. Production always supplies a source container, so the monitor never shares a plugin
+    // service.
+    private static FullServicesContainer CreateSharedContainerForTest(IPluginService pluginService)
+    {
         FullServicesContainer sharedContainer = new(new DbConnectionProvider(), new HostIdCacheService(), null, pluginService.TelemetryFactory ?? NullTelemetryFactory.Instance)
         {
             PluginService = pluginService,
