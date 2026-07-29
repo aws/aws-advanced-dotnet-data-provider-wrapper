@@ -26,21 +26,21 @@ public class GlobalAuroraPgDialect : AuroraPgDialect, IGlobalAuroraTopologyDiale
         LoggerUtils.GetLogger<GlobalAuroraPgDialect>();
 
     internal static readonly string GlobalStatusFuncExistsQuery =
-        "select 'pg_catalog.aurora_global_db_status'::regproc";
+        "SELECT 'pg_catalog.aurora_global_db_status'::pg_catalog.regproc";
 
     internal static readonly string GlobalInstanceStatusFuncExistsQuery =
-        "select 'pg_catalog.aurora_global_db_instance_status'::regproc";
+        "SELECT 'pg_catalog.aurora_global_db_instance_status'::pg_catalog.regproc";
 
     internal static readonly string RegionCountQuery =
-        "SELECT count(1) FROM pg_catalog.aurora_global_db_status()";
+        "SELECT pg_catalog.count(1) FROM pg_catalog.aurora_global_db_status()";
 
     public new string TopologyQuery =>
-        "SELECT SERVER_ID, CASE WHEN SESSION_ID = 'MASTER_SESSION_ID' THEN TRUE ELSE FALSE END, "
+        "SELECT SERVER_ID, CASE WHEN SESSION_ID OPERATOR(pg_catalog.=) 'MASTER_SESSION_ID' THEN TRUE ELSE FALSE END, "
         + "VISIBILITY_LAG_IN_MSEC, AWS_REGION "
         + "FROM pg_catalog.aurora_global_db_instance_status()";
 
     public string RegionByInstanceIdQuery =>
-        "SELECT AWS_REGION FROM pg_catalog.aurora_global_db_instance_status() WHERE SERVER_ID = '{0}'";
+        "SELECT AWS_REGION FROM pg_catalog.aurora_global_db_instance_status() WHERE SERVER_ID OPERATOR(pg_catalog.=) '{0}'";
 
     public override IList<Type> DialectUpdateCandidates { get; } = [];
 

@@ -26,7 +26,7 @@ public class AuroraPgDialect : PgDialect, ITopologyDialect, IAuroraLimitlessDial
 
     private static readonly ILogger<AuroraPgDialect> Logger = LoggerUtils.GetLogger<AuroraPgDialect>();
 
-    internal static readonly string ExtensionsSql = "SELECT (setting LIKE '%aurora_stat_utils%') AS aurora_stat_utils "
+    internal static readonly string ExtensionsSql = "SELECT (setting OPERATOR(pg_catalog.~~) '%aurora_stat_utils%') AS aurora_stat_utils "
           + "FROM pg_catalog.pg_settings "
           + "WHERE name OPERATOR(pg_catalog.=) 'rds.extensions'";
 
@@ -45,9 +45,9 @@ public class AuroraPgDialect : PgDialect, ITopologyDialect, IAuroraLimitlessDial
 
     public string WriterIdQuery =>
         "SELECT SERVER_ID FROM pg_catalog.aurora_replica_status() "
-        + "WHERE SESSION_ID OPERATOR(pg_catalog.=) 'MASTER_SESSION_ID' AND SERVER_ID OPERATOR(pg_catalog.=) aurora_db_instance_identifier()";
+        + "WHERE SESSION_ID OPERATOR(pg_catalog.=) 'MASTER_SESSION_ID' AND SERVER_ID OPERATOR(pg_catalog.=) pg_catalog.aurora_db_instance_identifier()";
 
-    protected static readonly string AuroraPostgreSqlBgTopologyExistsQuery = "SELECT 'pg_catalog.get_blue_green_fast_switchover_metadata'::regproc";
+    protected static readonly string AuroraPostgreSqlBgTopologyExistsQuery = "SELECT 'pg_catalog.get_blue_green_fast_switchover_metadata'::pg_catalog.regproc";
 
     protected static readonly string DriverVersion = "1.2.0";
     protected static readonly string AuroraPostgreSqlBgStatusQuery = $"SELECT * FROM pg_catalog.get_blue_green_fast_switchover_metadata('aws_advanced_dotnet_data_provider_wrapper-{DriverVersion}')";
@@ -120,5 +120,5 @@ public class AuroraPgDialect : PgDialect, ITopologyDialect, IAuroraLimitlessDial
         return AuroraPostgreSqlBgStatusQuery;
     }
 
-    public string LimitlessRouterEndpointQuery { get => "SELECT router_endpoint, load from aurora_limitless_router_endpoints()"; }
+    public string LimitlessRouterEndpointQuery { get => "SELECT router_endpoint, load FROM pg_catalog.aurora_limitless_router_endpoints()"; }
 }
