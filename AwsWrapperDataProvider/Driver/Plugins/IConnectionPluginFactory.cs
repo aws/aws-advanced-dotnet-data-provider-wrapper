@@ -16,5 +16,5 @@ namespace AwsWrapperDataProvider.Driver.Plugins;
 
 public interface IConnectionPluginFactory
 {
-    IConnectionPlugin GetInstance(IPluginService pluginService, Dictionary<string, string> props);
+    IConnectionPlugin GetInstance(FullServicesContainer servicesContainer, Dictionary<string, string> props);
 }

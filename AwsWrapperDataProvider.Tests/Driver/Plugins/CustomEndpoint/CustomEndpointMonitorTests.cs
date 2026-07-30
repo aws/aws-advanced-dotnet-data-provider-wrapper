@@ -1,4 +1,4 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -87,7 +87,7 @@ public class CustomEndpointMonitorTests : IDisposable
         Func<RegionEndpoint, AmazonRDSClient> rdsClientFunc = _ => mockRds.Object;
 
         var monitor = new CustomEndpointMonitor(
-            this.mockPluginService.Object,
+            ServiceUtility.CreateMonitorContainer(null, this.mockPluginService.Object, []),
             this.host,
             EndpointId,
             RegionEndpoint.USEast1,

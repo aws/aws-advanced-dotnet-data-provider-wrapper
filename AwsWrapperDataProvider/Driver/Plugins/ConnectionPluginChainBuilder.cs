@@ -1,4 +1,4 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -75,15 +75,15 @@ public class ConnectionPluginChainBuilder
         { PluginCodes.ExecutionTime, WeightRelativeToPriorPlugin },
     };
 
-    public string[] GetPluginCodes(IPluginService pluginService, Dictionary<string, string> props)
+    public string[] GetPluginCodes(FullServicesContainer servicesContainer, Dictionary<string, string> props)
     {
-        string pluginsCodes = pluginService.TargetConnectionDialect.GetPluginCodesOrDefault(props);
+        string pluginsCodes = servicesContainer.PluginService.TargetConnectionDialect.GetPluginCodesOrDefault(props);
         string[] pluginsCodesArray = [.. pluginsCodes.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)];
         return pluginsCodesArray;
     }
 
     public IList<IConnectionPlugin> GetPlugins(
-        IPluginService pluginService,
+        FullServicesContainer servicesContainer,
         IConnectionProvider defaultConnectionProvider,
         IConnectionProvider? effectiveConnectionProvider,
         Dictionary<string, string> props,
@@ -97,7 +97,7 @@ public class ConnectionPluginChainBuilder
         }
         else
         {
-            string[] pluginsCodesArray = this.GetPluginCodes(pluginService, props);
+            string[] pluginsCodesArray = this.GetPluginCodes(servicesContainer, props);
 
             Dictionary<IConnectionPluginFactory, int> pluginWeightByPluginFactory = [];
 
@@ -128,8 +128,8 @@ public class ConnectionPluginChainBuilder
         }
 
         List<IConnectionPlugin> plugins = [
-            .. pluginFactories.Select(factory => factory.GetInstance(pluginService, props)),
-            new DefaultConnectionPlugin(pluginService, defaultConnectionProvider, effectiveConnectionProvider)
+            .. pluginFactories.Select(factory => factory.GetInstance(servicesContainer, props)),
+            new DefaultConnectionPlugin(servicesContainer.PluginService, defaultConnectionProvider, effectiveConnectionProvider)
         ];
 
         return plugins;

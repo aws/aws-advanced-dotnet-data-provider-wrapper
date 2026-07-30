@@ -1,4 +1,4 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -230,7 +230,7 @@ public class DialectProviderTests
         public string HostAliasQuery => "SELECT 'test'";
         public string ServerVersionQuery => "SELECT 'version'";
         public IList<Type> DialectUpdateCandidates => new List<Type>();
-        public HostListProviderSupplier HostListProviderSupplier => (props, service, pluginService) => null;
+        public HostListProviderSupplier HostListProviderSupplier => (props, servicesContainer) => null;
 
         public IExceptionHandler ExceptionHandler => new GenericExceptionHandler();
 

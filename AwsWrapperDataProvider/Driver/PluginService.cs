@@ -32,23 +32,27 @@ namespace AwsWrapperDataProvider.Driver;
 public class PluginService : IPluginService, IHostListProviderService
 {
     private const int DefaultTopologyQueryTimeoutMs = 5000;
-    private static readonly TimeSpan DefaultHostAvailabilityCacheExpiration = TimeSpan.FromMinutes(5);
+    internal static readonly TimeSpan DefaultHostAvailabilityCacheExpiration = TimeSpan.FromMinutes(5);
     internal static readonly MemoryCache HostAvailabilityExpiringCache = new(new MemoryCacheOptions());
 
     // Cache for AllowedAndBlockedHosts (keyed by custom endpoint URL or connection URL)
     // This allows plugins like CustomEndpoint to store host restrictions without PluginService
-    // depending on plugin-specific types. Similar to Java's StorageService pattern.
+    // depending on plugin-specific types.
     public static readonly MemoryCache AllowedAndBlockedHostsCache = new(new MemoryCacheOptions());
 
     private static readonly ILogger<PluginService> Logger = LoggerUtils.GetLogger<PluginService>();
 
     private readonly object connectionSwitchLock = new();
+    private readonly FullServicesContainer? servicesContainer;
     private readonly AwsWrapperConnection wrapperConnection;
     private readonly ConnectionPluginManager pluginManager;
     private readonly Dictionary<string, string> props;
     private readonly DialectProvider dialectProvider;
-    private readonly IHostIdCacheService hostIdCacheService = new HostIdCacheService();
-    private volatile IHostListProvider hostListProvider;
+    private readonly IHostIdCacheService hostIdCacheService;
+    // Assigned by InitHostListProvider immediately after construction (see ServiceUtility); the
+    // supplier that builds it reads this service back off the container, so it cannot run until the
+    // container's slots are populated.
+    private volatile IHostListProvider hostListProvider = null!;
     private HostSpec? currentHostSpec;
     private HostSpec? initialConnectionHostSpec;
     private HostSpec? originalHostSpec;
@@ -96,7 +100,7 @@ public class PluginService : IPluginService, IHostListProviderService
     /// Gets the telemetry factory used to produce trace contexts and metric
     /// instruments. Initialized in the primary constructor.
     /// </summary>
-    public ITelemetryFactory TelemetryFactory { get; private set; } = NullTelemetryFactory.Instance;
+    public ITelemetryFactory TelemetryFactory { get; } = NullTelemetryFactory.Instance;
 
     public DbTransaction? CurrentTransaction
     {
@@ -119,33 +123,45 @@ public class PluginService : IPluginService, IHostListProviderService
         }
     }
 
-    public PluginService(
+    internal PluginService(
+        FullServicesContainer servicesContainer,
         AwsWrapperConnection wrapperConnection,
-        ConnectionPluginManager pluginManager,
         Dictionary<string, string> props,
-        ITargetConnectionDialect? targetConnectionDialect,
-        ConfigurationProfile? configurationProfile)
+        ITargetConnectionDialect? targetConnectionDialect)
     {
+        ConfigurationProfile? configurationProfile = servicesContainer.ConfigurationProfile;
+        this.servicesContainer = servicesContainer;
         this.wrapperConnection = wrapperConnection;
-        this.pluginManager = pluginManager;
+        this.pluginManager = servicesContainer.ConnectionPluginManager;
+        this.hostIdCacheService = servicesContainer.HostIdCacheService;
+        this.TelemetryFactory = servicesContainer.TelemetryFactory;
         this.props = props;
         this.TargetConnectionDialect = configurationProfile?.TargetConnectionDialect ?? targetConnectionDialect ?? throw new ArgumentNullException(nameof(targetConnectionDialect));
         this.dialectProvider = new(this, this.props);
         this.Dialect = configurationProfile?.Dialect ?? this.dialectProvider.GuessDialect();
+    }
 
+    /// <summary>
+    /// Builds this service's host list provider. Separate from the constructor because the
+    /// supplier reads the plugin and host list provider services back off the container, so the
+    /// caller must register this service into the container's slots first.
+    /// </summary>
+    internal void InitHostListProvider()
+    {
         this.hostListProvider =
-            this.Dialect.HostListProviderSupplier(this.props, this, this)
+            this.Dialect.HostListProviderSupplier(this.props, this.servicesContainer!)
             ?? throw new InvalidOperationException(); // TODO : throw proper error
-
-        this.TelemetryFactory = PropertyDefinition.EnableTelemetry.GetBoolean(this.props)
-            ? new DefaultTelemetryFactory(this.props)
-            : NullTelemetryFactory.Instance;
     }
 
     // for testing purpose only
 #pragma warning disable CS8618
-    internal PluginService() { }
+    internal PluginService()
+    {
+        this.hostIdCacheService = new HostIdCacheService();
+    }
 #pragma warning restore CS8618
+
+    internal FullServicesContainer? ServicesContainer => this.servicesContainer;
 
     public static void ClearCache()
     {
@@ -197,7 +213,7 @@ public class PluginService : IPluginService, IHostListProviderService
 
     public IList<HostSpec> GetHosts()
     {
-        // Filter hosts based on AllowedAndBlockedHosts restrictions (like Java's approach)
+        // Filter hosts based on AllowedAndBlockedHosts restrictions.
         // This allows plugins like CustomEndpoint to restrict hosts without PluginService
         // depending on plugin-specific types.
         if (this.InitialConnectionHostSpec == null)
@@ -365,7 +381,7 @@ public class PluginService : IPluginService, IHostListProviderService
 
         if (dialect != this.Dialect)
         {
-            this.hostListProvider = this.Dialect.HostListProviderSupplier(this.props, this, this)
+            this.hostListProvider = this.Dialect.HostListProviderSupplier(this.props, this.servicesContainer!)
                                      ?? this.hostListProvider;
         }
 

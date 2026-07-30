@@ -1,4 +1,4 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -51,7 +51,6 @@ public abstract class TopologyUtils
         DbConnection connection,
         HostSpec initialHostSpec,
         HostSpec clusterInstanceTemplate,
-        IHostListProviderService hostListProviderService,
         CancellationToken ct = default)
     {
         await using var command = connection.CreateCommand();

@@ -1,4 +1,4 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ namespace AwsWrapperDataProvider.Driver.Plugins.Efm;
 public class HostMonitorService : IHostMonitorService
 {
     private static readonly ILogger<HostMonitorService> Logger = LoggerUtils.GetLogger<HostMonitorService>();
+    private readonly FullServicesContainer? servicesContainer;
     private readonly IPluginService pluginService;
     private readonly Dictionary<string, string> props;
     private readonly TimeSpan cacheExpiration;
@@ -39,8 +40,20 @@ public class HostMonitorService : IHostMonitorService
         return $"{failureDetectionTimeMs}:{failureDetectionIntervalMs}:{failureDetectionCount}:{host}";
     }
 
-    public HostMonitorService(IPluginService pluginService, Dictionary<string, string> props)
+    public HostMonitorService(FullServicesContainer servicesContainer, Dictionary<string, string> props)
+        : this(servicesContainer, servicesContainer.PluginService, props)
     {
+    }
+
+    // For tests constructing the service around a bare (mock) plugin service with no container.
+    internal HostMonitorService(IPluginService pluginService, Dictionary<string, string> props)
+        : this(null, pluginService, props)
+    {
+    }
+
+    private HostMonitorService(FullServicesContainer? servicesContainer, IPluginService pluginService, Dictionary<string, string> props)
+    {
+        this.servicesContainer = servicesContainer;
         this.pluginService = pluginService;
         this.props = props;
         this.cacheExpiration = TimeSpan.FromMilliseconds(PropertyDefinition.MonitorDisposalTimeMs.GetInt(this.props) ?? DefaultMonitorDisposalTimeMs);
@@ -110,8 +123,11 @@ public class HostMonitorService : IHostMonitorService
 
         if (!Monitors.TryGetValue(monitorKey, out IHostMonitor? monitor))
         {
+            // The monitor is cached process-wide and outlives the creating connection, so it
+            // gets a monitor-scoped container rather than this connection's service.
+            FullServicesContainer monitorContainer = ServiceUtility.CreateMonitorContainer(this.servicesContainer, this.pluginService, properties);
             monitor = new HostMonitor(
-                this.pluginService,
+                monitorContainer,
                 hostSpec,
                 properties,
                 failureDetectionTimeMs,

@@ -17,6 +17,7 @@ using System.Data.Common;
 using System.Diagnostics;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Utils;
+using AwsWrapperDataProvider.Properties;
 using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.BlueGreenConnection;
@@ -32,6 +33,7 @@ public class BlueGreenConnectionPlugin : AbstractConnectionPlugin
 
     private static readonly ConcurrentDictionary<string, BlueGreenStatusProvider> Provider = new();
 
+    private readonly FullServicesContainer servicesContainer;
     private readonly IPluginService pluginService;
     private readonly Dictionary<string, string> props;
     private readonly BlueGreenProviderSupplier providerSupplier;
@@ -45,19 +47,20 @@ public class BlueGreenConnectionPlugin : AbstractConnectionPlugin
     public override IReadOnlySet<string> SubscribedMethods => PluginMethods.NetworkBoundMethods;
 
     public BlueGreenConnectionPlugin(
-        IPluginService pluginService,
+        FullServicesContainer servicesContainer,
         Dictionary<string, string> props)
-        : this(pluginService, props, (svc, p, bgdIdParam, clusterIdParam) => new BlueGreenStatusProvider(svc, p, bgdIdParam, clusterIdParam))
+        : this(servicesContainer, props, (container, p, bgdIdParam, clusterIdParam) => new BlueGreenStatusProvider(container, p, bgdIdParam, clusterIdParam))
     {
     }
 
     private BlueGreenConnectionPlugin(
-        IPluginService pluginService,
+        FullServicesContainer servicesContainer,
         Dictionary<string, string> props,
         BlueGreenProviderSupplier providerSupplier)
     {
         this.endTime = new AtomicLong(-1);
-        this.pluginService = pluginService;
+        this.servicesContainer = servicesContainer;
+        this.pluginService = servicesContainer.PluginService;
         this.props = props;
         this.providerSupplier = providerSupplier;
         this.bgdId = PropertyDefinition.BgdId.GetString(this.props) ?? PropertyDefinition.BgdId.DefaultValue!;
@@ -292,8 +295,13 @@ public class BlueGreenConnectionPlugin : AbstractConnectionPlugin
             throw new InvalidOperationException("Failed to get cluster ID", ex);
         }
 
+        if (this.clusterId == null)
+        {
+            throw new InvalidOperationException("Failed to get cluster ID");
+        }
+
         Provider.GetOrAdd(this.bgdId,
-            key => this.providerSupplier(this.pluginService, this.props, this.bgdId, this.clusterId));
+            key => this.providerSupplier(this.servicesContainer, this.props, this.bgdId, this.clusterId));
     }
 
     public long GetHoldTimeMs()

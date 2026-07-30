@@ -42,11 +42,11 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
     protected readonly TimeSpan highRefreshRate;
     protected readonly TimeSpan topologyCacheExpiration;
     protected readonly Dictionary<string, string> properties;
+    protected readonly FullServicesContainer servicesContainer;
     protected readonly IPluginService pluginService;
     protected readonly HostSpec initialHostSpec;
     protected readonly MemoryCache topologyMap;
     protected readonly string nodeIdQuery;
-    protected readonly IHostListProviderService hostListProviderService;
     protected readonly HostSpec clusterInstanceTemplate;
     protected readonly CancellationTokenSource ctsTopologyMonitoring = new();
     protected readonly object topologyUpdatedLock = new();
@@ -95,8 +95,7 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         MemoryCache topologyMap,
         HostSpec initialHostSpec,
         Dictionary<string, string> properties,
-        IPluginService pluginService,
-        IHostListProviderService hostListProviderService,
+        FullServicesContainer servicesContainer,
         HostSpec clusterInstanceTemplate,
         TimeSpan refreshRate,
         TimeSpan highRefreshRate,
@@ -107,8 +106,8 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
         this.clusterId = clusterId;
         this.topologyMap = topologyMap;
         this.initialHostSpec = initialHostSpec;
-        this.pluginService = pluginService;
-        this.hostListProviderService = hostListProviderService;
+        this.servicesContainer = servicesContainer;
+        this.pluginService = servicesContainer.PluginService;
         this.clusterInstanceTemplate = clusterInstanceTemplate;
         this.refreshRate = refreshRate;
         this.highRefreshRate = highRefreshRate;
@@ -734,7 +733,6 @@ public class ClusterTopologyMonitor : IClusterTopologyMonitor
                 connection,
                 this.initialHostSpec,
                 this.clusterInstanceTemplate,
-                this.hostListProviderService,
                 this.ctsTopologyMonitoring.Token);
         }
         catch (Exception ex)

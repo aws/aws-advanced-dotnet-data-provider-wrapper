@@ -28,6 +28,7 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
     public static readonly int DefaultFailureDetectionInterval = 5000;
     public static readonly int DefaultFailureDetectionCount = 3;
 
+    private readonly FullServicesContainer servicesContainer;
     private readonly IPluginService pluginService;
     private readonly Dictionary<string, string> props;
     private HostSpec? monitoringHostSpec;
@@ -38,9 +39,10 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
     public override IReadOnlySet<string> SubscribedMethods { get; } =
         new HashSet<string>(PluginMethods.NetworkBoundMethods.Concat(PluginMethods.SpecialMethods));
 
-    public HostMonitoringPlugin(IPluginService pluginService, Dictionary<string, string> props)
+    public HostMonitoringPlugin(FullServicesContainer servicesContainer, Dictionary<string, string> props)
     {
-        this.pluginService = pluginService;
+        this.servicesContainer = servicesContainer;
+        this.pluginService = servicesContainer.PluginService;
         this.props = props;
         this.isEnabled = PropertyDefinition.FailureDetectionEnabled.GetBoolean(props);
     }
@@ -130,7 +132,7 @@ public class HostMonitoringPlugin : AbstractConnectionPlugin
 
     private void InitMonitorService()
     {
-        this.monitorService ??= new HostMonitorService(this.pluginService, this.props);
+        this.monitorService ??= new HostMonitorService(this.servicesContainer, this.props);
     }
 
     public async Task<HostSpec> GetMonitoringHostSpec()

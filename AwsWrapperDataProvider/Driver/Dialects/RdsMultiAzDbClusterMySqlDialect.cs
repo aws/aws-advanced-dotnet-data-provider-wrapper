@@ -1,4 +1,4 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -84,13 +84,12 @@ public class RdsMultiAzDbClusterMySqlDialect : MySqlDialect, IMultiAzClusterDial
 
     private HostListProviderSupplier GetHostListProviderSupplier()
     {
-        return (props, hostListProviderService, pluginService) =>
+        return (props, servicesContainer) =>
             new RdsHostListProvider(
                 props,
-                hostListProviderService,
                 NodeIdQuery,
-                pluginService,
-                new MultiAzTopologyUtils(hostListProviderService.HostSpecBuilder, this, NodeIdQuery));
+                new MultiAzTopologyUtils(servicesContainer.HostListProviderService.HostSpecBuilder, this, NodeIdQuery),
+                servicesContainer);
     }
 
     public override void PrepareConnectionProperties(Dictionary<string, string> props, HostSpec hostSpec)

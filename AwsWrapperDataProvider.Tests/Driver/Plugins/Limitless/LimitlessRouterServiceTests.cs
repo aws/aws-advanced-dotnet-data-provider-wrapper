@@ -1,4 +1,4 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ public class LimitlessRouterServiceTests : IDisposable
         this.mockPluginService = new Mock<IPluginService>();
         this.mockHostListProvider = new Mock<IHostListProvider>();
         this.mockLimitlessRouterMonitor = new Mock<LimitlessRouterMonitor>(
-            Mock.Of<IPluginService>(),
+            ServiceUtility.CreateMonitorContainer(null, Mock.Of<IPluginService>(), []),
             HostSpec,
             new MemoryCache(new MemoryCacheOptions()),
             "key",

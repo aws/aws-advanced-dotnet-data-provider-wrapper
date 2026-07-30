@@ -1,4 +1,4 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -40,9 +40,9 @@ public class LimitlessConnectionPlugin : AbstractConnectionPlugin
     public override IReadOnlySet<string> SubscribedMethods => SubscribedMethodsSet;
 
     public LimitlessConnectionPlugin(
-        IPluginService pluginService,
+        FullServicesContainer servicesContainer,
         Dictionary<string, string> properties)
-        : this(pluginService, properties, () => new LimitlessRouterService(pluginService))
+        : this(servicesContainer.PluginService, properties, () => new LimitlessRouterService(servicesContainer))
     {
     }
 

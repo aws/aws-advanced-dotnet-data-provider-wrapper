@@ -15,8 +15,9 @@
 namespace AwsWrapperDataProvider.Driver.Plugins.ConnectTime;
 public class ConnectTimePluginFactory : IConnectionPluginFactory
 {
-    public IConnectionPlugin GetInstance(IPluginService pluginService, Dictionary<string, string> props)
+    public IConnectionPlugin GetInstance(FullServicesContainer servicesContainer, Dictionary<string, string> props)
     {
+        IPluginService pluginService = servicesContainer.PluginService;
         return new ConnectTimePlugin();
     }
 }

@@ -15,7 +15,7 @@
 namespace AwsWrapperDataProvider.Driver.Plugins.BlueGreenConnection;
 
 public delegate BlueGreenStatusProvider BlueGreenProviderSupplier(
-    IPluginService pluginService,
+    FullServicesContainer servicesContainer,
     Dictionary<string, string> props,
     string bgdId,
     string clusterId);

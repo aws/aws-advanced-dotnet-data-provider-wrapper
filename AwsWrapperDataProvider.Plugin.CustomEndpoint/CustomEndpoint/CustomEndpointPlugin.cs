@@ -1,4 +1,4 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -108,15 +108,25 @@ public class CustomEndpointPlugin : AbstractConnectionPlugin
     protected readonly bool shouldWaitForInfo;
     protected readonly int waitOnCachedInfoDurationMs;
     protected readonly int idleMonitorExpirationMs;
+    private readonly FullServicesContainer? servicesContainer;
     protected HostSpec? customEndpointHostSpec;
     protected string? customEndpointId;
     protected RegionEndpoint? region;
 
-    public CustomEndpointPlugin(IPluginService pluginService, Dictionary<string, string> props) : this(
-        pluginService,
+    public CustomEndpointPlugin(FullServicesContainer servicesContainer, Dictionary<string, string> props) : this(
+        servicesContainer,
         props,
         region => CreateRdsClient(region, props))
     {
+    }
+
+    public CustomEndpointPlugin(
+        FullServicesContainer servicesContainer,
+        Dictionary<string, string> props,
+        Func<RegionEndpoint, AmazonRDSClient> rdsClientFunc)
+        : this(servicesContainer.PluginService, props, rdsClientFunc)
+    {
+        this.servicesContainer = servicesContainer;
     }
 
     /// <summary>
@@ -133,7 +143,8 @@ public class CustomEndpointPlugin : AbstractConnectionPlugin
             : new AmazonRDSClient(region);
     }
 
-    public CustomEndpointPlugin(
+    // For tests constructing the plugin around a bare (mock) plugin service with no container.
+    internal CustomEndpointPlugin(
         IPluginService pluginService,
         Dictionary<string, string> props,
         Func<RegionEndpoint, AmazonRDSClient> rdsClientFunc)
@@ -221,9 +232,11 @@ public class CustomEndpointPlugin : AbstractConnectionPlugin
             entry.Size = 1;
             entry.RegisterPostEvictionCallback(OnMonitorEvicted);
 
+            // The monitor is cached process-wide and outlives the creating connection, so it
+            // gets a monitor-scoped container rather than this connection's service.
             return new Lazy<ICustomEndpointMonitor>(() =>
                 new CustomEndpointMonitor(
-                    this.pluginService,
+                    ServiceUtility.CreateMonitorContainer(this.servicesContainer, this.pluginService, props),
                     this.customEndpointHostSpec,
                     this.customEndpointId,
                     this.region,

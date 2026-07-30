@@ -37,8 +37,8 @@ public abstract class BaseExecuteRouting : BaseRouting, IExecuteRouting
         IConnectionPlugin plugin,
         object methodInvokeOn,
         string methodName,
-        ADONetDelegate<T> jdbcMethodFunc,
-        object[] jdbcMethodArgs,
+        ADONetDelegate<T> methodFunc,
+        object[] methodArgs,
         IPluginService pluginService,
         Dictionary<string, string> props);
 

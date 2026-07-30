@@ -1,4 +1,4 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ public class EfmHostMonitorTests
 
         this.mockPluginService = new Mock<IPluginService>();
 
-        this.monitor = new HostMonitor(this.mockPluginService.Object, hostSpec, props, 500, 500, 10);
+        this.monitor = new HostMonitor(ServiceUtility.CreateMonitorContainer(null, this.mockPluginService.Object, props), hostSpec, props, 500, 500, 10);
     }
 
     [Fact]

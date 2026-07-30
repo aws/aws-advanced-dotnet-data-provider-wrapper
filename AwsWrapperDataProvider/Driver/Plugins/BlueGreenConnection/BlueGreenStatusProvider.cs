@@ -28,6 +28,7 @@ public class BlueGreenStatusProvider
 {
     private static readonly ILogger<BlueGreenStatusProvider> Logger = LoggerUtils.GetLogger<BlueGreenStatusProvider>();
 
+    private readonly FullServicesContainer servicesContainer;
     private readonly IPluginService pluginService;
     private readonly Dictionary<string, string> props;
     private readonly string bgdId;
@@ -65,12 +66,13 @@ public class BlueGreenStatusProvider
     private Stopwatch? stopwatch;
 
     public BlueGreenStatusProvider(
-        IPluginService pluginService,
+        FullServicesContainer servicesContainer,
         Dictionary<string, string> props,
         string bgdId,
         string clusterId)
     {
-        this.pluginService = pluginService;
+        this.servicesContainer = servicesContainer;
+        this.pluginService = servicesContainer.PluginService;
         this.props = props;
         this.bgdId = bgdId;
         this.clusterId = clusterId;
@@ -115,7 +117,7 @@ public class BlueGreenStatusProvider
             BlueGreenRoleType.SOURCE,
             this.bgdId,
             this.pluginService.CurrentHostSpec!,
-            this.pluginService,
+            this.servicesContainer,
             this.GetMonitoringProperties(),
             this.statusCheckIntervalMap,
             this.PrepareStatus);
@@ -126,7 +128,7 @@ public class BlueGreenStatusProvider
             BlueGreenRoleType.TARGET,
             this.bgdId,
             this.pluginService.CurrentHostSpec!,
-            this.pluginService,
+            this.servicesContainer,
             this.GetMonitoringProperties(),
             this.statusCheckIntervalMap,
             this.PrepareStatus);

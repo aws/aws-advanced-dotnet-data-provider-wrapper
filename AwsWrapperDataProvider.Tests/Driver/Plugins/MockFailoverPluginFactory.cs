@@ -25,8 +25,9 @@ namespace AwsWrapperDataProvider.Tests.Driver.Plugins;
 internal class MockFailoverPluginFactory : IConnectionPluginFactory
 {
     // Return a mock FailoverPlugin that always returns a new MySqlConnection
-    public IConnectionPlugin GetInstance(IPluginService pluginService, Dictionary<string, string> props)
+    public IConnectionPlugin GetInstance(FullServicesContainer servicesContainer, Dictionary<string, string> props)
     {
+        IPluginService pluginService = servicesContainer.PluginService;
         var mock = new Mock<FailoverPlugin>(pluginService, props) { CallBase = true };
         mock.Setup(m => m.OpenConnection(It.IsAny<HostSpec>(), It.IsAny<Dictionary<string, string>>(), It.IsAny<bool>(), It.IsAny<ADONetDelegate<DbConnection>>(), It.IsAny<bool>()))
             .ReturnsAsync(new MySqlConnection());

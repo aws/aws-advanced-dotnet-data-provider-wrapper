@@ -1,4 +1,4 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ using Npgsql;
 namespace AwsWrapperDataProvider.Tests;
 
 /// <summary>
-/// Integration tests for the Custom Endpoint plugin, ported from the Java driver's CustomEndpointTest.
+/// Integration tests for the Custom Endpoint plugin.
 /// Runs only on Aurora with at least 3 instances; requires first instance to be writer.
 /// </summary>
 public class CustomEndpointConnectivityTests : IntegrationTestBase, IClassFixture<CustomEndpointTestFixture>

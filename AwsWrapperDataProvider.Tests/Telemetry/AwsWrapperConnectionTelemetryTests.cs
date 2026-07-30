@@ -1,4 +1,4 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -226,8 +226,9 @@ public class AwsWrapperConnectionTelemetryTests
     /// </summary>
     private sealed class ThrowingOpenConnectionPluginFactory : IConnectionPluginFactory
     {
-        public IConnectionPlugin GetInstance(IPluginService pluginService, Dictionary<string, string> props)
+        public IConnectionPlugin GetInstance(FullServicesContainer servicesContainer, Dictionary<string, string> props)
         {
+            IPluginService pluginService = servicesContainer.PluginService;
             Mock<FailoverPlugin> mock = new(pluginService, props) { CallBase = true };
             mock.Setup(m => m.OpenConnection(
                     It.IsAny<HostSpec>(),

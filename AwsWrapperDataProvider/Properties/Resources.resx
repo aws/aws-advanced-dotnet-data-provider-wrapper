@@ -479,6 +479,12 @@
   <data name="Error_HostNullEmpty" xml:space="preserve">
     <value>Host cannot be null or empty.</value>
   </data>
+  <data name="Error_FullServicesContainerSlotNotInitialized" xml:space="preserve">
+    <value>{0} was accessed before the connection bootstrap assigned it to the FullServicesContainer.</value>
+  </data>
+  <data name="Error_PartialPluginServiceMethodNotSupported" xml:space="preserve">
+    <value>{0} is not supported by the monitor-scoped PartialPluginService; it requires an owning wrapper connection.</value>
+  </data>
   <data name="Error_InvalidConnection" xml:space="preserve">
     <value>Unable to create connection.</value>
   </data>

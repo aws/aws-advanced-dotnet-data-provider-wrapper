@@ -1,4 +1,4 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@ namespace AwsWrapperDataProvider.Driver.Plugins.Limitless;
 
 public class LimitlessConnectionPluginFactory : IConnectionPluginFactory
 {
-    public IConnectionPlugin GetInstance(IPluginService pluginService, Dictionary<string, string> props)
+    public IConnectionPlugin GetInstance(FullServicesContainer servicesContainer, Dictionary<string, string> props)
     {
-        return new LimitlessConnectionPlugin(pluginService, props);
+        return new LimitlessConnectionPlugin(servicesContainer, props);
     }
 }
