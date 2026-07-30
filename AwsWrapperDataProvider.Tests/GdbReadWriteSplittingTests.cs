@@ -29,8 +29,7 @@ namespace AwsWrapperDataProvider.Tests;
 /// <c>InitializeWriterConnection</c> / <c>GetReaderHostCandidates</c> overrides on real clusters.
 ///
 /// True cross-region behavior (writer outside home region, Global Write Forwarding, secondary
-/// region connection) requires an actual Global Aurora cluster and is covered by
-/// <see cref="GdbReadWriteSplittingLocalTests"/>.
+/// region connection) requires an actual Global Aurora cluster and is not covered here.
 /// </summary>
 public class GdbReadWriteSplittingTests : IntegrationTestBase
 {
@@ -244,6 +243,7 @@ public class GdbReadWriteSplittingTests : IntegrationTestBase
             .Skip(1)
             .Select(i => i.InstanceId)
             .ToHashSet();
+        Assert.NotNull(readerId);
         Assert.Contains(readerId, clusterReaderIds);
     }
 

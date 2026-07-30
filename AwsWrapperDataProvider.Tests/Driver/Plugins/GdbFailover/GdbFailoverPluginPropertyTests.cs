@@ -205,7 +205,7 @@ public class GdbFailoverPluginPropertyTests
                 from rRegion in RegionGen()
                 from rInstance in InstanceNameGen()
                 select (rRegion, rInstance))
-            let readers = readerData.Length == 0 ? [(RegionGen: homeRegion, InstanceGen: "fallback-reader")] : readerData
+            let readers = readerData.Length == 0 ? [(homeRegion, "fallback-reader")] : readerData
             let hosts = BuildTopology(writerInstance, writerRegion, readers)
             select (hosts, homeRegion);
     }

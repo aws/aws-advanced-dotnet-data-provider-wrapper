@@ -65,7 +65,7 @@ public class HostMonitor : IHostMonitor
     /// <summary>
     /// Initializes a new instance of the <see cref="HostMonitor"/> class.
     /// </summary>
-    /// <param name="pluginService">A service for creating new connections.</param>
+    /// <param name="servicesContainer">The monitor-scoped container providing the services used to open monitoring connections.</param>
     /// <param name="hostSpec">The HostSpec of the server this HostMonitorImpl instance is monitoring.</param>
     /// <param name="properties">The Properties containing additional monitoring configuration.</param>
     /// <param name="failureDetectionTimeMs">A failure detection time in millis.</param>

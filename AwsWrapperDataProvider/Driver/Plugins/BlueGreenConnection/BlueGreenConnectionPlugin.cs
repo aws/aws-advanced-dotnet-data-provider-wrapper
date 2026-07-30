@@ -295,6 +295,11 @@ public class BlueGreenConnectionPlugin : AbstractConnectionPlugin
             throw new InvalidOperationException("Failed to get cluster ID", ex);
         }
 
+        if (this.clusterId == null)
+        {
+            throw new InvalidOperationException("Failed to get cluster ID");
+        }
+
         Provider.GetOrAdd(this.bgdId,
             key => this.providerSupplier(this.servicesContainer, this.props, this.bgdId, this.clusterId));
     }
