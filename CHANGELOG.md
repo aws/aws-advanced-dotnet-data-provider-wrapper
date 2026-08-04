@@ -3,6 +3,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/#semantic-versioning-200).
 
+## [2.2.0] - 2026-08-04
+
+### :magic_wand: Added
+- The `BgDropBlueConnections` configuration parameter for the [Blue/Green Deployment Plugin](./docs/using-the-dotnet-driver/using-plugins/UsingTheBlueGreenPlugin.md), which drops all tracked connections to the blue cluster when a Blue/Green switchover starts, so that applications fail fast and reconnect through the plugin's routing instead of holding connections to hosts that are being switched over ([PR #332](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/332)).
+
+  > [!NOTE]\
+  > `BgDropBlueConnections` defaults to `true`, so existing applications using the Blue/Green Deployment Plugin will start dropping blue connections at the beginning of a switchover after upgrading. Set `BgDropBlueConnections=false` in the connection string to keep the previous behavior.
+
+### :crab: Changed
+- The PostgreSQL dialect queries are now fully qualified: functions, operators, and type casts are schema-qualified against `pg_catalog` (for example `LIKE` is expressed as `OPERATOR(pg_catalog.~~)` and `::regproc` as `::pg_catalog.regproc`) ([PR #333](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/333)).
+
 ## [2.1.0] - 2026-07-16
 
 ### :magic_wand: Added
@@ -99,3 +110,4 @@ The AWS Advanced .NET Data Provider Wrapper is complementary to existing .NET da
 [1.2.0]: https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/compare/1.1.0...1.2.0
 [2.0.0]: https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/compare/1.2.0...2.0.0
 [2.1.0]: https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/compare/2.0.0...2.1.0
+[2.2.0]: https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/compare/2.1.0...2.2.0

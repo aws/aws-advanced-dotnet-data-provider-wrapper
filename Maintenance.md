@@ -8,6 +8,7 @@
 | June 2, 2026     | [Release 1.2.0](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/releases/tag/1.2.0) |
 | June 16, 2026    | [Release 2.0.0](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/releases/tag/2.0.0) |
 | July 16, 2026    | [Release 2.1.0](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/releases/tag/2.1.0) |
+| August 4, 2026   | [Release 2.2.0](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/releases/tag/2.2.0) |
 
 
 `aws-advanced-dotnet-data-provider-wrapper` [follows semver](https://semver.org/#semantic-versioning-200) which means we will only
@@ -63,4 +64,4 @@ from the updated source after the PRs are merged.
 | Major Version | Latest Minor Version | Status      | Initial Release | Maintenance Window Start | Maintenance Window End |
 |---------------|----------------------|-------------|-----------------|--------------------------|------------------------|
 | 1             | 1.2.0                | Maintenance | Nov 6, 2025     | Jun 16, 2026             | Jun 16, 2027           |
-| 2             | 2.1.0                | Current     | Jun 16, 2026    | N/A                      | N/A                    |
+| 2             | 2.2.0                | Current     | Jun 16, 2026    | N/A                      | N/A                    |

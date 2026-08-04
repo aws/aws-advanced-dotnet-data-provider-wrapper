@@ -8,8 +8,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AWSSDK.RDS" Version="4.0.102" />
-        <PackageReference Include="AWSSDK.SecurityToken" Version="4.0.100.4" />
+        <PackageReference Include="AWSSDK.RDS" Version="4.0.104" />
+        <PackageReference Include="AWSSDK.SecurityToken" Version="4.0.100.7" />
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.18" />
     </ItemGroup>
 
