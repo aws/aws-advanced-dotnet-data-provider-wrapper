@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="ColumnEncryptor_EncryptAsync_NoValueProduced" xml:space="preserve">
+    <value>No value was produced when encrypting {0}.</value>
+  </data>
+  <data name="ColumnEncryptor_Require_NoKeyMaterial" xml:space="preserve">
+    <value>No key material is recorded for {0}. The encryption metadata names key '{1}', but that key was not found in the key storage table.</value>
+  </data>
+  <data name="DecryptingDataReader_Unwrap_CannotUnwrap" xml:space="preserve">
+    <value>Cannot unwrap DecryptingDataReader to {0}.</value>
+  </data>
+  <data name="DecryptingDataReader_DescribeColumns_CannotDescribe" xml:space="preserve">
+    <value>The columns of this result cannot be described by {0}, so the kmsEncryption plugin cannot tell which of them are encrypted. Values would be returned as stored rather than decrypted. Use a driver whose reader implements IDbColumnSchemaGenerator or supports GetSchemaTable.</value>
+  </data>
+  <data name="DecryptingDataReader_Converted_ColumnIsNull" xml:space="preserve">
+    <value>Column {0} is NULL and cannot be read as {1}.</value>
+  </data>
+  <data name="EncryptionConfig_FromProperties_RegionRequired" xml:space="preserve">
+    <value>The {0} property is required by the {1} plugin.</value>
+  </data>
+  <data name="EncryptionConfig_FromProperties_SchemaEmpty" xml:space="preserve">
+    <value>The {0} property must not be empty.</value>
+  </data>
+  <data name="EncryptionConfig_PositiveNumber_Required" xml:space="preserve">
+    <value>The {0} property must be a positive number.</value>
+  </data>
+  <data name="EncryptionException_UnsupportedAlgorithm" xml:space="preserve">
+    <value>Unsupported encryption algorithm '{0}'. Supported algorithms are '{1}' and '{2}'.</value>
+  </data>
+  <data name="EncryptionException_InvalidKeyLength" xml:space="preserve">
+    <value>Invalid {0} length for {1}: expected {2} bytes but got {3}.</value>
+  </data>
+  <data name="EncryptionException_UnsupportedType" xml:space="preserve">
+    <value>Values of type '{0}' cannot be encrypted. Supported types are string, int, long, double, float, bool, decimal, DateTime, DateOnly, TimeOnly, DateTimeOffset and byte[].</value>
+  </data>
+  <data name="EncryptionException_Malformed" xml:space="preserve">
+    <value>The stored encrypted value is malformed: {0}.</value>
+  </data>
+  <data name="EncryptionException_NotEncrypted" xml:space="preserve">
+    <value>The value stored in {0} is not encrypted: it is {1} bytes, and an encrypted value is never shorter than {2}. It was most likely written without the kmsEncryption plugin enabled, written as a literal in the statement rather than as a parameter, or written by another application or tool.</value>
+  </data>
+  <data name="EncryptionException_IntegrityCheckFailed" xml:space="preserve">
+    <value>The value stored in {0} failed its integrity check. Either it is not encrypted (written without the kmsEncryption plugin, as a literal, or by another application), or a different key is configured for this column than the one it was encrypted with, or the stored bytes have been modified.</value>
+  </data>
+  <data name="EncryptionService_Encrypt_HmacFailed" xml:space="preserve">
+    <value>Failed to compute the integrity tag for an encrypted value.</value>
+  </data>
+  <data name="EncryptionService_Encrypt_Failed" xml:space="preserve">
+    <value>Failed to encrypt a value.</value>
+  </data>
+  <data name="EncryptionService_Decrypt_HmacFailed" xml:space="preserve">
+    <value>Failed to verify the integrity tag of an encrypted value.</value>
+  </data>
+  <data name="EncryptionService_Decrypt_WrongKey" xml:space="preserve">
+    <value>The stored encrypted value could not be decrypted. The wrong key may be configured for this column.</value>
+  </data>
+  <data name="EncryptionService_Decrypt_Failed" xml:space="preserve">
+    <value>Failed to decrypt a value.</value>
+  </data>
+  <data name="KeyManager_DecryptDataKeyAsync_InvalidBase64" xml:space="preserve">
+    <value>The stored data key for key '{0}' is not valid base64.</value>
+  </data>
+  <data name="KeyManager_DecryptDataKeyAsync_WrongLength" xml:space="preserve">
+    <value>The data key for key '{0}' is {1} bytes but {2} requires {3}.</value>
+  </data>
+  <data name="KeyManager_DecryptDataKeyAsync_KmsFailed" xml:space="preserve">
+    <value>AWS KMS could not decrypt the data key for key '{0}'. Check that the master key '{1}' exists and that this application is permitted to call kms:Decrypt on it.</value>
+  </data>
+  <data name="KmsEncryptionPlugin_Initialise_NotInitialised" xml:space="preserve">
+    <value>The kmsEncryption plugin was used before Initialise was called.</value>
+  </data>
+  <data name="KmsEncryptionPlugin_WarnIfUnsupported_ScalarNotDecryptable" xml:space="preserve">
+    <value>The kmsEncryption plugin cannot decrypt the result of ExecuteScalar because no reader is returned. Use ExecuteReader for statements that select an encrypted column.</value>
+  </data>
+  <data name="MetadataManager_CacheKey_NoHostConnected" xml:space="preserve">
+    <value>The kmsEncryption plugin cannot read its metadata because no host is connected yet.</value>
+  </data>
+  <data name="MetadataManager_ValidateSchemaName_NotAnIdentifier" xml:space="preserve">
+    <value>The {0} property must be a plain identifier containing only letters, digits, and underscores, and must not begin with a digit. It was '{1}'.</value>
+  </data>
+  <data name="MetadataManager_LoadAsync_MetadataUnreadable" xml:space="preserve">
+    <value>The kmsEncryption plugin could not read its metadata from schema '{0}'. Check that '{0}.encryption_metadata' and '{0}.key_storage' exist and are readable by this connection.</value>
+  </data>
+  <data name="SqlWriteScanner_Scan_Unreadable" xml:space="preserve">
+    <value>this statement could not be read ({0})</value>
+  </data>
+  <data name="KeyManager_KeySpecToAlgorithm_Unsupported" xml:space="preserve">
+    <value>Unsupported key specification '{0}'. Supported specifications are AES_256 and AES_128.</value>
+  </data>
+  <data name="KeyManager_DecryptDataKeyAsync_RequestingDecrypt" xml:space="preserve">
+    <value>Requesting AWS KMS to decrypt the data key for key {0} using master key {1}.</value>
+  </data>
+  <data name="KmsEncryptionPlugin_WarnIfScalarIsCiphertext_ScalarLooksEncrypted" xml:space="preserve">
+    <value>A scalar result of {0} bytes has the shape of a value this plugin encrypted, and a scalar cannot be decrypted because it carries no column information. The application has received the stored bytes. Use ExecuteReader for statements that select an encrypted column.</value>
+  </data>
+  <data name="KmsEncryptionPlugin_WarnIfUnsupported_RunningUnchanged" xml:space="preserve">
+    <value>The kmsEncryption plugin could not encrypt part of this statement, and is running it unchanged: {0}. A value written to an encrypted column this way is stored as it was supplied. Add a server-side constraint on the column so the database rejects it.</value>
+  </data>
+  <data name="KmsEncryptionPlugin_WarnIfUnsupported_UnnamedParameter" xml:space="preserve">
+    <value>The kmsEncryption plugin found an unnamed parameter on a statement that touches an encrypted column. An unnamed placeholder cannot be matched to its column, so its value is not encrypted. Use named parameters.</value>
+  </data>
+  <data name="KmsEncryptionPlugin_ExecuteBatchAsync_CannotCreateParameter" xml:space="preserve">
+    <value>The kmsEncryption plugin cannot encrypt a command of this batch because the driver does not support creating parameters on a batch command. Its values are stored as they were supplied. Run the statement as an individual command instead.</value>
+  </data>
+  <data name="MetadataManager_RefreshAsync_Refreshed" xml:space="preserve">
+    <value>The encryption metadata was refreshed for {0}.</value>
+  </data>
+  <data name="MetadataManager_ClearCache_Cleared" xml:space="preserve">
+    <value>The encryption metadata cache was cleared.</value>
+  </data>
+  <data name="MetadataManager_ResolveTableOidsAsync_NoCatalogue" xml:space="preserve">
+    <value>This server has no column catalogue, so encrypted columns will be identified by name.</value>
+  </data>
+  <data name="MetadataManager_ResolveTableOidsAsync_MappingFailed" xml:space="preserve">
+    <value>Could not map encrypted columns to their table identifiers. Decryption cannot work without this mapping, so the encryption metadata is being treated as unreadable.</value>
+  </data>
+  <data name="MetadataManager_ReadAsync_Loaded" xml:space="preserve">
+    <value>Loaded encryption metadata for {0} column(s) across {1} table(s) from {2}.</value>
+  </data>
+</root>
