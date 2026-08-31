@@ -230,7 +230,7 @@ public class DataKeyCacheTests
         // Replaced callback would scrub the array the cache is still serving - leaving an all-zero key
         // cached for the rest of its lifetime while no caller saw anything go wrong.
         using var barrier = new Barrier(Callers);
-        async Task<byte[]> Kms()
+        static async Task<byte[]> Kms()
         {
             // Real KMS latency is what widens the window; an already-completed task hides the defect.
             await Task.Delay(30).ConfigureAwait(false);
