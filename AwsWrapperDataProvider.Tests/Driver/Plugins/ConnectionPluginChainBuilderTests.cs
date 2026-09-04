@@ -28,7 +28,9 @@ using AwsWrapperDataProvider.Driver.Utils;
 using AwsWrapperDataProvider.Driver.Utils.Telemetry;
 using AwsWrapperDataProvider.Plugin.FederatedAuth.FederatedAuth;
 using AwsWrapperDataProvider.Plugin.Iam.Iam;
+using AwsWrapperDataProvider.Plugin.KmsEncryption.KmsEncryption;
 using AwsWrapperDataProvider.Plugin.SecretsManager.SecretsManager;
+using AwsWrapperDataProvider.Tests.Driver.Plugins.KmsEncryption;
 using Moq;
 
 namespace AwsWrapperDataProvider.Tests.Driver.Plugins;
@@ -103,6 +105,39 @@ public class ConnectionPluginChainBuilderTests
 
         Assert.NotNull(plugins);
         Assert.Equal(9, plugins.Count);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void TestKmsEncryptionPluginIsSortedAfterAuthPlugins()
+    {
+        ConnectionPluginChainBuilder.RegisterPluginFactory<IamAuthPluginFactory>(PluginCodes.Iam);
+
+        // The production KmsEncryptionPluginFactory refuses to build until metadata lookup and key
+        // management exist, so this test supplies a factory that can produce an instance. Only the
+        // ordering is under test here.
+        ConnectionPluginChainBuilder.RegisterPluginFactory<TestKmsEncryptionPluginFactory>(PluginCodes.KmsEncryption);
+
+        // Deliberately listed before "iam" to prove the weight, not the input order, decides the
+        // position: encryption must run after the auth plugins have resolved credentials.
+        Dictionary<string, string> props = new()
+        {
+            { PropertyDefinition.Plugins.Name, $"{PluginCodes.KmsEncryption},{PluginCodes.Iam}" },
+        };
+        ConnectionPluginChainBuilder pluginChainBuilder = new();
+
+        IList<IConnectionPlugin> plugins = pluginChainBuilder.GetPlugins(
+            ServiceUtility.CreateMonitorContainer(null, this.pluginServiceMock.Object, []),
+            this.connectionProviderMock.Object,
+            null,
+            props,
+            null);
+
+        Assert.NotNull(plugins);
+        Assert.Equal(3, plugins.Count);
+        Assert.IsType<IamAuthPlugin>(plugins[0]);
+        Assert.IsType<KmsEncryptionPlugin>(plugins[1]);
+        Assert.IsType<DefaultConnectionPlugin>(plugins[2]);
     }
 
     [Fact]

@@ -428,7 +428,7 @@ public class AwsWrapperConnection : DbConnection, IWrapper
         DbBatch batch = WrapperUtils.ExecuteWithPlugins(
                 this.PluginManager!,
                 this.pluginService!.CurrentConnection!,
-                "DbConnection.GetSchema",
+                "DbConnection.CreateBatch",
                 () => Task.FromResult(this.pluginService.CurrentConnection!.CreateBatch()))
             .GetAwaiter().GetResult();
         return new AwsWrapperBatch(batch, this, this.PluginManager!);

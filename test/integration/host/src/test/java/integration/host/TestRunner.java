@@ -177,6 +177,22 @@ public class TestRunner {
   }
 
   @TestTemplate
+  public void runPGKmsEncryptionAuroraTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
+
+    try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
+      env.runTests("pg-kms", "aurora");
+    }
+  }
+
+  @TestTemplate
+  public void runMySQLKmsEncryptionAuroraTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
+
+    try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
+      env.runTests("mysql-kms", "aurora");
+    }
+  }
+
+  @TestTemplate
   public void runMySQLPerfTests(TestEnvironmentRequest testEnvironmentRequest) throws Exception {
 
     try (final TestEnvironmentConfig env = TestEnvironmentConfig.build(testEnvironmentRequest)) {
