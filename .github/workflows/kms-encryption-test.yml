@@ -1,6 +1,18 @@
 name: KMS Encryption Integration Tests
 
 on:
+  push:
+    branches:
+      - main
+      - feat/kms
+    paths-ignore:
+      - '**/*.md'
+      - '**/*.jpg'
+      - '**/README.txt'
+      - '**/LICENSE.txt'
+      - 'docs/**'
+      - 'ISSUE_TEMPLATE/**'
+      - '**/remove-old-artifacts.yml'
   workflow_dispatch:
 
 permissions:
