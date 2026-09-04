@@ -22,11 +22,11 @@ using SqlParser.Tokens;
 namespace AwsWrapperDataProvider.Plugin.KmsEncryption.KmsEncryption.Service;
 
 /// <summary>
-/// Decides what a statement requires, by combining what <see cref="SqlWriteScanner"/> found in the text
+/// Decides what a statement requires, by combining what <see cref="SqlWriteAnalyzer"/> found in the text
 /// with what the encryption metadata says is encrypted.
 /// </summary>
 /// <remarks>
-/// A statement the scanner could not model is only refused when it touches a table that has encrypted
+/// A statement the analyzer could not model is only refused when it touches a table that has encrypted
 /// columns. Statements elsewhere in the schema - however complicated - pass through untouched.
 /// </remarks>
 internal sealed class StatementEncryptionPlanner : IStatementEncryptionPlanner
@@ -40,7 +40,7 @@ internal sealed class StatementEncryptionPlanner : IStatementEncryptionPlanner
 
     public async Task<StatementEncryptionPlan> PlanAsync(string commandText, CancellationToken cancellationToken)
     {
-        List<QueryAnalysis> statements = SqlWriteScanner.Scan(commandText, this.metadataManager.IsMySql);
+        List<QueryAnalysis> statements = SqlWriteAnalyzer.Analyze(commandText, this.metadataManager.IsMySql);
 
         var toEncrypt = new Dictionary<string, ColumnEncryptionConfig>(StringComparer.Ordinal);
         var limitations = new List<EncryptionLimitation>();
@@ -49,7 +49,7 @@ internal sealed class StatementEncryptionPlanner : IStatementEncryptionPlanner
         {
             if (statement.UnreadableReasons.Count > 0)
             {
-                // The scanner did not understand the statement. Whether that matters depends on whether an
+                // The analyzer did not understand the statement. Whether that matters depends on whether an
                 // encrypted table is involved, and without a table name that cannot be established - so the
                 // statement is refused only if some table in the schema is encrypted and this text mentions
                 // it. Since the table is unknown here, refuse conservatively when any encryption is
@@ -147,7 +147,7 @@ internal sealed class StatementEncryptionPlanner : IStatementEncryptionPlanner
 
     /// <summary>
     /// Returns whether the command text mentions any table that has encrypted columns. Used to decide
-    /// whether a statement the scanner could not model needs to be refused.
+    /// whether a statement the analyzer could not model needs to be refused.
     /// </summary>
     private async Task<bool> AnyEncryptedTableMentionedAsync(
         string commandText,

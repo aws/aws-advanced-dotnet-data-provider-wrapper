@@ -144,7 +144,7 @@ internal static class ValueSerializer
                 RequireLength(data, sizeof(long), marker);
                 return DateTimeOffset.FromUnixTimeMilliseconds(BinaryPrimitives.ReadInt64BigEndian(data));
 
-            // Date and Time are epoch milliseconds written by the JDBC wrapper. Narrow them to the
+            // Date and Time are epoch milliseconds written by the AWS Advanced JDBC Wrapper. Narrow them to
             // matching .NET type so a caller sees a date or a time rather than a full instant.
             case TypeMarker.Date:
                 RequireLength(data, sizeof(long), marker);
@@ -186,9 +186,9 @@ internal static class ValueSerializer
     }
 
     /// <summary>
-    /// Formats a time as the shortest ISO-8601 form that is still exact, matching how the JDBC wrapper
-    /// writes it: seconds are omitted when zero, and fractional digits appear in groups of three only
-    /// when non-zero.
+    /// Formats a time as the shortest ISO-8601 form that is still exact, matching how the AWS Advanced JDBC
+    /// Wrapper writes it: seconds are omitted when zero, and fractional digits appear in groups of three
+    /// only when non-zero.
     /// </summary>
     private static string FormatIsoTime(TimeOnly value)
     {

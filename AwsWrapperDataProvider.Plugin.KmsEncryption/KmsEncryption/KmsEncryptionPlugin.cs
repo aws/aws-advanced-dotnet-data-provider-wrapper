@@ -59,7 +59,7 @@ public class KmsEncryptionPlugin : AbstractConnectionPlugin
     private IColumnEncryptor? encryptor;
     private MetadataManager? metadataManager;
     private KeyManager? keyManager;
-    private IDisposable[] owned = Array.Empty<IDisposable>();
+    private IDisposable[] owned = [];
 
     internal KmsEncryptionPlugin(IPluginService pluginService, Dictionary<string, string> props)
     {

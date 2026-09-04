@@ -19,9 +19,9 @@ namespace AwsWrapperDataProvider.Plugin.KmsEncryption.KmsEncryption.Service;
 /// original type. Stored as a single byte immediately after the integrity tag.
 /// <para>
 /// <b>These numbers are part of the stored data format and must never change.</b> They also match the
-/// markers written by the AWS Advanced JDBC Wrapper, so that a column encrypted by one driver can be
-/// read by the other. Several markers therefore describe types that only exist in Java; they are
-/// readable here and map onto the closest .NET type, but are never written by this driver.
+/// markers the AWS Advanced JDBC Wrapper writes, so a column encrypted by either driver can be read by the
+/// other. Some markers therefore describe Java types with no exact .NET equivalent; those are readable
+/// here and map onto the closest .NET type, but are never written.
 /// </para>
 /// </summary>
 internal enum TypeMarker : byte
@@ -45,21 +45,21 @@ internal enum TypeMarker : byte
     Boolean = 6,
 
     /// <summary>
-    /// Decimal rendered as invariant-culture text. Written for <see cref="decimal"/>. Values produced
-    /// by the JDBC wrapper originate from Java's arbitrary-precision <c>BigDecimal</c>, so they may use
+    /// Decimal rendered as invariant-culture text. Written for <see cref="decimal"/>. A value from the
+    /// AWS Advanced JDBC Wrapper comes from Java's arbitrary-precision <c>BigDecimal</c>, so it may use
     /// scientific notation and may exceed the range of <see cref="decimal"/>.
     /// </summary>
     BigDecimal = 7,
 
     /// <summary>
-    /// Eight-byte big-endian Unix epoch milliseconds, date only. Read-only: written by Java's
-    /// <c>java.sql.Date</c>. This driver writes <see cref="LocalDate"/> for a date.
+    /// Eight-byte big-endian Unix epoch milliseconds, date only. Read-only: written by the AWS Advanced
+    /// JDBC Wrapper for <c>java.sql.Date</c>. This driver writes <see cref="LocalDate"/> for a date.
     /// </summary>
     Date = 8,
 
     /// <summary>
-    /// Eight-byte big-endian Unix epoch milliseconds, time only. Read-only: written by Java's
-    /// <c>java.sql.Time</c>. This driver writes <see cref="LocalTime"/> for a time.
+    /// Eight-byte big-endian Unix epoch milliseconds, time only. Read-only: written by the AWS Advanced
+    /// JDBC Wrapper for <c>java.sql.Time</c>. This driver writes <see cref="LocalTime"/> for a time.
     /// </summary>
     Time = 9,
 
@@ -73,9 +73,9 @@ internal enum TypeMarker : byte
     LocalDate = 11,
 
     /// <summary>
-    /// ISO-8601 time text. Written for <see cref="TimeOnly"/>. Java emits the shortest form that is
-    /// exact (<c>10:15</c>, <c>10:15:30</c>, <c>10:15:30.123</c>), and this driver does the same so the
-    /// two produce identical text for identical values.
+    /// ISO-8601 time text. Written for <see cref="TimeOnly"/>. The AWS Advanced JDBC Wrapper emits the
+    /// shortest form that is still exact (<c>10:15</c>, <c>10:15:30</c>, <c>10:15:30.123</c>), and this
+    /// driver does the same, so both produce identical text for identical values.
     /// </summary>
     LocalTime = 12,
 
@@ -89,8 +89,8 @@ internal enum TypeMarker : byte
     ByteArray = 14,
 
     /// <summary>
-    /// Reserved by the JDBC wrapper for values it could not classify. Never written by this driver, and
-    /// rejected on read because the payload has no defined layout.
+    /// Reserved by the AWS Advanced JDBC Wrapper for values it could not classify. Never written by this
+    /// driver, and rejected on read because the payload has no defined layout.
     /// </summary>
     Generic = 99,
 }

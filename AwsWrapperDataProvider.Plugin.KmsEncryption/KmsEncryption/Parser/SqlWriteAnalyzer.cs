@@ -32,12 +32,12 @@ namespace AwsWrapperDataProvider.Plugin.KmsEncryption.KmsEncryption.Parser;
 /// <para>
 /// A parameter is recognised by its leading marker in an identifier's text, because <c>@name</c> is an
 /// ADO.NET convention rather than server syntax - see <see cref="AdoPostgreSqlDialect"/>. Anything this
-/// scanner cannot read is reported as a failure rather than guessed at; a wrong answer here stores readable
+/// analyzer cannot read is reported as a failure rather than guessed at; a wrong answer here stores readable
 /// data in a column that is supposed to be encrypted, or encrypts under the wrong column's key, and neither
 /// is visible at the time it happens.
 /// </para>
 /// </remarks>
-internal static class SqlWriteScanner
+internal static class SqlWriteAnalyzer
 {
     private const string UnnamedPlaceholderReason =
         "unnamed placeholders cannot be matched to a column; use named parameters";
@@ -47,14 +47,14 @@ internal static class SqlWriteScanner
 
     private static readonly string[] NoColumns = Array.Empty<string>();
 
-    /// <summary>Scans every statement in a command.</summary>
+    /// <summary>Analyzes every statement in a command.</summary>
     /// <param name="commandText">The command text, which may hold more than one statement.</param>
     /// <param name="mySql">
     /// Whether to read the text as MySQL rather than PostgreSQL. The two differ in ways that matter here -
     /// backtick versus double-quote identifiers, dollar-quoted strings, and the upsert clause - so the wrong
     /// choice turns readable SQL into a parse failure.
     /// </param>
-    internal static List<QueryAnalysis> Scan(string commandText, bool mySql = false)
+    internal static List<QueryAnalysis> Analyze(string commandText, bool mySql = false)
     {
         // Nothing to read, and the parser treats an empty command as a syntax error rather than as no
         // statements, so it is answered here.
@@ -70,47 +70,45 @@ internal static class SqlWriteScanner
         {
             statements = new SqlParser.Parser().ParseSql(commandText, dialect);
         }
-        catch (Exception ex) when (ex is ParserException or TokenizeException)
+        catch (ParserException ex)
         {
-            // The whole command failed to parse, so nothing about it is known - including whether it writes
-            // to an encrypted column. It is reported as one unreadable statement, and the planner decides
-            // whether that matters by looking for an encrypted table's name in the text.
-            return new List<QueryAnalysis>
-            {
-                Unreadable(string.Format(
-                    CultureInfo.CurrentCulture,
-                    Resources.SqlWriteScanner_Scan_Unreadable,
-                    ex.Message.Split('\n')[0])),
-            };
+            // A command that fails to parse tells us nothing - including whether it writes to an encrypted
+            // column - so it is reported as one unreadable statement, and the planner decides whether that
+            // matters by looking for an encrypted table's name in the text.
+            return new List<QueryAnalysis> { Unreadable(nameof(ParserException), ex.Line, ex.Column) };
+        }
+        catch (TokenizeException ex)
+        {
+            return new List<QueryAnalysis> { Unreadable(nameof(TokenizeException), ex.Line, ex.Column) };
         }
 
         var results = new List<QueryAnalysis>();
         foreach (Statement statement in statements)
         {
-            results.Add(ScanStatement(statement));
+            results.Add(AnalyzeStatement(statement));
         }
 
         return results;
     }
 
-    private static QueryAnalysis ScanStatement(Statement statement)
+    private static QueryAnalysis AnalyzeStatement(Statement statement)
     {
         switch (statement)
         {
             case Statement.Insert insert:
-                return ScanInsert(insert.InsertOperation);
+                return AnalyzeInsert(insert.InsertOperation);
 
             case Statement.Update update:
-                return ScanUpdate(update);
+                return AnalyzeUpdate(update);
 
             case Statement.Delete delete:
-                return ScanDelete(delete.DeleteOperation);
+                return AnalyzeDelete(delete.DeleteOperation);
 
             // A common table expression is modelled as a query whose body is the statement it prefixes, so a
             // CTE-prefixed write arrives here rather than as an Insert or Update. Unwrapping it is what keeps
             // "WITH x AS (...) INSERT ..." from looking like a read.
             case Statement.Select select:
-                return ScanQuery(select.Query);
+                return AnalyzeQuery(select.Query);
 
             case Statement.Merge:
                 return Unreadable("MERGE statements are not supported");
@@ -121,7 +119,7 @@ internal static class SqlWriteScanner
         }
     }
 
-    private static QueryAnalysis ScanQuery(Query query)
+    private static QueryAnalysis AnalyzeQuery(Query query)
     {
         // A write inside the WITH clause - "WITH x AS (INSERT ... RETURNING id) SELECT ..." is valid
         // PostgreSQL - is not modelled, and passing over it would let a write to an encrypted column through
@@ -141,7 +139,7 @@ internal static class SqlWriteScanner
 
         return query.Body switch
         {
-            SetExpression.Insert insert => ScanStatement(insert.Statement),
+            SetExpression.Insert insert => AnalyzeStatement(insert.Statement),
             _ => Irrelevant(),
         };
     }
@@ -150,7 +148,7 @@ internal static class SqlWriteScanner
     // at all, so the whole statement is already reported as unreadable before reaching here.
     private static bool ContainsWrite(Query query) => query.Body is SetExpression.Insert;
 
-    private static QueryAnalysis ScanInsert(InsertOperation insert)
+    private static QueryAnalysis AnalyzeInsert(InsertOperation insert)
     {
         string table = LastNamePart(insert.Name.ToString());
 
@@ -172,8 +170,8 @@ internal static class SqlWriteScanner
             return Unreadable($"INSERT INTO {table} does not use a VALUES clause");
         }
 
-        var written = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        var withoutParameter = new List<string>();
+        var writtenByParameter = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var writtenWithoutParameter = new List<string>();
 
         // Every row is paired against the same column list, so a multi-row insert is handled by repeating.
         foreach (Sequence<Expression> row in values.Rows)
@@ -187,7 +185,7 @@ internal static class SqlWriteScanner
 
             for (int c = 0; c < columns.Count; c++)
             {
-                string? refusal = PairColumnWithValue(columns[c], row[c], written, withoutParameter);
+                string? refusal = PairColumnWithValue(columns[c], row[c], writtenByParameter, writtenWithoutParameter);
                 if (refusal is not null)
                 {
                     return Unreadable(refusal);
@@ -210,17 +208,17 @@ internal static class SqlWriteScanner
                 return Unreadable($"an assignment in the upsert clause of INSERT INTO {table} could not be read");
             }
 
-            string? refusal = PairColumnWithValue(assigned, assignment.Value, written, withoutParameter);
+            string? refusal = PairColumnWithValue(assigned, assignment.Value, writtenByParameter, writtenWithoutParameter);
             if (refusal is not null)
             {
                 return Unreadable(refusal);
             }
         }
 
-        return new QueryAnalysis(table, written, Empty, withoutParameter, NoColumns);
+        return new QueryAnalysis(table, writtenByParameter, Empty, writtenWithoutParameter, NoColumns);
     }
 
-    private static QueryAnalysis ScanUpdate(Statement.Update update)
+    private static QueryAnalysis AnalyzeUpdate(Statement.Update update)
     {
         if (update.Table.Relation is not TableFactor.Table target)
         {
@@ -229,8 +227,8 @@ internal static class SqlWriteScanner
 
         string table = LastNamePart(target.Name.ToString());
 
-        var written = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        var withoutParameter = new List<string>();
+        var writtenByParameter = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var writtenWithoutParameter = new List<string>();
         foreach (Statement.Assignment assignment in update.Assignments)
         {
             // A join does not make an assignment ambiguous: the target of a SET assignment is always a column
@@ -242,7 +240,7 @@ internal static class SqlWriteScanner
                 return Unreadable($"an assignment in the SET clause of UPDATE {table} could not be read");
             }
 
-            string? refusal = PairColumnWithValue(assigned, assignment.Value, written, withoutParameter);
+            string? refusal = PairColumnWithValue(assigned, assignment.Value, writtenByParameter, writtenWithoutParameter);
             if (refusal is not null)
             {
                 return Unreadable(refusal);
@@ -257,13 +255,13 @@ internal static class SqlWriteScanner
             ? Qualifiers(table, target.Alias?.Name.ToString())
             : null;
 
-        var predicates = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        ReadPredicate(update.Selection, predicates, qualifiers);
+        var predicatesByParameter = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        ReadPredicate(update.Selection, predicatesByParameter, qualifiers);
 
-        return new QueryAnalysis(table, written, predicates, withoutParameter, NoColumns);
+        return new QueryAnalysis(table, writtenByParameter, predicatesByParameter, writtenWithoutParameter, NoColumns);
     }
 
-    private static QueryAnalysis ScanDelete(DeleteOperation delete)
+    private static QueryAnalysis AnalyzeDelete(DeleteOperation delete)
     {
         Sequence<TableWithJoins>? from = (delete.From as FromTable)?.From;
         if (from is null || from.Count == 0 || from[0].Relation is not TableFactor.Table target)
@@ -274,31 +272,28 @@ internal static class SqlWriteScanner
         string table = LastNamePart(target.Name.ToString());
 
         // A DELETE writes nothing, but it may compare against an encrypted column, which cannot work.
-        var predicates = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        ReadPredicate(delete.Selection, predicates, null);
+        var predicatesByParameter = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        ReadPredicate(delete.Selection, predicatesByParameter, null);
 
-        return new QueryAnalysis(table, Empty, predicates, NoColumns, NoColumns);
+        return new QueryAnalysis(table, Empty, predicatesByParameter, NoColumns, NoColumns);
     }
 
     /// <summary>
-    /// Records one column and the value written to it, separating a plain parameter from everything else.
+    /// Files one column and the value written to it, under whichever of the two headings applies, and reports
+    /// the reason the statement cannot be handled when neither does.
     /// </summary>
     /// <remarks>
     /// Only a value that is a parameter and nothing else can be encrypted. A literal, <c>DEFAULT</c>, or an
     /// expression such as <c>upper(@x)</c> is reported as a column written without a parameter, because the
     /// value the server stores would not be the value the plugin encrypted.
     /// </remarks>
-    /// <summary>
-    /// Files one column and the value written to it, under whichever of the two headings applies, and reports
-    /// the reason the statement cannot be handled when neither does.
-    /// </summary>
     /// <param name="column">The column being written.</param>
     /// <param name="value">The value written to it.</param>
-    /// <param name="written">
+    /// <param name="writtenByParameter">
     /// Receives parameter-name to column, for each value that is a plain named parameter. These are the
     /// values the plugin can encrypt.
     /// </param>
-    /// <param name="withoutParameter">
+    /// <param name="writtenWithoutParameter">
     /// Receives the column, for each value that is not a parameter - a literal, <c>DEFAULT</c>, or an
     /// expression such as <c>upper(@x)</c>. The plugin cannot encrypt these, because what the server stores
     /// is not what was bound, so the planner reports them if the column turns out to be encrypted.
@@ -311,8 +306,8 @@ internal static class SqlWriteScanner
     private static string? PairColumnWithValue(
         string column,
         Expression value,
-        Dictionary<string, string> written,
-        List<string> withoutParameter)
+        Dictionary<string, string> writtenByParameter,
+        List<string> writtenWithoutParameter)
     {
         if (ContainsUnnamedPlaceholder(value))
         {
@@ -322,11 +317,11 @@ internal static class SqlWriteScanner
         string? parameter = AsParameterName(value);
         if (parameter is null)
         {
-            withoutParameter.Add(column);
+            writtenWithoutParameter.Add(column);
             return null;
         }
 
-        written[parameter] = column;
+        writtenByParameter[parameter] = column;
         return null;
     }
 
@@ -362,7 +357,7 @@ internal static class SqlWriteScanner
     /// </summary>
     private static void ReadPredicate(
         Expression? expression,
-        Dictionary<string, string> predicates,
+        Dictionary<string, string> predicatesByParameter,
         HashSet<string>? onlyQualifiedBy)
     {
         switch (expression)
@@ -371,20 +366,20 @@ internal static class SqlWriteScanner
                 return;
 
             case Expression.BinaryOp binary:
-                if (!TryRecordComparison(binary, predicates, onlyQualifiedBy))
+                if (!TryRecordComparison(binary, predicatesByParameter, onlyQualifiedBy))
                 {
-                    ReadPredicate(binary.Left, predicates, onlyQualifiedBy);
-                    ReadPredicate(binary.Right, predicates, onlyQualifiedBy);
+                    ReadPredicate(binary.Left, predicatesByParameter, onlyQualifiedBy);
+                    ReadPredicate(binary.Right, predicatesByParameter, onlyQualifiedBy);
                 }
 
                 return;
 
             case Expression.Nested nested:
-                ReadPredicate(nested.Expression, predicates, onlyQualifiedBy);
+                ReadPredicate(nested.Expression, predicatesByParameter, onlyQualifiedBy);
                 return;
 
             case Expression.UnaryOp unary:
-                ReadPredicate(unary.Expression, predicates, onlyQualifiedBy);
+                ReadPredicate(unary.Expression, predicatesByParameter, onlyQualifiedBy);
                 return;
 
             default:
@@ -394,7 +389,7 @@ internal static class SqlWriteScanner
 
     private static bool TryRecordComparison(
         Expression.BinaryOp binary,
-        Dictionary<string, string> predicates,
+        Dictionary<string, string> predicatesByParameter,
         HashSet<string>? onlyQualifiedBy)
     {
         (string Column, string? Qualifier)? column =
@@ -412,7 +407,7 @@ internal static class SqlWriteScanner
             return true;
         }
 
-        predicates[parameter] = column.Value.Column;
+        predicatesByParameter[parameter] = column.Value.Column;
         return true;
     }
 
@@ -464,7 +459,7 @@ internal static class SqlWriteScanner
     /// <summary>
     /// Returns the column an assignment writes to, or <see langword="null"/> when the target is not a plain
     /// column - a tuple assignment such as <c>SET (a, b) = (...)</c> pairs several columns with one value
-    /// list, which this scanner does not model.
+    /// list, which this analyzer does not model.
     /// </summary>
     /// <remarks>
     /// The target has to be read from the node rather than rendered, because an assignment target is one of
@@ -492,6 +487,23 @@ internal static class SqlWriteScanner
 
     private static QueryAnalysis Irrelevant() =>
         new(null, Empty, Empty, NoColumns, NoColumns);
+
+    /// <summary>
+    /// Reports that a statement could not be parsed, naming only where parsing stopped.
+    /// </summary>
+    /// <remarks>
+    /// The parser's own message is deliberately discarded. It names the token it did not expect, and that
+    /// token can be a string literal taken from the statement - so a malformed write of a readable value into
+    /// an encrypted column would put that value into the log, which is the one thing this plugin must never
+    /// do. The position and the kind of failure are equally actionable and cannot carry any content.
+    /// </remarks>
+    private static QueryAnalysis Unreadable(string failureKind, long line, long column) =>
+        Unreadable(string.Format(
+            CultureInfo.CurrentCulture,
+            Resources.SqlWriteAnalyzer_Analyze_Unreadable,
+            failureKind,
+            line,
+            column));
 
     private static QueryAnalysis Unreadable(string reason) =>
         new(null, Empty, Empty, NoColumns, new[] { reason });

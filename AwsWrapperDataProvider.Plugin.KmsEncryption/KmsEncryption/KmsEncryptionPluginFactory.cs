@@ -17,7 +17,6 @@ using Amazon.KeyManagementService;
 using Amazon.Runtime;
 using AwsWrapperDataProvider.Authentication;
 using AwsWrapperDataProvider.Driver;
-using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Plugin.KmsEncryption.KmsEncryption.Cache;
 using AwsWrapperDataProvider.Plugin.KmsEncryption.KmsEncryption.Key;

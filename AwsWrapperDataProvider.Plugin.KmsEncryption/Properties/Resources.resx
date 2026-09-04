@@ -139,8 +139,8 @@
   <data name="MetadataManager_LoadAsync_MetadataUnreadable" xml:space="preserve">
     <value>The kmsEncryption plugin could not read its metadata from schema '{0}'. Check that '{0}.encryption_metadata' and '{0}.key_storage' exist and are readable by this connection.</value>
   </data>
-  <data name="SqlWriteScanner_Scan_Unreadable" xml:space="preserve">
-    <value>this statement could not be read ({0})</value>
+  <data name="SqlWriteAnalyzer_Analyze_Unreadable" xml:space="preserve">
+    <value>this statement could not be read: {0} at line {1}, column {2}</value>
   </data>
   <data name="KeyManager_KeySpecToAlgorithm_Unsupported" xml:space="preserve">
     <value>Unsupported key specification '{0}'. Supported specifications are AES_256 and AES_128.</value>

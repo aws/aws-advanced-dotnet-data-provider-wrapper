@@ -26,15 +26,15 @@ namespace AwsWrapperDataProvider.Plugin.KmsEncryption.KmsEncryption.Service;
 /// <b>Stored layout.</b> Every encrypted value is laid out as:
 /// </para>
 /// <code>
-/// [HMAC-SHA256: 32][type marker: 1][nonce: 12][ciphertext: n][GCM tag: 16]
+/// [HMAC-SHA256: 32][type marker: 1][nonce: 12][ciphertext: n][GCM tag: 16]`
 /// </code>
 /// <para>
 /// <b>Why two keys.</b> AES-GCM's own tag authenticates the ciphertext but not the bytes stored beside
 /// it, so on its own it would leave the type marker and nonce unprotected - and an altered type marker
 /// makes decryption reinterpret the value as a different type. The HMAC covers everything from the type
 /// marker onwards and closes that gap. (Passing the type marker to AES-GCM as associated data would
-/// achieve the same with a single key; two keys are used here because that is the layout already
-/// written by the AWS Advanced JDBC Wrapper, and matching it lets both drivers read the same column.)
+/// achieve the same with a single key; two keys are used because this is the layout the AWS Advanced JDBC
+/// Wrapper already writes, and matching it lets either driver read the same column.)
 /// </para>
 /// <para>
 /// <b>This layout is stored data and must not change.</b> Any change to the field order, sizes, or the

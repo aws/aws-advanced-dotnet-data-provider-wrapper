@@ -17,11 +17,11 @@ using AwsWrapperDataProvider.Plugin.KmsEncryption.KmsEncryption.Parser;
 
 namespace AwsWrapperDataProvider.Tests.Driver.Plugins.KmsEncryption;
 
-public class SqlWriteScannerTests
+public class SqlWriteAnalyzerTests
 {
     private static QueryAnalysis Single(string sql)
     {
-        List<QueryAnalysis> all = SqlWriteScanner.Scan(sql);
+        List<QueryAnalysis> all = SqlWriteAnalyzer.Analyze(sql);
         return Assert.Single(all);
     }
 
@@ -104,7 +104,7 @@ public class SqlWriteScannerTests
     public void TestBackquotedIdentifiersAreHandled()
     {
         QueryAnalysis s = Assert.Single(
-            SqlWriteScanner.Scan("INSERT INTO `users` (`ssn`) VALUES (@p0)", mySql: true));
+            SqlWriteAnalyzer.Analyze("INSERT INTO `users` (`ssn`) VALUES (@p0)", mySql: true));
         Assert.Equal("users", s.Table);
         Assert.Equal("p0=ssn", Written(s));
         Assert.Empty(s.UnreadableReasons);
@@ -187,7 +187,10 @@ public class SqlWriteScannerTests
     [InlineData("INSERT INTO users VALUES (@a, @b)", "does not list its columns")]
     [InlineData("INSERT INTO users (ssn) SELECT ssn FROM staging", "does not use a VALUES clause")]
     [InlineData("MERGE INTO users USING staging ON (1=1)", "MERGE")]
-    [InlineData("REPLACE INTO users (ssn) VALUES (@s)", "REPLACE")]
+    // REPLACE does not parse as PostgreSQL, so it is refused for being unreadable. The reason names the
+    // position rather than the statement, because the reason is logged - see
+    // TestUnreadableReasonNeverQuotesTheStatement.
+    [InlineData("REPLACE INTO users (ssn) VALUES (@s)", "")]
     public void TestUnsupportedShapesAreRefused(string sql, string expectedFragment)
     {
         QueryAnalysis s = Single(sql);
@@ -243,7 +246,7 @@ public class SqlWriteScannerTests
     [InlineData("WITH x AS NOT MATERIALIZED (SELECT 1) INSERT INTO users (id, ssn) VALUES (@id, @ssn)")]
     // A nested parenthesis in the body must not end the clause early.
     [InlineData("WITH x AS (SELECT (1 + 2)) INSERT INTO users (id, ssn) VALUES (@id, @ssn)")]
-    public void TestCtePrefixedInsertIsScanned(string sql)
+    public void TestCtePrefixedInsertIsAnalyzed(string sql)
     {
         QueryAnalysis s = Single(sql);
         Assert.Equal("users", s.Table);
@@ -290,7 +293,7 @@ public class SqlWriteScannerTests
     {
         // The server would apply upper() to the ciphertext, so this value cannot be encrypted. It is
         // reported as a column written without a parameter, which the planner turns into a refusal if the
-        // column is encrypted - the scanner alone cannot know that.
+        // column is encrypted - the analyzer alone cannot know that.
         QueryAnalysis s = Single("INSERT INTO users (id, ssn) VALUES (@id, upper(@ssn))");
         Assert.DoesNotContain("ssn", s.WrittenColumnsByParameter.Values);
         Assert.Contains("ssn", s.ColumnsWrittenWithoutAParameter);
@@ -309,7 +312,7 @@ public class SqlWriteScannerTests
     [InlineData("UPDATE users SET ssn = ? WHERE id = ?", true)]
     public void TestUnnamedPlaceholdersAreRefused(string sql, bool mySql)
     {
-        QueryAnalysis s = Assert.Single(SqlWriteScanner.Scan(sql, mySql));
+        QueryAnalysis s = Assert.Single(SqlWriteAnalyzer.Analyze(sql, mySql));
         Assert.Contains("named parameters", string.Join(" ", s.UnreadableReasons));
     }
 
@@ -328,12 +331,40 @@ public class SqlWriteScannerTests
         Assert.NotEmpty(s.UnreadableReasons);
     }
 
+    /// <summary>
+    /// The reason a statement could not be read must never quote the statement.
+    /// </summary>
+    /// <remarks>
+    /// The parser names the token it did not expect, and that token can be a string literal. Since this
+    /// reason is logged as a warning, echoing it would write a readable value - exactly the value the caller
+    /// was trying to store in an encrypted column - into the application log. Each statement below is
+    /// malformed in a way that makes the sensitive literal the unexpected token.
+    /// </remarks>
+    [Theory]
+    [Trait("Category", "Unit")]
+    [InlineData("INSERT INTO users (ssn) VALUES ('111-22-3333' '444-55-6666')", "444-55-6666")]
+    [InlineData("UPDATE users SET ssn 'my-secret-value' WHERE id = 1", "my-secret-value")]
+    [InlineData("SELECT * FROM users WHERE ssn 'patient-record-42'", "patient-record-42")]
+    [InlineData(@"INSERT INTO users (ssn) VALUES (E'123-45-6789\';x')", "123-45-6789")]
+    public void TestUnreadableReasonNeverQuotesTheStatement(string sql, string sensitive)
+    {
+        QueryAnalysis s = Single(sql);
+        string reason = string.Join(" ", s.UnreadableReasons);
+
+        Assert.NotEmpty(s.UnreadableReasons);
+        Assert.DoesNotContain(sensitive, reason, StringComparison.Ordinal);
+
+        // The position is kept, because it is what makes the warning actionable.
+        Assert.Contains("line", reason, StringComparison.Ordinal);
+        Assert.Contains("column", reason, StringComparison.Ordinal);
+    }
+
     [Fact]
     [Trait("Category", "Unit")]
-    public void TestMultiStatementCommandIsScannedPerStatement()
+    public void TestMultiStatementCommandIsAnalyzedPerStatement()
     {
         // Entity Framework Core batches modifications into a single command.
-        List<QueryAnalysis> all = SqlWriteScanner.Scan(
+        List<QueryAnalysis> all = SqlWriteAnalyzer.Analyze(
             "INSERT INTO users (ssn) VALUES (@p0);\nUPDATE users SET city = @p1 WHERE id = @p2;");
 
         Assert.Equal(2, all.Count);
@@ -347,7 +378,7 @@ public class SqlWriteScannerTests
     public void TestSemicolonInsideALiteralDoesNotSplitTheStatement()
     {
         // Splitting on a bare semicolon would break this into two statements and mis-pair the columns.
-        List<QueryAnalysis> all = SqlWriteScanner.Scan(
+        List<QueryAnalysis> all = SqlWriteAnalyzer.Analyze(
             "INSERT INTO users (note, ssn) VALUES ('a;b', @s)");
 
         Assert.Single(all);
@@ -358,7 +389,7 @@ public class SqlWriteScannerTests
     [Trait("Category", "Unit")]
     public void TestSemicolonInsideACommentDoesNotSplitTheStatement()
     {
-        List<QueryAnalysis> all = SqlWriteScanner.Scan(
+        List<QueryAnalysis> all = SqlWriteAnalyzer.Analyze(
             "INSERT INTO users (ssn) /* one; two */ VALUES (@s) -- trailing; comment");
 
         Assert.Single(all);
@@ -369,7 +400,7 @@ public class SqlWriteScannerTests
     [Trait("Category", "Unit")]
     public void TestDollarQuotedStringDoesNotSplitTheStatement()
     {
-        List<QueryAnalysis> all = SqlWriteScanner.Scan(
+        List<QueryAnalysis> all = SqlWriteAnalyzer.Analyze(
             "INSERT INTO users (note, ssn) VALUES ($tag$a;b$tag$, @s)");
 
         Assert.Single(all);
@@ -380,7 +411,7 @@ public class SqlWriteScannerTests
     [Trait("Category", "Unit")]
     public void TestEscapedQuoteInsideALiteralIsHandled()
     {
-        List<QueryAnalysis> all = SqlWriteScanner.Scan(
+        List<QueryAnalysis> all = SqlWriteAnalyzer.Analyze(
             "INSERT INTO users (note, ssn) VALUES ('it''s; fine', @s)");
 
         Assert.Single(all);
@@ -412,8 +443,8 @@ public class SqlWriteScannerTests
     [Trait("Category", "Unit")]
     public void TestEmptyAndWhitespaceCommandsProduceNothing()
     {
-        Assert.Empty(SqlWriteScanner.Scan(string.Empty));
-        Assert.Empty(SqlWriteScanner.Scan("   \n\t "));
-        Assert.Empty(SqlWriteScanner.Scan(";;"));
+        Assert.Empty(SqlWriteAnalyzer.Analyze(string.Empty));
+        Assert.Empty(SqlWriteAnalyzer.Analyze("   \n\t "));
+        Assert.Empty(SqlWriteAnalyzer.Analyze(";;"));
     }
 }

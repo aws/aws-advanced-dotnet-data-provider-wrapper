@@ -64,8 +64,8 @@ public class BatchParameterSubstitutionTests
     }
 
     /// <summary>
-    /// Both drivers must allow a parameter to be created on a batch command; without it a substitute of the
-    /// driver's own type cannot be made and the plugin has to decline.
+    /// Both providers must allow a parameter to be created on a batch command; without it a substitute of
+    /// the provider's own type cannot be made and the plugin has to decline.
     /// </summary>
     [Fact]
     [Trait("Category", "Unit")]

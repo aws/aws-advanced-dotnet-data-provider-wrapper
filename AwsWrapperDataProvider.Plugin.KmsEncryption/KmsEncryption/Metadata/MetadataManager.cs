@@ -255,20 +255,25 @@ internal sealed class MetadataManager : IDisposable
                 + "JOIN pg_catalog.pg_attribute a ON a.attrelid OPERATOR(pg_catalog.=) c.oid "
                 + "WHERE a.attnum OPERATOR(pg_catalog.>) 0 AND NOT a.attisdropped";
 
-            await using DbDataReader reader = await command
+            DbDataReader reader = await command
                 .ExecuteReaderAsync(cancellationToken)
                 .ConfigureAwait(false);
 
-            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+            await using (reader.ConfigureAwait(false))
             {
-                uint oid = Convert.ToUInt32(reader.GetValue(0), System.Globalization.CultureInfo.InvariantCulture);
-                int attnum = Convert.ToInt32(reader.GetValue(1), System.Globalization.CultureInfo.InvariantCulture);
-                string table = reader.GetString(2);
-                string column = reader.GetString(3);
-
-                if (columns.TryGetValue(Key(table, column), out ColumnEncryptionConfig? config))
+                while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
                 {
-                    byOid[OidKey(oid, attnum)] = config;
+                    uint oid = Convert.ToUInt32(
+                        reader.GetValue(0), System.Globalization.CultureInfo.InvariantCulture);
+                    int attnum = Convert.ToInt32(
+                        reader.GetValue(1), System.Globalization.CultureInfo.InvariantCulture);
+                    string table = reader.GetString(2);
+                    string column = reader.GetString(3);
+
+                    if (columns.TryGetValue(Key(table, column), out ColumnEncryptionConfig? config))
+                    {
+                        byOid[OidKey(oid, attnum)] = config;
+                    }
                 }
             }
         }
@@ -421,9 +426,10 @@ internal sealed class MetadataManager : IDisposable
 
         // Scoped so the reader is closed before the catalogue query below. A connection can only have one
         // reader open at a time, and leaving this one open makes that second query fail.
-        await using (DbDataReader reader = await command
+        DbDataReader reader = await command
             .ExecuteReaderAsync(cancellationToken)
-            .ConfigureAwait(false))
+            .ConfigureAwait(false);
+        await using (reader.ConfigureAwait(false))
         {
             while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
             {

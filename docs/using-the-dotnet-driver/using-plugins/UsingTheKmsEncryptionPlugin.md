@@ -125,7 +125,10 @@ Once a column holds ciphertext the server can no longer reason about its content
 - **`LIKE`, ranges, and `ORDER BY` are meaningless** — they operate on ciphertext.
 - **An index only indexes ciphertext**, so it cannot serve lookups on the value.
 - **A unique constraint no longer prevents duplicates**, because two identical values produce different
-  bytes. Check for unique indexes before encrypting a column.
+  bytes. Check for unique indexes before encrypting a column. An upsert whose conflict target is the
+  encrypted column is affected by the same thing: `ON CONFLICT (ssn)` and a unique index on `ssn` never
+  detect the conflict, so the statement inserts another row instead of updating the existing one. Key the
+  conflict on a column that is not encrypted.
 - **`CHECK` constraints on the content stop working**, and collation no longer applies.
 
 ### Existing rows
@@ -153,7 +156,7 @@ see:
 | An unnamed placeholder, `VALUES (?)` | **No** | Yes |
 | A statement whose columns cannot be matched to its parameters, such as `INSERT INTO users VALUES (@a, @b)` | **No** | Yes |
 | A statement the plugin cannot read, such as one using a PostgreSQL `E''` escape string | **No** | Yes |
-| A `DbBatch` | **No** | Yes |
+| Parameter on a `DbBatch` command with the plugin enabled | Yes | – |
 | Any application connecting without the plugin | **No** | No |
 | A database client, migration tool, or data-fix script | **No** | No |
 | Rows that already existed when the column was registered | **No** | No |
@@ -267,8 +270,8 @@ Note the cost: the signature-verifying version loops 64 times per row, so on bul
 adopting it. The length check alone is nearly free.
 
 > [!WARNING]\
-> These triggers encode the stored byte layout. That layout is fixed and shared with the AWS Advanced JDBC
-> Wrapper, so it will not change - but if it ever did, the triggers would need updating alongside it.
+> These triggers encode the stored byte layout. That layout is shared with the AWS Advanced JDBC Wrapper, so
+> it will not change - but if it ever did, the triggers would need updating alongside it.
 
 ## Operational requirements
 

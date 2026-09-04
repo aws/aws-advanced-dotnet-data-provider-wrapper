@@ -22,9 +22,9 @@ namespace AwsWrapperDataProvider.Tests.Driver.Plugins.KmsEncryption;
 /// Locks the serialized byte layout of every supported type.
 /// <para>
 /// The expected values below are not hand-computed: they were produced by running the AWS Advanced JDBC
-/// Wrapper's own serialization for the same inputs, so any drift here means a column written by one
-/// driver can no longer be read by the other. Treat a failure as a compatibility break, not as a test
-/// that needs updating.
+/// Wrapper's own serialization for the same inputs, so any drift here means a column written by one driver
+/// can no longer be read by the other. Treat a failure as a compatibility break, not as a test that needs
+/// updating.
 /// </para>
 /// </summary>
 public class ValueSerializerTests
@@ -119,7 +119,7 @@ public class ValueSerializerTests
 
     [Theory]
     [Trait("Category", "Unit")]
-    // Values written by the other driver's arbitrary-precision decimal may be scientific.
+    // Values written by the other driver's arbitrary-precision decimal may be in scientific form.
     [InlineData("1E+3", "1000")]
     [InlineData("1.5E-3", "0.0015")]
     [InlineData("123.4500", "123.4500")]
@@ -144,10 +144,10 @@ public class ValueSerializerTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void TestEpochMillisecondMarkersFromTheOtherDriverNarrowToDateAndTime()
+    public void TestEpochMillisecondMarkersNarrowToDateAndTime()
     {
-        // java.sql.Date / java.sql.Time are written as epoch milliseconds; this driver never writes
-        // these markers but must read them.
+        // java.sql.Date / java.sql.Time are written as epoch milliseconds; this driver never writes these
+        // markers but must read them.
         object date = ValueSerializer.Deserialize(
             Convert.FromHexString("0000000005265c00"), TypeMarker.Date);
         Assert.Equal(new DateOnly(1970, 1, 2), (DateOnly)date);

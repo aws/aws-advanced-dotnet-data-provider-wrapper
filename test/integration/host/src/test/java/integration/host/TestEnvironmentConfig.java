@@ -1135,6 +1135,12 @@ public class TestEnvironmentConfig implements AutoCloseable {
           .withEnv("AWS_SESSION_TOKEN", env.awsSessionToken);
     }
 
+    // The column encryption tests need a KMS key, which is not created by this harness. When one is not
+    // supplied those tests skip themselves, so the variable is simply passed along when it is present.
+    if (!StringUtils.isNullOrEmpty(System.getenv("AWS_KMS_KEY_ARN"))) {
+      env.testContainer.withEnv("AWS_KMS_KEY_ARN", System.getenv("AWS_KMS_KEY_ARN"));
+    }
+
     if (env.info
           .getRequest()
           .getFeatures()
