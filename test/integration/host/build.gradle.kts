@@ -432,6 +432,12 @@ tasks.register<Test>("test-all-pg-aurora-kms") {
         systemProperty("test-no-multi-az-instance", "true")
         systemProperty("test-no-aurora-limitless", "true")
         systemProperty("test-no-bg", "true")
+        systemProperty("test-no-instances-2", "true")
+        systemProperty("test-no-instances-3", "true")
+        systemProperty("test-no-instances-5", "true")
+        systemProperty("test-no-failover", "true")
+        systemProperty("test-no-iam", "true")
+        systemProperty("test-no-secrets-manager", "true")
     }
 }
 
@@ -448,6 +454,12 @@ tasks.register<Test>("test-all-mysql-aurora-kms") {
         systemProperty("test-no-multi-az-instance", "true")
         systemProperty("test-no-aurora-limitless", "true")
         systemProperty("test-no-bg", "true")
+        systemProperty("test-no-instances-2", "true")
+        systemProperty("test-no-instances-3", "true")
+        systemProperty("test-no-instances-5", "true")
+        systemProperty("test-no-failover", "true")
+        systemProperty("test-no-iam", "true")
+        systemProperty("test-no-secrets-manager", "true")
     }
 }
 
