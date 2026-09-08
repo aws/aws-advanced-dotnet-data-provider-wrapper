@@ -38,17 +38,17 @@ public abstract class IntegrationTestBase : IAsyncLifetime
 {
     protected static readonly AuroraTestUtils AuroraUtils = AuroraTestUtils.GetUtility();
 
-    protected static readonly string DefaultDbName = TestEnvironment.Env.Info.DatabaseInfo.DefaultDbName;
-    protected static readonly string Username = TestEnvironment.Env.Info.DatabaseInfo.Username;
-    protected static readonly string Password = TestEnvironment.Env.Info.DatabaseInfo.Password;
-    protected static readonly DatabaseEngine Engine = TestEnvironment.Env.Info.Request.Engine;
-    protected static readonly DatabaseEngineDeployment Deployment = TestEnvironment.Env.Info.Request.Deployment;
+    protected internal static readonly string DefaultDbName = TestEnvironment.Env.Info.DatabaseInfo.DefaultDbName;
+    protected internal static readonly string Username = TestEnvironment.Env.Info.DatabaseInfo.Username;
+    protected internal static readonly string Password = TestEnvironment.Env.Info.DatabaseInfo.Password;
+    protected internal static readonly DatabaseEngine Engine = TestEnvironment.Env.Info.Request.Engine;
+    protected internal static readonly DatabaseEngineDeployment Deployment = TestEnvironment.Env.Info.Request.Deployment;
     protected static readonly TestProxyDatabaseInfo? ProxyDatabaseInfo = TestEnvironment.Env.Info.ProxyDatabaseInfo;
     protected static readonly string ProxyClusterEndpoint = ProxyDatabaseInfo?.ClusterEndpoint ?? string.Empty;
     protected static readonly int ProxyPort = ProxyDatabaseInfo?.ClusterEndpointPort ?? 0;
     protected static readonly int NumberOfInstances = TestEnvironment.Env.Info.DatabaseInfo.Instances.Count;
 
-    protected static readonly string Endpoint = Deployment switch
+    protected internal static readonly string Endpoint = Deployment switch
     {
         DatabaseEngineDeployment.AURORA => TestEnvironment.Env.Info.DatabaseInfo.ClusterEndpoint,
         DatabaseEngineDeployment.AURORA_LIMITLESS => TestEnvironment.Env.Info.DatabaseInfo.ClusterEndpoint,
@@ -57,7 +57,7 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         _ => throw new InvalidOperationException($"Unsupported deployment {Deployment}"),
     };
 
-    protected static readonly int Port = Deployment switch
+    protected internal static readonly int Port = Deployment switch
     {
         DatabaseEngineDeployment.AURORA => TestEnvironment.Env.Info.DatabaseInfo.ClusterEndpointPort,
         DatabaseEngineDeployment.AURORA_LIMITLESS => TestEnvironment.Env.Info.DatabaseInfo.ClusterEndpointPort,

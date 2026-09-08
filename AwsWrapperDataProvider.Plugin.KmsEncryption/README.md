@@ -10,6 +10,9 @@ Encryption uses envelope encryption: a KMS master key protects per-column data k
 
 This project depends on:
 - **[AWSSDK.KeyManagementService](https://www.nuget.org/packages/AWSSDK.KeyManagementService/)**: AWS SDK for KMS to generate and decrypt data keys
+- **[SqlParserCS](https://www.nuget.org/packages/SqlParserCS/)**: SQL parsing, to work out which parameter supplies which column's value
+
+Both are brought in with this package; nothing needs to be added to your project.
 
 ## Usage
 

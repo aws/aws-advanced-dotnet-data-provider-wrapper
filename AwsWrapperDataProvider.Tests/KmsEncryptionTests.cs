@@ -13,9 +13,11 @@
 // limitations under the License.
 
 using System.Data.Common;
+using System.Security.Cryptography;
 using System.Text;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Plugin.KmsEncryption.KmsEncryption;
+using AwsWrapperDataProvider.Plugin.KmsEncryption.KmsEncryption.Metadata;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 
 namespace AwsWrapperDataProvider.Tests;
@@ -43,6 +45,7 @@ public class KmsEncryptionTests : IntegrationTestBase,
 {
     private const string MetadataSchema = KmsEncryptionTestFixture.MetadataSchema;
     private const string TableName = KmsEncryptionTestFixture.TableName;
+    private const string Column = KmsEncryptionTestFixture.EncryptedColumn;
 
     private const string Ssn1 = "123-45-6789";
     private const string Ssn2 = "987-65-4321";
@@ -73,9 +76,14 @@ public class KmsEncryptionTests : IntegrationTestBase,
     }
 
     /// <summary>
-    /// The registration the plugin reads is present and names the expected algorithm and key. Every other
-    /// test depends on it, so it is checked on its own to make a setup problem obvious.
+    /// The registration the plugin reads is present and names the expected algorithm and key.
     /// </summary>
+    /// <remarks>
+    /// This checks the fixture rather than the plugin - it reads the metadata tables directly, on a
+    /// plugin-free connection. It is here because every other test in the class is meaningless if the
+    /// registration is missing or wrong, and a failure here says so plainly instead of surfacing as an
+    /// unencrypted value several tests later.
+    /// </remarks>
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg-kms")]
@@ -90,7 +98,7 @@ public class KmsEncryptionTests : IntegrationTestBase,
         command.CommandText =
             $"SELECT m.encryption_algorithm, k.name FROM {MetadataSchema}.encryption_metadata m "
             + $"JOIN {MetadataSchema}.key_storage k ON k.id = m.key_id "
-            + "WHERE m.table_name = @table AND m.column_name = 'secret'";
+            + "WHERE m.table_name = @table AND m.column_name = '" + Column + "'";
         AddParameter(command, "@table", TableName);
 
         await using DbDataReader reader = await command.ExecuteReaderAsync(
@@ -98,7 +106,7 @@ public class KmsEncryptionTests : IntegrationTestBase,
 
         Assert.True(
             await reader.ReadAsync(TestContext.Current.CancellationToken),
-            $"{TableName}.secret is not registered for encryption.");
+            $"{TableName}.{Column} is not registered for encryption.");
         Assert.Equal(KmsEncryptionTestFixture.Algorithm, reader.GetString(0));
         Assert.Equal(KmsEncryptionTestFixture.KeyName, reader.GetString(1));
     }
@@ -115,9 +123,7 @@ public class KmsEncryptionTests : IntegrationTestBase,
     public async Task TestStoredValueIsVerifiedByTheServer()
     {
         Assert.SkipUnless(this.fixture.Enabled, KmsEncryptionTestFixture.NoKeyReason);
-        Assert.SkipWhen(IsMySql, "pgcrypto is PostgreSQL only.");
-        Assert.SkipUnless(
-            this.fixture.ServerSideCheckAvailable, "pgcrypto could not be installed on this cluster.");
+        Assert.SkipWhen(IsMySql, "the trigger and pgcrypto are PostgreSQL only.");
 
         int id = NewId();
         await using (AwsWrapperConnection connection = await this.OpenEncryptedAsync())
@@ -128,12 +134,84 @@ public class KmsEncryptionTests : IntegrationTestBase,
         await using DbConnection plain = await KmsEncryptionTestFixture.OpenPlainAsync();
         await using DbCommand command = plain.CreateCommand();
         command.CommandText =
-            $"SELECT {MetadataSchema}.has_valid_signature(secret) FROM {TableName} WHERE id = @id";
+            $"SELECT verify_encrypted_data_hmac({Column}, k.hmac_key) "
+            + $"FROM {TableName} t, {MetadataSchema}.key_storage k "
+            + $"WHERE t.id = @id AND k.name = '{KmsEncryptionTestFixture.KeyName}'";
         AddParameter(command, "@id", id);
 
         object? verified = await command.ExecuteScalarAsync(TestContext.Current.CancellationToken);
         Assert.True(
             Assert.IsType<bool>(verified), "the server did not accept the stored value's signature.");
+    }
+
+    /// <summary>
+    /// The trigger rejects bytes that are long enough to look encrypted but are not.
+    /// </summary>
+    /// <remarks>
+    /// This is the case the plugin cannot see at all: a migration script, an administrative tool, or an
+    /// application connecting without the plugin. The value is written on a plugin-free connection and is
+    /// long enough to satisfy the column's length floor, so the signature check is the only thing that can
+    /// reject it - which is what distinguishes the trigger from the domain.
+    /// </remarks>
+    [Fact]
+    [Trait("Category", "Integration")]
+    [Trait("Database", "pg-kms")]
+    [Trait("Engine", "aurora")]
+    public async Task TestTriggerRejectsBytesThatAreNotEncrypted()
+    {
+        Assert.SkipUnless(this.fixture.Enabled, KmsEncryptionTestFixture.NoKeyReason);
+        Assert.SkipWhen(IsMySql, "the trigger and pgcrypto are PostgreSQL only.");
+
+        byte[] notEncrypted = RandomNumberGenerator.GetBytes(StoredOverhead);
+
+        await using DbConnection plain = await KmsEncryptionTestFixture.OpenPlainAsync();
+        await using DbCommand insert = plain.CreateCommand();
+        insert.CommandText = $"INSERT INTO {TableName} (id, {Column}) VALUES (@id, @value)";
+        AddParameter(insert, "@id", NewId());
+        AddParameter(insert, "@value", notEncrypted);
+
+        DbException thrown = await Assert.ThrowsAnyAsync<DbException>(
+            () => insert.ExecuteNonQueryAsync(TestContext.Current.CancellationToken));
+        Assert.Contains("HMAC", thrown.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// The trigger rejects a stored value whose bytes have been altered.
+    /// </summary>
+    /// <remarks>
+    /// The value starts out genuinely encrypted, so it has a valid signature and the right length; only one
+    /// byte of it is changed. Nothing about its shape gives it away, which is what makes this the case the
+    /// signature exists for - and it is caught as the row goes in rather than whenever it is next read.
+    /// </remarks>
+    [Fact]
+    [Trait("Category", "Integration")]
+    [Trait("Database", "pg-kms")]
+    [Trait("Engine", "aurora")]
+    public async Task TestTriggerRejectsATamperedValue()
+    {
+        Assert.SkipUnless(this.fixture.Enabled, KmsEncryptionTestFixture.NoKeyReason);
+        Assert.SkipWhen(IsMySql, "the trigger and pgcrypto are PostgreSQL only.");
+
+        int id = NewId();
+        await using (AwsWrapperConnection connection = await this.OpenEncryptedAsync())
+        {
+            await InsertAsync(connection, id, Ssn1);
+        }
+
+        byte[] tampered = await this.ReadStoredBytesAsync(id);
+
+        // The last byte is inside the signed region, so the signature no longer covers what is there.
+        tampered[^1] ^= 0xFF;
+
+        await using DbConnection plain = await KmsEncryptionTestFixture.OpenPlainAsync();
+        await using DbCommand update = plain.CreateCommand();
+        update.CommandText = $"UPDATE {TableName} SET {Column} = @value WHERE id = @id";
+        AddParameter(update, "@value", tampered);
+        AddParameter(update, "@id", id);
+
+        DbException thrown = await Assert.ThrowsAnyAsync<DbException>(
+            () => update.ExecuteNonQueryAsync(TestContext.Current.CancellationToken));
+        Assert.Contains("HMAC", thrown.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>A value written through the plugin is stored encrypted and reads back intact.</summary>
@@ -175,7 +253,7 @@ public class KmsEncryptionTests : IntegrationTestBase,
 
         await using (DbCommand update = connection.CreateCommand())
         {
-            update.CommandText = $"UPDATE {TableName} SET secret = @secret WHERE id = @id";
+            update.CommandText = $"UPDATE {TableName} SET {Column} = @secret WHERE id = @id";
             AddParameter(update, "@secret", Ssn2);
             AddParameter(update, "@id", id);
             Assert.Equal(1, await update.ExecuteNonQueryAsync(TestContext.Current.CancellationToken));
@@ -202,10 +280,10 @@ public class KmsEncryptionTests : IntegrationTestBase,
         int id = NewId();
 
         string upsert = IsMySql
-            ? $"INSERT INTO {TableName} (id, secret) VALUES (@id, @secret) "
-                + "ON DUPLICATE KEY UPDATE secret = @secret"
-            : $"INSERT INTO {TableName} (id, secret) VALUES (@id, @secret) "
-                + "ON CONFLICT (id) DO UPDATE SET secret = @secret";
+            ? $"INSERT INTO {TableName} (id, {Column}) VALUES (@id, @secret) "
+                + $"ON DUPLICATE KEY UPDATE {Column} = @secret"
+            : $"INSERT INTO {TableName} (id, {Column}) VALUES (@id, @secret) "
+                + $"ON CONFLICT (id) DO UPDATE SET {Column} = @secret";
 
         await using AwsWrapperConnection connection = await this.OpenEncryptedAsync();
 
@@ -256,7 +334,7 @@ public class KmsEncryptionTests : IntegrationTestBase,
             foreach ((int id, string secret) in rows)
             {
                 DbBatchCommand command = batch.CreateBatchCommand();
-                command.CommandText = $"INSERT INTO {TableName} (id, secret) VALUES (@id, @secret)";
+                command.CommandText = $"INSERT INTO {TableName} (id, {Column}) VALUES (@id, @secret)";
                 AddBatchParameter(command, "@id", id);
                 AddBatchParameter(command, "@secret", secret);
                 batch.BatchCommands.Add(command);
@@ -296,7 +374,7 @@ public class KmsEncryptionTests : IntegrationTestBase,
         foreach ((int id, string _) in rows)
         {
             DbBatchCommand command = batch.CreateBatchCommand();
-            command.CommandText = $"SELECT secret FROM {TableName} WHERE id = @id";
+            command.CommandText = $"SELECT {Column} FROM {TableName} WHERE id = @id";
             AddBatchParameter(command, "@id", id);
             batch.BatchCommands.Add(command);
         }
@@ -330,26 +408,26 @@ public class KmsEncryptionTests : IntegrationTestBase,
     {
         Assert.SkipUnless(this.fixture.Enabled, KmsEncryptionTestFixture.NoKeyReason);
         int id = NewId();
-        const string note = "not a secret";
+        const string plainValue = "not a secret";
 
         await using AwsWrapperConnection connection = await this.OpenEncryptedAsync();
 
         await using (DbCommand insert = connection.CreateCommand())
         {
             insert.CommandText =
-                $"INSERT INTO {TableName} (id, secret, note) VALUES (@id, @secret, @note)";
+                $"INSERT INTO {TableName} (id, {Column}, email) VALUES (@id, @secret, @email)";
             AddParameter(insert, "@id", id);
             AddParameter(insert, "@secret", Ssn1);
-            AddParameter(insert, "@note", note);
+            AddParameter(insert, "@email", plainValue);
             await insert.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
         }
 
         await using DbConnection plain = await KmsEncryptionTestFixture.OpenPlainAsync();
         await using DbCommand check = plain.CreateCommand();
-        check.CommandText = $"SELECT note FROM {TableName} WHERE id = @id";
+        check.CommandText = $"SELECT email FROM {TableName} WHERE id = @id";
         AddParameter(check, "@id", id);
 
-        Assert.Equal(note, await check.ExecuteScalarAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(plainValue, await check.ExecuteScalarAsync(TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -370,14 +448,14 @@ public class KmsEncryptionTests : IntegrationTestBase,
 
         await using (DbCommand insert = connection.CreateCommand())
         {
-            insert.CommandText = $"INSERT INTO {TableName} (id, secret) VALUES (@id, @secret)";
+            insert.CommandText = $"INSERT INTO {TableName} (id, {Column}) VALUES (@id, @secret)";
             AddParameter(insert, "@id", id);
             AddParameter(insert, "@secret", DBNull.Value);
             await insert.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
         }
 
         await using DbCommand select = connection.CreateCommand();
-        select.CommandText = $"SELECT secret FROM {TableName} WHERE id = @id";
+        select.CommandText = $"SELECT {Column} FROM {TableName} WHERE id = @id";
         AddParameter(select, "@id", id);
 
         await using DbDataReader reader = await select.ExecuteReaderAsync(
@@ -422,14 +500,14 @@ public class KmsEncryptionTests : IntegrationTestBase,
             int id = NewId();
             await using (DbCommand insert = connection.CreateCommand())
             {
-                insert.CommandText = $"INSERT INTO {TableName} (id, secret) VALUES (@id, @secret)";
+                insert.CommandText = $"INSERT INTO {TableName} (id, {Column}) VALUES (@id, @secret)";
                 AddParameter(insert, "@id", id);
                 AddParameter(insert, "@secret", value);
                 await insert.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
             }
 
             await using DbCommand select = connection.CreateCommand();
-            select.CommandText = $"SELECT secret FROM {TableName} WHERE id = @id";
+            select.CommandText = $"SELECT {Column} FROM {TableName} WHERE id = @id";
             AddParameter(select, "@id", id);
 
             await using DbDataReader reader = await select.ExecuteReaderAsync(
@@ -442,10 +520,15 @@ public class KmsEncryptionTests : IntegrationTestBase,
     }
 
     /// <summary>
-    /// The metadata is read once and cached, so a burst of statements must not re-read it. Clearing the
-    /// cache makes the next statement read it again, which is what an operator relies on after registering
+    /// The metadata is read once for a burst of statements rather than once per statement, and clearing the
+    /// cache makes the next statement read it again - which is what an operator relies on after registering
     /// a column.
     /// </summary>
+    /// <remarks>
+    /// Both halves are measured with <see cref="MetadataManager.LoadCount"/>, because the number of reads is
+    /// the only thing that distinguishes a working cache from a disabled one: every statement succeeds either
+    /// way, so asserting only on the values would pass with caching switched off entirely.
+    /// </remarks>
     [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg-kms")]
@@ -455,19 +538,27 @@ public class KmsEncryptionTests : IntegrationTestBase,
     {
         Assert.SkipUnless(this.fixture.Enabled, KmsEncryptionTestFixture.NoKeyReason);
 
+        // InitializeAsync cleared the cache, so the first statement below is a certain miss. The count is
+        // captured rather than assumed to be zero, since it covers the whole process.
+        int loadsAtStart = MetadataManager.LoadCount;
+
         await using AwsWrapperConnection connection = await this.OpenEncryptedAsync();
 
-        // Several statements in a row: all but the first must be served from the cache.
         for (int i = 0; i < 5; i++)
         {
             await InsertAsync(connection, NewId(), Ssn1);
         }
 
-        // Clearing forces the next statement to read the metadata again; it must still work.
+        Assert.Equal(loadsAtStart + 1, MetadataManager.LoadCount);
+
         KmsEncryptionPlugin.ClearCache();
 
         int id = NewId();
         await InsertAsync(connection, id, Ssn2);
+
+        // Exactly one more: the clear forced a fresh read rather than the statement failing or carrying on
+        // with the copy that was just discarded.
+        Assert.Equal(loadsAtStart + 2, MetadataManager.LoadCount);
         Assert.Equal(Ssn2, await ReadThroughPluginAsync(connection, id));
     }
 
@@ -488,7 +579,7 @@ public class KmsEncryptionTests : IntegrationTestBase,
 
         await using AwsWrapperConnection connection = await this.OpenEncryptedAsync();
         await using DbCommand insert = connection.CreateCommand();
-        insert.CommandText = $"INSERT INTO {TableName} (id, secret) VALUES ({id}, '{Ssn1}')";
+        insert.CommandText = $"INSERT INTO {TableName} (id, {Column}) VALUES ({id}, '{Ssn1}')";
 
         if (IsMySql)
         {
@@ -526,7 +617,7 @@ public class KmsEncryptionTests : IntegrationTestBase,
     private static async Task InsertAsync(DbConnection connection, int id, object secret)
     {
         await using DbCommand insert = connection.CreateCommand();
-        insert.CommandText = $"INSERT INTO {TableName} (id, secret) VALUES (@id, @secret)";
+        insert.CommandText = $"INSERT INTO {TableName} (id, {Column}) VALUES (@id, @secret)";
         AddParameter(insert, "@id", id);
         AddParameter(insert, "@secret", secret);
         Assert.Equal(1, await insert.ExecuteNonQueryAsync(TestContext.Current.CancellationToken));
@@ -535,7 +626,7 @@ public class KmsEncryptionTests : IntegrationTestBase,
     private static async Task<string> ReadThroughPluginAsync(DbConnection connection, int id)
     {
         await using DbCommand select = connection.CreateCommand();
-        select.CommandText = $"SELECT secret FROM {TableName} WHERE id = @id";
+        select.CommandText = $"SELECT {Column} FROM {TableName} WHERE id = @id";
         AddParameter(select, "@id", id);
 
         await using DbDataReader reader = await select.ExecuteReaderAsync(
@@ -563,7 +654,7 @@ public class KmsEncryptionTests : IntegrationTestBase,
     {
         await using DbConnection plain = await KmsEncryptionTestFixture.OpenPlainAsync();
         await using DbCommand command = plain.CreateCommand();
-        command.CommandText = $"SELECT secret FROM {TableName} WHERE id = @id";
+        command.CommandText = $"SELECT {Column} FROM {TableName} WHERE id = @id";
         AddParameter(command, "@id", id);
 
         object? stored = await command.ExecuteScalarAsync(TestContext.Current.CancellationToken);

@@ -64,6 +64,9 @@ internal sealed class MetadataManager : IDisposable
 
     private static readonly ConcurrentDictionary<string, Lazy<Task<MetadataSnapshot>>> PendingLoads = new();
 
+    /// <summary>How many times the metadata has been read from a database, for the whole process.</summary>
+    private static int loadCount;
+
     private readonly IPluginService pluginService;
     private readonly Dictionary<string, string> props;
     private readonly EncryptionConfig config;
@@ -161,6 +164,17 @@ internal sealed class MetadataManager : IDisposable
             Logger.LogDebug(Resources.MetadataManager_RefreshAsync_Refreshed, this.CacheKey);
         }
     }
+
+    /// <summary>
+    /// Gets the number of times the metadata has been read from a database since the process started.
+    /// </summary>
+    /// <remarks>
+    /// Exists so a test can assert that a burst of statements reads the metadata once rather than once each,
+    /// which is the whole point of the cache and is otherwise invisible from outside. It counts reads rather
+    /// than cache entries, because an entry existing does not show that the statements after the first
+    /// avoided a read. Never reset, so a test compares it against a value captured beforehand.
+    /// </remarks>
+    internal static int LoadCount => Volatile.Read(ref loadCount);
 
     /// <summary>Returns whether any column of <paramref name="table"/> is encrypted.</summary>
     internal async Task<bool> HasEncryptedColumnsAsync(string table, CancellationToken cancellationToken)
@@ -361,6 +375,8 @@ internal sealed class MetadataManager : IDisposable
 
     private async Task<MetadataSnapshot> LoadAsync(CancellationToken cancellationToken)
     {
+        Interlocked.Increment(ref loadCount);
+
         string schema = ValidateSchemaName(this.config.MetadataSchema);
         HostSpec hostSpec = this.pluginService.CurrentHostSpec
             ?? throw new EncryptionException(Resources.MetadataManager_CacheKey_NoHostConnected);
