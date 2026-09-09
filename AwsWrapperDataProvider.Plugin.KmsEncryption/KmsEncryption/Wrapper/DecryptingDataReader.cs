@@ -413,7 +413,7 @@ internal sealed class DecryptingDataReader : DbDataReader, IWrapper
     /// encrypted", which is an ordinary result, while null means "could not be described", which is not.
     /// </para>
     /// </remarks>
-    private static IReadOnlyList<ResultColumn>? DescribeColumns(DbDataReader reader)
+    internal static IReadOnlyList<ResultColumn>? DescribeColumns(DbDataReader reader)
     {
         if (Unwrapped(reader) is IDbColumnSchemaGenerator schemaGenerator)
         {
@@ -440,19 +440,22 @@ internal sealed class DecryptingDataReader : DbDataReader, IWrapper
 
         int nameIndex = schema.Columns.IndexOf("BaseColumnName");
         int tableIndex = schema.Columns.IndexOf("BaseTableName");
-        int ordinalIndex = schema.Columns.IndexOf("ColumnOrdinal");
         if (nameIndex < 0 || tableIndex < 0)
         {
             return null;
         }
 
+        // The row's position is the column's ordinal. The table's own ColumnOrdinal is deliberately not
+        // trusted: MySql.Data numbers it from one, so believing it files every column one place too high -
+        // a single-column SELECT then decrypts nothing and hands back ciphertext, and a wider one tries to
+        // decrypt its neighbour. The schema table's rows are in column order by contract, which is what
+        // makes the index the reliable answer.
         var described = new List<ResultColumn>();
         for (int i = 0; i < schema.Rows.Count; i++)
         {
             DataRow row = schema.Rows[i];
-            int ordinal = ordinalIndex >= 0 && row[ordinalIndex] is int declared ? declared : i;
             described.Add(new ResultColumn(
-                ordinal, row[tableIndex] as string, row[nameIndex] as string, dbColumn: null));
+                i, row[tableIndex] as string, row[nameIndex] as string, dbColumn: null));
         }
 
         return described;
@@ -470,7 +473,7 @@ internal sealed class DecryptingDataReader : DbDataReader, IWrapper
     /// <see cref="DbColumn"/> is carried when there was one, because the numeric identifiers PostgreSQL
     /// reports live on the driver's own subclass of it and are not part of the older schema table.
     /// </remarks>
-    private sealed class ResultColumn
+    internal sealed class ResultColumn
     {
         internal ResultColumn(int ordinal, string? baseTableName, string? baseColumnName, DbColumn? dbColumn)
         {

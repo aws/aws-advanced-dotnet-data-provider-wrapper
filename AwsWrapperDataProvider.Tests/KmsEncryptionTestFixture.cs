@@ -17,10 +17,10 @@ using System.Security.Cryptography;
 using Amazon;
 using Amazon.KeyManagementService;
 using Amazon.KeyManagementService.Model;
-using AwsWrapperDataProvider.Tests.Container;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 using MySqlConnector;
 using Npgsql;
+using static AwsWrapperDataProvider.Tests.IntegrationTestBase;
 
 namespace AwsWrapperDataProvider.Tests;
 
@@ -86,8 +86,6 @@ public sealed class KmsEncryptionTestFixture : IAsyncLifetime
     /// <summary>Gets a value indicating whether a key is configured and the schema was created.</summary>
     internal bool Enabled { get; private set; }
 
-    internal static bool IsMySql => IntegrationTestBase.Engine == DatabaseEngine.MYSQL;
-
     public async ValueTask InitializeAsync()
     {
         if (string.IsNullOrWhiteSpace(KeyArn))
@@ -112,7 +110,7 @@ public sealed class KmsEncryptionTestFixture : IAsyncLifetime
         await CreateMetadataTablesAsync(plain);
         await InsertKeyAndMetadataAsync(plain, dataKey.KeyId, encryptedDataKey, hmacKey);
 
-        if (IsMySql)
+        if (IsMySqlFamily)
         {
             await ExecuteAsync(plain, $"CREATE TABLE {TableName} ("
                 + "id INT AUTO_INCREMENT PRIMARY KEY, "
@@ -164,15 +162,15 @@ public sealed class KmsEncryptionTestFixture : IAsyncLifetime
     internal static async Task<DbConnection> OpenPlainAsync()
     {
         string connectionString = ConnectionStringHelper.GetUrl(
-            IntegrationTestBase.Engine,
-            IntegrationTestBase.Endpoint,
-            IntegrationTestBase.Port,
-            IntegrationTestBase.Username,
-            IntegrationTestBase.Password,
-            IntegrationTestBase.DefaultDbName,
+            Engine,
+            Endpoint,
+            Port,
+            Username,
+            Password,
+            DefaultDbName,
             enablePooling: false);
 
-        DbConnection connection = IsMySql
+        DbConnection connection = IsMySqlFamily
             ? new MySqlConnection(connectionString)
             : new NpgsqlConnection(connectionString);
 
@@ -189,10 +187,10 @@ public sealed class KmsEncryptionTestFixture : IAsyncLifetime
 
     private static async Task CreateMetadataTablesAsync(DbConnection plain)
     {
-        string serial = IsMySql ? "INT AUTO_INCREMENT" : "SERIAL";
-        string bytes = IsMySql ? "VARBINARY(32)" : "BYTEA";
-        string stamp = IsMySql ? "TIMESTAMP" : "TIMESTAMPTZ";
-        string onUpdate = IsMySql ? " ON UPDATE CURRENT_TIMESTAMP" : string.Empty;
+        string serial = IsMySqlFamily ? "INT AUTO_INCREMENT" : "SERIAL";
+        string bytes = IsMySqlFamily ? "VARBINARY(32)" : "BYTEA";
+        string stamp = IsMySqlFamily ? "TIMESTAMP" : "TIMESTAMPTZ";
+        string onUpdate = IsMySqlFamily ? " ON UPDATE CURRENT_TIMESTAMP" : string.Empty;
 
         await ExecuteAsync(plain, $"CREATE TABLE {MetadataSchema}.key_storage ("
             + $"id {serial} PRIMARY KEY, "
@@ -208,7 +206,7 @@ public sealed class KmsEncryptionTestFixture : IAsyncLifetime
             + "table_name VARCHAR(255) NOT NULL, "
             + "column_name VARCHAR(255) NOT NULL, "
             + "encryption_algorithm VARCHAR(50) NOT NULL, "
-            + $"key_id {(IsMySql ? "INT" : "INTEGER")} NOT NULL, "
+            + $"key_id {(IsMySqlFamily ? "INT" : "INTEGER")} NOT NULL, "
             + $"created_at {stamp} DEFAULT CURRENT_TIMESTAMP, "
             + $"updated_at {stamp} DEFAULT CURRENT_TIMESTAMP{onUpdate}, "
             + "PRIMARY KEY (table_name, column_name), "
@@ -343,11 +341,11 @@ $$ LANGUAGE plpgsql;");
         await ExecuteAsync(plain, $"DROP TABLE IF EXISTS {TableName}");
         await ExecuteAsync(
             plain,
-            IsMySql
+            IsMySqlFamily
                 ? $"DROP SCHEMA IF EXISTS {MetadataSchema}"
                 : $"DROP SCHEMA IF EXISTS {MetadataSchema} CASCADE");
 
-        if (!IsMySql)
+        if (!IsMySqlFamily)
         {
             // The domain and the trigger function live outside the metadata schema, so dropping the schema
             // does not take them with it.

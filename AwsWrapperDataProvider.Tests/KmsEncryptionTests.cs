@@ -61,8 +61,6 @@ public class KmsEncryptionTests : IntegrationTestBase,
         this.fixture = fixture;
     }
 
-    private static bool IsMySql => Engine == DatabaseEngine.MYSQL;
-
     public override async ValueTask InitializeAsync()
     {
         await base.InitializeAsync();
@@ -123,10 +121,12 @@ public class KmsEncryptionTests : IntegrationTestBase,
     public async Task TestStoredValueIsVerifiedByTheServer()
     {
         Assert.SkipUnless(this.fixture.Enabled, KmsEncryptionTestFixture.NoKeyReason);
-        Assert.SkipWhen(IsMySql, "the trigger and pgcrypto are PostgreSQL only.");
+        Assert.SkipUnless(
+            IsPostgres,
+            $"The domain and the pgcrypto trigger exist only on PostgreSQL, not on {Engine}.");
 
         int id = NewId();
-        await using (AwsWrapperConnection connection = await this.OpenEncryptedAsync())
+        await using (AwsWrapperConnection connection = await this.OpenConnectionAsync())
         {
             await InsertAsync(connection, id, Ssn1);
         }
@@ -160,7 +160,9 @@ public class KmsEncryptionTests : IntegrationTestBase,
     public async Task TestTriggerRejectsBytesThatAreNotEncrypted()
     {
         Assert.SkipUnless(this.fixture.Enabled, KmsEncryptionTestFixture.NoKeyReason);
-        Assert.SkipWhen(IsMySql, "the trigger and pgcrypto are PostgreSQL only.");
+        Assert.SkipUnless(
+            IsPostgres,
+            $"The domain and the pgcrypto trigger exist only on PostgreSQL, not on {Engine}.");
 
         byte[] notEncrypted = RandomNumberGenerator.GetBytes(StoredOverhead);
 
@@ -190,10 +192,12 @@ public class KmsEncryptionTests : IntegrationTestBase,
     public async Task TestTriggerRejectsATamperedValue()
     {
         Assert.SkipUnless(this.fixture.Enabled, KmsEncryptionTestFixture.NoKeyReason);
-        Assert.SkipWhen(IsMySql, "the trigger and pgcrypto are PostgreSQL only.");
+        Assert.SkipUnless(
+            IsPostgres,
+            $"The domain and the pgcrypto trigger exist only on PostgreSQL, not on {Engine}.");
 
         int id = NewId();
-        await using (AwsWrapperConnection connection = await this.OpenEncryptedAsync())
+        await using (AwsWrapperConnection connection = await this.OpenConnectionAsync())
         {
             await InsertAsync(connection, id, Ssn1);
         }
@@ -214,18 +218,87 @@ public class KmsEncryptionTests : IntegrationTestBase,
         Assert.Contains("HMAC", thrown.Message, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// The encrypted column is decrypted wherever it sits in the select list.
+    /// </summary>
+    /// <remarks>
+    /// The rest of the suite reads the encrypted column from a fixed position, which cannot detect an
+    /// off-by-one in column identification. This reorders the select list instead, because that has already
+    /// been wrong twice and both times silently: MySql.Data numbers <c>ColumnOrdinal</c> from one, so
+    /// trusting it shifted every column up by a place - a single-column select then decrypted nothing and
+    /// handed back stored bytes, and a wider one decrypted the neighbour. Both drivers are covered because
+    /// they establish ordinals through different APIs.
+    /// </remarks>
+    [Theory]
+    [Trait("Category", "Integration")]
+    [Trait("Database", "mysql-kms")]
+    [Trait("Engine", "aurora")]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task TestDecryptsAtAnyOrdinal(bool useMySqlClient)
+    {
+        Assert.SkipUnless(this.fixture.Enabled, KmsEncryptionTestFixture.NoKeyReason);
+        Assert.SkipUnless(
+            IsMySqlFamily,
+            $"Both drivers in this case are MySQL drivers, so there is nothing to run against {Engine}.");
+
+        int id = NewId();
+        const string plain = "a plain neighbour";
+
+        await using AwsWrapperConnection connection = await this.OpenConnectionAsync(useMySqlClient);
+
+        await using (DbCommand insert = connection.CreateCommand())
+        {
+            insert.CommandText =
+                $"INSERT INTO {TableName} (id, name, {Column}) VALUES (@id, @name, @secret)";
+            AddParameter(insert, "@id", id);
+            AddParameter(insert, "@name", plain);
+            AddParameter(insert, "@secret", Ssn1);
+            await insert.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
+        }
+
+        // The encrypted column first, then second, so a one-place shift cannot pass by luck.
+        (string Sql, int Secret, int Plain)[] shapes =
+        {
+            ($"SELECT {Column}, name FROM {TableName} WHERE id = @id", 0, 1),
+            ($"SELECT name, {Column} FROM {TableName} WHERE id = @id", 1, 0),
+            ($"SELECT name, {Column}, email FROM {TableName} WHERE id = @id", 1, 0),
+        };
+
+        foreach ((string sql, int secretOrdinal, int plainOrdinal) in shapes)
+        {
+            await using DbCommand select = connection.CreateCommand();
+            select.CommandText = sql;
+            AddParameter(select, "@id", id);
+
+            await using DbDataReader reader = await select.ExecuteReaderAsync(
+                TestContext.Current.CancellationToken);
+            Assert.True(await reader.ReadAsync(TestContext.Current.CancellationToken));
+
+            Assert.Equal(Ssn1, reader.GetString(secretOrdinal));
+            Assert.Equal(plain, reader.GetString(plainOrdinal));
+        }
+
+        byte[] stored = await this.ReadStoredBytesAsync(id);
+        Assert.Equal(StoredOverhead + Ssn1.Length, stored.Length);
+        Assert.DoesNotContain(
+            Convert.ToHexString(Encoding.UTF8.GetBytes(Ssn1)), Convert.ToHexString(stored));
+    }
+
     /// <summary>A value written through the plugin is stored encrypted and reads back intact.</summary>
-    [Fact]
+    [Theory]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg-kms")]
     [Trait("Database", "mysql-kms")]
     [Trait("Engine", "aurora")]
-    public async Task TestBasicEncryption()
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task TestBasicEncryption(bool useMySqlClient)
     {
         Assert.SkipUnless(this.fixture.Enabled, KmsEncryptionTestFixture.NoKeyReason);
         int id = NewId();
 
-        await using (AwsWrapperConnection connection = await this.OpenEncryptedAsync())
+        await using (AwsWrapperConnection connection = await this.OpenConnectionAsync(useMySqlClient))
         {
             await InsertAsync(connection, id, Ssn1);
             Assert.Equal(Ssn1, await ReadThroughPluginAsync(connection, id));
@@ -238,17 +311,19 @@ public class KmsEncryptionTests : IntegrationTestBase,
     }
 
     /// <summary>An UPDATE encrypts too, not only an INSERT.</summary>
-    [Fact]
+    [Theory]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg-kms")]
     [Trait("Database", "mysql-kms")]
     [Trait("Engine", "aurora")]
-    public async Task TestUpdateEncryption()
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task TestUpdateEncryption(bool useMySqlClient)
     {
         Assert.SkipUnless(this.fixture.Enabled, KmsEncryptionTestFixture.NoKeyReason);
         int id = NewId();
 
-        await using AwsWrapperConnection connection = await this.OpenEncryptedAsync();
+        await using AwsWrapperConnection connection = await this.OpenConnectionAsync(useMySqlClient);
         await InsertAsync(connection, id, Ssn1);
 
         await using (DbCommand update = connection.CreateCommand())
@@ -269,23 +344,30 @@ public class KmsEncryptionTests : IntegrationTestBase,
     /// Both branches of an upsert encrypt. The conflict branch is a second write to the encrypted column,
     /// and a plugin that maps only the VALUES parameter looks correct after the first write.
     /// </summary>
-    [Fact]
+    [Theory]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg-kms")]
     [Trait("Database", "mysql-kms")]
     [Trait("Engine", "aurora")]
-    public async Task TestUpsertEncryptsBothBranches()
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task TestUpsertEncryptsBothBranches(bool useMySqlClient)
     {
         Assert.SkipUnless(this.fixture.Enabled, KmsEncryptionTestFixture.NoKeyReason);
         int id = NewId();
 
-        string upsert = IsMySql
-            ? $"INSERT INTO {TableName} (id, {Column}) VALUES (@id, @secret) "
-                + $"ON DUPLICATE KEY UPDATE {Column} = @secret"
-            : $"INSERT INTO {TableName} (id, {Column}) VALUES (@id, @secret) "
-                + $"ON CONFLICT (id) DO UPDATE SET {Column} = @secret";
+        string upsert = Engine switch
+        {
+            DatabaseEngine.MYSQL or DatabaseEngine.MARIADB =>
+                $"INSERT INTO {TableName} (id, {Column}) VALUES (@id, @secret) "
+                + $"ON DUPLICATE KEY UPDATE {Column} = @secret",
+            DatabaseEngine.PG =>
+                $"INSERT INTO {TableName} (id, {Column}) VALUES (@id, @secret) "
+                + $"ON CONFLICT (id) DO UPDATE SET {Column} = @secret",
+            _ => throw new NotSupportedException($"No upsert syntax is known for {Engine}."),
+        };
 
-        await using AwsWrapperConnection connection = await this.OpenEncryptedAsync();
+        await using AwsWrapperConnection connection = await this.OpenConnectionAsync(useMySqlClient);
 
         var storedForms = new List<string>();
         foreach (string value in new[] { Ssn1, Ssn2 })
@@ -312,12 +394,14 @@ public class KmsEncryptionTests : IntegrationTestBase,
     /// Every command of a batch is encrypted against its own columns. Values of different lengths are used
     /// so that a value matched to the wrong command's column would change the stored length.
     /// </summary>
-    [Fact]
+    [Theory]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg-kms")]
     [Trait("Database", "mysql-kms")]
     [Trait("Engine", "aurora")]
-    public async Task TestBatchEncryptsEveryCommand()
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task TestBatchEncryptsEveryCommand(bool useMySqlClient)
     {
         Assert.SkipUnless(this.fixture.Enabled, KmsEncryptionTestFixture.NoKeyReason);
         (int Id, string Secret)[] rows =
@@ -327,7 +411,7 @@ public class KmsEncryptionTests : IntegrationTestBase,
             (NewId(), "333-33-3333-333"),
         };
 
-        await using AwsWrapperConnection connection = await this.OpenEncryptedAsync();
+        await using AwsWrapperConnection connection = await this.OpenConnectionAsync(useMySqlClient);
 
         await using (DbBatch batch = connection.CreateBatch())
         {
@@ -354,17 +438,19 @@ public class KmsEncryptionTests : IntegrationTestBase,
     /// A batch of SELECTs decrypts across the result-set boundary, which is the only path that makes the
     /// decrypting reader rebind its columns and keys part way through.
     /// </summary>
-    [Fact]
+    [Theory]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg-kms")]
     [Trait("Database", "mysql-kms")]
     [Trait("Engine", "aurora")]
-    public async Task TestBatchDecryptsAcrossResultSets()
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task TestBatchDecryptsAcrossResultSets(bool useMySqlClient)
     {
         Assert.SkipUnless(this.fixture.Enabled, KmsEncryptionTestFixture.NoKeyReason);
         (int Id, string Secret)[] rows = { (NewId(), Ssn1), (NewId(), Ssn2) };
 
-        await using AwsWrapperConnection connection = await this.OpenEncryptedAsync();
+        await using AwsWrapperConnection connection = await this.OpenConnectionAsync(useMySqlClient);
         foreach ((int id, string secret) in rows)
         {
             await InsertAsync(connection, id, secret);
@@ -399,18 +485,20 @@ public class KmsEncryptionTests : IntegrationTestBase,
     /// A value bound as a parameter to a column that is not registered must be stored as it was supplied.
     /// Encrypting an unregistered column would corrupt data silently.
     /// </summary>
-    [Fact]
+    [Theory]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg-kms")]
     [Trait("Database", "mysql-kms")]
     [Trait("Engine", "aurora")]
-    public async Task TestUnregisteredColumnIsLeftAlone()
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task TestUnregisteredColumnIsLeftAlone(bool useMySqlClient)
     {
         Assert.SkipUnless(this.fixture.Enabled, KmsEncryptionTestFixture.NoKeyReason);
         int id = NewId();
         const string plainValue = "not a secret";
 
-        await using AwsWrapperConnection connection = await this.OpenEncryptedAsync();
+        await using AwsWrapperConnection connection = await this.OpenConnectionAsync(useMySqlClient);
 
         await using (DbCommand insert = connection.CreateCommand())
         {
@@ -434,17 +522,19 @@ public class KmsEncryptionTests : IntegrationTestBase,
     /// A NULL stays NULL. Encrypting it would store ciphertext of nothing, which no longer reads back as
     /// NULL and defeats IS NULL predicates.
     /// </summary>
-    [Fact]
+    [Theory]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg-kms")]
     [Trait("Database", "mysql-kms")]
     [Trait("Engine", "aurora")]
-    public async Task TestNullStaysNull()
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task TestNullStaysNull(bool useMySqlClient)
     {
         Assert.SkipUnless(this.fixture.Enabled, KmsEncryptionTestFixture.NoKeyReason);
         int id = NewId();
 
-        await using AwsWrapperConnection connection = await this.OpenEncryptedAsync();
+        await using AwsWrapperConnection connection = await this.OpenConnectionAsync(useMySqlClient);
 
         await using (DbCommand insert = connection.CreateCommand())
         {
@@ -468,12 +558,14 @@ public class KmsEncryptionTests : IntegrationTestBase,
     /// Values of every supported type round-trip, which exercises each type marker and its byte layout
     /// against a real column rather than only in memory.
     /// </summary>
-    [Fact]
+    [Theory]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg-kms")]
     [Trait("Database", "mysql-kms")]
     [Trait("Engine", "aurora")]
-    public async Task TestSupportedTypesRoundTrip()
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task TestSupportedTypesRoundTrip(bool useMySqlClient)
     {
         Assert.SkipUnless(this.fixture.Enabled, KmsEncryptionTestFixture.NoKeyReason);
 
@@ -493,7 +585,7 @@ public class KmsEncryptionTests : IntegrationTestBase,
             new byte[] { 1, 2, 3, 4 },
         };
 
-        await using AwsWrapperConnection connection = await this.OpenEncryptedAsync();
+        await using AwsWrapperConnection connection = await this.OpenConnectionAsync(useMySqlClient);
 
         foreach (object value in values)
         {
@@ -529,12 +621,14 @@ public class KmsEncryptionTests : IntegrationTestBase,
     /// the only thing that distinguishes a working cache from a disabled one: every statement succeeds either
     /// way, so asserting only on the values would pass with caching switched off entirely.
     /// </remarks>
-    [Fact]
+    [Theory]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg-kms")]
     [Trait("Database", "mysql-kms")]
     [Trait("Engine", "aurora")]
-    public async Task TestMetadataIsCachedAndCanBeCleared()
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task TestMetadataIsCachedAndCanBeCleared(bool useMySqlClient)
     {
         Assert.SkipUnless(this.fixture.Enabled, KmsEncryptionTestFixture.NoKeyReason);
 
@@ -542,7 +636,7 @@ public class KmsEncryptionTests : IntegrationTestBase,
         // captured rather than assumed to be zero, since it covers the whole process.
         int loadsAtStart = MetadataManager.LoadCount;
 
-        await using AwsWrapperConnection connection = await this.OpenEncryptedAsync();
+        await using AwsWrapperConnection connection = await this.OpenConnectionAsync(useMySqlClient);
 
         for (int i = 0; i < 5; i++)
         {
@@ -567,21 +661,23 @@ public class KmsEncryptionTests : IntegrationTestBase,
     /// constraint rejects it; MySQL has no equivalent, so the value is stored readable and the test asserts
     /// that, because it is the behaviour the documentation warns about.
     /// </summary>
-    [Fact]
+    [Theory]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg-kms")]
     [Trait("Database", "mysql-kms")]
     [Trait("Engine", "aurora")]
-    public async Task TestLiteralIsNotEncrypted()
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task TestLiteralIsNotEncrypted(bool useMySqlClient)
     {
         Assert.SkipUnless(this.fixture.Enabled, KmsEncryptionTestFixture.NoKeyReason);
         int id = NewId();
 
-        await using AwsWrapperConnection connection = await this.OpenEncryptedAsync();
+        await using AwsWrapperConnection connection = await this.OpenConnectionAsync(useMySqlClient);
         await using DbCommand insert = connection.CreateCommand();
         insert.CommandText = $"INSERT INTO {TableName} (id, {Column}) VALUES ({id}, '{Ssn1}')";
 
-        if (IsMySql)
+        if (IsMySqlFamily)
         {
             // No column constraint exists on MySQL, so the readable value is accepted.
             await insert.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
@@ -642,10 +738,31 @@ public class KmsEncryptionTests : IntegrationTestBase,
         + $";KmsRegion={TestEnvironment.Env.Info.Region}"
         + $";KmsEncryptionMetadataSchema={MetadataSchema}";
 
-    private async Task<AwsWrapperConnection> OpenEncryptedAsync()
+    /// <summary>
+    /// Opens a plugin-enabled connection on the driver the test asked for.
+    /// </summary>
+    /// <param name="useMySqlClient">
+    /// Whether to use MySql.Data rather than the driver the harness picks for the engine, which for MySQL is
+    /// MySqlConnector. Every test that takes a value for this runs once each way, because the two drivers
+    /// describe their result columns through different APIs and so are identified by different code:
+    /// MySqlConnector implements <c>IDbColumnSchemaGenerator</c>, MySql.Data offers only the older
+    /// <c>GetSchemaTable</c>. That second path has already produced two silent defects.
+    /// </param>
+    /// <remarks>
+    /// The skip lives here rather than in each test because a data row cannot be made conditional: the
+    /// MySql.Data case is generated for PostgreSQL runs too, and there is no MySql.Data connection to make
+    /// against PostgreSQL.
+    /// </remarks>
+    private async Task<AwsWrapperConnection> OpenConnectionAsync(bool useMySqlClient = false)
     {
-        AwsWrapperConnection connection =
-            AuroraUtils.CreateAwsWrapperConnection(Engine, this.PluginConnectionString());
+        Assert.SkipWhen(
+            useMySqlClient && !IsMySqlFamily,
+            $"The MySql.Data case covers a MySQL-only driver, so it has nothing to run against {Engine}.");
+
+        AwsWrapperConnection connection = useMySqlClient
+            ? new AwsWrapperConnection<MySql.Data.MySqlClient.MySqlConnection>(this.PluginConnectionString())
+            : AuroraUtils.CreateAwsWrapperConnection(Engine, this.PluginConnectionString());
+
         await connection.OpenAsync(TestContext.Current.CancellationToken);
         return connection;
     }

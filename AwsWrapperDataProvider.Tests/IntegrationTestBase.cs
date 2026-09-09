@@ -66,6 +66,24 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         _ => throw new InvalidOperationException($"Unsupported deployment {Deployment}"),
     };
 
+    /// <summary>
+    /// Gets a value indicating whether the engine speaks MySQL's dialect, which MariaDB does too.
+    /// </summary>
+    /// <remarks>
+    /// Switched over rather than compared against <see cref="DatabaseEngine.MYSQL"/> so that a new engine has
+    /// to be classified deliberately. Treating "not MySQL" as PostgreSQL is how PostgreSQL-only SQL ends up
+    /// running against MariaDB.
+    /// </remarks>
+    protected internal static bool IsMySqlFamily => Engine switch
+    {
+        DatabaseEngine.MYSQL or DatabaseEngine.MARIADB => true,
+        DatabaseEngine.PG => false,
+        _ => throw new NotSupportedException($"Unsupported engine {Engine}."),
+    };
+
+    /// <summary>Gets a value indicating whether the engine is PostgreSQL.</summary>
+    protected internal static bool IsPostgres => Engine == DatabaseEngine.PG;
+
     protected virtual bool MakeSureFirstInstanceWriter => false;
 
     public virtual async ValueTask InitializeAsync()
