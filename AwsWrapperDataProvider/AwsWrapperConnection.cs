@@ -421,6 +421,9 @@ public class AwsWrapperConnection : DbConnection, IWrapper
         return wrapperCommand;
     }
 
+    public override bool CanCreateBatch =>
+        this.pluginService?.CurrentConnection?.CanCreateBatch ?? false;
+
     protected override DbBatch CreateDbBatch() => this.CreateBatch();
 
     public new AwsWrapperBatch CreateBatch()

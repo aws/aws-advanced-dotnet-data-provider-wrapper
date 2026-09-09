@@ -394,14 +394,12 @@ public class KmsEncryptionTests : IntegrationTestBase,
     /// Every command of a batch is encrypted against its own columns. Values of different lengths are used
     /// so that a value matched to the wrong command's column would change the stored length.
     /// </summary>
-    [Theory]
+    [Fact]
     [Trait("Category", "Integration")]
     [Trait("Database", "pg-kms")]
     [Trait("Database", "mysql-kms")]
     [Trait("Engine", "aurora")]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task TestBatchEncryptsEveryCommand(bool useMySqlClient)
+    public async Task TestBatchEncryptsEveryCommand()
     {
         Assert.SkipUnless(this.fixture.Enabled, KmsEncryptionTestFixture.NoKeyReason);
         (int Id, string Secret)[] rows =
@@ -411,7 +409,12 @@ public class KmsEncryptionTests : IntegrationTestBase,
             (NewId(), "333-33-3333-333"),
         };
 
-        await using AwsWrapperConnection connection = await this.OpenConnectionAsync(useMySqlClient);
+        await using AwsWrapperConnection connection = await this.OpenConnectionAsync();
+
+        // MySql.Data implements no batch at all, so DbConnection.CreateDbBatch throws from the base
+        // class. Asking the connection rather than naming the driver keeps this true for whatever
+        // driver a future engine brings.
+        Assert.SkipUnless(connection.CanCreateBatch, $"The current driver does not support DbBatch.");
 
         await using (DbBatch batch = connection.CreateBatch())
         {
@@ -451,6 +454,14 @@ public class KmsEncryptionTests : IntegrationTestBase,
         (int Id, string Secret)[] rows = { (NewId(), Ssn1), (NewId(), Ssn2) };
 
         await using AwsWrapperConnection connection = await this.OpenConnectionAsync(useMySqlClient);
+
+        // MySql.Data implements no batch at all, so DbConnection.CreateDbBatch throws from the base
+        // class. Asking the connection rather than naming the driver keeps this true for whatever
+        // driver a future engine brings.
+        Assert.SkipUnless(
+            connection.CanCreateBatch,
+            $"The {(useMySqlClient ? "MySql.Data" : "harness")} driver does not support DbBatch.");
+
         foreach ((int id, string secret) in rows)
         {
             await InsertAsync(connection, id, secret);
