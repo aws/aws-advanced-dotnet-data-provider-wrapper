@@ -47,7 +47,16 @@ public class AwsWrapperConnection : DbConnection, IWrapper
 
     internal DbConnection? TargetDbConnection => this.pluginService?.CurrentConnection;
 
+    // Wrapper objects that hold a reference to the target connection and so must follow it whenever a
+    // plugin switches the current connection (failover, read/write splitting). Both lists are guarded
+    // by wrapperObjectsLock: the application creates and disposes commands and batches on its own
+    // threads, while a monitor thread can trigger a switch at any moment, and iterating a List<> that
+    // another thread is mutating throws.
+    private readonly object wrapperObjectsLock = new();
+
     internal readonly List<AwsWrapperCommand> ActiveWrapperCommands = new();
+
+    internal readonly List<AwsWrapperBatch> ActiveWrapperBatches = new();
 
     [AllowNull]
     public override string ConnectionString
@@ -416,9 +425,8 @@ public class AwsWrapperConnection : DbConnection, IWrapper
         Logger.LogDebug(Resources.AwsWrapperConnection_CreateCommand_DbCommandCreated, RuntimeHelpers.GetHashCode(this.pluginService.CurrentConnection));
 
         this.ConnectionProperties![PropertyDefinition.TargetCommandType.Name] = typeof(TCommand).AssemblyQualifiedName!;
-        var wrapperCommand = new AwsWrapperCommand<TCommand>(command, this, this.PluginManager);
-        this.ActiveWrapperCommands.Add(wrapperCommand);
-        return wrapperCommand;
+        // The command registers itself with this connection so that it follows a connection switch.
+        return new AwsWrapperCommand<TCommand>(command, this, this.PluginManager);
     }
 
     protected override DbBatch CreateDbBatch() => this.CreateBatch();
@@ -431,6 +439,7 @@ public class AwsWrapperConnection : DbConnection, IWrapper
                 "DbConnection.GetSchema",
                 () => Task.FromResult(this.pluginService.CurrentConnection!.CreateBatch()))
             .GetAwaiter().GetResult();
+        // The batch registers itself with this connection so that it follows a connection switch.
         return new AwsWrapperBatch(batch, this, this.PluginManager!);
     }
 
@@ -478,9 +487,68 @@ public class AwsWrapperConnection : DbConnection, IWrapper
         throw new Exception(string.Format(Properties.Resources.Error_CantLoadTargetConnectionType, targetConnectionTypeString));
     }
 
+    internal void RegisterWrapperCommand(AwsWrapperCommand command)
+    {
+        lock (this.wrapperObjectsLock)
+        {
+            this.ActiveWrapperCommands.Add(command);
+        }
+    }
+
     internal void UnregisterWrapperCommand(AwsWrapperCommand command)
     {
-        this.ActiveWrapperCommands.Remove(command);
+        lock (this.wrapperObjectsLock)
+        {
+            this.ActiveWrapperCommands.Remove(command);
+        }
+    }
+
+    internal void RegisterWrapperBatch(AwsWrapperBatch batch)
+    {
+        lock (this.wrapperObjectsLock)
+        {
+            this.ActiveWrapperBatches.Add(batch);
+        }
+    }
+
+    internal void UnregisterWrapperBatch(AwsWrapperBatch batch)
+    {
+        lock (this.wrapperObjectsLock)
+        {
+            this.ActiveWrapperBatches.Remove(batch);
+        }
+    }
+
+    /// <summary>
+    /// Points every live command and batch at <paramref name="connection"/>, so that objects the
+    /// application already holds keep working after a plugin switches the current connection.
+    /// </summary>
+    /// <remarks>
+    /// The lists are snapshotted and then released before any wrapper object is touched, because
+    /// re-pointing one can call into the target driver (creating a command) and holding the lock
+    /// across that would serialize unrelated work. Nothing is missed by doing so: the caller assigns
+    /// the new connection to the plugin service before calling this, so a command or batch created
+    /// concurrently is already built on the new connection and needs no re-pointing.
+    /// </remarks>
+    internal void RebindActiveWrapperObjects(DbConnection? connection)
+    {
+        AwsWrapperCommand[] commands;
+        AwsWrapperBatch[] batches;
+        lock (this.wrapperObjectsLock)
+        {
+            commands = this.ActiveWrapperCommands.ToArray();
+            batches = this.ActiveWrapperBatches.ToArray();
+        }
+
+        foreach (AwsWrapperCommand command in commands)
+        {
+            command.SetCurrentConnection(connection);
+        }
+
+        foreach (AwsWrapperBatch batch in batches)
+        {
+            batch.SetCurrentConnection(connection);
+        }
     }
 
     public T Unwrap<T>() where T : class

@@ -48,6 +48,7 @@ public class AwsWrapperCommand : DbCommand, IWrapper
         this.wrapperConnection = connection;
         this.TargetDbConnection = connection.TargetDbConnection;
         this.pluginManager = pluginManager;
+        connection.RegisterWrapperCommand(this);
     }
 
     public AwsWrapperCommand(DbCommand command, DbConnection? connection)
@@ -60,6 +61,7 @@ public class AwsWrapperCommand : DbCommand, IWrapper
             this.wrapperConnection = awsWrapperConnection;
             this.TargetDbConnection = awsWrapperConnection.TargetDbConnection;
             this.pluginManager = awsWrapperConnection.PluginManager;
+            awsWrapperConnection.RegisterWrapperCommand(this);
         }
     }
 
@@ -82,6 +84,7 @@ public class AwsWrapperCommand : DbCommand, IWrapper
             this.pluginManager = connection.PluginManager;
             this.EnsureTargetDbCommandCreated();
             this.TargetDbCommand!.Connection = this.TargetDbConnection;
+            connection.RegisterWrapperCommand(this);
         }
     }
 
@@ -153,31 +156,35 @@ public class AwsWrapperCommand : DbCommand, IWrapper
         {
             if (value == null)
             {
+                this.wrapperConnection?.UnregisterWrapperCommand(this);
                 this.wrapperConnection = null;
                 this.TargetDbConnection = null;
                 this.pluginManager = null;
                 return;
             }
 
-            if (!IsTypeAwsWrapperConnection(value.GetType()))
+            // Covers AwsWrapperConnection<T> and any other subclass too
+            if (value is not AwsWrapperConnection newConnection)
             {
                 throw new InvalidOperationException(Resources.Error_ProvidedConnectionNotAwsWrapperConnection);
             }
 
-            this.wrapperConnection = (AwsWrapperConnection)value;
-            this.TargetDbConnection = this.wrapperConnection.TargetDbConnection;
-            this.pluginManager = this.wrapperConnection.PluginManager;
+            // Follow the new connection instead of the old one, so a switch on either re-points the
+            // command at most once and never at a connection it has been moved off.
+            if (!ReferenceEquals(newConnection, this.wrapperConnection))
+            {
+                this.wrapperConnection?.UnregisterWrapperCommand(this);
+                newConnection.RegisterWrapperCommand(this);
+            }
+
+            this.wrapperConnection = newConnection;
+            this.TargetDbConnection = newConnection.TargetDbConnection;
+            this.pluginManager = newConnection.PluginManager;
             if (this.TargetDbCommand != null)
             {
-                this.TargetDbCommand.Connection = this.wrapperConnection?.TargetDbConnection;
+                this.TargetDbCommand.Connection = newConnection.TargetDbConnection;
             }
         }
-    }
-
-    protected static bool IsTypeAwsWrapperConnection(Type type)
-    {
-        // check if type is AwsWrapperConnection or AwsWrapperConnection<T>
-        return type == typeof(AwsWrapperConnection) || (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(AwsWrapperConnection<>));
     }
 
     protected override DbParameterCollection DbParameterCollection
@@ -392,6 +399,22 @@ public class AwsWrapperCommand : DbCommand, IWrapper
             RuntimeHelpers.GetHashCode(this.TargetDbConnection),
             RuntimeHelpers.GetHashCode(this));
         this.EnsureTargetDbCommandCreated();
+
+        // A transaction belongs to the connection that began it, and that connection is about to be
+        // disposed, so the transaction cannot survive the switch. The reference is dropped rather than
+        // carried over: ADO.NET requires a command's transaction to belong to its connection, and some
+        // providers reject the assignment below while a foreign transaction is still attached. Dropping
+        // it here is not what tells the application its transaction is gone - the plugin that switched
+        // the connection reports that (a failover exception, for instance); this only keeps the command
+        // itself coherent so the failure the application sees is the real one.
+        if (this.TargetDbCommand!.Transaction != null)
+        {
+            Logger.LogWarning(Resources.AwsWrapperCommand_SetCurrentConnection_TransactionDropped,
+                RuntimeHelpers.GetHashCode(this));
+            this.TargetDbCommand.Transaction = null;
+            this.wrapperTransaction = null;
+        }
+
         this.TargetDbConnection = connection;
         this.TargetDbCommand!.Connection = connection;
     }
