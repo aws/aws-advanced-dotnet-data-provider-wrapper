@@ -326,29 +326,29 @@ public class AwsWrapperConnectionRebindTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void ConnectionSwitch_DoesNotThrowWhenCommandsAreCreatedConcurrently()
+    public async Task ConnectionSwitch_DoesNotThrowWhenCommandsAreCreatedConcurrently()
     {
         using AwsWrapperConnection<MySqlConnection> connection = NewConnectionThatSwitchesOnOpen();
 
         // The switch iterates the registered wrapper objects while the application may still be
-        // creating and disposing them, which throws if the live list is iterated directly.
-        using var startCreating = new ManualResetEventSlim(false);
-        var creator = Task.Run(() =>
-        {
-            startCreating.Wait();
-            for (int i = 0; i < 200; i++)
+        // creating and disposing them, which throws if the live list is iterated directly. The two
+        // loops are deliberately unsynchronised and unequal in length so that they overlap wherever
+        // the scheduler happens to interleave them.
+        Task creator = Task.Run(
+            () =>
             {
-                var command = connection.CreateCommand<MySqlCommand>();
-                command.Dispose();
-            }
-        });
+                for (int i = 0; i < 500; i++)
+                {
+                    using AwsWrapperCommand<MySqlCommand> command = connection.CreateCommand<MySqlCommand>();
+                }
+            },
+            TestContext.Current.CancellationToken);
 
-        startCreating.Set();
-        for (int i = 0; i < 50; i++)
+        for (int i = 0; i < 100; i++)
         {
             connection.Open();
         }
 
-        creator.GetAwaiter().GetResult();
+        await creator;
     }
 }
