@@ -27,4 +27,6 @@ jobs:
         run: dotnet build
 
       - name: Run unit tests
-        run: dotnet test --filter Category!=Integration --no-build
+        # Exit code 8 is "zero tests ran". The integration-only test projects match nothing under
+        # this filter, and Microsoft.Testing.Platform reports that as a failure where VSTest did not.
+        run: dotnet test --filter Category!=Integration --no-build --ignore-exit-code 8

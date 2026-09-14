@@ -111,12 +111,16 @@ public class ContainerHelper {
         assertEquals(0, exitCode, "Failed to update database with migration");
     }
 
+    // Microsoft.Testing.Platform replaces the VSTest options that used to be passed here:
+    // "--logger:console;verbosity=detailed" becomes "--output Detailed", and exit code 8
+    // ("zero tests ran") has to be ignored because the filter selects one engine's tests, so the
+    // test projects for the other engines legitimately match nothing.
     if (task.contains("perf")) {
       exitCode = execInContainer(container, consumer, "dotnet", "test", "--filter",
-              "Category=Integration&Database=" + task + "&Engine=" + engineDeployment, "--configuration", "Release", "--logger:\"console;verbosity=detailed\"");
+              "Category=Integration&Database=" + task + "&Engine=" + engineDeployment, "--configuration", "Release", "--output", "Detailed", "--ignore-exit-code", "8");
     } else {
       exitCode = execInContainer(container, consumer, "dotnet", "test", "--filter",
-              "Category=Integration&Database=" + task + "&Engine=" + engineDeployment, "--no-build", "--logger:\"console;verbosity=detailed\"");
+              "Category=Integration&Database=" + task + "&Engine=" + engineDeployment, "--no-build", "--output", "Detailed", "--ignore-exit-code", "8");
     }
 
 
@@ -135,7 +139,7 @@ public class ContainerHelper {
     Consumer<OutputFrame> consumer = new ConsoleConsumer();
     execInContainer(container, consumer, "printenv", "TEST_ENV_DESCRIPTION");
 
-    Long exitCode = execInContainer(container, consumer, "dotnet", "test", "--filter", "Category!=Integration");
+    Long exitCode = execInContainer(container, consumer, "dotnet", "test", "--filter", "Category!=Integration", "--ignore-exit-code", "8");
     System.out.println("==== Container console feed ==== <<<<");
     assertEquals(0, exitCode, "Some tests failed.");
   }
