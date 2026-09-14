@@ -16,8 +16,10 @@ using AwsWrapperDataProvider.Driver.Plugins.Failover;
 using AwsWrapperDataProvider.Tests.Container.Utils;
 using NHibernate;
 using NHibernate.Criterion;
+using Xunit.Sdk;
+using Xunit.v3;
 
-[assembly: CollectionBehavior(DisableTestParallelization = true)]
+[assembly: Parallelization(Mode = ParallelMode.None)]
 [assembly: CaptureConsole]
 
 namespace AwsWrapperDataProvider.NHibernate.Tests

@@ -17,12 +17,18 @@
 
   <ItemGroup>
     <PackageReference Include="NPOI" Version="2.8.0" />
+    <!--
+      NPOI 2.8.0 (the newest release) pulls System.Security.Cryptography.Xml 8.0.2, which has
+      published high-severity advisories. Pinning it directly overrides the transitive version;
+      nothing in this project uses the assembly.
+    -->
+    <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.12" />
     <PackageReference Include="ToxiproxyNetCore" Version="1.0.50" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
+    <PackageReference Include="xunit.runner.visualstudio" Version="4.0.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="xunit.v3" Version="3.2.2" />
+    <PackageReference Include="xunit.v3" Version="4.0.1" />
   </ItemGroup>
 
 </Project>
