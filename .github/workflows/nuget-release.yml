@@ -16,14 +16,14 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Download NuGet package artifact
-        uses: dawidd6/action-download-artifact@v11
+        uses: dawidd6/action-download-artifact@v24
         with:
           name: nuget-packages
           run_id: ${{ github.event.inputs.run_id }}
           path: .\packages
 
       - name: Configure NuGet credential
-        uses: aws-actions/configure-aws-credentials@v6.2.0
+        uses: aws-actions/configure-aws-credentials@v6.2.4
         with:
           role-to-assume: ${{ secrets.NUGET_ACCESS_ROLE_ARN }}
           aws-region: ${{ secrets.AWS_NUGET_KEY_REGION }}
