@@ -93,14 +93,9 @@ public class ContainerHelper {
     Long exitCode = execInContainer(container, consumer, "dotnet", "build");
     assertEquals(0, exitCode, "Dotnet build failed.");
 
-    // For Entity Framework tests.
-    // The EF test sources were split into two assemblies because Pomelo (MySQL) has no EF Core 10
-    // release: PostgreSQL tests target EF Core 10, MySQL tests stay on EF Core 9. Each engine's
-    // migrations live in its own project, so select the project by engine.
+    // For Entity Framework tests
     if (task.endsWith("ef")) {
-        String efProject = task.startsWith("mysql")
-                ? "AwsWrapperDataProvider.EntityFrameworkCore.MySql.Tests"
-                : "AwsWrapperDataProvider.EntityFrameworkCore.Tests";
+        String efProject = "AwsWrapperDataProvider.EntityFrameworkCore.Tests";
 
         exitCode = execInContainer(container, consumer,
                 "dotnet", "ef", "migrations", "add", "InitialCreate_" + System.currentTimeMillis(), "--project", efProject);
@@ -113,8 +108,8 @@ public class ContainerHelper {
 
     // Microsoft.Testing.Platform replaces the VSTest options that used to be passed here:
     // "--logger:console;verbosity=detailed" becomes "--output Detailed", and exit code 8
-    // ("zero tests ran") has to be ignored because the filter selects one engine's tests, so the
-    // test projects for the other engines legitimately match nothing.
+    // ("zero tests ran") has to be ignored because the filter runs solution-wide, so the test
+    // projects holding no test for this task legitimately match nothing.
     if (task.contains("perf")) {
       exitCode = execInContainer(container, consumer, "dotnet", "test", "--filter",
               "Category=Integration&Database=" + task + "&Engine=" + engineDeployment, "--configuration", "Release", "--output", "Detailed", "--ignore-exit-code", "8");
@@ -218,7 +213,7 @@ public class ContainerHelper {
                 builder -> appendExtraCommandsToBuilder.apply(
                     builder
                         .from(testContainerImageName)
-                        .run("dotnet tool install --global dotnet-ef --version 10.0.9")
+                        .run("dotnet tool install --global dotnet-ef --version 10.0.12")
                         .env("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/.dotnet/tools")
                         .run("mkdir", "app")
                         .workDir("/app")
@@ -235,7 +230,6 @@ public class ContainerHelper {
         .withFileSystemBind("../../../AwsWrapperDataProvider.Dialect.MySqlConnector", "/app/AwsWrapperDataProvider.Dialect.MySqlConnector", BindMode.READ_WRITE)
         .withFileSystemBind("../../../AwsWrapperDataProvider.Dialect.Npgsql", "/app/AwsWrapperDataProvider.Dialect.Npgsql", BindMode.READ_WRITE)
         .withFileSystemBind("../../../AwsWrapperDataProvider.EntityFrameworkCore.Tests", "/app/AwsWrapperDataProvider.EntityFrameworkCore.Tests", BindMode.READ_WRITE)
-        .withFileSystemBind("../../../AwsWrapperDataProvider.EntityFrameworkCore.MySql.Tests", "/app/AwsWrapperDataProvider.EntityFrameworkCore.MySql.Tests", BindMode.READ_WRITE)
         .withFileSystemBind("../../../AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector", "/app/AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector", BindMode.READ_WRITE)
         .withFileSystemBind("../../../AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL", "/app/AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL", BindMode.READ_WRITE)
         .withFileSystemBind("../../../AwsWrapperDataProvider", "/app/AwsWrapperDataProvider", BindMode.READ_WRITE)
