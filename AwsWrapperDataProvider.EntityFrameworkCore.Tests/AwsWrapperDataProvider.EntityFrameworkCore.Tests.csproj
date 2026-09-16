@@ -10,9 +10,9 @@
   </PropertyGroup>
 
   <!--
-    PostgreSQL EF Core integration tests (EF Core 10). The shared EF test sources are owned
-    physically by this project; the MySQL test project (EF Core 9, blocked on Pomelo) links the
-    same files. MySQL-only sources (migrations, the Pomelo dialect unit test) live in that project.
+    EF Core integration tests for both engines. Both providers target EF Core 10, so they coexist in
+    a single assembly; PersonDbContextFactory selects the provider from the test environment so
+    "dotnet ef" resolves the right one at design time.
   -->
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="10.0.1" />
@@ -29,7 +29,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL\AwsWrapperDataProvider.EntityFrameworkCore.PostgreSQL.csproj" />
+    <ProjectReference Include="..\AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector\AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.csproj" />
     <ProjectReference Include="..\AwsWrapperDataProvider.Dialect.Npgsql\AwsWrapperDataProvider.Dialect.Npgsql.csproj" />
+    <ProjectReference Include="..\AwsWrapperDataProvider.Dialect.MySqlConnector\AwsWrapperDataProvider.Dialect.MySqlConnector.csproj" />
     <ProjectReference Include="..\AwsWrapperDataProvider.Tests\AwsWrapperDataProvider.Tests.csproj" />
   </ItemGroup>
 

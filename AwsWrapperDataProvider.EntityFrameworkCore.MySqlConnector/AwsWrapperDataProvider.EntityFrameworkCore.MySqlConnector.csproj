@@ -7,12 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="AwsWrapperDataProvider.EntityFrameworkCore.MySql.Tests" />
+    <InternalsVisibleTo Include="AwsWrapperDataProvider.EntityFrameworkCore.Tests" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.12" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.12" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="[10.0.12,11.0.0)" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="[10.0.12,11.0.0)" />
     <PackageReference Include="Microting.EntityFrameworkCore.MySql" Version="10.0.11" />
   </ItemGroup>
 
