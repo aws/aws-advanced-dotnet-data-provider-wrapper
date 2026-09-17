@@ -234,6 +234,7 @@ public class ContainerHelper {
         .withFileSystemBind("../../../AwsWrapperDataProvider.Plugin.SecretsManager", "/app/AwsWrapperDataProvider.Plugin.SecretsManager", BindMode.READ_WRITE)
         .withFileSystemBind("../../../AwsWrapperDataProvider.Plugin.FederatedAuth", "/app/AwsWrapperDataProvider.Plugin.FederatedAuth", BindMode.READ_WRITE)
         .withFileSystemBind("../../../AwsWrapperDataProvider.Plugin.CustomEndpoint", "/app/AwsWrapperDataProvider.Plugin.CustomEndpoint", BindMode.READ_WRITE)
+        .withFileSystemBind("../../../AwsWrapperDataProvider.Plugin.KmsEncryption", "/app/AwsWrapperDataProvider.Plugin.KmsEncryption", BindMode.READ_WRITE)
         .withFileSystemBind("../../../AwsWrapperDataProvider.Telemetry.XRay", "/app/AwsWrapperDataProvider.Telemetry.XRay", BindMode.READ_WRITE)
         .withFileSystemBind("../../../AwsWrapperDataProvider.Telemetry.XRay.Tests", "/app/AwsWrapperDataProvider.Telemetry.XRay.Tests", BindMode.READ_WRITE)
         .withFileSystemBind("../../../AwsWrapperDataProvider.Tests", "/app/AwsWrapperDataProvider.Tests", BindMode.READ_WRITE)

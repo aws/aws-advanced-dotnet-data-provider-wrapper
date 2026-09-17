@@ -175,6 +175,48 @@ public class AwsWrapperConnectionStringBuilder : DbConnectionStringBuilder
         set => this.SetValue(PropertyDefinition.SecretsManagerSecretPasswordProperty.Name, value);
     }
 
+    public string? KmsRegion
+    {
+        get => this.GetValue(PropertyDefinition.KmsRegion.Name);
+        set => this.SetValue(PropertyDefinition.KmsRegion.Name, value);
+    }
+
+    public string? KmsEncryptionMetadataSchema
+    {
+        get => this.GetValue(PropertyDefinition.KmsEncryptionMetadataSchema.Name);
+        set => this.SetValue(PropertyDefinition.KmsEncryptionMetadataSchema.Name, value);
+    }
+
+    public bool? KmsMetadataCacheEnabled
+    {
+        get => this.GetBoolValue(PropertyDefinition.KmsMetadataCacheEnabled.Name);
+        set => this.SetValue(PropertyDefinition.KmsMetadataCacheEnabled.Name, value?.ToString());
+    }
+
+    public int? KmsMetadataCacheExpirationMinutes
+    {
+        get => this.GetIntValue(PropertyDefinition.KmsMetadataCacheExpirationMinutes.Name);
+        set => this.SetValue(PropertyDefinition.KmsMetadataCacheExpirationMinutes.Name, value?.ToString());
+    }
+
+    public bool? KmsDataKeyCacheEnabled
+    {
+        get => this.GetBoolValue(PropertyDefinition.KmsDataKeyCacheEnabled.Name);
+        set => this.SetValue(PropertyDefinition.KmsDataKeyCacheEnabled.Name, value?.ToString());
+    }
+
+    public int? KmsDataKeyCacheMaxSize
+    {
+        get => this.GetIntValue(PropertyDefinition.KmsDataKeyCacheMaxSize.Name);
+        set => this.SetValue(PropertyDefinition.KmsDataKeyCacheMaxSize.Name, value?.ToString());
+    }
+
+    public long? KmsDataKeyCacheExpirationMs
+    {
+        get => this.GetLongValue(PropertyDefinition.KmsDataKeyCacheExpirationMs.Name);
+        set => this.SetValue(PropertyDefinition.KmsDataKeyCacheExpirationMs.Name, value?.ToString());
+    }
+
     public int? OpenConnectionRetryTimeoutMs
     {
         get => this.GetIntValue(PropertyDefinition.OpenConnectionRetryTimeoutMs.Name);
@@ -574,6 +616,12 @@ public class AwsWrapperConnectionStringBuilder : DbConnectionStringBuilder
     {
         var stringValue = this.GetValue(key);
         return bool.TryParse(stringValue, out bool result) ? result : null;
+    }
+
+    private long? GetLongValue(string key)
+    {
+        var stringValue = this.GetValue(key);
+        return long.TryParse(stringValue, out long result) ? result : null;
     }
 
     private void SetValue(string key, string? value)

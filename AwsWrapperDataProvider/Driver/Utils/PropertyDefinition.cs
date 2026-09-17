@@ -112,6 +112,29 @@ public static class PropertyDefinition
         "password",
         "Set this value to be the key in the JSON secret that contains the password for database connection.");
 
+    public static readonly AwsWrapperProperty KmsRegion = new(
+        "KmsRegion", null, "The AWS region used for AWS KMS encryption operations.");
+
+    public static readonly AwsWrapperProperty KmsEncryptionMetadataSchema = new(
+        "KmsEncryptionMetadataSchema",
+        "encrypt",
+        "The schema containing the encryption metadata tables.");
+
+    public static readonly AwsWrapperProperty KmsMetadataCacheEnabled = new(
+        "KmsMetadataCacheEnabled", "true", "Whether encryption metadata is cached.");
+
+    public static readonly AwsWrapperProperty KmsMetadataCacheExpirationMinutes = new(
+        "KmsMetadataCacheExpirationMinutes", "60", "Encryption metadata cache expiration time in minutes.");
+
+    public static readonly AwsWrapperProperty KmsDataKeyCacheEnabled = new(
+        "KmsDataKeyCacheEnabled", "true", "Whether data keys are cached in memory.");
+
+    public static readonly AwsWrapperProperty KmsDataKeyCacheMaxSize = new(
+        "KmsDataKeyCacheMaxSize", "1000", "Maximum number of entries in the data key cache.");
+
+    public static readonly AwsWrapperProperty KmsDataKeyCacheExpirationMs = new(
+        "KmsDataKeyCacheExpirationMs", "3600000", "Data key cache expiration in milliseconds.");
+
     public static readonly AwsWrapperProperty OpenConnectionRetryTimeoutMs = new(
         "OpenConnectionRetryTimeoutMs", "30000", "Maximum allowed time for the retries opening a connection.");
 
