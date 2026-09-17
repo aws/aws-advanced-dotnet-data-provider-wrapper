@@ -244,7 +244,7 @@ internal sealed class EncryptionService
 
         if (hmacKey.Length == 0)
         {
-            throw EncryptionException.InvalidKeyLength(algorithm, "HMAC key", HmacTagLength, hmacKey.Length);
+            throw EncryptionException.EmptyKey(algorithm, "HMAC key");
         }
     }
 }

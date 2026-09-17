@@ -133,6 +133,15 @@ namespace AwsWrapperDataProvider.Plugin.KmsEncryption.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The {0} for {1} is empty. Check the key material recorded in the encryption metadata..
+        /// </summary>
+        internal static string EncryptionException_EmptyKey {
+            get {
+                return ResourceManager.GetString("EncryptionException_EmptyKey", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to The value stored in {0} failed its integrity check. Either it is not encrypted (written without the kmsEncryption plugin, as a literal, or by another application), or a different key is configured for this column than the one it was encrypted with, or the stored bytes have been modified..
         /// </summary>
         internal static string EncryptionException_IntegrityCheckFailed {

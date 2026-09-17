@@ -88,6 +88,9 @@
   <data name="EncryptionException_InvalidKeyLength" xml:space="preserve">
     <value>Invalid {0} length for {1}: expected {2} bytes but got {3}.</value>
   </data>
+  <data name="EncryptionException_EmptyKey" xml:space="preserve">
+    <value>The {0} for {1} is empty. Check the key material recorded in the encryption metadata.</value>
+  </data>
   <data name="EncryptionException_UnsupportedType" xml:space="preserve">
     <value>Values of type '{0}' cannot be encrypted. Supported types are string, int, long, double, float, bool, decimal, DateTime, DateOnly, TimeOnly, DateTimeOffset and byte[].</value>
   </data>

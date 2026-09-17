@@ -53,6 +53,18 @@ public class EncryptionException : Exception
             expected,
             actual));
 
+    /// <summary>
+    /// Reports key material that has no bytes at all. Kept separate from <see cref="InvalidKeyLength"/>
+    /// because an empty HMAC key is refused for being empty rather than for being the wrong size: HMAC
+    /// accepts a key of any length, so there is no expected length to report.
+    /// </summary>
+    internal static EncryptionException EmptyKey(string algorithm, string keyName) =>
+        new(string.Format(
+            CultureInfo.CurrentCulture,
+            Resources.EncryptionException_EmptyKey,
+            keyName,
+            algorithm));
+
     internal static EncryptionException UnsupportedType(Type type) =>
         new(string.Format(
             CultureInfo.CurrentCulture,

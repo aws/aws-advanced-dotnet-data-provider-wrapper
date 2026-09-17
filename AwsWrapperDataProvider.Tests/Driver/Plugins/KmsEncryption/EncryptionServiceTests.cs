@@ -190,6 +190,36 @@ public class EncryptionServiceTests
 
     [Fact]
     [Trait("Category", "Unit")]
+    public void TestEmptyHmacKeyIsRejected()
+    {
+        var service = new EncryptionService();
+
+        // HMACSHA256 accepts an empty key and returns a tag that looks like any other, so nothing else
+        // would notice a value signed with no key at all.
+        Assert.Throws<EncryptionException>(
+            () => service.Encrypt("x", DataKey(), Array.Empty<byte>(), Algorithm));
+    }
+
+    [Theory]
+    [Trait("Category", "Unit")]
+    [InlineData(1)]
+    [InlineData(16)]
+    [InlineData(64)]
+    [InlineData(100)]
+    public void TestHmacKeyOfAnyNonEmptyLengthIsAccepted(int length)
+    {
+        var service = new EncryptionService();
+        byte[] hmacKey = Enumerable.Range(0, length).Select(i => (byte)i).ToArray();
+
+        // Pinned because requiring 32 bytes here looks tidy and would be wrong: HMAC-SHA256 has no key
+        // length, and the key comes from metadata that another driver may have written without checking
+        // one either. Rejecting these would make rows written elsewhere unreadable through this driver.
+        byte[] stored = service.Encrypt("123-45-6789", DataKey(), hmacKey, Algorithm)!;
+        Assert.Equal("123-45-6789", service.Decrypt(stored, DataKey(), hmacKey, Algorithm));
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
     public void TestAes128UsesAShorterDataKey()
     {
         var service = new EncryptionService();
