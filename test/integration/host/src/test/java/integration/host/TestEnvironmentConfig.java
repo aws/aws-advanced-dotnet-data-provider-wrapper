@@ -1214,7 +1214,7 @@ public class TestEnvironmentConfig implements AutoCloseable {
   }
 
   private static String getContainerBaseImageName(TestEnvironmentRequest request) {
-      return "mcr.microsoft.com/dotnet/sdk:8.0";
+      return "mcr.microsoft.com/dotnet/sdk:10.0";
   }
 
   private static void configureIamAccess(TestEnvironmentConfig env) {

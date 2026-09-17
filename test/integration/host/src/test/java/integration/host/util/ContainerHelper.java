@@ -106,12 +106,16 @@ public class ContainerHelper {
         assertEquals(0, exitCode, "Failed to update database with migration");
     }
 
+    // Microsoft.Testing.Platform replaces the VSTest options that used to be passed here:
+    // "--logger:console;verbosity=detailed" becomes "--output Detailed", and exit code 8
+    // ("zero tests ran") has to be ignored because the filter runs solution-wide, so the test
+    // projects holding no test for this task legitimately match nothing.
     if (task.contains("perf")) {
       exitCode = execInContainer(container, consumer, "dotnet", "test", "--filter",
-              "Category=Integration&Database=" + task + "&Engine=" + engineDeployment, "--configuration", "Release", "--logger:\"console;verbosity=detailed\"");
+              "Category=Integration&Database=" + task + "&Engine=" + engineDeployment, "--configuration", "Release", "--output", "Detailed", "--ignore-exit-code", "8");
     } else {
       exitCode = execInContainer(container, consumer, "dotnet", "test", "--filter",
-              "Category=Integration&Database=" + task + "&Engine=" + engineDeployment, "--no-build", "--logger:\"console;verbosity=detailed\"");
+              "Category=Integration&Database=" + task + "&Engine=" + engineDeployment, "--no-build", "--output", "Detailed", "--ignore-exit-code", "8");
     }
 
 
@@ -130,7 +134,7 @@ public class ContainerHelper {
     Consumer<OutputFrame> consumer = new ConsoleConsumer();
     execInContainer(container, consumer, "printenv", "TEST_ENV_DESCRIPTION");
 
-    Long exitCode = execInContainer(container, consumer, "dotnet", "test", "--filter", "Category!=Integration");
+    Long exitCode = execInContainer(container, consumer, "dotnet", "test", "--filter", "Category!=Integration", "--ignore-exit-code", "8");
     System.out.println("==== Container console feed ==== <<<<");
     assertEquals(0, exitCode, "Some tests failed.");
   }
@@ -209,7 +213,7 @@ public class ContainerHelper {
                 builder -> appendExtraCommandsToBuilder.apply(
                     builder
                         .from(testContainerImageName)
-                        .run("dotnet tool install --global dotnet-ef --version 9.0.10")
+                        .run("dotnet tool install --global dotnet-ef --version 10.0.12")
                         .env("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/.dotnet/tools")
                         .run("mkdir", "app")
                         .workDir("/app")

@@ -28,8 +28,10 @@ using AwsWrapperDataProvider.Plugin.Iam.Iam;
 using AwsWrapperDataProvider.Plugin.SecretsManager.SecretsManager;
 using AwsWrapperDataProvider.Telemetry.XRay;
 using AwsWrapperDataProvider.Tests.Container.Utils;
+using Xunit.Sdk;
+using Xunit.v3;
 
-[assembly: CollectionBehavior(DisableTestParallelization = true)]
+[assembly: Parallelization(Mode = ParallelMode.None)]
 [assembly: CaptureConsole]
 
 namespace AwsWrapperDataProvider.Tests;

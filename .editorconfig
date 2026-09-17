@@ -407,6 +407,15 @@ dotnet_diagnostic.IDE0073.severity = warning
 
 dotnet_diagnostic.CS1591.severity = suggestion
 
+# xUnit1069 arrived with the xunit.v3 4.0 analyzers: a test with Timeout should pass
+# TestContext.Current.CancellationToken into the work it awaits. It fires on 27 integration tests.
+# Most of those already cancel correctly -- the shared AuroraTestUtils helpers read the ambient
+# TestContext.Current.CancellationToken internally, which the analyzer cannot see through. The real
+# gap is the bare "await tcs.Task" style joins, which are neither bounded nor cancellable; fixing
+# those changes integration-test cancellation behaviour, so it is tracked separately rather than
+# bundled into the .NET 10 upgrade. There is no analyzer code fix, so the rule is silenced meanwhile.
+dotnet_diagnostic.xUnit1069.severity = suggestion
+
 
 [*.cs]
 file_header_template = Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.\n\nLicensed under the Apache License, Version 2.0 (the "License").\nYou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\nhttp://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an "AS IS" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.
