@@ -125,14 +125,6 @@ public class AwsWrapperBatch : DbBatch, IWrapper
     /// </summary>
     internal void SetCurrentConnection(DbConnection? connection)
     {
-        if (this.targetBatch.Transaction != null)
-        {
-            Logger.LogWarning(Resources.AwsWrapperBatch_SetCurrentConnection_TransactionDropped,
-                RuntimeHelpers.GetHashCode(this));
-            this.targetBatch.Transaction = null;
-            this.wrapperTransaction = null;
-        }
-
         Logger.LogTrace(Resources.AwsWrapperBatch_SetCurrentConnection_TargetConnectionUpdating,
             connection?.GetType().FullName,
             RuntimeHelpers.GetHashCode(connection),

@@ -15,6 +15,7 @@
 using System.Data;
 using System.Data.Common;
 using AwsWrapperDataProvider.Dialect.MySqlConnector;
+using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Configuration;
 using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.Dialects;
@@ -291,37 +292,37 @@ public class AwsWrapperConnectionRebindTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void ConnectionSwitch_DropsTransactionLeftOverFromTheOldConnectionOnACommand()
+    public void ConnectionSwitch_LeavesAnAttachedTransactionAlone()
     {
         using AwsWrapperConnection<MySqlConnection> connection = NewConnectionThatSwitchesOnOpen();
 
-        var targetCommand = new Mock<DbCommand>();
-        targetCommand.SetupAllProperties();
-        targetCommand.Object.Transaction = new Mock<DbTransaction>().Object;
-
-        using var command = new AwsWrapperCommand(targetCommand.Object, connection);
-        command.SetCurrentConnection(new MySqlConnection());
-
-        // A transaction belongs to the connection that began it. Carrying the reference across a switch
-        // leaves the command in a state ADO.NET forbids, and the provider then fails on execute with a
-        // message about mismatched connections instead of the real reason the connection moved.
-        Assert.Null(targetCommand.Object.Transaction);
-    }
-
-    [Fact]
-    [Trait("Category", "Unit")]
-    public void ConnectionSwitch_DropsTransactionLeftOverFromTheOldConnectionOnABatch()
-    {
-        using AwsWrapperConnection<MySqlConnection> connection = NewConnectionThatSwitchesOnOpen();
-
+        DbTransaction targetTransaction = new Mock<DbTransaction>().Object;
         var targetBatch = new Mock<DbBatch>();
         targetBatch.SetupAllProperties();
-        targetBatch.Object.Transaction = new Mock<DbTransaction>().Object;
+        targetBatch.Object.Transaction = targetTransaction;
 
         var batch = new AwsWrapperBatch(targetBatch.Object, connection, connection.PluginManager!);
         batch.SetCurrentConnection(new MySqlConnection());
 
-        Assert.Null(targetBatch.Object.Transaction);
+        // Detaching it would let the next execute succeed under autocommit on the new connection, so an
+        // application still holding the transaction would have its statements committed rather than
+        // failing. Re-pointing covers the connection only; the transaction is the switching plugin's
+        // business.
+        Assert.Same(targetTransaction, targetBatch.Object.Transaction);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task DisposeAsync_UnregistersBatchFromConnection()
+    {
+        using AwsWrapperConnection<MySqlConnection> connection = NewConnectionThatSwitchesOnOpen();
+
+        AwsWrapperBatch batch = connection.CreateBatch();
+        Assert.Single(connection.ActiveWrapperBatches);
+
+        await batch.DisposeAsync();
+
+        Assert.Empty(connection.ActiveWrapperBatches);
     }
 
     [Fact]

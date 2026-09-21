@@ -399,22 +399,6 @@ public class AwsWrapperCommand : DbCommand, IWrapper
             RuntimeHelpers.GetHashCode(this.TargetDbConnection),
             RuntimeHelpers.GetHashCode(this));
         this.EnsureTargetDbCommandCreated();
-
-        // A transaction belongs to the connection that began it, and that connection is about to be
-        // disposed, so the transaction cannot survive the switch. The reference is dropped rather than
-        // carried over: ADO.NET requires a command's transaction to belong to its connection, and some
-        // providers reject the assignment below while a foreign transaction is still attached. Dropping
-        // it here is not what tells the application its transaction is gone - the plugin that switched
-        // the connection reports that (a failover exception, for instance); this only keeps the command
-        // itself coherent so the failure the application sees is the real one.
-        if (this.TargetDbCommand!.Transaction != null)
-        {
-            Logger.LogWarning(Resources.AwsWrapperCommand_SetCurrentConnection_TransactionDropped,
-                RuntimeHelpers.GetHashCode(this));
-            this.TargetDbCommand.Transaction = null;
-            this.wrapperTransaction = null;
-        }
-
         this.TargetDbConnection = connection;
         this.TargetDbCommand!.Connection = connection;
     }

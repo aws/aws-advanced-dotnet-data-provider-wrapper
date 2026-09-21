@@ -141,15 +141,6 @@ namespace AwsWrapperDataProvider.Properties {
         }
 
         /// <summary>
-        ///   Looks up a localized string similar to The connection was switched while AwsWrapperBatch@{0} still had a transaction attached. The transaction belonged to the previous connection and cannot continue on the new one, so it has been detached from the batch.
-        /// </summary>
-        internal static string AwsWrapperBatch_SetCurrentConnection_TransactionDropped {
-            get {
-                return ResourceManager.GetString("AwsWrapperBatch_SetCurrentConnection_TransactionDropped", resourceCulture);
-            }
-        }
-
-        /// <summary>
         ///   Looks up a localized string similar to Target connection is updating to {0}@{1} from {2} for AwsWrapperCommand@{3}.
         /// </summary>
         internal static string AwsWrapperCommand_SetCurrentConnection_TargetConnectionUpdating {
@@ -158,15 +149,6 @@ namespace AwsWrapperDataProvider.Properties {
             }
         }
 
-        /// <summary>
-        ///   Looks up a localized string similar to The connection was switched while AwsWrapperCommand@{0} still had a transaction attached. The transaction belonged to the previous connection and cannot continue on the new one, so it has been detached from the command.
-        /// </summary>
-        internal static string AwsWrapperCommand_SetCurrentConnection_TransactionDropped {
-            get {
-                return ResourceManager.GetString("AwsWrapperCommand_SetCurrentConnection_TransactionDropped", resourceCulture);
-            }
-        }
-        
         /// <summary>
         ///   Looks up a localized string similar to AwsWrapperConnection.BeginDbTransaction() called with wrapper state = {0}, current connection state = {1}, type = {2}@{3}, DataSource = {4}.
         /// </summary>

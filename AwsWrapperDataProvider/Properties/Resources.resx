@@ -86,14 +86,8 @@
   <data name="AwsWrapperBatch_SetCurrentConnection_TargetConnectionUpdating" xml:space="preserve">
     <value>Target connection is updating to {0}@{1} from {2} for AwsWrapperBatch@{3}</value>
   </data>
-  <data name="AwsWrapperBatch_SetCurrentConnection_TransactionDropped" xml:space="preserve">
-    <value>The connection was switched while AwsWrapperBatch@{0} still had a transaction attached. The transaction belonged to the previous connection and cannot continue on the new one, so it has been detached from the batch.</value>
-  </data>
   <data name="AwsWrapperCommand_SetCurrentConnection_TargetConnectionUpdating" xml:space="preserve">
     <value>Target connection is updating to {0}@{1} from {2} for AwsWrapperCommand@{3}</value>
-  </data>
-  <data name="AwsWrapperCommand_SetCurrentConnection_TransactionDropped" xml:space="preserve">
-    <value>The connection was switched while AwsWrapperCommand@{0} still had a transaction attached. The transaction belonged to the previous connection and cannot continue on the new one, so it has been detached from the command.</value>
   </data>
   <data name="AwsWrapperConnection_BeginDbTransaction_Called" xml:space="preserve">
     <value>AwsWrapperConnection.BeginDbTransaction() called with wrapper state = {0}, current connection state = {1}, type = {2}@{3}, DataSource = {4}</value>
