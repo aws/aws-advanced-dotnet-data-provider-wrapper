@@ -55,8 +55,8 @@ When connecting to Aurora clusters, the [`ClusterInstanceHostPattern`](#failover
 | Errors                           | Is the connection valid? | Can the connection be reused? | Does the session need to be reconfigured? | Does the last query need to be re-executed? | Does the transaction need to be restarted? |
 |----------------------------------|--------------------------|-------------------------------|-------------------------------------------|---------------------------------------------|--------------------------------------------|
 | FailoverSuccessException         | Yes                      | Yes                           | Yes                                       | Yes                                         | N/A                                        |
-| FailoverFailedException          | No                       | No                            | Yes                                       | Yes                                         | N/A                                        |
-| TransactionStateUnknownException | Yes                      | Yes                           | Yes                                       | Yes                                         | N/A                                        |
+| FailoverFailedException          | No                       | No                            | Yes                                       | Yes                                         | Yes                                        |
+| TransactionStateUnknownException | Yes                      | Yes                           | Yes                                       | Yes                                         | Yes                                        |
 
 ### FailoverSuccessException
 
@@ -68,15 +68,16 @@ When the AWS Advanced .NET Data Provider Wrapper raises a `FailoverSuccessExcept
 
 ### FailoverFailedException
 
-When the AWS Advanced .NET Data Provider Wrapper raises a `FailoverFailedException`, the original connection has failed while outside a transaction, and the AWS Advanced .NET Data Provider Wrapper failed to fail over to another available instance in the cluster. In this scenario, you should:
+When the AWS Advanced .NET Data Provider Wrapper raises a `FailoverFailedException`, the original connection has failed and the AWS Advanced .NET Data Provider Wrapper failed to fail over to another available instance in the cluster. This can happen whether or not a transaction was in progress. In this scenario, you should:
 
 - Close the connection and reconfigure the original connection.
 - Recreate the `AwsWrapperConnection` object.
+- Restart the transaction, if one was in progress, and repeat all queries that were executed during it.
 - Repeat the query that was executed when the connection failed, and continue work as desired.
 
 ### TransactionStateUnknownException
 
-When the AWS Advanced .NET Data Provider Wrapper throws a `NotSupportedException`, the original connection has failed within a transaction. In this scenario, the AWS Advanced .NET Data Provider Wrapper first attempts to rollback the transaction and then fails over to another available instance in the cluster. Note that the rollback might be unsuccessful as the initial connection may be broken at the time that the AWS Advanced .NET Data Provider Wrapper recognizes the problem. In this scenario, you should:
+When the AWS Advanced .NET Data Provider Wrapper throws a `TransactionStateUnknownException`, the original connection has failed within a transaction. In this scenario, the AWS Advanced .NET Data Provider Wrapper first attempts to rollback the transaction and then fails over to another available instance in the cluster. Note that the rollback might be unsuccessful as the initial connection may be broken at the time that the AWS Advanced .NET Data Provider Wrapper recognizes the problem. In this scenario, you should:
 
 - Reuse and reconfigure the original connection.
 - Recreate the `AwsWrapperConnection` object.

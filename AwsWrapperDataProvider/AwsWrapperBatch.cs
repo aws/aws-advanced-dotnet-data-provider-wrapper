@@ -1,4 +1,4 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -14,14 +14,18 @@
 
 using System.Data;
 using System.Data.Common;
+using System.Runtime.CompilerServices;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Utils;
 using AwsWrapperDataProvider.Properties;
+using Microsoft.Extensions.Logging;
 
 namespace AwsWrapperDataProvider;
 
 public class AwsWrapperBatch : DbBatch, IWrapper
 {
+    private static readonly ILogger<AwsWrapperBatch> Logger = LoggerUtils.GetLogger<AwsWrapperBatch>();
+
     protected DbBatch targetBatch;
     protected AwsWrapperConnection? wrapperConnection;
     protected AwsWrapperTransaction? wrapperTransaction;
@@ -32,6 +36,7 @@ public class AwsWrapperBatch : DbBatch, IWrapper
         this.targetBatch = targetBatch;
         this.wrapperConnection = connection;
         this.connectionPluginManager = connectionPluginManager;
+        connection.RegisterWrapperBatch(this);
     }
 
     internal AwsWrapperBatch(DbBatch targetBatch, DbConnection? connection)
@@ -43,6 +48,7 @@ public class AwsWrapperBatch : DbBatch, IWrapper
         {
             this.wrapperConnection = awsWrapperConnection;
             this.connectionPluginManager = awsWrapperConnection.PluginManager;
+            awsWrapperConnection.RegisterWrapperBatch(this);
         }
         else
         {
@@ -67,20 +73,27 @@ public class AwsWrapperBatch : DbBatch, IWrapper
         {
             if (value == null)
             {
+                this.wrapperConnection?.UnregisterWrapperBatch(this);
                 this.wrapperConnection = null;
                 this.targetBatch.Connection = null;
                 this.connectionPluginManager = null;
                 return;
             }
 
-            if (value is not AwsWrapperConnection)
+            if (value is not AwsWrapperConnection newConnection)
             {
                 throw new InvalidOperationException(Resources.Error_ProvidedConnectionNotAwsWrapperConnection);
             }
 
-            this.targetBatch.Connection = value;
-            this.wrapperConnection = (AwsWrapperConnection)value;
-            this.connectionPluginManager = this.wrapperConnection.PluginManager;
+            if (!ReferenceEquals(newConnection, this.wrapperConnection))
+            {
+                this.wrapperConnection?.UnregisterWrapperBatch(this);
+                newConnection.RegisterWrapperBatch(this);
+            }
+
+            this.wrapperConnection = newConnection;
+            this.connectionPluginManager = newConnection.PluginManager;
+            this.targetBatch.Connection = newConnection.TargetDbConnection;
         }
     }
 
@@ -96,14 +109,28 @@ public class AwsWrapperBatch : DbBatch, IWrapper
                 return;
             }
 
-            if (value is not AwsWrapperTransaction)
+            if (value is not AwsWrapperTransaction newTransaction)
             {
                 throw new InvalidOperationException(Resources.Error_ProvidedTransactionNotAwsWrapperTransaction);
             }
 
-            this.targetBatch.Transaction = value;
-            this.wrapperTransaction = (AwsWrapperTransaction)value;
+            this.wrapperTransaction = newTransaction;
+            this.targetBatch.Transaction = newTransaction.TargetDbTransaction;
         }
+    }
+
+    /// <summary>
+    /// Re-points this batch at <paramref name="connection"/> after a plugin switched the current
+    /// connection, so that a batch the application already built still executes.
+    /// </summary>
+    internal void SetCurrentConnection(DbConnection? connection)
+    {
+        Logger.LogTrace(Resources.AwsWrapperBatch_SetCurrentConnection_TargetConnectionUpdating,
+            connection?.GetType().FullName,
+            RuntimeHelpers.GetHashCode(connection),
+            RuntimeHelpers.GetHashCode(this.targetBatch.Connection),
+            RuntimeHelpers.GetHashCode(this));
+        this.targetBatch.Connection = connection;
     }
 
     protected override DbBatchCommand CreateDbBatchCommand()
@@ -224,11 +251,13 @@ public class AwsWrapperBatch : DbBatch, IWrapper
 
     public override void Dispose()
     {
+        this.wrapperConnection?.UnregisterWrapperBatch(this);
         this.targetBatch?.Dispose();
     }
 
     public override async ValueTask DisposeAsync()
     {
+        this.wrapperConnection?.UnregisterWrapperBatch(this);
         if (this.targetBatch is not null)
         {
             await this.targetBatch.DisposeAsync().ConfigureAwait(false);

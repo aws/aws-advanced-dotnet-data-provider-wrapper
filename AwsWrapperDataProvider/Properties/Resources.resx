@@ -83,6 +83,9 @@
   <data name="AuroraStaleDnsHelper_OpenVerifiedConnectionAsync_WriterNotInAllowedHosts" xml:space="preserve">
     <value>Current writer {0} is not in the allowed hosts list. Allowed hosts: {1}.</value>
   </data>
+  <data name="AwsWrapperBatch_SetCurrentConnection_TargetConnectionUpdating" xml:space="preserve">
+    <value>Target connection is updating to {0}@{1} from {2} for AwsWrapperBatch@{3}</value>
+  </data>
   <data name="AwsWrapperCommand_SetCurrentConnection_TargetConnectionUpdating" xml:space="preserve">
     <value>Target connection is updating to {0}@{1} from {2} for AwsWrapperCommand@{3}</value>
   </data>

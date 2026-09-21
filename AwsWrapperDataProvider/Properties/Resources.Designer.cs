@@ -132,6 +132,15 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Target connection is updating to {0}@{1} from {2} for AwsWrapperBatch@{3}.
+        /// </summary>
+        internal static string AwsWrapperBatch_SetCurrentConnection_TargetConnectionUpdating {
+            get {
+                return ResourceManager.GetString("AwsWrapperBatch_SetCurrentConnection_TargetConnectionUpdating", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to Target connection is updating to {0}@{1} from {2} for AwsWrapperCommand@{3}.
         /// </summary>
         internal static string AwsWrapperCommand_SetCurrentConnection_TargetConnectionUpdating {
@@ -139,7 +148,7 @@ namespace AwsWrapperDataProvider.Properties {
                 return ResourceManager.GetString("AwsWrapperCommand_SetCurrentConnection_TargetConnectionUpdating", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to AwsWrapperConnection.BeginDbTransaction() called with wrapper state = {0}, current connection state = {1}, type = {2}@{3}, DataSource = {4}.
         /// </summary>

@@ -186,10 +186,10 @@ public class PluginService : IPluginService, IHostListProviderService
             {
                 if (!ReferenceEquals(connection, oldConnection))
                 {
-                    foreach (var cmd in this.wrapperConnection.ActiveWrapperCommands)
-                    {
-                        cmd.SetCurrentConnection(connection);
-                    }
+                    // Commands and batches the application already holds are re-pointed before the old
+                    // connection is disposed, so they execute against the new one instead of against a
+                    // connection that has been returned to the pool.
+                    this.wrapperConnection.RebindActiveWrapperObjects(connection);
 
                     oldConnection?.Dispose();
                     Logger.LogTrace(Resources.PluginService_SetCurrentConnection_OldConnectionDisposed);
