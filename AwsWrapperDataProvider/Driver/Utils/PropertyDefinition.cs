@@ -504,6 +504,15 @@ public static class PropertyDefinition
         GdbRwRestrictWriterToHomeRegion,
         GdbRwRestrictReaderToHomeRegion,
 
+        // KMS Encryption Plugin Properties
+        KmsRegion,
+        KmsEncryptionMetadataSchema,
+        KmsMetadataCacheEnabled,
+        KmsMetadataCacheExpirationMinutes,
+        KmsDataKeyCacheEnabled,
+        KmsDataKeyCacheMaxSize,
+        KmsDataKeyCacheExpirationMs,
+
         // Telemetry Properties
         EnableTelemetry,
         TelemetryTracesBackend,
