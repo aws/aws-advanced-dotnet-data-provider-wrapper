@@ -8,4 +8,4 @@ To run a specific example, change the `StartupObject` in `AwsWrapperDataProvider
 <StartupObject>AwsWrapperDataProviderExample.MySqlFailover</StartupObject>
 ```
 
-Available examples include `MySqlFailover`, `PGFailover`, `PGReadWriteSplitting`, `LimitlessPostgresql`, and the authentication examples (`PGIamAuthentication`, `MySqlIamAuthentication`, etc.). Use the fully qualified class name as the `StartupObject` value.
+Available examples include `MySqlFailover`, `PGFailover`, `PGReadWriteSplitting`, `LimitlessPostgresql`, `PGKmsEncryption`, and the authentication examples (`PGIamAuthentication`, `MySqlIamAuthentication`, etc.). Use the fully qualified class name as the `StartupObject` value.

@@ -51,6 +51,7 @@ public class ConnectionPluginChainBuilder
             { PluginCodes.SecretsManager, null },
             { PluginCodes.FederatedAuth, null },
             { PluginCodes.Okta, null },
+            { PluginCodes.KmsEncryption, null },
             { PluginCodes.ConnectTime, new Lazy<IConnectionPluginFactory>(() => new ConnectTimePluginFactory()) },
             { PluginCodes.ExecutionTime, new Lazy<IConnectionPluginFactory>(() => new ExecutionTimePluginFactory()) },
     };
@@ -71,6 +72,7 @@ public class ConnectionPluginChainBuilder
         { PluginCodes.SecretsManager, 1100 },
         { PluginCodes.FederatedAuth, 1200 },
         { PluginCodes.Okta, 1300 },
+        { PluginCodes.KmsEncryption, 1400 },
         { PluginCodes.ConnectTime, WeightRelativeToPriorPlugin },
         { PluginCodes.ExecutionTime, WeightRelativeToPriorPlugin },
     };

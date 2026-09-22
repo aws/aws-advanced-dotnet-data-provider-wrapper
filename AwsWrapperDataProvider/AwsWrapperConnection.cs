@@ -429,6 +429,9 @@ public class AwsWrapperConnection : DbConnection, IWrapper
         return new AwsWrapperCommand<TCommand>(command, this, this.PluginManager);
     }
 
+    public override bool CanCreateBatch =>
+        this.pluginService?.CurrentConnection?.CanCreateBatch ?? false;
+
     protected override DbBatch CreateDbBatch() => this.CreateBatch();
 
     public new AwsWrapperBatch CreateBatch()
@@ -436,7 +439,7 @@ public class AwsWrapperConnection : DbConnection, IWrapper
         DbBatch batch = WrapperUtils.ExecuteWithPlugins(
                 this.PluginManager!,
                 this.pluginService!.CurrentConnection!,
-                "DbConnection.GetSchema",
+                "DbConnection.CreateBatch",
                 () => Task.FromResult(this.pluginService.CurrentConnection!.CreateBatch()))
             .GetAwaiter().GetResult();
         // The batch registers itself with this connection so that it follows a connection switch.

@@ -416,6 +416,53 @@ tasks.register<Test>("test-all-mysql-multi-az-instance") {
     }
 }
 
+// The kmsEncryption suite needs a KMS key, supplied to the test container through AWS_KMS_KEY_ARN. Without
+// one every test in it skips, so these tasks are safe to run in an environment that has no key configured.
+tasks.register<Test>("test-all-pg-aurora-kms") {
+    group = "verification"
+    filter.includeTestsMatching("integration.host.TestRunner.runPGKmsEncryptionAuroraTests")
+    doFirst {
+        systemProperty("test-no-docker", "true")
+        systemProperty("test-no-performance", "true")
+        systemProperty("test-no-mysql-driver", "true")
+        systemProperty("test-no-mysql-engine", "true")
+        systemProperty("test-no-mariadb-driver", "true")
+        systemProperty("test-no-mariadb-engine", "true")
+        systemProperty("test-no-multi-az-cluster", "true")
+        systemProperty("test-no-multi-az-instance", "true")
+        systemProperty("test-no-aurora-limitless", "true")
+        systemProperty("test-no-bg", "true")
+        systemProperty("test-no-instances-2", "true")
+        systemProperty("test-no-instances-3", "true")
+        systemProperty("test-no-instances-5", "true")
+        systemProperty("test-no-failover", "true")
+        systemProperty("test-no-iam", "true")
+        systemProperty("test-no-secrets-manager", "true")
+    }
+}
+
+tasks.register<Test>("test-all-mysql-aurora-kms") {
+    group = "verification"
+    filter.includeTestsMatching("integration.host.TestRunner.runMySQLKmsEncryptionAuroraTests")
+    doFirst {
+        systemProperty("test-no-docker", "true")
+        systemProperty("test-no-performance", "true")
+        systemProperty("test-no-pg-driver", "true")
+        systemProperty("test-no-pg-engine", "true")
+        systemProperty("test-no-mariadb-engine", "true")
+        systemProperty("test-no-multi-az-cluster", "true")
+        systemProperty("test-no-multi-az-instance", "true")
+        systemProperty("test-no-aurora-limitless", "true")
+        systemProperty("test-no-bg", "true")
+        systemProperty("test-no-instances-2", "true")
+        systemProperty("test-no-instances-3", "true")
+        systemProperty("test-no-instances-5", "true")
+        systemProperty("test-no-failover", "true")
+        systemProperty("test-no-iam", "true")
+        systemProperty("test-no-secrets-manager", "true")
+    }
+}
+
 tasks.register<Test>("test-aurora-mysql-rw-splitting-performance") {
     group = "verification"
     filter.includeTestsMatching("integration.host.TestRunner.runMySQLRWSplittingPerfTests")
