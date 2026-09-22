@@ -1,4 +1,4 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -112,7 +112,7 @@ public class SqlWriteAnalyzerTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void TestBackquotedIdentifiersAreRefusedAsPostgreSql()
+    public void TestBackquotedIdentifiersAreUnreadableAsPostgreSql()
     {
         QueryAnalysis s = Single("INSERT INTO `users` (`ssn`) VALUES (@p0)");
         Assert.NotEmpty(s.UnreadableReasons);
@@ -156,9 +156,9 @@ public class SqlWriteAnalyzerTests
     [Trait("Category", "Unit")]
     public void TestPredicateOnAPotentiallyEncryptedColumnIsReported()
     {
-        // Reported, not refused, here: whether it matters depends on the metadata. The planner refuses it
-        // when the column turns out to be encrypted, because a fresh nonce per value means the comparison
-        // can never match.
+        // Reported here, and warned about later: whether it matters depends on the metadata. The planner
+        // adds a limitation when the column turns out to be encrypted, because a fresh nonce per value
+        // means the comparison can never match. The statement still runs.
         QueryAnalysis s = Single("UPDATE users SET city = @c WHERE ssn = @s");
         Assert.Equal("c=city", Written(s));
         Assert.Equal("ssn", s.PredicateColumnsByParameter["s"]);
@@ -187,11 +187,11 @@ public class SqlWriteAnalyzerTests
     [InlineData("INSERT INTO users VALUES (@a, @b)", "does not list its columns")]
     [InlineData("INSERT INTO users (ssn) SELECT ssn FROM staging", "does not use a VALUES clause")]
     [InlineData("MERGE INTO users USING staging ON (1=1)", "MERGE")]
-    // REPLACE does not parse as PostgreSQL, so it is refused for being unreadable. The reason names the
+    // REPLACE does not parse as PostgreSQL, so it is reported as unreadable. The reason names the
     // position rather than the statement, because the reason is logged - see
     // TestUnreadableReasonNeverQuotesTheStatement.
     [InlineData("REPLACE INTO users (ssn) VALUES (@s)", "")]
-    public void TestUnsupportedShapesAreRefused(string sql, string expectedFragment)
+    public void TestUnsupportedShapesAreReportedAsUnreadable(string sql, string expectedFragment)
     {
         QueryAnalysis s = Single(sql);
         Assert.NotEmpty(s.UnreadableReasons);
@@ -255,29 +255,30 @@ public class SqlWriteAnalyzerTests
     }
 
     /// <summary>
-    /// A CTE-prefixed UPDATE is valid PostgreSQL that the parser does not accept, so it is refused. The
+    /// A CTE-prefixed UPDATE is valid PostgreSQL that the parser does not accept, so it is reported as
+    /// unreadable. The
     /// statement is never misread - it simply cannot be encrypted, and the caller is told so.
     /// </summary>
     [Fact]
     [Trait("Category", "Unit")]
-    public void TestCtePrefixedUpdateIsRefused()
+    public void TestCtePrefixedUpdateIsReportedAsUnreadable()
     {
         QueryAnalysis s = Single("WITH x AS (SELECT 1) UPDATE users SET ssn = @s WHERE id = @id");
         Assert.NotEmpty(s.UnreadableReasons);
     }
 
     /// <summary>
-    /// A write inside the WITH clause is refused rather than stepped over, because those writes are not
+    /// A write inside the WITH clause is reported as unreadable rather than stepped over, because those writes are not
     /// modelled and passing over the clause would let one through unnoticed. An INSERT there parses, so the
     /// reason names the clause; an UPDATE or DELETE there does not parse, so the reason is that the statement
-    /// could not be read. Either way it is refused, which is what matters.
+    /// could not be read. Either way it is reported, which is what matters.
     /// </summary>
     [Theory]
     [Trait("Category", "Unit")]
     [InlineData("WITH x AS (INSERT INTO users (ssn) VALUES (@s) RETURNING id) SELECT * FROM x", true)]
     [InlineData("WITH x AS (UPDATE users SET ssn = @s RETURNING id) SELECT * FROM x", false)]
     [InlineData("WITH x AS (DELETE FROM users RETURNING id) SELECT * FROM x", false)]
-    public void TestWriteInsideACteIsRefused(string sql, bool namesTheClause)
+    public void TestWriteInsideACteIsReportedAsUnreadable(string sql, bool namesTheClause)
     {
         QueryAnalysis s = Single(sql);
         Assert.NotEmpty(s.UnreadableReasons);
@@ -287,12 +288,91 @@ public class SqlWriteAnalyzerTests
         }
     }
 
+    /// <summary>
+    /// A statement kind the analyzer does not model is reported as unreadable, not passed over.
+    /// </summary>
+    /// <remarks>
+    /// These all bind a value that reaches a column, and none of them is an INSERT, UPDATE, DELETE or
+    /// MERGE. Treating the unmodelled remainder as "writes nothing" is what would let a plaintext be
+    /// stored with no warning at all, which for an encryption plugin is the one outcome that must not
+    /// happen silently. A stored procedure is the ordinary way to meet this: its command text is a bare
+    /// procedure name, which does not parse, so it arrives as unreadable by a different route.
+    /// </remarks>
+    [Theory]
+    [Trait("Category", "Unit")]
+    [InlineData("CALL record_user(@ssn)")]
+    [InlineData("COPY users (ssn) FROM STDIN")]
+    [InlineData("EXECUTE insert_user (@ssn)")]
+    [InlineData("PREPARE insert_user AS INSERT INTO users (ssn) VALUES ($1)")]
+
+    // A cursor can be declared over a data-modifying common table expression, so the write is one level
+    // down from the statement kind and cannot be cleared by looking at the kind alone.
+    [InlineData("DECLARE c CURSOR FOR SELECT ssn FROM users")]
+    public void TestUnmodelledStatementKindIsReportedAsUnreadable(string sql)
+    {
+        QueryAnalysis s = Single(sql);
+
+        Assert.NotEmpty(s.UnreadableReasons);
+        Assert.Null(s.Table);
+    }
+
+    /// <summary>
+    /// The statement kinds that provably bind no column value stay silent, so an application's ordinary
+    /// transaction and session traffic raises nothing.
+    /// </summary>
+    /// <remarks>
+    /// These are listed by statement kind rather than by text, so the list cannot go stale against a
+    /// differently written statement. Anything not listed is reported as unreadable by
+    /// <see cref="TestUnmodelledStatementKindIsReportedAsUnreadable"/>, which is the safe direction to be wrong in.
+    /// </remarks>
+    [Theory]
+    [Trait("Category", "Unit")]
+    [InlineData("COMMIT")]
+    [InlineData("ROLLBACK")]
+    [InlineData("BEGIN")]
+    [InlineData("SAVEPOINT s1")]
+    [InlineData("RELEASE SAVEPOINT s1")]
+    [InlineData("SET search_path = 'public'")]
+    [InlineData("SET TIME ZONE 'UTC'")]
+    [InlineData("SET ROLE admin")]
+    [InlineData("DISCARD ALL")]
+    [InlineData("CLOSE my_cursor")]
+    [InlineData("DEALLOCATE insert_user")]
+    [InlineData("CREATE TABLE t (a int)")]
+    [InlineData("ALTER TABLE users ADD COLUMN note text")]
+    [InlineData("DROP TABLE users")]
+    [InlineData("GRANT SELECT ON users TO reader")]
+
+    // Destroys every row, but cannot put a readable value in an encrypted column, which is the only thing
+    // this analyzer exists to catch.
+    [InlineData("TRUNCATE TABLE users")]
+    public void TestStatementThatBindsNoColumnValueIsSilent(string sql)
+    {
+        QueryAnalysis s = Single(sql);
+
+        Assert.Empty(s.UnreadableReasons);
+        Assert.Null(s.Table);
+    }
+
+    /// <summary>
+    /// The reason names the statement kind, so an operator reading the warning can tell which statement to
+    /// rewrite rather than only that something could not be read.
+    /// </summary>
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void TestRefusalNamesTheStatementKind()
+    {
+        QueryAnalysis s = Single("CALL record_user(@ssn)");
+
+        Assert.Contains("CALL", string.Join(" ", s.UnreadableReasons));
+    }
+
     [Fact]
     [Trait("Category", "Unit")]
     public void TestFunctionWrappedParameterIsNotTreatedAsAStoredValue()
     {
         // The server would apply upper() to the ciphertext, so this value cannot be encrypted. It is
-        // reported as a column written without a parameter, which the planner turns into a refusal if the
+        // reported as a column written without a parameter, which the planner turns into a warning if the
         // column is encrypted - the analyzer alone cannot know that.
         QueryAnalysis s = Single("INSERT INTO users (id, ssn) VALUES (@id, upper(@ssn))");
         Assert.DoesNotContain("ssn", s.WrittenColumnsByParameter.Values);
@@ -310,7 +390,7 @@ public class SqlWriteAnalyzerTests
     // "?" is what MySQL uses, and MySqlConnector accepts it.
     [InlineData("INSERT INTO users (ssn) VALUES (?)", true)]
     [InlineData("UPDATE users SET ssn = ? WHERE id = ?", true)]
-    public void TestUnnamedPlaceholdersAreRefused(string sql, bool mySql)
+    public void TestUnnamedPlaceholdersAreReportedAsUnreadable(string sql, bool mySql)
     {
         QueryAnalysis s = Assert.Single(SqlWriteAnalyzer.Analyze(sql, mySql));
         Assert.Contains("named parameters", string.Join(" ", s.UnreadableReasons));
@@ -318,14 +398,14 @@ public class SqlWriteAnalyzerTests
 
     /// <summary>
     /// PostgreSQL has no "?" placeholder, so reading one as PostgreSQL is a syntax error. The statement is
-    /// still refused - which is what matters - but the reason is that it could not be read, rather than
+    /// still reported - which is what matters - but the reason is that it could not be read, rather than
     /// naming the placeholder.
     /// </summary>
     [Theory]
     [Trait("Category", "Unit")]
     [InlineData("INSERT INTO users (ssn) VALUES (?)")]
     [InlineData("UPDATE users SET ssn = ? WHERE id = ?")]
-    public void TestQuestionMarkPlaceholderIsRefusedAsPostgreSql(string sql)
+    public void TestQuestionMarkPlaceholderIsUnreadableAsPostgreSql(string sql)
     {
         QueryAnalysis s = Single(sql);
         Assert.NotEmpty(s.UnreadableReasons);
@@ -433,7 +513,7 @@ public class SqlWriteAnalyzerTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void TestColumnCountMismatchIsRefused()
+    public void TestColumnCountMismatchIsReportedAsUnreadable()
     {
         QueryAnalysis s = Single("INSERT INTO users (id, ssn) VALUES (@id)");
         Assert.Contains("lists 2 columns", string.Join(" ", s.UnreadableReasons));

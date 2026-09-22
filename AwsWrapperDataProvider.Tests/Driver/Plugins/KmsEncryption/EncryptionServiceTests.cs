@@ -1,4 +1,4 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -187,6 +187,97 @@ public class EncryptionServiceTests
         Assert.Throws<EncryptionException>(
             () => service.Encrypt("x", new byte[16], HmacKey(), Algorithm));
     }
+
+    /// <summary>
+    /// The four types that have a <c>DbDataReader</c> accessor but no marker of their own are stored under a
+    /// wider marker, so they survive a round trip as that wider type rather than as themselves.
+    /// </summary>
+    /// <remarks>
+    /// Widening is what keeps the stored bytes readable by the other AWS wrappers, which know nothing of a
+    /// marker invented here. The reader converts back on the way out, which is covered by
+    /// <c>DecryptingDataReaderTests</c>; this pins the half that decides what is actually written.
+    /// </remarks>
+    [Theory]
+    [Trait("Category", "Unit")]
+    [MemberData(nameof(WidenedValues))]
+    public void TestWidenedTypeRoundTripsAsItsWiderType(object value, object expected)
+    {
+        var service = new EncryptionService();
+
+        byte[] stored = service.Encrypt(value, DataKey(), HmacKey(), Algorithm)!;
+        object? recovered = service.Decrypt(stored, DataKey(), HmacKey(), Algorithm);
+
+        Assert.Equal(expected, recovered);
+        Assert.Equal(expected.GetType(), recovered!.GetType());
+    }
+
+    public static IEnumerable<object[]> WidenedValues() => new List<object[]>
+    {
+        new object[] { (short)1234, 1234 },
+        new object[] { short.MinValue, (int)short.MinValue },
+        new object[] { (byte)200, 200 },
+        new object[] { 'x', "x" },
+
+        // The canonical 36-character form, which is what Java's UUID.toString also produces.
+        new object[]
+        {
+            Guid.Parse("00112233-4455-6677-8899-aabbccddeeff"),
+            "00112233-4455-6677-8899-aabbccddeeff",
+        },
+    };
+
+    /// <summary>
+    /// A widened value is stored under the marker of the type it widened to, not one of its own, so another
+    /// driver reading the column sees a type it already knows.
+    /// </summary>
+    [Theory]
+    [Trait("Category", "Unit")]
+    [InlineData((short)7, (byte)TypeMarker.Integer)]
+    [InlineData((byte)7, (byte)TypeMarker.Integer)]
+    [InlineData('7', (byte)TypeMarker.String)]
+    public void TestWidenedTypeIsStoredUnderTheWiderMarker(object value, byte expectedMarker)
+    {
+        var service = new EncryptionService();
+
+        byte[] stored = service.Encrypt(value, DataKey(), HmacKey(), Algorithm)!;
+
+        Assert.Equal(expectedMarker, stored[32]);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void TestGuidIsStoredUnderTheStringMarker()
+    {
+        var service = new EncryptionService();
+
+        byte[] stored = service.Encrypt(Guid.NewGuid(), DataKey(), HmacKey(), Algorithm)!;
+
+        Assert.Equal((byte)TypeMarker.String, stored[32]);
+    }
+
+    /// <summary>
+    /// A type with no accessor and no sensible widening is still refused, so the refusal stays a deliberate
+    /// list rather than becoming "whatever happens to convert".
+    /// </summary>
+    [Theory]
+    [Trait("Category", "Unit")]
+    [MemberData(nameof(StillUnsupportedValues))]
+    public void TestTypeWithNoWideningIsStillRejected(object value)
+    {
+        var service = new EncryptionService();
+
+        Assert.Throws<EncryptionException>(() => service.Encrypt(value, DataKey(), HmacKey(), Algorithm));
+    }
+
+    public static IEnumerable<object[]> StillUnsupportedValues() => new List<object[]>
+    {
+        new object[] { TimeSpan.FromMinutes(90) },
+        new object[] { (sbyte)-5 },
+        new object[] { 5u },
+        new object[] { 5UL },
+        new object[] { DayOfWeek.Monday },
+        new object[] { new object() },
+    };
 
     [Fact]
     [Trait("Category", "Unit")]

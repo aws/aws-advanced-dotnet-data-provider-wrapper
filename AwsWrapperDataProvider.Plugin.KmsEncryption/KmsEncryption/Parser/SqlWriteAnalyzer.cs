@@ -1,4 +1,4 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -114,8 +114,17 @@ internal static class SqlWriteAnalyzer
                 return Unreadable("MERGE statements are not supported");
 
             default:
-                // SELECT, DDL, SET, and anything else writes no column value through a parameter.
-                return Irrelevant();
+                // Anything not proven harmless is reported as unreadable rather than assumed to write
+                // nothing. The parser models 94 statement kinds and several of them do carry a column
+                // value - CALL, EXECUTE ... USING and COPY ... FROM STDIN among them - so treating the
+                // unmodelled remainder as "writes nothing" is what lets a plaintext be stored with no
+                // warning at all. The planner decides whether it matters by looking for an encrypted
+                // table's name in the text, so a statement touching nothing encrypted stays quiet.
+                return BindsNoColumnValue(statement)
+                    ? Irrelevant()
+                    : Unreadable(
+                        $"{statement.GetType().Name.ToUpperInvariant()} statements are not modelled, so a "
+                        + "column value one writes cannot be matched to a column");
         }
     }
 
@@ -299,7 +308,7 @@ internal static class SqlWriteAnalyzer
     /// is not what was bound, so the planner reports them if the column turns out to be encrypted.
     /// </param>
     /// <returns>
-    /// <see langword="null"/> when the pair was filed, or the reason the whole statement must be refused.
+    /// <see langword="null"/> when the pair was filed, or the reason the whole statement is unreadable.
     /// Returning the reason rather than a flag keeps it with the code that detected it, so a caller does not
     /// have to know which of several causes applied.
     /// </returns>
@@ -507,4 +516,61 @@ internal static class SqlWriteAnalyzer
 
     private static QueryAnalysis Unreadable(string reason) =>
         new(null, Empty, Empty, NoColumns, new[] { reason });
+
+    /// <summary>
+    /// Returns whether a statement kind can be relied on not to carry a column value.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Everything here is transaction control, a session setting, schema definition, access control,
+    /// cursor mechanics or introspection: none of them stores an application value in a table column, so
+    /// none of them can put a plaintext in an encrypted one. They are named because the alternative - a
+    /// warning - would be noise, and because the statements an application issues most often are in here.
+    /// </para>
+    /// <para>
+    /// Matched by statement kind rather than by text, so the list cannot go stale against a differently
+    /// written statement. A kind this does not name is reported as unreadable instead, which is the safe
+    /// direction: a
+    /// spurious warning costs a log line, whereas a missed one costs a readable value in an encrypted
+    /// column. That is also what makes a future parser version safe - a statement kind added later is
+    /// reported as unreadable until it is deliberately classified here.
+    /// </para>
+    /// <para>
+    /// <c>TRUNCATE</c> and <c>DROP</c> belong here even though they destroy data: the plugin's concern is a
+    /// plaintext reaching an encrypted column, and neither can produce one.
+    /// </para>
+    /// </remarks>
+    private static bool BindsNoColumnValue(Statement statement) => statement is
+
+        // Transaction control.
+        Statement.Commit or Statement.Rollback or Statement.StartTransaction or Statement.SetTransaction
+        or Statement.Savepoint or Statement.ReleaseSavepoint
+
+        // Session settings.
+        or Statement.SetVariable or Statement.SetNames or Statement.SetNamesDefault or Statement.SetRole
+        or Statement.SetTimeZone or Statement.Use or Statement.Discard or Statement.Pragma
+
+        // Cursor and prepared-statement mechanics. Declare and Prepare are deliberately absent: each names
+        // a statement whose parameters are bound later, so neither can be cleared here.
+        or Statement.Fetch or Statement.Close or Statement.Deallocate
+
+        // Schema definition and access control.
+        or Statement.CreateTable or Statement.CreateIndex or Statement.CreateView or Statement.CreateSchema
+        or Statement.CreateDatabase or Statement.CreateSequence or Statement.CreateType
+        or Statement.CreateRole or Statement.CreateExtension or Statement.CreateFunction
+        or Statement.CreateProcedure or Statement.CreateTrigger or Statement.CreateVirtualTable
+        or Statement.AlterTable or Statement.AlterIndex or Statement.AlterView or Statement.AlterRole
+        or Statement.AlterPolicy or Statement.CreatePolicy or Statement.DropPolicy
+        or Statement.Drop or Statement.DropFunction or Statement.DropProcedure or Statement.DropTrigger
+        or Statement.Truncate or Statement.Comment or Statement.Grant or Statement.Revoke
+
+        // Introspection and diagnostics.
+        or Statement.Explain or Statement.ExplainTable or Statement.Analyze or Statement.ShowTables
+        or Statement.ShowColumns or Statement.ShowVariable or Statement.ShowVariables
+        or Statement.ShowCreate or Statement.ShowDatabases or Statement.ShowSchemas
+        or Statement.ShowFunctions or Statement.ShowViews or Statement.ShowCollation
+        or Statement.ShowStatus
+
+        // Locks and server control.
+        or Statement.LockTables or Statement.UnlockTables or Statement.Flush or Statement.Kill;
 }

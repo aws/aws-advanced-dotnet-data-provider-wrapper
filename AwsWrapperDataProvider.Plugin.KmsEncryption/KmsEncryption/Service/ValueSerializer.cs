@@ -54,6 +54,9 @@ internal static class ValueSerializer
         TimeOnly => TypeMarker.LocalTime,
         DateTime => TypeMarker.LocalDateTime,
         byte[] => TypeMarker.ByteArray,
+        byte or short => TypeMarker.Integer,
+        char or Guid => TypeMarker.String,
+
         _ => throw EncryptionException.UnsupportedType(value.GetType()),
     };
 
@@ -103,6 +106,18 @@ internal static class ValueSerializer
 
             case byte[] bytes:
                 return bytes;
+
+            case byte smallInteger:
+                return Serialize((int)smallInteger);
+
+            case short shortInteger:
+                return Serialize((int)shortInteger);
+
+            case char character:
+                return Encoding.UTF8.GetBytes(character.ToString());
+
+            case Guid guid:
+                return Encoding.UTF8.GetBytes(guid.ToString("D", CultureInfo.InvariantCulture));
 
             default:
                 throw EncryptionException.UnsupportedType(value.GetType());

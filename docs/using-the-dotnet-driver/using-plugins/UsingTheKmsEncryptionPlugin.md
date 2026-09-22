@@ -14,8 +14,8 @@ common path does not call AWS Key Management Service.
 > [!IMPORTANT]\
 > **The plugin does not refuse writes it cannot encrypt.** Some statements bind a value in a way the plugin
 > cannot intercept - a literal in the SQL text, a value the server computes, an unnamed placeholder, a
-> `DbBatch`. In those cases the plugin logs a warning at `Warning` level and runs the statement anyway, so
-> the readable value is stored. Enable `Warning` logging, and add the server-side constraint in
+> stored procedure, a `COPY`. In those cases the plugin logs a warning at `Warning` level and runs the
+> statement anyway, so the readable value is stored. Enable `Warning` logging, and add the constraint in
 > [Preventing unencrypted writes](#preventing-unencrypted-writes) - that constraint, not the driver, is
 > what guarantees the column only ever holds ciphertext.
 
@@ -234,6 +234,52 @@ ALTER TABLE users ALTER COLUMN ssn TYPE encrypt.encrypted_data USING ssn::bytea;
 ALTER TABLE users MODIFY ssn VARBINARY(256);
 ```
 
+### Supported value types
+
+Every type ADO.NET has a `DbDataReader` accessor for can be encrypted, plus the three date and time types
+that have no accessor of their own.
+
+| Written as | Read it with | `GetValue` returns |
+|---|---|---|
+| `string` | `GetString` | `string` |
+| `int` | `GetInt32` | `int` |
+| `long` | `GetInt64` | `long` |
+| `float` | `GetFloat` | `float` |
+| `double` | `GetDouble` | `double` |
+| `decimal` | `GetDecimal` | `decimal` |
+| `bool` | `GetBoolean` | `bool` |
+| `byte[]` | `GetBytes`, `GetStream` | `byte[]` |
+| `DateTime` | `GetDateTime` | `DateTime` |
+| `DateTimeOffset` | `GetFieldValue<DateTimeOffset>` | `DateTimeOffset` |
+| `DateOnly` | `GetFieldValue<DateOnly>` | `DateOnly` |
+| `TimeOnly` | `GetFieldValue<TimeOnly>` | `TimeOnly` |
+| `short` | `GetInt16` | **`int`** |
+| `byte` | `GetByte` | **`int`** |
+| `char` | `GetChar` | **`string`** |
+| `Guid` | `GetGuid` | **`string`** |
+
+The last four are stored under a wider type's marker rather than one of their own, because the marker is part
+of the stored format and a value invented here could not be read by the other AWS wrappers. They round-trip
+correctly through the accessor in the middle column, which converts; only `GetValue` and `GetFieldValue<T>`
+for the original type show the widening. So read a `short` with `GetInt16`, not `(short)reader.GetValue(0)`.
+
+Reading with an accessor converts wherever there is one unambiguous answer, so `GetString` works on any
+stored type and `GetDateTime` works on a `DateTimeOffset` (returned as UTC) or a `DateOnly` (returned as
+midnight). The one case with no answer is a `TimeOnly` read with `GetDateTime`: it carries no date, so it
+raises an error naming the column rather than inventing one.
+
+**Anything else is refused** at the point the value is written, with an error naming the type. That covers
+`TimeSpan`, `sbyte`, `uint`, `ulong`, enums and arbitrary objects. Convert before binding — a `TimeSpan` as
+its `Ticks`, an enum as its underlying `int` — and convert back after reading.
+
+> [!NOTE]\
+> This set is narrower than the column itself accepts. The column is binary (`bytea` or `VARBINARY`), so the
+> database will hold anything; the restriction belongs to the plugin and applies to the value you bind.
+
+A column may also hold values written by the AWS Advanced JDBC Wrapper's `setDate` or `setTime`. Those read
+back as `DateOnly` and `TimeOnly`. A `Guid` written here is stored as its canonical 36-character text, which
+is what Java's `UUID.toString` produces, so the other wrappers read it as the same string.
+
 ### Sizing
 
 Stored size is **61 bytes plus the length of the value**. An 11-character national identifier occupies 72
@@ -285,6 +331,8 @@ see:
 | An unnamed placeholder, `VALUES (?)` | **No** | Yes |
 | A statement whose columns cannot be matched to its parameters, such as `INSERT INTO users VALUES (@a, @b)` | **No** | Yes |
 | A statement the plugin cannot read, such as one using a PostgreSQL `E''` escape string | **No** | Yes |
+| A `MERGE`, which is not analysed | **No** | Yes |
+| A statement kind that carries values some other way — `CALL`, `EXECUTE … USING`, `COPY … FROM STDIN`, `PREPARE`, or any `CommandType.StoredProcedure` | **No** | Yes |
 | Parameter on a `DbBatch` command with the plugin enabled | Yes | – |
 | Any application connecting without the plugin | **No** | No |
 | A database client, migration tool, or data-fix script | **No** | No |
@@ -453,7 +501,7 @@ registered columns needs `kms:Decrypt` alone.
 | A query on an encrypted column returns no rows | Expected. Encryption is randomized, so an equality comparison can never match - see [What the column can no longer do](#what-the-column-can-no-longer-do). |
 | `AWS KMS could not decrypt the data key` | The application lacks `kms:Decrypt` on the master key, the credentials have expired, or `KmsRegion` does not match the key's region. |
 | Values are stored readable, with a warning in the log | The statement bound the value in a way the plugin cannot intercept. The warning names the reason - see [Preventing unencrypted writes](#preventing-unencrypted-writes). |
-| Values are stored readable, with nothing in the log | The application connected without the plugin enabled, or the write came from a tool. |
+| Values are stored readable, with nothing in the log | The application connected without the plugin enabled, the plugin was not in `Plugins`, or the write came from a tool, a migration, or another application. The plugin warns about every write it sees and cannot encrypt, so silence means it did not see the write. |
 
 Enable `Warning` level logging for `AwsWrapperDataProvider.Plugin.KmsEncryption` to see every write the
 plugin could not encrypt. Nothing the plugin logs contains a column value.
@@ -461,7 +509,12 @@ plugin could not encrypt. Nothing the plugin logs contains a column value.
 ## Limitations
 
 - One master key and one data key per column. A value encrypted for one column cannot be read as another.
-- Only bind parameters are encrypted. Literals, server-computed expressions and unnamed placeholders are not.
+- Only bind parameters are encrypted, and only on an `INSERT`, `UPDATE` or `DELETE` the plugin can match to
+  a column. Literals, server-computed expressions, unnamed placeholders, `MERGE`, `CALL`,
+  `EXECUTE … USING`, `COPY … FROM STDIN` and stored procedures are not — each is warned about but still
+  executed. [Preventing unencrypted writes](#preventing-unencrypted-writes) lists every shape.
+- `TimeSpan`, `sbyte`, `uint`, `ulong` and enums cannot be encrypted. Every type with a `DbDataReader`
+  accessor can be. See [Supported value types](#supported-value-types).
 - An encrypted column cannot be searched, sorted, indexed by value, or covered by a unique constraint.
 - Rows written before a column was registered are not readable through the plugin until they are migrated.
 - Encrypted columns cannot be configured through `AwsWrapperDataSource`; use a connection string.
@@ -481,5 +534,8 @@ plugin could not encrypt. Nothing the plugin logs contains a column value.
 
 ## Example Application
 
-See [KmsEncryptionTests.cs](../../../AwsWrapperDataProvider.Tests/KmsEncryptionTests.cs) for a complete
-worked example, including the schema it expects.
+See [PGKmsEncryption.cs](../../examples/AwsWrapperDataProviderExample/PGKmsEncryption.cs) for a runnable
+example that registers the plugin factory, writes an encrypted value as a bind parameter, and reads it
+back. It expects the metadata schema and column registration described in
+[Metadata schema](#metadata-schema) and [Preparing a column for encryption](#preparing-a-column-for-encryption)
+to be in place already.

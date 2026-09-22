@@ -29,12 +29,14 @@ namespace AwsWrapperDataProvider.Plugin.KmsEncryption.KmsEncryption.Wrapper;
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>Only the abstract members of <see cref="DbDataReader"/> are overridden.</b> That is deliberate rather
-/// than an omission. The base class implements the rest in terms of the abstract ones -
-/// <c>GetFieldValue&lt;T&gt;</c> calls <see cref="GetValue"/>, <c>GetTextReader</c> calls
-/// <see cref="GetString"/>, <c>GetStream</c> calls <see cref="GetBytes"/>, <c>IsDBNullAsync</c> calls
-/// <see cref="IsDBNull"/> - so implementing the abstract set covers every accessor. Adding a delegating
-/// override for any of the inherited members would bypass that and return ciphertext.
+/// <b>Beyond the abstract members of <see cref="DbDataReader"/>, only <see cref="GetFieldValue{T}"/> is
+/// overridden.</b> Leaving the rest alone is deliberate rather than an omission: the base class implements
+/// them in terms of the abstract ones - <c>GetTextReader</c> calls <see cref="GetString"/>,
+/// <c>GetStream</c> calls <see cref="GetBytes"/>, <c>IsDBNullAsync</c> calls <see cref="IsDBNull"/> - so
+/// implementing the abstract set covers them. Adding a delegating override for any of those would bypass
+/// that and return ciphertext. <see cref="GetFieldValue{T}"/> is the exception because its base
+/// implementation casts <see cref="GetValue"/>'s result rather than converting it, which disagrees with the
+/// typed accessors for a value stored under a wider marker than it was written as.
 /// </para>
 /// <para>
 /// The data key for each encrypted column is resolved once, when the reader is created, and held for its
@@ -185,6 +187,17 @@ internal sealed class DecryptingDataReader : DbDataReader, IWrapper
     public override int GetInt32(int ordinal) => this.Converted<int>(ordinal);
 
     public override long GetInt64(int ordinal) => this.Converted<long>(ordinal);
+
+    /// <summary>
+    /// Reads a value as <typeparamref name="T"/>, converting it the way the typed accessors do.
+    /// </summary>
+    /// <remarks>
+    /// The base implementation casts the result of <see cref="GetValue"/>, which is not enough here: a value
+    /// written as a <see cref="short"/> is stored under the integer marker and comes back as an
+    /// <see cref="int"/>, so a cast to <see cref="short"/> would fail where <see cref="GetInt16"/> succeeds.
+    /// Routing both through the same conversion keeps them from disagreeing.
+    /// </remarks>
+    public override T GetFieldValue<T>(int ordinal) => this.Converted<T>(ordinal);
 
     /// <summary>
     /// Copies bytes of the value, decrypting first for an encrypted column.
@@ -562,6 +575,41 @@ internal sealed class DecryptingDataReader : DbDataReader, IWrapper
         this.encryptedByOrdinal = new Dictionary<int, EncryptedColumn>();
     }
 
+    /// <summary>
+    /// Converts a decrypted value to <paramref name="target"/> for the cases the BCL cannot reach, and
+    /// returns it unchanged for every other case.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Three of the types this plugin stores - <see cref="DateTimeOffset"/>, <see cref="DateOnly"/> and
+    /// <see cref="TimeOnly"/> - do not implement <see cref="IConvertible"/>. So
+    /// <see cref="Convert.ChangeType(object, Type, IFormatProvider)"/> cannot convert them to anything at
+    /// all, not even to a string, and reports "Object must implement IConvertible" for a value this plugin
+    /// itself wrote. <c>GetDateTime</c> on a value stored as a timestamp is the common way to meet it.
+    /// </para>
+    /// <para>
+    /// Only the conversions with one unambiguous answer are made. A <see cref="TimeOnly"/> read as a
+    /// <see cref="DateTime"/> is deliberately not one of them: it carries no date, so any date this supplied
+    /// would be invented.
+    /// </para>
+    /// </remarks>
+    internal static object NarrowForTypedGetter(object value, Type target) => value switch
+    {
+        DateTimeOffset offset when target == typeof(DateTime) => offset.UtcDateTime,
+        DateOnly date when target == typeof(DateTime) => date.ToDateTime(TimeOnly.MinValue),
+
+        // The round-trip format rather than the current culture's, so the text is unambiguous and does not
+        // change with the machine the application happens to run on.
+        DateTimeOffset or DateOnly or TimeOnly when target == typeof(string) =>
+            ((IFormattable)value).ToString("O", CultureInfo.InvariantCulture),
+
+        // A Guid is stored as its canonical text, and Convert.ChangeType cannot produce a Guid from a
+        // string - Guid is not one of the types it knows - so GetGuid would fail without this.
+        string text when target == typeof(Guid) => Guid.Parse(text),
+
+        _ => value,
+    };
+
     private T Converted<T>(int ordinal)
     {
         object value = this.GetValue(ordinal);
@@ -579,7 +627,27 @@ internal sealed class DecryptingDataReader : DbDataReader, IWrapper
                 typeof(T).Name));
         }
 
-        return (T)Convert.ChangeType(value, typeof(T), CultureInfo.InvariantCulture);
+        object convertible = NarrowForTypedGetter(value, typeof(T));
+        if (convertible is T narrowed)
+        {
+            return narrowed;
+        }
+
+        // Anything left that cannot be converted would reach Convert.ChangeType and fail with a message
+        // naming IConvertible, which says nothing about the column or about what to call instead. A
+        // TimeOnly read as a DateTime is the reachable case: it carries no date, so there is no answer to
+        // give rather than invent one.
+        if (convertible is not IConvertible)
+        {
+            throw new InvalidCastException(string.Format(
+                CultureInfo.CurrentCulture,
+                Resources.DecryptingDataReader_Converted_CannotConvert,
+                this.GetName(ordinal),
+                convertible.GetType().Name,
+                typeof(T).Name));
+        }
+
+        return (T)Convert.ChangeType(convertible, typeof(T), CultureInfo.InvariantCulture);
     }
 
     private object? Decrypt(int ordinal, EncryptedColumn column)

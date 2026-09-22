@@ -79,6 +79,15 @@ namespace AwsWrapperDataProvider.Plugin.KmsEncryption.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Column {0} holds a {1}, which cannot be converted to {2}. Read it with GetValue, with GetFieldValue&lt;{1}&gt;, or as a string..
+        /// </summary>
+        internal static string DecryptingDataReader_Converted_CannotConvert {
+            get {
+                return ResourceManager.GetString("DecryptingDataReader_Converted_CannotConvert", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to Column {0} is NULL and cannot be read as {1}..
         /// </summary>
         internal static string DecryptingDataReader_Converted_ColumnIsNull {

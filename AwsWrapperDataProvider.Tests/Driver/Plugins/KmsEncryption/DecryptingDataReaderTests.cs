@@ -124,6 +124,141 @@ public class DecryptingDataReaderTests
         Assert.Null(DecryptingDataReader.DescribeColumns(reader));
     }
 
+    // Typed getters over the date and time types, which the BCL cannot convert on its own.
+
+    /// <summary>
+    /// A value stored as a timestamp comes back as a <see cref="DateTimeOffset"/>, and must still be
+    /// readable with <c>GetDateTime</c>.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="DateTimeOffset"/> does not implement <see cref="IConvertible"/>, so without the conversion
+    /// under test <see cref="Convert.ChangeType(object, Type, IFormatProvider)"/> reports "Object must
+    /// implement IConvertible" for a value this plugin itself wrote - a round trip through its own driver
+    /// that fails.
+    /// </remarks>
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void TestTimestampIsReadableAsDateTime()
+    {
+        var stored = new DateTimeOffset(2026, 1, 2, 3, 4, 5, TimeSpan.Zero);
+
+        object narrowed = DecryptingDataReader.NarrowForTypedGetter(stored, typeof(DateTime));
+
+        Assert.Equal(new DateTime(2026, 1, 2, 3, 4, 5, DateTimeKind.Utc), narrowed);
+    }
+
+    /// <summary>A date comes back as a <see cref="DateOnly"/>, and reads as midnight on that date.</summary>
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void TestDateIsReadableAsDateTimeAtMidnight()
+    {
+        object narrowed = DecryptingDataReader.NarrowForTypedGetter(new DateOnly(2026, 1, 2), typeof(DateTime));
+
+        Assert.Equal(new DateTime(2026, 1, 2, 0, 0, 0), narrowed);
+    }
+
+    /// <summary>
+    /// Every date and time type reads as a string in the round-trip format, so the text does not change with
+    /// the culture of the machine the application runs on.
+    /// </summary>
+    [Theory]
+    [Trait("Category", "Unit")]
+    [MemberData(nameof(RoundTripTextCases))]
+    public void TestDateAndTimeTypesReadAsRoundTripText(object stored, string expected)
+    {
+        object narrowed = DecryptingDataReader.NarrowForTypedGetter(stored, typeof(string));
+
+        Assert.Equal(expected, narrowed);
+    }
+
+    public static IEnumerable<object[]> RoundTripTextCases() => new List<object[]>
+    {
+        new object[] { new DateOnly(2026, 1, 2), "2026-01-02" },
+        new object[] { new TimeOnly(3, 4, 5), "03:04:05.0000000" },
+        new object[]
+        {
+            new DateTimeOffset(2026, 1, 2, 3, 4, 5, TimeSpan.Zero),
+            "2026-01-02T03:04:05.0000000+00:00",
+        },
+    };
+
+    /// <summary>
+    /// A type the conversion has no answer for is handed back unchanged, so the caller's own conversion -
+    /// or its failure - is what decides.
+    /// </summary>
+    /// <remarks>
+    /// A <see cref="TimeOnly"/> read as a <see cref="DateTime"/> is the reachable case: it carries no date,
+    /// so any date returned would be invented. The reader turns this into a message naming the column and
+    /// both types rather than the BCL's mention of <see cref="IConvertible"/>.
+    /// </remarks>
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void TestTimeReadAsDateTimeIsLeftAlone()
+    {
+        var stored = new TimeOnly(3, 4, 5);
+
+        Assert.Equal(stored, DecryptingDataReader.NarrowForTypedGetter(stored, typeof(DateTime)));
+    }
+
+    /// <summary>
+    /// Types the BCL can already convert are untouched, so the conversion adds no behaviour of its own for
+    /// the types that were always fine.
+    /// </summary>
+    [Theory]
+    [Trait("Category", "Unit")]
+    [InlineData("123-45-6789")]
+    [InlineData(42)]
+    [InlineData(4.5d)]
+    [InlineData(true)]
+    public void TestConvertibleValuesAreLeftAlone(object stored)
+    {
+        Assert.Same(stored, DecryptingDataReader.NarrowForTypedGetter(stored, typeof(string)));
+    }
+
+    /// <summary>
+    /// A Guid is stored as its canonical text, and must read back as a Guid.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="Convert.ChangeType(object, Type, IFormatProvider)"/> cannot produce a
+    /// <see cref="Guid"/> from a string - <see cref="Guid"/> is not one of the types it handles - so without
+    /// the conversion under test <c>GetGuid</c> fails on a value this plugin wrote.
+    /// </remarks>
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void TestGuidTextIsReadableAsGuid()
+    {
+        const string text = "00112233-4455-6677-8899-aabbccddeeff";
+
+        object narrowed = DecryptingDataReader.NarrowForTypedGetter(text, typeof(Guid));
+
+        Assert.Equal(Guid.Parse(text), narrowed);
+    }
+
+    /// <summary>
+    /// A string that is not a Guid fails as a Guid rather than being handed back as a string, so the failure
+    /// names the real problem instead of surfacing later as a cast.
+    /// </summary>
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void TestNonGuidTextIsRejectedAsGuid()
+    {
+        Assert.Throws<FormatException>(
+            () => DecryptingDataReader.NarrowForTypedGetter("not a guid", typeof(Guid)));
+    }
+
+    /// <summary>
+    /// A string stays a string when a string is what was asked for, so adding the Guid conversion did not
+    /// change the ordinary case.
+    /// </summary>
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void TestGuidTextStaysTextWhenReadAsString()
+    {
+        const string text = "00112233-4455-6677-8899-aabbccddeeff";
+
+        Assert.Same(text, DecryptingDataReader.NarrowForTypedGetter(text, typeof(string)));
+    }
+
     /// <summary>
     /// A reader that offers only <see cref="DbDataReader.GetSchemaTable"/>, as MySql.Data does.
     /// </summary>

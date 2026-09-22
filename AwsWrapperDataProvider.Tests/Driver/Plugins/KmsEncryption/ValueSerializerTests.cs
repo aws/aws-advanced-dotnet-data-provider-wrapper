@@ -1,4 +1,4 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -177,10 +177,29 @@ public class ValueSerializerTests
             () => ValueSerializer.Deserialize(new byte[length], (TypeMarker)marker));
     }
 
-    [Fact]
+    /// <summary>
+    /// A type the serializer has no marker for, and no wider marker it can be stored under, is refused.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="TimeSpan"/> is the interesting one: it looks like it should fit
+    /// <see cref="TypeMarker.LocalTime"/>, but a <see cref="TimeSpan"/> can be negative and can exceed a
+    /// day, so it is a duration rather than a time of day and storing it as one would be lossy.
+    /// </remarks>
+    [Theory]
     [Trait("Category", "Unit")]
-    public void TestUnsupportedTypeIsRejected()
+    [MemberData(nameof(UnsupportedValues))]
+    public void TestUnsupportedTypeIsRejected(object value)
     {
-        Assert.Throws<EncryptionException>(() => ValueSerializer.MarkerFor(Guid.NewGuid()));
+        Assert.Throws<EncryptionException>(() => ValueSerializer.MarkerFor(value));
     }
+
+    public static IEnumerable<object[]> UnsupportedValues() => new List<object[]>
+    {
+        new object[] { TimeSpan.FromMinutes(90) },
+        new object[] { (sbyte)-5 },
+        new object[] { 5u },
+        new object[] { 5UL },
+        new object[] { DayOfWeek.Monday },
+        new object[] { new object() },
+    };
 }

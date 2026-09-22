@@ -73,6 +73,9 @@
   <data name="DecryptingDataReader_Converted_ColumnIsNull" xml:space="preserve">
     <value>Column {0} is NULL and cannot be read as {1}.</value>
   </data>
+  <data name="DecryptingDataReader_Converted_CannotConvert" xml:space="preserve">
+    <value>Column {0} holds a {1}, which cannot be converted to {2}. Read it with GetValue, with GetFieldValue&lt;{1}&gt;, or as a string.</value>
+  </data>
   <data name="EncryptionConfig_FromProperties_RegionRequired" xml:space="preserve">
     <value>The {0} property is required by the {1} plugin.</value>
   </data>
