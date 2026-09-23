@@ -7,8 +7,14 @@ This project provides Entity Framework Core integration for MySQL databases usin
 ## Dependencies
 
 This project depends on:
-- **[Pomelo.EntityFrameworkCore.MySql](https://www.nuget.org/packages/Pomelo.EntityFrameworkCore.MySql/)**: Pomelo EF Core provider for MySQL
+- **[Microting.EntityFrameworkCore.MySql](https://www.nuget.org/packages/Microting.EntityFrameworkCore.MySql/)**: EF Core provider for MySQL — a fork of `Pomelo.EntityFrameworkCore.MySql` (see note below)
 - **[Microsoft.EntityFrameworkCore](https://www.nuget.org/packages/Microsoft.EntityFrameworkCore/)**: Entity Framework Core framework
+
+### Why the Microting fork instead of Pomelo
+
+Upstream `Pomelo.EntityFrameworkCore.MySql` has no Entity Framework Core 10 release — its latest version targets EF Core 9 and caps `Microsoft.EntityFrameworkCore.Relational` below 10. `Microting.EntityFrameworkCore.MySql` is a fork of Pomelo that is built against EF Core 10, so it is what this package references.
+
+The fork renamed its assembly and namespaces from `Pomelo.*` to `Microting.*`. The wrapper selects the MySQL dialect by matching that assembly name, so **referencing upstream Pomelo instead will not work** — the wrapper cannot resolve a dialect for it and `UseAwsWrapperMySql` throws. Aside from the package id and the `using` directives, the API is unchanged: `UseMySql` and `MySqlServerVersion` are called exactly as before.
 
 ## Usage
 
@@ -23,7 +29,7 @@ services.AddDbContext<MyDbContext>(options =>
 
 ## Custom Provider Registration
 
-The wrapper automatically detects supported EF Core MySQL providers (e.g. Pomelo) by matching the assembly name prefix of the wrapped options extension. If you are using an unsupported or custom EF Core MySQL provider, you can register it manually using `RelationalConnectionDialectProvider.RegisterDialect`:
+The wrapper automatically detects supported EF Core MySQL providers (currently `Microting.EntityFrameworkCore.MySql`) by matching the assembly name prefix of the wrapped options extension. If you are using an unsupported or custom EF Core MySQL provider — including upstream `Pomelo.EntityFrameworkCore.MySql` — you can register it manually using `RelationalConnectionDialectProvider.RegisterDialect`:
 
 ```csharp
 using AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.RelationalConnectionDialects;

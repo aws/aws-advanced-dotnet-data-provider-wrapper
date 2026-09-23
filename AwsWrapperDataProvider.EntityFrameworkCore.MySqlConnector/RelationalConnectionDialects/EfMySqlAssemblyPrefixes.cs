@@ -14,11 +14,20 @@
 
 namespace AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector.RelationalConnectionDialects;
 
+/// <summary>
+/// Assembly name prefixes of the Entity Framework Core MySQL providers that
+/// <see cref="RelationalConnectionDialectProvider"/> recognizes out of the box.
+/// </summary>
 public static class EfMySqlAssemblyPrefixes
 {
-    // The EF Core MySQL provider is the Microting fork of Pomelo.EntityFrameworkCore.MySql, which is
-    // required for EF Core 10 support (upstream Pomelo has no EF Core 10 release). The fork renamed
-    // its assembly and namespaces from "Pomelo.EntityFrameworkCore.MySql" to
-    // "Microting.EntityFrameworkCore.MySql"; the dialect is selected by matching this assembly name.
-    public static string Pomelo = "Microting.EntityFrameworkCore.MySql";
+    /// <summary>
+    /// Assembly name prefix of <c>Microting.EntityFrameworkCore.MySql</c>, the supported EF Core MySQL provider.
+    /// </summary>
+    /// <remarks>
+    /// Microting is a fork of <c>Pomelo.EntityFrameworkCore.MySql</c> and is required because upstream Pomelo
+    /// has no Entity Framework Core 10 release. The fork renamed its assembly and namespaces from
+    /// <c>Pomelo.*</c> to <c>Microting.*</c>, and the dialect is selected by matching this assembly name, so
+    /// referencing upstream Pomelo instead does not resolve a dialect.
+    /// </remarks>
+    public static readonly string Microting = "Microting.EntityFrameworkCore.MySql";
 }
