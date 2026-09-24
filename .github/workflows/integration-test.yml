@@ -12,6 +12,11 @@ on:
       - 'docs/**'
       - 'ISSUE_TEMPLATE/**'
       - '**/remove-old-artifacts.yml'
+  # Saturdays: net10.0 is covered on every merge, so the scheduled run only adds the net8.0 pass.
+  # Scheduled runs only ever fire from the default branch, so this takes effect once merged, not from
+  # a feature branch.
+  schedule:
+    - cron: '0 6 * * 6'
   workflow_dispatch:
     inputs:
       frameworks:
@@ -73,9 +78,10 @@ jobs:
           AWS_RDS_MONITORING_ROLE_ARN: ${{ secrets.AWS_RDS_MONITORING_ROLE_ARN }}
           MYSQL_VERSION: "default"
           PG_VERSION: "default"
-          # Empty on push, so ContainerHelper falls back to its net10.0 default and the automatic runs
-          # keep their current duration. Widened only by a manual dispatch.
-          TEST_FRAMEWORKS: ${{ inputs.frameworks }}
+          # schedule: the weekly net8.0 pass. dispatch: whatever was selected. push: inputs is null, so
+          # this renders empty and ContainerHelper falls back to its net10.0 default, leaving the
+          # per-merge runs at their current duration.
+          TEST_FRAMEWORKS: ${{ github.event_name == 'schedule' && 'net8.0' || inputs.frameworks }}
       - name: Archive results
         if: always()
         uses: actions/upload-artifact@v7
