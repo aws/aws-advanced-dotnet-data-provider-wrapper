@@ -13,6 +13,16 @@ on:
       - 'ISSUE_TEMPLATE/**'
       - '**/remove-old-artifacts.yml'
   workflow_dispatch:
+    inputs:
+      frameworks:
+        description: 'Target frameworks to run the suite against, comma separated. Each one repeats the whole suite against the same cluster, so adding net8.0 roughly doubles the run.'
+        required: false
+        default: 'net10.0'
+        type: choice
+        options:
+          - 'net10.0'
+          - 'net10.0,net8.0'
+          - 'net8.0'
 
 permissions:
   id-token: write   # This is required for requesting the JWT
@@ -63,6 +73,9 @@ jobs:
           AWS_RDS_MONITORING_ROLE_ARN: ${{ secrets.AWS_RDS_MONITORING_ROLE_ARN }}
           MYSQL_VERSION: "default"
           PG_VERSION: "default"
+          # Empty on push, so ContainerHelper falls back to its net10.0 default and the automatic runs
+          # keep their current duration. Widened only by a manual dispatch.
+          TEST_FRAMEWORKS: ${{ inputs.frameworks }}
       - name: Archive results
         if: always()
         uses: actions/upload-artifact@v7

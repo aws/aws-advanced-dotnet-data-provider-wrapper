@@ -15,10 +15,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
 
-      - name: Setup .NET 10.0
+      # Both runtimes are needed: the test projects that cover the multitargeted libraries build for
+      # net8.0 and net10.0, and executing the net8.0 test host requires the .NET 8 runtime. The 10.0
+      # SDK still drives the build -- global.json pins 10.0 with rollForward latestFeature, which
+      # cannot select an 8.0 SDK.
+      - name: Setup .NET 8.0 and 10.0
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: '10.0.x'
+          dotnet-version: |
+            8.0.x
+            10.0.x
 
       - name: Run dotnet format
         run:  dotnet format AwsWrapperDataProvider.sln --verify-no-changes --verbosity diagnostic

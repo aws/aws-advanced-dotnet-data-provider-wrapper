@@ -17,6 +17,7 @@
 package integration.host.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.ExecCreateCmd;
@@ -26,8 +27,16 @@ import com.github.dockerjava.api.exception.DockerException;
 import eu.rekawek.toxiproxy.ToxiproxyClient;
 import integration.host.TestInstanceInfo;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.GenericContainer;
@@ -57,6 +66,52 @@ public class ContainerHelper {
 
   private static final int PROXY_CONTROL_PORT = 8474;
   private static final int PROXY_PORT = 8666;
+
+  // Frameworks the integration suite runs against, in order. Defaults to net10.0 alone so the
+  // automatic post-merge runs keep their current duration: every added framework repeats the whole
+  // suite against the same cluster, roughly multiplying wall-clock time. Set TEST_FRAMEWORKS to a
+  // comma separated list (for example "net10.0,net8.0") to widen it, which is what the manually
+  // dispatched multi-framework runs do. Each framework needs a runtime in the test container image:
+  // the base image supplies net10.0, and NET8_RUNTIME_INSTALL adds net8.0.
+  private static final String CONTAINER_DEFAULT_TEST_FRAMEWORK = "net10.0";
+  private static final String NET8_FRAMEWORK = "net8.0";
+  private static final List<String> CONTAINER_TEST_FRAMEWORKS = resolveTestFrameworks();
+
+  private static List<String> resolveTestFrameworks() {
+    String configured = System.getenv("TEST_FRAMEWORKS");
+    if (configured == null || configured.trim().isEmpty()) {
+      return Collections.singletonList(CONTAINER_DEFAULT_TEST_FRAMEWORK);
+    }
+
+    List<String> frameworks = Arrays.stream(configured.split(","))
+        .map(String::trim)
+        .filter(framework -> !framework.isEmpty())
+        .distinct()
+        // The default framework is the only one that can run solution-wide, so it goes first: it is
+        // the pass that covers the test projects which target it exclusively.
+        .sorted(Comparator.comparingInt(
+            framework -> CONTAINER_DEFAULT_TEST_FRAMEWORK.equals(framework) ? 0 : 1))
+        .collect(Collectors.toList());
+
+    return frameworks.isEmpty()
+        ? Collections.singletonList(CONTAINER_DEFAULT_TEST_FRAMEWORK)
+        : Collections.unmodifiableList(frameworks);
+  }
+
+  // Test projects that multitarget net8.0. Kept in sync with the TargetFrameworks in those csproj files.
+  private static final List<String> NET8_TEST_PROJECTS =
+      Collections.unmodifiableList(Arrays.asList(
+          "AwsWrapperDataProvider.Tests",
+          "AwsWrapperDataProvider.NHibernate.Tests"));
+
+  // The dotnet/sdk:10.0 base image carries only the .NET 10 runtime, so the net8.0 test host would
+  // fail to start. Only the runtime is installed (not a second SDK) since the 10.0 SDK builds both
+  // frameworks, and it goes to the image's existing dotnet root so the installed muxer finds it.
+  private static final String NET8_RUNTIME_INSTALL =
+      "curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh"
+          + " && chmod +x /tmp/dotnet-install.sh"
+          + " && /tmp/dotnet-install.sh --channel 8.0 --runtime dotnet --install-dir /usr/share/dotnet"
+          + " && rm /tmp/dotnet-install.sh";
 
   private static final String XRAY_TELEMETRY_IMAGE_NAME = "amazon/aws-xray-daemon";
   private static final String OTLP_TELEMETRY_IMAGE_NAME = "amazon/aws-otel-collector";
@@ -110,17 +165,75 @@ public class ContainerHelper {
     // "--logger:console;verbosity=detailed" becomes "--output Detailed", and exit code 8
     // ("zero tests ran") has to be ignored because the filter runs solution-wide, so the test
     // projects holding no test for this task legitimately match nothing.
-    if (task.contains("perf")) {
-      exitCode = execInContainer(container, consumer, "dotnet", "test", "--filter",
-              "Category=Integration&Database=" + task + "&Engine=" + engineDeployment, "--configuration", "Release", "--output", "Detailed", "--ignore-exit-code", "8");
-    } else {
-      exitCode = execInContainer(container, consumer, "dotnet", "test", "--filter",
-              "Category=Integration&Database=" + task + "&Engine=" + engineDeployment, "--no-build", "--output", "Detailed", "--ignore-exit-code", "8");
+    //
+    // The frameworks run one after another inside this same container, against the AWS resources
+    // this task has already provisioned. Running them sequentially here rather than as separate
+    // workflow jobs is what keeps a single Aurora cluster serving both, and it also keeps the two
+    // passes from competing over the same cluster.
+    String filter = "Category=Integration&Database=" + task + "&Engine=" + engineDeployment;
+    Map<String, Long> exitCodesByFramework = new LinkedHashMap<>();
+
+    for (String framework : CONTAINER_TEST_FRAMEWORKS) {
+      List<String> projects = testProjectsForFramework(framework, task);
+      if (projects.isEmpty()) {
+        System.out.println("Skipping " + framework + ": no test project for task '" + task + "' targets it.");
+        continue;
+      }
+
+      for (String project : projects) {
+        List<String> command = new ArrayList<>(Arrays.asList("dotnet", "test"));
+        // An empty project means "whatever `dotnet test` resolves here", i.e. the solution.
+        if (!project.isEmpty()) {
+          command.add(project);
+        }
+        command.addAll(Arrays.asList("--framework", framework, "--filter", filter));
+        if (task.contains("perf")) {
+          command.addAll(Arrays.asList("--configuration", "Release"));
+        } else {
+          command.add("--no-build");
+        }
+        command.addAll(Arrays.asList("--output", "Detailed", "--ignore-exit-code", "8"));
+
+        String label = framework + (project.isEmpty() ? "" : " (" + project + ")");
+        System.out.println("==== Running integration tests for " + label + " ====");
+        Long frameworkExitCode = execInContainer(container, consumer, command.toArray(new String[0]));
+
+        // Keep the first failure per framework, but carry on so one framework failing still reports
+        // the other's result instead of hiding it.
+        exitCodesByFramework.merge(label, frameworkExitCode, (existing, latest) -> existing != 0 ? existing : latest);
+      }
     }
 
-
     System.out.println("==== Container console feed ==== <<<<");
-    assertEquals(0, exitCode, "Some tests failed.");
+
+    exitCodesByFramework.forEach(
+        (label, code) -> System.out.println("Integration tests for " + label + " exited with " + code));
+
+    String failed = exitCodesByFramework.entrySet().stream()
+        .filter(entry -> entry.getValue() == null || entry.getValue() != 0)
+        .map(Map.Entry::getKey)
+        .collect(Collectors.joining(", "));
+
+    assertTrue(failed.isEmpty(), "Some tests failed for: " + failed);
+  }
+
+  /**
+   * Test projects to run for a given framework. net10.0 runs solution-wide so every test project is
+   * covered. net8.0 has to name projects explicitly: a solution-wide "--framework net8.0" fails with
+   * NETSDK1005 because AwsWrapperDataProvider.EntityFrameworkCore.Tests (EF Core 10 requires .NET 10)
+   * and AwsWrapperDataProvider.Performance.Tests have no net8.0 target.
+   */
+  private static List<String> testProjectsForFramework(String framework, String task) {
+    if (CONTAINER_DEFAULT_TEST_FRAMEWORK.equals(framework)) {
+      return Collections.singletonList("");
+    }
+
+    // The EF and perf suites live solely in net10.0-only projects, so those tasks have nothing to run.
+    if (task.endsWith("ef") || task.contains("perf")) {
+      return Collections.emptyList();
+    }
+
+    return NET8_TEST_PROJECTS;
   }
 
   public void debugTest(GenericContainer<?> container, String task)
@@ -134,7 +247,9 @@ public class ContainerHelper {
     Consumer<OutputFrame> consumer = new ConsoleConsumer();
     execInContainer(container, consumer, "printenv", "TEST_ENV_DESCRIPTION");
 
-    Long exitCode = execInContainer(container, consumer, "dotnet", "test", "--filter", "Category!=Integration", "--ignore-exit-code", "8");
+    // Single framework on purpose: this is the debug entry point, so it stays fast rather than
+    // repeating the unit suite per framework the way runTest does for integration coverage.
+    Long exitCode = execInContainer(container, consumer, "dotnet", "test", "--framework", CONTAINER_DEFAULT_TEST_FRAMEWORK, "--filter", "Category!=Integration", "--ignore-exit-code", "8");
     System.out.println("==== Container console feed ==== <<<<");
     assertEquals(0, exitCode, "Some tests failed.");
   }
@@ -210,16 +325,24 @@ public class ContainerHelper {
     return new FixedExposedPortContainer<>(
         new ImageFromDockerfile(dockerImageName, true)
             .withDockerfileFromBuilder(
-                builder -> appendExtraCommandsToBuilder.apply(
-                    builder
-                        .from(testContainerImageName)
+                builder -> {
+                  DockerfileBuilder imageBuilder = builder.from(testContainerImageName);
+                  // Only fetched when a net8.0 pass is actually requested, so the default runs do not
+                  // take on a network download during image build.
+                  if (CONTAINER_TEST_FRAMEWORKS.contains(NET8_FRAMEWORK)) {
+                    imageBuilder = imageBuilder.run(NET8_RUNTIME_INSTALL);
+                  }
+
+                  appendExtraCommandsToBuilder.apply(
+                    imageBuilder
                         .run("dotnet tool install --global dotnet-ef --version 10.0.12")
                         .env("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/.dotnet/tools")
                         .run("mkdir", "app")
                         .workDir("/app")
                         .entryPoint("/bin/sh -c \"while true; do sleep 30; done;\"")
                         .expose(5005) // Exposing ports for debugger to be attached
-                ).build()))
+                  ).build();
+                }))
         .withFixedExposedPort(5005, 5005) // Mapping container port to host
         .withFileSystemBind("../../../AwsWrapperDataProvider.sln", "/app/AwsWrapperDataProvider.sln", BindMode.READ_ONLY)
         .withFileSystemBind("../../../.editorconfig", "/app/.editorconfig", BindMode.READ_ONLY)
