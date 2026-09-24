@@ -104,14 +104,22 @@ public class ContainerHelper {
           "AwsWrapperDataProvider.Tests",
           "AwsWrapperDataProvider.NHibernate.Tests"));
 
-  // The dotnet/sdk:10.0 base image carries only the .NET 10 runtime, so the net8.0 test host would
-  // fail to start. Only the runtime is installed (not a second SDK) since the 10.0 SDK builds both
-  // frameworks, and it goes to the image's existing dotnet root so the installed muxer finds it.
+  // The dotnet/sdk:10.0 base image carries only the .NET 10 runtimes, so the net8.0 test host would
+  // fail to start. Only runtimes are installed (not a second SDK) since the 10.0 SDK builds both
+  // frameworks, and they go to the image's existing dotnet root so the installed muxer finds them.
+  //
+  // Both shared frameworks are required, not just the base runtime: the test assemblies' generated
+  // runtimeconfig.json asks for Microsoft.NETCore.App AND Microsoft.AspNetCore.App (the latter arrives
+  // transitively through a package reference). Installing "--runtime dotnet" alone leaves the host
+  // unable to resolve Microsoft.AspNetCore.App, which fails every net8.0 invocation before a single
+  // test runs -- including projects whose filter matches nothing.
   private static final String NET8_RUNTIME_INSTALL =
       "curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh"
           + " && chmod +x /tmp/dotnet-install.sh"
           + " && /tmp/dotnet-install.sh --channel 8.0 --runtime dotnet --install-dir /usr/share/dotnet"
-          + " && rm /tmp/dotnet-install.sh";
+          + " && /tmp/dotnet-install.sh --channel 8.0 --runtime aspnetcore --install-dir /usr/share/dotnet"
+          + " && rm /tmp/dotnet-install.sh"
+          + " && dotnet --list-runtimes";
 
   private static final String XRAY_TELEMETRY_IMAGE_NAME = "amazon/aws-xray-daemon";
   private static final String OTLP_TELEMETRY_IMAGE_NAME = "amazon/aws-otel-collector";
@@ -209,9 +217,12 @@ public class ContainerHelper {
     exitCodesByFramework.forEach(
         (label, code) -> System.out.println("Integration tests for " + label + " exited with " + code));
 
+    // The exit code is part of the message because it distinguishes a genuine test failure from the
+    // invocation never getting that far: a missing shared framework, for instance, fails every project
+    // for that framework identically, including ones whose filter selects nothing.
     String failed = exitCodesByFramework.entrySet().stream()
         .filter(entry -> entry.getValue() == null || entry.getValue() != 0)
-        .map(Map.Entry::getKey)
+        .map(entry -> entry.getKey() + " (exit " + entry.getValue() + ")")
         .collect(Collectors.joining(", "));
 
     assertTrue(failed.isEmpty(), "Some tests failed for: " + failed);
