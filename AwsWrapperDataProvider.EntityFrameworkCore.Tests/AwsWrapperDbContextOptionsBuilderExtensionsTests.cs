@@ -22,7 +22,7 @@ namespace AwsWrapperDataProvider.EntityFrameworkCore.Tests;
 
 public class AwsWrapperDbContextOptionsBuilderExtensionsTests
 {
-    [Fact(Timeout = 60 * 60 * 1000)]
+    [Fact]
     [Trait("Category", "Unit")]
     public void UseAwsWrapper_StoresRawWrapperConnectionString_OnExtension()
     {
@@ -38,7 +38,7 @@ public class AwsWrapperDbContextOptionsBuilderExtensionsTests
         Assert.Equal(wrapperConnectionString, extension.WrapperConnectionString);
     }
 
-    [Fact(Timeout = 60 * 60 * 1000)]
+    [Fact]
     [Trait("Category", "Unit")]
     public void PomeloDialect_NormalizeConnectionString_EnforcesMandatoryMySqlOptions()
     {
@@ -50,7 +50,7 @@ public class AwsWrapperDbContextOptionsBuilderExtensionsTests
         Assert.False(Convert.ToBoolean(connectionStringBuilder["UseAffectedRows"]));
     }
 
-    [Fact(Timeout = 60 * 60 * 1000)]
+    [Fact]
     [Trait("Category", "Unit")]
     public void GetDialect_WithPomeloUseMySql_ReturnsPomeloDialect()
     {
@@ -64,7 +64,7 @@ public class AwsWrapperDbContextOptionsBuilderExtensionsTests
         Assert.IsType<PomeloEfMySqlRelationalConnectionDialect>(dialect);
     }
 
-    [Fact(Timeout = 60 * 60 * 1000)]
+    [Fact]
     [Trait("Category", "Unit")]
     public void GetDialect_WithNullExtension_ThrowsInvalidOperationException()
     {
@@ -72,5 +72,58 @@ public class AwsWrapperDbContextOptionsBuilderExtensionsTests
             () => RelationalConnectionDialectProvider.GetDialect(null));
         Assert.Contains("relational connection", ex.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("not supported", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Guards the prefix constant against drifting from the EF MySQL provider actually referenced. Dialect
+    /// selection is a silent string match, so swapping the provider package without updating the constant
+    /// would not fail to compile -- it would only surface as "provider is not supported" at runtime.
+    /// </summary>
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void MicrotingPrefix_MatchesAssemblyOfReferencedEfMySqlProvider()
+    {
+        var wrapped = new DbContextOptionsBuilder()
+            .UseMySql("Server=localhost;Database=test;User ID=u;Password=p;", new MySqlServerVersion(new Version(8, 0, 36)))
+            .Options;
+
+        var ext = wrapped.Extensions.First(x => x is not CoreOptionsExtension);
+        var providerAssembly = ext.GetType().Assembly.GetName().Name;
+
+        Assert.StartsWith(EfMySqlAssemblyPrefixes.Microting, providerAssembly, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void RegisterDialect_ReplacesDialectRegisteredForSamePrefix()
+    {
+        var wrapped = new DbContextOptionsBuilder()
+            .UseMySql("Server=localhost;Database=test;User ID=u;Password=p;", new MySqlServerVersion(new Version(8, 0, 36)))
+            .Options;
+        var ext = wrapped.Extensions.First(x => x is not CoreOptionsExtension);
+
+        var custom = new StubRelationalConnectionDialect();
+        try
+        {
+            RelationalConnectionDialectProvider.RegisterDialect(EfMySqlAssemblyPrefixes.Microting, custom);
+            Assert.Same(custom, RelationalConnectionDialectProvider.GetDialect(ext));
+        }
+        finally
+        {
+            // The registry is static, so the built-in dialect is put back rather than left overridden
+            // for whichever test runs next.
+            RelationalConnectionDialectProvider.RegisterDialect(
+                EfMySqlAssemblyPrefixes.Microting, PomeloEfMySqlRelationalConnectionDialect.Instance);
+        }
+
+        Assert.IsType<PomeloEfMySqlRelationalConnectionDialect>(
+            RelationalConnectionDialectProvider.GetDialect(ext));
+    }
+
+    private sealed class StubRelationalConnectionDialect : IRelationalConnectionDialect
+    {
+        public Type UnderlyingConnectionType => typeof(DbConnection);
+
+        public string NormalizeConnectionString(string wrapperConnectionString) => wrapperConnectionString;
     }
 }

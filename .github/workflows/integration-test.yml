@@ -12,7 +12,22 @@ on:
       - 'docs/**'
       - 'ISSUE_TEMPLATE/**'
       - '**/remove-old-artifacts.yml'
+  # Saturdays: net10.0 is covered on every merge, so the scheduled run only adds the net8.0 pass.
+  # Scheduled runs only ever fire from the default branch, so this takes effect once merged, not from
+  # a feature branch.
+  schedule:
+    - cron: '0 6 * * 6'
   workflow_dispatch:
+    inputs:
+      frameworks:
+        description: 'Target frameworks to run the suite against, comma separated. Each one repeats the whole suite against the same cluster, so adding net8.0 roughly doubles the run.'
+        required: false
+        default: 'net10.0'
+        type: choice
+        options:
+          - 'net10.0'
+          - 'net10.0,net8.0'
+          - 'net8.0'
 
 permissions:
   id-token: write   # This is required for requesting the JWT
@@ -32,19 +47,19 @@ jobs:
             deployment: "aurora-limitless"
     steps:
       - name: 'Clone repository'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: "Set up JDK 8"
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: "corretto"
           java-version: 8
-      - name: Setup .NET 8.0
-        uses: actions/setup-dotnet@v4
+      - name: Setup .NET 10.0
+        uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: '8.0.407'
+          dotnet-version: '10.0.x'
       - name: Configure AWS Credentials
         id: creds
-        uses: aws-actions/configure-aws-credentials@v5.1.0
+        uses: aws-actions/configure-aws-credentials@v6.2.4
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ secrets.AWS_DEPLOY_ROLE }}
           role-session-name: dotnet_integration_test
@@ -63,9 +78,13 @@ jobs:
           AWS_RDS_MONITORING_ROLE_ARN: ${{ secrets.AWS_RDS_MONITORING_ROLE_ARN }}
           MYSQL_VERSION: "default"
           PG_VERSION: "default"
+          # schedule: the weekly net8.0 pass. dispatch: whatever was selected. push: inputs is null, so
+          # this renders empty and ContainerHelper falls back to its net10.0 default, leaving the
+          # per-merge runs at their current duration.
+          TEST_FRAMEWORKS: ${{ github.event_name == 'schedule' && 'net8.0' || inputs.frameworks }}
       - name: Archive results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: integration-report-default-${{ matrix.dbEngine }}-${{ matrix.deployment }}
           path: ./test/integration/container/reports

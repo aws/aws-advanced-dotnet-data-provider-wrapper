@@ -15,6 +15,7 @@
 using System.Data.Common;
 
 namespace AwsWrapperDataProvider.Driver.Plugins.ReadWriteSplitting;
+
 public class ReadWriteSplittingDbException : DbException
 {
     public ReadWriteSplittingDbException(string message) : base(message)
