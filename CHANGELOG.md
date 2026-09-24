@@ -3,6 +3,43 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/#semantic-versioning-200).
 
+## [3.0.0] - 2026-09-24
+
+### :crab: Breaking Changes
+
+> [!WARNING]\
+> This breaking change only impacts customers using Entity Framework Core with MySQL. 3.0 replaces the Entity Framework Core MySQL provider with the Microting fork of Pomelo ([PR #344](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/344)).
+> #### Entity Framework Core MySQL provider
+> `AWS.AdvancedDotnetDataProviderWrapper.EntityFrameworkCore.MySqlConnector` now references [`Microting.EntityFrameworkCore.MySql`](https://www.nuget.org/packages/Microting.EntityFrameworkCore.MySql/) instead of `Pomelo.EntityFrameworkCore.MySql`. Upstream Pomelo has no Entity Framework Core 10 release — its latest version targets EF Core 9 and caps `Microsoft.EntityFrameworkCore.Relational` below 10 — and Microting is a fork of Pomelo built against EF Core 10. The fork renamed its assembly and namespaces from `Pomelo.*` to `Microting.*`, and the wrapper selects the MySQL dialect by matching that assembly name, so referencing upstream Pomelo no longer resolves a dialect and `UseAwsWrapperMySql` throws.
+> #### Migration
+> | Using | Requires Changes | Action Items |
+> |-------|------------------|--------------|
+> | Entity Framework Core with PostgreSQL only | No | No changes required. |
+> | Entity Framework Core with MySQL | Yes | Replace the `Pomelo.EntityFrameworkCore.MySql` package reference with `Microting.EntityFrameworkCore.MySql` (10.0.11 or later) and update the corresponding `using` directives. `UseMySql` and `MySqlServerVersion` are called exactly as before. If you must stay on upstream Pomelo, register a dialect for it with `RelationalConnectionDialectProvider.RegisterDialect`. See the [Entity Framework integration documentation](./docs/using-the-dotnet-driver/UsingEntityFrameworkIntegration.md). |
+>
+> As part of this change the constant naming the recognized provider assembly was renamed from `EfMySqlAssemblyPrefixes.Pomelo` to `EfMySqlAssemblyPrefixes.Microting` and is now `static readonly`. The wrapper registers this dialect itself, so applications do not reference the constant unless they are deliberately overriding the built-in registration.
+
+> [!WARNING]\
+> This breaking change only impacts customers using Entity Framework Core on .NET 8. The Entity Framework Core packages now target .NET 10 only ([PR #344](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/344)).
+> #### Entity Framework Core target framework
+> `AWS.AdvancedDotnetDataProviderWrapper.EntityFrameworkCore.MySqlConnector` and `AWS.AdvancedDotnetDataProviderWrapper.EntityFrameworkCore.PostgreSQL` ship only a `net10.0` assembly, because Entity Framework Core 10 requires .NET 10. Every other package in the wrapper continues to support .NET 8.
+> #### Migration
+> Applications using the Entity Framework Core packages must target .NET 10. Applications on .NET 8 that use the wrapper without Entity Framework Core are unaffected.
+
+> [!WARNING]\
+> This breaking change only impacts customers calling the obsolete MySQL extension method. 3.0 removes `UseAwsWrapper` ([PR #344](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/344)).
+> #### Obsolete extension method removal
+> The `UseAwsWrapper` overloads on `DbContextOptionsBuilder`, deprecated in favour of `UseAwsWrapperMySql` and marked `[Obsolete]` in an earlier release, have been removed.
+> #### Migration
+> Rename any remaining `UseAwsWrapper` call sites to `UseAwsWrapperMySql`. The signatures are unchanged, so the rename is the only edit required.
+
+### :magic_wand: Added
+- .NET 10 support. The core `AWS.AdvancedDotnetDataProviderWrapper.Core` package, all plugin packages, the dialect packages, `Authentication`, `NHibernate`, and `Telemetry.XRay` now multitarget `net8.0` and `net10.0`, so .NET 8 applications are unaffected while .NET 10 applications get an assembly built against the current framework ([PR #344](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/344)).
+- The [AWS KMS Encryption Plugin](./docs/using-the-dotnet-driver/using-plugins/UsingTheKmsEncryptionPlugin.md) in the new `AWS.AdvancedDotnetDataProviderWrapper.Plugin.KmsEncryption` package, which transparently encrypts and decrypts configured columns using data keys derived from an AWS KMS master key, so that values are encrypted client-side before they reach the database and decrypted on read ([PR #342](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/342)).
+
+### :bug: Fixed
+- Commands and batches created before a connection switch are now re-pointed at the new connection instead of continuing to use the old one. Previously a `DbCommand` or `DbBatch` created before a failover or a read/write split kept executing against the previous physical connection; the wrapper now tracks active commands and batches and rebinds them when the underlying connection changes. `DbDataReader` instances are still bound to the connection they were created on and must be recreated after a switch ([PR #343](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/343)).
+
 ## [2.2.0] - 2026-08-04
 
 ### :magic_wand: Added
@@ -111,3 +148,4 @@ The AWS Advanced .NET Data Provider Wrapper is complementary to existing .NET da
 [2.0.0]: https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/compare/1.2.0...2.0.0
 [2.1.0]: https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/compare/2.0.0...2.1.0
 [2.2.0]: https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/compare/2.1.0...2.2.0
+[3.0.0]: https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/compare/2.2.0...3.0.0

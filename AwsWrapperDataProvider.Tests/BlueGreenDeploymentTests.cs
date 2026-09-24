@@ -20,6 +20,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using Amazon.RDS.Model;
+using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Plugins.BlueGreenConnection;
 using AwsWrapperDataProvider.Driver.Utils;
 using AwsWrapperDataProvider.Plugin.Iam.Iam;
@@ -35,17 +36,15 @@ namespace AwsWrapperDataProvider.Tests;
 
 public class BlueGreenDeploymentTests : IntegrationTestBase
 {
-    private const string DriverVersion = "2.2.0";
-
     private const string MysqlBgStatusQuery =
         "SELECT id, SUBSTRING_INDEX(endpoint, '.', 1) as hostId, endpoint, port, role, status, version FROM mysql.rds_topology";
 
     private const string PgAuroraBgStatusQuery =
         "SELECT id, SPLIT_PART(endpoint, '.', 1) as hostId, endpoint, port, role, status, version"
-        + $" FROM pg_catalog.get_blue_green_fast_switchover_metadata('aws_advanced_dotnet_data_provider_wrapper-{DriverVersion}')";
+        + $" FROM pg_catalog.get_blue_green_fast_switchover_metadata('{DriverInfo.NameAndVersion}')";
 
     private static readonly string PgRdsBgStatusQuery =
-        $"SELECT * FROM rds_tools.show_topology('aws_advanced_dotnet_data_provider_wrapper-{DriverVersion}')";
+        $"SELECT * FROM rds_tools.show_topology('{DriverInfo.NameAndVersion}')";
 
     private static readonly ILogger<BlueGreenDeploymentTests> Logger = LoggerUtils.GetLogger<BlueGreenDeploymentTests>();
     private static readonly AuroraTestUtils AuroraTestUtils = AuroraTestUtils.GetUtility();

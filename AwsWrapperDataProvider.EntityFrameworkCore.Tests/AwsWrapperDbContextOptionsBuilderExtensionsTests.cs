@@ -1,4 +1,4 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -26,13 +26,13 @@ public class AwsWrapperDbContextOptionsBuilderExtensionsTests
     [Trait("Category", "Unit")]
     public void UseAwsWrapper_StoresRawWrapperConnectionString_OnExtension()
     {
-        var pomeloConnectionString = "Server=localhost;Database=test;User ID=u;Password=p;";
+        var mySqlConnectionString = "Server=localhost;Database=test;User ID=u;Password=p;";
         var wrapperConnectionString = "Server=localhost;Database=test;User ID=u;Password=p;Plugins=failover;AllowUserVariables=false;UseAffectedRows=true;";
 
         var builder = new DbContextOptionsBuilder();
         builder.UseAwsWrapperMySql(
             wrapperConnectionString,
-            wrapped => wrapped.UseMySql(pomeloConnectionString, new MySqlServerVersion(new Version(8, 0, 36))));
+            wrapped => wrapped.UseMySql(mySqlConnectionString, new MySqlServerVersion(new Version(8, 0, 36))));
 
         var extension = builder.Options.Extensions.OfType<AwsWrapperOptionsExtension>().Single();
         Assert.Equal(wrapperConnectionString, extension.WrapperConnectionString);
@@ -40,10 +40,10 @@ public class AwsWrapperDbContextOptionsBuilderExtensionsTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void PomeloDialect_NormalizeConnectionString_EnforcesMandatoryMySqlOptions()
+    public void EfMySqlDialect_NormalizeConnectionString_EnforcesMandatoryMySqlOptions()
     {
         var input = "Server=localhost;Database=test;User ID=u;Password=p;Plugins=failover;AllowUserVariables=false;UseAffectedRows=true;";
-        var normalized = PomeloEfMySqlRelationalConnectionDialect.Instance.NormalizeConnectionString(input);
+        var normalized = EfMySqlRelationalConnectionDialect.Instance.NormalizeConnectionString(input);
 
         var connectionStringBuilder = new DbConnectionStringBuilder { ConnectionString = normalized };
         Assert.True(Convert.ToBoolean(connectionStringBuilder["AllowUserVariables"]));
@@ -52,16 +52,16 @@ public class AwsWrapperDbContextOptionsBuilderExtensionsTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void GetDialect_WithPomeloUseMySql_ReturnsPomeloDialect()
+    public void GetDialect_WithUseMySql_ReturnsEfMySqlDialect()
     {
-        var pomeloConnectionString = "Server=localhost;Database=test;User ID=u;Password=p;";
+        var mySqlConnectionString = "Server=localhost;Database=test;User ID=u;Password=p;";
         var wrapped = new DbContextOptionsBuilder()
-            .UseMySql(pomeloConnectionString, new MySqlServerVersion(new Version(8, 0, 36)))
+            .UseMySql(mySqlConnectionString, new MySqlServerVersion(new Version(8, 0, 36)))
             .Options;
 
         var ext = wrapped.Extensions.First(x => x is not CoreOptionsExtension);
         var dialect = RelationalConnectionDialectProvider.GetDialect(ext);
-        Assert.IsType<PomeloEfMySqlRelationalConnectionDialect>(dialect);
+        Assert.IsType<EfMySqlRelationalConnectionDialect>(dialect);
     }
 
     [Fact]
@@ -113,10 +113,10 @@ public class AwsWrapperDbContextOptionsBuilderExtensionsTests
             // The registry is static, so the built-in dialect is put back rather than left overridden
             // for whichever test runs next.
             RelationalConnectionDialectProvider.RegisterDialect(
-                EfMySqlAssemblyPrefixes.Microting, PomeloEfMySqlRelationalConnectionDialect.Instance);
+                EfMySqlAssemblyPrefixes.Microting, EfMySqlRelationalConnectionDialect.Instance);
         }
 
-        Assert.IsType<PomeloEfMySqlRelationalConnectionDialect>(
+        Assert.IsType<EfMySqlRelationalConnectionDialect>(
             RelationalConnectionDialectProvider.GetDialect(ext));
     }
 

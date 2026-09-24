@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Data;
+using System.Data.Common;
 using AwsWrapperDataProvider.Driver.Plugins.Failover;
 using AwsWrapperDataProvider.Driver.Plugins.ReadWriteSplitting;
 using AwsWrapperDataProvider.Tests.Container.Utils;
@@ -658,5 +659,118 @@ public class ReadWriteSplittingTests : IntegrationTestBase
         Assert.Equal(writerConnectionId, await AuroraUtils.QueryInstanceId(connection, async));
         await AuroraUtils.SetReadOnly(connection, Engine, true, async);
         Assert.Equal(readerConnectionId, await AuroraUtils.QueryInstanceId(connection, async));
+    }
+
+    /// <summary>
+    /// A command created before a switch keeps working across it, against whichever connection is current
+    /// at execution time.
+    /// </summary>
+    /// <remarks>
+    /// The other tests here create a fresh command per query, so they never execute a command that outlived
+    /// a switch. This one holds a single command across both directions, which is the path that only works
+    /// because the wrapper tracks active commands and re-points them when the underlying connection changes.
+    /// </remarks>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    [Trait("Category", "Integration")]
+    [Trait("Database", "mysql")]
+    [Trait("Database", "pg")]
+    [Trait("Engine", "aurora")]
+    [Trait("Engine", "multi-az-cluster")]
+    [Trait("Engine", "multi-az-instance")]
+    public async Task ReusedCommand_IsRepointedAcrossReadWriteSwitches(bool async)
+    {
+        Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
+
+        using AwsWrapperConnection connection = this.CreateReadWriteSplittingConnection();
+        await AuroraUtils.OpenDbConnection(connection, async);
+        Assert.Equal(ConnectionState.Open, connection.State);
+
+        // Created on the writer, before any switch, and deliberately reused rather than recreated.
+        await using var command = connection.CreateCommand();
+        command.CommandText = AuroraUtils.GetInstanceIdSql(Engine, Deployment);
+
+        var writerConnectionId = await ExecuteScalarAsString(command, async);
+        this.logger.WriteLine($"Writer instance from the reused command: {writerConnectionId}");
+
+        await AuroraUtils.SetReadOnly(connection, Engine, true, async);
+        var readerConnectionId = await ExecuteScalarAsString(command, async);
+        this.logger.WriteLine($"Reader instance from the same command object: {readerConnectionId}");
+        Assert.NotEqual(writerConnectionId, readerConnectionId);
+
+        await AuroraUtils.SetReadOnly(connection, Engine, false, async);
+        Assert.Equal(writerConnectionId, await ExecuteScalarAsString(command, async));
+    }
+
+    /// <summary>
+    /// The batch equivalent of <see cref="ReusedCommand_IsRepointedAcrossReadWriteSwitches"/>.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    [Trait("Category", "Integration")]
+    [Trait("Database", "mysql")]
+    [Trait("Database", "pg")]
+    [Trait("Engine", "aurora")]
+    [Trait("Engine", "multi-az-cluster")]
+    [Trait("Engine", "multi-az-instance")]
+    public async Task ReusedBatch_IsRepointedAcrossReadWriteSwitches(bool async)
+    {
+        Assert.SkipWhen(NumberOfInstances < 2, "Skipped due to test requiring number of database instances >= 2.");
+
+        using AwsWrapperConnection connection = this.CreateReadWriteSplittingConnection();
+        await AuroraUtils.OpenDbConnection(connection, async);
+        Assert.Equal(ConnectionState.Open, connection.State);
+        Assert.SkipUnless(connection.CanCreateBatch, "The current driver does not support DbBatch.");
+
+        await using var batch = connection.CreateBatch();
+        var batchCommand = batch.CreateBatchCommand();
+        batchCommand.CommandText = AuroraUtils.GetInstanceIdSql(Engine, Deployment);
+        batch.BatchCommands.Add(batchCommand);
+
+        var writerConnectionId = await ExecuteScalarAsString(batch, async);
+        this.logger.WriteLine($"Writer instance from the reused batch: {writerConnectionId}");
+
+        await AuroraUtils.SetReadOnly(connection, Engine, true, async);
+        var readerConnectionId = await ExecuteScalarAsString(batch, async);
+        this.logger.WriteLine($"Reader instance from the same batch object: {readerConnectionId}");
+        Assert.NotEqual(writerConnectionId, readerConnectionId);
+
+        await AuroraUtils.SetReadOnly(connection, Engine, false, async);
+        Assert.Equal(writerConnectionId, await ExecuteScalarAsString(batch, async));
+    }
+
+    private static async Task<string?> ExecuteScalarAsString(DbCommand command, bool async)
+    {
+        return Convert.ToString(
+            async
+                ? await command.ExecuteScalarAsync(TestContext.Current.CancellationToken)
+                : command.ExecuteScalar());
+    }
+
+    private static async Task<string?> ExecuteScalarAsString(DbBatch batch, bool async)
+    {
+        return Convert.ToString(
+            async
+                ? await batch.ExecuteScalarAsync(TestContext.Current.CancellationToken)
+                : batch.ExecuteScalar());
+    }
+
+    private AwsWrapperConnection CreateReadWriteSplittingConnection()
+    {
+        var writer = TestEnvironment.Env.Info.DatabaseInfo!.Instances.First();
+        var connectionString = ConnectionStringHelper.GetUrl(
+            Engine,
+            writer.Host,
+            writer.Port,
+            Username,
+            Password,
+            DefaultDbName,
+            3,
+            10,
+            "readWriteSplitting");
+
+        return AuroraUtils.CreateAwsWrapperConnection(Engine, connectionString);
     }
 }

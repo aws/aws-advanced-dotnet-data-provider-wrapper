@@ -111,7 +111,7 @@ public abstract class EFIntegrationTestBase : IntegrationTestBase
     /// Asserts that executing <paramref name="action"/> surfaces a successful-failover signal.
     /// Failover that completes successfully throws <see cref="FailoverSuccessException"/> when no transaction
     /// is in progress, or <see cref="TransactionStateUnknownException"/> when it interrupts an in-flight
-    /// transaction (for example a Pomelo MySQL <c>SaveChanges</c>, which wraps the write in an explicit
+    /// transaction (for example an EF MySQL <c>SaveChanges</c>, which wraps the write in an explicit
     /// transaction). EF Core also wraps exceptions thrown during <c>SaveChanges</c> in a
     /// <see cref="DbUpdateException"/>, so the signal may arrive directly or nested in an outer exception.
     /// This helper accepts all of those shapes and walks the inner-exception chain.
