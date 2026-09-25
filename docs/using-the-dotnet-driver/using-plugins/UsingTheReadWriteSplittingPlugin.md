@@ -105,9 +105,11 @@ The first time a command sets the session to read-only, the plugin opens a new p
 
 ## Limitations
 
-### Statements and result sets bound to the current connection
+### Result sets bound to the current connection
 
-When a `DbCommand` or `DbDataReader` is created, it is bound to the underlying database connection at that time. There is no standard ADO.NET way to change the connection used by an existing command or reader. Therefore, if the read/write splitting plugin switches the underlying connection (e.g., after executing a read-only or read-write session statement), any commands or readers that were created before the switch continue to use the previous connection. To avoid incorrect behavior, create new `DbCommand` and `DbDataReader` instances after switching between reader and writer. Do not reuse commands or readers across such switches.
+When a `DbDataReader` is created, it is bound to the underlying database connection at that time, and there is no way to move an open reader to a different connection. Therefore, if the read/write splitting plugin switches the underlying connection (e.g., after executing a read-only or read-write session statement), any reader created before the switch continues to read from the previous connection. Finish reading and dispose readers before switching between reader and writer, and create new `DbDataReader` instances afterwards.
+
+`DbCommand` and `DbBatch` objects are not affected. The wrapper tracks the commands and batches created from an `AwsWrapperConnection` and re-points them at the new connection whenever the underlying connection changes, so a command created before a switch executes against the connection that is current at execution time. Reusing a command across a switch is therefore safe.
 
 ## Example
 
