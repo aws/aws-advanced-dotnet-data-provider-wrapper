@@ -99,15 +99,30 @@ var connectionString = "Host=my-cluster.cluster-xyz.us-east-1.rds.amazonaws.com;
     "RWSplittingReaderHostSelectorStrategy=RoundRobin";
 ```
 
-## Cached reader connection
+## Session state is not carried across a switch
 
-The first time a command sets the session to read-only, the plugin opens a new physical connection to a reader and uses it for that logical connection. That reader connection is then cached for the lifetime of the `AwsWrapperConnection`. Subsequent commands that set the session to read-only on the same connection object reuse the same reader connection. Commands that set the session to read-write reuse the existing writer connection. This avoids repeatedly opening new connections when you alternate between read and write within the same connection.
+Each switch opens a connection to the target instance and closes the previous one. The underlying driver may return the closed connection to its own pool and hand the same socket back later, but the session is reset in the process, so **session state does not survive a switch**: temporary tables, `SET` variables, session-level advisory locks and server-side prepared statements are all gone once you switch away, and they do not come back when you switch to that role again.
+
+Keep anything session-scoped on one side of a switch, or re-establish it after switching.
 
 ## Limitations
 
-### Statements and result sets bound to the current connection
+### What survives a connection switch
 
-When a `DbCommand` or `DbDataReader` is created, it is bound to the underlying database connection at that time. There is no standard ADO.NET way to change the connection used by an existing command or reader. Therefore, if the read/write splitting plugin switches the underlying connection (e.g., after executing a read-only or read-write session statement), any commands or readers that were created before the switch continue to use the previous connection. To avoid incorrect behavior, create new `DbCommand` and `DbDataReader` instances after switching between reader and writer. Do not reuse commands or readers across such switches.
+| | Survives a switch? |
+|---|---|
+| `AwsWrapperConnection` | Yes — it is the same object throughout; only the underlying connection changes. |
+| `DbCommand`, `DbBatch` | Yes. The wrapper tracks the commands and batches created from an `AwsWrapperConnection` and re-points them at the new connection, so a command created before a switch executes against the connection current at execution time. |
+| `DbDataReader` | **No.** A reader is bound to the connection it was created on, and that connection is closed as part of the switch. |
+| An attached `DbTransaction` | **No.** Transactions are not re-pointed. A command that still carries a transaction from the previous connection will fail or, worse, run outside the transaction the application believes it is in. |
+
+As a matter of style, commands and readers are best kept short-lived — create them where you use them rather than holding them across a switch. That keeps you clear of all of the above.
+
+### Do not switch while a reader is open
+
+Executing a statement on a connection that already has an open `DbDataReader` is not valid in the first place: neither Npgsql nor MySqlConnector supports multiple concurrent result sets on one connection, and both reject it. Because the read-only and read-write session statements are themselves commands, this applies to them too.
+
+If you do it anyway, the plugin raises an `InvalidOperationException` reporting an open data reader, and the switch is left partly applied — the previous connection is not closed, and commands created after the reader are still pointing at it. Finish and dispose readers before switching.
 
 ## Example
 
