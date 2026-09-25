@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="NPOI" Version="2.8.0" />
+    <PackageReference Include="NPOI" Version="2.8.1" />
     <!--
       NPOI 2.8.0 (the newest release) pulls System.Security.Cryptography.Xml 8.0.2, which has
       published high-severity advisories. Pinning it directly overrides the transitive version;
