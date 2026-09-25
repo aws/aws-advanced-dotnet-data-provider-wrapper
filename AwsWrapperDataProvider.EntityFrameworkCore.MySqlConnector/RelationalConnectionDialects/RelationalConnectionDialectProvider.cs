@@ -1,4 +1,4 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -24,11 +24,11 @@ public static class RelationalConnectionDialectProvider
 {
     // Concurrent because RegisterDialect is public: a caller registering a dialect on one thread would
     // otherwise corrupt the dictionary, or throw "collection was modified" in a GetDialect enumerating
-    // it on another. The Microting prefix maps to the Pomelo dialect because Microting is a Pomelo fork
-    // and its relational connection behaves identically.
+    // it on another. The dialect is shared rather than provider-specific: the mandatory options it
+    // applies follow from Entity Framework Core's use of MySqlConnector, not from any one provider.
     private static readonly ConcurrentDictionary<string, IRelationalConnectionDialect> DialectsByAssemblyPrefix = new()
     {
-        [EfMySqlAssemblyPrefixes.Microting] = PomeloEfMySqlRelationalConnectionDialect.Instance,
+        [EfMySqlAssemblyPrefixes.Microting] = EfMySqlRelationalConnectionDialect.Instance,
     };
 
     /// <summary>

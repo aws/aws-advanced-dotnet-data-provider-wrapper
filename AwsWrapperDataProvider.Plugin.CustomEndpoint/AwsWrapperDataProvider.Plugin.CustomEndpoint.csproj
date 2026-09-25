@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
@@ -8,8 +8,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AWSSDK.RDS" Version="4.0.105.2" />
-        <PackageReference Include="AWSSDK.SecurityToken" Version="4.0.100.13" />
+        <PackageReference Include="AWSSDK.RDS" Version="4.0.105.3" />
+        <PackageReference Include="AWSSDK.SecurityToken" Version="4.0.101" />
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.12" />
     </ItemGroup>
 

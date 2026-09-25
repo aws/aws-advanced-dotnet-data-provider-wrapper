@@ -75,7 +75,7 @@ SET SESSION TRANSACTION READ WRITE  -- switch to writer
 
 ## Limitations
 
-The same limitation described for the [Read/Write Splitting Plugin](./UsingTheReadWriteSplittingPlugin.md#limitations) applies: a `DbCommand` or `DbDataReader` is bound to the underlying connection at the time it is created. Create new `DbCommand` and `DbDataReader` instances after switching between reader and writer; do not reuse them across a switch.
+The same limitation described for the [Read/Write Splitting Plugin](./UsingTheReadWriteSplittingPlugin.md#limitations) applies: a `DbDataReader` is bound to the underlying connection at the time it is created, so finish and dispose readers before switching between reader and writer and create new ones afterwards. `DbCommand` and `DbBatch` objects are re-pointed at the new connection automatically and are safe to reuse across a switch.
 
 ## Example
 

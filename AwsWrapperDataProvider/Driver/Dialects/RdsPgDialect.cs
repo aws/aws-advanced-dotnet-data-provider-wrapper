@@ -1,4 +1,4 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+﻿// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License").
 // You may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ public class RdsPgDialect : PgDialect, IBlueGreenDialect
 
     protected static readonly string RdsPgTopologyTableExistsQuery = "SELECT 'rds_tools.show_topology'::pg_catalog.regproc";
 
-    protected static readonly string RdsPgBgStatusQuery = "SELECT * FROM rds_tools.show_topology('aws_advanced_dotnet_data_provider_wrapper')";
+    protected static readonly string RdsPgBgStatusQuery = $"SELECT * FROM rds_tools.show_topology('{DriverInfo.Name}')";
 
     private static readonly ILogger<RdsPgDialect> Logger = LoggerUtils.GetLogger<RdsPgDialect>();
 
