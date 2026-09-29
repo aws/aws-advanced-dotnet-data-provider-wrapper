@@ -121,7 +121,12 @@ jobs:
         run: |
           mkdir -p release-assets
           for pkg in ./packages/*.nupkg; do
-            unzip -j "$pkg" "lib/**/*.dll" -d release-assets
+            # The lib/<framework>/ folder is kept rather than flattened with -j. Most packages now
+            # ship both net8.0 and net10.0, so the same assembly name appears twice per package and
+            # flattening makes unzip prompt to overwrite; with no stdin it exits non-zero and fails
+            # this step. -o overwrites without prompting, for the case where two packages contribute
+            # the same path.
+            unzip -o "$pkg" "lib/*/*.dll" -d release-assets
           done
       
       - name: Get Release Details
@@ -139,7 +144,8 @@ jobs:
           draft: true
           name: "AWS Advanced .NET Data Provider Wrapper - v${{ env.RELEASE_VERSION }}"
           bodyFile: RELEASE_DETAILS.md
-          artifacts: ./release-assets/*
+          # One level deeper than release-assets/* because the extraction keeps lib/<framework>/.
+          artifacts: ./release-assets/lib/*/*.dll
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ env.RELEASE_VERSION }}
           commit:  ${{ github.ref_name }}

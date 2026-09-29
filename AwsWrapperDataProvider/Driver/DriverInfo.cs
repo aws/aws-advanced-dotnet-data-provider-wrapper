@@ -40,7 +40,7 @@ internal static class DriverInfo
     /// <summary>
     /// Release version reported to RDS. Bump this for every release.
     /// </summary>
-    internal const string Version = "2.2.0";
+    internal const string Version = "3.0.0";
 
     /// <summary>
     /// The <c>name-version</c> form RDS expects from the topology and Blue/Green metadata functions.
