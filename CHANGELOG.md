@@ -17,7 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 > | Entity Framework Core with PostgreSQL only | No | No changes required. |
 > | Entity Framework Core with MySQL | Yes | Replace the `Pomelo.EntityFrameworkCore.MySql` package reference with `Microting.EntityFrameworkCore.MySql` (10.0.11 or later) and update the corresponding `using` directives. `UseMySql` and `MySqlServerVersion` are called exactly as before. If you must stay on upstream Pomelo, register a dialect for it with `RelationalConnectionDialectProvider.RegisterDialect`. See the [Entity Framework integration documentation](./docs/using-the-dotnet-driver/UsingEntityFrameworkIntegration.md). |
 >
-> As part of this change the constant naming the recognized provider assembly was renamed from `EfMySqlAssemblyPrefixes.Pomelo` to `EfMySqlAssemblyPrefixes.Microting` and is now `static readonly`. The wrapper registers this dialect itself, so applications do not reference the constant unless they are deliberately overriding the built-in registration.
+> Two smaller API changes came with it. `EfMySqlAssemblyPrefixes.Pomelo` is now `EfMySqlAssemblyPrefixes.Microting`, matching the provider assembly the wrapper actually looks for, and it is declared `static readonly` instead of a mutable field. Most applications never touch this constant, because the wrapper registers the built-in MySQL dialect on its own; it matters only to code that deliberately replaces that registration.
 
 > [!WARNING]\
 > This breaking change only impacts customers using Entity Framework Core on .NET 8. The Entity Framework Core packages now target .NET 10 only ([PR #344](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/pull/344)).
