@@ -26,6 +26,18 @@ Enhanced Failure Monitoring (EFM) is a feature that periodically checks the conn
 
 The AWS Advanced .NET Data Provider Wrapper also works with RDS provided databases that are not Aurora.
 
+## Getting Started
+
+For installation, connection configuration, and the full list of available plugins, see [Using the AWS Advanced .NET Data Provider Wrapper](./docs/using-the-dotnet-driver/UsingTheDotNetDataProviderDriver.md).
+
+Other topics:
+
+- [Entity Framework Core integration](./docs/using-the-dotnet-driver/UsingEntityFrameworkIntegration.md)
+- [NHibernate integration](./AwsWrapperDataProvider.NHibernate/README.md)
+- [Telemetry](./docs/using-the-dotnet-driver/Telemetry.md)
+- [Release schedule and maintenance policy](./Maintenance.md)
+- [Changelog](./CHANGELOG.md)
+
 ## Security
 
 See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.

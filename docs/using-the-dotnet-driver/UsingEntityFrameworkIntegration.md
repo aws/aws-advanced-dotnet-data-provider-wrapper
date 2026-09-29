@@ -2,6 +2,8 @@
 
 The AWS Advanced .NET Data Provider Wrapper can be seamlessly integrated with Entity Framework (EF) Core to provide enhanced AWS and Aurora functionalities while maintaining the familiar Entity Framework development experience.
 
+Entity Framework Core 10 support, and the `Microting.EntityFrameworkCore.MySql` provider it requires for MySQL, are available since version 3.0.0. Earlier wrapper versions target Entity Framework Core 9 and use `Pomelo.EntityFrameworkCore.MySql` for MySQL; see the [2.2.0 documentation](https://github.com/aws/aws-advanced-dotnet-data-provider-wrapper/blob/2.2.0/docs/using-the-dotnet-driver/UsingEntityFrameworkIntegration.md) if you are on a 2.x release.
+
 ## Database Provider Compatibility
 
 The AWS Advanced .NET Data Provider Wrapper works with Entity Framework Core through the underlying supported database providers:
