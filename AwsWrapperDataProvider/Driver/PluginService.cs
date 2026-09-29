@@ -186,13 +186,25 @@ public class PluginService : IPluginService, IHostListProviderService
             {
                 if (!ReferenceEquals(connection, oldConnection))
                 {
-                    // Commands and batches the application already holds are re-pointed before the old
-                    // connection is disposed, so they execute against the new one instead of against a
-                    // connection that has been returned to the pool.
-                    this.wrapperConnection.RebindActiveWrapperObjects(connection);
+                    try
+                    {
+                        // Commands and batches the application already holds are re-pointed before the old
+                        // connection is disposed, so they execute against the new one instead of against a
+                        // connection that has been returned to the pool.
+                        this.wrapperConnection.RebindActiveWrapperObjects(connection);
+                    }
+                    finally
+                    {
+                        // In a finally because re-pointing can throw: a driver refuses to move a command
+                        // that still has an open reader, and that is an InvalidOperationException rather
+                        // than a DbException, so it escapes the handler below. Disposing here regardless
+                        // keeps a failed switch from leaking one connection per occurrence. Anything left
+                        // pointing at this connection then fails loudly instead of quietly continuing to
+                        // work against an instance the wrapper has already switched away from.
+                        oldConnection?.Dispose();
+                        Logger.LogTrace(Resources.PluginService_SetCurrentConnection_OldConnectionDisposed);
+                    }
 
-                    oldConnection?.Dispose();
-                    Logger.LogTrace(Resources.PluginService_SetCurrentConnection_OldConnectionDisposed);
                     Logger.LogTrace(Resources.PluginService_SetCurrentConnection_NewConnectionDetails, connection?.DataSource, connection?.State);
                 }
                 else

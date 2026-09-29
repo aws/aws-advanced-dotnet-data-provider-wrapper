@@ -543,14 +543,48 @@ public class AwsWrapperConnection : DbConnection, IWrapper
             batches = this.ActiveWrapperBatches.ToArray();
         }
 
+        // Every object is attempted even if one fails, so a single unmovable command cannot strand the
+        // ones behind it in the list. The failures are collected and reported together at the end: a
+        // driver refuses to move a command that still has an open DbDataReader, and that exception
+        // names the command being moved rather than the one holding the reader, which is the opposite
+        // of what the caller needs to find the problem.
+        List<string>? failures = null;
+        List<Exception>? causes = null;
+
+        void Rebind(string description, Action rebind)
+        {
+            try
+            {
+                rebind();
+            }
+            catch (Exception ex)
+            {
+                (failures ??= []).Add(description);
+                (causes ??= []).Add(ex);
+            }
+        }
+
         foreach (AwsWrapperCommand command in commands)
         {
-            command.SetCurrentConnection(connection);
+            Rebind(
+                string.Format(Resources.Error_RebindFailedCommand, command.CommandText),
+                () => command.SetCurrentConnection(connection));
         }
 
         foreach (AwsWrapperBatch batch in batches)
         {
-            batch.SetCurrentConnection(connection);
+            Rebind(Resources.Error_RebindFailedBatch, () => batch.SetCurrentConnection(connection));
+        }
+
+        if (failures != null)
+        {
+            throw new InvalidOperationException(
+                string.Format(
+                    Resources.Error_RebindFailed,
+                    failures.Count,
+                    commands.Length + batches.Length,
+                    string.Join("; ", failures)),
+                causes!.Count == 1 ? causes[0] : new AggregateException(causes!));
         }
     }
 

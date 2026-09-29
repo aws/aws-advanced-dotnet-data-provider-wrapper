@@ -25,8 +25,6 @@ namespace AwsWrapperDataProvider.Driver.Dialects;
 
 public class RdsMultiAzDbClusterPgDialect : PgDialect, IMultiAzClusterDialect
 {
-    private static readonly string DriverVersion = "2.2.0";
-
     private static readonly ILogger<RdsMultiAzDbClusterPgDialect> Logger = LoggerUtils.GetLogger<RdsMultiAzDbClusterPgDialect>();
 
     private static readonly string FetchWriterNodeQueryColumnName =
@@ -42,7 +40,7 @@ public class RdsMultiAzDbClusterPgDialect : PgDialect, IMultiAzClusterDialect
         "SELECT multi_az_db_cluster_source_dbi_resource_id FROM rds_tools.multi_az_db_cluster_source_dbi_resource_id()";
 
     public string TopologyQuery =>
-        $"SELECT id, endpoint, port FROM rds_tools.show_topology('aws_advanced_dotnet_data_provider_wrapper-{DriverVersion}')";
+        $"SELECT id, endpoint, port FROM rds_tools.show_topology('{DriverInfo.NameAndVersion}')";
 
     public string WriterIdQuery =>
         "SELECT multi_az_db_cluster_source_dbi_resource_id FROM rds_tools.multi_az_db_cluster_source_dbi_resource_id()"

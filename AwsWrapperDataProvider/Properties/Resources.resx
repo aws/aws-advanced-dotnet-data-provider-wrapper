@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
     <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
@@ -97,6 +97,15 @@
   </data>
   <data name="AwsWrapperConnection_Dispose_DisposingTargetConnection" xml:space="preserve">
     <value>Disposing target db connection@{0}</value>
+  </data>
+  <data name="Error_RebindFailed" xml:space="preserve">
+    <value>The connection switch completed, but {0} of {1} tracked object(s) could not be moved to the new connection and are no longer usable: {2}. This normally means a DbDataReader was still open on them; finish and dispose readers before switching between reader and writer.</value>
+  </data>
+  <data name="Error_RebindFailedCommand" xml:space="preserve">
+    <value>a command with text "{0}"</value>
+  </data>
+  <data name="Error_RebindFailedBatch" xml:space="preserve">
+    <value>a batch</value>
   </data>
   <data name="AwsWrapperProperty_SslValidationIsDisabled" xml:space="preserve">
     <value>SSL validation is disabled (sslInsecure=true). This configuration can pose a significant security risks and should not be used in production environments.</value>

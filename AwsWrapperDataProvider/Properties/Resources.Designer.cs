@@ -2058,6 +2058,33 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The connection switch completed, but {0} of {1} tracked object(s) could not be moved to the new connection and are no longer usable: {2}. This normally means a DbDataReader was still open on them; finish and dispose readers before switching between reader and writer..
+        /// </summary>
+        internal static string Error_RebindFailed {
+            get {
+                return ResourceManager.GetString("Error_RebindFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to a command with text "{0}".
+        /// </summary>
+        internal static string Error_RebindFailedCommand {
+            get {
+                return ResourceManager.GetString("Error_RebindFailedCommand", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to a batch.
+        /// </summary>
+        internal static string Error_RebindFailedBatch {
+            get {
+                return ResourceManager.GetString("Error_RebindFailedBatch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Should not be called.
         /// </summary>
         internal static string Error_ShouldNotBeCalled {
