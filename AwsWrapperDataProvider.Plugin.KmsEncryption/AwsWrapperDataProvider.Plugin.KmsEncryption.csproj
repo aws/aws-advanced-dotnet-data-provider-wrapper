@@ -8,7 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AWSSDK.KeyManagementService" Version="4.0.100.14" />
+        <PackageReference Include="AWSSDK.KeyManagementService" Version="4.0.100.15" />
         <PackageReference Include="SqlParserCS" Version="0.6.5" />
     </ItemGroup>
 
