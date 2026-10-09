@@ -260,6 +260,9 @@
   <data name="DefaultConnectionPlugin_OpenInternal_ConnectionOpened" xml:space="preserve">
     <value>Connection {0}@{1} is opened with data source {2}.</value>
   </data>
+  <data name="DefaultConnectionPlugin_OpenTargetConnection_CancelledWithDriverError" xml:space="preserve">
+    <value>Opening {0} was cancelled, but the driver reported a different error; surfacing it as a cancellation.</value>
+  </data>
   <data name="DefaultTelemetryFactory_ResolveFactory_UnknownBackend" xml:space="preserve">
     <value>Telemetry backend '{0}' is not recognized or not registered; falling back to NullTelemetryFactory.</value>
   </data>
@@ -706,6 +709,9 @@
   </data>
   <data name="FailoverPlugin_PickNewConnectionAsync_PickingNewConnection" xml:space="preserve">
     <value>Picking a new connection.</value>
+  </data>
+  <data name="FailoverPlugin_ShouldExceptionTriggerConnectionSwitch_Cancelled" xml:space="preserve">
+    <value>Do not start failover since the call was cancelled.</value>
   </data>
   <data name="FailoverPlugin_ShouldExceptionTriggerConnectionSwitch_FailoverDisabled" xml:space="preserve">
     <value>Cluster-aware failover is disabled.</value>

@@ -272,21 +272,37 @@ public class ConnectionPluginManager
             null);
     }
 
-    public virtual async Task<DbConnection> Open(
+    public virtual Task<DbConnection> Open(
         HostSpec? hostSpec,
         Dictionary<string, string> props,
         bool isInitialConnection,
         IConnectionPlugin? pluginToSkip,
         bool async)
     {
+        return this.Open(hostSpec, props, isInitialConnection, pluginToSkip, async, CancellationToken.None);
+    }
+
+    internal virtual async Task<DbConnection> Open(
+        HostSpec? hostSpec,
+        Dictionary<string, string> props,
+        bool isInitialConnection,
+        IConnectionPlugin? pluginToSkip,
+        bool async,
+        CancellationToken cancellationToken)
+    {
         ITelemetryContext middleContext = this.TelemetryFactory.OpenTelemetryContext(
             "ConnectionPluginManager.Open", TelemetryTraceLevel.Nested);
         try
         {
-            // Execute the plugin chain and return the connection
+            // Execute the plugin chain and return the connection. IConnectionPlugin.OpenConnection takes no token,
+            // so it is handed only to DefaultConnectionPlugin, which always terminates the chain and is where the
+            // target driver's OpenAsync actually runs. A plugin that ignores the token still forwards it, because
+            // calling methodFunc re-enters this delegate for the next plugin.
             DbConnection result = await this.ExecuteWithSubscribedPlugins<DbConnection>(
                 ConnectMethod,
-                (plugin, methodFunc) => plugin.OpenConnection(hostSpec, props, isInitialConnection, methodFunc, async),
+                (plugin, methodFunc) => plugin is DefaultConnectionPlugin defaultPlugin
+                    ? defaultPlugin.OpenConnection(hostSpec, props, isInitialConnection, async, cancellationToken)
+                    : plugin.OpenConnection(hostSpec, props, isInitialConnection, methodFunc, async),
                 () => throw new UnreachableException(Resources.Error_FunctionShouldNotBeCalled),
                 pluginToSkip);
             middleContext.SetSuccess(true);

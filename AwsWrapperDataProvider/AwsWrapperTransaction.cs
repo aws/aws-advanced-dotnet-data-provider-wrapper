@@ -61,6 +61,7 @@ public class AwsWrapperTransaction : DbTransaction, IWrapper
             this.pluginManager!,
             this.TargetTransaction!,
             "DbTransaction.CommitAsync",
+            cancellationToken,
             () => this.TargetTransaction!.CommitAsync(cancellationToken),
             cancellationToken);
         this.pluginService.CurrentTransaction = null;
@@ -86,6 +87,7 @@ public class AwsWrapperTransaction : DbTransaction, IWrapper
             this.pluginManager!,
             this.TargetTransaction!,
             "DbTransaction.RollbackAsync",
+            cancellationToken,
             () => this.TargetTransaction!.RollbackAsync(cancellationToken),
             cancellationToken);
         this.pluginService.CurrentTransaction = null;
@@ -111,6 +113,7 @@ public class AwsWrapperTransaction : DbTransaction, IWrapper
             this.pluginManager!,
             this.TargetTransaction!,
             "DbTransaction.SaveAsync",
+            cancellationToken,
             () => this.TargetTransaction!.SaveAsync(savepointName, cancellationToken),
             savepointName,
             cancellationToken);
@@ -136,6 +139,7 @@ public class AwsWrapperTransaction : DbTransaction, IWrapper
             this.pluginManager!,
             this.TargetTransaction!,
             "DbTransaction.RollbackAsync",
+            cancellationToken,
             () => this.TargetTransaction!.RollbackAsync(savepointName, cancellationToken),
             savepointName,
             cancellationToken);
@@ -161,6 +165,7 @@ public class AwsWrapperTransaction : DbTransaction, IWrapper
             this.pluginManager!,
             this.TargetTransaction!,
             "DbTransaction.ReleaseAsync",
+            cancellationToken,
             () => this.TargetTransaction!.ReleaseAsync(savepointName, cancellationToken),
             savepointName,
             cancellationToken);

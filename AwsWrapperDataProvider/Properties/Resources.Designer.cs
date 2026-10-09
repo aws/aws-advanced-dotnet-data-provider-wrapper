@@ -1077,6 +1077,15 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Opening {0} was cancelled, but the driver reported a different error; surfacing it as a cancellation..
+        /// </summary>
+        internal static string DefaultConnectionPlugin_OpenTargetConnection_CancelledWithDriverError {
+            get {
+                return ResourceManager.GetString("DefaultConnectionPlugin_OpenTargetConnection_CancelledWithDriverError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Telemetry backend &apos;{0}&apos; is not recognized or not registered; falling back to NullTelemetryFactory..
         /// </summary>
         internal static string DefaultTelemetryFactory_ResolveFactory_UnknownBackend {
@@ -2487,6 +2496,15 @@ namespace AwsWrapperDataProvider.Properties {
         internal static string FailoverPlugin_PickNewConnectionAsync_PickingNewConnection {
             get {
                 return ResourceManager.GetString("FailoverPlugin_PickNewConnectionAsync_PickingNewConnection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Do not start failover since the call was cancelled..
+        /// </summary>
+        internal static string FailoverPlugin_ShouldExceptionTriggerConnectionSwitch_Cancelled {
+            get {
+                return ResourceManager.GetString("FailoverPlugin_ShouldExceptionTriggerConnectionSwitch_Cancelled", resourceCulture);
             }
         }
         

@@ -174,7 +174,8 @@ public class ConnectionPluginManagerTests
                 [],
                 true,
                 null,
-                true);
+                true,
+                TestContext.Current.CancellationToken);
         }
         catch
         {
@@ -212,7 +213,8 @@ public class ConnectionPluginManagerTests
                 [],
                 true,
                 pluginOne,
-                true);
+                true,
+                TestContext.Current.CancellationToken);
         }
         catch
         {

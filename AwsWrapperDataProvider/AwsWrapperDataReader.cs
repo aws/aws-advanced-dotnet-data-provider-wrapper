@@ -87,6 +87,7 @@ public class AwsWrapperDataReader : DbDataReader, IWrapper
             this.connectionPluginManager,
             this.targetDataReader,
             "DbDataReader.NextResultAsync",
+            cancellationToken,
             () => this.targetDataReader.NextResultAsync(cancellationToken));
     }
 
@@ -106,6 +107,7 @@ public class AwsWrapperDataReader : DbDataReader, IWrapper
             this.connectionPluginManager,
             this.targetDataReader,
             "DbDataReader.ReadAsync",
+            cancellationToken,
             () => this.targetDataReader.ReadAsync(cancellationToken));
     }
 
@@ -187,6 +189,7 @@ public class AwsWrapperDataReader : DbDataReader, IWrapper
             this.connectionPluginManager,
             this.targetDataReader,
             "DbDataReader.IsDBNullAsync",
+            cancellationToken,
             () => this.targetDataReader.IsDBNullAsync(ordinal, cancellationToken));
     }
 
