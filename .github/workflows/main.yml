@@ -26,6 +26,20 @@ jobs:
             8.0.x
             10.0.x
 
+      # dotnet format, build and test see only the projects in the solution, so a project left out of
+      # it is never checked. Benchmarks and the docs examples do not ship and are exempt.
+      - name: Check every project is in the solution
+        shell: pwsh
+        run: |
+          $sln = dotnet sln AwsWrapperDataProvider.sln list | Select-Object -Skip 2 |
+                 ForEach-Object { $_.Trim().Replace('\', '/').ToLowerInvariant() }
+          $missing = git ls-files '*.csproj' ':!docs/examples/' ':!AwsWrapperDataProvider.Benchmarks/' |
+                     Where-Object { $sln -notcontains $_.ToLowerInvariant() }
+          if ($missing) {
+            $missing | ForEach-Object { Write-Host "::error::$_ is not in AwsWrapperDataProvider.sln, so CI never builds or tests it" }
+            exit 1
+          }
+
       - name: Run dotnet format
         run:  dotnet format AwsWrapperDataProvider.sln --verify-no-changes --verbosity diagnostic
 
