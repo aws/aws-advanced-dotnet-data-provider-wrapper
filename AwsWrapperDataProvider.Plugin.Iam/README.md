@@ -15,7 +15,7 @@ Register the IAM plugin before using it:
 
 ```csharp
 using AwsWrapperDataProvider.Driver.Plugins;
-using AwsWrapperDataProvider.Plugin.Iam;
+using AwsWrapperDataProvider.Plugin.Iam.Iam;
 
 // Register the IAM plugin
 ConnectionPluginChainBuilder.RegisterPluginFactory<IamAuthPluginFactory>(PluginCodes.Iam);
