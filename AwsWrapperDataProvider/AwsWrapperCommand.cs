@@ -250,6 +250,7 @@ public class AwsWrapperCommand : DbCommand, IWrapper
             this.pluginManager!,
             this.TargetDbCommand!,
             "DbCommand.ExecuteNonQueryAsync",
+            cancellationToken,
             () => this.TargetDbCommand!.ExecuteNonQueryAsync(cancellationToken));
     }
 
@@ -270,6 +271,7 @@ public class AwsWrapperCommand : DbCommand, IWrapper
             this.pluginManager!,
             this.TargetDbCommand!,
             "DbCommand.ExecuteScalarAsync",
+            cancellationToken,
             () => this.TargetDbCommand!.ExecuteScalarAsync(cancellationToken));
     }
 
@@ -294,6 +296,7 @@ public class AwsWrapperCommand : DbCommand, IWrapper
             this.pluginManager!,
             this.TargetDbCommand!,
             "DbCommand.PrepareAsync",
+            cancellationToken,
             () => this.TargetDbCommand!.PrepareAsync(cancellationToken));
     }
 
@@ -322,6 +325,7 @@ public class AwsWrapperCommand : DbCommand, IWrapper
             this.pluginManager!,
             this.TargetDbCommand!,
             "DbCommand.ExecuteReaderAsync",
+            cancellationToken,
             () => this.TargetDbCommand!.ExecuteReaderAsync(behavior, cancellationToken));
         return new AwsWrapperDataReader(reader, this.pluginManager!);
     }

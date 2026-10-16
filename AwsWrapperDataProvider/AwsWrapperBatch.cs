@@ -171,6 +171,7 @@ public class AwsWrapperBatch : DbBatch, IWrapper
                 this.connectionPluginManager!,
                 this.targetBatch,
                 "DbBatch.ExecuteReaderAsync",
+                cancellationToken,
                 () => this.targetBatch.ExecuteReaderAsync(behavior, cancellationToken));
 
         return new AwsWrapperDataReader(dataReader, this.connectionPluginManager!);
@@ -191,6 +192,7 @@ public class AwsWrapperBatch : DbBatch, IWrapper
             this.connectionPluginManager!,
             this.targetBatch,
             "DbBatch.ExecuteNonQueryAsync",
+            cancellationToken,
             () => this.targetBatch.ExecuteNonQueryAsync(cancellationToken),
             cancellationToken);
     }
@@ -210,6 +212,7 @@ public class AwsWrapperBatch : DbBatch, IWrapper
             this.connectionPluginManager!,
             this.targetBatch,
             "DbBatch.ExecuteScalarAsync",
+            cancellationToken,
             () => this.targetBatch.ExecuteScalarAsync(cancellationToken),
             cancellationToken);
     }
@@ -233,6 +236,7 @@ public class AwsWrapperBatch : DbBatch, IWrapper
             this.connectionPluginManager!,
             this.targetBatch,
             "DbBatch.PrepareAsync",
+            cancellationToken,
             () => this.targetBatch.PrepareAsync(cancellationToken));
     }
 

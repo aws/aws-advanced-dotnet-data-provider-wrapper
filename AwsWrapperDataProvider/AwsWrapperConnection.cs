@@ -204,7 +204,8 @@ public class AwsWrapperConnection : DbConnection, IWrapper
             this.PluginManager!,
             this.pluginService!.CurrentConnection!,
             "DbConnection.ChangeDatabaseAsync",
-            () => this.pluginService.CurrentConnection!.ChangeDatabaseAsync(databaseName),
+            cancellationToken,
+            () => this.pluginService.CurrentConnection!.ChangeDatabaseAsync(databaseName, cancellationToken),
             databaseName);
     }
 
@@ -279,6 +280,7 @@ public class AwsWrapperConnection : DbConnection, IWrapper
             this.PluginManager!,
             this.pluginService!.CurrentConnection!,
             "DbConnection.GetSchema",
+            cancellationToken,
             () => this.pluginService.CurrentConnection!.GetSchemaAsync(cancellationToken),
             cancellationToken);
     }
@@ -289,6 +291,7 @@ public class AwsWrapperConnection : DbConnection, IWrapper
                 this.PluginManager!,
                 this.pluginService!.CurrentConnection!,
                 "DbConnection.GetSchema",
+                cancellationToken,
                 () => this.pluginService.CurrentConnection!.GetSchemaAsync(collectionName, cancellationToken),
                 collectionName,
                 cancellationToken);
@@ -300,6 +303,7 @@ public class AwsWrapperConnection : DbConnection, IWrapper
             this.PluginManager!,
             this.pluginService!.CurrentConnection!,
             "DbConnection.GetSchema",
+            cancellationToken,
             () => this.pluginService.CurrentConnection!.GetSchemaAsync(collectionName, restrictionValues, cancellationToken),
             collectionName,
             restrictionValues,
@@ -308,6 +312,10 @@ public class AwsWrapperConnection : DbConnection, IWrapper
 
     private async Task OpenInternal(CancellationToken cancellationToken, bool async)
     {
+        // An already-cancelled token must fail the open before any plugin runs. Relying on the target driver
+        // is not enough: Npgsql hands back an idle pooled connector without looking at the token.
+        cancellationToken.ThrowIfCancellationRequested();
+
         if (this.State != ConnectionState.Closed)
         {
             throw new InvalidOperationException(Properties.Resources.Error_ConnectionAlreadyOpen);
@@ -344,7 +352,8 @@ public class AwsWrapperConnection : DbConnection, IWrapper
                 connectHostSpec,
                 this.ConnectionProperties!,
                 true,
-                async);
+                async,
+                cancellationToken);
 
             HostSpec? connectedHostSpec = this.pluginService.RoutedHostSpec ?? this.pluginService.CurrentHostSpec;
             this.pluginService.SetCurrentConnection(connection, connectedHostSpec);
@@ -400,6 +409,7 @@ public class AwsWrapperConnection : DbConnection, IWrapper
             this.PluginManager,
             this.pluginService.CurrentConnection,
             "DbConnection.BeginDbTransactionAsync",
+            cancellationToken,
             async () => await this.pluginService.CurrentConnection!.BeginTransactionAsync(isolationLevel, cancellationToken),
             isolationLevel,
             cancellationToken);

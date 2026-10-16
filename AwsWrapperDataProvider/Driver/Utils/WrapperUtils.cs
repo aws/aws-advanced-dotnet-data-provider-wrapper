@@ -25,8 +25,8 @@ public partial class WrapperUtils
 {
     /// <summary>
     /// Attribute key for the invoked ADO.NET method name on top-level
-    /// telemetry spans opened by <see cref="ExecuteWithPlugins{T}"/> and
-    /// <see cref="RunWithPlugins"/>. Value equals the <c>methodName</c>
+    /// telemetry spans opened by <see cref="ExecuteWithPlugins{T}(ConnectionPluginManager, object, string, ADONetDelegate{T}, object[])"/> and
+    /// <see cref="RunWithPlugins(ConnectionPluginManager, object, string, ADONetDelegate, object[])"/>. Value equals the <c>methodName</c>
     /// argument passed at the call site.
     /// </summary>
     internal const string DbCallAttribute = "dbCall";
@@ -65,6 +65,51 @@ public partial class WrapperUtils
         }
     }
 
+    /// <summary>
+    /// Same as <see cref="ExecuteWithPlugins{T}(ConnectionPluginManager, object, string, ADONetDelegate{T}, object[])"/>,
+    /// except that an already-cancelled <paramref name="cancellationToken"/> returns a cancelled task without
+    /// reaching any plugin.
+    /// </summary>
+    internal static Task<T> ExecuteWithPlugins<T>(
+        ConnectionPluginManager connectionPluginManager,
+        object methodInvokeOn,
+        string methodName,
+        CancellationToken cancellationToken,
+        ADONetDelegate<T> methodFunc,
+        params object[] methodArgs)
+    {
+        // Plugins act before the target driver sees the token. Read/write splitting, for example, switches the
+        // physical connection, so letting a cancelled call into the chain would report it as cancelled after it
+        // had already moved the connection to another instance.
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return Task.FromCanceled<T>(cancellationToken);
+        }
+
+        return ExecuteWithPlugins(connectionPluginManager, methodInvokeOn, methodName, methodFunc, methodArgs);
+    }
+
+    /// <summary>
+    /// Same as <see cref="RunWithPlugins(ConnectionPluginManager, object, string, ADONetDelegate, object[])"/>,
+    /// except that an already-cancelled <paramref name="cancellationToken"/> returns a cancelled task without
+    /// reaching any plugin.
+    /// </summary>
+    internal static Task RunWithPlugins(
+        ConnectionPluginManager connectionPluginManager,
+        object methodInvokeOn,
+        string methodName,
+        CancellationToken cancellationToken,
+        ADONetDelegate methodFunc,
+        params object[] methodArgs)
+    {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return Task.FromCanceled(cancellationToken);
+        }
+
+        return RunWithPlugins(connectionPluginManager, methodInvokeOn, methodName, methodFunc, methodArgs);
+    }
+
     public static Task RunWithPlugins(
         ConnectionPluginManager connectionPluginManager,
         object methodInvokeOn,
@@ -93,6 +138,17 @@ public partial class WrapperUtils
         bool async)
     {
         return connectionPluginManager.Open(hostSpec, props, isInitialConnection, null, async);
+    }
+
+    internal static Task<DbConnection> OpenWithPlugins(
+        ConnectionPluginManager connectionPluginManager,
+        HostSpec? hostSpec,
+        Dictionary<string, string> props,
+        bool isInitialConnection,
+        bool async,
+        CancellationToken cancellationToken)
+    {
+        return connectionPluginManager.Open(hostSpec, props, isInitialConnection, null, async, cancellationToken);
     }
 
     public static Task<DbConnection> ForceOpenWithPlugins(

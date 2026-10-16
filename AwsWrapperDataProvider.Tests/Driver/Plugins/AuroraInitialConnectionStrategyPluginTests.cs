@@ -283,4 +283,25 @@ public class AuroraInitialConnectionStrategyPluginTests
 
         this.mockPluginService.VerifySet(x => x.RoutedHostSpec = It.IsAny<HostSpec>(), Times.Once);
     }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task OpenConnection_WriterClusterOpenCancelled_RethrowsWithoutMarkingHostUnavailableOrRetrying()
+    {
+        var hostSpec = new HostSpec("test-cluster.cluster-xyz.us-east-1.rds.amazonaws.com", 5432, null, HostRole.Writer, HostAvailability.Available);
+        var cancellation = new OperationCanceledException(new CancellationToken(true));
+
+        // With no writer in the topology yet, the plugin opens through the caller's own open, which is the one
+        // that carries the caller's token.
+        this.mockPluginService.Setup(x => x.AllHosts).Returns([]);
+
+        await this.plugin.InitHostProvider("test-url", this.defaultProps, this.mockHostListProviderService.Object, () => Task.CompletedTask);
+
+        var exception = await Assert.ThrowsAsync<OperationCanceledException>(() =>
+            this.plugin.OpenConnection(hostSpec, this.defaultProps, true, () => Task.FromException<DbConnection>(cancellation), true));
+
+        Assert.Same(cancellation, exception);
+        this.mockPluginService.Verify(x => x.SetAvailability(It.IsAny<HostSpec>(), It.IsAny<HostAvailability>()), Times.Never);
+        this.mockPluginService.Verify(x => x.OpenConnection(It.IsAny<HostSpec>(), It.IsAny<Dictionary<string, string>>(), It.IsAny<IConnectionPlugin?>(), It.IsAny<bool>()), Times.Never);
+    }
 }
