@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Diagnostics;
 using Amazon;
 using Amazon.RDS;
 using Amazon.RDS.Model;
@@ -96,10 +97,16 @@ public class CustomEndpointMonitorTests : IDisposable
             maxRefreshRate: TimeSpan.FromMilliseconds(300000),
             rdsClientFunc);
 
-        // Wait for 2 run cycles. The first returns unexpected number of endpoints, the second returns one.
-        await Task.Delay(150, TestContext.Current.CancellationToken);
+        // Wait for 2 run cycles. The first returns unexpected number of endpoints, the second returns one. Poll rather
+        // than sleep a fixed time, because the monitor's background loop can start late on a busy machine.
+        CustomEndpointInfo? cachedInfo = CustomEndpointMonitor.CustomEndpointInfoCache.Get<CustomEndpointInfo>(this.host.Host);
+        Stopwatch stopwatch = Stopwatch.StartNew();
+        while (cachedInfo == null && stopwatch.Elapsed < TimeSpan.FromSeconds(5))
+        {
+            await Task.Delay(10, TestContext.Current.CancellationToken);
+            cachedInfo = CustomEndpointMonitor.CustomEndpointInfoCache.Get<CustomEndpointInfo>(this.host.Host);
+        }
 
-        var cachedInfo = CustomEndpointMonitor.CustomEndpointInfoCache.Get<CustomEndpointInfo>(this.host.Host);
         Assert.NotNull(cachedInfo);
         Assert.Equal(ExpectedInfo.EndpointIdentifier, cachedInfo.EndpointIdentifier);
         Assert.Equal(ExpectedInfo.ClusterIdentifier, cachedInfo.ClusterIdentifier);
