@@ -128,6 +128,10 @@ public class FailoverPlugin : AbstractConnectionPlugin
             && (this.pluginService.CurrentConnection.State == ConnectionState.Closed
             || this.pluginService.CurrentConnection.State == ConnectionState.Broken))
         {
+            // The connection broke without this plugin seeing the error, for example during a cancelled call or a
+            // call the plugin does not intercept. An open transaction died with it, so record that just as a
+            // failover triggered by an exception does.
+            this.RecordLostTransaction();
             await this.PickNewConnectionAsync();
         }
 
@@ -637,18 +641,7 @@ public class FailoverPlugin : AbstractConnectionPlugin
     private async Task InvalidateCurrentConnectionAsync()
     {
         Logger.LogTrace(Resources.FailoverPlugin_InvalidateCurrentConnectionAsync_InvalidatingConnection);
-        try
-        {
-            if (this.pluginService.CurrentTransaction != null)
-            {
-                this.shouldThrowTransactionError = true;
-                this.pluginService.CurrentTransaction = null;
-            }
-        }
-        catch
-        {
-            // Swallow exception, current transaction should be useless anyway.
-        }
+        this.RecordLostTransaction();
 
         try
         {
@@ -664,6 +657,26 @@ public class FailoverPlugin : AbstractConnectionPlugin
         {
             // Swallow exception, current connection should be useless anyway.
             Logger.LogTrace(Resources.FailoverPlugin_InvalidateCurrentConnectionAsync_ErrorDisposingConnection, ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Records that the open transaction, if any, was lost with the current connection, so that the failover which
+    /// follows reports <see cref="TransactionStateUnknownException"/> rather than <see cref="FailoverSuccessException"/>.
+    /// </summary>
+    private void RecordLostTransaction()
+    {
+        try
+        {
+            if (this.pluginService.CurrentTransaction != null)
+            {
+                this.shouldThrowTransactionError = true;
+                this.pluginService.CurrentTransaction = null;
+            }
+        }
+        catch
+        {
+            // Swallow exception, current transaction should be useless anyway.
         }
     }
 
@@ -690,6 +703,15 @@ public class FailoverPlugin : AbstractConnectionPlugin
         if (this.skipFailoverOnInterruptedThread && Thread.CurrentThread.ThreadState == ThreadState.AbortRequested)
         {
             Logger.LogTrace(Resources.FailoverPlugin_ShouldExceptionTriggerConnectionSwitch_ThreadInterrupted);
+            return false;
+        }
+
+        // A cancelled call is not a failed connection, even when the driver chains a network-looking exception
+        // inside the cancellation: Npgsql reports a cancel request the server never answered as an
+        // OperationCanceledException wrapping a TimeoutException, and IsNetworkException walks inner exceptions.
+        if (exception is OperationCanceledException)
+        {
+            Logger.LogTrace(Resources.FailoverPlugin_ShouldExceptionTriggerConnectionSwitch_Cancelled);
             return false;
         }
 

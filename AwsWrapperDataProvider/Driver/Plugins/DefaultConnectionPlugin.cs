@@ -57,7 +57,22 @@ public class DefaultConnectionPlugin(
         ADONetDelegate<DbConnection> methodFunc,
         bool async)
     {
-        return this.OpenInternal(hostSpec, props, this.defaultConnProvider, isInitialConnection, false, async);
+        return this.OpenInternal(hostSpec, props, this.defaultConnProvider, isInitialConnection, false, async, CancellationToken.None);
+    }
+
+    /// <summary>
+    /// Opens the connection the caller asked for, passing <paramref name="cancellationToken"/> to the target driver.
+    /// <see cref="IConnectionPlugin.OpenConnection"/> has no token, so <see cref="ConnectionPluginManager"/> calls
+    /// this overload directly when it reaches the end of the chain.
+    /// </summary>
+    internal Task<DbConnection> OpenConnection(
+        HostSpec? hostSpec,
+        Dictionary<string, string> props,
+        bool isInitialConnection,
+        bool async,
+        CancellationToken cancellationToken)
+    {
+        return this.OpenInternal(hostSpec, props, this.defaultConnProvider, isInitialConnection, false, async, cancellationToken);
     }
 
     public Task<DbConnection> ForceOpenConnection(
@@ -67,7 +82,7 @@ public class DefaultConnectionPlugin(
         ADONetDelegate<DbConnection> methodFunc,
         bool async)
     {
-        return this.OpenInternal(hostSpec, props, this.defaultConnProvider, isInitialConnection, true, async);
+        return this.OpenInternal(hostSpec, props, this.defaultConnProvider, isInitialConnection, true, async, CancellationToken.None);
     }
 
     /// <summary>
@@ -79,7 +94,8 @@ public class DefaultConnectionPlugin(
         IConnectionProvider connProvider,
         bool isInitialConnection,
         bool isForceOpen,
-        bool async)
+        bool async,
+        CancellationToken cancellationToken)
     {
         DbConnection conn = connProvider.CreateDbConnection(this.pluginService.Dialect, this.pluginService.TargetConnectionDialect, hostSpec, props);
 
@@ -89,7 +105,7 @@ public class DefaultConnectionPlugin(
         {
             if (async)
             {
-                await conn.OpenAsync();
+                await OpenTargetConnectionAsync(conn, cancellationToken);
             }
             else
             {
@@ -123,7 +139,7 @@ public class DefaultConnectionPlugin(
                 {
                     await conn.DisposeAsync();
                     conn = connProvider.CreateDbConnection(this.pluginService.Dialect, this.pluginService.TargetConnectionDialect, hostSpec, props);
-                    await conn.OpenAsync();
+                    await OpenTargetConnectionAsync(conn, cancellationToken);
 
                     if (attempt == UpdateDialectMaxRetries)
                     {
@@ -145,6 +161,28 @@ public class DefaultConnectionPlugin(
         this.pluginService.SetAvailability(hostSpec!, HostAvailability.Available);
 
         return conn;
+    }
+
+    /// <summary>
+    /// Opens the target driver connection, reporting a cancelled open as an <see cref="OperationCanceledException"/>
+    /// whatever the driver threw.
+    /// </summary>
+    private static async Task OpenTargetConnectionAsync(DbConnection conn, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await conn.OpenAsync(cancellationToken);
+        }
+        catch (Exception ex) when (cancellationToken.IsCancellationRequested && ex is not OperationCanceledException)
+        {
+            // Cancelling a connect partway through can surface as a driver or socket error instead: Npgsql on
+            // Windows reports an aborted DNS lookup as an NpgsqlException wrapping a SocketException. The plugins
+            // above would read that as a host failure (connect failover and the initial connection strategy both
+            // act on it), so report it as the cancellation it is. The driver error is logged rather than chained,
+            // because the plugins classify an exception by walking its inner exceptions.
+            Logger.LogDebug(ex, Resources.DefaultConnectionPlugin_OpenTargetConnection_CancelledWithDriverError, conn.GetType().FullName);
+            throw new OperationCanceledException(cancellationToken);
+        }
     }
 
     public Task InitHostProvider(
