@@ -43,6 +43,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AwsWrapperDataProvider.Auth
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AwsWrapperDataProvider.Plugin.KmsEncryption", "AwsWrapperDataProvider.Plugin.KmsEncryption\AwsWrapperDataProvider.Plugin.KmsEncryption.csproj", "{E6426D79-3B6B-4AD3-8DBA-A886B726EA49}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AwsWrapperDataProvider.Telemetry.XRay", "AwsWrapperDataProvider.Telemetry.XRay\AwsWrapperDataProvider.Telemetry.XRay.csproj", "{50C988DC-583C-497E-8C96-D8B7EEE6EA1F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AwsWrapperDataProvider.Telemetry.XRay.Tests", "AwsWrapperDataProvider.Telemetry.XRay.Tests\AwsWrapperDataProvider.Telemetry.XRay.Tests.csproj", "{1D9FD4B5-0BA1-411E-9360-69415A64E31C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -113,6 +117,14 @@ Global
 		{E6426D79-3B6B-4AD3-8DBA-A886B726EA49}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E6426D79-3B6B-4AD3-8DBA-A886B726EA49}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E6426D79-3B6B-4AD3-8DBA-A886B726EA49}.Release|Any CPU.Build.0 = Release|Any CPU
+		{50C988DC-583C-497E-8C96-D8B7EEE6EA1F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{50C988DC-583C-497E-8C96-D8B7EEE6EA1F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{50C988DC-583C-497E-8C96-D8B7EEE6EA1F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{50C988DC-583C-497E-8C96-D8B7EEE6EA1F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1D9FD4B5-0BA1-411E-9360-69415A64E31C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1D9FD4B5-0BA1-411E-9360-69415A64E31C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1D9FD4B5-0BA1-411E-9360-69415A64E31C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1D9FD4B5-0BA1-411E-9360-69415A64E31C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
