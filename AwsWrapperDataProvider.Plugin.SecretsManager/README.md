@@ -15,7 +15,7 @@ Register the Secrets Manager plugin before using it:
 
 ```csharp
 using AwsWrapperDataProvider.Driver.Plugins;
-using AwsWrapperDataProvider.Plugin.SecretsManager;
+using AwsWrapperDataProvider.Plugin.SecretsManager.SecretsManager;
 
 // Register the Secrets Manager plugin
 ConnectionPluginChainBuilder.RegisterPluginFactory<SecretsManagerAuthPluginFactory>(PluginCodes.SecretsManager);
@@ -23,8 +23,8 @@ ConnectionPluginChainBuilder.RegisterPluginFactory<SecretsManagerAuthPluginFacto
 // Use in connection string
 var connectionString = "Server=your-rds-instance.amazonaws.com;" +
                        "Database=mydb;" +
-                       "SecretArn=arn:aws:secretsmanager:region:account:secret:secret-name;" +
-                       "Plugins=secretsManager;";
+                       "SecretsManagerSecretId=arn:aws:secretsmanager:region:account:secret:secret-name;" +
+                       "Plugins=awsSecretsManager;";
 ```
 
 ## Documentation
