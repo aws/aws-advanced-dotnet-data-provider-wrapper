@@ -153,6 +153,11 @@ public class AwsWrapperDataReader : DbDataReader, IWrapper
                                    DynamicallyAccessedMemberTypes.PublicProperties)]
     public override Type GetFieldType(int i) => this.targetDataReader.GetFieldType(i);
 
+    public override T GetFieldValue<T>(int i) => this.targetDataReader.GetFieldValue<T>(i);
+
+    public override Task<T> GetFieldValueAsync<T>(int i, CancellationToken cancellationToken)
+        => this.targetDataReader.GetFieldValueAsync<T>(i, cancellationToken);
+
     public override float GetFloat(int i) => this.targetDataReader.GetFloat(i);
 
     public override Guid GetGuid(int i) => this.targetDataReader.GetGuid(i);
