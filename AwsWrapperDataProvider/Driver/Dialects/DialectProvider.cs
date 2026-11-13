@@ -125,7 +125,7 @@ public class DialectProvider
             host = hosts.First().Host;
         }
 
-        if (KnownEndpointDialects.TryGetValue(host, out IDialect? cachedDialect) && cachedDialect != null)
+        if (KnownEndpointDialects.TryGetValue(host.ToLowerInvariant(), out IDialect? cachedDialect) && cachedDialect != null)
         {
             Logger.LogDebug(Resources.DialectProvider_GuessDialect_CacheDialect, cachedDialect.GetType().FullName);
             this.dialect = cachedDialect;
@@ -170,8 +170,7 @@ public class DialectProvider
                 {
                     Logger.LogDebug(Resources.DialectProvider_UpdateDialectAsync_DialectMatch, dialect.GetType().FullName);
                     this.dialect = dialect;
-                    KnownEndpointDialects.Set(this.pluginService.InitialConnectionHostSpec!.Host, dialect, EndpointCacheExpiration);
-                    KnownEndpointDialects.Set(connection.ConnectionString, dialect, EndpointCacheExpiration);
+                    this.CacheEndpointDialect(dialect);
                     this.CanUpdate = false;
                     return this.dialect;
                 }
@@ -190,6 +189,7 @@ public class DialectProvider
             if (await currDialect.IsDialect(connection))
             {
                 Logger.LogDebug(Resources.DialectProvider_UpdateDialectAsync_CurrentDialectValid, currDialect.GetType().FullName);
+                this.CacheEndpointDialect(currDialect);
                 this.CanUpdate = false;
                 return currDialect;
             }
@@ -211,6 +211,13 @@ public class DialectProvider
 
         this.CanUpdate = false;
         return currDialect;
+    }
+
+    private void CacheEndpointDialect(IDialect dialect)
+    {
+        string host = this.pluginService.OriginalHostSpec?.Host
+                      ?? PropertyDefinition.Host.GetString(this.properties)!;
+        KnownEndpointDialects.Set(host.ToLowerInvariant(), dialect, EndpointCacheExpiration);
     }
 
     private static IDialect? GetDialectFromType(Type? dialectType)
