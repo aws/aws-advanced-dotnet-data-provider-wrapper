@@ -223,6 +223,58 @@ public class DialectProviderTests
         Assert.IsType<MySqlDialect>(updatedDialect);
     }
 
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task UpdateDialect_CurrentDialectValid_CachesEndpointDialect()
+    {
+        string host = $"cache-current-{Guid.NewGuid():N}.example.com";
+        var props = new Dictionary<string, string>
+        {
+            { PropertyDefinition.Host.Name, host },
+            { PropertyDefinition.TargetConnectionType.Name, typeof(MySqlConnection).AssemblyQualifiedName! },
+        };
+        var pluginService = new Mock<PluginService>();
+        pluginService.Object.InitialConnectionHostSpec = new HostSpecBuilder().WithHost(host).Build();
+
+        var first = new DialectProvider(pluginService.Object, props);
+        first.GuessDialect();
+
+        var confirmed = new TestCustomDialect();
+        await first.UpdateDialectAsync(this.mockConnection, confirmed);
+
+        var second = new DialectProvider(pluginService.Object, props);
+        Assert.Same(confirmed, second.GuessDialect());
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task UpdateDialect_MatchingCandidate_CachesEndpointDialect()
+    {
+        string host = $"cache-candidate-{Guid.NewGuid():N}.example.com";
+        var props = new Dictionary<string, string>
+        {
+            { PropertyDefinition.Host.Name, host },
+            { PropertyDefinition.TargetConnectionType.Name, typeof(MySqlConnection).AssemblyQualifiedName! },
+        };
+        var pluginService = new Mock<PluginService>();
+        pluginService.Object.InitialConnectionHostSpec = new HostSpecBuilder().WithHost(host).Build();
+
+        var first = new DialectProvider(pluginService.Object, props);
+        IDialect guessed = first.GuessDialect();
+
+        this.mockConnection.Mocks
+            .When(cmd => cmd.CommandText == new MySqlDialect().ServerVersionQuery)
+            .ReturnsTable(MockTable.WithColumns("Variable_name", "Value").AddRow("version_comment", "Source distribution"));
+        this.mockConnection.Mocks
+            .When(cmd => cmd.CommandText == AuroraMySqlDialect.IsDialectQuery)
+            .ReturnsTable(MockTable.WithColumns("Variable_name", "Value").AddRow("aurora_version", "3.08.2"));
+
+        IDialect updated = await first.UpdateDialectAsync(this.mockConnection, guessed);
+
+        var second = new DialectProvider(pluginService.Object, props);
+        Assert.Same(updated, second.GuessDialect());
+    }
+
     // Custom dialect class for testing
     private class TestCustomDialect : IDialect
     {
