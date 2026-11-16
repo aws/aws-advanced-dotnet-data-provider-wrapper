@@ -277,6 +277,18 @@ public class AwsWrapperConnectionStringBuilder : DbConnectionStringBuilder
         set => this.SetValue(PropertyDefinition.HttpClientConnectTimeout.Name, value?.ToString());
     }
 
+    public long? ConnectionLifetimeMs
+    {
+        get => this.GetLongValue(PropertyDefinition.ConnectionLifetimeMs.Name);
+        set => this.SetValue(PropertyDefinition.ConnectionLifetimeMs.Name, value?.ToString());
+    }
+
+    public string? ConnectionLifetimeAction
+    {
+        get => this.GetValue(PropertyDefinition.ConnectionLifetimeAction.Name);
+        set => this.SetValue(PropertyDefinition.ConnectionLifetimeAction.Name, value);
+    }
+
     public int? FailoverTimeoutMs
     {
         get => this.GetIntValue(PropertyDefinition.FailoverTimeoutMs.Name);

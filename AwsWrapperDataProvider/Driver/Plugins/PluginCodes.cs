@@ -17,6 +17,7 @@ namespace AwsWrapperDataProvider.Driver.Plugins;
 public static class PluginCodes
 {
     public const string ConnectTime = "connectTime";
+    public const string ConnectionLifetime = "connectionLifetime";
     public const string ExecutionTime = "executionTime";
     public const string AuroraConnectionTracker = "auroraConnectionTracker";
     public const string Failover = "failover";

@@ -69,6 +69,7 @@ public class ConnectionPluginManager
             ["AuroraInitialConnectionStrategyPlugin"] = "plugin:auroraInitialConnectionStrategy",
             ["BlueGreenConnectionPlugin"] = "plugin:blueGreen",
             ["ConnectTimePlugin"] = "plugin:connectTime",
+            ["ConnectionLifetimePlugin"] = "plugin:connectionLifetime",
             ["DefaultConnectionPlugin"] = "plugin:targetDriver",
             ["ExecutionTimePlugin"] = "plugin:executionTime",
             ["LimitlessConnectionPlugin"] = "plugin:limitless",

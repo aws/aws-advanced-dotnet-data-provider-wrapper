@@ -25,6 +25,7 @@
 - [Aurora Initial Connection Strategy Plugin](./using-the-dotnet-driver/using-plugins/UsingTheAuroraInitialConnectionStrategyPlugin.md)
 - [AWS Secrets Manager Plugin](./using-the-dotnet-driver/using-plugins/UsingTheAwsSecretsManagerPlugin.md)
 - [Blue/Green Deployment Plugin](./using-the-dotnet-driver/using-plugins/UsingTheBlueGreenPlugin.md)
+- [Connection Lifetime Plugin](./using-the-dotnet-driver/using-plugins/UsingTheConnectionLifetimePlugin.md)
 - [Custom Endpoint Plugin](./using-the-dotnet-driver/using-plugins/UsingTheCustomEndpointPlugin.md)
 - [Failover Plugin](./using-the-dotnet-driver/using-plugins/UsingTheFailoverPlugin.md)
 - [Federated Authentication Plugin](./using-the-dotnet-driver/using-plugins/UsingTheFederatedAuthenticationPlugin.md)

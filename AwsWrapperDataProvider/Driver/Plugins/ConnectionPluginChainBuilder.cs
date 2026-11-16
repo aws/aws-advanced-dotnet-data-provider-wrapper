@@ -17,6 +17,7 @@ using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.Plugins.AuroraConnectionTracker;
 using AwsWrapperDataProvider.Driver.Plugins.AuroraInitialConnectionStrategy;
 using AwsWrapperDataProvider.Driver.Plugins.BlueGreenConnection;
+using AwsWrapperDataProvider.Driver.Plugins.ConnectionLifetime;
 using AwsWrapperDataProvider.Driver.Plugins.ConnectTime;
 using AwsWrapperDataProvider.Driver.Plugins.Efm;
 using AwsWrapperDataProvider.Driver.Plugins.ExecutionTime;
@@ -37,6 +38,7 @@ public class ConnectionPluginChainBuilder
 
     private static readonly Dictionary<string, Lazy<IConnectionPluginFactory>?> PluginFactoryTypesByCode = new()
     {
+            { PluginCodes.ConnectionLifetime, new Lazy<IConnectionPluginFactory>(() => new ConnectionLifetimePluginFactory()) },
             { PluginCodes.CustomEndpoint, null },
             { PluginCodes.BlueGreenConnection, new Lazy<IConnectionPluginFactory>(() => new BlueGreenConnectionPluginFactory()) },
             { PluginCodes.InitialConnection, new Lazy<IConnectionPluginFactory>(() => new AuroraInitialConnectionStrategyPluginFactory()) },
@@ -58,6 +60,7 @@ public class ConnectionPluginChainBuilder
 
     private static readonly Dictionary<string, int> PluginWeightByPluginFactoryType = new()
     {
+        { PluginCodes.ConnectionLifetime, 50 },
         { PluginCodes.BlueGreenConnection, 200 },
         { PluginCodes.CustomEndpoint, 380 },
         { PluginCodes.InitialConnection, 390 },
