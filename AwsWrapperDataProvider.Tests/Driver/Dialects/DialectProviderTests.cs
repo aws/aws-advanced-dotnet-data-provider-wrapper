@@ -69,6 +69,41 @@ public class DialectProviderTests
         {
             new Dictionary<string, string>
             {
+                { PropertyDefinition.Host.Name, "database-test-name.shardgrp-XYZ.us-east-2.rds.amazonaws.com" },
+                { PropertyDefinition.TargetConnectionType.Name, typeof(NpgsqlConnection).AssemblyQualifiedName! },
+            }, typeof(AuroraPgDialect)
+        },
+        {
+            new Dictionary<string, string>
+            {
+                { PropertyDefinition.Host.Name, "group-test-name.rw-XYZ.db-cluster-group.us-east-2.rds.amazonaws.com" },
+                { PropertyDefinition.TargetConnectionType.Name, typeof(NpgsqlConnection).AssemblyQualifiedName! },
+            }, typeof(RdsPgDialect)
+        },
+        {
+            new Dictionary<string, string>
+            {
+                { PropertyDefinition.Host.Name, "group-test-name.ro-XYZ.db-cluster-group.us-east-2.rds.amazonaws.com" },
+                { PropertyDefinition.TargetConnectionType.Name, typeof(MySqlConnection).AssemblyQualifiedName! },
+            }, typeof(RdsMySqlDialect)
+        },
+        {
+            new Dictionary<string, string>
+            {
+                { PropertyDefinition.Host.Name, "database-test-name.XYZ.data-group.us-east-2.rds.amazonaws.com" },
+                { PropertyDefinition.TargetConnectionType.Name, typeof(NpgsqlConnection).AssemblyQualifiedName! },
+            }, typeof(RdsPgDialect)
+        },
+        {
+            new Dictionary<string, string>
+            {
+                { PropertyDefinition.Host.Name, "database-test-name.ro-XYZ.data-group.us-east-2.rds.amazonaws.com" },
+                { PropertyDefinition.TargetConnectionType.Name, typeof(MySqlConnection).AssemblyQualifiedName! },
+            }, typeof(RdsMySqlDialect)
+        },
+        {
+            new Dictionary<string, string>
+            {
                 { PropertyDefinition.Host.Name, "some-unknown-host.com" },
                 { PropertyDefinition.TargetConnectionType.Name, typeof(MySqlDataMySqlConnection).AssemblyQualifiedName! },
             }, typeof(MySqlDialect)
