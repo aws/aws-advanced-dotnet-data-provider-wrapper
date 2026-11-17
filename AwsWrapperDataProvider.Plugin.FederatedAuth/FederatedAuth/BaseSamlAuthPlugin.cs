@@ -136,12 +136,10 @@ public abstract partial class BaseSamlAuthPlugin : AbstractConnectionPlugin
         }
 
         string host = iamHostSpec.Host;
-        int port = PropertyDefinition.IamDefaultPort.GetInt(props) ?? hostSpec?.Port ?? this.pluginService.Dialect.DefaultPort;
-
-        if (port <= 0)
-        {
-            port = this.pluginService.Dialect.DefaultPort;
-        }
+        // IamDefaultPort defaults to -1, so a non-positive value means it was not set.
+        int port = PropertyDefinition.IamDefaultPort.GetInt(props) is int iamDefaultPort && iamDefaultPort > 0
+            ? iamDefaultPort
+            : iamHostSpec.IsPortSpecified ? iamHostSpec.Port : this.pluginService.Dialect.DefaultPort;
 
         // Pick the right RegionUtils implementation based on the URL type so global endpoints
         // are resolved via the RDS DescribeGlobalClusters API. For a Global Aurora Database
