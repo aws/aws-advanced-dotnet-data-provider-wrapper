@@ -59,6 +59,14 @@ public sealed class RdsUrlType
     /// </summary>
     public static readonly RdsUrlType RdsGlobalWriterCluster = new(true, true, false);
 
+    public static readonly RdsUrlType RdsClusterGroupWriter = new(true, false, true);
+
+    public static readonly RdsUrlType RdsClusterGroupReader = new(true, false, true);
+
+    public static readonly RdsUrlType RdsDataGroupWriter = new(true, false, true);
+
+    public static readonly RdsUrlType RdsDataGroupReader = new(true, false, true);
+
     /// <summary>
     /// Represents any other type of hostname that doesn't match the RDS endpoint patterns.
     /// </summary>

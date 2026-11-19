@@ -30,6 +30,14 @@ public class RdsUtilsTests
         "custom-test-name.cluster-custom-XYZ.us-east-2.rds.amazonaws.com";
     private const string UsEastRegionLimitlessDbShardGroup =
         "database-test-name.shardgrp-XYZ.us-east-2.rds.amazonaws.com";
+    private const string UsEastRegionClusterGroupWriter =
+        "group-test-name.rw-XYZ.db-cluster-group.us-east-2.rds.amazonaws.com";
+    private const string UsEastRegionClusterGroupReader =
+        "group-test-name.ro-XYZ.db-cluster-group.us-east-2.rds.amazonaws.com";
+    private const string UsEastRegionDataGroupWriter =
+        "database-test-name.XYZ.data-group.us-east-2.rds.amazonaws.com";
+    private const string UsEastRegionDataGroupReader =
+        "database-test-name.ro-XYZ.data-group.us-east-2.rds.amazonaws.com";
 
     private const string EuRedshift =
         "redshift-test-name.XYZ.eusc-de-east-1.rds.amazonaws.eu";
@@ -117,6 +125,10 @@ public class RdsUtilsTests
         yield return new object?[] { UsEastRegionProxy, RdsUrlType.RdsProxy };
         yield return new object?[] { UsEastRegionInstance, RdsUrlType.RdsInstance };
         yield return new object?[] { UsEastRegionLimitlessDbShardGroup, RdsUrlType.RdsAuroraLimitlessDbShardGroup };
+        yield return new object?[] { UsEastRegionClusterGroupWriter, RdsUrlType.RdsClusterGroupWriter };
+        yield return new object?[] { UsEastRegionClusterGroupReader, RdsUrlType.RdsClusterGroupReader };
+        yield return new object?[] { UsEastRegionDataGroupWriter, RdsUrlType.RdsDataGroupWriter };
+        yield return new object?[] { UsEastRegionDataGroupReader, RdsUrlType.RdsDataGroupReader };
         yield return new object?[] { EuRedshift, RdsUrlType.RdsInstance };
         yield return new object?[] { AuRegionInstance, RdsUrlType.RdsInstance };
         yield return new object?[] { UkRegionInstance, RdsUrlType.RdsInstance };
@@ -162,6 +174,9 @@ public class RdsUtilsTests
         // Should be case insensitive
         yield return new object?[] { "mydb.cluster-123456789012.us-east-1.RDS.AMAZONAWS.COM", RdsUrlType.RdsWriterCluster };
         yield return new object?[] { "MYDB.CLUSTER-123456789012.US-EAST-1.RDS.AMAZONAWS.COM", RdsUrlType.RdsWriterCluster };
+        yield return new object?[] { "GROUP-TEST-NAME.RW-XYZ.DB-CLUSTER-GROUP.US-EAST-2.RDS.AMAZONAWS.COM", RdsUrlType.RdsClusterGroupWriter };
+        yield return new object?[] { "DATABASE-TEST-NAME.XYZ.DATA-GROUP.US-EAST-2.RDS.AMAZONAWS.COM", RdsUrlType.RdsDataGroupWriter };
+        yield return new object?[] { "DATABASE-TEST-NAME.RO-XYZ.DATA-GROUP.US-EAST-2.RDS.AMAZONAWS.COM", RdsUrlType.RdsDataGroupReader };
 
         // Other
         yield return new object?[] { UsEastRegionElbUrl, RdsUrlType.Other };
@@ -327,11 +342,79 @@ public class RdsUtilsTests
     [InlineData(UsEastRegionProxy, false)]
     [InlineData(UsEastRegionCustomDomain, false)]
     [InlineData(UsEastRegionLimitlessDbShardGroup, false)]
+    [InlineData(UsEastRegionClusterGroupWriter, false)]
+    [InlineData(UsEastRegionClusterGroupReader, false)]
+    [InlineData(UsEastRegionDataGroupWriter, false)]
+    [InlineData(UsEastRegionDataGroupReader, false)]
     [InlineData(UsEastRegionElbUrl, false)]
     [InlineData("192.168.1.1", false)]
     [InlineData("example.com", false)]
     public void IsRdsInstance_ShouldReturnCorrectResult(string host, bool expected)
     {
         Assert.Equal(expected, RdsUtils.IsRdsInstance(host));
+    }
+
+    [Theory]
+    [Trait("Category", "Unit")]
+    [InlineData(UsEastRegionClusterGroupWriter, true, false)]
+    [InlineData(UsEastRegionClusterGroupReader, false, true)]
+    [InlineData(UsEastRegionCluster, false, false)]
+    [InlineData(UsEastRegionClusterReadOnly, false, false)]
+    [InlineData(UsEastRegionInstance, false, false)]
+    [InlineData(UsEastRegionDataGroupWriter, false, false)]
+    [InlineData(UsEastRegionDataGroupReader, false, false)]
+    public void IsClusterGroupDns_ShouldReturnCorrectResult(string host, bool expectedWriter, bool expectedReader)
+    {
+        Assert.Equal(expectedWriter, RdsUtils.IsClusterGroupWriterDns(host));
+        Assert.Equal(expectedReader, RdsUtils.IsClusterGroupReaderDns(host));
+    }
+
+    [Theory]
+    [Trait("Category", "Unit")]
+    [InlineData(UsEastRegionClusterGroupWriter)]
+    [InlineData(UsEastRegionClusterGroupReader)]
+    public void ClusterGroupDns_ShouldParseEndpoint(string host)
+    {
+        Assert.True(RdsUtils.IsRdsDns(host));
+        Assert.False(RdsUtils.IsRdsClusterDns(host));
+        Assert.False(RdsUtils.IsWriterClusterDns(host));
+        Assert.False(RdsUtils.IsReaderClusterDns(host));
+        Assert.Equal("us-east-2", RdsUtils.GetRdsRegion(host));
+        Assert.Equal("group-test-name", RdsUtils.GetRdsClusterId(host));
+        Assert.Equal("?.XYZ.db-cluster-group.us-east-2.rds.amazonaws.com", RdsUtils.GetRdsInstanceHostPattern(host));
+    }
+
+    [Theory]
+    [Trait("Category", "Unit")]
+    [InlineData(UsEastRegionDataGroupWriter, true, false)]
+    [InlineData(UsEastRegionDataGroupReader, false, true)]
+    [InlineData("DATABASE-TEST-NAME.XYZ.DATA-GROUP.US-EAST-2.RDS.AMAZONAWS.COM", true, false)]
+    [InlineData("DATABASE-TEST-NAME.RO-XYZ.DATA-GROUP.US-EAST-2.RDS.AMAZONAWS.COM", false, true)]
+    [InlineData(UsEastRegionClusterGroupWriter, false, false)]
+    [InlineData(UsEastRegionClusterGroupReader, false, false)]
+    [InlineData(UsEastRegionCluster, false, false)]
+    [InlineData(UsEastRegionClusterReadOnly, false, false)]
+    [InlineData(UsEastRegionInstance, false, false)]
+    [InlineData("test-instance.XYZ.us-east-2.rds.amazonaws.com", false, false)]
+    public void IsDataGroupDns_ShouldReturnCorrectResult(string host, bool expectedWriter, bool expectedReader)
+    {
+        Assert.Equal(expectedWriter, RdsUtils.IsDataGroupWriterDns(host));
+        Assert.Equal(expectedReader, RdsUtils.IsDataGroupReaderDns(host));
+    }
+
+    [Theory]
+    [Trait("Category", "Unit")]
+    [InlineData(UsEastRegionDataGroupWriter)]
+    [InlineData(UsEastRegionDataGroupReader)]
+    public void DataGroupDns_ShouldParseEndpoint(string host)
+    {
+        Assert.True(RdsUtils.IsRdsDns(host));
+        Assert.False(RdsUtils.IsRdsInstance(host));
+        Assert.False(RdsUtils.IsRdsClusterDns(host));
+        Assert.False(RdsUtils.IsWriterClusterDns(host));
+        Assert.False(RdsUtils.IsReaderClusterDns(host));
+        Assert.Equal("us-east-2", RdsUtils.GetRdsRegion(host));
+        Assert.Equal("database-test-name", RdsUtils.GetRdsClusterId(host));
+        Assert.Equal("?.XYZ.data-group.us-east-2.rds.amazonaws.com", RdsUtils.GetRdsInstanceHostPattern(host));
     }
 }

@@ -32,6 +32,12 @@ public static partial class RdsUtils
     [GeneratedRegex(@"^(?<instance>.+)\.(?<dns>cluster-|cluster-ro-)(?<domain>[a-zA-Z0-9]+\.(?<region>[a-zA-Z0-9\-]+)\.(rds|rds-fips)\.amazonaws\.(com|au|eu|uk)\.?)$", RegexOptions.IgnoreCase, "en-CA")]
     private static partial Regex AuroraClusterPattern();
 
+    [GeneratedRegex(@"^(?<instance>.+)\.(?<dns>rw-|ro-)(?<domain>[a-zA-Z0-9]+\.db-cluster-group\.(?<region>[a-zA-Z0-9\-]+)\.(rds|rds-fips)\.amazonaws\.(com|au|eu|uk)\.?)$", RegexOptions.IgnoreCase, "en-CA")]
+    private static partial Regex AuroraClusterGroupDnsPattern();
+
+    [GeneratedRegex(@"^(?<instance>.+)\.(?<dns>ro-)?(?<domain>[a-zA-Z0-9]+\.data-group\.(?<region>[a-zA-Z0-9\-]+)\.(rds|rds-fips)\.amazonaws\.(com|au|eu|uk)\.?)$", RegexOptions.IgnoreCase, "en-CA")]
+    private static partial Regex AuroraDataGroupDnsPattern();
+
     [GeneratedRegex(@"(?<instance>.+)\.(?<dns>shardgrp-)+(?<domain>[a-zA-Z0-9]+\.(?<region>[a-zA-Z0-9\-]+)\.(rds|rds-fips)\.(amazonaws\.(com|au|eu|uk)\.?|amazonaws\.com\.cn\.?|sc2s\.sgov\.gov\.?|c2s\.ic\.gov\.?))$", RegexOptions.IgnoreCase, "en-CA")]
     private static partial Regex AuroraLimitlessClusterPattern();
 
@@ -56,7 +62,7 @@ public static partial class RdsUtils
     [GeneratedRegex(@"^(?<instance>.+)\.(?<dns>global-)?(?<domain>[a-zA-Z0-9]+\.global\.rds\.amazonaws\.com\.?)$", RegexOptions.IgnoreCase, "en-CA")]
     private static partial Regex AuroraGlobalWriterDnsPattern();
 
-    private static readonly Regex[] AuroraDnsPatterns = [AuroraDnsPattern(), AuroraChinaDnsPattern(), AuroraOldChinaDnsPattern(), AuroraGovDnsPattern(), AuroraGlobalWriterDnsPattern()];
+    private static readonly Regex[] AuroraDnsPatterns = [AuroraClusterGroupDnsPattern(), AuroraDataGroupDnsPattern(), AuroraDnsPattern(), AuroraChinaDnsPattern(), AuroraOldChinaDnsPattern(), AuroraGovDnsPattern(), AuroraGlobalWriterDnsPattern()];
 
     [GeneratedRegex(@"^(([1-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){1}(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){2}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$")]
     private static partial Regex IpV4Pattern();
@@ -139,6 +145,13 @@ public static partial class RdsUtils
             return RdsUrlType.RdsGlobalWriterCluster;
         }
 
+        if (IsDataGroupDns(host))
+        {
+            return dnsGroup.Equals("ro-", StringComparison.OrdinalIgnoreCase)
+                ? RdsUrlType.RdsDataGroupReader
+                : RdsUrlType.RdsDataGroupWriter;
+        }
+
         // Is RDS writer cluster DNS.
         if (dnsGroup.Equals("cluster-", StringComparison.OrdinalIgnoreCase))
         {
@@ -167,6 +180,16 @@ public static partial class RdsUtils
         if (dnsGroup.StartsWith("shardgrp-"))
         {
             return RdsUrlType.RdsAuroraLimitlessDbShardGroup;
+        }
+
+        if (dnsGroup.Equals("rw-", StringComparison.OrdinalIgnoreCase))
+        {
+            return RdsUrlType.RdsClusterGroupWriter;
+        }
+
+        if (dnsGroup.Equals("ro-", StringComparison.OrdinalIgnoreCase))
+        {
+            return RdsUrlType.RdsClusterGroupReader;
         }
 
         // Is generic RDS DNS.
@@ -249,7 +272,7 @@ public static partial class RdsUtils
 
     public static bool IsRdsInstance(string host)
     {
-        return string.IsNullOrEmpty(GetDnsGroup(host)) && IsRdsDns(host);
+        return string.IsNullOrEmpty(GetDnsGroup(host)) && IsRdsDns(host) && !IsDataGroupDns(host);
     }
 
     public static bool IsRdsClusterDns(string host)
@@ -350,6 +373,36 @@ public static partial class RdsUtils
     {
         string? dnsGroup = GetDnsGroup(host);
         return dnsGroup != null && string.Equals(dnsGroup, "global-", StringComparison.OrdinalIgnoreCase);
+    }
+
+    public static bool IsClusterGroupWriterDns(string host)
+    {
+        string? dnsGroup = GetDnsGroup(host);
+        return dnsGroup != null && string.Equals(dnsGroup, "rw-", StringComparison.OrdinalIgnoreCase);
+    }
+
+    public static bool IsClusterGroupReaderDns(string host)
+    {
+        string? dnsGroup = GetDnsGroup(host);
+        return dnsGroup != null
+               && string.Equals(dnsGroup, "ro-", StringComparison.OrdinalIgnoreCase)
+               && AuroraClusterGroupDnsPattern().IsMatch(GetPreparedHost(host));
+    }
+
+    public static bool IsDataGroupWriterDns(string host)
+    {
+        return IsDataGroupDns(host) && string.IsNullOrEmpty(GetDnsGroup(host));
+    }
+
+    public static bool IsDataGroupReaderDns(string host)
+    {
+        string? dnsGroup = GetDnsGroup(host);
+        return IsDataGroupDns(host) && string.Equals(dnsGroup, "ro-", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsDataGroupDns(string host)
+    {
+        return !string.IsNullOrEmpty(host) && AuroraDataGroupDnsPattern().IsMatch(GetPreparedHost(host));
     }
 
     private static string? GetDnsGroup(string host)
