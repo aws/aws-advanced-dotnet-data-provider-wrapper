@@ -17,6 +17,7 @@ using Amazon;
 using Amazon.Runtime;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Auth;
+using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
@@ -88,6 +89,23 @@ public class OktaAuthPluginTests
         this.oktaAuthPlugin = new(this.mockPluginService.Object, this.mockCredentialsProviderFactory.Object, this.mockTokenUtility.Object);
 
         this.methodFunc = () => Task.FromResult(new Mock<DbConnection>().Object);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task OpenConnection_WithoutIamDefaultPort_UsesHostPort()
+    {
+        this.props.Remove(PropertyDefinition.IamDefaultPort.Name);
+        this.props[PropertyDefinition.DbUser.Name] = "db-user";
+        var mockDialect = new Mock<IDialect>();
+        mockDialect.Setup(d => d.DefaultPort).Returns(HostSpec.NoPort);
+        this.mockPluginService.Setup(s => s.Dialect).Returns(mockDialect.Object);
+
+        _ = await this.oktaAuthPlugin.OpenConnection(new HostSpec(Host, 3306, HostRole.Writer, HostAvailability.Available), this.props, true, this.methodFunc, true);
+
+        this.mockTokenUtility.Verify(
+            utility => utility.GenerateAuthenticationTokenAsync(Region, Host, 3306, "db-user", It.IsAny<AWSCredentials?>()),
+            Times.Once);
     }
 
     [Fact]
