@@ -11,6 +11,7 @@
 ## Using the .NET Wrapper
 - [Aurora Global Databases](./using-the-dotnet-driver/GlobalDatabases.md)
 - [Cluster Id](./using-the-dotnet-driver/ClusterId.md)
+- [Configuring the Wrapper with AI Tools](./using-the-dotnet-driver/ConfiguringWithAITools.md)
 - [Database Dialects](./using-the-dotnet-driver/DatabaseDialects.md)
 - [Target Connection Dialects](./using-the-dotnet-driver/TargetConnectionDialects.md)
 - [Failover Configuration Guide](./using-the-dotnet-driver/FailoverConfigurationGuide.md)
