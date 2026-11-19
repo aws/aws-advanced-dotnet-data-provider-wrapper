@@ -21,7 +21,7 @@ The Host Monitoring Connection Plugin will be loaded by default if the [`Plugins
 
 > [!IMPORTANT]\
 > The Host Monitoring Plugin creates monitoring threads in the background to monitor all connections established to each cluster instance. The monitoring threads can be cleaned up in two ways:
-> 1. If there are no connections to the cluster instance the thread is monitoring for over a period of time, the Host Monitoring Plugin will automatically terminate the thread. This period of time is adjustable via the `MonitorDisposalTimeMs` parameter.
+> 1. If there are no connections to the cluster instance the thread is monitoring for over a period of time, the Host Monitoring Plugin will automatically terminate the thread. This period of time is adjustable via the `MonitorDisposalTime` parameter.
 > 2. Client applications can manually call `MonitoringThreadContainer.clean_up()` to clean up any dangling resources.
 
 ### Enhanced Failure Monitoring Parameters
@@ -41,7 +41,7 @@ If a more aggressive approach to failure checking is necessary, all of these par
 | Parameter                  |  Value  | Required | Description                                                                                                  | Default Value |
 |----------------------------|:-------:|:--------:|:-------------------------------------------------------------------------------------------------------------|---------------|
 | `FailureDetectionEnabled`  | Boolean |    No    | Set to `true` to enable Enhanced Failure Monitoring. Set to `false` to disable it.                           | `true`        |
-| `MonitorDisposalTimeMs`    | Integer |    No    | Interval in milliseconds specifying how long to wait before an inactive monitor should be disposed.          | `60000`       |
+| `MonitorDisposalTime`      | Integer |    No    | Interval in milliseconds specifying how long to wait before an inactive monitor should be disposed.          | `600000`       |
 | `FailureDetectionCount`    | Integer |    No    | Number of failed connection checks before considering database host as unhealthy.                            | `3`           |
 | `FailureDetectionInterval` | Integer |    No    | Interval in milliseconds between probes to database host.                                                    | `5000`        |
 | `FailureDetectionTime`     | Integer |    No    | Interval in milliseconds between sending a SQL query to the server and the first probe to the database host. | `30000`       |

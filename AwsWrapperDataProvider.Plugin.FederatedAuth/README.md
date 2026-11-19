@@ -16,7 +16,7 @@ Register the Federated Authentication plugin before using it:
 
 ```csharp
 using AwsWrapperDataProvider.Driver.Plugins;
-using AwsWrapperDataProvider.Plugin.FederatedAuth;
+using AwsWrapperDataProvider.Plugin.FederatedAuth.FederatedAuth;
 
 // Register the Federated Auth plugin
 ConnectionPluginChainBuilder.RegisterPluginFactory<FederatedAuthPluginFactory>(PluginCodes.FederatedAuth);

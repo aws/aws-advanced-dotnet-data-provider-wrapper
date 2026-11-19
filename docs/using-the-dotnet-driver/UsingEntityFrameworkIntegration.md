@@ -28,7 +28,10 @@ Both wrapper packages require Entity Framework Core 10, so the minimum versions 
 services.AddDbContext<MyDbContext>(options =>
     options.UseAwsWrapperMySql(
         connectionString,
-        wrappedOptions => wrappedOptions.UseMySql(connectionString)));
+        wrappedOptions => wrappedOptions.UseMySql(
+            connectionString,
+            // Set this to your database's MySQL version.
+            new MySqlServerVersion(new Version(8, 0, 36)))));
 ```
 
 See the package [README](../../AwsWrapperDataProvider.EntityFrameworkCore.MySqlConnector/README.md) for additional configuration, including registering custom EF Core MySQL providers.

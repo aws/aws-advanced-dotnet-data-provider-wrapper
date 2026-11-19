@@ -24,7 +24,10 @@ Configure your DbContext to use the AWS Wrapper:
 services.AddDbContext<MyDbContext>(options =>
     options.UseAwsWrapperMySql(
         connectionString,
-        wrappedOptions => wrappedOptions.UseMySql(connectionString)));
+        wrappedOptions => wrappedOptions.UseMySql(
+            connectionString,
+            // Set this to your database's MySQL version.
+            new MySqlServerVersion(new Version(8, 0, 36)))));
 ```
 
 ## Custom Provider Registration
