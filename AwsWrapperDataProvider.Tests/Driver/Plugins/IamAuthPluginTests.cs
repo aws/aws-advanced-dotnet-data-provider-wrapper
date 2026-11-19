@@ -17,6 +17,7 @@ using Amazon.Runtime;
 using AwsWrapperDataProvider.Authentication;
 using AwsWrapperDataProvider.Driver;
 using AwsWrapperDataProvider.Driver.Auth;
+using AwsWrapperDataProvider.Driver.Dialects;
 using AwsWrapperDataProvider.Driver.HostInfo;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.TargetConnectionDialects;
@@ -176,6 +177,50 @@ public class IamAuthPluginTests : IDisposable
 
     [Fact]
     [Trait("Category", "Unit")]
+    public async Task OpenConnection_WithoutIamDefaultPort_UsesHostPort()
+    {
+        this.props.Remove(PropertyDefinition.IamDefaultPort.Name);
+        var hostWithMySqlPort = new HostSpec(Host, 3306, HostRole.Writer, HostAvailability.Available);
+        this.MockDialectDefaultPort(HostSpec.NoPort);
+
+        _ = await this.iamAuthPlugin.OpenConnection(hostWithMySqlPort, this.props, true, this.methodFunc.Object, true);
+
+        this.mockIamTokenUtility.Verify(
+            utility => utility.GenerateAuthenticationTokenAsync(Region, Host, 3306, User, null),
+            Times.Once);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task OpenConnection_WithoutIamDefaultPortOrHostPort_UsesDialectDefaultPort()
+    {
+        this.props.Remove(PropertyDefinition.IamDefaultPort.Name);
+        var hostWithoutPort = new HostSpec(Host, HostSpec.NoPort, HostRole.Writer, HostAvailability.Available);
+        this.MockDialectDefaultPort(3306);
+
+        _ = await this.iamAuthPlugin.OpenConnection(hostWithoutPort, this.props, true, this.methodFunc.Object, true);
+
+        this.mockIamTokenUtility.Verify(
+            utility => utility.GenerateAuthenticationTokenAsync(Region, Host, 3306, User, null),
+            Times.Once);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task OpenConnection_WithIamDefaultPort_OverridesHostPort()
+    {
+        this.props[PropertyDefinition.IamDefaultPort.Name] = "3307";
+        var hostWithMySqlPort = new HostSpec(Host, 3306, HostRole.Writer, HostAvailability.Available);
+
+        _ = await this.iamAuthPlugin.OpenConnection(hostWithMySqlPort, this.props, true, this.methodFunc.Object, true);
+
+        this.mockIamTokenUtility.Verify(
+            utility => utility.GenerateAuthenticationTokenAsync(Region, Host, 3307, User, null),
+            Times.Once);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
     public async Task OpenConnection_WithNoHandler_PassesNullCredentials()
     {
         _ = await this.iamAuthPlugin.OpenConnection(this.hostSpec, this.props, true, this.methodFunc.Object, true);
@@ -261,5 +306,12 @@ public class IamAuthPluginTests : IDisposable
     private static string GetCacheKey(string user, string hostname, int port, string region)
     {
         return $"{user}:{hostname}:{port}:{region}";
+    }
+
+    private void MockDialectDefaultPort(int port)
+    {
+        var mockDialect = new Mock<IDialect>();
+        mockDialect.Setup(d => d.DefaultPort).Returns(port);
+        this.mockPluginService.Setup(s => s.Dialect).Returns(mockDialect.Object);
     }
 }

@@ -69,10 +69,12 @@ public class DialectProvider
         { (RdsUrlType.RdsCustomCluster, PgDataSource), typeof(AuroraPgDialect) },
         { (RdsUrlType.RdsProxy, PgDataSource), typeof(RdsPgDialect) },
         { (RdsUrlType.RdsInstance, PgDataSource), typeof(RdsPgDialect) },
+        { (RdsUrlType.RdsAuroraLimitlessDbShardGroup, PgDataSource), typeof(AuroraPgDialect) },
+        { (RdsUrlType.RdsClusterGroupWriter, PgDataSource), typeof(RdsPgDialect) },
+        { (RdsUrlType.RdsClusterGroupReader, PgDataSource), typeof(RdsPgDialect) },
+        { (RdsUrlType.RdsDataGroupWriter, PgDataSource), typeof(RdsPgDialect) },
+        { (RdsUrlType.RdsDataGroupReader, PgDataSource), typeof(RdsPgDialect) },
         { (RdsUrlType.Other, PgDataSource), typeof(PgDialect) },
-
-        // TODO : Uncomment when Aurora Limitless DB Shard Group is supported
-        // { (RdsUrlType.RdsAuroraLimitlessDbShardGroup, PgDataSource), typeof() },
         { (RdsUrlType.IpAddress, MySqlDataSource), typeof(MySqlDialect) },
         { (RdsUrlType.RdsGlobalWriterCluster, MySqlDataSource), typeof(AuroraMySqlDialect) },
         { (RdsUrlType.RdsWriterCluster, MySqlDataSource), typeof(AuroraMySqlDialect) },
@@ -80,10 +82,11 @@ public class DialectProvider
         { (RdsUrlType.RdsCustomCluster, MySqlDataSource), typeof(AuroraMySqlDialect) },
         { (RdsUrlType.RdsProxy, MySqlDataSource), typeof(RdsMySqlDialect) },
         { (RdsUrlType.RdsInstance, MySqlDataSource), typeof(RdsMySqlDialect) },
+        { (RdsUrlType.RdsClusterGroupWriter, MySqlDataSource), typeof(RdsMySqlDialect) },
+        { (RdsUrlType.RdsClusterGroupReader, MySqlDataSource), typeof(RdsMySqlDialect) },
+        { (RdsUrlType.RdsDataGroupWriter, MySqlDataSource), typeof(RdsMySqlDialect) },
+        { (RdsUrlType.RdsDataGroupReader, MySqlDataSource), typeof(RdsMySqlDialect) },
         { (RdsUrlType.Other, MySqlDataSource), typeof(MySqlDialect) },
-
-        // TODO : Uncomment when Aurora Limitless DB Shard Group is supported
-        // { (RdsUrlType.RdsAuroraLimitlessDbShardGroup, MySqlDataSource), typeof() },
     };
 
     private readonly PluginService pluginService;

@@ -130,6 +130,34 @@ public class AwsWrapperDataReaderTests
 
     [Fact]
     [Trait("Category", "Unit")]
+    public void GetFieldValue_DelegatesToTargetReader()
+    {
+        var dateTime = new DateTime(2026, 1, 2, 3, 4, 5, DateTimeKind.Utc);
+        var expected = new DateTimeOffset(dateTime);
+        this.mockTargetReader.Setup(r => r.GetValue(0)).Returns(dateTime);
+        this.mockTargetReader.Setup(r => r.GetFieldValue<DateTimeOffset>(0)).Returns(expected);
+
+        Assert.Equal(expected, this.wrapper.GetFieldValue<DateTimeOffset>(0));
+        this.mockTargetReader.Verify(r => r.GetValue(0), Times.Never);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetFieldValueAsync_DelegatesToTargetReader()
+    {
+        var dateTime = new DateTime(2026, 1, 2, 3, 4, 5, DateTimeKind.Utc);
+        var expected = new DateTimeOffset(dateTime);
+        this.mockTargetReader.Setup(r => r.GetValue(0)).Returns(dateTime);
+        this.mockTargetReader
+            .Setup(r => r.GetFieldValueAsync<DateTimeOffset>(0, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expected);
+
+        Assert.Equal(expected, await this.wrapper.GetFieldValueAsync<DateTimeOffset>(0, TestContext.Current.CancellationToken));
+        this.mockTargetReader.Verify(r => r.GetValue(0), Times.Never);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
     public void Indexer_ByName_DelegatesToTargetReader()
     {
         var result = this.wrapper["foo"];

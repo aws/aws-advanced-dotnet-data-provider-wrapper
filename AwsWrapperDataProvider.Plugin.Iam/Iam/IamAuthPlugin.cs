@@ -96,13 +96,10 @@ public class IamAuthPlugin(IPluginService pluginService, Dictionary<string, stri
 
         string iamHost = iamHostSpec.Host;
 
-        // the default value for IamDefaultPort is -1, which should default to the other port property (?)
-        int iamPort = PropertyDefinition.IamDefaultPort.GetInt(props) ?? this.pluginService.Dialect.DefaultPort;
-
-        if (iamPort <= 0)
-        {
-            iamPort = this.pluginService.Dialect.DefaultPort;
-        }
+        // IamDefaultPort defaults to -1, so a non-positive value means it was not set.
+        int iamPort = PropertyDefinition.IamDefaultPort.GetInt(props) is int iamDefaultPort && iamDefaultPort > 0
+            ? iamDefaultPort
+            : iamHostSpec.IsPortSpecified ? iamHostSpec.Port : this.pluginService.Dialect.DefaultPort;
 
         // Pick the right RegionUtils implementation based on the URL type so global endpoints
         // are resolved via the RDS DescribeGlobalClusters API. For a Global Aurora Database endpoint
