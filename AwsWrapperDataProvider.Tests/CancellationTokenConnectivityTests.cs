@@ -163,9 +163,14 @@ public class CancellationTokenConnectivityTests : IntegrationTestBase
     [Trait("Engine", "multi-az-cluster")]
     public async Task RunningQuery_CancelNotAcknowledged_ThrowsCancellationInsteadOfFailingOver()
     {
-        // When the server does not answer a cancel request within Cancellation Timeout, Npgsql breaks the connection
-        // and throws OperationCanceledException with a TimeoutException inside. A negative timeout makes Npgsql break
-        // the connection straight after sending the cancel request, which gives the same exception every time.
+        // When the server does not answer a cancel request, Npgsql breaks the connection and throws
+        // OperationCanceledException with a TimeoutException inside. A negative Cancellation Timeout makes Npgsql break
+        // the connection as soon as the cancel request has been delivered, rather than wait for an answer.
+        //
+        // That alone does not keep the server from answering: Npgsql only breaks the connection once the server has
+        // closed the cancel request's connection, and by then the server has usually already sent the cancelled
+        // query's error, which Npgsql reports as OperationCanceledException with a PostgresException inside. So the
+        // statement catches the cancel and keeps sleeping, which leaves nothing for Npgsql to read.
         using AwsWrapperConnection connection = AuroraUtils.CreateAwsWrapperConnection(Engine, GetUrl("failover") + "; Cancellation Timeout=-1");
         await connection.OpenAsync(TestContext.Current.CancellationToken);
         using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
@@ -174,7 +179,8 @@ public class CancellationTokenConnectivityTests : IntegrationTestBase
         OperationCanceledException exception;
         await using (DbCommand command = connection.CreateCommand())
         {
-            command.CommandText = $"SELECT pg_sleep({LongQuerySeconds})";
+            command.CommandText =
+                $"DO $$ BEGIN PERFORM pg_sleep({LongQuerySeconds}); EXCEPTION WHEN query_canceled THEN PERFORM pg_sleep({LongQuerySeconds}); END $$";
             exception = await Assert.ThrowsAnyAsync<OperationCanceledException>(() => command.ExecuteScalarAsync(cts.Token));
         }
 
