@@ -165,6 +165,17 @@ public static class PropertyDefinition
     public static readonly AwsWrapperProperty HttpClientConnectTimeout = new AwsWrapperProperty(
         "HttpClientConnectTimeout", "10000", "The connect timeout value in milliseconds for the HttpClient used by the federated auth and OKTA plugins.");
 
+    // Connection Lifetime Plugin Properties
+    public static readonly AwsWrapperProperty ConnectionLifetimeMs = new(
+        "ConnectionLifetimeMs", null, "Maximum physical connection lifetime in milliseconds.", true);
+
+    public static readonly AwsWrapperProperty ConnectionLifetimeAction = new(
+        "ConnectionLifetimeAction",
+        "reconnect",
+        "Action to take after the physical connection reaches its configured lifetime. Supported values are close and reconnect.",
+        false,
+        ["close", "reconnect"]);
+
     // Failover Plugin Properties
     public static readonly AwsWrapperProperty FailoverTimeoutMs = new(
         "FailoverTimeoutMs", "300000", "Maximum allowed time for the failover process in milliseconds.");
@@ -438,6 +449,10 @@ public static class PropertyDefinition
         OpenConnectionRetryIntervalMs,
         VerifyOpenedConnectionType,
         AppId,
+
+        // Connection Lifetime Plugin Properties
+        ConnectionLifetimeMs,
+        ConnectionLifetimeAction,
 
         // Failover Plugin Properties
         FailoverTimeoutMs,

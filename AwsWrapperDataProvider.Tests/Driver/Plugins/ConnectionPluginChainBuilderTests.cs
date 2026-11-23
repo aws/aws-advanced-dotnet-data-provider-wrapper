@@ -19,6 +19,7 @@ using AwsWrapperDataProvider.Driver.ConnectionProviders;
 using AwsWrapperDataProvider.Driver.Plugins;
 using AwsWrapperDataProvider.Driver.Plugins.AuroraConnectionTracker;
 using AwsWrapperDataProvider.Driver.Plugins.AuroraInitialConnectionStrategy;
+using AwsWrapperDataProvider.Driver.Plugins.ConnectionLifetime;
 using AwsWrapperDataProvider.Driver.Plugins.ConnectTime;
 using AwsWrapperDataProvider.Driver.Plugins.Efm;
 using AwsWrapperDataProvider.Driver.Plugins.ExecutionTime;
@@ -309,6 +310,32 @@ public class ConnectionPluginChainBuilderTests
                 null,
                 props,
                 null));
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void TestConnectionLifetimePluginIsSortedFirst()
+    {
+        Dictionary<string, string> props = new()
+        {
+            { PropertyDefinition.Plugins.Name, $"{PluginCodes.Failover},{PluginCodes.ExecutionTime},{PluginCodes.ConnectionLifetime}" },
+            { PropertyDefinition.ConnectionLifetimeMs.Name, "300000" },
+        };
+        ConnectionPluginChainBuilder pluginChainBuilder = new();
+
+        IList<IConnectionPlugin> plugins = pluginChainBuilder.GetPlugins(
+            ServiceUtility.CreateMonitorContainer(null, this.pluginServiceMock.Object, []),
+            this.connectionProviderMock.Object,
+            null,
+            props,
+            null);
+
+        Assert.NotNull(plugins);
+        Assert.Equal(4, plugins.Count);
+        Assert.IsType<ConnectionLifetimePlugin>(plugins[0]);
+        Assert.IsType<FailoverPlugin>(plugins[1]);
+        Assert.IsType<ExecutionTimePlugin>(plugins[2]);
+        Assert.IsType<DefaultConnectionPlugin>(plugins[3]);
     }
 
     [Fact]

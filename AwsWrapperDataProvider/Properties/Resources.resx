@@ -896,6 +896,42 @@
   <data name="ReadWriteSplittingPlugin_ExceptionWhileExecutingCommand" xml:space="preserve">
     <value>Detected an exception while executing a command: '{0}'</value>
   </data>
+  <data name="ConnectionLifetimePlugin_InvalidConnectionLifetime" xml:space="preserve">
+    <value>The configuration property 'ConnectionLifetimeMs' is required and must be a positive whole number of milliseconds. Received: '{0}'.</value>
+  </data>
+  <data name="ConnectionLifetimePlugin_InvalidConnectionLifetimeAction" xml:space="preserve">
+    <value>The configuration property 'ConnectionLifetimeAction' must be either 'close' or 'reconnect'. Received: '{0}'.</value>
+  </data>
+  <data name="ConnectionLifetimePlugin_ConnectionClosed" xml:space="preserve">
+    <value>The connection has reached its maximum lifetime and is closed.</value>
+  </data>
+  <data name="ConnectionLifetimePlugin_ActionDeferred" xml:space="preserve">
+    <value>The connection has reached its maximum lifetime, but the lifetime action is deferred while a transaction is active. Executing '{0}' on the current connection.</value>
+  </data>
+  <data name="ConnectionLifetimePlugin_ActionDeferredForReader" xml:space="preserve">
+    <value>The connection has reached its maximum lifetime, but the lifetime action is deferred while a data reader is open on it. Executing '{0}' on the current connection.</value>
+  </data>
+  <data name="ConnectionLifetimePlugin_CloseConnectionFailed" xml:space="preserve">
+    <value>Unable to close the expired connection: {0}</value>
+  </data>
+  <data name="ConnectionLifetimePlugin_OriginalHostUnavailable" xml:space="preserve">
+    <value>The original application host is unavailable for connection-lifetime reconnection.</value>
+  </data>
+  <data name="ConnectionLifetimePlugin_Reconnecting" xml:space="preserve">
+    <value>The connection has reached its maximum lifetime. Reconnecting to the original application host '{0}'.</value>
+  </data>
+  <data name="ConnectionLifetimePlugin_ReplacementCloseFailed" xml:space="preserve">
+    <value>Unable to close the unused replacement connection after a connection-lifetime reconnect failure: {0}</value>
+  </data>
+  <data name="ConnectionLifetimePlugin_FailedInstallationConnectionCloseFailed" xml:space="preserve">
+    <value>Unable to close a connection after a replacement connection was only partially installed: {0}</value>
+  </data>
+  <data name="ConnectionLifetimeSuccessException_ConnectionChanged" xml:space="preserve">
+    <value>The active connection changed because its configured maximum lifetime was reached. The call was not executed. Open data readers belong to the previous connection; execute the command again before continuing.</value>
+  </data>
+  <data name="ConnectionLifetimeFailedException_UnableToReconnect" xml:space="preserve">
+    <value>Unable to establish a replacement connection after the configured maximum connection lifetime was reached.</value>
+  </data>
   <data name="ConnectTimePlugin_ConnectTime" xml:space="preserve">
     <value>Connected in {0} nanos.</value>
   </data>

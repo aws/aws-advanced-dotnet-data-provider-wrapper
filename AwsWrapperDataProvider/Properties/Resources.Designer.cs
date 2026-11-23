@@ -852,6 +852,114 @@ namespace AwsWrapperDataProvider.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The configuration property 'ConnectionLifetimeMs' is required and must be a positive whole number of milliseconds. Received: '{0}'..
+        /// </summary>
+        internal static string ConnectionLifetimePlugin_InvalidConnectionLifetime {
+            get {
+                return ResourceManager.GetString("ConnectionLifetimePlugin_InvalidConnectionLifetime", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The configuration property 'ConnectionLifetimeAction' must be either 'close' or 'reconnect'. Received: '{0}'..
+        /// </summary>
+        internal static string ConnectionLifetimePlugin_InvalidConnectionLifetimeAction {
+            get {
+                return ResourceManager.GetString("ConnectionLifetimePlugin_InvalidConnectionLifetimeAction", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The connection has reached its maximum lifetime and is closed..
+        /// </summary>
+        internal static string ConnectionLifetimePlugin_ConnectionClosed {
+            get {
+                return ResourceManager.GetString("ConnectionLifetimePlugin_ConnectionClosed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The connection has reached its maximum lifetime, but the lifetime action is deferred while a transaction is active. Executing '{0}' on the current connection..
+        /// </summary>
+        internal static string ConnectionLifetimePlugin_ActionDeferred {
+            get {
+                return ResourceManager.GetString("ConnectionLifetimePlugin_ActionDeferred", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The connection has reached its maximum lifetime, but the lifetime action is deferred while a data reader is open on it. Executing '{0}' on the current connection..
+        /// </summary>
+        internal static string ConnectionLifetimePlugin_ActionDeferredForReader {
+            get {
+                return ResourceManager.GetString("ConnectionLifetimePlugin_ActionDeferredForReader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unable to close the expired connection: {0}.
+        /// </summary>
+        internal static string ConnectionLifetimePlugin_CloseConnectionFailed {
+            get {
+                return ResourceManager.GetString("ConnectionLifetimePlugin_CloseConnectionFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The original application host is unavailable for connection-lifetime reconnection..
+        /// </summary>
+        internal static string ConnectionLifetimePlugin_OriginalHostUnavailable {
+            get {
+                return ResourceManager.GetString("ConnectionLifetimePlugin_OriginalHostUnavailable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The connection has reached its maximum lifetime. Reconnecting to the original application host '{0}'..
+        /// </summary>
+        internal static string ConnectionLifetimePlugin_Reconnecting {
+            get {
+                return ResourceManager.GetString("ConnectionLifetimePlugin_Reconnecting", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unable to close the unused replacement connection after a connection-lifetime reconnect failure: {0}.
+        /// </summary>
+        internal static string ConnectionLifetimePlugin_ReplacementCloseFailed {
+            get {
+                return ResourceManager.GetString("ConnectionLifetimePlugin_ReplacementCloseFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unable to close a connection after a replacement connection was only partially installed: {0}.
+        /// </summary>
+        internal static string ConnectionLifetimePlugin_FailedInstallationConnectionCloseFailed {
+            get {
+                return ResourceManager.GetString("ConnectionLifetimePlugin_FailedInstallationConnectionCloseFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The active connection changed because its configured maximum lifetime was reached. The call was not executed. Open data readers belong to the previous connection; execute the command again before continuing..
+        /// </summary>
+        internal static string ConnectionLifetimeSuccessException_ConnectionChanged {
+            get {
+                return ResourceManager.GetString("ConnectionLifetimeSuccessException_ConnectionChanged", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unable to establish a replacement connection after the configured maximum connection lifetime was reached..
+        /// </summary>
+        internal static string ConnectionLifetimeFailedException_UnableToReconnect {
+            get {
+                return ResourceManager.GetString("ConnectionLifetimeFailedException_UnableToReconnect", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Connected in {0} nanos..
         /// </summary>
         internal static string ConnectTimePlugin_ConnectTime {
