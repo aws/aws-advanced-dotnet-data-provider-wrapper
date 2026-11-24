@@ -205,7 +205,8 @@ When you interview:
   would not change the configuration.
 - Avoid chains of yes/no questions. Ask "Which database engine are you
   using?" rather than "Are you using PostgreSQL?".
-- Three answers change the code more than any other, so get them early:
+- Four answers change the code more than any other, so get them early,
+  before you write any configuration:
   1. **The underlying driver.** Npgsql, MySqlConnector or MySql.Data.
      This decides the dialect package, the loader call, the generic type
      argument of `AwsWrapperConnection<TConn>`, the connection string
@@ -222,6 +223,14 @@ When you interview:
      server. This decides the plugin list. The default plugin list adds
      failover, and with Npgsql also failure monitoring; the docs say both
      must be disabled on plain RDS databases.
+  4. **How the application authenticates.** A database password, IAM,
+     AWS Secrets Manager, AD FS or Okta. This decides the plugin package,
+     the `RegisterPluginFactory` call, the plugin code in `Plugins`, and
+     whether the connection string carries a user name and password
+     (`SecretsManagerSecretId` replaces both; `iam` keeps the user name
+     and drops the password). Ask this even when the other answers are
+     enough. Do not assume a password: a configuration written for a
+     password has to be rewritten for any of the other four.
 
 ### 1.3 The anchor question
 
@@ -310,7 +319,11 @@ When you deliver a final configuration:
   `appsettings.json` or any other configuration source by itself.
   - _A literal or constant in code_ suits examples and small tools.
   - _`appsettings.json` or another configuration source_ suits ASP.NET
-    Core and hosted services. Store the whole wrapper connection string,
+    Core and hosted services, and is the default for them: for a web API,
+    worker or other service, put the connection string in
+    `appsettings.json` and read it with
+    `builder.Configuration.GetConnectionString("<name>")` unless the user
+    asks for something else. Store the whole wrapper connection string,
     wrapper keys included, as one value, and pass that value to the
     `AwsWrapperConnection<TConn>` constructor or to `UseAwsWrapperNpgsql`
     or `UseAwsWrapperMySql`. Keep secrets out of the file: use IAM,
@@ -351,6 +364,11 @@ When you deliver a final configuration:
   from `System.Data.Common.DbException`:
 
   ```csharp
+  // At the top of the file:
+  using AwsWrapperDataProvider.Driver.Plugins.Failover;
+  using Npgsql;
+
+  // connection is the AwsWrapperConnection<NpgsqlConnection> opened above.
   using var command = connection.CreateCommand<NpgsqlCommand>();
   command.CommandText = "SELECT 1";
   try
@@ -382,6 +400,51 @@ When you deliver a final configuration:
   must be created again. Under EF Core and NHibernate the failover
   exception can arrive wrapped in another exception, so walk the inner
   exceptions (§3.6, §3.8).
+  A retry loop keeps the same `AwsWrapperConnection` after
+  `FailoverSuccessException` and `TransactionStateUnknownException`; do
+  not dispose it or open a new one for the retry. Only after
+  `FailoverFailedException` does the code dispose the connection and
+  create a new one; never retry on the failed connection. Do not catch
+  the base `FailoverException` to retry, because it also catches
+  `TransactionStateUnknownException`, which needs the transaction check
+  first (§3.2).
+- **Every code block compiles as written.** Each file you show starts
+  with the `using` lines for every type it names; do not leave them to
+  the user or to a block shown earlier. The ones most often missed:
+  `AwsWrapperDataProvider.Driver.Plugins.Failover` for the three failover
+  exceptions, `AwsWrapperDataProvider.Driver.Plugins.Failover.Exceptions`
+  for `FailoverException`, `AwsWrapperDataProvider.Driver.Plugins` for
+  `ConnectionPluginChainBuilder` and `PluginCodes`,
+  `AwsWrapperDataProvider.Driver.Utils` for `LoggerUtils`,
+  `System.Data.Common` for `DbCommand`, `DbParameter`, `DbTransaction`
+  and `DbDataReader`, the driver namespace (`Npgsql`, `MySqlConnector` or
+  `MySql.Data.MySqlClient`) for `TConn` and `TCommand`, and the
+  doubled factory namespaces (§4.6, §11.2). Every package a block needs
+  appears in the package list, including the dialect package and each
+  plugin package whose factory the block registers.
+- **Use the wrapper's types, not the driver's, for what the wrapper
+  returns.** The wrapper hands back its own ADO.NET objects, so
+  driver-specific members are not available on them:
+  - `CreateCommand<NpgsqlCommand>()` returns
+    `AwsWrapperCommand<NpgsqlCommand>`, which derives from `DbCommand`,
+    not from `NpgsqlCommand`. Declare the variable with `var`,
+    `DbCommand` or `AwsWrapperCommand<NpgsqlCommand>`, and write helper
+    methods that take `DbCommand`. Assigning it to an `NpgsqlCommand`
+    variable or passing it to a method that takes `NpgsqlCommand` does
+    not compile. The same holds for the MySQL command types.
+  - `command.Parameters` is a `DbParameterCollection`. It has `Add`, but
+    not the driver's `AddWithValue`, so `Parameters.AddWithValue(...)`
+    does not compile. Create parameters with `command.CreateParameter()`
+    and `Parameters.Add`, as `FailoverRetry.AddParameter` in §3.2 does.
+  - `ExecuteReader` and `ExecuteReaderAsync` return a `DbDataReader`
+    (an `AwsWrapperDataReader` at run time), not an `NpgsqlDataReader`
+    or `MySqlDataReader`. Use `var` or `DbDataReader`; a cast to the
+    driver's reader type compiles but throws `InvalidCastException`.
+  - `BeginTransaction` and `BeginTransactionAsync` are declared to
+    return `DbTransaction` (an `AwsWrapperTransaction` at run time), not
+    the driver's transaction type. Use `var` or `DbTransaction`.
+  - For a driver-only API, call `Unwrap<TConn>()` on the connection for
+    that one call (§15.1).
 - **Be tiered, prescriptive first:**
   1. Give the recommended configuration: the package list, the startup
      code, the connection string, and the C# code that opens the
@@ -395,7 +458,10 @@ When you deliver a final configuration:
 - **Use placeholders for secrets and hosts.** Never repeat real database
   passwords, IAM tokens, identity provider passwords or AWS credentials
   that a user pastes. Write `<password>`, `<cluster-endpoint>`,
-  `<secret-arn>`, `<region>`, `<db-user>` and similar.
+  `<secret-arn>`, `<region>`, `<db-user>` and similar. Do not describe a
+  pasted secret either: say nothing about its length, its characters or
+  whether it would break a rule such as the `;` limit in §6.1. State the
+  rule and let the user check their own value.
 
 ### 1.5 Posture
 
@@ -859,9 +925,10 @@ parameters from §5 and §6.
    these plugins unless the user is tied to MySql.Data.
 3. **Which region?**
    - `iam`: `IamRegion` is parsed from the host when unset. For a Global
-     Database writer endpoint the region is looked up with the RDS
-     `DescribeGlobalClusters` API, so the AWS identity needs
-     `rds:DescribeGlobalClusters`.
+     Database writer endpoint with `IamRegion` unset, the region is
+     looked up with the RDS `DescribeGlobalClusters` API, so the AWS
+     identity needs `rds:DescribeGlobalClusters`. Setting `IamRegion` to
+     the writer region skips that call and the permission.
    - `federatedAuth` and `okta`: the same rule applies in the source,
      although their doc pages mark `IamRegion` as required. Tell the user
      to set it when the host does not contain a region.
@@ -903,10 +970,11 @@ parameters from §5 and §6.
    unset), and for Okta `AppId` (required; a missing value throws
    `App ID not provided.`). `IdpPort` (default 443) and `RpIdentifier`
    (default `urn:amazon:webservices`) apply to AD FS only.
-   `HttpClientConnectTimeout` (milliseconds, default 10000) limits the
-   identity provider connection.
+   `HttpClientConnectTimeout` (milliseconds, default 10000) limits each
+   HTTP request to the identity provider, response included.
 9. **Global Database endpoints?** `iam`, `federatedAuth` and `okta` need
-   `rds:DescribeGlobalClusters` (question 3).
+   `rds:DescribeGlobalClusters` on the global writer endpoint unless
+   `IamRegion` is set (question 3).
 10. **Blue/Green Deployment with IAM?** The `bg` plugin keeps the token
     host matched to the original host when it reroutes a connection
     (Track G).
@@ -967,7 +1035,8 @@ first.
    application uses connection pooling, and to keep `initialConnection`,
    which handles stale DNS for global endpoints.
 6. **Auth and other plugins?** `iam`, `federatedAuth` and `okta` need
-   `rds:DescribeGlobalClusters` for the global writer endpoint (Track E).
+   `rds:DescribeGlobalClusters` for the global writer endpoint when
+   `IamRegion` is unset; setting `IamRegion` avoids it (Track E).
    The `bg` docs list Aurora Global Database as unsupported.
 
 → Use the Global Database recipe in §3.14 for writer and reader
@@ -1123,7 +1192,11 @@ in §5.15.
      `AwsWrapperDataProvider.Telemetry.XRay`) once at startup, then
      `AWSXRayRecorder.InitializeInstance()`. Without `Load()`, `XRAY`
      acts as `NONE`. X-Ray has no metrics: pair it with
-     `TelemetryMetricsBackend=OTLP` or `NONE`.
+     `TelemetryMetricsBackend=OTLP` or `NONE`. Never set
+     `TelemetryMetricsBackend=XRAY`: after `Load()` it selects the X-Ray
+     factory, whose `CreateCounter` and `CreateGauge` throw
+     `NotSupportedException`, and `failover` creates its counters in its
+     constructor, so the `AwsWrapperConnection` constructor fails.
 3. **Nested or top-level traces?** `TelemetrySubmitTopLevel` (default
    `false`) nests wrapper spans under the application's open span; set it
    to `true` to make each wrapper entry-point span a new root.
@@ -2291,9 +2364,10 @@ Points to state:
   `IamDefaultPort` (default `-1`, which uses the dialect's default
   port), and `IamExpiration` (token cache time in seconds, default
   `870`).
-- For an Aurora Global Database writer endpoint, the plugin resolves
-  the region with `rds:DescribeGlobalClusters`, so the AWS credentials
-  also need that permission.
+- For an Aurora Global Database writer endpoint with `IamRegion` unset,
+  the plugin resolves the region with `rds:DescribeGlobalClusters`, so
+  the AWS credentials also need that permission. With `IamRegion` set to
+  a valid region, the plugin uses it and makes no RDS call.
 - AWS credentials come from the AWS SDK default chain. To supply them in
   code, for example an `AssumeRoleAWSCredentials`, register a handler
   once at startup with `AwsCredentialsManager.SetCustomHandler`
@@ -2846,7 +2920,9 @@ Points to state:
 - `EnableTelemetry` defaults to `false`. `TelemetryTracesBackend`
   accepts `OTLP`, `XRAY`, or `NONE`; `TelemetryMetricsBackend` accepts
   `OTLP` or `NONE`. Both default to `NONE`, the names are not
-  case-sensitive, and an unrecognized name becomes `NONE`.
+  case-sensitive, and an unrecognized name becomes `NONE`. `XRAY` is
+  not a metrics backend: once `XRayTelemetryLoader.Load()` has run, a
+  metrics backend of `XRAY` throws `NotSupportedException` (§3.19).
 - The wrapper only emits, through an `ActivitySource` and a `Meter`
   named `aws-advanced-dotnet-wrapper` (the constant
   `OtlpTelemetryFactory.InstrumentationName`, namespace
@@ -2905,9 +2981,15 @@ Points to state:
 - Call `XRayTelemetryLoader.Load()` once at startup, before any wrapper
   connection is created.
 - X-Ray has no metrics. For metrics, set `TelemetryMetricsBackend=OTLP`
-  and add a `MeterProvider` as in §3.18. The source would also accept
-  `XRAY` for metrics, but the docs say X-Ray has no metrics, so use
-  `OTLP` or `NONE`.
+  and add a `MeterProvider` as in §3.18; otherwise set it to `NONE`. Do
+  not set `TelemetryMetricsBackend=XRAY`. After `XRayTelemetryLoader.Load()`
+  it selects the X-Ray factory, whose `CreateCounter` and `CreateGauge`
+  throw `NotSupportedException` (`AWS X-Ray does not support metrics.
+  Configure a separate metrics backend (for example
+  TelemetryMetricsBackend=OTLP).`). The `failover` plugin creates its
+  counters in its constructor, so with `failover` in the chain the
+  `AwsWrapperConnection` constructor throws; `efm` creates its counters
+  when its monitor starts. Without `Load()`, `XRAY` acts as `NONE`.
 - An X-Ray daemon must be running; the shipped example includes a
   `docker-compose.yml` for one.
 
@@ -3598,7 +3680,7 @@ region.
 | `Username` (related) | (unset) | The database user the token is generated for. Required: without it, connecting throws `Could not determine user for IAM authentication.` The driver's own keyword works too (`Username` for Npgsql, `User Id` for the MySQL drivers), because the dialect maps it to `Username`. |
 | `IamHost` | (unset) | Host used to generate the token, instead of the connection host. Set it when connecting through an IP address, a custom domain or a custom endpoint. |
 | `IamDefaultPort` | `-1` | Port used to generate the token. A value of 0 or less means the database dialect's default port (5432 or 3306). |
-| `IamRegion` | (unset) | Region used to generate the token. When unset, parsed from the host; for a Global Database writer endpoint the region is looked up with the RDS `DescribeGlobalClusters` API. If neither works, connecting throws `Could not determine region for IAM authentication provider.` |
+| `IamRegion` | (unset) | Region used to generate the token. When set to a valid AWS region, it is used as is. When unset, parsed from the host; for a Global Database writer endpoint the region is looked up with the RDS `DescribeGlobalClusters` API. A value that is not a known AWS region is ignored as if unset, without an error or log line. If no region is found, connecting throws `Could not determine region for IAM authentication provider.` |
 | `IamExpiration` | `870` | Seconds a token stays in the cache (14 minutes 30 seconds). IAM tokens live 15 minutes. |
 
 Prerequisites and points to state:
@@ -3611,9 +3693,10 @@ Prerequisites and points to state:
   dialect's default port otherwise; the `Port` in the connection string is
   not used. When the database listens on another port, set
   `IamDefaultPort` to that port.
-- Connecting to the Global Database writer endpoint needs the IAM
-  permission `rds:DescribeGlobalClusters` in addition to
-  `rds-db:connect`.
+- Connecting to the Global Database writer endpoint with `IamRegion`
+  unset needs the IAM permission `rds:DescribeGlobalClusters` in
+  addition to `rds-db:connect`. With `IamRegion` set to the writer
+  region, the plugin skips the lookup and needs only `rds-db:connect`.
 - AWS credentials come from the AWS SDK default chain, or from a handler
   registered with `AwsCredentialsManager.SetCustomHandler` (§6.8).
 - **Pool stability.** With Npgsql and MySqlConnector the token reaches the
@@ -3714,11 +3797,11 @@ provider for this plugin.
 | `IamRoleArn` | (unset) | ARN of the IAM role to assume. Required. |
 | `IamIdpArn` | (unset) | ARN of the IAM SAML identity provider. Required. |
 | `RpIdentifier` | `urn:amazon:webservices` | Relying party identifier. |
-| `IamRegion` | (unset) | Region for the token. When unset, parsed from the host, or looked up with `DescribeGlobalClusters` for a Global Database writer endpoint. |
+| `IamRegion` | (unset) | Region for the token. When set to a valid AWS region, used as is. When unset, parsed from the host, or looked up with `DescribeGlobalClusters` for a Global Database writer endpoint. A value that is not a known AWS region is ignored as if unset. |
 | `IamHost` | (unset) | Host used to generate the token, instead of the connection host. |
 | `IamDefaultPort` | `-1` | Port used to generate the token; 0 or less means the dialect's default port (see §5.4). |
 | `IamExpiration` | `870` | Seconds a token stays in the cache. |
-| `HttpClientConnectTimeout` | `10000` | Connect timeout of the HTTP client, in milliseconds. |
+| `HttpClientConnectTimeout` | `10000` | Timeout in milliseconds for each HTTP request to the identity provider (`HttpClient.Timeout`), response included, not only the connect. |
 
 Points to state:
 
@@ -3736,7 +3819,7 @@ Points to state:
 - This plugin does not use `AwsCredentialsManager`; the role credentials
   come from the SAML exchange with STS.
 - Connecting to the Global Database writer endpoint needs
-  `rds:DescribeGlobalClusters`.
+  `rds:DescribeGlobalClusters` when `IamRegion` is unset.
 - Pool stability is the same as for `iam` (§5.4): Npgsql and
   MySqlConnector use the password provider; MySql.Data does not.
 - When a login with a cached token fails, the plugin gets a new token and
@@ -3772,7 +3855,7 @@ generate an RDS IAM token, and connects as `DbUser`.
 | `IamHost` | (unset) | As for `federatedAuth`. |
 | `IamDefaultPort` | `-1` | As for `federatedAuth`. |
 | `IamExpiration` | `870` | Seconds a token stays in the cache. |
-| `HttpClientConnectTimeout` | `10000` | Connect timeout of the HTTP client, in milliseconds. |
+| `HttpClientConnectTimeout` | `10000` | Timeout in milliseconds for each HTTP request to the identity provider (`HttpClient.Timeout`), response included, not only the connect. |
 
 Points to state:
 
@@ -3785,7 +3868,8 @@ Points to state:
   does not exist (§4.6).
 - The `HttpClientConnectTimeout`, `SSLInsecure`, `IamRegion` and
   `IamDefaultPort` disagreements of §5.6 apply here too.
-- Global Database writer endpoints need `rds:DescribeGlobalClusters`.
+- Global Database writer endpoints need `rds:DescribeGlobalClusters`
+  when `IamRegion` is unset.
 
 ### 5.8 `readWriteSplitting`: switch between writer and readers
 
@@ -4075,6 +4159,12 @@ also detects a failed switchover and a rollback. Not in the default list.
 | `BgSwitchoverTimeoutMs` | `180000` | Maximum time for the switchover. When it is exceeded, the wrapper assumes the switchover completed and resumes normal operation. |
 | `BgDropBlueConnections` | `true` | Drop all connections to the blue cluster when the switchover starts. Added in 2.2.0 with the default `true`; set `false` to keep the earlier behavior. |
 
+`BgBaselineMs`, `BgIncreasedMs`, `BgHighMs` and `BgSwitchoverTimeoutMs`
+must be whole numbers of milliseconds. The plugin reads them with
+`long.Parse` when it creates the status provider at the first `Open`,
+so a value such as `1s` or `1000.0` throws `FormatException` there (from
+reading the source).
+
 Prerequisites and points to state:
 
 - **Non-admin users need grants**, on both the blue and the green side,
@@ -4127,7 +4217,7 @@ failover and read/write splitting.
 
 | Name | Default | Description |
 | --- | --- | --- |
-| `CustomEndpointRegion` | (unset) | Region of the custom endpoint. When unset, parsed from the host. If the region cannot be found or is invalid, connecting throws `InvalidOperationException` `Unable to determine region for custom endpoint. Please specify CustomEndpointRegion property.` |
+| `CustomEndpointRegion` | (unset) | Region of the custom endpoint. When unset, parsed from the host. A value that is not a known AWS region is ignored as if unset, without an error: a misspelled region silently falls back to the region in the host. Only when no valid region comes from either source does connecting throw `InvalidOperationException` `Unable to determine region for custom endpoint. Please specify CustomEndpointRegion property.` |
 | `CustomEndpointInfoRefreshRateMs` | `30000` | How often the monitor fetches the endpoint information. |
 | `CustomEndpointInfoRefreshRateBackoffFactor` | `2` | After an RDS throttling exception, the refresh interval grows by this factor; after a successful call it shrinks by the same factor. |
 | `CustomEndpointInfoMaxRefreshRateMs` | `300000` | Upper bound for the refresh interval. |
@@ -4189,7 +4279,8 @@ selection.
 application, so the database stores only ciphertext, and decrypts them
 when they are read. It uses envelope encryption: a master key in AWS KMS
 protects one data key per column, and the data keys encrypt locally with
-AES-256-GCM. New in 3.0.0. §2.9 has the interview questions and §3.17
+AES-GCM: AES-256-GCM or AES-128-GCM, as the column's
+`encryption_algorithm` metadata names. New in 3.0.0. §2.9 has the interview questions and §3.17
 has the recipe.
 
 - **Package:** `AWS.AdvancedDotnetDataProviderWrapper.Plugin.KmsEncryption`
@@ -4517,7 +4608,7 @@ backends (§3.18 and §3.19 have the setup):
 | --- | --- | --- |
 | `EnableTelemetry` | `false` | Turns traces and metrics on. When `false`, the telemetry calls are no-ops. |
 | `TelemetryTracesBackend` | `NONE` | `OTLP`, `XRAY` or `NONE`, any case. An unknown value is treated as `NONE`. `XRAY` needs the Telemetry.XRay package and `XRayTelemetryLoader.Load()`. |
-| `TelemetryMetricsBackend` | `NONE` | `OTLP` or `NONE`. X-Ray has no metrics. |
+| `TelemetryMetricsBackend` | `NONE` | `OTLP` or `NONE`. X-Ray has no metrics: after `XRayTelemetryLoader.Load()`, `XRAY` here makes counter creation throw `NotSupportedException`, which fails the connection constructor when `failover` is loaded. |
 | `TelemetrySubmitTopLevel` | `false` | `true` makes each wrapper entry-point span a new root span; `false` nests it under the application's open span. |
 | `TelemetryFailoverAdditionalTopTrace` | `false` | Also submits each failover span as its own top-level trace. |
 
@@ -5135,10 +5226,10 @@ the Multi-AZ page and the source. §4.4 explains the combination rules;
 | `customEndpoint` | Yes | Not stated | Not stated | Untested | Passes through | Passes through |
 | `limitless` | No | No | Yes (PostgreSQL only) | No | No | No |
 | `bg` | Yes | Not supported | Not stated | Not supported | Yes | Not stated |
-| `iam` | Yes | Yes, with `rds:DescribeGlobalClusters` | Yes | Untested | Yes | No: needs an Amazon endpoint |
+| `iam` | Yes | Yes, with `rds:DescribeGlobalClusters` or `IamRegion` | Yes | Untested | Yes | No: needs an Amazon endpoint |
 | `awsSecretsManager` | Yes | Yes | Yes | Untested | Yes | Yes |
-| `federatedAuth` | Yes | Yes, with `rds:DescribeGlobalClusters` | Not stated | Untested | Yes | No: it generates an RDS IAM token |
-| `okta` | Yes | Yes, with `rds:DescribeGlobalClusters` | Not stated | Untested | Yes | No: it generates an RDS IAM token |
+| `federatedAuth` | Yes | Yes, with `rds:DescribeGlobalClusters` or `IamRegion` | Not stated | Untested | Yes | No: it generates an RDS IAM token |
+| `okta` | Yes | Yes, with `rds:DescribeGlobalClusters` or `IamRegion` | Not stated | Untested | Yes | No: it generates an RDS IAM token |
 | `kmsEncryption` | Yes | Not stated | Not stated | Untested | Yes | Yes |
 | `connectTime`, `executionTime` | Yes | Yes | Yes | Yes | Yes | Yes |
 
@@ -5194,7 +5285,8 @@ docs. §12.3 lists the endpoint forms.
   a custom domain or IP address, and that `IamHost` (the host name used to
   generate the token) is required with custom endpoints. I did not test
   `IamHost` with an IP address or a custom domain. With the global writer
-  endpoint, the IAM role needs `rds:DescribeGlobalClusters`.
+  endpoint, the IAM role needs `rds:DescribeGlobalClusters` unless
+  `IamRegion` is set.
 
 ### 10.5 Pairings to recommend
 
@@ -5281,7 +5373,7 @@ of the classes. Use these names:
 
 | Type or member | Namespace | Package |
 | --- | --- | --- |
-| `AwsWrapperConnection`, `AwsWrapperConnection<TConn>`, `AwsWrapperCommand<TCommand>`, `AwsWrapperConnectionStringBuilder`, `AwsWrapperDataSource` | `AwsWrapperDataProvider` | Core |
+| `AwsWrapperConnection`, `AwsWrapperConnection<TConn>`, `AwsWrapperCommand<TCommand>`, `AwsWrapperDataReader`, `AwsWrapperTransaction`, `AwsWrapperBatch`, `AwsWrapperConnectionStringBuilder`, `AwsWrapperDataSource` | `AwsWrapperDataProvider` | Core |
 | `ConnectionPluginChainBuilder`, `PluginCodes` | `AwsWrapperDataProvider.Driver.Plugins` | Core |
 | Database dialect classes (§8.1) | `AwsWrapperDataProvider.Driver.Dialects` | Core |
 | `FailoverSuccessException`, `FailoverFailedException`, `TransactionStateUnknownException` | `AwsWrapperDataProvider.Driver.Plugins.Failover` | Core |
@@ -5602,7 +5694,8 @@ has the recipe. What a configuration needs:
   `GlobalAuroraMySqlDialect`.
 - **Authentication.** `iam`, `federatedAuth` and `okta` support the
   global writer endpoint; the IAM role then needs
-  `rds:DescribeGlobalClusters`.
+  `rds:DescribeGlobalClusters`, unless `IamRegion` is set to the writer
+  region.
 - **Not supported:** `bg` (§10.1). Instance names duplicated across
   regions.
 
@@ -6012,10 +6105,13 @@ The recipes in §3.3, §3.4 and §3.5 show a complete program for each
 driver. What applies to all three:
 
 - **Create commands from the wrapper connection.**
-  `CreateCommand<TCommand>()` returns `AwsWrapperCommand<TCommand>`;
-  the plain `CreateCommand()` returns `AwsWrapperCommand<DbCommand>`.
-  `CreateBatch()` returns `AwsWrapperBatch`, and `BeginTransaction()`
-  returns `AwsWrapperTransaction`. A command created with
+  `CreateCommand<TCommand>()` returns `AwsWrapperCommand<TCommand>`, a
+  `DbCommand` that is not a `TCommand`; the plain `CreateCommand()` is
+  declared as `DbCommand` and returns an `AwsWrapperCommand<DbCommand>`.
+  `CreateBatch()` returns `AwsWrapperBatch`. `BeginTransaction()` is
+  declared as `DbTransaction` and returns an `AwsWrapperTransaction`.
+  §1.4 lists the driver-specific members these types do not have. A
+  command created with
   `new NpgsqlCommand(sql, connection)` would need a driver connection
   and would bypass the wrapper; create commands from the wrapper
   connection only. The source creates an unopened driver connection in
